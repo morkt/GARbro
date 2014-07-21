@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>WindowsAPICodePack-Shell</id>
+    <version>1.1</version>
+    <title>Windows API Code Pack - Shell</title>
+    <authors>Aybe</authors>
+    <owners>Aybe</owners>
+    <licenseUrl>http://code.msdn.microsoft.com/WindowsAPICodePack/Project/License.aspx</licenseUrl>
+    <projectUrl>http://archive.msdn.microsoft.com/WindowsAPICodePack</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Shell library for Windows API Code Pack</description>
+    <summary>Windows® API Code Pack for Microsoft® .NET Framework provides a source code library that can be used to access some features of Windows 7 and Windows Vista from managed code.</summary>
+    <language>en-US</language>
+    <tags>WindowsAPICodePack</tags>
+    <dependencies>
+      <dependency id="WindowsAPICodePack-Core" version="1.1" />
+    </dependencies>
+  </metadata>
+</package>

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>WindowsAPICodePack-Core</id>
+    <version>1.1</version>
+    <title>Windows API Code Pack - Core</title>
+    <authors>Aybe</authors>
+    <owners>Aybe</owners>
+    <licenseUrl>http://code.msdn.microsoft.com/WindowsAPICodePack/Project/License.aspx</licenseUrl>
+    <projectUrl>http://archive.msdn.microsoft.com/WindowsAPICodePack</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Core library for Windows API Code Pack</description>
+    <summary>Windows® API Code Pack for Microsoft® .NET Framework provides a source code library that can be used to access some features of Windows 7 and Windows Vista from managed code.</summary>
+    <releaseNotes>Fixes TaskDialog.Icon bug that wasn't visible unless specified duringTaskDialog.Opened event.</releaseNotes>
+    <language>en-US</language>
+    <tags>WindowsAPICodePack</tags>
+  </metadata>
+</package>

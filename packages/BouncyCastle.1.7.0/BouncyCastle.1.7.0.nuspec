@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>BouncyCastle</id>
+    <version>1.7.0</version>
+    <title>Bouncy Castle</title>
+    <authors>Bouncy Castle Project Contributors</authors>
+    <owners>Bouncy Castle Project Contributors</owners>
+    <projectUrl>http://www.bouncycastle.org/csharp/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>BouncyCastle.Crypto is a cryptography API providing:
+ -Generation and parsing of PKCS#12 files.
+ -X.509: Generators and parsers for V1 and V3 certificates, V2 CRLs and attribute certificates.
+ -PBE algorithms supported by PBEUtil: PBEwithMD2andDES-CBC, PBEwithMD2andRC2-CBC, PBEwithMD5andDES-CBC, PBEwithMD5andRC2-CBC, PBEwithSHA1andDES-CBC, PBEwithSHA1andRC2-CBC, PBEwithSHA-1and128bitRC4, PBEwithSHA-1and40bitRC4, PBEwithSHA-1and3-keyDESEDE-CBC, PBEwithSHA-1and2-keyDESEDE-CBC, PBEwithSHA-1and128bitRC2-CBC, PBEwithSHA-1and40bitRC2-CBC, PBEwithHmacSHA-1, PBEwithHmacSHA-224, PBEwithHmacSHA-256, PBEwithHmacRIPEMD128, PBEwithHmacRIPEMD160, and PBEwithHmacRIPEMD256.
+ -Signature algorithms supported by SignerUtilities: MD2withRSA, MD4withRSA, MD5withRSA, RIPEMD128withRSA, RIPEMD160withRSA, RIPEMD256withRSA, SHA-1withRSA, SHA-224withRSA, SHA-256withRSAandMGF1, SHA-384withRSAandMGF1, SHA-512withRSAandMGF1, SHA-1withDSA, and SHA-1withECDSA.
+ -Symmetric key algorithms: AES, Blowfish, Camellia, CAST5, CAST6, DESede, DES, GOST28147, HC-128, HC-256, IDEA, NaccacheStern, RC2, RC4, RC5-32, RC5-64, RC6, Rijndael, Serpent, Skipjack, TEA/XTEA, Twofish, and VMPC.
+ -Symmetric key modes: CBC, CFB, CTS, GOFB, OFB, OpenPGPCFB, and SIC (or CTR).
+ -Symmetric key paddings: ISO10126d2, ISO7816d4, PKCS#5/7, TBC, X.923, and Zero Byte.
+ -Asymmetric key algorithms: RSA (with blinding), ElGamal, DSA, ECDSA.
+ -Asymmetric key paddings/encodings: ISO9796d1, OAEP, and PKCS#1.
+ -Digests: GOST3411, MD2, MD4, MD5, RIPEMD128, RIPEMD160, RIPEMD256, RIPEMD320, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, Tiger, and Whirlpool.
+ -Signer mechanisms: DSA, ECDSA, ECGOST3410, GOST3410, ISO9796d2, PSS, RSA.
+ -Key Agreement: Diffie-Hellman and EC-DH.
+ -Macs: CBCBlockCipher, CFBBlockCipher, GOST28147, HMac, and ISO9797 Alg. 3.
+ -PBE generators: PKCS#12, and PKCS#5 - schemes 1 and 2.
+ -OpenPGP (RFC 2440)
+ -Cryptographic Message Syntax (CMS, RFC 3852), including streaming API.
+ -Online Certificate Status Protocol (OCSP, RFC 2560).
+ -Time Stamp Protocol (TSP, RFC 3161).
+ -TLS/SSL Client with support for client side authentication.</description>
+    <summary>BouncyCastle.Crypto is a cryptography API providing: -Generation and parsing of PKCS#12 files. -X.509: Generators and parsers for V1 and V3 certificates, V2 CRLs and attribute certificates. -PBE algorithms supported by PBEUtil: PBEwithMD2andDES-CBC, PBEwithMD2andRC2-CBC, PBEwithMD5andDES-CBC, PBEwithMD5andRC2-CBC, PBEwithSHA1andDES-CBC, PBEwithSHA1andRC2-CBC, PBEwithSHA-1and128bitRC4, PBEwithSHA-1and40bitRC4, PBEwithSHA-1and3-keyDESEDE-CBC, PBEwithSHA-1and2-keyDESEDE-CBC, PBEwithSHA-1and128bitRC2-CBC, PBEwithSHA-1and40bitRC2-CBC, PBEwithHmacSHA-1, PBEwithHmacSHA-224, PBEwithHmacSHA-256, PBEwithHmacRIPEMD128, PBEwithHmacRIPEMD160, and PBEwithHmacRIPEMD256. -Signature algorithms supported by SignerUtilities: MD2withRSA, MD4withRSA, MD5withRSA, RIPEMD128withRSA, RIPEMD160withRSA, RIPEMD256withRSA, SHA-1withRSA, SHA-224withRSA, SHA-256withRSAandMGF1, SHA-384withRSAandMGF1, SHA-512withRSAandMGF1, SHA-1withDSA, and SHA-1withECDSA. -Symmetric key algorithms: AES, Blowfish, Camellia, CAST5, CAST6, DESede, DES, GOST28147, HC-128, HC-256, IDEA, NaccacheStern, RC2, RC4, RC5-32, RC5-64, RC6, Rijndael, Serpent, Skipjack, TEA/XTEA, Twofish, and VMPC. -Symmetric key modes: CBC, CFB, CTS, GOFB, OFB, OpenPGPCFB, and SIC (or CTR). -Symmetric key paddings: ISO10126d2, ISO7816d4, PKCS#5/7, TBC, X.923, and Zero Byte. -Asymmetric key algorithms: RSA (with blinding), ElGamal, DSA, ECDSA. -Asymmetric key paddings/encodings: ISO9796d1, OAEP, and PKCS#1. -Digests: GOST3411, MD2, MD4, MD5, RIPEMD128, RIPEMD160, RIPEMD256, RIPEMD320, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, Tiger, and Whirlpool. -Signer mechanisms: DSA, ECDSA, ECGOST3410, GOST3410, ISO9796d2, PSS, RSA. -Key Agreement: Diffie-Hellman and EC-DH. -Macs: CBCBlockCipher, CFBBlockCipher, GOST28147, HMac, and ISO9797 Alg. 3. -PBE generators: PKCS#12, and PKCS#5 - schemes 1 and 2. -OpenPGP (RFC 2440) -Cryptographic Message Syntax (CMS, RFC 3852), including streaming API. -Online Certificate Status Protocol (OCSP, RFC 2560). -Time Stamp Protocol (TSP, RFC 3161). -TLS/SSL Client with support for client side authentication.</summary>
+    <tags>bouncycastle cryptography encryption security</tags>
+  </metadata>
+</package>

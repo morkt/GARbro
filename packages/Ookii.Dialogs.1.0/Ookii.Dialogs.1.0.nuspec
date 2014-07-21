@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Ookii.Dialogs</id>
+    <version>1.0</version>
+    <title>Ookii Dialogs WPF library</title>
+    <authors>Sven Groot</authors>
+    <owners>Sven Groot</owners>
+    <projectUrl>http://www.ookii.org/software/dialogs/</projectUrl>
+    <iconUrl>http://www.ookii.org/favicon.ico</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Ookii.Dialogs is a class library for .Net applications providing several common dialogs. It includes classes for task dialog, credential dialog, progress dialog, input dialog, and common file dialogs. This library is intended for use in WPF applications.</description>
+    <summary>Ookii.Dialogs is a class library for .Net applications providing several common dialogs. It includes classes for task dialog, credential dialog, progress dialog, input dialog, and common file dialogs.</summary>
+    <tags>wpf task dialogs</tags>
+  </metadata>
+</package>
