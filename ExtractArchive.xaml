@@ -1,0 +1,37 @@
+﻿<local:ExtractDialog x:Class="GARbro.GUI.ExtractArchiveDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:GARbro.GUI.Strings"
+        xmlns:p="clr-namespace:GARbro.GUI.Properties"
+        xmlns:local="clr-namespace:GARbro.GUI"
+        Title="{x:Static s:guiStrings.TextExtractTitle}" Height="200" Width="411.713"
+        ShowInTaskbar="False"  WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+    <Grid Margin="0,0,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="61*"/>
+            <RowDefinition Height="70*"/>
+            <RowDefinition Height="41*"/>
+        </Grid.RowDefinitions>
+        <TextBlock x:Name="ExtractLabel" Text="{x:Static s:guiStrings.TextExtractAllTo}" Margin="10,10,10,0" VerticalAlignment="Top" Height="15"/>
+        <local:ExtAutoCompleteBox x:Name="DestinationDir" Margin="10,0,41,9" VerticalAlignment="Bottom"/>
+        <Button Margin="0,0,10,9" VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                Command="{x:Static local:Commands.Browse}">
+            <Image Source="{StaticResource IconSearch}" Stretch="Uniform" UseLayoutRounding="True" SnapsToDevicePixels="True" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Button>
+        <CheckBox Name="ExtractImages" Content="{x:Static s:guiStrings.TextExtractImages}" HorizontalAlignment="Left" Margin="10,7.061,0,0" Grid.Row="1" VerticalAlignment="Top" Width="147" Height="15" IsChecked="True"/>
+        <Border BorderBrush="{x:Null}" Height="28" Width="115" Margin="0,0.061,127.87,0" Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Right" >
+            <TextBlock Text="{x:Static s:guiStrings.TextSaveImagesAs}" TextWrapping="Wrap" TextAlignment="Right"  VerticalAlignment="Center" HorizontalAlignment="Right"/>
+        </Border>
+        <ComboBox Name="ImageConversionFormat" DisplayMemberPath="Tag" Margin="0,4.061,41.87,0" Grid.Row="1" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="75">
+        </ComboBox>
+        <CheckBox x:Name="ExtractText" Content="{x:Static s:guiStrings.TextExtractText}" HorizontalAlignment="Left" Margin="10,35.061,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120" Height="15" IsChecked="True"/>
+        <TextBlock Text="{x:Static s:guiStrings.TextEncoding}" Margin="0,35.061,128,0" TextAlignment="Right"  VerticalAlignment="Top" Height="20" Grid.Row="1" HorizontalAlignment="Right" Width="109"/>
+        <ComboBox x:Name="TextEncoding" Margin="0,33.061,41.87,0" Grid.Row="1" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="76">
+        </ComboBox>
+        <Button Content="{x:Static s:guiStrings.ButtonExtract}" Click="ExtractButton_Click" HorizontalAlignment="Right" Margin="0,0,103,10" Grid.Row="2" Width="75" Height="21" VerticalAlignment="Bottom" IsDefault="True"/>
+        <Button Content="{x:Static s:guiStrings.ButtonCancel}" Margin="0,0,10,10" Grid.Row="2" Height="21" VerticalAlignment="Bottom" IsCancel="True" HorizontalAlignment="Right" Width="75"/>
+    </Grid>
+    <Window.CommandBindings>
+        <CommandBinding Command="{x:Static local:Commands.Browse}"       Executed="BrowseExec" CanExecute="CanExecuteAlways"/>
+    </Window.CommandBindings>
+</local:ExtractDialog>

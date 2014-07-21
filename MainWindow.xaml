@@ -1,0 +1,258 @@
+﻿<Window x:Class="GARbro.GUI.MainWindow" x:Name="AppWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:GARbro.GUI"
+        xmlns:s="clr-namespace:GARbro.GUI.Strings"
+        xmlns:p="clr-namespace:GARbro.GUI.Properties"
+        xmlns:sdk="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
+        Title="GARbro" MinHeight="250" ResizeMode="CanResizeWithGrip"
+        Loaded="WindowLoaded"
+        Top="{Binding Source={x:Static p:Settings.Default}, Path=winTop, Mode=TwoWay}"
+        Left="{Binding Source={x:Static p:Settings.Default}, Path=winLeft, Mode=TwoWay}"
+        Height="{Binding Source={x:Static p:Settings.Default}, Path=winHeight, Mode=TwoWay}"
+        Width="{Binding Source={x:Static p:Settings.Default}, Path=winWidth, Mode=TwoWay}"
+        WindowState="{Binding Source={x:Static p:Settings.Default}, Path=winState, Mode=TwoWay}">
+    <Window.Resources>
+        <SolidColorBrush x:Key="AlternateColor1" Color="#f2f5f9" />
+        <SolidColorBrush x:Key="AlternateColor2" Color="White" />
+        <BitmapImage x:Key="Icon32x32Back"      UriSource="Images/32x32/back button.png"/>
+        <BitmapImage x:Key="Icon32x32Forward"   UriSource="Images/32x32/forward button.png"/>
+        <BitmapImage x:Key="Icon32x32Help"      UriSource="Images/32x32/help.png"/>
+        <CollectionViewSource x:Key="ListViewSource" Source="{Binding}"/>
+        <Style x:Key="HeaderLeftAlign" TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="HorizontalContentAlignment" Value="Left"></Setter>
+        </Style>
+        <DataTemplate x:Key="SortArrowUp">
+            <DockPanel>
+                <TextBlock Margin="5,0,5,0" Text="{Binding}" />
+                <Path VerticalAlignment="Center" Fill="Gray" Data="M 5,5 15,5 10,0 5,5" />
+            </DockPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="SortArrowDown">
+            <DockPanel>
+                <TextBlock Margin="5,0,5,0" Text="{Binding}" />
+                <Path VerticalAlignment="Center" Fill="Gray" Data="M 5,0 10,5 15,0 5,0" />
+            </DockPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="SortArrowNone">
+            <TextBlock Margin="5,0,5,0" Text="{Binding}"/>
+        </DataTemplate>
+    </Window.Resources>
+    <DockPanel LastChildFill="True">
+        <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Collapsed"/>
+        <DockPanel Background="{Binding Path=Background, ElementName=MainMenuBar}" x:Name="MainToolBar"
+                   HorizontalAlignment="Stretch" DockPanel.Dock="Top">
+            <DockPanel.Resources>
+                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                    <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="Margin" Value="1,2,1,2"/>
+                </Style>
+                <Style TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}">
+                    <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="Margin" Value="2,2,2,2"/>
+                </Style>
+                <Style TargetType="{x:Type Separator}" BasedOn="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}">
+                    <Setter Property="Margin" Value="5,0,5,0"/>
+                </Style>
+                <Style TargetType="{x:Type Image}">
+                    <Setter Property="UseLayoutRounding" Value="True"/>
+                    <Setter Property="SnapsToDevicePixels" Value="True"/>
+                    <!--
+                    <Setter Property="Width" Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.Width}"/>
+                    <Setter Property="Height" Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.Height}"/>
+                    <Setter Property="Stretch" Value="None"/>
+                    -->
+                    <Setter Property="Width" Value="24"/>
+                    <Setter Property="Height" Value="24"/>
+                    <Setter Property="Stretch" Value="Uniform"/>
+                    <!-- hack to make images within disabled toolbar buttons appear 'grayed out'.
+                         This doesn't gray them at all, but lowers their opacity so the (usually gray)
+                         background of the button shows through.  If WPF had a built-in facility for
+                         grayscaling images in disabled buttons, this kind of icky kludgery wouldn't be
+                         necessary -->
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type Button}, AncestorLevel=1}, Path=IsEnabled}" Value="False">
+                            <Setter Property="Opacity" Value="0.33"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DockPanel.Resources>
+            <Button x:Name="ButtonBack" ToolTip="{x:Static s:guiStrings.TooltipBack}" Margin="5,2,0,2"
+                    Command="{x:Static local:Commands.GoBack}">
+                <Image Source="{StaticResource Icon32x32Back}"/>
+            </Button>
+            <Button x:Name="ButtonForward" ToolTip="{x:Static s:guiStrings.TooltipForward}"
+                    Command="{x:Static local:Commands.GoForward}">
+                <Image Source="{StaticResource Icon32x32Forward}"/>
+            </Button>
+            <Separator/>
+            <local:ExtAutoCompleteBox x:Name="pathLine" Height="22" Width="100" KeyDown="acb_OnKeyDown"/>
+            <Button ToolTip="{x:Static s:guiStrings.MenuAbout}" DockPanel.Dock="Right" Margin="0,2,10,2" Click="MenuAbout_Click">
+                <Image Source="{StaticResource Icon32x32Help}"/>
+            </Button>
+            <TextBlock Visibility="Hidden"/>
+        </DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="appStatusText"/>
+            </StatusBarItem>
+        </StatusBar>
+        <Grid x:Name="ContentGrid" DockPanel.Dock="Left" VerticalAlignment="Stretch"
+              HorizontalAlignment="Stretch" ShowGridLines="False">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{Binding Source={x:Static p:Settings.Default}, Path=lvPanelWidth, Mode=TwoWay}" MinWidth="200" />
+                <ColumnDefinition Width="1"/>
+                <ColumnDefinition Width="*" MinWidth="100"/>
+            </Grid.ColumnDefinitions>
+            <ListView Name="CurrentDirectory" Grid.Column="0"
+                    ItemsSource="{Binding Source={StaticResource ListViewSource}}"
+                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                    BorderBrush="Transparent" SelectedValuePath="Name"
+                    SelectionMode="Extended" Foreground="Black" AlternationCount="2"
+                    PreviewTextInput="lv_TextInput" IsSynchronizedWithCurrentItem="True"
+                    GridViewColumnHeader.Click="lv_ColumnHeaderClicked">
+                <ListView.Resources>
+                    <SolidColorBrush x:Key="ItemInactiveBackground" Color="#ffcbcbcb" />
+                    <Style x:Key="DefaultMenuItemStyle" TargetType="{x:Type MenuItem}">
+                        <Setter Property="FontWeight" Value="Bold" />
+                    </Style>
+                    <ContextMenu x:Key="lvDirContextMenu">
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuOpen}" InputGestureText="Enter"
+                                  Style="{StaticResource DefaultMenuItemStyle}"
+                                  Command="{x:Static local:Commands.OpenItem}" />
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuExtract}" InputGestureText="F4"
+                                  Command="{x:Static local:Commands.ExtractItem}" />
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuExplorer}" InputGestureText="Ctrl+E"
+                                  Command="{x:Static local:Commands.ExploreItem}"/>
+                        <Separator/>
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuDelete}" InputGestureText="Del"
+                                  Command="{x:Static local:Commands.DeleteItem}"/>
+                        <Separator/>
+                        <!--
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuRename}" InputGestureText="F2"
+                                  Command="{x:Static local:Commands.RenameItem}"/>
+                        -->
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
+                                  Command="{x:Static local:Commands.Refresh}"/>
+                        <!-- Sort-by submenu
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBy}">
+                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
+                                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByName, Mode=OneWay}"
+                                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
+                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
+                                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByType, Mode=OneWay}"
+                                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
+                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
+                                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortBySize, Mode=OneWay}"
+                                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
+                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
+                                      IsChecked="{Binding ElementName=AppWindow, Path=IsUnsorted, Mode=OneWay}"
+                                      Command="{x:Static local:Commands.SortBy}"/>
+                        </MenuItem>
+                        -->
+                    </ContextMenu>
+                </ListView.Resources>
+                <ListView.InputBindings>
+                    <KeyBinding Key="Enter" Command="{x:Static local:Commands.OpenItem}"/>
+                    <KeyBinding Gesture="Ctrl+E" Command="{x:Static local:Commands.ExploreItem}"/>
+                    <KeyBinding Gesture="F2" Command="{x:Static local:Commands.RenameItem}"/>
+                    <KeyBinding Gesture="F4" Command="{x:Static local:Commands.ExtractItem}"/>
+                    <KeyBinding Gesture="F5" Command="{x:Static local:Commands.Refresh}"/>
+                    <KeyBinding Gesture="Delete" Command="{x:Static local:Commands.DeleteItem}"/>
+                    <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
+                    <MouseBinding Gesture="LeftDoubleClick" Command="{x:Static local:Commands.OpenItem}" />
+                </ListView.InputBindings>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="ContextMenu" Value="{StaticResource lvDirContextMenu}"/>
+                        <EventSetter Event="Selected" Handler="lvi_Selected"/>
+                        <EventSetter Event="ListViewItem.MouseDoubleClick" Handler="lvi_DoubleClick" />
+                        <Style.Triggers>
+                            <!-- BEGIN alternate row color -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="False" />
+                                    <Condition Property="ItemsControl.AlternationIndex" Value="0"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Background" Value="{StaticResource AlternateColor1}"/>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="False" />
+                                    <Condition Property="ItemsControl.AlternationIndex" Value="1"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Background" Value="{StaticResource AlternateColor2}"/>
+                            </MultiTrigger>
+                            <!-- END alternate row color -->
+                            <!-- BEGIN context menu trigger -->
+                            <!--
+                            <DataTrigger Binding="{Binding Path=IsArchive}" Value="True">
+                                <Setter Property="ContextMenu" Value="{StaticResource lvArcContextMenu}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Path=IsArchive}" Value="False">
+                                <Setter Property="ContextMenu" Value="{StaticResource lvDirContextMenu}"/>
+                            </DataTrigger>
+                            -->
+                            <!-- END context menu trigger -->
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.View>
+                    <GridView AllowsColumnReorder="False">
+                        <GridViewColumn HeaderContainerStyle="{StaticResource HeaderLeftAlign}" Width="{Binding Source={x:Static p:Settings.Default}, Path=lvNameColumnWidth, Mode=TwoWay}" HeaderTemplate="{StaticResource SortArrowNone}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Tag="Name" Content="{x:Static s:guiStrings.HeaderName}"/>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate><TextBlock x:Name="item_Name" Text="{Binding Path=Name}"/></DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn HeaderContainerStyle="{StaticResource HeaderLeftAlign}" Width="{Binding Source={x:Static p:Settings.Default}, Path=lvTypeColumnWidth, Mode=TwoWay}" HeaderTemplate="{StaticResource SortArrowNone}" DisplayMemberBinding="{Binding Path=Type}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Tag="Type" Content="{x:Static s:guiStrings.HeaderType}"/>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn HeaderContainerStyle="{StaticResource HeaderLeftAlign}" Width="{Binding Source={x:Static p:Settings.Default}, Path=lvSizeColumnWidth, Mode=TwoWay}" HeaderTemplate="{StaticResource SortArrowNone}">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Tag="Size" Content="{x:Static s:guiStrings.HeaderSize}"/>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Path=Size}" TextAlignment="Right"/></DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <ScrollViewer Grid.Column="2" Background="LightGray"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <Image Name="PreviewPane" Stretch="None" UseLayoutRounding="False" SnapsToDevicePixels="True"
+                       local:TouchScrolling.IsEnabled="True"/>
+            </ScrollViewer>
+            <!-- Margin and BorderThickness help to react early on mouse pointer -->
+            <GridSplitter Grid.Column="1" Background="Black" ShowsPreview="False" Focusable="False"
+                          Margin="-3,0" BorderThickness="3,0" BorderBrush="Transparent"
+                          HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+        </Grid>
+    </DockPanel>
+    <Window.InputBindings>
+        <KeyBinding Gesture="Ctrl+Q" Command="{x:Static local:Commands.Exit}"/>
+        <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
+    </Window.InputBindings>
+    <Window.CommandBindings>
+        <CommandBinding Command="{x:Static local:Commands.OpenItem}"   Executed="OpenItemExec"   CanExecute="CanExecuteOnSelected"/>
+        <CommandBinding Command="{x:Static local:Commands.ExtractItem}" Executed="ExtractItemExec"   CanExecute="CanExecuteOnSelected"/>
+        <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteDelete" />
+        <CommandBinding Command="{x:Static local:Commands.RenameItem}" Executed="RenameItemExec" CanExecute="CanExecuteInDirectory" />
+        <CommandBinding Command="{x:Static local:Commands.ExploreItem}" Executed="ExploreItemExec" CanExecute="CanExecuteInDirectory" />
+        <CommandBinding Command="{x:Static local:Commands.SortBy}"     Executed="SortByExec"     CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.GoBack}"     Executed="GoBackExec"     CanExecute="CanExecuteGoBack"/>
+        <CommandBinding Command="{x:Static local:Commands.GoForward}"  Executed="GoForwardExec"  CanExecute="CanExecuteGoForward"/>
+        <CommandBinding Command="{x:Static local:Commands.Refresh}"    Executed="RefreshExec"    CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
+    </Window.CommandBindings>
+</Window>

@@ -1,0 +1,25 @@
+v1.3	june 2013
+Upgrade zlib to 1.2.8
+Make custom build v1.2.8.1 where 1 bugs fixed: Incorrect move method was sent to SetFilePointer.
+Fix bug where utf8 flag was not set correctly.
+Change UTF8Encoding to default true.
+Support unicode in filename of zip itself.
+
+v1.2	6.may 2012
+-Upgrade zlib to 1.2.7
+-Change Zip64 option to enum (Yes,No,Auto) where Auto now is default (was No)
+
+v1.1	6.jan 2011
+Fixed bug: If Unzipper.ItemList had more than one entry, unzip would not work (exctracted files would try to overwrite themself)
+
+Update zlib dlls to custom build v1.2.5.1 where 2 bugs fixed:
+-Adding over 64k number of entries in zip with total size below 4GB created invalid zip
+-Writing entries over 4GB with zip64=false did not fail but created invalid zip 
+
+Misc:
+Convert unsafe code to safe code.
+Wrap CloseCurrentEntry in try/finally block: we must always CloseFile, even if CloseCurrentEntry fails.
+Zip64 zipping works now.
+
+v1.0
+Initial release

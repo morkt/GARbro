@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="GameRes.Formats.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="NPAScheme" Type="GameRes.Formats.NpaTitleId" Scope="User">
+      <Value Profile="(Default)">NotEncrypted</Value>
+    </Setting>
+    <Setting Name="XP3Scheme" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="YPFKey" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">4294967295</Value>
+    </Setting>
+    <Setting Name="INTEncryption" Type="GameRes.Formats.IntEncryptionInfo" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+  </Settings>
+</SettingsFile>
