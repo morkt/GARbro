@@ -3,4 +3,6 @@ obj
 tags
 *.exe
 *.suo
+*.pfx
 *;*
+Images
