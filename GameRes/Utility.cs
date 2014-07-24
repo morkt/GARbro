@@ -70,6 +70,16 @@ namespace GameRes.Utility
         {
             return (int)ToUInt32 (value, index);
         }
+
+        public static ulong ToUInt64 (byte[] value, int index)
+        {
+            return (ulong)ToUInt32 (value, index) | ((ulong)ToUInt32 (value, index+4) << 32);
+        }
+
+        public static long ToInt64 (byte[] value, int index)
+        {
+            return (long)ToUInt64 (value, index);
+        }
     }
 
     public sealed class Crc32
