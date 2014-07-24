@@ -132,6 +132,9 @@
   <data name="CtxMenuCopy" xml:space="preserve">
     <value>Copy</value>
   </data>
+  <data name="CtxMenuCreate" xml:space="preserve">
+    <value>Create archive...</value>
+  </data>
   <data name="CtxMenuCut" xml:space="preserve">
     <value>Cut</value>
   </data>
@@ -179,6 +182,21 @@
   </data>
   <data name="HeaderType" xml:space="preserve">
     <value>Type</value>
+  </data>
+  <data name="LabelArchiveFormat" xml:space="preserve">
+    <value>Archive format</value>
+  </data>
+  <data name="LabelArchiveName" xml:space="preserve">
+    <value>Archive name</value>
+  </data>
+  <data name="LabelArchiveOptions" xml:space="preserve">
+    <value>Archive options</value>
+  </data>
+  <data name="LabelExtractAllTo" xml:space="preserve">
+    <value>Extract all files from {0} to</value>
+  </data>
+  <data name="LabelExtractFileTo" xml:space="preserve">
+    <value>Extract {0} to</value>
   </data>
   <data name="LPfile1" xml:space="preserve">
     <value>file</value>
@@ -249,23 +267,29 @@
   <data name="TextAboutTitle" xml:space="preserve">
     <value>About Game Resource browser</value>
   </data>
+  <data name="TextAllFiles" xml:space="preserve">
+    <value>All Files</value>
+  </data>
   <data name="TextAsIs" xml:space="preserve">
     <value>as is</value>
   </data>
+  <data name="TextChooseArchive" xml:space="preserve">
+    <value>Choose archive location</value>
+  </data>
   <data name="TextChooseDestDir" xml:space="preserve">
     <value>Choose destination directory</value>
+  </data>
+  <data name="TextCreateArchive" xml:space="preserve">
+    <value>Create archive</value>
+  </data>
+  <data name="TextCreateArchiveError" xml:space="preserve">
+    <value>Archive creation error</value>
   </data>
   <data name="TextDirType" xml:space="preserve">
     <value>&lt;DIR&gt;</value>
   </data>
   <data name="TextEncoding" xml:space="preserve">
     <value>Text encoding</value>
-  </data>
-  <data name="TextExtractAllTo" xml:space="preserve">
-    <value>Extract all files from {0} to</value>
-  </data>
-  <data name="TextExtractFileTo" xml:space="preserve">
-    <value>Extract {0} to</value>
   </data>
   <data name="TextExtractImages" xml:space="preserve">
     <value>Extract images</value>

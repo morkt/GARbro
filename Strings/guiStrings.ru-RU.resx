@@ -129,6 +129,9 @@
   <data name="CtxMenuCopy" xml:space="preserve">
     <value>Копировать</value>
   </data>
+  <data name="CtxMenuCreate" xml:space="preserve">
+    <value>Создать архив...</value>
+  </data>
   <data name="CtxMenuCut" xml:space="preserve">
     <value>Вырезать</value>
   </data>
@@ -176,6 +179,21 @@
   </data>
   <data name="HeaderType" xml:space="preserve">
     <value>Тип</value>
+  </data>
+  <data name="LabelArchiveFormat" xml:space="preserve">
+    <value>Формат архива</value>
+  </data>
+  <data name="LabelArchiveName" xml:space="preserve">
+    <value>Имя архива</value>
+  </data>
+  <data name="LabelArchiveOptions" xml:space="preserve">
+    <value>Настройки архивирования</value>
+  </data>
+  <data name="LabelExtractAllTo" xml:space="preserve">
+    <value>Извлечь все файлы из {0} в</value>
+  </data>
+  <data name="LabelExtractFileTo" xml:space="preserve">
+    <value>Извлечь {0} в</value>
   </data>
   <data name="LPfile1" xml:space="preserve">
     <value>файл</value>
@@ -249,23 +267,29 @@
   <data name="TextAboutTitle" xml:space="preserve">
     <value>Об обозревателе игровых ресурсов</value>
   </data>
+  <data name="TextAllFiles" xml:space="preserve">
+    <value>Все файлы</value>
+  </data>
   <data name="TextAsIs" xml:space="preserve">
     <value>исходном</value>
   </data>
+  <data name="TextChooseArchive" xml:space="preserve">
+    <value>Выберите месторасположение архива</value>
+  </data>
   <data name="TextChooseDestDir" xml:space="preserve">
     <value>Выберите место извлечения</value>
+  </data>
+  <data name="TextCreateArchive" xml:space="preserve">
+    <value>Создать архив</value>
+  </data>
+  <data name="TextCreateArchiveError" xml:space="preserve">
+    <value>Ошибка при создании архива</value>
   </data>
   <data name="TextDirType" xml:space="preserve">
     <value>&lt;DIR&gt;</value>
   </data>
   <data name="TextEncoding" xml:space="preserve">
     <value>Кодировка текста</value>
-  </data>
-  <data name="TextExtractAllTo" xml:space="preserve">
-    <value>Извлечь все файлы из {0} в</value>
-  </data>
-  <data name="TextExtractFileTo" xml:space="preserve">
-    <value>Извлечь {0} в</value>
   </data>
   <data name="TextExtractImages" xml:space="preserve">
     <value>Извлекать изображения</value>

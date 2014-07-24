@@ -118,7 +118,7 @@ namespace GameRes.Formats.GUI
             }
             catch
             {
-                return new ValidationResult (false, "Numeric key should be a 32-bit hexadecimal integer");
+                return new ValidationResult (false, Strings.arcStrings.INTKeyRequirement);
             }
             return new ValidationResult (true, null);
         }

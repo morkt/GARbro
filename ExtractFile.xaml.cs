@@ -43,7 +43,7 @@ namespace GARbro.GUI
         public ExtractFile (EntryViewModel entry, string destination)
         {
             InitializeComponent();
-            ExtractLabel.Text = string.Format (guiStrings.TextExtractFileTo, entry.Name);
+            ExtractLabel.Text = string.Format (guiStrings.LabelExtractFileTo, entry.Name);
             DestinationDir.Text = destination;
             if ("image" == entry.Type)
             {

@@ -41,8 +41,9 @@ namespace GameRes.Formats
     public class IntOpener : ArchiveFormat
     {
         public override string Tag { get { return "INT"; } }
-        public override string Description { get { return "FrontWing game resource archive"; } }
+        public override string Description { get { return arcStrings.INTDescription; } }
         public override uint Signature { get { return 0x0046494b; } }
+        public override bool IsHierarchic { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -267,11 +268,9 @@ namespace GameRes.Formats
             { "Sengoku Tenshi Djibril (trial)",   new KeyData { Key=0xef870610, Passphrase="FW-8O9B6WDS" }},
         };
 
-        IntEncryptionInfo m_info = Settings.Default.INTEncryption ?? new IntEncryptionInfo();
-
         uint? QueryEncryptionInfo ()
         {
-            var widget = new GUI.WidgetINT (m_info);
+            var widget = new GUI.WidgetINT (Settings.Default.INTEncryption ?? new IntEncryptionInfo());
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.INTNotice,
@@ -283,6 +282,13 @@ namespace GameRes.Formats
 
             Settings.Default.INTEncryption = widget.Info;
             return widget.GetKey();
+        }
+
+        public override ResourceOptions GetOptions ()
+        {
+            return new ResourceOptions {
+                Widget = new GUI.WidgetINT (Settings.Default.INTEncryption ?? new IntEncryptionInfo())
+            };
         }
     }
 }

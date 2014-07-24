@@ -103,6 +103,8 @@ namespace GameRes
     {
         public override string Type { get { return "archive"; } }
 
+        public abstract bool IsHierarchic { get; }
+
         public abstract ArcFile TryOpen (ArcView view);
 
         /// <summary>
@@ -141,7 +143,7 @@ namespace GameRes
             return File.Create (entry.Name);
         }
 
-        /// /// <summary>
+        /// <summary>
         /// Create resource archive named <paramref name="filename"/> containing entries from the
         /// supplied <paramref name="list"/> and applying necessary <paramref name="options"/>.
         /// </summary>

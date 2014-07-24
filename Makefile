@@ -1,8 +1,10 @@
-MSCS = D:/WINDOWS/Microsoft.NET/Framework/v4.0.30319/csc //nologo
+MSNETDIR = D:/WINDOWS/Microsoft.NET/Framework/v4.0.30319
+MSCS = $(MSNETDIR)/csc //nologo
+MSBUILD = $(MSNETDIR)/MSBuild.exe //nologo
 
 .SUFFIXES: .cs .exe
 
-all: GARbro
+all: GARbro.GUI
 
 adler32: adler32.cs
 	$(MSCS) $(MSCSFLAGS) //out:$@.exe $^
@@ -12,6 +14,9 @@ inflate: inflate.cs
 
 deflate: deflate.cs
 	$(MSCS) $(MSCSFLAGS) //out:$@.exe $^ //r:zlib\\zlibnet.dll
+
+GARbro.GUI:
+	$(MSBUILD) //p:Configuration=Debug //v:m GARbro.GUI.csproj
 
 GARbro: Program.cs GameRes.cs ArcXFL.cs
 	$(MSCS) $(MSCSFLAGS) //out:$@.exe $^ //r:System.ComponentModel.Composition.dll //r:System.ComponentModel.DataAnnotations.dll

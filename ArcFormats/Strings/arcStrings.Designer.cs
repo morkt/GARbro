@@ -61,6 +61,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv archive.
+        /// </summary>
+        public static string AMIDescription {
+            get {
+                return ResourceManager.GetString("AMIDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive content is encrypted.
         ///Choose appropriate encryption scheme..
         /// </summary>
@@ -76,6 +85,42 @@ namespace GameRes.Formats.Strings {
         public static string ArcNoEncryption {
             get {
                 return ResourceManager.GetString("ArcNoEncryption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to âge proprietary image format.
+        /// </summary>
+        public static string GRPDescription {
+            get {
+                return ResourceManager.GetString("GRPDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Liar-soft proprietary script format.
+        /// </summary>
+        public static string GSCDescription {
+            get {
+                return ResourceManager.GetString("GSCDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to FrontWing game resource archive.
+        /// </summary>
+        public static string INTDescription {
+            get {
+                return ResourceManager.GetString("INTDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Numeric key should be a 32-bit hexadecimal integer.
+        /// </summary>
+        public static string INTKeyRequirement {
+            get {
+                return ResourceManager.GetString("INTKeyRequirement", resourceCulture);
             }
         }
         
@@ -114,6 +159,60 @@ namespace GameRes.Formats.Strings {
         public static string INTNotice {
             get {
                 return ResourceManager.GetString("INTNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Liar-soft image archive.
+        /// </summary>
+        public static string LWGDescription {
+            get {
+                return ResourceManager.GetString("LWGDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nitro+ resource archive.
+        /// </summary>
+        public static string NPADescription {
+            get {
+                return ResourceManager.GetString("NPADescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv script file.
+        /// </summary>
+        public static string SCRDescription {
+            get {
+                return ResourceManager.GetString("SCRDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Liar-soft game resource archive.
+        /// </summary>
+        public static string XFLDescription {
+            get {
+                return ResourceManager.GetString("XFLDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to KiriKiri game engine resource archive.
+        /// </summary>
+        public static string XP3Description {
+            get {
+                return ResourceManager.GetString("XP3Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Yu-Ris game engine resource archive.
+        /// </summary>
+        public static string YPFDescription {
+            get {
+                return ResourceManager.GetString("YPFDescription", resourceCulture);
             }
         }
         

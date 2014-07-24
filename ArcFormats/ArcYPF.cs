@@ -20,8 +20,9 @@ namespace GameRes.Formats
     public class YpfOpener : ArchiveFormat
     {
         public override string Tag { get { return "YPF"; } }
-        public override string Description { get { return "Yu-Ris game engine resource archive"; } }
+        public override string Description { get { return arcStrings.YPFDescription; } }
         public override uint Signature { get { return 0x00465059; } }
+        public override bool IsHierarchic { get { return true; } }
 
         private const uint DefaultKey = 0xffffffff;
 

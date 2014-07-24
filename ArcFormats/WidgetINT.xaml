@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:s="clr-namespace:GameRes.Formats.Strings"
       xmlns:local="clr-namespace:GameRes.Formats.GUI"
-      MaxWidth="250">
+      MaxWidth="260">
     <Grid.Resources>
         <local:KeyConverter x:Key="keyConverter"/>
         <Style TargetType="{x:Type TextBox}">
@@ -17,7 +17,7 @@
     </Grid.Resources>
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto"/>
-        <ColumnDefinition MinWidth="100" Width="*"/>
+        <ColumnDefinition MinWidth="130" Width="*"/>
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
         <RowDefinition/>

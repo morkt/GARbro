@@ -117,12 +117,27 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AMIDescription" xml:space="preserve">
+    <value>Amaterasu Translations Muv-Luv archive</value>
+  </data>
   <data name="ArcEncryptedNotice" xml:space="preserve">
     <value>Archive content is encrypted.
 Choose appropriate encryption scheme.</value>
   </data>
   <data name="ArcNoEncryption" xml:space="preserve">
     <value>no encryption</value>
+  </data>
+  <data name="GRPDescription" xml:space="preserve">
+    <value>âge proprietary image format</value>
+  </data>
+  <data name="GSCDescription" xml:space="preserve">
+    <value>Liar-soft proprietary script format</value>
+  </data>
+  <data name="INTDescription" xml:space="preserve">
+    <value>FrontWing game resource archive</value>
+  </data>
+  <data name="INTKeyRequirement" xml:space="preserve">
+    <value>Numeric key should be a 32-bit hexadecimal integer</value>
   </data>
   <data name="INTLabelNumericKey" xml:space="preserve">
     <value>Numeric key</value>
@@ -137,6 +152,24 @@ Choose appropriate encryption scheme.</value>
     <value>Archive directory is encrypted.
 Enter archive encryption key or choose
 predefined encryption scheme.</value>
+  </data>
+  <data name="LWGDescription" xml:space="preserve">
+    <value>Liar-soft image archive</value>
+  </data>
+  <data name="NPADescription" xml:space="preserve">
+    <value>Nitro+ resource archive</value>
+  </data>
+  <data name="SCRDescription" xml:space="preserve">
+    <value>Amaterasu Translations Muv-Luv script file</value>
+  </data>
+  <data name="XFLDescription" xml:space="preserve">
+    <value>Liar-soft game resource archive</value>
+  </data>
+  <data name="XP3Description" xml:space="preserve">
+    <value>KiriKiri game engine resource archive</value>
+  </data>
+  <data name="YPFDescription" xml:space="preserve">
+    <value>Yu-Ris game engine resource archive</value>
   </data>
   <data name="YPFLabelKey" xml:space="preserve">
     <value>8-bit encryption key</value>

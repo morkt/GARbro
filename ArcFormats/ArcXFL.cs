@@ -16,8 +16,9 @@ namespace GameRes.Formats
     public class XflOpener : ArchiveFormat
     {
         public override string Tag { get { return "XFL"; } }
-        public override string Description { get { return "Liar-soft game resource archive"; } }
+        public override string Description { get { return Strings.arcStrings.XFLDescription; } }
         public override uint Signature { get { return 0x0001424c; } }
+        public override bool IsHierarchic { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -62,8 +63,9 @@ namespace GameRes.Formats
     public class LwgOpener : ArchiveFormat
     {
         public override string Tag { get { return "LWG"; } }
-        public override string Description { get { return "Liar-soft image archive"; } }
+        public override string Description { get { return Strings.arcStrings.LWGDescription; } }
         public override uint Signature { get { return 0x0001474c; } }
+        public override bool IsHierarchic { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -112,7 +114,7 @@ namespace GameRes.Formats
     public class GscFormat : ScriptFormat
     {
         public override string Tag { get { return "GSC"; } }
-        public override string Description { get { return "Liar-soft proprietary script format"; } }
+        public override string Description { get { return Strings.arcStrings.GSCDescription; } }
         public override uint Signature { get { return 0; } }
 
         public override ScriptData Read (string name, Stream stream)

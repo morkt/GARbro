@@ -158,12 +158,16 @@ namespace GARbro.GUI
 
         DirectoryViewModel GetNewViewModel (string path)
         {
-            SetBusyState();
             path = Path.GetFullPath (path);
             if (Directory.Exists (path))
+            {
                 return new DirectoryViewModel (path, m_app.GetDirectoryList (path));
+            }
             else
+            {
+                SetBusyState();
                 return new ArchiveViewModel (path, m_app.GetArchive (path));
+            }
         }
 
         public void SetBusyState()
@@ -918,7 +922,7 @@ namespace GARbro.GUI
                 Description = "",
                 MinimizeBox = true,
             };
-            if (1 == file_list.Count())
+            if (!file_list.Skip (1).Any()) // 1 == file_list.Count()
             {
                 extractProgressDialog.Description = file_list.First().Name;
                 extractProgressDialog.ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar;
@@ -960,6 +964,28 @@ namespace GARbro.GUI
             extractProgressDialog.ShowDialog (this);
         }
 
+        private void CreateArchiveExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new CreateArchiveDialog();
+                dialog.Owner = this;
+                if (!dialog.ShowDialog().Value || string.IsNullOrEmpty (dialog.ArchiveName.Text))
+                    return;
+                var format = dialog.ArchiveFormat.SelectedItem as ArchiveFormat;
+                if (null == format)
+                    return;
+
+                string arc_name = Path.GetFullPath (dialog.ArchiveName.Text);
+                var items = CurrentDirectory.SelectedItems.Cast<EntryViewModel>();
+                format.Create (arc_name, items.Select (entry => entry.Source), dialog.ArchiveOptions);
+            }
+            catch (Exception X)
+            {
+                PopupError (X.Message, guiStrings.TextCreateArchiveError);
+            }
+        }
+
         /// <summary>
         /// Handle "Exit" command.
         /// </summary>
@@ -994,6 +1020,11 @@ namespace GARbro.GUI
         private void CanExecuteInArchive (object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = ViewModel.IsArchive && CurrentDirectory.SelectedIndex != -1;
+        }
+
+        private void CanExecuteCreateArchive (object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = !ViewModel.IsArchive && CurrentDirectory.SelectedItems.Count > 0;
         }
 
         private void CanExecuteInDirectory (object sender, CanExecuteRoutedEventArgs e)
@@ -1077,10 +1108,30 @@ namespace GARbro.GUI
         }
     }
 
+    public class BooleanToCollapsedVisibilityConverter : IValueConverter
+    {
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            //reverse conversion (false=>Visible, true=>collapsed) on any given parameter
+            bool input = (null == parameter) ? (bool)value : !((bool)value);
+            return (input) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
+
     public static class Commands
     {
         public static readonly RoutedCommand OpenItem = new RoutedCommand();
         public static readonly RoutedCommand ExtractItem = new RoutedCommand();
+        public static readonly RoutedCommand CreateArchive = new RoutedCommand();
         public static readonly RoutedCommand SortBy = new RoutedCommand();
         public static readonly RoutedCommand Exit = new RoutedCommand();
         public static readonly RoutedCommand GoBack = new RoutedCommand();

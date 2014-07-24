@@ -45,8 +45,9 @@ namespace GameRes.Formats.KiriKiri
     public class Xp3Opener : ArchiveFormat
     {
         public override string Tag { get { return "XP3"; } }
-        public override string Description { get { return "KiriKiri game engine resource archive"; } }
+        public override string Description { get { return arcStrings.XP3Description; } }
         public override uint Signature { get { return 0x0d335058; } }
+        public override bool IsHierarchic { get { return false; } }
 
         private static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
 

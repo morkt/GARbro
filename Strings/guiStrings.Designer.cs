@@ -106,6 +106,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Create archive....
+        /// </summary>
+        public static string CtxMenuCreate {
+            get {
+                return ResourceManager.GetString("CtxMenuCreate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cut.
         /// </summary>
         public static string CtxMenuCut {
@@ -246,6 +255,51 @@ namespace GARbro.GUI.Strings {
         public static string HeaderType {
             get {
                 return ResourceManager.GetString("HeaderType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive format.
+        /// </summary>
+        public static string LabelArchiveFormat {
+            get {
+                return ResourceManager.GetString("LabelArchiveFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive name.
+        /// </summary>
+        public static string LabelArchiveName {
+            get {
+                return ResourceManager.GetString("LabelArchiveName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive options.
+        /// </summary>
+        public static string LabelArchiveOptions {
+            get {
+                return ResourceManager.GetString("LabelArchiveOptions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Extract all files from {0} to.
+        /// </summary>
+        public static string LabelExtractAllTo {
+            get {
+                return ResourceManager.GetString("LabelExtractAllTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Extract {0} to.
+        /// </summary>
+        public static string LabelExtractFileTo {
+            get {
+                return ResourceManager.GetString("LabelExtractFileTo", resourceCulture);
             }
         }
         
@@ -457,6 +511,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to All Files.
+        /// </summary>
+        public static string TextAllFiles {
+            get {
+                return ResourceManager.GetString("TextAllFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to as is.
         /// </summary>
         public static string TextAsIs {
@@ -466,11 +529,38 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose archive location.
+        /// </summary>
+        public static string TextChooseArchive {
+            get {
+                return ResourceManager.GetString("TextChooseArchive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose destination directory.
         /// </summary>
         public static string TextChooseDestDir {
             get {
                 return ResourceManager.GetString("TextChooseDestDir", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create archive.
+        /// </summary>
+        public static string TextCreateArchive {
+            get {
+                return ResourceManager.GetString("TextCreateArchive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive creation error.
+        /// </summary>
+        public static string TextCreateArchiveError {
+            get {
+                return ResourceManager.GetString("TextCreateArchiveError", resourceCulture);
             }
         }
         
@@ -489,24 +579,6 @@ namespace GARbro.GUI.Strings {
         public static string TextEncoding {
             get {
                 return ResourceManager.GetString("TextEncoding", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Extract all files from {0} to.
-        /// </summary>
-        public static string TextExtractAllTo {
-            get {
-                return ResourceManager.GetString("TextExtractAllTo", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Extract {0} to.
-        /// </summary>
-        public static string TextExtractFileTo {
-            get {
-                return ResourceManager.GetString("TextExtractFileTo", resourceCulture);
             }
         }
         

@@ -119,6 +119,9 @@
     <Compile Include="ArcParameters.xaml.cs">
       <DependentUpon>ArcParameters.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CreateArchive.xaml.cs">
+      <DependentUpon>CreateArchive.xaml</DependentUpon>
+    </Compile>
     <Compile Include="DragScroll.cs" />
     <Compile Include="ExtractArchive.xaml.cs">
       <DependentUpon>ExtractArchive.xaml</DependentUpon>
@@ -129,6 +132,7 @@
     </Compile>
     <Compile Include="HistoryStack.cs" />
     <Compile Include="ImagePreview.cs" />
+    <Compile Include="ListBoxEx.cs" />
     <Compile Include="ModalWindow.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Strings\guiStrings.Designer.cs">
@@ -143,6 +147,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ArcParameters.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CreateArchive.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

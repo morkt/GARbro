@@ -45,7 +45,7 @@ namespace GARbro.GUI
         public ExtractArchiveDialog (string filename, string destination)
         {
             InitializeComponent();
-            ExtractLabel.Text = string.Format (guiStrings.TextExtractAllTo, filename);
+            ExtractLabel.Text = string.Format (guiStrings.LabelExtractAllTo, filename);
             DestinationDir.Text = destination;
 
             ExtractImages.IsChecked = Settings.Default.appExtractImages;

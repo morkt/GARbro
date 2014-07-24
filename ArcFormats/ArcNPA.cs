@@ -49,8 +49,9 @@ namespace GameRes.Formats
     public class NpaOpener : ArchiveFormat
     {
         public override string Tag { get { return "NPA"; } }
-        public override string Description { get { return "Nitro+ resource archive"; } }
+        public override string Description { get { return arcStrings.NPADescription; } }
         public override uint Signature { get { return 0x0141504e; } } // NPA\x01
+        public override bool IsHierarchic { get { return true; } }
 
         /// <summary>Known encryption schemes.</summary>
         public static readonly string[] KnownSchemes = new string[] {

@@ -10,7 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <TextBlock x:Name="ExtractLabel" Text="{x:Static s:guiStrings.TextExtractFileTo}" Margin="10,10,9.157,0" VerticalAlignment="Top" Height="15"/>
+        <TextBlock x:Name="ExtractLabel" Text="{x:Static s:guiStrings.LabelExtractFileTo}" Margin="10,10,9.157,0" VerticalAlignment="Top" Height="15"/>
         <local:ExtAutoCompleteBox x:Name="DestinationDir" Margin="10,28,0,0"
                                   VerticalAlignment="Top" HorizontalAlignment="Left" Width="337"/>
         <Button Margin="0,28,10,0" VerticalAlignment="Top" HorizontalAlignment="Right"

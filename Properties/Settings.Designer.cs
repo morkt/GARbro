@@ -226,5 +226,17 @@ namespace GARbro.GUI.Properties {
                 this["appLastDirectory"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string appArchiveFormat {
+            get {
+                return ((string)(this["appArchiveFormat"]));
+            }
+            set {
+                this["appArchiveFormat"] = value;
+            }
+        }
     }
 }

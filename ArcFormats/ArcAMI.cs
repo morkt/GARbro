@@ -39,8 +39,9 @@ namespace GameRes.Formats
     public class AmiOpener : ArchiveFormat
     {
         public override string Tag { get { return "AMI"; } }
-        public override string Description { get { return "Amaterasu Translations Muv-Luv archive"; } }
+        public override string Description { get { return Strings.arcStrings.AMIDescription; } }
         public override uint Signature { get { return 0x00494d41; } }
+        public override bool IsHierarchic { get { return false; } }
 
         public AmiOpener ()
         {
@@ -109,7 +110,7 @@ namespace GameRes.Formats
     public class GrpFormat : ImageFormat
     {
         public override string Tag { get { return "GRP"; } }
-        public override string Description { get { return "âge proprietary image format"; } }
+        public override string Description { get { return Strings.arcStrings.GRPDescription; } }
         public override uint Signature { get { return 0x00505247; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
@@ -191,7 +192,7 @@ namespace GameRes.Formats
     public class ScrFormat : ScriptFormat
     {
         public override string Tag { get { return "SCR"; } }
-        public override string Description { get { return "Amaterasu Translations Muv-Luv script file"; } }
+        public override string Description { get { return Strings.arcStrings.SCRDescription; } }
         public override uint Signature { get { return 0x00524353; } }
 
         public override ScriptData Read (string name, Stream stream)
