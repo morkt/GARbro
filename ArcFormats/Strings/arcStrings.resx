@@ -159,6 +159,9 @@ predefined encryption scheme.</value>
   <data name="NPADescription" xml:space="preserve">
     <value>Nitro+ resource archive</value>
   </data>
+  <data name="NPASteinsGateDescription" xml:space="preserve">
+    <value>Nitro+ Steins;Gate resource archive</value>
+  </data>
   <data name="SCRDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv script file</value>
   </data>
