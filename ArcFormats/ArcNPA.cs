@@ -64,9 +64,6 @@ namespace GameRes.Formats
             arcStrings.ArcNoEncryption,
         };
 
-        /// <summary>Game id of the last opened archive.</summary>
-        NpaTitleId m_game_id = Settings.Default.NPAScheme;
-
         public override ArcFile TryOpen (ArcView file)
         {
             int key1 = file.View.ReadInt32 (7);
@@ -98,7 +95,7 @@ namespace GameRes.Formats
             {
                 int name_size = file.View.ReadInt32 (cur_offset);
                 int type = file.View.ReadByte (cur_offset+4+name_size);
-                if (1 != type)
+                if (1 != type) // ignore directory entries
                 {
                     var raw_name = new byte[name_size];
                     file.View.Read (cur_offset+4, raw_name, 0, (uint)name_size);
@@ -278,7 +275,7 @@ namespace GameRes.Formats
 
         NpaTitleId QueryGameEncryption ()
         {
-            var widget = new GUI.WidgetNPA (KnownSchemes[(int)m_game_id]);
+            var widget = new GUI.WidgetNPA (KnownSchemes[(int)Settings.Default.NPAScheme]);
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.ArcEncryptedNotice,
