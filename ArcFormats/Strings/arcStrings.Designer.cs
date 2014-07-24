@@ -181,6 +181,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Nitro+ Steins;Gate resource archive.
+        /// </summary>
+        public static string NPASteinsGateDescription {
+            get {
+                return ResourceManager.GetString("NPASteinsGateDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv script file.
         /// </summary>
         public static string SCRDescription {
