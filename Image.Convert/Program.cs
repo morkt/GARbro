@@ -42,47 +42,11 @@ namespace GARbro
             return range.FirstOrDefault();
         }
 
-        Tuple<ImageFormat, ImageMetaData> FindImageFormat (ArcView arc)
-        {
-            uint signature = arc.View.ReadUInt32 (0);
-            using (var stream = arc.CreateStream())
-            {
-                for (;;)
-                {
-                    var range = FormatCatalog.Instance.LookupSignature<ImageFormat> (signature);
-                    foreach (var impl in range)
-                    {
-                        try
-                        {
-                            ImageMetaData metadata = impl.ReadMetaData (stream);
-                            if (null != metadata)
-                                return new Tuple<ImageFormat, ImageMetaData> (impl, metadata);
-                            stream.Position = 0;
-                        }
-                        catch { }
-                    }
-                    if (0 == signature)
-                        break;
-                    signature = 0;
-                }
-            }
-            return null;
-        }
-
-        ImageData ReadImage (ArcView file)
-        {
-            var format = FindImageFormat (file);
-            if (null == format)
-                return null;
-            using (var stream = file.CreateStream())
-                return format.Item1.Read (stream, format.Item2);
-        }
-
         void PrintMetaData (string filename)
         {
-            using (ArcView file = new ArcView (filename))
+            using (var file = File.Open (filename, FileMode.Open, FileAccess.Read))
             {
-                var format = FindImageFormat (file);
+                var format = ImageFormat.FindFormat (file);
                 if (null == format)
                 {
                     Console.Error.WriteLine ("{0}: file format not recognized", filename);
@@ -96,9 +60,9 @@ namespace GARbro
         void ConvertFile (string filename, ImageFormat format)
         {
             ImageData image;
-            using (var file = new ArcView (filename))
+            using (var file = File.Open (filename, FileMode.Open, FileAccess.Read))
             {
-                image = ReadImage (file);
+                image = ImageFormat.Read (file);
                 if (null == image)
                 {
                     Console.Error.WriteLine ("{0}: Unknown image format", filename);

@@ -99,7 +99,7 @@ namespace GARbro.GUI
                 }
                 using (file)
                 {
-                    var data = ReadImage (file);
+                    var data = ImageFormat.Read (file);
                     if (null != data)
                         SetPreviewImage (preview, data.Bitmap);
                     else
@@ -136,60 +136,11 @@ namespace GARbro.GUI
             });
         }
 
-        ImageData ReadImage (Stream file)
-        {
-            bool need_dispose = false;
-            try
-            {
-                if (!file.CanSeek)
-                {
-                    var stream = new MemoryStream();
-                    file.CopyTo (stream);
-                    file = stream;
-                    need_dispose = true;
-                }
-                var format = FindImageFormat (file);
-                if (null == format)
-                    return null;
-                file.Position = 0;
-                return format.Item1.Read (file, format.Item2);
-            }
-            finally
-            {
-                if (need_dispose)
-                    file.Dispose();
-            }
-        }
-
-        Tuple<ImageFormat, ImageMetaData> FindImageFormat (Stream file)
-        {
-            uint signature = FormatCatalog.ReadSignature (file);
-            for (;;)
-            {
-                var range = FormatCatalog.Instance.LookupSignature<ImageFormat> (signature);
-                foreach (var impl in range)
-                {
-                    try
-                    {
-                        file.Position = 0;
-                        ImageMetaData metadata = impl.ReadMetaData (file);
-                        if (null != metadata)
-                            return new Tuple<ImageFormat, ImageMetaData> (impl, metadata);
-                    }
-                    catch { }
-                }
-                if (0 == signature)
-                    break;
-                signature = 0;
-            }
-            return null;
-        }
-
         void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
         {
             using (var file = arc.OpenEntry (entry))
             {
-                ImageData image = ReadImage (file);
+                ImageData image = ImageFormat.Read (file);
                 if (null == image)
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
                 string target_ext = target_format.Extensions.First();

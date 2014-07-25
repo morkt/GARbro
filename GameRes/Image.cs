@@ -20,12 +20,6 @@ namespace GameRes
     public class ImageEntry : Entry
     {
         public override string Type { get { return "image"; } }
-        /*
-        public ImageEntry ()
-        {
-            Type = "image";
-        }
-        */
     }
 
     public class ImageData
@@ -58,7 +52,12 @@ namespace GameRes
     {
         public override string Type { get { return "image"; } }
 
-        public ImageData Read (Stream file)
+        public abstract ImageMetaData ReadMetaData (Stream file);
+
+        public abstract ImageData Read (Stream file, ImageMetaData info);
+        public abstract void Write (Stream file, ImageData bitmap);
+
+        public static ImageData Read (Stream file)
         {
             bool need_dispose = false;
             try
@@ -70,10 +69,11 @@ namespace GameRes
                     file = stream;
                     need_dispose = true;
                 }
-                var info = ReadMetaData (file);
-                if (null == info)
-                    throw new InvalidFormatException();
-                return Read (file, info);
+                var format = FindFormat (file);
+                if (null == format)
+                    return null;
+                file.Position = 0;
+                return format.Item1.Read (file, format.Item2);
             }
             finally
             {
@@ -82,10 +82,29 @@ namespace GameRes
             }
         }
 
-        public abstract ImageData Read (Stream file, ImageMetaData info);
-        public abstract void Write (Stream file, ImageData bitmap);
-
-        public abstract ImageMetaData ReadMetaData (Stream file);
+        public static System.Tuple<ImageFormat, ImageMetaData> FindFormat (Stream file)
+        {
+            uint signature = FormatCatalog.ReadSignature (file);
+            for (;;)
+            {
+                var range = FormatCatalog.Instance.LookupSignature<ImageFormat> (signature);
+                foreach (var impl in range)
+                {
+                    try
+                    {
+                        file.Position = 0;
+                        ImageMetaData metadata = impl.ReadMetaData (file);
+                        if (null != metadata)
+                            return new System.Tuple<ImageFormat, ImageMetaData> (impl, metadata);
+                    }
+                    catch { }
+                }
+                if (0 == signature)
+                    break;
+                signature = 0;
+            }
+            return null;
+        }
 
         public override Entry CreateEntry ()
         {
