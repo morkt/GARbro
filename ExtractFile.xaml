@@ -25,8 +25,8 @@
             <TextBlock Text="{x:Static s:guiStrings.TextEncoding}" Margin="0,0,7,0" TextAlignment="Right"  VerticalAlignment="Center" HorizontalAlignment="Right"/>
             <ComboBox x:Name="TextEncoding" Margin="0" VerticalAlignment="Center" Height="21" HorizontalAlignment="Right" Width="76"/>
         </StackPanel>
-        <Button Content="{x:Static s:guiStrings.ButtonExtract}" Click="ExtractButton_Click" HorizontalAlignment="Right" Margin="0,0,102.157,10" Width="75" IsDefault="True" Height="21" VerticalAlignment="Bottom"/>
-        <Button Content="{x:Static s:guiStrings.ButtonCancel}" Margin="0,0,10.157,10" IsCancel="True" HorizontalAlignment="Right" Width="75" Height="21" VerticalAlignment="Bottom"/>
+        <Button Content="{x:Static s:guiStrings.ButtonExtract}" Click="ExtractButton_Click" HorizontalAlignment="Right" Margin="0,0,102.157,10" Width="75" IsDefault="True" Height="25" VerticalAlignment="Bottom" VerticalContentAlignment="Center"/>
+        <Button Content="{x:Static s:guiStrings.ButtonCancel}" Margin="0,0,10.157,10" IsCancel="True" HorizontalAlignment="Right" Width="75" Height="25" VerticalAlignment="Bottom" VerticalContentAlignment="Center"/>
     </Grid>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.Browse}"       Executed="BrowseExec" CanExecute="CanExecuteAlways"/>
