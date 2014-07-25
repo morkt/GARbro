@@ -24,35 +24,79 @@
 //
 
 using System;
-using System.Text;
+using System.IO;
+//using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Rnd.Shell
+namespace GARbro.Shell
 {
     /// <summary>
-    /// Wrapper around PathCreateFromUrl WINAPI call.
+    /// Wrapper around MoveFileEx WINAPI call.
     /// </summary>
-    class PathConverter
+    class File
     {
-        [DllImport("shlwapi.dll", EntryPoint="PathCreateFromUrlW", CharSet=CharSet.Unicode, SetLastError=true)]
-        private static extern Int32 PathCreateFromUrl(
-                string url, StringBuilder path,
-                ref Int32 size, UInt32 flags);
+        [DllImport("kernel32.dll", EntryPoint="MoveFileExW", SetLastError=true, CharSet=CharSet.Unicode)]
+        public static extern bool MoveFileEx (string lpExistingFileName, string lpNewFileName, MoveFileFlags dwFlags);
 
-        private StringBuilder   buf;
-        private Int32           size;
-
-        public PathConverter (int capacity = 260)
+        [Flags]
+        public enum MoveFileFlags : uint
         {
-            buf = new StringBuilder (capacity);
+            ReplaceExisting         = 0x00000001,
+            CopyAllowed             = 0x00000002,
+            DelayUntilReboot        = 0x00000004,
+            WriteThrough            = 0x00000008,
+            CreateHardlink          = 0x00000010,
+            FailIfNotTrackable      = 0x00000020
         }
-        public string UrlToPath (string url)
+
+        public static bool Rename (string szFrom, string szTo)
         {
-            size = buf.Capacity;
-            Int32 rc = PathCreateFromUrl (url, buf, ref size, 0);
-            return rc == 0 ? buf.ToString (0, size) : "";
+            return MoveFileEx (szFrom, szTo, MoveFileFlags.ReplaceExisting);
         }
     }
+
+    public class TemporaryFile : IDisposable
+    {
+        private string m_name;
+        public string Name { get { return m_name; } }
+
+        public TemporaryFile ()
+        {
+            m_name = Path.GetRandomFileName();
+        }
+
+        public TemporaryFile (string filename)
+        {
+            m_name = filename;
+        }
+
+        public TemporaryFile (string path, string filename)
+        {
+            m_name = Path.Combine (path, filename);
+        }
+
+        #region IDisposable Members
+        bool disposed = false;
+
+        public void Dispose ()
+        {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    System.IO.File.Delete (m_name);
+                }
+                disposed = true;
+            }
+        }
+        #endregion
+    };
 
     /// <summary>
     /// Wrapper around SHGetFileInfo WINAPI call.
@@ -152,31 +196,6 @@ namespace Rnd.Shell
             int result = (int)SHGetFileInfo (filename, 0, ref info, szInfo, (int)flags);
 
             return result != 0? new Nullable<SHFILEINFO> (info): null;
-        }
-    }
-
-    /// <summary>
-    /// Wrapper around MoveFileEx WINAPI call.
-    /// </summary>
-    class File
-    {
-        [DllImport("kernel32.dll", EntryPoint="MoveFileExW", SetLastError=true, CharSet=CharSet.Unicode)]
-        public static extern bool MoveFileEx (string lpExistingFileName, string lpNewFileName, MoveFileFlags dwFlags);
-
-        [Flags]
-        public enum MoveFileFlags : uint
-        {
-            ReplaceExisting         = 0x00000001,
-            CopyAllowed             = 0x00000002,
-            DelayUntilReboot        = 0x00000004,
-            WriteThrough            = 0x00000008,
-            CreateHardlink          = 0x00000010,
-            FailIfNotTrackable      = 0x00000020
-        }
-
-        public static bool Rename (string szFrom, string szTo)
-        {
-            return MoveFileEx (szFrom, szTo, MoveFileFlags.ReplaceExisting);
         }
     }
 }
