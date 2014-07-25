@@ -193,7 +193,9 @@ namespace GARbro.GUI
                 if (null == image)
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
                 string target_ext = target_format.Extensions.First();
+                string outdir = Path.GetDirectoryName (entry.Name);
                 string outname = Path.GetFileNameWithoutExtension (entry.Name)+'.'+target_ext;
+                outname = Path.Combine (outdir, outname);
                 Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractFileFromArchive");
                 using (var outfile = File.Create (outname))
                 {
