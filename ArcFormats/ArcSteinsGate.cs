@@ -15,10 +15,15 @@ namespace GameRes.Formats
     [Export(typeof(ArchiveFormat))]
     public class NpaSteinsGateOpener : ArchiveFormat
     {
-        public override string Tag { get { return "NPA"; } }
+        public override string Tag { get { return "NPA-SG"; } }
         public override string Description { get { return arcStrings.NPASteinsGateDescription; } }
         public override uint Signature { get { return 0; } }
         public override bool IsHierarchic { get { return true; } }
+
+        public NpaSteinsGateOpener ()
+        {
+            Extensions = new string[] { "npa" };
+        }
 
         internal static readonly byte[] KeyString = {
             'B'^0xff, 'U'^0xff, 'C'^0xff, 'K'^0xff,
