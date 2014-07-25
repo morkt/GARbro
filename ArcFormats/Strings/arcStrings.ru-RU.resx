@@ -141,6 +141,12 @@
 Введите ключ шифрования или выберите
 один из предопределённых вариантов.</value>
   </data>
+  <data name="MsgFileNameTooLong" xml:space="preserve">
+    <value>Слишком длинное имя файла</value>
+  </data>
+  <data name="MsgIllegalCharacters" xml:space="preserve">
+    <value>Имя файла содержит недопустимые символы</value>
+  </data>
   <data name="YPFLabelKey" xml:space="preserve">
     <value>8-битный ключ шифрования</value>
   </data>

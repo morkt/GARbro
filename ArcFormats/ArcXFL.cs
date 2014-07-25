@@ -7,8 +7,10 @@ using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Text;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats
 {
@@ -49,6 +51,71 @@ namespace GameRes.Formats
                 cur_offset += 40;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options)
+        {
+            using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                writer.Write (Signature);
+                int list_size = list.Count();
+                uint dir_size = (uint)(list_size * 40);
+                writer.Write (dir_size);
+                writer.Write (list_size);
+
+                var encoding = Encodings.cp932.Clone() as Encoding;
+                encoding.EncoderFallback = EncoderFallback.ExceptionFallback;
+
+                byte[] name_buf = new byte[32];
+
+                // first, write names only
+                foreach (var entry in list)
+                {
+                    try
+                    {
+                        string name = Path.GetFileName (entry.Name);
+                        int size = encoding.GetBytes (name, 0, name.Length, name_buf, 0);
+                        if (size < name_buf.Length)
+                            name_buf[size] = 0;
+                    }
+                    catch (EncoderFallbackException X)
+                    {
+                        throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
+                    }
+                    catch (ArgumentException X)
+                    {
+                        throw new InvalidFileName (entry.Name, arcStrings.MsgFileNameTooLong, X);
+                    }
+                    writer.Write (name_buf);
+                    writer.BaseStream.Seek (8, SeekOrigin.Current);
+                }
+
+                // now, write files and remember offset/sizes
+                uint current_offset = 0;
+                foreach (var entry in list)
+                {
+                    entry.Offset = current_offset;
+                    using (var input = File.Open (entry.Name, FileMode.Open, FileAccess.Read))
+                    {
+                        var size = input.Length;
+                        if (size > uint.MaxValue || current_offset + size > uint.MaxValue)
+                            throw new FileSizeException();
+                        current_offset += (uint)size;
+                        entry.Size = (uint)size;
+                        input.CopyTo (output);
+                    }
+                }
+
+                // at last, go back to directory and write offset/sizes
+                long dir_offset = 12+32;
+                foreach (var entry in list)
+                {
+                    writer.BaseStream.Position = dir_offset;
+                    writer.Write ((uint)entry.Offset);
+                    writer.Write (entry.Size);
+                    dir_offset += 40;
+                }
+            }
         }
     }
 

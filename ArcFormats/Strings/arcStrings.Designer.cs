@@ -172,6 +172,24 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File name is too long.
+        /// </summary>
+        public static string MsgFileNameTooLong {
+            get {
+                return ResourceManager.GetString("MsgFileNameTooLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File name contains illegal characters.
+        /// </summary>
+        public static string MsgIllegalCharacters {
+            get {
+                return ResourceManager.GetString("MsgIllegalCharacters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Nitro+ resource archive.
         /// </summary>
         public static string NPADescription {
