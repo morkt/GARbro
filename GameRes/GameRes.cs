@@ -144,10 +144,10 @@ namespace GameRes
         }
 
         /// <summary>
-        /// Create resource archive named <paramref name="filename"/> containing entries from the
+        /// Create resource wihin stream <paramref name="file"/> containing entries from the
         /// supplied <paramref name="list"/> and applying necessary <paramref name="options"/>.
         /// </summary>
-        public virtual void Create (string filename, IEnumerable<Entry> list, ResourceOptions options = null)
+        public virtual void Create (Stream file, IEnumerable<Entry> list, ResourceOptions options = null)
         {
             throw new NotImplementedException ("ArchiveFormat.Create is not implemented");
         }
@@ -329,7 +329,7 @@ namespace GameRes
         }
     }
 
-    public class InvalidFormatException : Exception
+    public class InvalidFormatException : FileFormatException
     {
         public InvalidFormatException() : base(garStrings.MsgInvalidFormat) { }
         public InvalidFormatException (string msg) : base (msg) { }
@@ -345,5 +345,38 @@ namespace GameRes
     {
         public InvalidEncryptionScheme() : base(garStrings.MsgInvalidEncryption) { }
         public InvalidEncryptionScheme (string msg) : base (msg) { }
+    }
+
+    public class FileSizeException : Exception
+    {
+        public FileSizeException () : base (garStrings.MsgFileTooLarge) { }
+        public FileSizeException (string msg) : base (msg) { }
+    }
+
+    public class InvalidFileName : Exception
+    {
+        public string FileName { get; set; }
+
+        public InvalidFileName (string filename)
+            : this (filename, garStrings.MsgInvalidFileName)
+        {
+        }
+
+        public InvalidFileName (string filename, string message)
+            : base (message)
+        {
+            FileName = filename;
+        }
+
+        public InvalidFileName (string filename, Exception X)
+            : this (filename, garStrings.MsgInvalidFileName, X)
+        {
+        }
+
+        public InvalidFileName (string filename, string message, Exception X)
+            : base (message, X)
+        {
+            FileName = filename;
+        }
     }
 }

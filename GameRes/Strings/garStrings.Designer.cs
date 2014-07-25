@@ -61,11 +61,29 @@ namespace GameRes.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File is too large.
+        /// </summary>
+        public static string MsgFileTooLarge {
+            get {
+                return ResourceManager.GetString("MsgFileTooLarge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Inappropriate encryption scheme.
         /// </summary>
         public static string MsgInvalidEncryption {
             get {
                 return ResourceManager.GetString("MsgInvalidEncryption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid file name.
+        /// </summary>
+        public static string MsgInvalidFileName {
+            get {
+                return ResourceManager.GetString("MsgInvalidFileName", resourceCulture);
             }
         }
         

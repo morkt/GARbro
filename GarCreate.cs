@@ -1,0 +1,140 @@
+//! \file       GarCreate.cs
+//! \date       Fri Jul 25 05:56:29 2014
+//! \brief      Create archive frontend.
+//
+// Copyright (C) 2014 by morkt
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+//
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Input;
+using GameRes;
+using GARbro.GUI.Strings;
+
+namespace GARbro.GUI
+{
+    public partial class MainWindow : Window
+    {
+        private void CreateArchiveExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+                Directory.SetCurrentDirectory (CurrentPath);
+                var items = CurrentDirectory.SelectedItems.Cast<EntryViewModel>();
+                string arc_name = Path.GetFileName (CurrentPath);
+                if (!items.Skip (1).Any()) // items.Count() == 1
+                {
+                    var item = items.First();
+                    if (item.IsDirectory)
+                        arc_name = Path.GetFileNameWithoutExtension (item.Name);
+                }
+
+                var dialog = new CreateArchiveDialog (arc_name);
+                dialog.Owner = this;
+                if (!dialog.ShowDialog().Value)
+                    return;
+                if (string.IsNullOrEmpty (dialog.ArchiveName.Text))
+                {
+                    SetStatusText ("Archive name is empty");
+                    return;
+                }
+                var format = dialog.ArchiveFormat.SelectedItem as ArchiveFormat;
+                if (null == format)
+                {
+                    SetStatusText ("Format is not selected");
+                    return;
+                }
+
+                IEnumerable<Entry> file_list;
+                if (format.IsHierarchic)
+                    file_list = BuildFileList (items, AddFilesRecursive);
+                else
+                    file_list = BuildFileList (items, AddFilesFromDir);
+
+                arc_name = Path.GetFullPath (dialog.ArchiveName.Text);
+                using (var tmp_file = new GARbro.Shell.TemporaryFile (Path.GetDirectoryName (arc_name),
+                                                                      Path.GetRandomFileName()))
+                {
+                    using (var file = File.Create (tmp_file.Name))
+                        format.Create (file, file_list, dialog.ArchiveOptions);
+                    GARbro.Shell.File.Rename (tmp_file.Name, arc_name);
+                }
+            }
+            catch (Exception X)
+            {
+                PopupError (X.Message, guiStrings.TextCreateArchiveError);
+            }
+        }
+
+        delegate void AddFilesEnumerator (IList<Entry> list, string path, DirectoryInfo path_info);
+
+        IEnumerable<Entry> BuildFileList (IEnumerable<EntryViewModel> files, AddFilesEnumerator add_files)
+        {
+            var list = new List<Entry>();
+            foreach (var entry in files)
+            {
+                if (entry.IsDirectory)
+                {
+                    if (".." != entry.Name)
+                    {
+                        var dir = new DirectoryInfo (entry.Name);
+                        add_files (list, entry.Name, dir);
+                    }
+                }
+                else if (entry.Size < uint.MaxValue)
+                {
+                    list.Add (entry.Source);
+                }
+            }
+            return list;
+        }
+
+        void AddFilesFromDir (IList<Entry> list, string path, DirectoryInfo dir)
+        {
+            foreach (var file in dir.EnumerateFiles())
+            {
+                if (0 != (file.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
+                    continue;
+                if (file.Length >= uint.MaxValue)
+                    continue;
+                string name = Path.Combine (path, file.Name);
+                var e = FormatCatalog.Instance.CreateEntry (name);
+                e.Size = (uint)file.Length;
+                list.Add (e);
+            }
+        }
+
+        void AddFilesRecursive (IList<Entry> list, string path, DirectoryInfo info)
+        {
+            foreach (var dir in info.EnumerateDirectories())
+            {
+                string subdir = Path.Combine (path, dir.Name);
+                var subdir_info = new DirectoryInfo (subdir);
+                AddFilesRecursive (list, subdir, subdir_info);
+            }
+            AddFilesFromDir (list, path, info);
+        }
+    }
+}

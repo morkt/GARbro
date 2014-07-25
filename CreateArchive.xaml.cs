@@ -1,12 +1,12 @@
 ﻿using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Text;
 using System.Linq;
 using Microsoft.Win32;
 using GARbro.GUI.Strings;
 using GameRes;
-using System.Windows.Controls;
 
 namespace GARbro.GUI
 {
@@ -15,17 +15,31 @@ namespace GARbro.GUI
     /// </summary>
     public partial class CreateArchiveDialog : Window
     {
-        public CreateArchiveDialog ()
+        public CreateArchiveDialog (string initial_name = "")
         {
             InitializeComponent ();
 
-            this.ArchiveFormat.ItemsSource = FormatCatalog.Instance.ArcFormats;
+            if (!string.IsNullOrEmpty (initial_name))
+            {
+                var format = this.ArchiveFormat.SelectedItem as ArchiveFormat;
+                if (null != format)
+                    ArchiveName.Text = Path.ChangeExtension (initial_name, format.Extensions.First());
+            }
         }
 
         public ResourceOptions ArchiveOptions { get; private set; }
 
         void Button_Click (object sender, RoutedEventArgs e)
         {
+            string arc_name = Path.GetFullPath (ArchiveName.Text);
+            if (File.Exists (arc_name))
+            {
+                string text = string.Format (guiStrings.MsgOverwrite, arc_name);
+                var rc = MessageBox.Show (this, text, guiStrings.TextConfirmOverwrite, MessageBoxButton.YesNo,
+                                          MessageBoxImage.Question);
+                if (MessageBoxResult.Yes != rc)
+                    return;
+            }
             DialogResult = true;
         }
 
@@ -92,11 +106,21 @@ namespace GARbro.GUI
             }
             OptionsWidget.Content = widget;
             OptionsWidget.Visibility = null != widget ? Visibility.Visible : Visibility.Hidden;
+
+            if (!string.IsNullOrEmpty (ArchiveName.Text))
+            {
+                ArchiveName.Text = Path.ChangeExtension (ArchiveName.Text, format.Extensions.First());
+            }
         }
 
         void CanExecuteAlways (object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = true;
+        }
+
+        private void ArchiveName_TextChanged (object sender, RoutedEventArgs e)
+        {
+            this.ButtonOk.IsEnabled = ArchiveName.Text.Length > 0;
         }
     }
 }

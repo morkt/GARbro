@@ -439,6 +439,18 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File {0}
+        ///already exists.
+        ///
+        ///Overwrite?.
+        /// </summary>
+        public static string MsgOverwrite {
+            get {
+                return ResourceManager.GetString("MsgOverwrite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Ready.
         /// </summary>
         public static string MsgReady {
@@ -543,6 +555,15 @@ namespace GARbro.GUI.Strings {
         public static string TextChooseDestDir {
             get {
                 return ResourceManager.GetString("TextChooseDestDir", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm overwrite.
+        /// </summary>
+        public static string TextConfirmOverwrite {
+            get {
+                return ResourceManager.GetString("TextConfirmOverwrite", resourceCulture);
             }
         }
         

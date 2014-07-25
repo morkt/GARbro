@@ -318,4 +318,13 @@
   <data name="TooltipForward" xml:space="preserve">
     <value>Forward</value>
   </data>
+  <data name="MsgOverwrite" xml:space="preserve">
+    <value>File {0}
+already exists.
+
+Overwrite?</value>
+  </data>
+  <data name="TextConfirmOverwrite" xml:space="preserve">
+    <value>Confirm overwrite</value>
+  </data>
 </root>

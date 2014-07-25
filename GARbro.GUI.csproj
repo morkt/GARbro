@@ -69,7 +69,7 @@
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
     <SignManifests>true</SignManifests>
@@ -130,11 +130,14 @@
     <Compile Include="ExtractFile.xaml.cs">
       <DependentUpon>ExtractFile.xaml</DependentUpon>
     </Compile>
+    <Compile Include="GarCreate.cs" />
+    <Compile Include="GarExtract.cs" />
     <Compile Include="HistoryStack.cs" />
     <Compile Include="ImagePreview.cs" />
-    <Compile Include="ListBoxEx.cs" />
+    <Compile Include="ListViewEx.cs" />
     <Compile Include="ModalWindow.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="Shell.cs" />
     <Compile Include="Strings\guiStrings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -198,6 +201,7 @@
       <LastGenOutput>guiStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\guiStrings.ru-RU.resx" />
+    <None Include="app.manifest" />
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">

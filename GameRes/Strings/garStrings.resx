@@ -117,8 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="MsgFileTooLarge" xml:space="preserve">
+    <value>File is too large</value>
+  </data>
   <data name="MsgInvalidEncryption" xml:space="preserve">
     <value>Inappropriate encryption scheme</value>
+  </data>
+  <data name="MsgInvalidFileName" xml:space="preserve">
+    <value>Invalid file name</value>
   </data>
   <data name="MsgInvalidFormat" xml:space="preserve">
     <value>Invalid file format</value>
