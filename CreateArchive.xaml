@@ -3,46 +3,49 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
         xmlns:p="clr-namespace:GARbro.GUI.Properties"
+        xmlns:gr="clr-namespace:GameRes;assembly=GameRes"
         xmlns:local="clr-namespace:GARbro.GUI"
         Title="{x:Static s:guiStrings.TextCreateArchive}" SizeToContent="WidthAndHeight"
         UseLayoutRounding="True" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         MinWidth="300">
-        <DockPanel VerticalAlignment="Top" Margin="10">
-            <Grid DockPanel.Dock="Top">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Label Target="{Binding ElementName=ArchiveName}" Content="{x:Static s:guiStrings.LabelArchiveName}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"/>
-                <local:ExtAutoCompleteBox x:Name="ArchiveName" HorizontalContentAlignment="Stretch" Grid.Column="0" Grid.Row="1"/>
-                <Button Margin="10,0,0,0" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1"
-                        Command="{x:Static local:Commands.Browse}">
-                    <Image Source="{StaticResource IconSearch}" Stretch="Uniform" UseLayoutRounding="True" SnapsToDevicePixels="True" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-            </Grid>
+    <DockPanel VerticalAlignment="Top" Margin="10">
+        <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Margin="20,20,0,0">
+            <Button Name="ButtonOk" Content="{x:Static s:guiStrings.ButtonOK}" Click="Button_Click" IsDefault="True" Width="70" Height="25" Margin="0,0,10,0"/>
+            <Button Content="{x:Static s:guiStrings.ButtonCancel}" IsCancel="True" Width="70" Height="25" Margin="10,0,0,0"/>
+        </StackPanel>
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Label Target="{Binding ElementName=ArchiveName}" Content="{x:Static s:guiStrings.LabelArchiveName}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"/>
+            <local:ExtAutoCompleteBox x:Name="ArchiveName" HorizontalContentAlignment="Stretch" Grid.Column="0" Grid.Row="1"
+                                        TextChanged="ArchiveName_TextChanged"/>
+            <Button Margin="10,0,0,0" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1"
+                    Command="{x:Static local:Commands.Browse}">
+                <Image Source="{StaticResource IconSearch}" Stretch="Uniform" UseLayoutRounding="True" SnapsToDevicePixels="True" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Button>
+        </Grid>
         <Grid DockPanel.Dock="Top" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
+            <GroupBox Name="OptionsWidget" Grid.Column="1" Header="{x:Static s:guiStrings.LabelArchiveOptions}"
+                      VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" Padding="5" Visibility="Hidden"/>
             <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Top" Margin="0,0,10,0">
                 <Label Content="{x:Static s:guiStrings.LabelArchiveFormat}" Target="{Binding ElementName=ArchiveFormat}" HorizontalAlignment="Left"
                        Padding="5,0,5,5"/>
                 <ComboBox Name="ArchiveFormat" SelectedValuePath="Tag" SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=appArchiveFormat, Mode=TwoWay}"
+                          ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}"
                           SelectionChanged="OnFormatSelect" DisplayMemberPath="Tag"/>
             </StackPanel>
-            <GroupBox Name="OptionsWidget" Grid.Column="1" Header="{x:Static s:guiStrings.LabelArchiveOptions}"
-                      VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" Padding="5" Visibility="Hidden"/>
         </Grid>
-        <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Margin="20,20,0,0">
-            <Button Content="Ok" Click="Button_Click" IsDefault="True" Width="70" Margin="0,0,10,0"/>
-            <Button Content="Cancel" IsCancel="True" Width="70" Margin="10,0,0,0"/>
-        </StackPanel>
     </DockPanel>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.Browse}" Executed="BrowseExec" CanExecute="CanExecuteAlways"/>

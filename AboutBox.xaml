@@ -50,7 +50,7 @@ IN THE SOFTWARE.
             <Label Content="{Binding Path=AssemblyCopyright, Mode=OneWay}" />
         </StackPanel>
         <Button Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" IsDefault="true"
-                Content="{x:Static s:guiStrings.ButtonOK}" Margin="10,0,0,10" Width="70" Click="Button_Click" IsCancel="True" Height="21"/>
+                Content="{x:Static s:guiStrings.ButtonOK}" Margin="10,0,0,10" Width="70" Height="25" Click="Button_Click" IsCancel="True"/>
         <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Margin="10,8,10,6">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

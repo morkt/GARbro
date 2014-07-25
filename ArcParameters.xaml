@@ -16,8 +16,8 @@
         <DockPanel Name="WidgetPane" VerticalAlignment="Top" Margin="10">
             <TextBlock Name="Notice" DockPanel.Dock="Top" TextWrapping="WrapWithOverflow" Margin="0,0,0,10"/>
             <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Margin="20,20,0,0">
-                <Button Content="Ok" Click="Button_Click" IsDefault="True" Width="70" Margin="0,0,10,0"/>
-                <Button Content="Cancel" IsCancel="True" Width="70" Margin="10,0,0,0"/>
+                <Button Content="{x:Static s:guiStrings.ButtonOK}" Click="Button_Click" IsDefault="True" Width="70" Height="25" Margin="0,0,10,0"/>
+                <Button Content="{x:Static s:guiStrings.ButtonCancel}" IsCancel="True" Width="70" Height="25" Margin="10,0,0,0"/>
             </StackPanel>
         </DockPanel>
     </StackPanel>

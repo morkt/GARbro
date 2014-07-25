@@ -28,8 +28,8 @@
         <TextBlock Text="{x:Static s:guiStrings.TextEncoding}" Margin="0,35.061,128,0" TextAlignment="Right"  VerticalAlignment="Top" Height="20" Grid.Row="1" HorizontalAlignment="Right" Width="109"/>
         <ComboBox x:Name="TextEncoding" Margin="0,33.061,41.87,0" Grid.Row="1" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="76">
         </ComboBox>
-        <Button Content="{x:Static s:guiStrings.ButtonExtract}" Click="ExtractButton_Click" HorizontalAlignment="Right" Margin="0,0,103,10" Grid.Row="2" Width="75" Height="21" VerticalAlignment="Bottom" IsDefault="True"/>
-        <Button Content="{x:Static s:guiStrings.ButtonCancel}" Margin="0,0,10,10" Grid.Row="2" Height="21" VerticalAlignment="Bottom" IsCancel="True" HorizontalAlignment="Right" Width="75"/>
+        <Button Content="{x:Static s:guiStrings.ButtonExtract}" Click="ExtractButton_Click" HorizontalAlignment="Right" Margin="0,0,103,10" Grid.Row="2" Width="75" Height="25" VerticalAlignment="Bottom" VerticalContentAlignment="Center" IsDefault="True"/>
+        <Button Content="{x:Static s:guiStrings.ButtonCancel}" Margin="0,0,10,10" Grid.Row="2" Height="25" VerticalAlignment="Bottom" VerticalContentAlignment="Center" IsCancel="True" HorizontalAlignment="Right" Width="75"/>
     </Grid>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.Browse}"       Executed="BrowseExec" CanExecute="CanExecuteAlways"/>
