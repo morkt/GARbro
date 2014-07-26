@@ -69,7 +69,7 @@ namespace GARbro.GUI
                     return;
                 }
 
-                IEnumerable<Entry> file_list;
+                IList<Entry> file_list;
                 if (format.IsHierarchic)
                     file_list = BuildFileList (items, AddFilesRecursive);
                 else
@@ -140,7 +140,7 @@ namespace GARbro.GUI
 
         delegate void AddFilesEnumerator (IList<Entry> list, string path, DirectoryInfo path_info);
 
-        IEnumerable<Entry> BuildFileList (IEnumerable<EntryViewModel> files, AddFilesEnumerator add_files)
+        IList<Entry> BuildFileList (IEnumerable<EntryViewModel> files, AddFilesEnumerator add_files)
         {
             var list = new List<Entry>();
             foreach (var entry in files)
