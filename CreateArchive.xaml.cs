@@ -40,6 +40,11 @@ namespace GARbro.GUI
                 if (MessageBoxResult.Yes != rc)
                     return;
             }
+            var format = this.ArchiveFormat.SelectedItem as ArchiveFormat;
+            if (null != format)
+            {
+                ArchiveOptions = format.GetOptions (OptionsWidget.Content);
+            }
             DialogResult = true;
         }
 
@@ -97,17 +102,10 @@ namespace GARbro.GUI
         void OnFormatSelect (object sender, SelectionChangedEventArgs e)
         {
             var format = this.ArchiveFormat.SelectedItem as ArchiveFormat;
-            UIElement widget = null;
+            object widget = null;
             if (null != format)
             {
-                var options = format.GetOptions();
-                ArchiveOptions = options;
-                if (null != options)
-                    widget = options.Widget as UIElement;
-            }
-            else
-            {
-                ArchiveOptions = null;
+                widget = format.GetCreationWidget();
             }
             OptionsWidget.Content = widget;
             OptionsWidget.Visibility = null != widget ? Visibility.Visible : Visibility.Hidden;

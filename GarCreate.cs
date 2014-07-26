@@ -32,12 +32,13 @@ using System.Windows;
 using System.Windows.Input;
 using GameRes;
 using GARbro.GUI.Strings;
+using Ookii.Dialogs.Wpf;
 
 namespace GARbro.GUI
 {
     public partial class MainWindow : Window
     {
-        private void CreateArchiveExec (object sender, ExecutedRoutedEventArgs e)
+        private void CreateArchiveExec (object sender, ExecutedRoutedEventArgs args)
         {
             StopWatchDirectoryChanges();
             try
@@ -75,14 +76,60 @@ namespace GARbro.GUI
                     file_list = BuildFileList (items, AddFilesFromDir);
 
                 arc_name = Path.GetFullPath (dialog.ArchiveName.Text);
-                using (var tmp_file = new GARbro.Shell.TemporaryFile (Path.GetDirectoryName (arc_name),
-                                                                      Path.GetRandomFileName()))
+
+                var createProgressDialog = new ProgressDialog ()
                 {
-                    using (var file = File.Create (tmp_file.Name))
-                        format.Create (file, file_list, dialog.ArchiveOptions);
-                    GARbro.Shell.File.Rename (tmp_file.Name, arc_name);
-                    SetCurrentPosition (new DirectoryPosition (arc_name));
-                }
+                    WindowTitle = guiStrings.TextTitle,
+                    Text        = string.Format (guiStrings.MsgCreatingArchive, Path.GetFileName (arc_name)),
+                    Description = "",
+                    MinimizeBox = true,
+                };
+                createProgressDialog.DoWork += (s, e) =>
+                {
+                    try
+                    {
+                        using (var tmp_file = new GARbro.Shell.TemporaryFile (Path.GetDirectoryName (arc_name),
+                                                                            Path.GetRandomFileName ()))
+                        {
+                            int total = file_list.Count() + 1;
+                            using (var file = File.Create (tmp_file.Name))
+                            {
+                                format.Create (file, file_list, dialog.ArchiveOptions, (i, entry, msg) =>
+                                {
+                                    if (createProgressDialog.CancellationPending)
+                                        throw new OperationCanceledException();
+                                    int progress = i*100/total;
+                                    string notice = msg;
+                                    if (null != entry)
+                                    {
+                                        if (null != msg)
+                                            notice = string.Format ("{0} {1}", msg, entry.Name);
+                                        else
+                                            notice = entry.Name;
+                                    }
+                                    createProgressDialog.ReportProgress (progress, null, notice);
+                                    return ArchiveOperation.Continue;
+                                });
+                            }
+                            GARbro.Shell.File.Rename (tmp_file.Name, arc_name);
+                        }
+                    }
+                    catch (OperationCanceledException X)
+                    {
+                        m_watcher.EnableRaisingEvents = true;
+                        SetStatusText (X.Message);
+                    }
+                    catch (Exception X)
+                    {
+                        m_watcher.EnableRaisingEvents = true;
+                        PopupError (X.Message, guiStrings.TextCreateArchiveError);
+                    }
+                };
+                createProgressDialog.RunWorkerCompleted += (s, e) => {
+                    createProgressDialog.Dispose();
+                    Dispatcher.Invoke (() => SetCurrentPosition (new DirectoryPosition (arc_name)));
+                };
+                createProgressDialog.ShowDialog (this);
             }
             catch (Exception X)
             {

@@ -330,4 +330,7 @@
   <data name="TextConfirmOverwrite" xml:space="preserve">
     <value>Подтвердите перезапись</value>
   </data>
+  <data name="MsgCreatingArchive" xml:space="preserve">
+    <value>Создание архива {0}</value>
+  </data>
 </root>

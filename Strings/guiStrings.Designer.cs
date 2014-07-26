@@ -331,6 +331,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Creating archive {0}.
+        /// </summary>
+        public static string MsgCreatingArchive {
+            get {
+                return ResourceManager.GetString("MsgCreatingArchive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Deleted {0}.
         /// </summary>
         public static string MsgDeletedItem {

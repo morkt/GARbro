@@ -327,4 +327,7 @@ Overwrite?</value>
   <data name="TextConfirmOverwrite" xml:space="preserve">
     <value>Confirm overwrite</value>
   </data>
+  <data name="MsgCreatingArchive" xml:space="preserve">
+    <value>Creating archive {0}</value>
+  </data>
 </root>
