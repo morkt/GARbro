@@ -39,6 +39,7 @@ namespace GARbro.GUI
     {
         private void CreateArchiveExec (object sender, ExecutedRoutedEventArgs e)
         {
+            StopWatchDirectoryChanges();
             try
             {
                 Directory.SetCurrentDirectory (CurrentPath);
@@ -80,10 +81,12 @@ namespace GARbro.GUI
                     using (var file = File.Create (tmp_file.Name))
                         format.Create (file, file_list, dialog.ArchiveOptions);
                     GARbro.Shell.File.Rename (tmp_file.Name, arc_name);
+                    SetCurrentPosition (new DirectoryPosition (arc_name));
                 }
             }
             catch (Exception X)
             {
+                m_watcher.EnableRaisingEvents = true;
                 PopupError (X.Message, guiStrings.TextCreateArchiveError);
             }
         }
