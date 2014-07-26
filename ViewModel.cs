@@ -292,5 +292,13 @@ namespace GARbro.GUI
             else
                 ArchivePath = "";
         }
+
+        public DirectoryPosition (string filename)
+        {
+            Path = System.IO.Path.GetDirectoryName (filename);
+            ArchivePath = "";
+            var entry = FormatCatalog.Instance.CreateEntry (filename);
+            Item = new EntryViewModel (entry, 0);
+        }
     }
 }
