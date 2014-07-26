@@ -26,6 +26,7 @@ IN THE SOFTWARE.
         xmlns:local="clr-namespace:GARbro.GUI"
         xmlns:w="clr-namespace:Rnd.Windows"
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
+        xmlns:gr="clr-namespace:GameRes;assembly=GameRes"
         Title="{x:Static s:guiStrings.TextAboutTitle}" Height="306" Width="475" ResizeMode="NoResize"
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
@@ -43,13 +44,13 @@ IN THE SOFTWARE.
             <RowDefinition />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="4" Margin="10,10,10,67.304"
+        <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Margin="10"
                     DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:AboutBox}}}">
             <Label Content="{Binding Path=AssemblyTitle, Mode=OneWay}" />
             <Label Content="{Binding Path=VersionString, Mode=OneWay}" />
             <Label Content="{Binding Path=AssemblyCopyright, Mode=OneWay}" />
         </StackPanel>
-        <Button Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" IsDefault="true"
+        <Button Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsDefault="true"
                 Content="{x:Static s:guiStrings.ButtonOK}" Margin="10,0,0,10" Width="70" Height="25" Click="Button_Click" IsCancel="True"/>
         <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Margin="10,8,10,6">
             <Grid.RowDefinitions>
@@ -61,7 +62,7 @@ IN THE SOFTWARE.
                 <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                               Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}"
                               BorderThickness="1" BorderBrush="Black">
-                    <ItemsControl Name="ArchiveFormats">
+                    <ItemsControl Name="ArchiveFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -82,7 +83,7 @@ IN THE SOFTWARE.
             <TextBlock Grid.Row="0" Text="{x:Static s:guiStrings.TextAboutSupportedImages}" Margin="0" />
             <Border Grid.Row="1" BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
                 <ScrollViewer VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}" BorderThickness="1" BorderBrush="Black">
-                    <ItemsControl Name="ImageFormats">
+                    <ItemsControl Name="ImageFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ImageFormats, Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
