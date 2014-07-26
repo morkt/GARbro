@@ -103,6 +103,8 @@ namespace GameRes
     {
         public override string Type { get { return "archive"; } }
 
+        public virtual bool CanCreate { get { return false; } }
+
         public abstract bool IsHierarchic { get; }
 
         public abstract ArcFile TryOpen (ArcView view);
