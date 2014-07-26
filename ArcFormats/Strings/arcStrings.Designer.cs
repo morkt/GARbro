@@ -172,6 +172,33 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adding file.
+        /// </summary>
+        public static string MsgAddingFile {
+            get {
+                return ResourceManager.GetString("MsgAddingFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Compressing index....
+        /// </summary>
+        public static string MsgCompressingIndex {
+            get {
+                return ResourceManager.GetString("MsgCompressingIndex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encryption method not implemented.
+        /// </summary>
+        public static string MsgEncNotImplemented {
+            get {
+                return ResourceManager.GetString("MsgEncNotImplemented", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File name is too long.
         /// </summary>
         public static string MsgFileNameTooLong {
@@ -186,6 +213,15 @@ namespace GameRes.Formats.Strings {
         public static string MsgIllegalCharacters {
             get {
                 return ResourceManager.GetString("MsgIllegalCharacters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Writing index....
+        /// </summary>
+        public static string MsgWritingIndex {
+            get {
+                return ResourceManager.GetString("MsgWritingIndex", resourceCulture);
             }
         }
         

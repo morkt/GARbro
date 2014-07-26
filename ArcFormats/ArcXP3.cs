@@ -39,6 +39,15 @@ namespace GameRes.Formats.KiriKiri
         public uint Hash { get; set; }
     }
 
+    public class Xp3Options : ResourceOptions
+    {
+        public int              Version { get; set; }
+        public ICrypt            Scheme { get; set; }
+        public bool       CompressIndex { get; set; }
+        public bool    CompressContents { get; set; }
+        public bool          RetainDirs { get; set; }
+    }
+
     // Archive version 1: encrypt file first, then calculate checksum
     //         version 2: calculate checksum, then encrypt
 
@@ -229,16 +238,41 @@ NextEntry:
             return new Xp3Stream (arc.File, xp3_entry);
         }
 
-        public override ResourceOptions GetOptions ()
+        public override ResourceOptions GetDefaultOptions ()
         {
-            return new ResourceOptions {
-                Widget = new GUI.CreateXP3Widget()
+            return new Xp3Options {
+                Version             = Settings.Default.XP3Version,
+                Scheme              = NoCryptAlgorithm,
+                CompressIndex       = Settings.Default.XP3CompressHeader,
+                CompressContents    = Settings.Default.XP3CompressContents,
+                RetainDirs          = Settings.Default.XP3RetainStructure,
             };
+        }
+
+        public override ResourceOptions GetOptions (object widget)
+        {
+            var options = this.GetDefaultOptions() as Xp3Options;
+            var w = widget as GUI.CreateXP3Widget;
+            if (null != w)
+            {
+                options.Scheme = w.EncryptionWidget.GetScheme();
+            }
+            return options;
+        }
+
+        public override object GetCreationWidget ()
+        {
+            return new GUI.CreateXP3Widget();
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetXP3();
         }
 
         ICrypt QueryCryptAlgorithm ()
         {
-            var widget = new GUI.WidgetXP3();
+            var widget = this.GetAccessWidget() as GUI.WidgetXP3;
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.ArcEncryptedNotice,
@@ -280,25 +314,24 @@ NextEntry:
             (byte)'X', (byte)'P', (byte)'3', 0x0d, 0x0a, 0x20, 0x0a, 0x1a, 0x8b, 0x67, 0x01
         };
 
-        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options)
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
         {
-            int version = Settings.Default.XP3Version;
-            ICrypt scheme = NoCryptAlgorithm;
-            bool compress_header = Settings.Default.XP3CompressHeader;
-            bool compress_contents = Settings.Default.XP3CompressContents;
-            bool retain_dirs = Settings.Default.XP3RetainStructure;
+            var xp3_options = options as Xp3Options;
+            if (null == xp3_options)
+                xp3_options = this.GetDefaultOptions() as Xp3Options;
 
-            var widget = options.Widget as GUI.CreateXP3Widget;
-            if (null != widget)
-            {
-                scheme = widget.EncryptionWidget.GetScheme();
-            }
+            ICrypt scheme = xp3_options.Scheme;
+            bool compress_index = xp3_options.CompressIndex;
+            bool compress_contents = xp3_options.CompressContents;
+            bool retain_dirs = xp3_options.RetainDirs;
+
             bool use_encryption = scheme != NoCryptAlgorithm;
 
             using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
             {
                 writer.Write (s_xp3_header);
-                if (2 == version)
+                if (2 == xp3_options.Version)
                 {
                     writer.Write ((long)0x17);
                     writer.Write ((int)1);
@@ -308,11 +341,15 @@ NextEntry:
                 long index_pos_offset = writer.BaseStream.Position;
                 writer.BaseStream.Seek (8, SeekOrigin.Current);
 
+                int callback_count = 0;
                 var used_names = new HashSet<string>();
                 var dir = new List<Xp3Entry>();
                 long current_offset = writer.BaseStream.Position;
                 foreach (var entry in list)
                 {
+                    if (null != callback)
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
                     string name = entry.Name;
                     if (!retain_dirs)
                         name = Path.GetFileName (name);
@@ -330,10 +367,13 @@ NextEntry:
                         Cipher          = scheme,
                     };
                     bool compress = compress_contents && ShouldCompressFile (entry);
-                    if (!use_encryption)
-                        RawFileCopy (entry.Name, xp3entry, output, compress);
-                    else
-                        EncryptedFileCopy (entry.Name, xp3entry, output, compress);
+                    using (var file = File.Open (name, FileMode.Open, FileAccess.Read))
+                    {
+                        if (!use_encryption || 0 == file.Length)
+                            RawFileCopy (file, xp3entry, output, compress);
+                        else
+                            EncryptedFileCopy (file, xp3entry, output, compress);
+                    }
 
                     dir.Add (xp3entry);
                 }
@@ -345,6 +385,9 @@ NextEntry:
 
                 using (var header = new BinaryWriter (new MemoryStream (dir.Count*0x58), Encoding.Unicode))
                 {
+                    if (null != callback)
+                        callback (callback_count++, null, arcStrings.MsgWritingIndex);
+
                     long dir_pos = 0;
                     foreach (var entry in dir)
                     {
@@ -381,10 +424,13 @@ NextEntry:
                     }
 
                     header.BaseStream.Position = 0;
-                    writer.Write ((byte)(compress_header ? 1 : 0));
+                    writer.Write ((byte)(compress_index ? 1 : 0));
                     long unpacked_dir_size = header.BaseStream.Length;
-                    if (compress_header)
+                    if (compress_index)
                     {
+                        if (null != callback)
+                            callback (callback_count++, null, arcStrings.MsgCompressingIndex);
+
                         long packed_dir_size_pos = writer.BaseStream.Position;
                         writer.Write ((long)0);
                         writer.Write (unpacked_dir_size);
@@ -407,48 +453,45 @@ NextEntry:
             output.Seek (0, SeekOrigin.End);
         }
 
-        void RawFileCopy (string name, Xp3Entry xp3entry, Stream output, bool compress)
+        void RawFileCopy (FileStream file, Xp3Entry xp3entry, Stream output, bool compress)
         {
-            using (var file = File.Open (name, FileMode.Open, FileAccess.Read))
-            {
-                if (file.Length > uint.MaxValue)
-                    throw new FileSizeException();
+            if (file.Length > uint.MaxValue)
+                throw new FileSizeException();
 
-                uint unpacked_size    = (uint)file.Length;
-                xp3entry.UnpackedSize = (uint)unpacked_size;
-                xp3entry.Size         = (uint)unpacked_size;
-                var segment = new Xp3Segment {
-                    IsCompressed = compress,
-                    Offset       = output.Position,
-                    Size         = unpacked_size,
-                    PackedSize   = unpacked_size
-                };
-                if (compress)
+            uint unpacked_size    = (uint)file.Length;
+            xp3entry.UnpackedSize = (uint)unpacked_size;
+            xp3entry.Size         = (uint)unpacked_size;
+            compress = compress && unpacked_size > 0;
+            var segment = new Xp3Segment {
+                IsCompressed = compress,
+                Offset       = output.Position,
+                Size         = unpacked_size,
+                PackedSize   = unpacked_size
+            };
+            if (compress)
+            {
+                using (var zstream = new ZLibStream (output, CompressionMode.Compress, true))
                 {
-                    using (var zstream = new ZLibStream (output, CompressionMode.Compress, true))
-                    {
-                        xp3entry.Hash = CheckedCopy (file, zstream);
-                        zstream.Flush();
-                        segment.PackedSize = (uint)zstream.TotalOut;
-                    }
+                    xp3entry.Hash = CheckedCopy (file, zstream);
+                    zstream.Flush();
+                    segment.PackedSize = (uint)zstream.TotalOut;
                 }
-                else
-                {
-                    xp3entry.Hash = CheckedCopy (file, output);
-                }
-                xp3entry.Segments.Add (segment);
             }
+            else
+            {
+                xp3entry.Hash = CheckedCopy (file, output);
+            }
+            xp3entry.Segments.Add (segment);
         }
 
-        void EncryptedFileCopy (string name, Xp3Entry xp3entry, Stream output, bool compress)
+        void EncryptedFileCopy (FileStream file, Xp3Entry xp3entry, Stream output, bool compress)
         {
-            var file = File.Open (name, FileMode.Open, FileAccess.Read);
-            using (var map = MemoryMappedFile.CreateFromFile (file, null, 0,
-                    MemoryMappedFileAccess.Read, null, HandleInheritability.None, false))
-            {
-                if (file.Length > int.MaxValue)
-                    throw new FileSizeException();
+            if (file.Length > int.MaxValue)
+                throw new FileSizeException();
 
+            using (var map = MemoryMappedFile.CreateFromFile (file, null, 0,
+                    MemoryMappedFileAccess.Read, null, HandleInheritability.None, true))
+            {
                 uint unpacked_size    = (uint)file.Length;
                 xp3entry.UnpackedSize = (uint)unpacked_size;
                 xp3entry.Size         = (uint)unpacked_size;
@@ -671,7 +714,7 @@ NextEntry:
 
         public virtual void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
-            throw new NotImplementedException ("Encryption method not implemented");
+            throw new NotImplementedException (arcStrings.MsgEncNotImplemented);
         }
     }
 

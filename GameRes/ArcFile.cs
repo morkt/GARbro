@@ -11,13 +11,6 @@ using System.Diagnostics;
 
 namespace GameRes
 {
-    public enum ExtractAction
-    {
-        Abort,
-        Skip,
-        Continue,
-    }
-
     public class ArcFile : IDisposable
     {
         private ArcView         m_arc;
@@ -35,8 +28,6 @@ namespace GameRes
 
         /// <summary>Archive contents.</summary>
         public ICollection<Entry> Dir { get { return m_dir; } }
-
-        public delegate ExtractAction ExtractCallback (int num, Entry entry);
 
         public ArcFile (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
         {
@@ -93,15 +84,15 @@ namespace GameRes
         /// Extract all entries from the archive into current directory.
         /// <paramref name="callback"/> could be used to observe/control extraction process.
         /// </summary>
-        public void ExtractFiles (ExtractCallback callback)
+        public void ExtractFiles (EntryCallback callback)
         {
             int i = 0;
             foreach (var entry in Dir.OrderBy (e => e.Offset))
             {
-                var action = callback (i, entry);
-                if (ExtractAction.Abort == action)
+                var action = callback (i, entry, null);
+                if (ArchiveOperation.Abort == action)
                     break;
-                if (ExtractAction.Skip != action)
+                if (ArchiveOperation.Skip != action)
                     Extract (entry);
                 ++i;
             }

@@ -273,11 +273,9 @@ namespace GameRes.Formats
             return table;
         }
 
-        public override ResourceOptions GetOptions ()
+        public override object GetAccessWidget ()
         {
-            return new ResourceOptions {
-                Widget = new GUI.WidgetNPA()
-            };
+            return new GUI.WidgetNPA();
         }
 
         NpaTitleId QueryGameEncryption ()

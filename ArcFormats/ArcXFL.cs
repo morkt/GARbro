@@ -54,7 +54,8 @@ namespace GameRes.Formats
             return new ArcFile (file, this, dir);
         }
 
-        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options)
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
         {
             using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
             {
@@ -68,6 +69,10 @@ namespace GameRes.Formats
                 encoding.EncoderFallback = EncoderFallback.ExceptionFallback;
 
                 byte[] name_buf = new byte[32];
+                int callback_count = 0;
+
+                if (null != callback)
+                    callback (callback_count++, null, "Writing index...");
 
                 // first, write names only
                 foreach (var entry in list)
@@ -95,6 +100,9 @@ namespace GameRes.Formats
                 uint current_offset = 0;
                 foreach (var entry in list)
                 {
+                    if (null != callback)
+                        callback (callback_count++, entry, "Adding file");
+
                     entry.Offset = current_offset;
                     using (var input = File.Open (entry.Name, FileMode.Open, FileAccess.Read))
                     {
@@ -106,6 +114,9 @@ namespace GameRes.Formats
                         input.CopyTo (output);
                     }
                 }
+
+                if (null != callback)
+                    callback (callback_count++, null, "Updating index...");
 
                 // at last, go back to directory and write offset/sizes
                 long dir_offset = 12+32;

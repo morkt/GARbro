@@ -96,8 +96,16 @@ namespace GameRes
 
     public class ResourceOptions
     {
-        public object Widget { get; set; }
     }
+
+    public enum ArchiveOperation
+    {
+        Abort,
+        Skip,
+        Continue,
+    }
+
+    public delegate ArchiveOperation EntryCallback (int num, Entry entry, string description);
 
     public abstract class ArchiveFormat : IResource
     {
@@ -149,12 +157,28 @@ namespace GameRes
         /// Create resource wihin stream <paramref name="file"/> containing entries from the
         /// supplied <paramref name="list"/> and applying necessary <paramref name="options"/>.
         /// </summary>
-        public virtual void Create (Stream file, IEnumerable<Entry> list, ResourceOptions options = null)
+        public virtual void Create (Stream file, IEnumerable<Entry> list, ResourceOptions options = null,
+                                    EntryCallback callback = null)
         {
             throw new NotImplementedException ("ArchiveFormat.Create is not implemented");
         }
 
-        public virtual ResourceOptions GetOptions ()
+        public virtual ResourceOptions GetDefaultOptions ()
+        {
+            return null;
+        }
+
+        public virtual ResourceOptions GetOptions (object widget)
+        {
+            return null;
+        }
+
+        public virtual object GetCreationWidget ()
+        {
+            return null;
+        }
+
+        public virtual object GetAccessWidget ()
         {
             return null;
         }
@@ -178,6 +202,11 @@ namespace GameRes
         /// Return value from ShowDialog()
         /// </summary>
         public bool   InputResult   { get; set; }
+
+        /// <summary>
+        /// Archive-specific options set by InputWidget.
+        /// </summary>
+        public ResourceOptions Options { get; set; }
     }
 
     public sealed class FormatCatalog

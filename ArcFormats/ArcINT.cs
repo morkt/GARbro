@@ -284,11 +284,9 @@ namespace GameRes.Formats
             return widget.GetKey();
         }
 
-        public override ResourceOptions GetOptions ()
+        public override object GetAccessWidget ()
         {
-            return new ResourceOptions {
-                Widget = new GUI.WidgetINT (Settings.Default.INTEncryption ?? new IntEncryptionInfo())
-            };
+            return new GUI.WidgetINT (Settings.Default.INTEncryption ?? new IntEncryptionInfo());
         }
     }
 }

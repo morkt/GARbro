@@ -141,11 +141,23 @@
 Введите ключ шифрования или выберите
 один из предопределённых вариантов.</value>
   </data>
+  <data name="MsgAddingFile" xml:space="preserve">
+    <value>Добавляется файл</value>
+  </data>
+  <data name="MsgCompressingIndex" xml:space="preserve">
+    <value>Сжимается оглавление...</value>
+  </data>
+  <data name="MsgEncNotImplemented" xml:space="preserve">
+    <value>Метод шифрования не реализован</value>
+  </data>
   <data name="MsgFileNameTooLong" xml:space="preserve">
     <value>Слишком длинное имя файла</value>
   </data>
   <data name="MsgIllegalCharacters" xml:space="preserve">
     <value>Имя файла содержит недопустимые символы</value>
+  </data>
+  <data name="MsgWritingIndex" xml:space="preserve">
+    <value>Записывается оглавление...</value>
   </data>
   <data name="XP3CompressContents" xml:space="preserve">
     <value>Сжать содержимое</value>

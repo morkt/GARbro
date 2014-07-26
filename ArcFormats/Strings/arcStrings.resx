@@ -156,11 +156,23 @@ predefined encryption scheme.</value>
   <data name="LWGDescription" xml:space="preserve">
     <value>Liar-soft image archive</value>
   </data>
+  <data name="MsgAddingFile" xml:space="preserve">
+    <value>Adding file</value>
+  </data>
+  <data name="MsgCompressingIndex" xml:space="preserve">
+    <value>Compressing index...</value>
+  </data>
+  <data name="MsgEncNotImplemented" xml:space="preserve">
+    <value>Encryption method not implemented</value>
+  </data>
   <data name="MsgFileNameTooLong" xml:space="preserve">
     <value>File name is too long</value>
   </data>
   <data name="MsgIllegalCharacters" xml:space="preserve">
     <value>File name contains illegal characters</value>
+  </data>
+  <data name="MsgWritingIndex" xml:space="preserve">
+    <value>Writing index...</value>
   </data>
   <data name="NPADescription" xml:space="preserve">
     <value>Nitro+ resource archive</value>
