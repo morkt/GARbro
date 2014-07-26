@@ -38,8 +38,6 @@ namespace GARbro.GUI
         public AboutBox()
         {
             InitializeComponent();
-            ArchiveFormats.ItemsSource = GameRes.FormatCatalog.Instance.ArcFormats;
-            ImageFormats.ItemsSource = GameRes.FormatCatalog.Instance.ImageFormats;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
