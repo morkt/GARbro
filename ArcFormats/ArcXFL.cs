@@ -21,6 +21,7 @@ namespace GameRes.Formats
         public override string Description { get { return Strings.arcStrings.XFLDescription; } }
         public override uint Signature { get { return 0x0001424c; } }
         public override bool IsHierarchic { get { return false; } }
+        public override bool CanCreate { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -71,9 +72,9 @@ namespace GameRes.Formats
                 // first, write names only
                 foreach (var entry in list)
                 {
+                    string name = Path.GetFileName (entry.Name);
                     try
                     {
-                        string name = Path.GetFileName (entry.Name);
                         int size = encoding.GetBytes (name, 0, name.Length, name_buf, 0);
                         if (size < name_buf.Length)
                             name_buf[size] = 0;
