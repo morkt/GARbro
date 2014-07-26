@@ -69,5 +69,53 @@ namespace GameRes.Formats.Properties {
                 this["INTEncryption"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool XP3CompressHeader {
+            get {
+                return ((bool)(this["XP3CompressHeader"]));
+            }
+            set {
+                this["XP3CompressHeader"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool XP3CompressContents {
+            get {
+                return ((bool)(this["XP3CompressContents"]));
+            }
+            set {
+                this["XP3CompressContents"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        public int XP3Version {
+            get {
+                return ((int)(this["XP3Version"]));
+            }
+            set {
+                this["XP3Version"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool XP3RetainStructure {
+            get {
+                return ((bool)(this["XP3RetainStructure"]));
+            }
+            set {
+                this["XP3RetainStructure"] = value;
+            }
+        }
     }
 }

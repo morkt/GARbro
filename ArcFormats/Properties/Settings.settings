@@ -14,5 +14,17 @@
     <Setting Name="INTEncryption" Type="GameRes.Formats.IntEncryptionInfo" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="XP3CompressHeader" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="XP3CompressContents" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="XP3Version" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="XP3RetainStructure" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -174,8 +174,23 @@ predefined encryption scheme.</value>
   <data name="XFLDescription" xml:space="preserve">
     <value>Liar-soft game resource archive</value>
   </data>
+  <data name="XP3CompressContents" xml:space="preserve">
+    <value>Compress contents</value>
+  </data>
+  <data name="XP3CompressHeader" xml:space="preserve">
+    <value>Compress directory</value>
+  </data>
   <data name="XP3Description" xml:space="preserve">
     <value>KiriKiri game engine resource archive</value>
+  </data>
+  <data name="XP3LabelScheme" xml:space="preserve">
+    <value>Encryption scheme</value>
+  </data>
+  <data name="XP3LabelVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="XP3RetainStructure" xml:space="preserve">
+    <value>Retain directory structure</value>
   </data>
   <data name="YPFDescription" xml:space="preserve">
     <value>Yu-Ris game engine resource archive</value>

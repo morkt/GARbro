@@ -10,6 +10,7 @@ using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Diagnostics;
@@ -47,7 +48,8 @@ namespace GameRes.Formats.KiriKiri
         public override string Tag { get { return "XP3"; } }
         public override string Description { get { return arcStrings.XP3Description; } }
         public override uint Signature { get { return 0x0d335058; } }
-        public override bool IsHierarchic { get { return false; } }
+        public override bool IsHierarchic { get { return true; } }
+        public override bool CanCreate { get { return true; } }
 
         private static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
 
@@ -73,6 +75,9 @@ namespace GameRes.Formats.KiriKiri
                     return null;
                 dir_offset = file.View.ReadInt64 (0x20);
             }
+            if (dir_offset >= file.MaxOffset)
+                return null;
+
             int header_type = file.View.ReadByte (dir_offset);
             if (0 != header_type && 1 != header_type)
                 return null;
@@ -193,7 +198,13 @@ namespace GameRes.Formats.KiriKiri
                         header.BaseStream.Position = next_section_pos;
                     }
                     if (!string.IsNullOrEmpty (entry.Name) && entry.Segments.Any())
+                    {
                         dir.Add (entry);
+                        Trace.WriteLine (string.Format ("{0,-16} {3:X8} {1,11} {2,12}", entry.Name,
+                                                        entry.IsEncrypted ? "[encrypted]" : "",
+                                                        entry.Segments.First().IsCompressed ? "[compressed]" : "",
+                                                        entry.Hash));
+                    }
 NextEntry:
                     header.BaseStream.Position = dir_offset;
                 }
@@ -204,7 +215,7 @@ NextEntry:
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var xp3_entry = entry as Xp3Entry;
-            if (null == xp3_entry || !xp3_entry.Segments.Any())
+            if (null == xp3_entry)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             if (1 == xp3_entry.Segments.Count && !xp3_entry.IsEncrypted)
             {
@@ -218,11 +229,16 @@ NextEntry:
             return new Xp3Stream (arc.File, xp3_entry);
         }
 
-        string m_scheme = GetDefaultScheme();
+        public override ResourceOptions GetOptions ()
+        {
+            return new ResourceOptions {
+                Widget = new GUI.CreateXP3Widget()
+            };
+        }
 
         ICrypt QueryCryptAlgorithm ()
         {
-            var widget = new GUI.WidgetXP3 (m_scheme);
+            var widget = new GUI.WidgetXP3();
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.ArcEncryptedNotice,
@@ -232,26 +248,17 @@ NextEntry:
             if (!args.InputResult)
                 throw new OperationCanceledException();
 
-            m_scheme = widget.GetScheme();
-            if (null != m_scheme)
-            {
-                ICrypt algorithm;
-                if (KnownSchemes.TryGetValue (m_scheme, out algorithm))
-                {
-                    Settings.Default.XP3Scheme = m_scheme;
-                    return algorithm;
-                }
-            }
-            return NoCryptAlgorithm;
+            return widget.GetScheme();
         }
 
-        public static string GetDefaultScheme ()
+        public static ICrypt GetScheme (string scheme)
         {
-            string scheme = Settings.Default.XP3Scheme;
-            if (!string.IsNullOrEmpty (scheme) && KnownSchemes.ContainsKey (scheme))
-                return scheme;
-            else
-                return arcStrings.ArcNoEncryption;
+            ICrypt algorithm = NoCryptAlgorithm;
+            if (!string.IsNullOrEmpty (scheme))
+            {
+                KnownSchemes.TryGetValue (scheme, out algorithm);
+            }
+            return algorithm;
         }
 
         static uint GetFileCheckSum (Stream src)
@@ -267,6 +274,263 @@ NextEntry:
                 sum.Update (buf, 0, read);
             }
             return sum.Value;
+        }
+
+        static readonly byte[] s_xp3_header = {
+            (byte)'X', (byte)'P', (byte)'3', 0x0d, 0x0a, 0x20, 0x0a, 0x1a, 0x8b, 0x67, 0x01
+        };
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options)
+        {
+            int version = Settings.Default.XP3Version;
+            ICrypt scheme = NoCryptAlgorithm;
+            bool compress_header = Settings.Default.XP3CompressHeader;
+            bool compress_contents = Settings.Default.XP3CompressContents;
+            bool retain_dirs = Settings.Default.XP3RetainStructure;
+
+            var widget = options.Widget as GUI.CreateXP3Widget;
+            if (null != widget)
+            {
+                scheme = widget.EncryptionWidget.GetScheme();
+            }
+            bool use_encryption = scheme != NoCryptAlgorithm;
+
+            using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                writer.Write (s_xp3_header);
+                if (2 == version)
+                {
+                    writer.Write ((long)0x17);
+                    writer.Write ((int)1);
+                    writer.Write ((byte)0x80);
+                    writer.Write ((long)0);
+                }
+                long index_pos_offset = writer.BaseStream.Position;
+                writer.BaseStream.Seek (8, SeekOrigin.Current);
+
+                var used_names = new HashSet<string>();
+                var dir = new List<Xp3Entry>();
+                long current_offset = writer.BaseStream.Position;
+                foreach (var entry in list)
+                {
+                    string name = entry.Name;
+                    if (!retain_dirs)
+                        name = Path.GetFileName (name);
+                    else
+                        name = name.Replace (@"\", "/");
+                    if (!used_names.Add (name))
+                    {
+                        Trace.WriteLine ("duplicate name", entry.Name);
+                        continue;
+                    }
+
+                    var xp3entry = new Xp3Entry {
+                        Name            = name,
+                        IsEncrypted     = use_encryption,
+                        Cipher          = scheme,
+                    };
+                    bool compress = compress_contents && ShouldCompressFile (entry);
+                    if (!use_encryption)
+                        RawFileCopy (entry.Name, xp3entry, output, compress);
+                    else
+                        EncryptedFileCopy (entry.Name, xp3entry, output, compress);
+
+                    dir.Add (xp3entry);
+                }
+
+                long index_pos = writer.BaseStream.Position;
+                writer.BaseStream.Position = index_pos_offset;
+                writer.Write (index_pos);
+                writer.BaseStream.Position = index_pos;
+
+                using (var header = new BinaryWriter (new MemoryStream (dir.Count*0x58), Encoding.Unicode))
+                {
+                    long dir_pos = 0;
+                    foreach (var entry in dir)
+                    {
+                        header.BaseStream.Position = dir_pos;
+                        header.Write ((uint)0x656c6946); // "File"
+                        long header_size_pos = header.BaseStream.Position;
+                        header.Write ((long)0);
+                        header.Write ((uint)0x6f666e69); // "info"
+                        header.Write ((long)(4+8+8+2 + entry.Name.Length*2));
+                        header.Write ((uint)(use_encryption ? 0x80000000 : 0));
+                        header.Write ((long)entry.UnpackedSize);
+                        header.Write ((long)entry.Size);
+
+                        header.Write ((short)entry.Name.Length);
+                        foreach (char c in entry.Name)
+                            header.Write (c);
+
+                        header.Write ((uint)0x6d676573); // "segm"
+                        header.Write ((long)0x1c);
+                        var segment = entry.Segments.First();
+                        header.Write ((int)(segment.IsCompressed ? 1 : 0));
+                        header.Write ((long)segment.Offset);
+                        header.Write ((long)segment.Size);
+                        header.Write ((long)segment.PackedSize);
+
+                        header.Write ((uint)0x726c6461); // "adlr"
+                        header.Write ((long)4);
+                        header.Write ((uint)entry.Hash);
+
+                        dir_pos = header.BaseStream.Position;
+                        long header_size = dir_pos - header_size_pos - 8;
+                        header.BaseStream.Position = header_size_pos;
+                        header.Write (header_size);
+                    }
+
+                    header.BaseStream.Position = 0;
+                    writer.Write ((byte)(compress_header ? 1 : 0));
+                    long unpacked_dir_size = header.BaseStream.Length;
+                    if (compress_header)
+                    {
+                        long packed_dir_size_pos = writer.BaseStream.Position;
+                        writer.Write ((long)0);
+                        writer.Write (unpacked_dir_size);
+
+                        long dir_start = writer.BaseStream.Position;
+                        using (var zstream = new ZLibStream (writer.BaseStream, CompressionMode.Compress, true))
+                            header.BaseStream.CopyTo (zstream);
+
+                        long packed_dir_size = writer.BaseStream.Position - dir_start;
+                        writer.BaseStream.Position = packed_dir_size_pos;
+                        writer.Write (packed_dir_size);
+                    }
+                    else
+                    {
+                        writer.Write (unpacked_dir_size);
+                        header.BaseStream.CopyTo (writer.BaseStream);
+                    }
+                }
+            }
+            output.Seek (0, SeekOrigin.End);
+        }
+
+        void RawFileCopy (string name, Xp3Entry xp3entry, Stream output, bool compress)
+        {
+            using (var file = File.Open (name, FileMode.Open, FileAccess.Read))
+            {
+                if (file.Length > uint.MaxValue)
+                    throw new FileSizeException();
+
+                uint unpacked_size    = (uint)file.Length;
+                xp3entry.UnpackedSize = (uint)unpacked_size;
+                xp3entry.Size         = (uint)unpacked_size;
+                var segment = new Xp3Segment {
+                    IsCompressed = compress,
+                    Offset       = output.Position,
+                    Size         = unpacked_size,
+                    PackedSize   = unpacked_size
+                };
+                if (compress)
+                {
+                    using (var zstream = new ZLibStream (output, CompressionMode.Compress, true))
+                    {
+                        xp3entry.Hash = CheckedCopy (file, zstream);
+                        zstream.Flush();
+                        segment.PackedSize = (uint)zstream.TotalOut;
+                    }
+                }
+                else
+                {
+                    xp3entry.Hash = CheckedCopy (file, output);
+                }
+                xp3entry.Segments.Add (segment);
+            }
+        }
+
+        void EncryptedFileCopy (string name, Xp3Entry xp3entry, Stream output, bool compress)
+        {
+            var file = File.Open (name, FileMode.Open, FileAccess.Read);
+            using (var map = MemoryMappedFile.CreateFromFile (file, null, 0,
+                    MemoryMappedFileAccess.Read, null, HandleInheritability.None, false))
+            {
+                if (file.Length > int.MaxValue)
+                    throw new FileSizeException();
+
+                uint unpacked_size    = (uint)file.Length;
+                xp3entry.UnpackedSize = (uint)unpacked_size;
+                xp3entry.Size         = (uint)unpacked_size;
+                using (var view = map.CreateViewAccessor (0, unpacked_size, MemoryMappedFileAccess.Read))
+                {
+                    var segment = new Xp3Segment {
+                        IsCompressed = compress,
+                        Offset       = output.Position,
+                        Size         = unpacked_size,
+                        PackedSize   = unpacked_size,
+                    };
+                    xp3entry.Segments.Add (segment);
+                    bool need_output_dispose = false;
+                    if (compress)
+                    {
+                        output = new ZLibStream (output, CompressionMode.Compress, true);
+                        need_output_dispose = true;
+                    }
+                    unsafe
+                    {
+                        byte[] read_buffer = new byte[81920];
+                        byte* ptr = view.GetPointer (0);
+                        try
+                        {
+                            var checksum = new Adler32();
+                            if (!xp3entry.Cipher.HashAfterCrypt)
+                                xp3entry.Hash = checksum.Update (ptr, (int)unpacked_size);
+                            int offset = 0;
+                            int remaining = (int)unpacked_size;
+                            while (remaining > 0)
+                            {
+                                int amount = Math.Min (remaining, read_buffer.Length);
+                                remaining -= amount;
+                                Marshal.Copy ((IntPtr)(ptr+offset), read_buffer, 0, amount);
+                                xp3entry.Cipher.Encrypt (xp3entry, offset, read_buffer, 0, amount);
+                                if (xp3entry.Cipher.HashAfterCrypt)
+                                    checksum.Update (read_buffer, 0, amount);
+                                output.Write (read_buffer, 0, amount);
+                                offset += amount;
+                            }
+                            if (xp3entry.Cipher.HashAfterCrypt)
+                                xp3entry.Hash = checksum.Value;
+                            if (compress)
+                            {
+                                output.Flush();
+                                segment.PackedSize = (uint)(output as ZLibStream).TotalOut;
+                            }
+                        }
+                        finally
+                        {
+                            view.SafeMemoryMappedViewHandle.ReleasePointer();
+                            if (need_output_dispose)
+                                output.Dispose();
+                        }
+                    }
+                }
+            }
+        }
+
+        uint CheckedCopy (Stream src, Stream dst)
+        {
+            var checksum = new Adler32();
+            var read_buffer = new byte[81920];
+            for (;;)
+            {
+                int read = src.Read (read_buffer, 0, read_buffer.Length);
+                if (0 == read)
+                    break;
+                checksum.Update (read_buffer, 0, read);
+                dst.Write (read_buffer, 0, read);
+            }
+            return checksum.Value;
+        }
+
+        bool ShouldCompressFile (Entry entry)
+        {
+            if ("image" == entry.Type || "archive" == entry.Type)
+                return false;
+            var ext = Path.GetExtension (entry.Name);
+            if (!string.IsNullOrEmpty (ext) && ext.Equals (".ogg", StringComparison.OrdinalIgnoreCase))
+                return false;
+            return true;
         }
     }
 
@@ -392,6 +656,11 @@ NextEntry:
 
     public abstract class ICrypt
     {
+        /// <summary>
+        /// whether Adler32 checksum should be calculated after contents have been encrypted.
+        /// </summary>
+        public virtual bool HashAfterCrypt { get { return false; } }
+
         public abstract byte Decrypt (Xp3Entry entry, long offset, byte value);
 
         public virtual void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
@@ -424,6 +693,8 @@ NextEntry:
 
     internal class FateCrypt : ICrypt
     {
+        public override bool HashAfterCrypt { get { return true; } }
+
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
             byte result = (byte)(value ^ 0x36);

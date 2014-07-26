@@ -147,6 +147,21 @@
   <data name="MsgIllegalCharacters" xml:space="preserve">
     <value>Имя файла содержит недопустимые символы</value>
   </data>
+  <data name="XP3CompressContents" xml:space="preserve">
+    <value>Сжать содержимое</value>
+  </data>
+  <data name="XP3CompressHeader" xml:space="preserve">
+    <value>Сжать оглавление</value>
+  </data>
+  <data name="XP3LabelScheme" xml:space="preserve">
+    <value>Способ шифрования</value>
+  </data>
+  <data name="XP3LabelVersion" xml:space="preserve">
+    <value>Версия</value>
+  </data>
+  <data name="XP3RetainStructure" xml:space="preserve">
+    <value>Сохранить структуру папок</value>
+  </data>
   <data name="YPFLabelKey" xml:space="preserve">
     <value>8-битный ключ шифрования</value>
   </data>

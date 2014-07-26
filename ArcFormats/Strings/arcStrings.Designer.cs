@@ -226,11 +226,56 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Compress contents.
+        /// </summary>
+        public static string XP3CompressContents {
+            get {
+                return ResourceManager.GetString("XP3CompressContents", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Compress directory.
+        /// </summary>
+        public static string XP3CompressHeader {
+            get {
+                return ResourceManager.GetString("XP3CompressHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to KiriKiri game engine resource archive.
         /// </summary>
         public static string XP3Description {
             get {
                 return ResourceManager.GetString("XP3Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encryption scheme.
+        /// </summary>
+        public static string XP3LabelScheme {
+            get {
+                return ResourceManager.GetString("XP3LabelScheme", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Version.
+        /// </summary>
+        public static string XP3LabelVersion {
+            get {
+                return ResourceManager.GetString("XP3LabelVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Retain directory structure.
+        /// </summary>
+        public static string XP3RetainStructure {
+            get {
+                return ResourceManager.GetString("XP3RetainStructure", resourceCulture);
             }
         }
         
