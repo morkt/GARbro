@@ -82,9 +82,14 @@ namespace GARbro.GUI
             }
             dir = Path.GetFullPath (dir);
             var dlg = new OpenFileDialog {
+                AddExtension = true,
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = initial,
+                Filter = GetFilters(),
                 InitialDirectory = dir,
                 Multiselect = false,
-                Filter = GetFilters(),
+                Title = guiStrings.TextChooseArchive,
             };
             return dlg.ShowDialog (this).Value ? dlg.FileName : null;
         }
