@@ -1,6 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using GameRes.Formats.KiriKiri;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
+
 
 namespace GameRes.Formats.GUI
 {
@@ -9,16 +12,16 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetXP3 : Grid
     {
-        public WidgetXP3 (string scheme)
+        public WidgetXP3 ()
         {
             InitializeComponent();
-            Scheme.ItemsSource = Xp3Opener.KnownSchemes.Keys;
-            Scheme.SelectedItem = scheme;
+            if (null == Scheme.SelectedItem)
+                Scheme.SelectedItem = arcStrings.ArcNoEncryption;
         }
 
-        public string GetScheme ()
+        public ICrypt GetScheme ()
         {
-            return Scheme.SelectedItem as string;
+            return Xp3Opener.GetScheme (Scheme.SelectedItem as string);
         }
     }
 }

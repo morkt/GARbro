@@ -25,7 +25,6 @@ namespace GameRes.Formats.GUI
         {
             InitializeComponent();
             this.DataContext = encryption_info;
-            EncScheme.ItemsSource = IntOpener.KnownSchemes.Keys;
 
             Passphrase.TextChanged += OnPassphraseChanged;
             EncScheme.SelectionChanged += OnSchemeChanged;

@@ -273,9 +273,16 @@ namespace GameRes.Formats
             return table;
         }
 
+        public override ResourceOptions GetOptions ()
+        {
+            return new ResourceOptions {
+                Widget = new GUI.WidgetNPA()
+            };
+        }
+
         NpaTitleId QueryGameEncryption ()
         {
-            var widget = new GUI.WidgetNPA (KnownSchemes[(int)Settings.Default.NPAScheme]);
+            var widget = new GUI.WidgetNPA();
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.ArcEncryptedNotice,

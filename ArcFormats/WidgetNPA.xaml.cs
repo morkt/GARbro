@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using GameRes.Formats.Properties;
 
 namespace GameRes.Formats.GUI
 {
@@ -8,11 +9,10 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetNPA : Grid
     {
-        public WidgetNPA (string scheme)
+        public WidgetNPA ()
         {
             InitializeComponent();
-            Scheme.ItemsSource = NpaOpener.KnownSchemes;
-            Scheme.SelectedItem = scheme;
+            Scheme.SelectedItem = NpaOpener.KnownSchemes[(int)Settings.Default.NPAScheme];
         }
 
         public string GetScheme()

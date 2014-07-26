@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using GameRes.Formats.Properties;
 
 namespace GameRes.Formats.GUI
 {
@@ -8,11 +9,13 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetYPF : Grid
     {
-        public WidgetYPF (uint? key)
+        public WidgetYPF ()
         {
             InitializeComponent();
-            if (null != key)
-                this.Passkey.Text = key.Value.ToString();
+
+            uint key = Settings.Default.YPFKey;
+            if (key < 0x100)
+                this.Passkey.Text = key.ToString();
             else
                 this.Passkey.Text = null;
         }
@@ -20,7 +23,7 @@ namespace GameRes.Formats.GUI
         public uint? GetKey ()
         {
             uint key;
-            if (uint.TryParse (this.Passkey.Text, out key))
+            if (uint.TryParse (this.Passkey.Text, out key) && key < 0x100)
                 return key;
             else
                 return null;

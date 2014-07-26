@@ -55,14 +55,9 @@ namespace GameRes.Formats
                 return new ZLibStream (input, CompressionMode.Decompress);
         }
 
-        uint m_last_key = Settings.Default.YPFKey;
-
         uint QueryEncryptionKey ()
         {
-            uint? key = m_last_key;
-            if (m_last_key > 0xff)
-                key = null;
-            var widget = new GUI.WidgetYPF (key);
+            var widget = new GUI.WidgetYPF();
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.YPFNotice,
@@ -72,10 +67,9 @@ namespace GameRes.Formats
             if (!args.InputResult)
                 throw new OperationCanceledException();
 
-            key = widget.GetKey();
-            m_last_key = null != key && key.Value < 0x100 ? key.Value : DefaultKey;
-            Settings.Default.YPFKey = m_last_key;
-            return m_last_key;
+            uint last_key = widget.GetKey() ?? DefaultKey;
+            Settings.Default.YPFKey = last_key;
+            return last_key;
         }
 
         private class Parser
@@ -99,9 +93,8 @@ namespace GameRes.Formats
             {
                 uint dir_offset = 0x20;
                 uint dir_remaining = m_dir_size;
-                uint num;
                 var dir = new List<Entry> ((int)m_count);
-                for (num = 0; num < m_count; ++num)
+                for (uint num = 0; num < m_count; ++num)
                 {
                     if (dir_remaining < 0x17)
                         break;
