@@ -140,10 +140,21 @@ namespace GameRes.Utility
 
         public static uint Compute (byte[] buf, int pos, int len)
         {
-            return Update (1, buf, pos, len);
+            unsafe
+            {
+                fixed (byte* ptr = &buf[pos])
+                {
+                    return Update (1, ptr, len);
+                }
+            }
         }
 
-        private static uint Update (uint adler, byte[] buf, int pos, int len)
+        public unsafe static uint Compute (byte* buf, int len)
+        {
+            return Update (1, buf, len);
+        }
+
+        private unsafe static uint Update (uint adler, byte* buf, int len)
         {
             /* split Adler-32 into component sums */
             uint sum2 = (adler >> 16) & 0xffff;
@@ -151,7 +162,7 @@ namespace GameRes.Utility
 
             /* in case user likes doing a byte at a time, keep it fast */
             if (1 == len) {
-                adler += buf[pos];
+                adler += *buf;
                 if (adler >= BASE)
                     adler -= BASE;
                 sum2 += adler;
@@ -163,7 +174,7 @@ namespace GameRes.Utility
             /* in case short lengths are provided, keep it somewhat fast */
             if (len < 16) {
                 while (0 != len--) {
-                    adler += buf[pos++];
+                    adler += *buf++;
                     sum2 += adler;
                 }
                 if (adler >= BASE)
@@ -178,23 +189,23 @@ namespace GameRes.Utility
                 int n = NMAX / 16;          /* NMAX is divisible by 16 */
                 do {
                     /* 16 sums unrolled */
-                    adler += buf[pos];    sum2 += adler;
-                    adler += buf[pos+1];  sum2 += adler;
-                    adler += buf[pos+2];  sum2 += adler;
-                    adler += buf[pos+3];  sum2 += adler;
-                    adler += buf[pos+4];  sum2 += adler;
-                    adler += buf[pos+5];  sum2 += adler;
-                    adler += buf[pos+6];  sum2 += adler;
-                    adler += buf[pos+7];  sum2 += adler;
-                    adler += buf[pos+8];  sum2 += adler;
-                    adler += buf[pos+9];  sum2 += adler;
-                    adler += buf[pos+10]; sum2 += adler;
-                    adler += buf[pos+11]; sum2 += adler;
-                    adler += buf[pos+12]; sum2 += adler;
-                    adler += buf[pos+13]; sum2 += adler;
-                    adler += buf[pos+14]; sum2 += adler;
-                    adler += buf[pos+15]; sum2 += adler;
-                    pos += 16;
+                    adler += buf[0];  sum2 += adler;
+                    adler += buf[1];  sum2 += adler;
+                    adler += buf[2];  sum2 += adler;
+                    adler += buf[3];  sum2 += adler;
+                    adler += buf[4];  sum2 += adler;
+                    adler += buf[5];  sum2 += adler;
+                    adler += buf[6];  sum2 += adler;
+                    adler += buf[7];  sum2 += adler;
+                    adler += buf[8];  sum2 += adler;
+                    adler += buf[9];  sum2 += adler;
+                    adler += buf[10]; sum2 += adler;
+                    adler += buf[11]; sum2 += adler;
+                    adler += buf[12]; sum2 += adler;
+                    adler += buf[13]; sum2 += adler;
+                    adler += buf[14]; sum2 += adler;
+                    adler += buf[15]; sum2 += adler;
+                    buf += 16;
                 } while (0 != --n);
                 adler %= BASE;
                 sum2 %= BASE;
@@ -204,26 +215,26 @@ namespace GameRes.Utility
             if (0 != len) {                  /* avoid modulos if none remaining */
                 while (len >= 16) {
                     len -= 16;
-                    adler += buf[pos];    sum2 += adler;
-                    adler += buf[pos+1];  sum2 += adler;
-                    adler += buf[pos+2];  sum2 += adler;
-                    adler += buf[pos+3];  sum2 += adler;
-                    adler += buf[pos+4];  sum2 += adler;
-                    adler += buf[pos+5];  sum2 += adler;
-                    adler += buf[pos+6];  sum2 += adler;
-                    adler += buf[pos+7];  sum2 += adler;
-                    adler += buf[pos+8];  sum2 += adler;
-                    adler += buf[pos+9];  sum2 += adler;
-                    adler += buf[pos+10]; sum2 += adler;
-                    adler += buf[pos+11]; sum2 += adler;
-                    adler += buf[pos+12]; sum2 += adler;
-                    adler += buf[pos+13]; sum2 += adler;
-                    adler += buf[pos+14]; sum2 += adler;
-                    adler += buf[pos+15]; sum2 += adler;
-                    pos += 16;
+                    adler += buf[0];  sum2 += adler;
+                    adler += buf[1];  sum2 += adler;
+                    adler += buf[2];  sum2 += adler;
+                    adler += buf[3];  sum2 += adler;
+                    adler += buf[4];  sum2 += adler;
+                    adler += buf[5];  sum2 += adler;
+                    adler += buf[6];  sum2 += adler;
+                    adler += buf[7];  sum2 += adler;
+                    adler += buf[8];  sum2 += adler;
+                    adler += buf[9];  sum2 += adler;
+                    adler += buf[10]; sum2 += adler;
+                    adler += buf[11]; sum2 += adler;
+                    adler += buf[12]; sum2 += adler;
+                    adler += buf[13]; sum2 += adler;
+                    adler += buf[14]; sum2 += adler;
+                    adler += buf[15]; sum2 += adler;
+                    buf += 16;
                 }
                 while (0 != len--) {
-                    adler += buf[pos++];
+                    adler += *buf++;
                     sum2 += adler;
                 }
                 adler %= BASE;
@@ -237,9 +248,22 @@ namespace GameRes.Utility
         private uint m_adler = 1;
         public  uint Value { get { return m_adler; } }
 
-        public void Update (byte[] buf, int pos, int len)
+        public uint Update (byte[] buf, int pos, int len)
         {
-            m_adler = Update (m_adler, buf, pos, len);
+            unsafe
+            {
+                fixed (byte* ptr = &buf[pos])
+                {
+                    m_adler = Update (m_adler, ptr, len);
+                    return m_adler;
+                }
+            }
+        }
+
+        public unsafe uint Update (byte* buf, int len)
+        {
+            m_adler = Update (m_adler, buf, len);
+            return m_adler;
         }
     }
 }
