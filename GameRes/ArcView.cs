@@ -118,7 +118,7 @@ namespace GameRes
             {
                 MaxOffset = fs.Length;
                 m_map = MemoryMappedFile.CreateFromFile (fs, null, 0,
-                    MemoryMappedFileAccess.Read, null, HandleInheritability.None, false);
+                    MemoryMappedFileAccess.Read, null, HandleInheritability.None, true);
                 try {
                     View = new Frame (this);
                 } catch {
