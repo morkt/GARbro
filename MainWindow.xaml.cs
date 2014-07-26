@@ -169,10 +169,14 @@ namespace GARbro.GUI
             }
         }
 
+        private bool m_busy_state = false;
+
         public void SetBusyState()
         {
+            m_busy_state = true;
             Mouse.OverrideCursor = Cursors.Wait;
             Dispatcher.InvokeAsync (() => {
+                m_busy_state = false;
                 Mouse.OverrideCursor = null;
             }, DispatcherPriority.ApplicationIdle);
         }
@@ -836,9 +840,12 @@ namespace GARbro.GUI
             var control = e.InputWidget as UIElement;
             if (null != control)
             {
+                bool busy_state = m_busy_state;
                 var param_dialog = new ArcParametersDialog (control, e.Notice);
                 param_dialog.Owner = this;
                 e.InputResult = param_dialog.ShowDialog() ?? false;
+                if (busy_state)
+                    SetBusyState();
             }
         }
     }
