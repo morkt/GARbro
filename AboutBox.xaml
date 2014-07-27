@@ -27,11 +27,18 @@ IN THE SOFTWARE.
         xmlns:w="clr-namespace:Rnd.Windows"
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
         xmlns:gr="clr-namespace:GameRes;assembly=GameRes"
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         Title="{x:Static s:guiStrings.TextAboutTitle}" Height="306" Width="475" ResizeMode="NoResize"
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <local:BooleanToVisibiltyConverter x:Key="guiBoolToVisibilityConverter" />
+        <local:CanCreateConverter x:Key="guiCanCreateConverter"/>
+        <CollectionViewSource x:Key="FormatsSource" Source="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="Tag" Direction="Ascending"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -62,11 +69,12 @@ IN THE SOFTWARE.
                 <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                               Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}"
                               BorderThickness="1" BorderBrush="Black">
-                    <ItemsControl Name="ArchiveFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}">
+                    <ItemsControl Name="ArchiveFormats" ItemsSource="{Binding Source={StaticResource FormatsSource}}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding Tag}" Margin="3,0,5,0" />
+                                    <TextBlock Text="{Binding Path=CanCreate, Converter={StaticResource guiCanCreateConverter}}" Margin="0,0,5,0"/>
                                     <TextBlock Text="{Binding Description}" />
                                 </StackPanel>
                             </DataTemplate>

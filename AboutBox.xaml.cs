@@ -208,4 +208,18 @@ namespace GARbro.GUI
             return isVisible;
         }
     }
+
+    [ValueConversion(typeof(bool), typeof(string))]
+    class CanCreateConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return (bool)value ? "[r/w]" : "[r]";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return false;
+        }
+    }
 }
