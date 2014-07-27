@@ -244,6 +244,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ONScripter game engine resource archive.
+        /// </summary>
+        public static string NSADescription {
+            get {
+                return ResourceManager.GetString("NSADescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv script file.
         /// </summary>
         public static string SCRDescription {

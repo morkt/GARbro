@@ -180,6 +180,9 @@ predefined encryption scheme.</value>
   <data name="NPASteinsGateDescription" xml:space="preserve">
     <value>Nitro+ Steins;Gate resource archive</value>
   </data>
+  <data name="NSADescription" xml:space="preserve">
+    <value>ONScripter game engine resource archive</value>
+  </data>
   <data name="SCRDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv script file</value>
   </data>
