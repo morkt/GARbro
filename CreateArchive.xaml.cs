@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Microsoft.Win32;
@@ -23,9 +24,14 @@ namespace GARbro.GUI
             {
                 var format = this.ArchiveFormat.SelectedItem as ArchiveFormat;
                 if (null != format)
-                    ArchiveName.Text = Path.ChangeExtension (initial_name, format.Extensions.First());
+                    initial_name = Path.ChangeExtension (initial_name, format.Extensions.First());
             }
+            ArchiveName.Text = initial_name;
         }
+
+        private readonly IEnumerable<ArchiveFormat> m_formats = FormatCatalog.Instance.ArcFormats.Where (f => f.CanCreate);
+
+        public IEnumerable<ArchiveFormat> ArcFormats { get { return m_formats; } }
 
         public ResourceOptions ArchiveOptions { get; private set; }
 

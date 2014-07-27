@@ -42,7 +42,7 @@
                 <Label Content="{x:Static s:guiStrings.LabelArchiveFormat}" Target="{Binding ElementName=ArchiveFormat}" HorizontalAlignment="Left"
                        Padding="5,0,5,5"/>
                 <ComboBox Name="ArchiveFormat" SelectedValuePath="Tag" SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=appArchiveFormat, Mode=TwoWay}"
-                          ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}"
+                          ItemsSource="{Binding Path=ArcFormats, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Mode=OneWay}"
                           SelectionChanged="OnFormatSelect" DisplayMemberPath="Tag"/>
             </StackPanel>
         </Grid>
