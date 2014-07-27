@@ -515,7 +515,7 @@ namespace GARbro.GUI
                 vm.SetPosition (pos);
                 ViewModel = vm;
                 if (null != pos.Item)
-                    lv_SelectItem (pos.Item.Name);
+                    lv_SelectItem (pos.Item);
                 return true;
             }
             catch (Exception X)

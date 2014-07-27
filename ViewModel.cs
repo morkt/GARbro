@@ -281,12 +281,12 @@ namespace GARbro.GUI
     {
         public string           Path { get; set; }
         public string    ArchivePath { get; set; }
-        public EntryViewModel   Item { get; set; }
+        public string           Item { get; set; }
 
         public DirectoryPosition (DirectoryViewModel vm, EntryViewModel item)
         {
             Path = vm.Path;
-            Item = item;
+            Item = item.Name;
             if (vm.IsArchive)
                 ArchivePath = (vm as ArchiveViewModel).SubDir;
             else
@@ -297,8 +297,7 @@ namespace GARbro.GUI
         {
             Path = System.IO.Path.GetDirectoryName (filename);
             ArchivePath = "";
-            var entry = FormatCatalog.Instance.CreateEntry (filename);
-            Item = new EntryViewModel (entry, 0);
+            Item = System.IO.Path.GetFileName (filename);
         }
     }
 }
