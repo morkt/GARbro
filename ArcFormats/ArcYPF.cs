@@ -16,6 +16,11 @@ using GameRes.Formats.Properties;
 
 namespace GameRes.Formats
 {
+    public class YpfOptions : ResourceOptions
+    {
+        public uint Key { get; set; }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class YpfOpener : ArchiveFormat
     {
@@ -55,21 +60,38 @@ namespace GameRes.Formats
                 return new ZLibStream (input, CompressionMode.Decompress);
         }
 
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new YpfOptions { Key = Settings.Default.YPFKey };
+        }
+
+        public override ResourceOptions GetOptions (object w)
+        {
+            var widget = w as GUI.WidgetYPF;
+            if (null != widget)
+            {
+                uint last_key = widget.GetKey() ?? DefaultKey;
+                Settings.Default.YPFKey = last_key;
+                return new YpfOptions { Key = last_key };
+            }
+            return this.GetDefaultOptions();
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetYPF();
+        }
+
         uint QueryEncryptionKey ()
         {
-            var widget = new GUI.WidgetYPF();
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.YPFNotice,
-                InputWidget = widget,
             };
             FormatCatalog.Instance.InvokeParametersRequest (this, args);
             if (!args.InputResult)
                 throw new OperationCanceledException();
-
-            uint last_key = widget.GetKey() ?? DefaultKey;
-            Settings.Default.YPFKey = last_key;
-            return last_key;
+            return GetOptions<YpfOptions> (args.Options).Key;
         }
 
         private class Parser

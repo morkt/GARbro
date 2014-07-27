@@ -34,7 +34,28 @@ namespace GameRes.Formats
         public string   Scheme   { get; set; }
         public string   Password { get; set; }
 
-        public IntEncryptionInfo () { }
+        public uint? GetKey ()
+        {
+            if (null != Key && Key.HasValue)
+                return Key;
+
+            if (!string.IsNullOrEmpty (Scheme))
+            {
+                IntOpener.KeyData keydata;
+                if (IntOpener.KnownSchemes.TryGetValue (Scheme, out keydata))
+                    return keydata.Key;
+            }
+
+            if (!string.IsNullOrEmpty (Password))
+                return IntOpener.EncodePassPhrase (Password);
+
+            return null;
+        }
+    }
+
+    public class IntOptions : ResourceOptions
+    {
+        public IntEncryptionInfo EncryptionInfo { get; set; }
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -268,25 +289,41 @@ namespace GameRes.Formats
             { "Sengoku Tenshi Djibril (trial)",   new KeyData { Key=0xef870610, Passphrase="FW-8O9B6WDS" }},
         };
 
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new IntOptions {
+                EncryptionInfo = Settings.Default.INTEncryption ?? new IntEncryptionInfo(),
+            };
+        }
+
+        public override ResourceOptions GetOptions (object w)
+        {
+            var widget = w as GUI.WidgetINT;
+            if (null != widget)
+            {
+                Settings.Default.INTEncryption = widget.Info;
+                return new IntOptions { EncryptionInfo = widget.Info };
+            }
+            return this.GetDefaultOptions();
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetINT ();
+        }
+
         uint? QueryEncryptionInfo ()
         {
-            var widget = new GUI.WidgetINT (Settings.Default.INTEncryption ?? new IntEncryptionInfo());
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.INTNotice,
-                InputWidget = widget,
             };
             FormatCatalog.Instance.InvokeParametersRequest (this, args);
             if (!args.InputResult)
                 throw new OperationCanceledException();
 
-            Settings.Default.INTEncryption = widget.Info;
-            return widget.GetKey();
-        }
-
-        public override object GetAccessWidget ()
-        {
-            return new GUI.WidgetINT (Settings.Default.INTEncryption ?? new IntEncryptionInfo());
+            var options = GetOptions<IntOptions> (args.Options);
+            return options.EncryptionInfo.GetKey();
         }
     }
 }

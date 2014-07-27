@@ -21,10 +21,10 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetINT : Grid
     {
-        public WidgetINT (IntEncryptionInfo encryption_info)
+        public WidgetINT ()
         {
             InitializeComponent();
-            this.DataContext = encryption_info;
+            this.DataContext = GameRes.Formats.Properties.Settings.Default.INTEncryption ?? new IntEncryptionInfo();
 
             Passphrase.TextChanged += OnPassphraseChanged;
             EncScheme.SelectionChanged += OnSchemeChanged;
@@ -60,24 +60,6 @@ namespace GameRes.Formats.GUI
                     Passphrase.TextChanged += OnPassphraseChanged;
                 }
             }
-        }
-
-        public uint? GetKey ()
-        {
-            if (null != Info.Key && Info.Key.HasValue)
-                return Info.Key;
-
-            if (!string.IsNullOrEmpty (Info.Scheme))
-            {
-                IntOpener.KeyData keydata;
-                if (IntOpener.KnownSchemes.TryGetValue (Info.Scheme, out keydata))
-                    return keydata.Key;
-            }
-
-            if (!string.IsNullOrEmpty (Info.Password))
-                return IntOpener.EncodePassPhrase (Info.Password);
-
-            return null;
         }
     }
 

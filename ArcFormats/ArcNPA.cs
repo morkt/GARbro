@@ -39,10 +39,15 @@ namespace GameRes.Formats
 
     public enum NpaTitleId
     {
-        CHAOSHEAD = 0, CHAOSHEADTR1, CHAOSHEADTR2, MURAMASATR, MURAMASA, SUMAGA, DJANGO, DJANGOTR,
+        NotEncrypted,
+        CHAOSHEAD, CHAOSHEADTR1, CHAOSHEADTR2, MURAMASATR, MURAMASA, SUMAGA, DJANGO, DJANGOTR,
         LAMENTO, LAMENTOTR, SWEETPOOL, SUMAGASP, DEMONBANE, MURAMASAAD, AXANAEL, KIKOKUGAI, SONICOMITR2,
         SUMAGA3P, SONICOMI, LOSTX, LOSTXTRAILER, DRAMATICALMURDER, TOTONO, PHENOMENO, NEKODA,
-        NotEncrypted
+    }
+
+    public class NpaOptions : ResourceOptions
+    {
+        public NpaTitleId TitleId { get; set; }
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -55,13 +60,13 @@ namespace GameRes.Formats
 
         /// <summary>Known encryption schemes.</summary>
         public static readonly string[] KnownSchemes = new string[] {
+            arcStrings.ArcNoEncryption,
             "Chaos;Head", "Chaos;Head Trial 1", "Chaos;Head Trial 2", "Muramasa Trial", "Muramasa",
             "Sumaga", "Zoku Satsuriku no Django", "Zoku Satsuriku no Django Trial", "Lamento",
             "Lamento Trial", "Sweet Pool", "Sumaga Special", "Demonbane", "MuramasaAD", "Axanael",
             "Kikokugai", "Sonicomi Trial 2", "Sumaga 3% Trial", "Sonicomi Version 1.0",
             "Guilty Crown Lost Xmas", "Guilty Crown Lost Xmas Trailer", "DRAMAtical Murder",
             "Kimi to Kanojo to Kanojo no Koi", "Phenomeno", "Nekoda -Nyanda-",
-            arcStrings.ArcNoEncryption,
         };
 
         public override ArcFile TryOpen (ArcView file)
@@ -248,10 +253,14 @@ namespace GameRes.Formats
 
         public static byte[] GenerateKeyTable (NpaTitleId title_id)
         {
-            if ((int)title_id >= OrderTable.Length)
+            int index = (int)title_id;
+            if (index < 0 || index >= OrderTable.Length)
                 throw new ArgumentOutOfRangeException ("title_id", "Invalid title id specified");
 
-            byte[] order = OrderTable[(int)title_id];
+            byte[] order = OrderTable[index];
+            if (null == order)
+                throw new ArgumentException ("Encryption key table not defined", "title_id");
+
             var table = new byte[256];
             for (int i = 0; i < 256; ++i)
             {
@@ -273,6 +282,23 @@ namespace GameRes.Formats
             return table;
         }
 
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new NpaOptions { TitleId = Settings.Default.NPAScheme };
+        }
+
+        public override ResourceOptions GetOptions (object w)
+        {
+            var widget = w as GUI.WidgetNPA;
+            if (null != widget)
+            {
+                NpaTitleId scheme = GetTitleId (widget.GetScheme());
+                Settings.Default.NPAScheme = scheme;
+                return new NpaOptions { TitleId = scheme };
+            }
+            return this.GetDefaultOptions();
+        }
+
         public override object GetAccessWidget ()
         {
             return new GUI.WidgetNPA();
@@ -280,19 +306,16 @@ namespace GameRes.Formats
 
         NpaTitleId QueryGameEncryption ()
         {
-            var widget = new GUI.WidgetNPA();
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.ArcEncryptedNotice,
-                InputWidget = widget,
             };
             FormatCatalog.Instance.InvokeParametersRequest (this, args);
             if (!args.InputResult)
                 throw new OperationCanceledException();
 
-            NpaTitleId scheme = GetTitleId (widget.GetScheme());
-            Settings.Default.NPAScheme = scheme;
-            return scheme;
+            var options = GetOptions<NpaOptions> (args.Options);
+            return options.TitleId;
         }
 
         public static NpaTitleId GetTitleId (string title)
@@ -324,6 +347,7 @@ namespace GameRes.Formats
         };
 
         static readonly byte[][] OrderTable = {
+            null, // NotEncrypted
             // CHAOSHEAD
             new byte[] { 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 },
             // CHAOSHEADTR1

@@ -837,15 +837,21 @@ namespace GARbro.GUI
 
         private void OnParametersRequest (object sender, ParametersRequestEventArgs e)
         {
-            var control = e.InputWidget as UIElement;
-            if (null != control)
+            var format = sender as ArchiveFormat;
+            if (null != format)
             {
-                bool busy_state = m_busy_state;
-                var param_dialog = new ArcParametersDialog (control, e.Notice);
-                param_dialog.Owner = this;
-                e.InputResult = param_dialog.ShowDialog() ?? false;
-                if (busy_state)
-                    SetBusyState();
+                var control = format.GetAccessWidget() as UIElement;
+                if (null != control)
+                {
+                    bool busy_state = m_busy_state;
+                    var param_dialog = new ArcParametersDialog (control, e.Notice);
+                    param_dialog.Owner = this;
+                    e.InputResult = param_dialog.ShowDialog() ?? false;
+                    if (e.InputResult)
+                        e.Options = format.GetOptions (control);
+                    if (busy_state)
+                        SetBusyState();
+                }
             }
         }
     }

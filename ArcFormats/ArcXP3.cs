@@ -242,7 +242,7 @@ NextEntry:
         {
             return new Xp3Options {
                 Version             = Settings.Default.XP3Version,
-                Scheme              = NoCryptAlgorithm,
+                Scheme              = GetScheme (Settings.Default.XP3Scheme),
                 CompressIndex       = Settings.Default.XP3CompressHeader,
                 CompressContents    = Settings.Default.XP3CompressContents,
                 RetainDirs          = Settings.Default.XP3RetainStructure,
@@ -251,13 +251,7 @@ NextEntry:
 
         public override ResourceOptions GetOptions (object widget)
         {
-            var options = this.GetDefaultOptions() as Xp3Options;
-            var w = widget as GUI.CreateXP3Widget;
-            if (null != w)
-            {
-                options.Scheme = w.EncryptionWidget.GetScheme();
-            }
-            return options;
+            return this.GetDefaultOptions();
         }
 
         public override object GetCreationWidget ()
@@ -272,17 +266,15 @@ NextEntry:
 
         ICrypt QueryCryptAlgorithm ()
         {
-            var widget = this.GetAccessWidget() as GUI.WidgetXP3;
             var args = new ParametersRequestEventArgs
             {
                 Notice = arcStrings.ArcEncryptedNotice,
-                InputWidget = widget,
             };
             FormatCatalog.Instance.InvokeParametersRequest (this, args);
             if (!args.InputResult)
                 throw new OperationCanceledException();
-
-            return widget.GetScheme();
+            
+            return GetOptions<Xp3Options> (args.Options).Scheme;
         }
 
         public static ICrypt GetScheme (string scheme)

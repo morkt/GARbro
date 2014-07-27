@@ -182,6 +182,14 @@ namespace GameRes
         {
             return null;
         }
+
+        protected OptType GetOptions<OptType> (ResourceOptions res_options) where OptType : ResourceOptions
+        {
+            var options = res_options as OptType;
+            if (null == options)
+                options = this.GetDefaultOptions() as OptType;
+            return options;
+        }
     }
 
     public delegate void ParametersRequestEventHandler (object sender, ParametersRequestEventArgs e);
