@@ -83,9 +83,9 @@ namespace GameRes.Formats.ONScripter
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var nsa_entry = entry as NsaEntry;
-            if (null != nsa_entry
-                && nsa_entry.CompressionType == Compression.Lzss
-                && nsa_entry.CompressionType == Compression.Spb)
+            if (null != nsa_entry &&
+                (Compression.Lzss == nsa_entry.CompressionType ||
+                 Compression.Spb  == nsa_entry.CompressionType))
             {
                 using (var input = arc.File.CreateStream (nsa_entry.Offset, nsa_entry.Size))
                 {
@@ -171,33 +171,27 @@ namespace GameRes.Formats.ONScripter
     internal class Unpacker
     {
         private Stream          m_input;
-        private MemoryStream    m_output;
-        private uint            m_unpacked_size;
+        private byte[]          m_output;
         private byte[]          m_read_buf = new byte[4096];
 
         public Unpacker (Stream input, uint unpacked_size)
         {
             m_input = input;
-            m_output = new MemoryStream ((int)unpacked_size);
-            m_unpacked_size = unpacked_size;
+            m_output = new byte[unpacked_size];
         }
 
         public Stream LzssDecodedStream ()
         {
             uint size = DecodeLZSS();
-            if (size != m_unpacked_size)
+            if (size != m_output.Length)
                 System.Diagnostics.Trace.WriteLine ("Invalid compressed data", "LzssDecoder");
-            m_output.Position = 0;
-            return m_output;
+            return new MemoryStream (m_output, false);
         }
 
         public Stream SpbDecodedStream ()
         {
             uint size = DecodeSPB();
-            if (size != m_unpacked_size)
-                System.Diagnostics.Trace.WriteLine ("Invalid compressed data", "SpbDecoder");
-            m_output.Position = 0;
-            return m_output;
+            return new MemoryStream (m_output, false);
         }
 
         const int EI = 8;
@@ -206,9 +200,9 @@ namespace GameRes.Formats.ONScripter
         const int N  = (1 << EI);  /* buffer size */
         const int F  = ((1 << EJ) + P);  /* lookahead buffer size */
 
-        private int  m_getbit_mask;
-        private uint m_getbit_len;
-        private uint m_getbit_count;
+        private int m_getbit_mask;
+        private int m_getbit_len;
+        private int m_getbit_count;
 
         uint DecodeLZSS ()
         {
@@ -219,15 +213,14 @@ namespace GameRes.Formats.ONScripter
             byte[] decomp_buffer = new byte[N*2];
             int r = N - F;
             int c;
-            while (count < m_unpacked_size)
+            while (count < m_output.Length)
             {
                 if (0 != GetBits (1))
                 {
                     c = GetBits (8);
                     if (-1 == c)
                         break;
-                    m_output.WriteByte ((byte)c);
-                    ++count;
+                    m_output[count++] = (byte)c;
                     decomp_buffer[r++] = (byte)c;
                     r &= (N - 1);
                 }
@@ -242,8 +235,7 @@ namespace GameRes.Formats.ONScripter
                     for (int k = 0; k <= j + 1; k++)
                     {
                         c = decomp_buffer[(i + k) & (N - 1)];
-                        m_output.WriteByte ((byte)c);
-                        ++count;
+                        m_output[count++] = (byte)c;
                         decomp_buffer[r++] = (byte)c;
                         r &= (N - 1);
                     }
@@ -265,35 +257,28 @@ namespace GameRes.Formats.ONScripter
             uint width_pad  = (4 - width * 3 % 4) % 4;
             int stride = (int)(width * 3 + width_pad);
             uint total_size = (uint)stride * height + 54;
-            m_output.SetLength (total_size);
+
+            if ((uint)m_output.Length < total_size)
+                m_output = new byte[total_size];
 
             /* ---------------------------------------- */
             /* Write header */
-            m_output.WriteByte ((byte)'B'); 
-            m_output.WriteByte ((byte)'M');
-            m_output.WriteByte ((byte)(total_size & 0xff));
-            m_output.WriteByte ((byte)((total_size >>  8) & 0xff));
-            m_output.WriteByte ((byte)((total_size >> 16) & 0xff));
-            m_output.WriteByte ((byte)((total_size >> 24) & 0xff));
-            m_output.Seek (4, SeekOrigin.Current);
-            m_output.WriteByte (54); // offset to the body
-            m_output.Seek (3, SeekOrigin.Current);
-            m_output.WriteByte (40); // header size
-            m_output.Seek (3, SeekOrigin.Current);
-            m_output.WriteByte ((byte)(width & 0xff));
-            m_output.WriteByte ((byte)((width >> 8) & 0xff));
-            m_output.Seek (2, SeekOrigin.Current);
-            m_output.WriteByte ((byte)(height & 0xff));
-            m_output.WriteByte ((byte)((height >> 8) & 0xff));
-            m_output.Seek (2, SeekOrigin.Current);
-            m_output.WriteByte (1); // the number of the plane
-            m_output.WriteByte (0);
-            m_output.WriteByte (24); // bpp
-            m_output.Seek (5, SeekOrigin.Current);
-            m_output.WriteByte ((byte)(total_size - 54)); // size of the body
-            m_output.Seek (54, SeekOrigin.Begin);
+            m_output[0] = (byte)'B';
+            m_output[1] = (byte)'M';
+            m_output[2] = (byte)(total_size & 0xff);
+            m_output[3] = (byte)((total_size >>  8) & 0xff);
+            m_output[4] = (byte)((total_size >> 16) & 0xff);
+            m_output[5] = (byte)((total_size >> 24) & 0xff);
+            m_output[10] = 54; // offset to the body
+            m_output[14] = 40; // header size
+            m_output[18] = (byte)(width & 0xff);
+            m_output[19] = (byte)((width >> 8) & 0xff);
+            m_output[22] = (byte)(height & 0xff);
+            m_output[23] = (byte)((height >> 8) & 0xff);
+            m_output[26] = 1; // the number of the plane
+            m_output[28] = 24; // bpp
+            m_output[34] = (byte)(total_size - 54); // size of the body
 
-            byte[] buf = m_output.GetBuffer();
             byte[] decomp_buffer = new byte[width*height*4];
             
             for (int i = 0; i < 3; i++)
@@ -338,7 +323,7 @@ namespace GameRes.Formats.ONScripter
                     }
                 }
 
-                int pbuf  = stride * (int)(height-1) + i + 54; // in buf
+                int pbuf  = stride * (int)(height-1) + i + 54; // in m_output
                 int psbuf = 0; // in decomp_buffer
 
                 for (uint j = 0; j < height; j++)
@@ -346,13 +331,13 @@ namespace GameRes.Formats.ONScripter
                     if (0 != (j & 1))
                     {
                         for (uint k = 0; k < width; k++, pbuf -= 3)
-                            buf[pbuf] = decomp_buffer[psbuf++];
+                            m_output[pbuf] = decomp_buffer[psbuf++];
                         pbuf -= stride - 3;
                     }
                     else
                     {
                         for (uint k = 0; k < width; k++, pbuf += 3)
-                            buf[pbuf] = decomp_buffer[psbuf++];
+                            m_output[pbuf] = decomp_buffer[psbuf++];
                         pbuf -= stride + 3;
                     }
                 }
@@ -371,7 +356,7 @@ namespace GameRes.Formats.ONScripter
                 {
                     if (m_getbit_len == m_getbit_count)
                     {
-                        m_getbit_len = (uint)m_input.Read (m_read_buf, 0, m_read_buf.Length);
+                        m_getbit_len = m_input.Read (m_read_buf, 0, m_read_buf.Length);
                         if (0 == m_getbit_len)
                             return -1;
                         m_getbit_count = 0;
