@@ -99,6 +99,8 @@ namespace GameRes.Formats
             for (int i = 0; i < total_count; ++i)
             {
                 int name_size = file.View.ReadInt32 (cur_offset);
+                if ((uint)name_size >= dir_size)
+                    return null;
                 int type = file.View.ReadByte (cur_offset+4+name_size);
                 if (1 != type) // ignore directory entries
                 {
