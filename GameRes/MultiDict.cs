@@ -2,6 +2,8 @@
 //! \date       Mon Jun 30 20:12:13 2014
 //! \brief      game resources browser.
 //
+// copy-pasted from some post on the stackoverflow.
+//
 
 using System;
 using System.Collections.Generic;

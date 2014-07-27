@@ -2,6 +2,26 @@
 //! \date       Sun Jul 27 11:25:46 2014
 //! \brief      ONScripter NSA/SAR archives implementation.
 //
+// Copyright (C) 2014 by morkt
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+//
 
 using System;
 using System.IO;
@@ -168,6 +188,20 @@ namespace GameRes.Formats.ONScripter
         }
     }
 
+   /*
+    *  ONScripter-EN decompression routines.
+    *
+    *  Copyright (c) 2001-2010 Ogapee. All rights reserved.
+    *  (original ONScripter, of which this is a fork).
+    *
+    *  ogapee@aqua.dti2.ne.jp
+    *
+    *  Copyright (c) 2007-2010 "Uncle" Mion Sonozaki
+    *
+    *  UncleMion@gmail.com
+    *
+    */
+
     internal class Unpacker
     {
         private Stream          m_input;
@@ -277,7 +311,7 @@ namespace GameRes.Formats.ONScripter
             m_output[23] = (byte)((height >> 8) & 0xff);
             m_output[26] = 1; // the number of the plane
             m_output[28] = 24; // bpp
-            m_output[34] = (byte)(total_size - 54); // size of the body
+//            m_output[34] = (byte)(total_size - 54); // size of the body
 
             byte[] decomp_buffer = new byte[width*height*4];
             
