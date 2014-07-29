@@ -44,7 +44,7 @@ namespace GARbro.GUI
         private void ExtractItemExec (object sender, ExecutedRoutedEventArgs e)
         {
             var entry = CurrentDirectory.SelectedItem as EntryViewModel;
-            if (null == entry)
+            if (null == entry && !ViewModel.IsArchive)
                 return;
             try
             {
@@ -66,7 +66,7 @@ namespace GARbro.GUI
                     var vm = ViewModel as ArchiveViewModel;
                     string destination = Path.GetDirectoryName (vm.Path);
                     string arc_name = Path.GetFileName (vm.Path);
-                    if (entry.Name == ".." && vm.SubDir == "") // root entry
+                    if (null == entry || (entry.Name == ".." && vm.SubDir == "")) // root entry
                     {
                         ExtractArchive (m_app.CurrentArchive, arc_name, destination);
                     }
@@ -128,7 +128,7 @@ namespace GARbro.GUI
                 }
                 finally
                 {
-                    m_watcher.EnableRaisingEvents = true;
+                    ResumeWatchDirectoryChanges();
                 }
             }
             IEnumerable<Entry> file_list = arc.Dir;
