@@ -183,6 +183,8 @@ namespace GameRes.Formats
 
             if (arc.GameId != NpaTitleId.LAMENTO && arc.GameId != NpaTitleId.LAMENTOTR)
                 encrypted_length += entry.RawName.Length;
+            if (encrypted_length > entry.Size)
+                encrypted_length = (int)entry.Size;
 
             using (var view = arc.File.CreateViewAccessor (entry.Offset, entry.Size))
             {
@@ -193,7 +195,7 @@ namespace GameRes.Formats
                     try
                     {
                         int x;
-                        for (x = 0; x < entry.Size && x < encrypted_length; x++)
+                        for (x = 0; x < encrypted_length; x++)
                         {
                             if (arc.GameId == NpaTitleId.LAMENTO || arc.GameId == NpaTitleId.LAMENTOTR)
                             {
@@ -251,6 +253,7 @@ namespace GameRes.Formats
                 case NpaTitleId.SONICOMI:
                 case NpaTitleId.LOSTX:
                 case NpaTitleId.DRAMATICALMURDER:
+                case NpaTitleId.PHENOMENO:
                     key1 = 0x20101118;
                     break;
                 case NpaTitleId.TOTONO:
