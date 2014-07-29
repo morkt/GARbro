@@ -58,18 +58,22 @@ namespace GameRes
 
         /// <summary>
         /// Try to open <paramref name="filename"/> as archive.
-        /// Returns: ArcFile object if file is opened successfully, null otherwise.
         /// </summary>
+        /// <returns>
+        /// ArcFile object if file is opened successfully, null otherwise.
+        /// </returns>
         public static ArcFile TryOpen (string filename)
         {
             var file = new ArcView (filename);
+            string ext = Path.GetExtension (filename).TrimStart ('.').ToLower();
             try
             {
                 uint signature = file.View.ReadUInt32 (0);
                 for (;;)
                 {
                     var range = FormatCatalog.Instance.LookupSignature<ArchiveFormat> (signature);
-                    foreach (var impl in range)
+                    // check formats that match filename extension first
+                    foreach (var impl in range.OrderByDescending (f => f.Extensions.First() == ext))
                     {
                         try
                         {
