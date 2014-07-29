@@ -33,6 +33,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Windows.Data;
 using GameRes;
 using GARbro.GUI.Strings;
 
@@ -40,7 +41,7 @@ namespace GARbro.GUI
 {
     public class SubDirEntry : GameRes.Entry
     {
-        public override string Type  { get { return guiStrings.TextDirType; } }
+        public override string Type  { get { return "directory"; } }
 
         public SubDirEntry (string name)
         {
@@ -318,6 +319,26 @@ namespace GARbro.GUI
             Path = System.IO.Path.GetDirectoryName (filename);
             ArchivePath = "";
             Item = System.IO.Path.GetFileName (filename);
+        }
+    }
+
+    public class EntryTypeConverter : IValueConverter
+    {
+        public object Convert (object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var type = value as string;
+            if (!string.IsNullOrEmpty (type))
+            {
+                var translation = guiStrings.ResourceManager.GetString ("Type_"+type, guiStrings.Culture);
+                if (!string.IsNullOrEmpty (translation))
+                    return translation;
+            }
+            return value;
+        }
+
+        public object ConvertBack (object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -595,15 +595,6 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &lt;DIR&gt;.
-        /// </summary>
-        public static string TextDirType {
-            get {
-                return ResourceManager.GetString("TextDirType", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Text encoding.
         /// </summary>
         public static string TextEncoding {
@@ -690,6 +681,15 @@ namespace GARbro.GUI.Strings {
         public static string TooltipForward {
             get {
                 return ResourceManager.GetString("TooltipForward", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;DIR&gt;.
+        /// </summary>
+        public static string Type_directory {
+            get {
+                return ResourceManager.GetString("Type_directory", resourceCulture);
             }
         }
     }

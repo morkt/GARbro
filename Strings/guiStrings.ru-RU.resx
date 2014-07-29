@@ -333,4 +333,13 @@
   <data name="MsgCreatingArchive" xml:space="preserve">
     <value>Создание архива {0}</value>
   </data>
+  <data name="Type_archive" xml:space="preserve">
+    <value>архив</value>
+  </data>
+  <data name="Type_image" xml:space="preserve">
+    <value>изображение</value>
+  </data>
+  <data name="Type_script" xml:space="preserve">
+    <value>сценарий</value>
+  </data>
 </root>

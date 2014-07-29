@@ -20,6 +20,7 @@
         <BitmapImage x:Key="Icon32x32Help"      UriSource="Images/32x32/help.png"/>
         <CollectionViewSource x:Key="ListViewSource" Source="{Binding}"/>
         <local:BooleanToCollapsedVisibilityConverter x:Key="booleanToCollapsedVisibilityConverter" />
+        <local:EntryTypeConverter x:Key="entryTypeConverter"/>
         <Style x:Key="HeaderLeftAlign" TargetType="{x:Type GridViewColumnHeader}">
             <Setter Property="HorizontalContentAlignment" Value="Left"></Setter>
         </Style>
@@ -217,7 +218,7 @@
                                 <DataTemplate><TextBlock x:Name="item_Name" Text="{Binding Path=Name}"/></DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn HeaderContainerStyle="{StaticResource HeaderLeftAlign}" Width="{Binding Source={x:Static p:Settings.Default}, Path=lvTypeColumnWidth, Mode=TwoWay}" HeaderTemplate="{StaticResource SortArrowNone}" DisplayMemberBinding="{Binding Path=Type}">
+                        <GridViewColumn HeaderContainerStyle="{StaticResource HeaderLeftAlign}" Width="{Binding Source={x:Static p:Settings.Default}, Path=lvTypeColumnWidth, Mode=TwoWay}" HeaderTemplate="{StaticResource SortArrowNone}" DisplayMemberBinding="{Binding Path=Type, Mode=OneWay, Converter={StaticResource entryTypeConverter}}">
                             <GridViewColumn.Header>
                                 <GridViewColumnHeader Tag="Type" Content="{x:Static s:guiStrings.HeaderType}"/>
                             </GridViewColumn.Header>
