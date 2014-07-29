@@ -31,6 +31,7 @@ using GameRes.Formats.Strings;
 using GameRes.Utility;
 using GameRes.Formats.Properties;
 using System.Text;
+using System.Diagnostics;
 
 namespace GameRes.Formats.ONScripter
 {
@@ -92,31 +93,13 @@ namespace GameRes.Formats.ONScripter
                 entry.Type   = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                 entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset)) + (long)base_offset;
                 entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+4));
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
 
                 cur_offset += 8;
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);
-        }
-
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            var nsa_entry = entry as NsaEntry;
-            if (null != nsa_entry &&
-                (Compression.LZSS == nsa_entry.CompressionType ||
-                 Compression.SPB  == nsa_entry.CompressionType))
-            {
-                using (var input = arc.File.CreateStream (nsa_entry.Offset, nsa_entry.Size))
-                {
-                    var decoder = new Unpacker (input, nsa_entry.UnpackedSize);
-                    switch (nsa_entry.CompressionType)
-                    {
-                    case Compression.LZSS:  return decoder.LzssDecodedStream();
-                    case Compression.SPB:   return decoder.SpbDecodedStream();
-                    }
-                }
-            }
-            return arc.File.CreateStream (entry.Offset, entry.Size);
         }
 
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
@@ -239,6 +222,8 @@ namespace GameRes.Formats.ONScripter
                 entry.Type   = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                 entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+1)) + (long)base_offset;
                 entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+5));
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
                 entry.UnpackedSize = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+9));
                 entry.IsPacked = compression_type != 0;
                 switch (compression_type)
@@ -249,10 +234,31 @@ namespace GameRes.Formats.ONScripter
                 case 4:  entry.CompressionType = Compression.NBZ; break;
                 default: entry.CompressionType = Compression.Unknown; break;
                 }
+//                Trace.WriteLine (string.Format ("[{0}] {1}", entry.CompressionType, entry.Name));
                 cur_offset += 13;
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var nsa_entry = entry as NsaEntry;
+            if (null != nsa_entry &&
+                (Compression.LZSS == nsa_entry.CompressionType ||
+                 Compression.SPB  == nsa_entry.CompressionType))
+            {
+                using (var input = arc.File.CreateStream (nsa_entry.Offset, nsa_entry.Size))
+                {
+                    var decoder = new Unpacker (input, nsa_entry.UnpackedSize);
+                    switch (nsa_entry.CompressionType)
+                    {
+                    case Compression.LZSS:  return decoder.LzssDecodedStream();
+                    case Compression.SPB:   return decoder.SpbDecodedStream();
+                    }
+                }
+            }
+            return arc.File.CreateStream (entry.Offset, entry.Size);
         }
 
         public override ResourceOptions GetDefaultOptions ()
@@ -290,6 +296,12 @@ namespace GameRes.Formats.ONScripter
                     throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
                 }
                 var header_entry = new NsaEntry { Name = entry.Name };
+                if (Compression.None != ons_options.CompressionType)
+                {
+                    string ext = Path.GetExtension (entry.Name).ToLower();
+                    if (".bmp" == ext)
+                        header_entry.CompressionType = ons_options.CompressionType;
+                }
                 index_size += 13;
                 real_entry_list.Add (header_entry);
             }
@@ -307,14 +319,21 @@ namespace GameRes.Formats.ONScripter
                     long file_offset = output.Position - base_offset;
                     if (file_offset+file_size > uint.MaxValue)
                         throw new FileSizeException();
-                    entry.Offset = file_offset;
-                    entry.Size   = (uint)file_size;
-                    entry.UnpackedSize    = entry.Size;
-                    entry.CompressionType = Compression.None;
                     if (null != callback)
                         callback (callback_count++, entry, arcStrings.MsgAddingFile);
-
-                    input.CopyTo (output);
+                    entry.Offset = file_offset;
+                    entry.UnpackedSize = (uint)file_size;
+                    if (Compression.LZSS == entry.CompressionType)
+                    {
+                        var packer = new Packer (input, output);
+                        entry.Size = packer.EncodeLZSS();
+                    }
+                    else
+                    {
+                        entry.Size            = entry.UnpackedSize;
+                        entry.CompressionType = Compression.None;
+                        input.CopyTo (output);
+                    }
                 }
             }
 
@@ -338,6 +357,7 @@ namespace GameRes.Formats.ONScripter
         }
     }
 
+
    /*
     *  ONScripter-EN decompression routines.
     *
@@ -351,6 +371,16 @@ namespace GameRes.Formats.ONScripter
     *  UncleMion@gmail.com
     *
     */
+    /* LZSS encoder-decoder  (c) Haruhiko Okumura */
+
+    internal static class LZSS
+    {
+        public const int EI = 8;
+        public const int EJ = 4;
+        public const int P  = 1;  /* If match length <= P then output one character */
+        public const int N  = (1 << EI);  /* buffer size */
+        public const int F  = ((1 << EJ) + P);  /* lookahead buffer size */
+    }
 
     internal class Unpacker
     {
@@ -378,12 +408,6 @@ namespace GameRes.Formats.ONScripter
             return new MemoryStream (m_output, false);
         }
 
-        const int EI = 8;
-        const int EJ = 4;
-        const int P  = 1;  /* If match length <= P then output one character */
-        const int N  = (1 << EI);  /* buffer size */
-        const int F  = ((1 << EJ) + P);  /* lookahead buffer size */
-
         private int m_getbit_mask;
         private int m_getbit_len;
         private int m_getbit_count;
@@ -394,8 +418,8 @@ namespace GameRes.Formats.ONScripter
 
             m_getbit_mask = 0;
             m_getbit_len = m_getbit_count = 0;
-            byte[] decomp_buffer = new byte[N*2];
-            int r = N - F;
+            byte[] decomp_buffer = new byte[LZSS.N*2];
+            int r = LZSS.N - LZSS.F;
             int c;
             while (count < m_output.Length)
             {
@@ -406,22 +430,22 @@ namespace GameRes.Formats.ONScripter
                         break;
                     m_output[count++] = (byte)c;
                     decomp_buffer[r++] = (byte)c;
-                    r &= (N - 1);
+                    r &= (LZSS.N - 1);
                 }
                 else
                 {
-                    int i = GetBits (EI);
+                    int i = GetBits (LZSS.EI);
                     if (-1 == i)
                         break;
-                    int j = GetBits (EJ);
+                    int j = GetBits (LZSS.EJ);
                     if (-1 == j)
                         break;
                     for (int k = 0; k <= j + 1; k++)
                     {
-                        c = decomp_buffer[(i + k) & (N - 1)];
+                        c = decomp_buffer[(i + k) & (LZSS.N - 1)];
                         m_output[count++] = (byte)c;
                         decomp_buffer[r++] = (byte)c;
-                        r &= (N - 1);
+                        r &= (LZSS.N - 1);
                     }
                 }
             }
@@ -554,6 +578,146 @@ namespace GameRes.Formats.ONScripter
                 m_getbit_mask >>= 1;
             }
             return x;
+        }
+    }
+
+    internal class Packer
+    {
+        private Stream  m_input;
+        private Stream  m_output;
+        private uint    m_code_count = 0;
+
+        public uint PackedSize { get { return m_code_count; } }
+
+        public Packer (Stream input, Stream output)
+        {
+            m_input = input;
+            m_output = output;
+        }
+
+        public uint EncodeLZSS ()
+        {
+            byte[] comp_buffer = new byte[LZSS.N*2];
+
+            int i;
+            for (i = LZSS.N - LZSS.F; i < LZSS.N * 2; i++)
+            {
+                int c = m_input.ReadByte();
+                if (-1 == c)
+                    break;
+                comp_buffer[i] = (byte)c;
+            }
+            int bufferend = i;
+            int r = LZSS.N - LZSS.F;
+            int s = 0;
+            while (r < bufferend)
+            {
+                int f1 = (LZSS.F <= bufferend - r) ? LZSS.F : bufferend - r;
+                int x = 0;
+                int y = 1;
+                int c = comp_buffer[r];
+                for (i = r - 1; i >= s; i--)
+                {
+                    if (comp_buffer[i] == c)
+                    {
+                        int j;
+                        for (j = 1; j < f1; j++)
+                            if (comp_buffer[i + j] != comp_buffer[r + j])
+                                break;
+                        if (j > y)
+                        {
+                            x = i;
+                            y = j;
+                        }
+                    }
+                }
+                if (y <= LZSS.P)
+                    Output1 (c);
+                else
+                    Output2 (x & (LZSS.N - 1), y - 2);
+                r += y;
+                s += y;
+                if (r >= LZSS.N * 2 - LZSS.F)
+                {
+                    for (i = 0; i < LZSS.N; i++)
+                        comp_buffer[i] = comp_buffer[i + LZSS.N];
+                    bufferend -= LZSS.N;
+                    r -= LZSS.N;
+                    s -= LZSS.N;
+                    while (bufferend < LZSS.N * 2)
+                    {
+                        c = m_input.ReadByte();
+                        if (-1 == c)
+                            break;
+                        comp_buffer[bufferend++] = (byte)c;
+                    }
+                }
+            }
+            FlushBitBuffer();
+            return m_code_count;
+        }
+
+        int m_bit_buffer = 0;
+        int m_bit_mask = 128;
+
+        void PutBit1 ()
+        {
+            m_bit_buffer |= m_bit_mask;
+            if ((m_bit_mask >>= 1) == 0)
+            {
+                m_output.WriteByte ((byte)m_bit_buffer);
+                m_bit_buffer = 0;
+                m_bit_mask = 128;
+                m_code_count++;
+            }
+        }
+
+        void PutBit0 ()
+        {
+            if ((m_bit_mask >>= 1) == 0)
+            {
+                m_output.WriteByte ((byte)m_bit_buffer);
+                m_bit_buffer = 0;
+                m_bit_mask = 128;
+                m_code_count++;
+            }
+        }
+
+        void FlushBitBuffer ()
+        {
+            if (m_bit_mask != 128)
+            {
+                m_output.WriteByte ((byte)m_bit_buffer);
+                m_code_count++;
+            }
+        }
+
+        void Output1 (int c)
+        {
+            PutBit1();
+            int mask = 256;
+            while (0 != (mask >>= 1))
+            {
+                if (0 != (c & mask)) PutBit1();
+                else PutBit0();
+            }
+        }
+
+        void Output2 (int x, int y)
+        {
+            PutBit0();
+            int mask = LZSS.N;
+            while (0 != (mask >>= 1))
+            {
+                if (0 != (x & mask)) PutBit1();
+                else PutBit0();
+            }
+            mask = (1 << LZSS.EJ);
+            while (0 != (mask >>= 1))
+            {
+                if (0 != (y & mask)) PutBit1();
+                else PutBit0();
+            }
         }
     }
 }
