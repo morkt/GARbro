@@ -64,8 +64,8 @@ namespace GameRes
         /// </returns>
         public static ArcFile TryOpen (string filename)
         {
+            var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLower());
             var file = new ArcView (filename);
-            string ext = Path.GetExtension (filename).TrimStart ('.').ToLower();
             try
             {
                 uint signature = file.View.ReadUInt32 (0);
@@ -73,7 +73,9 @@ namespace GameRes
                 {
                     var range = FormatCatalog.Instance.LookupSignature<ArchiveFormat> (signature);
                     // check formats that match filename extension first
-                    foreach (var impl in range.OrderByDescending (f => f.Extensions.First() == ext))
+                    if (range.Skip(1).Any()) // if range.Count() > 1
+                        range = range.OrderByDescending (f => f.Extensions.First() == ext.Value);
+                    foreach (var impl in range)
                     {
                         try
                         {
