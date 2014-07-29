@@ -140,7 +140,7 @@ namespace GameRes
         /// <summary>
         /// Extract file referenced by <paramref name="entry"/> into current directory.
         /// </summary>
-        public virtual void Extract (ArcFile file, Entry entry)
+        public void Extract (ArcFile file, Entry entry)
         {
             using (var reader = OpenEntry (file, entry))
             {
@@ -161,20 +161,35 @@ namespace GameRes
 
         /// <summary>
         /// Create file corresponding to <paramref name="entry"/> in current directory and open it
-        /// for writing.
+        /// for writing. Overwrites existing file, if any.
         /// </summary>
         public virtual Stream CreateFile (Entry entry)
         {
-            string dir = Path.GetDirectoryName (entry.Name);
-            if (!string.IsNullOrEmpty (dir))
+            string filename = entry.Name;
+            string dir = Path.GetDirectoryName (filename);
+            if (!string.IsNullOrEmpty (dir)) // check for malformed filenames
             {
-                Directory.CreateDirectory (dir);
+                string root = Path.GetPathRoot (dir);
+                if (!string.IsNullOrEmpty (root))
+                {
+                    dir = dir.Substring (root.Length); // strip root
+                }
+                string cwd = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar;
+                dir = Path.GetFullPath (dir);
+                filename = Path.GetFileName (filename);
+                // check whether filename would reside within current directory
+                if (dir.StartsWith (cwd, StringComparison.OrdinalIgnoreCase))
+                {
+                    // path looks legit, create it
+                    Directory.CreateDirectory (dir);
+                    filename = Path.Combine (dir, filename);
+                }
             }
-            return File.Create (entry.Name);
+            return File.Create (filename);
         }
 
         /// <summary>
-        /// Create resource wihin stream <paramref name="file"/> containing entries from the
+        /// Create resource within stream <paramref name="file"/> containing entries from the
         /// supplied <paramref name="list"/> and applying necessary <paramref name="options"/>.
         /// </summary>
         public virtual void Create (Stream file, IEnumerable<Entry> list, ResourceOptions options = null,
@@ -190,7 +205,7 @@ namespace GameRes
 
         public virtual ResourceOptions GetOptions (object widget)
         {
-            return null;
+            return GetDefaultOptions();
         }
 
         public virtual object GetCreationWidget ()
@@ -220,11 +235,6 @@ namespace GameRes
         /// String describing request nature (encryption key etc).
         /// </summary>
         public string Notice        { get; set; }
-
-        /// <summary>
-        /// UIElement responsible for displaying request.
-        /// </summary>
-        public object InputWidget   { get; set; }
 
         /// <summary>
         /// Return value from ShowDialog()
