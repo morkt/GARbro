@@ -229,10 +229,10 @@ namespace GameRes.Formats.KiriKiri
                     if (!string.IsNullOrEmpty (entry.Name) && entry.Segments.Any())
                     {
                         dir.Add (entry);
-                        Trace.WriteLine (string.Format ("{0,-16} {3:X8} {1,11} {2,12}", entry.Name,
-                                                        entry.IsEncrypted ? "[encrypted]" : "",
-                                                        entry.Segments.First().IsCompressed ? "[compressed]" : "",
-                                                        entry.Hash));
+//                        Trace.WriteLine (string.Format ("{0,-16} {3:X8} {1,11} {2,12}", entry.Name,
+//                                                        entry.IsEncrypted ? "[encrypted]" : "",
+//                                                        entry.Segments.First().IsCompressed ? "[compressed]" : "",
+//                                                        entry.Hash));
                     }
 NextEntry:
                     header.BaseStream.Position = dir_offset;
@@ -267,11 +267,6 @@ NextEntry:
                 CompressContents    = Settings.Default.XP3CompressContents,
                 RetainDirs          = Settings.Default.XP3RetainStructure,
             };
-        }
-
-        public override ResourceOptions GetOptions (object widget)
-        {
-            return this.GetDefaultOptions();
         }
 
         public override object GetCreationWidget ()
@@ -529,7 +524,8 @@ NextEntry:
                         try
                         {
                             var checksum = new Adler32();
-                            if (!xp3entry.Cipher.HashAfterCrypt)
+                            bool hash_after_crypt = xp3entry.Cipher.HashAfterCrypt;
+                            if (!hash_after_crypt)
                                 xp3entry.Hash = checksum.Update (ptr, (int)unpacked_size);
                             int offset = 0;
                             int remaining = (int)unpacked_size;
@@ -539,12 +535,12 @@ NextEntry:
                                 remaining -= amount;
                                 Marshal.Copy ((IntPtr)(ptr+offset), read_buffer, 0, amount);
                                 xp3entry.Cipher.Encrypt (xp3entry, offset, read_buffer, 0, amount);
-                                if (xp3entry.Cipher.HashAfterCrypt)
+                                if (hash_after_crypt)
                                     checksum.Update (read_buffer, 0, amount);
                                 output.Write (read_buffer, 0, amount);
                                 offset += amount;
                             }
-                            if (xp3entry.Cipher.HashAfterCrypt)
+                            if (hash_after_crypt)
                                 xp3entry.Hash = checksum.Value;
                             if (compress)
                             {
