@@ -105,6 +105,16 @@ namespace GARbro.GUI
             }
             else
                 Settings.Default.lvSortColumn = "";
+
+            string cwd = CurrentPath;
+            if (!string.IsNullOrEmpty (cwd))
+            {
+                if (ViewModel.IsArchive)
+                    cwd = Path.GetDirectoryName (cwd);
+            }
+            else
+                cwd = Directory.GetCurrentDirectory();
+            Settings.Default.appLastDirectory = cwd;
         }
 
         /// <summary>

@@ -74,7 +74,6 @@ namespace GARbro.GUI
 
         void ApplicationExit (object sender, ExitEventArgs e)
         {
-            Settings.Default.appLastDirectory = Directory.GetCurrentDirectory();
             Settings.Default.Save();
         }
 
