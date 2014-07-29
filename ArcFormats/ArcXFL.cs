@@ -85,14 +85,13 @@ namespace GameRes.Formats
                 writer.Write (dir_size);
                 writer.Write (list_size);
 
-                var encoding = Encodings.cp932.Clone() as Encoding;
-                encoding.EncoderFallback = EncoderFallback.ExceptionFallback;
+                var encoding = Encodings.cp932.WithFatalFallback();
 
                 byte[] name_buf = new byte[32];
                 int callback_count = 0;
 
                 if (null != callback)
-                    callback (callback_count++, null, "Writing index...");
+                    callback (callback_count++, null, arcStrings.MsgWritingIndex);
 
                 // first, write names only
                 foreach (var entry in list)
@@ -121,7 +120,7 @@ namespace GameRes.Formats
                 foreach (var entry in list)
                 {
                     if (null != callback)
-                        callback (callback_count++, entry, "Adding file");
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
 
                     entry.Offset = current_offset;
                     using (var input = File.Open (entry.Name, FileMode.Open, FileAccess.Read))
@@ -136,7 +135,7 @@ namespace GameRes.Formats
                 }
 
                 if (null != callback)
-                    callback (callback_count++, null, "Updating index...");
+                    callback (callback_count++, null, arcStrings.MsgUpdatingIndex);
 
                 // at last, go back to directory and write offset/sizes
                 long dir_offset = 12+32;
