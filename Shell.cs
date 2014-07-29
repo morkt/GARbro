@@ -53,6 +53,11 @@ namespace GARbro.Shell
         {
             return MoveFileEx (szFrom, szTo, MoveFileFlags.ReplaceExisting);
         }
+
+        public static int GetLastError ()
+        {
+            return Marshal.GetLastWin32Error();
+        }
     }
 
     public class TemporaryFile : IDisposable
