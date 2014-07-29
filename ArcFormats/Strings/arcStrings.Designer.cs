@@ -70,6 +70,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No files suitable for AMI archive found..
+        /// </summary>
+        public static string AMINoFiles {
+            get {
+                return ResourceManager.GetString("AMINoFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive content is encrypted.
         ///Choose appropriate encryption scheme..
         /// </summary>
@@ -213,6 +222,15 @@ namespace GameRes.Formats.Strings {
         public static string MsgIllegalCharacters {
             get {
                 return ResourceManager.GetString("MsgIllegalCharacters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: image format not recognized..
+        /// </summary>
+        public static string MsgInvalidImageFormat {
+            get {
+                return ResourceManager.GetString("MsgInvalidImageFormat", resourceCulture);
             }
         }
         

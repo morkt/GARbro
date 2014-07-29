@@ -26,12 +26,15 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ZLibNet;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats
 {
@@ -62,6 +65,7 @@ namespace GameRes.Formats
         public override string Description { get { return Strings.arcStrings.AMIDescription; } }
         public override uint Signature { get { return 0x00494d41; } }
         public override bool IsHierarchic { get { return false; } }
+        public override bool CanCreate { get { return true; } }
 
         public AmiOpener ()
         {
@@ -123,6 +127,125 @@ namespace GameRes.Formats
                 return input;
             else
                 return new ZLibStream (input, CompressionMode.Decompress);
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            IDictionary<uint, PackedEntry> file_table = BuildFileTable (list);
+            uint file_count = (uint)file_table.Count;
+            if (0 == file_count)
+                throw new InvalidFormatException (arcStrings.AMINoFiles);
+            if (null != callback)
+                callback ((int)file_count+1, null, null);
+
+            int callback_count = 0;
+            long start_offset = output.Position;
+            uint data_offset = file_count * 16 + 16;
+            output.Seek (data_offset, SeekOrigin.Current);
+            foreach (var entry in file_table)
+            {
+                if (null != callback)
+                    callback (callback_count++, entry.Value, arcStrings.MsgAddingFile);
+                long current_offset = output.Position;
+                if (current_offset > uint.MaxValue)
+                    throw new FileSizeException();
+                entry.Value.Offset = (uint)current_offset;
+                entry.Value.Size = WriteAmiEntry (entry.Value, output);
+            }
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+            output.Position = start_offset;
+            using (var header = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                header.Write (Signature);
+                header.Write (file_count);
+                header.Write (data_offset);
+                header.Write ((uint)0);
+                foreach (var entry in file_table)
+                {
+                    header.Write (entry.Key);
+                    header.Write ((uint)entry.Value.Offset);
+                    header.Write ((uint)entry.Value.UnpackedSize);
+                    header.Write ((uint)entry.Value.Size);
+                }
+            }
+        }
+
+        IDictionary<uint, PackedEntry> BuildFileTable (IEnumerable<Entry> list)
+        {
+            var table = new SortedDictionary<uint, PackedEntry>();
+            foreach (var entry in list)
+            {
+                string ext = Path.GetExtension (entry.Name).ToLower();
+                if (entry.Type != "image" && ext != ".scr")
+                    continue;
+                uint id;
+                if (!uint.TryParse (Path.GetFileNameWithoutExtension (entry.Name), NumberStyles.HexNumber,
+                                    CultureInfo.InvariantCulture, out id))
+                    continue;
+                PackedEntry existing;
+                if (table.TryGetValue (id, out existing))
+                {
+                    var file_new = new FileInfo (entry.Name);
+                    var file_old = new FileInfo (existing.Name);
+                    if (file_new.LastWriteTime <= file_old.LastWriteTime)
+                        continue;
+                }
+                table[id] = new PackedEntry
+                {
+                    Name = entry.Name,
+                    Type = entry.Type
+                };
+            }
+            return table;
+        }
+
+        uint WriteAmiEntry (PackedEntry entry, Stream output)
+        {
+            uint packed_size = 0;
+            using (var input = File.OpenRead (entry.Name))
+            {
+                long file_size = input.Length;
+                if (file_size > uint.MaxValue)
+                    throw new FileSizeException();
+                entry.UnpackedSize = (uint)file_size;
+                if ("image" == entry.Type)
+                {
+                    packed_size = WriteImageEntry (entry, input, output);
+                }
+                else
+                {
+                    input.CopyTo (output);
+                }
+            }
+            return packed_size;
+        }
+
+        uint WriteImageEntry (PackedEntry entry, Stream input, Stream output)
+        {
+            var grp = FormatCatalog.Instance.LookupTag<GrpFormat> ("GRP").FirstOrDefault();
+            if (null == grp) // probably never happens
+                throw new FileFormatException ("GRP image encoder not available");
+            bool is_grp = grp.Signature == FormatCatalog.ReadSignature (input);
+            input.Position = 0;
+            using (var zstream = new ZLibStream (output, CompressionMode.Compress, true))
+            {
+                if (is_grp)
+                {
+                    input.CopyTo (zstream);
+                }
+                else
+                {
+                    var image = ImageFormat.Read (input);
+                    if (null == image)
+                        throw new InvalidFormatException (string.Format (arcStrings.MsgInvalidImageFormat, entry.Name));
+                    grp.Write (zstream, image);
+                    entry.UnpackedSize = (uint)zstream.TotalIn;
+                }
+                zstream.Flush();
+                return (uint)zstream.TotalOut;
+            }
         }
     }
 

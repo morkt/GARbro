@@ -120,6 +120,9 @@
   <data name="AMIDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv archive</value>
   </data>
+  <data name="AMINoFiles" xml:space="preserve">
+    <value>No files suitable for AMI archive found.</value>
+  </data>
   <data name="ArcEncryptedNotice" xml:space="preserve">
     <value>Archive content is encrypted.
 Choose appropriate encryption scheme.</value>
@@ -170,6 +173,9 @@ predefined encryption scheme.</value>
   </data>
   <data name="MsgIllegalCharacters" xml:space="preserve">
     <value>File name contains illegal characters</value>
+  </data>
+  <data name="MsgInvalidImageFormat" xml:space="preserve">
+    <value>{0}: image format not recognized.</value>
   </data>
   <data name="MsgUpdatingIndex" xml:space="preserve">
     <value>Updating index...</value>

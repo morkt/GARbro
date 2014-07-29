@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AMINoFiles" xml:space="preserve">
+    <value>Не найдено файлов, подходящих для архива AMI.</value>
+  </data>
   <data name="ArcEncryptedNotice" xml:space="preserve">
     <value>Содержимое архива зашифровано.
 Выберите алгоритм шифрования.</value>
@@ -155,6 +158,9 @@
   </data>
   <data name="MsgIllegalCharacters" xml:space="preserve">
     <value>Имя файла содержит недопустимые символы</value>
+  </data>
+  <data name="MsgInvalidImageFormat" xml:space="preserve">
+    <value>{0}: не удалось распознать формат изображения.</value>
   </data>
   <data name="MsgUpdatingIndex" xml:space="preserve">
     <value>Обновляется оглавление...</value>
