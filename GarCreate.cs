@@ -153,7 +153,7 @@ namespace GARbro.GUI
                 using (var tmp_file = new GARbro.Shell.TemporaryFile (Path.GetDirectoryName (m_arc_name),
                                                                     Path.GetRandomFileName ()))
                 {
-                    int m_total = m_file_list.Count() + 1;
+                    m_total = m_file_list.Count() + 1;
                     using (var file = File.Create (tmp_file.Name))
                     {
                         m_format.Create (file, m_file_list, m_options, CreateEntryCallback);
