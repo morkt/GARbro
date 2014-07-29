@@ -238,6 +238,11 @@ namespace GARbro.GUI
             m_watcher.EnableRaisingEvents = false;
         }
 
+        void ResumeWatchDirectoryChanges ()
+        {
+            m_watcher.EnableRaisingEvents = true;
+        }
+
         private void InvokeRefreshView (object source, FileSystemEventArgs e)
         {
             var watcher = source as FileSystemWatcher;
@@ -495,17 +500,17 @@ namespace GARbro.GUI
 
         #region Navigation history implementation
 
-        private string CurrentPath { get { return ViewModel.Path; } }
+        internal string CurrentPath { get { return ViewModel.Path; } }
 
         HistoryStack<DirectoryPosition> m_history = new HistoryStack<DirectoryPosition>();
 
-        DirectoryPosition GetCurrentPosition ()
+        public DirectoryPosition GetCurrentPosition ()
         {
             var evm = CurrentDirectory.SelectedItem as EntryViewModel;
             return new DirectoryPosition (ViewModel, evm);
         }
 
-        bool SetCurrentPosition (DirectoryPosition pos)
+        public bool SetCurrentPosition (DirectoryPosition pos)
         {
             var vm = TryCreateViewModel (pos.Path);
             if (null == vm)
@@ -525,7 +530,7 @@ namespace GARbro.GUI
             }
         }
 
-        private void SaveCurrentPosition ()
+        public void SaveCurrentPosition ()
         {
             m_history.Push (GetCurrentPosition());
         }
@@ -821,7 +826,26 @@ namespace GARbro.GUI
             e.CanExecute = !ViewModel.IsArchive;
         }
 
-        private void CanExecuteDelete (object sender, CanExecuteRoutedEventArgs e)
+        private void CanExecuteExtract (object sender, CanExecuteRoutedEventArgs e)
+        {
+            if (ViewModel.IsArchive)
+            {
+                e.CanExecute = true;
+                return;
+            }
+            else if (CurrentDirectory.SelectedIndex != -1)
+            {
+                var entry = CurrentDirectory.SelectedItem as EntryViewModel;
+                if (entry != null && !entry.IsDirectory)
+                {
+                    e.CanExecute = true;
+                    return;
+                }
+            }
+            e.CanExecute = false;
+        }
+
+        private void CanExecuteOnPhysicalFile (object sender, CanExecuteRoutedEventArgs e)
         {
             if (!ViewModel.IsArchive && CurrentDirectory.SelectedIndex != -1)
             {
@@ -892,16 +916,23 @@ namespace GARbro.GUI
         protected override void OnPopulating (PopulatingEventArgs e)
         {
             var candidates = new List<string>();
-            string dirname = Path.GetDirectoryName (this.Text);
-            if (!string.IsNullOrEmpty (this.Text) && Directory.Exists (dirname))
+            try
             {
-                foreach (var dir in Directory.GetDirectories (dirname))
+                string dirname = Path.GetDirectoryName (this.Text);
+                if (!string.IsNullOrEmpty (this.Text) && Directory.Exists (dirname))
                 {
-                    if (dir.StartsWith (dirname, StringComparison.CurrentCultureIgnoreCase))
-                        candidates.Add (dir);
+                    foreach (var dir in Directory.GetDirectories (dirname))
+                    {
+                        if (dir.StartsWith (dirname, StringComparison.CurrentCultureIgnoreCase))
+                            candidates.Add (dir);
+                    }
                 }
+                this.ItemsSource = candidates;
             }
-            this.ItemsSource = candidates;
+            catch
+            {
+                // ignore filesystem errors
+            }
             base.OnPopulating (e);
         }
     }
