@@ -143,6 +143,8 @@ namespace GameRes.Formats
                         IsPacked    = compressed,
                         RawName     = raw_name,
                     };
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
                     entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                     dir.Add (entry);
                 }
