@@ -34,6 +34,13 @@ namespace GameRes
     public static class Encodings
     {
         public static readonly Encoding cp932 = Encoding.GetEncoding (932);
+
+        public static Encoding WithFatalFallback (Encoding enc)
+        {
+            enc = enc.Clone() as Encoding;
+            enc.EncoderFallback = EncoderFallback.ExceptionFallback;
+            return enc;
+        }
     }
 
     public static class StreamExtension
