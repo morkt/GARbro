@@ -160,6 +160,14 @@ namespace GARbro.GUI
         {
             using (var file = arc.OpenEntry (entry))
             {
+                string source_ext = Path.GetExtension (entry.Name).TrimStart ('.').ToLower();
+                if (target_format.Extensions.Any (ext => ext == source_ext))
+                {
+                    // source extension matches target image format, copy file as is
+                    using (var output = arc.CreateFile (entry))
+                        file.CopyTo (output);
+                    return;
+                }
                 ImageData image = ImageFormat.Read (file);
                 if (null == image)
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
@@ -167,8 +175,8 @@ namespace GARbro.GUI
                 string outdir = Path.GetDirectoryName (entry.Name);
                 string outname = Path.GetFileNameWithoutExtension (entry.Name)+'.'+target_ext;
                 outname = Path.Combine (outdir, outname);
-                Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractFileFromArchive");
-                using (var outfile = File.Create (outname))
+                Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractImage");
+                using (var outfile = arc.CreateFile (new Entry { Name = outname }))
                 {
                     target_format.Write (outfile, image);
                 }
