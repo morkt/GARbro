@@ -27,6 +27,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
@@ -43,102 +44,150 @@ namespace GARbro.GUI
             StopWatchDirectoryChanges();
             try
             {
-                Directory.SetCurrentDirectory (CurrentPath);
-                var items = CurrentDirectory.SelectedItems.Cast<EntryViewModel>();
-                string arc_name = Path.GetFileName (CurrentPath);
-                if (!items.Skip (1).Any()) // items.Count() == 1
-                {
-                    var item = items.First();
-                    if (item.IsDirectory)
-                        arc_name = Path.GetFileNameWithoutExtension (item.Name);
-                }
-
-                var dialog = new CreateArchiveDialog (arc_name);
-                dialog.Owner = this;
-                if (!dialog.ShowDialog().Value)
-                    return;
-                if (string.IsNullOrEmpty (dialog.ArchiveName.Text))
-                {
-                    SetStatusText ("Archive name is empty");
-                    return;
-                }
-                var format = dialog.ArchiveFormat.SelectedItem as ArchiveFormat;
-                if (null == format)
-                {
-                    SetStatusText ("Format is not selected");
-                    return;
-                }
-
-                IList<Entry> file_list;
-                if (format.IsHierarchic)
-                    file_list = BuildFileList (items, AddFilesRecursive);
-                else
-                    file_list = BuildFileList (items, AddFilesFromDir);
-
-                arc_name = Path.GetFullPath (dialog.ArchiveName.Text);
-
-                var createProgressDialog = new ProgressDialog ()
-                {
-                    WindowTitle = guiStrings.TextTitle,
-                    Text        = string.Format (guiStrings.MsgCreatingArchive, Path.GetFileName (arc_name)),
-                    Description = "",
-                    MinimizeBox = true,
-                };
-                createProgressDialog.DoWork += (s, e) =>
-                {
-                    try
-                    {
-                        using (var tmp_file = new GARbro.Shell.TemporaryFile (Path.GetDirectoryName (arc_name),
-                                                                            Path.GetRandomFileName ()))
-                        {
-                            int total = file_list.Count() + 1;
-                            using (var file = File.Create (tmp_file.Name))
-                            {
-                                format.Create (file, file_list, dialog.ArchiveOptions, (i, entry, msg) =>
-                                {
-                                    if (createProgressDialog.CancellationPending)
-                                        throw new OperationCanceledException();
-                                    int progress = i*100/total;
-                                    string notice = msg;
-                                    if (null != entry)
-                                    {
-                                        if (null != msg)
-                                            notice = string.Format ("{0} {1}", msg, entry.Name);
-                                        else
-                                            notice = entry.Name;
-                                    }
-                                    createProgressDialog.ReportProgress (progress, null, notice);
-                                    return ArchiveOperation.Continue;
-                                });
-                            }
-                            GARbro.Shell.File.Rename (tmp_file.Name, arc_name);
-                        }
-                    }
-                    catch (OperationCanceledException X)
-                    {
-                        m_watcher.EnableRaisingEvents = true;
-                        SetStatusText (X.Message);
-                    }
-                    catch (Exception X)
-                    {
-                        m_watcher.EnableRaisingEvents = true;
-                        PopupError (X.Message, guiStrings.TextCreateArchiveError);
-                    }
-                };
-                createProgressDialog.RunWorkerCompleted += (s, e) => {
-                    createProgressDialog.Dispose();
-                    Dispatcher.Invoke (() => SetCurrentPosition (new DirectoryPosition (arc_name)));
-                };
-                createProgressDialog.ShowDialog (this);
+                var archive_creator = new GarCreate (this);
+                if (!archive_creator.Run())
+                    ResumeWatchDirectoryChanges();
             }
             catch (Exception X)
             {
-                m_watcher.EnableRaisingEvents = true;
+                ResumeWatchDirectoryChanges();
                 PopupError (X.Message, guiStrings.TextCreateArchiveError);
             }
         }
+    }
+
+    internal class GarCreate
+    {
+        private MainWindow      m_main;
+        private string          m_arc_name;
+        private IList<Entry>    m_file_list;
+        private ProgressDialog  m_progress_dialog;
+        private ArchiveFormat   m_format;
+        private ResourceOptions m_options;
+        private Exception       m_pending_error;
 
         delegate void AddFilesEnumerator (IList<Entry> list, string path, DirectoryInfo path_info);
+
+        public GarCreate (MainWindow parent)
+        {
+            m_main = parent;
+        }
+
+        public bool Run ()
+        {
+            Directory.SetCurrentDirectory (m_main.CurrentPath);
+            var items = m_main.CurrentDirectory.SelectedItems.Cast<EntryViewModel>();
+            m_arc_name = Path.GetFileName (m_main.CurrentPath);
+            if (!items.Skip (1).Any()) // items.Count() == 1
+            {
+                var item = items.First();
+                if (item.IsDirectory)
+                    m_arc_name = Path.GetFileNameWithoutExtension (item.Name);
+            }
+
+            var dialog = new CreateArchiveDialog (m_arc_name);
+            dialog.Owner = m_main;
+            if (!dialog.ShowDialog().Value)
+            {
+                return false;
+            }
+            if (string.IsNullOrEmpty (dialog.ArchiveName.Text))
+            {
+                m_main.SetStatusText ("Archive name is empty");
+                return false;
+            }
+            m_format = dialog.ArchiveFormat.SelectedItem as ArchiveFormat;
+            if (null == m_format)
+            {
+                m_main.SetStatusText ("Format is not selected");
+                return false;
+            }
+            m_options = dialog.ArchiveOptions;
+
+            if (m_format.IsHierarchic)
+                m_file_list = BuildFileList (items, AddFilesRecursive);
+            else
+                m_file_list = BuildFileList (items, AddFilesFromDir);
+
+            m_arc_name = Path.GetFullPath (dialog.ArchiveName.Text);
+
+            m_progress_dialog = new ProgressDialog ()
+            {
+                WindowTitle = guiStrings.TextTitle,
+                Text        = string.Format (guiStrings.MsgCreatingArchive, Path.GetFileName (m_arc_name)),
+                Description = "",
+                MinimizeBox = true,
+            };
+            m_progress_dialog.DoWork += CreateWorker;
+            m_progress_dialog.RunWorkerCompleted += OnCreateComplete;
+            m_progress_dialog.ShowDialog (m_main);
+            return true;
+        }
+
+        private int m_total = 1;
+
+        ArchiveOperation CreateEntryCallback (int i, Entry entry, string msg)
+        {
+            if (m_progress_dialog.CancellationPending)
+                throw new OperationCanceledException();
+            int progress = i*100/m_total;
+            if (progress > 100)
+                progress = 100;
+            string notice = msg;
+            if (null != entry)
+            {
+                if (null != msg)
+                    notice = string.Format ("{0} {1}", msg, entry.Name);
+                else
+                    notice = entry.Name;
+            }
+            m_progress_dialog.ReportProgress (progress, null, notice);
+            return ArchiveOperation.Continue;
+        }
+
+        void CreateWorker (object sender, DoWorkEventArgs e)
+        {
+            m_pending_error = null;
+            try
+            {
+                using (var tmp_file = new GARbro.Shell.TemporaryFile (Path.GetDirectoryName (m_arc_name),
+                                                                    Path.GetRandomFileName ()))
+                {
+                    int m_total = m_file_list.Count() + 1;
+                    using (var file = File.Create (tmp_file.Name))
+                    {
+                        m_format.Create (file, m_file_list, m_options, CreateEntryCallback);
+                    }
+                    if (!GARbro.Shell.File.Rename (tmp_file.Name, m_arc_name))
+                    {
+                        throw new Win32Exception (GARbro.Shell.File.GetLastError());
+                    }
+                }
+            }
+            catch (Exception X)
+            {
+                m_pending_error = X;
+            }
+        }
+
+        void OnCreateComplete (object sender, RunWorkerCompletedEventArgs e)
+        {
+            m_progress_dialog.Dispose();
+            if (null == m_pending_error)
+            {
+                m_main.Dispatcher.Invoke (() => {
+                    m_main.SaveCurrentPosition();
+                    m_main.SetCurrentPosition (new DirectoryPosition (m_arc_name));
+                });
+            }
+            else
+            {
+                if (m_pending_error is OperationCanceledException)
+                    m_main.SetStatusText (m_pending_error.Message);
+                else
+                    m_main.PopupError (m_pending_error.Message, guiStrings.TextCreateArchiveError);
+            }
+        }
 
         IList<Entry> BuildFileList (IEnumerable<EntryViewModel> files, AddFilesEnumerator add_files)
         {
