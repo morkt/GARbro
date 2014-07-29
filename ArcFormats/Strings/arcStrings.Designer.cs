@@ -217,6 +217,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Updating index....
+        /// </summary>
+        public static string MsgUpdatingIndex {
+            get {
+                return ResourceManager.GetString("MsgUpdatingIndex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Writing index....
         /// </summary>
         public static string MsgWritingIndex {
@@ -249,6 +258,33 @@ namespace GameRes.Formats.Strings {
         public static string NSADescription {
             get {
                 return ResourceManager.GetString("NSADescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive type.
+        /// </summary>
+        public static string ONSArchiveType {
+            get {
+                return ResourceManager.GetString("ONSArchiveType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Compression.
+        /// </summary>
+        public static string ONSCompression {
+            get {
+                return ResourceManager.GetString("ONSCompression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to None.
+        /// </summary>
+        public static string ONSCompressionNone {
+            get {
+                return ResourceManager.GetString("ONSCompressionNone", resourceCulture);
             }
         }
         

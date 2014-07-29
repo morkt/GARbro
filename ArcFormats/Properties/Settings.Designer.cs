@@ -129,5 +129,17 @@ namespace GameRes.Formats.Properties {
                 this["SGFileNameEncoding"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("None")]
+        public global::GameRes.Formats.ONScripter.Compression ONSCompression {
+            get {
+                return ((global::GameRes.Formats.ONScripter.Compression)(this["ONSCompression"]));
+            }
+            set {
+                this["ONSCompression"] = value;
+            }
+        }
     }
 }

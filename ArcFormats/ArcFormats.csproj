@@ -63,6 +63,9 @@
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
     <Compile Include="Blowfish.cs" />
+    <Compile Include="CreateONSWidget.xaml.cs">
+      <DependentUpon>CreateONSWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CreateSGWidget.xaml.cs">
       <DependentUpon>CreateSGWidget.xaml</DependentUpon>
     </Compile>
@@ -122,6 +125,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="CreateONSWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="CreateSGWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

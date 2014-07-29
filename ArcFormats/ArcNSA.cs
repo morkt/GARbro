@@ -29,6 +29,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
+using GameRes.Formats.Properties;
+using System.Text;
 
 namespace GameRes.Formats.ONScripter
 {
@@ -37,22 +39,174 @@ namespace GameRes.Formats.ONScripter
         public Compression CompressionType { get; set; }
     }
 
+    public class NsaOptions : ResourceOptions
+    {
+        public Compression CompressionType { get; set; }
+    }
+
     public enum Compression
     {
         Unknown = 256,
         None    = 0,
-        Spb     = 1,
-        Lzss    = 2,
-        Nbz     = 4,
+        SPB     = 1,
+        LZSS    = 2,
+        NBZ     = 4,
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class NsaOpener : ArchiveFormat
+    public class SarOpener : ArchiveFormat
     {
-        public override string Tag { get { return "NSA"; } }
+        public override string Tag { get { return "SAR"; } }
         public override string Description { get { return arcStrings.NSADescription; } }
         public override uint Signature { get { return 0; } }
         public override bool IsHierarchic { get { return true; } }
+        public override bool CanCreate { get { return true; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int num_of_files = Binary.BigEndian (file.View.ReadInt16 (0));
+            if (num_of_files <= 0)
+                return null;
+            uint base_offset = Binary.BigEndian (file.View.ReadUInt32 (2));
+            if (base_offset >= file.MaxOffset || base_offset < 10 * (uint)num_of_files)
+                return null;
+
+            uint cur_offset = 6;
+            var dir = new List<Entry>();
+            for (int i = 0; i < num_of_files; ++i)
+            {
+                if (base_offset - cur_offset < 10)
+                    return null;
+                int name_len;
+                byte[] name_buffer = ReadName (file, cur_offset, base_offset-cur_offset, out name_len);
+                if (0 == name_len || base_offset-cur_offset == name_len)
+                    return null;
+                cur_offset += (uint)(name_len + 1);
+                if (base_offset - cur_offset < 8)
+                    return null;
+
+                var entry = new Entry
+                {
+                    Name = Encodings.cp932.GetString (name_buffer, 0, name_len),
+                };
+                entry.Type   = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset)) + (long)base_offset;
+                entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+4));
+
+                cur_offset += 8;
+                dir.Add (entry);
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var nsa_entry = entry as NsaEntry;
+            if (null != nsa_entry &&
+                (Compression.LZSS == nsa_entry.CompressionType ||
+                 Compression.SPB  == nsa_entry.CompressionType))
+            {
+                using (var input = arc.File.CreateStream (nsa_entry.Offset, nsa_entry.Size))
+                {
+                    var decoder = new Unpacker (input, nsa_entry.UnpackedSize);
+                    switch (nsa_entry.CompressionType)
+                    {
+                    case Compression.LZSS:  return decoder.LzssDecodedStream();
+                    case Compression.SPB:   return decoder.SpbDecodedStream();
+                    }
+                }
+            }
+            return arc.File.CreateStream (entry.Offset, entry.Size);
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            var encoding = Encodings.cp932.WithFatalFallback();
+            int callback_count = 0;
+
+            var real_entry_list = new List<Entry>();
+            var used_names = new HashSet<string>();
+            int index_size = 0;
+            foreach (var entry in list)
+            {
+                if (!used_names.Add (entry.Name)) // duplicate name
+                    continue;
+                try
+                {
+                    index_size += encoding.GetByteCount (entry.Name) + 1;
+                }
+                catch (EncoderFallbackException X)
+                {
+                    throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
+                }
+                index_size += 8;
+                real_entry_list.Add (entry);
+            }
+
+            long start_offset = output.Position;
+            long base_offset = 6+index_size;
+            output.Seek (base_offset, SeekOrigin.Current);
+            foreach (var entry in real_entry_list)
+            {
+                using (var input = File.OpenRead (entry.Name))
+                {
+                    var file_size = input.Length;
+                    if (file_size > uint.MaxValue)
+                        throw new FileSizeException();
+                    long file_offset = output.Position - base_offset;
+                    if (file_offset+file_size > uint.MaxValue)
+                        throw new FileSizeException();
+                    entry.Offset = file_offset;
+                    entry.Size   = (uint)file_size;
+                    if (null != callback)
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                    input.CopyTo (output);
+                }
+            }
+
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+            output.Position = start_offset;
+            using (var writer = new BinaryWriter (output, encoding, true))
+            {
+                writer.Write (Binary.BigEndian ((short)real_entry_list.Count));
+                writer.Write (Binary.BigEndian ((uint)base_offset));
+                foreach (var entry in real_entry_list)
+                {
+                    writer.Write (encoding.GetBytes (entry.Name));
+                    writer.Write ((byte)0);
+                    writer.Write (Binary.BigEndian ((uint)entry.Offset));
+                    writer.Write (Binary.BigEndian ((uint)entry.Size));
+                }
+            }
+        }
+
+        protected static byte[] ReadName (ArcView file, uint offset, uint limit, out int name_len)
+        {
+            byte[] name_buffer = new byte[40];
+            for (name_len = 0; name_len < limit; ++name_len)
+            {
+                byte b = file.View.ReadByte (offset+name_len);
+                if (0 == b)
+                    break;
+                if (name_buffer.Length == name_len)
+                {
+                    byte[] new_buffer = new byte[checked(name_len/2*3)];
+                    Array.Copy (name_buffer, new_buffer, name_len);
+                    name_buffer = new_buffer;
+                }
+                name_buffer[name_len] = b;
+            }
+            return name_buffer;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class NsaOpener : SarOpener
+    {
+        public override string Tag { get { return "NSA"; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -90,9 +244,9 @@ namespace GameRes.Formats.ONScripter
                 switch (compression_type)
                 {
                 case 0:  entry.CompressionType = Compression.None; break;
-                case 1:  entry.CompressionType = Compression.Spb; break;
-                case 2:  entry.CompressionType = Compression.Lzss; break;
-                case 4:  entry.CompressionType = Compression.Nbz; break;
+                case 1:  entry.CompressionType = Compression.SPB; break;
+                case 2:  entry.CompressionType = Compression.LZSS; break;
+                case 4:  entry.CompressionType = Compression.NBZ; break;
                 default: entry.CompressionType = Compression.Unknown; break;
                 }
                 cur_offset += 13;
@@ -101,88 +255,86 @@ namespace GameRes.Formats.ONScripter
             return new ArcFile (file, this, dir);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override ResourceOptions GetDefaultOptions ()
         {
-            var nsa_entry = entry as NsaEntry;
-            if (null != nsa_entry &&
-                (Compression.Lzss == nsa_entry.CompressionType ||
-                 Compression.Spb  == nsa_entry.CompressionType))
-            {
-                using (var input = arc.File.CreateStream (nsa_entry.Offset, nsa_entry.Size))
-                {
-                    var decoder = new Unpacker (input, nsa_entry.UnpackedSize);
-                    switch (nsa_entry.CompressionType)
-                    {
-                    case Compression.Lzss:  return decoder.LzssDecodedStream();
-                    case Compression.Spb:   return decoder.SpbDecodedStream();
-                    }
-                }
-            }
-            return arc.File.CreateStream (entry.Offset, entry.Size);
+            return new NsaOptions {
+                CompressionType     = Settings.Default.ONSCompression,
+            };
         }
 
-        protected static byte[] ReadName (ArcView file, uint offset, uint limit, out int name_len)
+        public override object GetCreationWidget ()
         {
-            byte[] name_buffer = new byte[40];
-            for (name_len = 0; name_len < limit; ++name_len)
-            {
-                byte b = file.View.ReadByte (offset+name_len);
-                if (0 == b)
-                    break;
-                if (name_buffer.Length == name_len)
-                {
-                    byte[] new_buffer = new byte[checked(name_len/2*3)];
-                    Array.Copy (name_buffer, new_buffer, name_len);
-                    name_buffer = new_buffer;
-                }
-                name_buffer[name_len] = b;
-            }
-            return name_buffer;
+            return new GUI.CreateONSWidget();
         }
-    }
 
-    [Export(typeof(ArchiveFormat))]
-    public class SarOpener : NsaOpener
-    {
-        public override string Tag { get { return "SAR"; } }
-
-        public override ArcFile TryOpen (ArcView file)
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
         {
-            int num_of_files = Binary.BigEndian (file.View.ReadInt16 (0));
-            if (num_of_files <= 0)
-                return null;
-            uint base_offset = Binary.BigEndian (file.View.ReadUInt32 (2));
-            if (base_offset >= file.MaxOffset || base_offset < 10 * (uint)num_of_files)
-                return null;
+            var ons_options = GetOptions<NsaOptions> (options);
+            var encoding = Encodings.cp932.WithFatalFallback();
+            int callback_count = 0;
 
-            uint cur_offset = 6;
-            var dir = new List<Entry>();
-            for (int i = 0; i < num_of_files; ++i)
+            var real_entry_list = new List<NsaEntry>();
+            var used_names = new HashSet<string>();
+            int index_size = 0;
+            foreach (var entry in list)
             {
-                if (base_offset - cur_offset < 10)
-                    return null;
-                int name_len;
-                byte[] name_buffer = ReadName (file, cur_offset, base_offset-cur_offset, out name_len);
-                if (0 == name_len || base_offset-cur_offset == name_len)
-                    return null;
-                cur_offset += (uint)(name_len + 1);
-                if (base_offset - cur_offset < 8)
-                    return null;
-
-                var entry = new NsaEntry
+                if (!used_names.Add (entry.Name)) // duplicate name
+                    continue;
+                try
                 {
-                    Name = Encodings.cp932.GetString (name_buffer, 0, name_len),
-                };
-                entry.Type   = FormatCatalog.Instance.GetTypeFromName (entry.Name);
-                entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset)) + (long)base_offset;
-                entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+4));
-                entry.UnpackedSize = entry.Size;
-                entry.CompressionType = Compression.None;
-
-                cur_offset += 8;
-                dir.Add (entry);
+                    index_size += encoding.GetByteCount (entry.Name) + 1;
+                }
+                catch (EncoderFallbackException X)
+                {
+                    throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
+                }
+                var header_entry = new NsaEntry { Name = entry.Name };
+                index_size += 13;
+                real_entry_list.Add (header_entry);
             }
-            return new ArcFile (file, this, dir);
+
+            long start_offset = output.Position;
+            long base_offset = 6+index_size;
+            output.Seek (base_offset, SeekOrigin.Current);
+            foreach (var entry in real_entry_list)
+            {
+                using (var input = File.OpenRead (entry.Name))
+                {
+                    var file_size = input.Length;
+                    if (file_size > uint.MaxValue)
+                        throw new FileSizeException();
+                    long file_offset = output.Position - base_offset;
+                    if (file_offset+file_size > uint.MaxValue)
+                        throw new FileSizeException();
+                    entry.Offset = file_offset;
+                    entry.Size   = (uint)file_size;
+                    entry.UnpackedSize    = entry.Size;
+                    entry.CompressionType = Compression.None;
+                    if (null != callback)
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                    input.CopyTo (output);
+                }
+            }
+
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+            output.Position = start_offset;
+            using (var writer = new BinaryWriter (output, encoding, true))
+            {
+                writer.Write (Binary.BigEndian ((short)real_entry_list.Count));
+                writer.Write (Binary.BigEndian ((uint)base_offset));
+                foreach (var entry in real_entry_list)
+                {
+                    writer.Write (encoding.GetBytes (entry.Name));
+                    writer.Write ((byte)0);
+                    writer.Write ((byte)entry.CompressionType);
+                    writer.Write (Binary.BigEndian ((uint)entry.Offset));
+                    writer.Write (Binary.BigEndian ((uint)entry.Size));
+                    writer.Write (Binary.BigEndian ((uint)entry.UnpackedSize));
+                }
+            }
         }
     }
 

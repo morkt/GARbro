@@ -171,6 +171,9 @@ predefined encryption scheme.</value>
   <data name="MsgIllegalCharacters" xml:space="preserve">
     <value>File name contains illegal characters</value>
   </data>
+  <data name="MsgUpdatingIndex" xml:space="preserve">
+    <value>Updating index...</value>
+  </data>
   <data name="MsgWritingIndex" xml:space="preserve">
     <value>Writing index...</value>
   </data>
@@ -182,6 +185,15 @@ predefined encryption scheme.</value>
   </data>
   <data name="NSADescription" xml:space="preserve">
     <value>ONScripter game engine resource archive</value>
+  </data>
+  <data name="ONSArchiveType" xml:space="preserve">
+    <value>Archive type</value>
+  </data>
+  <data name="ONSCompression" xml:space="preserve">
+    <value>Compression</value>
+  </data>
+  <data name="ONSCompressionNone" xml:space="preserve">
+    <value>None</value>
   </data>
   <data name="SCRDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv script file</value>

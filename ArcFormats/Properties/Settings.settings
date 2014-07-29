@@ -29,5 +29,8 @@
     <Setting Name="SGFileNameEncoding" Type="System.String" Scope="User">
       <Value Profile="(Default)">shift-jis</Value>
     </Setting>
+    <Setting Name="ONSCompression" Type="GameRes.Formats.ONScripter.Compression" Scope="User">
+      <Value Profile="(Default)">None</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

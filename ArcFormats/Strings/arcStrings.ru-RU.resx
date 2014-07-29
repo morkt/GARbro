@@ -156,8 +156,20 @@
   <data name="MsgIllegalCharacters" xml:space="preserve">
     <value>Имя файла содержит недопустимые символы</value>
   </data>
+  <data name="MsgUpdatingIndex" xml:space="preserve">
+    <value>Обновляется оглавление...</value>
+  </data>
   <data name="MsgWritingIndex" xml:space="preserve">
     <value>Записывается оглавление...</value>
+  </data>
+  <data name="ONSArchiveType" xml:space="preserve">
+    <value>Тип архива</value>
+  </data>
+  <data name="ONSCompression" xml:space="preserve">
+    <value>Компрессия</value>
+  </data>
+  <data name="ONSCompressionNone" xml:space="preserve">
+    <value>Без компрессии</value>
   </data>
   <data name="SGLabelEncoding" xml:space="preserve">
     <value>Кодировка имён файлов</value>
