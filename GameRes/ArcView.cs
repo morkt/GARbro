@@ -35,11 +35,11 @@ namespace GameRes
     {
         public static readonly Encoding cp932 = Encoding.GetEncoding (932);
 
-        public static Encoding WithFatalFallback (Encoding enc)
+        public static Encoding WithFatalFallback (this Encoding enc)
         {
-            enc = enc.Clone() as Encoding;
-            enc.EncoderFallback = EncoderFallback.ExceptionFallback;
-            return enc;
+            var encoding = enc.Clone() as Encoding;
+            encoding.EncoderFallback = EncoderFallback.ExceptionFallback;
+            return encoding;
         }
     }
 
