@@ -86,6 +86,7 @@ namespace GameRes.Formats.ONScripter
                 entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+1)) + (long)base_offset;
                 entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+5));
                 entry.UnpackedSize = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+9));
+                entry.IsPacked = compression_type != 0;
                 switch (compression_type)
                 {
                 case 0:  entry.CompressionType = Compression.None; break;
@@ -177,9 +178,6 @@ namespace GameRes.Formats.ONScripter
                 entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+4));
                 entry.UnpackedSize = entry.Size;
                 entry.CompressionType = Compression.None;
-                string ext = Path.GetExtension (entry.Name);
-                if (".nbz".Equals (ext, StringComparison.OrdinalIgnoreCase))
-                    entry.CompressionType = Compression.Nbz;
 
                 cur_offset += 8;
                 dir.Add (entry);
