@@ -33,6 +33,7 @@ using System.Windows.Input;
 using Ookii.Dialogs.Wpf;
 using GameRes;
 using GARbro.GUI.Strings;
+using GARbro.GUI.Properties;
 
 namespace GARbro.GUI
 {
@@ -115,7 +116,7 @@ namespace GARbro.GUI
             if (!result.Value)
                 return;
 
-            destination = extractDialog.DestinationDir.Text;
+            destination = extractDialog.Destination;
             if (!string.IsNullOrEmpty (destination))
             {
                 destination = Path.GetFullPath (destination);
@@ -153,26 +154,34 @@ namespace GARbro.GUI
 
         private void ExtractFileFromArchive (EntryViewModel entry, string destination)
         {
-            var extractDialog = new ExtractFile (entry, destination);
+            var vm = ViewModel as ArchiveViewModel;
+            var selected = CurrentDirectory.SelectedItems;
+            IEnumerable<Entry> file_list = new Entry[0];
+            foreach (var e in selected.Cast<EntryViewModel>())
+            {
+                file_list = file_list.Concat (vm.GetFiles (e));
+            }
+
+            string arc_name = Path.GetFileName (CurrentPath);
+            ExtractDialog extractDialog;
+            if (file_list.Skip (1).Any())
+                extractDialog = new ExtractArchiveDialog (arc_name, destination);
+            else
+                extractDialog = new ExtractFile (entry, destination);
             extractDialog.Owner = this;
             var result = extractDialog.ShowDialog();
             if (!result.Value)
                 return;
 
-            var file_list = (ViewModel as ArchiveViewModel).GetFiles (entry);
-
-            destination = extractDialog.DestinationDir.Text;
+            destination = extractDialog.Destination;
             if (!string.IsNullOrEmpty (destination))
             {
                 destination = Path.GetFullPath (destination);
                 Directory.CreateDirectory (destination);
                 Directory.SetCurrentDirectory (destination);
             }
-            ImageFormat format = null;
-            if (entry.Type == "image")
-                format = extractDialog.GetImageFormat (extractDialog.ImageConversionFormat);
+            ImageFormat format = FormatCatalog.Instance.ImageFormats.FirstOrDefault (f => f.Tag.Equals (Settings.Default.appImageFormat));
 
-            string arc_name = Path.GetFileName (CurrentPath);
             ExtractFilesFromArchive (string.Format (guiStrings.MsgExtractingFile, arc_name),
                                      m_app.CurrentArchive, file_list, format);
         }
