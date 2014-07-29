@@ -324,9 +324,7 @@ NextEntry:
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
                                      EntryCallback callback)
         {
-            var xp3_options = options as Xp3Options;
-            if (null == xp3_options)
-                xp3_options = this.GetDefaultOptions() as Xp3Options;
+            var xp3_options = GetOptions<Xp3Options> (options);
 
             ICrypt scheme = xp3_options.Scheme;
             bool compress_index = xp3_options.CompressIndex;
