@@ -165,13 +165,12 @@ namespace GameRes.Formats
                                      EntryCallback callback)
         {
             var sg_options = GetOptions<SteinsGateOptions> (options);
-            Encoding encoding = Encodings.WithFatalFallback (sg_options.FileNameEncoding);
+            Encoding encoding = sg_options.FileNameEncoding.WithFatalFallback();
             long start_pos = output.Position;
             int callback_count = 0;
 
             uint index_size = 4;
-            int entry_count = list.Count();
-            var real_entry_list = new List<RawEntry> (entry_count);
+            var real_entry_list = new List<RawEntry> (list.Count());
             var used_names = new HashSet<string>();
             foreach (var entry in list)
             {
@@ -216,7 +215,7 @@ namespace GameRes.Formats
             var encrypted_stream = new SteinsGateEncryptedStream (output);
             using (var header = new BinaryWriter (encrypted_stream))
             {
-                header.Write (entry_count);
+                header.Write (real_entry_list.Count);
                 foreach (var entry in real_entry_list)
                 {
                     header.Write (entry.IndexName.Length);
