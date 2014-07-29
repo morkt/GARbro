@@ -26,5 +26,8 @@
     <Setting Name="XP3RetainStructure" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="SGFileNameEncoding" Type="System.String" Scope="User">
+      <Value Profile="(Default)">shift-jis</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

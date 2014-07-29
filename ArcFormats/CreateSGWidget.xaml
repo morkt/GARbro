@@ -1,0 +1,16 @@
+﻿<Grid x:Class="GameRes.Formats.GUI.CreateSGWidget"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:s="clr-namespace:GameRes.Formats.Strings"
+      xmlns:p="clr-namespace:GameRes.Formats.Properties"
+      xmlns:local="clr-namespace:GameRes.Formats.GUI">
+    <StackPanel Orientation="Vertical" Margin="0">
+        <Label Content="{x:Static s:arcStrings.SGLabelEncoding}" Target="{Binding ElementName=Encoding}" Padding="4,0,0,5"/>
+        <ComboBox Name="Encoding" Width="160" HorizontalAlignment="Left" SelectedValuePath="Tag"
+                  SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=SGFileNameEncoding, Mode=TwoWay}">
+            <ComboBoxItem Content="Shift-JIS (Japan release)" Tag="shift-jis"/>
+            <ComboBoxItem Content="UTF-16LE (JAST USA release)" Tag="utf-16"/>
+            <ComboBoxItem Content="ANSI (Windows default)" Tag="ansi"/>
+        </ComboBox>
+    </StackPanel>
+</Grid>

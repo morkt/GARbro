@@ -117,5 +117,17 @@ namespace GameRes.Formats.Properties {
                 this["XP3RetainStructure"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("shift-jis")]
+        public string SGFileNameEncoding {
+            get {
+                return ((string)(this["SGFileNameEncoding"]));
+            }
+            set {
+                this["SGFileNameEncoding"] = value;
+            }
+        }
     }
 }

@@ -186,6 +186,9 @@ predefined encryption scheme.</value>
   <data name="SCRDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv script file</value>
   </data>
+  <data name="SGLabelEncoding" xml:space="preserve">
+    <value>Filename encoding</value>
+  </data>
   <data name="XFLDescription" xml:space="preserve">
     <value>Liar-soft game resource archive</value>
   </data>

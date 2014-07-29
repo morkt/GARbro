@@ -159,6 +159,9 @@
   <data name="MsgWritingIndex" xml:space="preserve">
     <value>Записывается оглавление...</value>
   </data>
+  <data name="SGLabelEncoding" xml:space="preserve">
+    <value>Кодировка имён файлов</value>
+  </data>
   <data name="XP3CompressContents" xml:space="preserve">
     <value>Сжать содержимое</value>
   </data>

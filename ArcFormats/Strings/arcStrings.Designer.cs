@@ -262,6 +262,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Filename encoding.
+        /// </summary>
+        public static string SGLabelEncoding {
+            get {
+                return ResourceManager.GetString("SGLabelEncoding", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Liar-soft game resource archive.
         /// </summary>
         public static string XFLDescription {
