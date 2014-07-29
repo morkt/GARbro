@@ -11,8 +11,8 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <TextBlock x:Name="ExtractLabel" Text="{x:Static s:guiStrings.LabelExtractFileTo}" Margin="10,10,9.157,0" VerticalAlignment="Top" Height="15"/>
-        <local:ExtAutoCompleteBox x:Name="DestinationDir" Margin="10,28,0,0"
-                                  VerticalAlignment="Top" HorizontalAlignment="Left" Width="337"/>
+        <local:ExtAutoCompleteBox x:Name="DestinationDir" Margin="10,28,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="337"
+                                  Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:ExtractDialog}}, Path=Destination, Mode=TwoWay}"/>
         <Button Margin="0,28,10,0" VerticalAlignment="Top" HorizontalAlignment="Right"
                 Command="{x:Static local:Commands.Browse}">
             <Image Source="{StaticResource IconSearch}" Stretch="Uniform" UseLayoutRounding="True" SnapsToDevicePixels="True" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>

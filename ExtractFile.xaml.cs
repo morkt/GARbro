@@ -44,7 +44,7 @@ namespace GARbro.GUI
         {
             InitializeComponent();
             ExtractLabel.Text = string.Format (guiStrings.LabelExtractFileTo, entry.Name);
-            DestinationDir.Text = destination;
+            Destination = destination;
             if ("image" == entry.Type)
             {
                 ImageConversionOptions.Visibility = Visibility.Visible;

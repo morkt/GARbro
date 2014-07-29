@@ -39,6 +39,8 @@ namespace GARbro.GUI
 {
     public partial class ExtractDialog : Window
     {
+        public string Destination { get; set; }
+
         public void InitImageFormats (ComboBox image_format)
         {
             var default_format = Settings.Default.appImageFormat;

@@ -46,7 +46,7 @@ namespace GARbro.GUI
         {
             InitializeComponent();
             ExtractLabel.Text = string.Format (guiStrings.LabelExtractAllTo, filename);
-            DestinationDir.Text = destination;
+            Destination = destination;
 
             ExtractImages.IsChecked = Settings.Default.appExtractImages;
             ExtractText.IsChecked = Settings.Default.appExtractText;
