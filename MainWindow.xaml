@@ -38,6 +38,48 @@
         <DataTemplate x:Key="SortArrowNone">
             <TextBlock Margin="5,0,5,0" Text="{Binding}"/>
         </DataTemplate>
+        <Style x:Key="DefaultMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <ContextMenu x:Key="lvDirContextMenu">
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuOpen}" InputGestureText="Enter"
+                      Style="{StaticResource DefaultMenuItemStyle}"
+                      Command="{x:Static local:Commands.OpenItem}" />
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuCreate}" InputGestureText="F3"
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.CreateArchive}" />
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuExtract}" InputGestureText="F4"
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.ExtractItem}" />
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuExplorer}" InputGestureText="Ctrl+E"
+                      Command="{x:Static local:Commands.ExploreItem}"/>
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuDelete}" InputGestureText="Del"
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.DeleteItem}"/>
+            <Separator/>
+            <!--
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuRename}" InputGestureText="F2"
+                      Command="{x:Static local:Commands.RenameItem}"/>
+            -->
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
+                      Command="{x:Static local:Commands.Refresh}"/>
+            <!-- Sort-by submenu
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBy}">
+                <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
+                          IsChecked="{Binding ElementName=AppWindow, Path=IsSortByName, Mode=OneWay}"
+                          Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
+                <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
+                          IsChecked="{Binding ElementName=AppWindow, Path=IsSortByType, Mode=OneWay}"
+                          Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
+                <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
+                          IsChecked="{Binding ElementName=AppWindow, Path=IsSortBySize, Mode=OneWay}"
+                          Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
+                <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
+                          IsChecked="{Binding ElementName=AppWindow, Path=IsUnsorted, Mode=OneWay}"
+                          Command="{x:Static local:Commands.SortBy}"/>
+            </MenuItem>
+            -->
+        </ContextMenu>
     </Window.Resources>
     <DockPanel LastChildFill="True">
         <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Collapsed"/>
@@ -112,52 +154,11 @@
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="Transparent" SelectedValuePath="Name"
                     SelectionMode="Extended" Foreground="Black" AlternationCount="2"
+                    ContextMenu="{StaticResource lvDirContextMenu}"
                     PreviewTextInput="lv_TextInput" IsSynchronizedWithCurrentItem="True"
                     GridViewColumnHeader.Click="lv_ColumnHeaderClicked">
                 <ListView.Resources>
                     <SolidColorBrush x:Key="ItemInactiveBackground" Color="#ffcbcbcb" />
-                    <Style x:Key="DefaultMenuItemStyle" TargetType="{x:Type MenuItem}">
-                        <Setter Property="FontWeight" Value="Bold" />
-                    </Style>
-                    <ContextMenu x:Key="lvDirContextMenu">
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuOpen}" InputGestureText="Enter"
-                                  Style="{StaticResource DefaultMenuItemStyle}"
-                                  Command="{x:Static local:Commands.OpenItem}" />
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuCreate}" InputGestureText="F3"
-                                  Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
-                                  Command="{x:Static local:Commands.CreateArchive}" />
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuExtract}" InputGestureText="F4"
-                                  Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
-                                  Command="{x:Static local:Commands.ExtractItem}" />
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuExplorer}" InputGestureText="Ctrl+E"
-                                  Command="{x:Static local:Commands.ExploreItem}"/>
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuDelete}" InputGestureText="Del"
-                                  Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
-                                  Command="{x:Static local:Commands.DeleteItem}"/>
-                        <Separator/>
-                        <!--
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuRename}" InputGestureText="F2"
-                                  Command="{x:Static local:Commands.RenameItem}"/>
-                        -->
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
-                                  Command="{x:Static local:Commands.Refresh}"/>
-                        <!-- Sort-by submenu
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBy}">
-                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
-                                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByName, Mode=OneWay}"
-                                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
-                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
-                                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByType, Mode=OneWay}"
-                                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
-                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
-                                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortBySize, Mode=OneWay}"
-                                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
-                            <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
-                                      IsChecked="{Binding ElementName=AppWindow, Path=IsUnsorted, Mode=OneWay}"
-                                      Command="{x:Static local:Commands.SortBy}"/>
-                        </MenuItem>
-                        -->
-                    </ContextMenu>
                 </ListView.Resources>
                 <ListView.InputBindings>
                     <KeyBinding Key="Enter" Command="{x:Static local:Commands.OpenItem}"/>
@@ -172,7 +173,6 @@
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="ContextMenu" Value="{StaticResource lvDirContextMenu}"/>
                         <EventSetter Event="Selected" Handler="lvi_Selected"/>
                         <EventSetter Event="ListViewItem.MouseDoubleClick" Handler="lvi_DoubleClick" />
                         <Style.Triggers>
@@ -250,9 +250,9 @@
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.OpenItem}"   Executed="OpenItemExec"   CanExecute="CanExecuteOnSelected"/>
-        <CommandBinding Command="{x:Static local:Commands.ExtractItem}" Executed="ExtractItemExec"   CanExecute="CanExecuteOnSelected"/>
+        <CommandBinding Command="{x:Static local:Commands.ExtractItem}" Executed="ExtractItemExec"   CanExecute="CanExecuteExtract"/>
         <CommandBinding Command="{x:Static local:Commands.CreateArchive}" Executed="CreateArchiveExec" CanExecute="CanExecuteCreateArchive"/>
-        <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteDelete" />
+        <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteOnPhysicalFile" />
         <CommandBinding Command="{x:Static local:Commands.RenameItem}" Executed="RenameItemExec" CanExecute="CanExecuteInDirectory" />
         <CommandBinding Command="{x:Static local:Commands.ExploreItem}" Executed="ExploreItemExec" CanExecute="CanExecuteInDirectory" />
         <CommandBinding Command="{x:Static local:Commands.SortBy}"     Executed="SortByExec"     CanExecute="CanExecuteAlways"/>
