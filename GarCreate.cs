@@ -130,7 +130,7 @@ namespace GARbro.GUI
         {
             if (m_progress_dialog.CancellationPending)
                 throw new OperationCanceledException();
-            if (null == entry && null == msg)
+            if (null == entry && null == msg && 0 != i)
             {
                 m_total = i;
                 m_progress_dialog.ReportProgress (0);
