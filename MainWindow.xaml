@@ -132,7 +132,7 @@
                 <Image Source="{StaticResource Icon32x32Forward}"/>
             </Button>
             <Separator/>
-            <local:ExtAutoCompleteBox x:Name="pathLine" Height="22" Width="100" KeyDown="acb_OnKeyDown"/>
+            <local:ExtAutoCompleteBox x:Name="pathLine" Height="22" Width="100"/>
             <Button ToolTip="{x:Static s:guiStrings.MenuAbout}" DockPanel.Dock="Right" Margin="0,2,10,2" Click="MenuAbout_Click">
                 <Image Source="{StaticResource Icon32x32Help}"/>
             </Button>
@@ -248,6 +248,8 @@
     <Window.InputBindings>
         <KeyBinding Gesture="Ctrl+Q" Command="{x:Static local:Commands.Exit}"/>
         <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
+        <KeyBinding Gesture="Alt+Left" Command="{x:Static local:Commands.GoBack}"/>
+        <KeyBinding Gesture="Alt+Right" Command="{x:Static local:Commands.GoForward}"/>
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.OpenItem}"   Executed="OpenItemExec"   CanExecute="CanExecuteOnSelected"/>
