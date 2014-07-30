@@ -321,7 +321,7 @@ namespace GARbro.GUI
         public DirectoryPosition (DirectoryViewModel vm, EntryViewModel item)
         {
             Path = vm.Path;
-            Item = item.Name;
+            Item = null != item ? item.Name : null;
             if (vm.IsArchive)
                 ArchivePath = (vm as ArchiveViewModel).SubDir;
             else
