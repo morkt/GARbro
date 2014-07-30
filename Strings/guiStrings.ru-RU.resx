@@ -190,7 +190,7 @@
     <value>Настройки архивирования</value>
   </data>
   <data name="LabelExtractAllTo" xml:space="preserve">
-    <value>Извлечь все файлы из {0} в</value>
+    <value>Извлечь файлы из {0} в</value>
   </data>
   <data name="LabelExtractFileTo" xml:space="preserve">
     <value>Извлечь {0} в</value>
@@ -341,5 +341,8 @@
   </data>
   <data name="Type_script" xml:space="preserve">
     <value>сценарий</value>
+  </data>
+  <data name="MsgChooseFiles" xml:space="preserve">
+    <value>Выберите файлы для извлечения</value>
   </data>
 </root>

@@ -193,7 +193,7 @@
     <value>Archive options</value>
   </data>
   <data name="LabelExtractAllTo" xml:space="preserve">
-    <value>Extract all files from {0} to</value>
+    <value>Extract files from {0} to</value>
   </data>
   <data name="LabelExtractFileTo" xml:space="preserve">
     <value>Extract {0} to</value>
@@ -329,5 +329,8 @@ Overwrite?</value>
   </data>
   <data name="MsgCreatingArchive" xml:space="preserve">
     <value>Creating archive {0}</value>
+  </data>
+  <data name="MsgChooseFiles" xml:space="preserve">
+    <value>Choose files to extract</value>
   </data>
 </root>

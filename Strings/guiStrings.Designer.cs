@@ -286,7 +286,7 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Extract all files from {0} to.
+        ///   Looks up a localized string similar to Extract files from {0} to.
         /// </summary>
         public static string LabelExtractAllTo {
             get {
@@ -327,6 +327,15 @@ namespace GARbro.GUI.Strings {
         public static string MenuAbout {
             get {
                 return ResourceManager.GetString("MenuAbout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose files to extract.
+        /// </summary>
+        public static string MsgChooseFiles {
+            get {
+                return ResourceManager.GetString("MsgChooseFiles", resourceCulture);
             }
         }
         

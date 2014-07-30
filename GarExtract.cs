@@ -46,7 +46,10 @@ namespace GARbro.GUI
         {
             var entry = CurrentDirectory.SelectedItem as EntryViewModel;
             if (null == entry && !ViewModel.IsArchive)
+            {
+                SetStatusText (guiStrings.MsgChooseFiles);
                 return;
+            }
             try
             {
                 if (!ViewModel.IsArchive)
@@ -154,12 +157,15 @@ namespace GARbro.GUI
 
         private void ExtractFileFromArchive (EntryViewModel entry, string destination)
         {
-            var vm = ViewModel as ArchiveViewModel;
-            var selected = CurrentDirectory.SelectedItems;
-            IEnumerable<Entry> file_list = new Entry[0];
-            foreach (var e in selected.Cast<EntryViewModel>())
+            var view_model = ViewModel;
+            var selected = CurrentDirectory.SelectedItems.Cast<EntryViewModel>();
+            IEnumerable<Entry> file_list = view_model.GetFiles (selected);
+            if (!file_list.Any() && entry.Name == "..")
+                file_list = view_model.GetFiles (view_model);
+            if (!file_list.Any())
             {
-                file_list = file_list.Concat (vm.GetFiles (e));
+                SetStatusText (guiStrings.MsgChooseFiles);
+                return;
             }
 
             string arc_name = Path.GetFileName (CurrentPath);
