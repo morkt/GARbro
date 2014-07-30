@@ -150,7 +150,7 @@
                 <ColumnDefinition Width="1"/>
                 <ColumnDefinition Width="*" MinWidth="100"/>
             </Grid.ColumnDefinitions>
-            <ListView x:Name="CurrentDirectory" Grid.Column="0"
+            <local:ListViewEx x:Name="CurrentDirectory" Grid.Column="0"
                     ItemsSource="{Binding Source={StaticResource ListViewSource}}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="Transparent" SelectedValuePath="Name"
@@ -233,7 +233,7 @@
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
-            </ListView>
+            </local:ListViewEx>
             <ScrollViewer Grid.Column="2" Background="LightGray"
                           VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <Image Name="PreviewPane" Stretch="None" UseLayoutRounding="False" SnapsToDevicePixels="True"
