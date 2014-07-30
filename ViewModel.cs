@@ -76,6 +76,11 @@ namespace GARbro.GUI
             }
         }
 
+        public virtual IEnumerable<Entry> GetFiles (IEnumerable<EntryViewModel> entries)
+        {
+            return entries.Select (e => e.Source);
+        }
+
         public EntryViewModel Find (string name)
         {
             return this.FirstOrDefault (e => e.Name.Equals (name, System.StringComparison.OrdinalIgnoreCase));
@@ -180,15 +185,24 @@ namespace GARbro.GUI
             UpdateModel (pos.ArchivePath);
         }
 
-        public IEnumerable<Entry> GetFiles (EntryViewModel entry)
+        public override IEnumerable<Entry> GetFiles (IEnumerable<EntryViewModel> entries)
         {
-            if (!entry.IsDirectory)
-                return new Entry[] { entry.Source };
-
-            string path = GetPath (entry.Name);
-            return from file in Source
-                   where file.Name.StartsWith (path)
-                   select file;
+            var list = new List<Entry>();
+            foreach (var entry in entries)
+            {
+                if (!entry.IsDirectory) // add ordinary file
+                    list.Add (entry.Source);
+                else if (".." == entry.Name) // skip reference to parent directory
+                    continue;
+                else // add all files contained within directory, recursive
+                {
+                    string path = GetPath (entry.Name);
+                    list.AddRange (from file in Source
+                                   where file.Name.StartsWith (path)
+                                   select file);
+                }
+            }
+            return list;
         }
 
         string GetPath (string dir)
