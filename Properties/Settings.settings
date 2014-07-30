@@ -15,7 +15,7 @@
       <Value Profile="(Default)">1024</Value>
     </Setting>
     <Setting Name="winHeight" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">560</Value>
+      <Value Profile="(Default)">600</Value>
     </Setting>
     <Setting Name="winState" Type="System.Windows.WindowState" Scope="User">
       <Value Profile="(Default)">Normal</Value>

@@ -73,7 +73,7 @@ namespace GARbro.GUI.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("560")]
+        [global::System.Configuration.DefaultSettingValueAttribute("600")]
         public double winHeight {
             get {
                 return ((double)(this["winHeight"]));
