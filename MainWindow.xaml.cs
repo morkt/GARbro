@@ -40,6 +40,8 @@ using GARbro.GUI.Properties;
 using GARbro.GUI.Strings;
 using GameRes;
 using Rnd.Windows;
+using System.Collections.Specialized;
+using System.Collections.ObjectModel;
 
 namespace GARbro.GUI
 {
@@ -58,6 +60,10 @@ namespace GARbro.GUI
             InitializeComponent();
             InitDirectoryChangesWatcher();
             InitPreviewPane();
+
+            if (null == Settings.Default.appRecentFiles)
+                Settings.Default.appRecentFiles = new StringCollection();
+            m_recent_files = new ObservableCollection<string> (Settings.Default.appRecentFiles.Cast<string>());
 
             FormatCatalog.Instance.ParametersRequest += OnParametersRequest;
 
@@ -106,6 +112,10 @@ namespace GARbro.GUI
             else
                 Settings.Default.lvSortColumn = "";
 
+            Settings.Default.appRecentFiles.Clear();
+            foreach (var file in m_recent_files)
+                Settings.Default.appRecentFiles.Add (file);
+
             string cwd = CurrentPath;
             if (!string.IsNullOrEmpty (cwd))
             {
@@ -133,6 +143,27 @@ namespace GARbro.GUI
             Dispatcher.Invoke (() => MessageBox.Show (this, message, title, MessageBoxButton.OK, MessageBoxImage.Error));
         }
 
+        const int MaxRecentFiles = 10;
+        ObservableCollection<string> m_recent_files;
+
+        public ObservableCollection<string> RecentFiles { get { return m_recent_files; } }
+
+        void PushRecentFile (string file)
+        {
+            var found = m_recent_files.IndexOf (file);
+            if (-1 == found)
+            {
+                if (MaxRecentFiles == m_recent_files.Count)
+                    m_recent_files.RemoveAt (0);
+                m_recent_files.Add (file);
+            }
+            else if (found+1 != m_recent_files.Count)
+            {
+                m_recent_files.RemoveAt (found);
+                m_recent_files.Add (file);
+            }
+        }
+
         /// <summary>
         /// Set data context of the ListView.
         /// </summary>
@@ -152,6 +183,10 @@ namespace GARbro.GUI
                 var cvs = this.Resources["ListViewSource"] as CollectionViewSource;
                 cvs.Source = value;
                 pathLine.Text = value.Path;
+
+                if (value.IsArchive)
+                    PushRecentFile (value.Path);
+
                 if (m_lvSortByColumn != null)
                     lv_Sort (m_lvSortByColumn.Tag.ToString(), m_lvSortDirection);
                 else
@@ -385,19 +420,6 @@ namespace GARbro.GUI
         {
             var dataView = CollectionViewSource.GetDefaultView (CurrentDirectory.ItemsSource) as ListCollectionView;
             dataView.CustomSort = new FileSystemComparer (sortBy, direction);
-            /*
-            using (dataView.DeferRefresh())
-            {
-                dataView.SortDescriptions.Clear();
-                dataView.SortDescriptions.Add (new SortDescription ("Priority", ListSortDirection.Ascending));
-                if (!string.IsNullOrEmpty (sortBy))
-                {
-                    dataView.SortDescriptions.Add (new SortDescription (sortBy, direction));
-                    if (sortBy != "Name")
-                        dataView.SortDescriptions.Add (new SortDescription ("Name", ListSortDirection.Ascending));
-                }
-            }
-            */
         }
 
         /// <summary>

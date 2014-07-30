@@ -83,7 +83,20 @@
         </ContextMenu>
     </Window.Resources>
     <DockPanel LastChildFill="True">
-        <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Collapsed"/>
+        <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Collapsed">
+            <MenuItem Header="File">
+                <MenuItem Header="Open..."/>
+                <MenuItem Header="Recent files" ItemsSource="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Path=RecentFiles, Mode=OneWay}">
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding}"/>
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Exit" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
+            </MenuItem>
+        </Menu>
         <DockPanel Background="{Binding Path=Background, ElementName=MainMenuBar}" x:Name="MainToolBar"
                    HorizontalAlignment="Stretch" DockPanel.Dock="Top">
             <DockPanel.Resources>
@@ -138,7 +151,7 @@
             </Button>
             <TextBlock Visibility="Hidden"/>
         </DockPanel>
-        <StatusBar DockPanel.Dock="Bottom">
+        <StatusBar DockPanel.Dock="Bottom" x:Name="AppStatusBar">
             <StatusBarItem>
                 <TextBlock x:Name="appStatusText"/>
             </StatusBarItem>

@@ -238,5 +238,16 @@ namespace GARbro.GUI.Properties {
                 this["appArchiveFormat"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection appRecentFiles {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["appRecentFiles"]));
+            }
+            set {
+                this["appRecentFiles"] = value;
+            }
+        }
     }
 }
