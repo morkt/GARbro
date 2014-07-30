@@ -47,6 +47,7 @@ namespace GARbro.GUI
             InitializeComponent();
             ExtractLabel.Text = string.Format (guiStrings.LabelExtractAllTo, filename);
             Destination = destination;
+            DestinationDir.EnterKeyDown += acb_OnEnterKeyDown;
 
             ExtractImages.IsChecked = Settings.Default.appExtractImages;
             ExtractText.IsChecked = Settings.Default.appExtractText;

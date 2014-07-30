@@ -45,6 +45,7 @@ namespace GARbro.GUI
             InitializeComponent();
             ExtractLabel.Text = string.Format (guiStrings.LabelExtractFileTo, entry.Name);
             Destination = destination;
+            DestinationDir.EnterKeyDown += acb_OnEnterKeyDown;
             if ("image" == entry.Type)
             {
                 ImageConversionOptions.Visibility = Visibility.Visible;

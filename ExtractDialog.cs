@@ -97,6 +97,13 @@ namespace GARbro.GUI
                 return null;
         }
 
+        protected void acb_OnEnterKeyDown (object sender, KeyEventArgs e)
+        {
+            string path = (sender as AutoCompleteBox).Text;
+            if (!string.IsNullOrEmpty (path))
+                this.DialogResult = true;
+        }
+
         public void CanExecuteAlways (object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = true;
