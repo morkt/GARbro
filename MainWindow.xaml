@@ -81,23 +81,41 @@
             </MenuItem>
             -->
         </ContextMenu>
+
+        <!--
+        <ItemsPanelTemplate x:Key="MenuPanelWithoutIcon">
+            <StackPanel Margin="-20,0,0,0" Background="{DynamicResource {x:Static SystemColors.MenuBrushKey}}"/>
+        </ItemsPanelTemplate>
+        <Style TargetType="{x:Type MenuItem}">
+            <Setter Property="ItemsPanel" Value="{StaticResource MenuPanelWithoutIcon}"/>
+        </Style>
+        -->
+
     </Window.Resources>
     <DockPanel LastChildFill="True">
-        <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Collapsed">
-            <MenuItem Header="File">
-                <MenuItem Header="Open..."/>
-                <MenuItem Header="Recent files" ItemsSource="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Path=RecentFiles, Mode=OneWay}">
+        <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Visible"
+              Background="{Binding Path=Background, ElementName=AppStatusBar}">
+            <MenuItem Header="{x:Static s:guiStrings.MenuFile}">
+                <MenuItem Header="{x:Static s:guiStrings.MenuOpen}" Command="{x:Static local:Commands.OpenFile}" InputGestureText="Ctrl+O"/>
+                <MenuItem Header="{x:Static s:guiStrings.MenuRecent}" x:Name="RecentFilesMenu">
                     <MenuItem.ItemContainerStyle>
                         <Style TargetType="MenuItem">
-                            <Setter Property="Header" Value="{Binding}"/>
+                            <Setter Property="Header" Value="{Binding Path=Item2}"/>
+                            <Setter Property="Command" Value="{x:Static local:Commands.OpenRecent}"/>
+                            <Setter Property="CommandParameter" Value="{Binding Path=Item1}"/>
                         </Style>
                     </MenuItem.ItemContainerStyle>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Exit" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
+                <MenuItem Header="{x:Static s:guiStrings.MenuExit}" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
+            </MenuItem>
+            <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
+                <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
             </MenuItem>
         </Menu>
-        <DockPanel Background="{Binding Path=Background, ElementName=MainMenuBar}" x:Name="MainToolBar"
+        <Menu Visibility="Collapsed" x:Name="HelperMenuBar"/>
+        <Separator DockPanel.Dock="Top" Height="1" Margin="0"/>
+        <DockPanel Background="{Binding Path=Background, ElementName=HelperMenuBar}" x:Name="MainToolBar"
                    HorizontalAlignment="Stretch" DockPanel.Dock="Top">
             <DockPanel.Resources>
                 <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
@@ -146,16 +164,19 @@
             </Button>
             <Separator/>
             <local:ExtAutoCompleteBox x:Name="pathLine" Height="22" Width="100"/>
-            <Button ToolTip="{x:Static s:guiStrings.MenuAbout}" DockPanel.Dock="Right" Margin="0,2,10,2" Click="MenuAbout_Click">
+            <Button ToolTip="{x:Static s:guiStrings.MenuAbout}" DockPanel.Dock="Right" Margin="0,2,10,2"
+                    Command="{x:Static local:Commands.About}">
                 <Image Source="{StaticResource Icon32x32Help}"/>
             </Button>
             <TextBlock Visibility="Hidden"/>
         </DockPanel>
+        <Separator DockPanel.Dock="Top" Height="1" Margin="0"/>
         <StatusBar DockPanel.Dock="Bottom" x:Name="AppStatusBar">
             <StatusBarItem>
                 <TextBlock x:Name="appStatusText"/>
             </StatusBarItem>
         </StatusBar>
+        <Separator DockPanel.Dock="Bottom" Height="1" Margin="0"/>
         <Grid x:Name="ContentGrid" DockPanel.Dock="Left" VerticalAlignment="Stretch"
               HorizontalAlignment="Stretch" ShowGridLines="False">
             <Grid.ColumnDefinitions>
@@ -163,7 +184,7 @@
                 <ColumnDefinition Width="1"/>
                 <ColumnDefinition Width="*" MinWidth="100"/>
             </Grid.ColumnDefinitions>
-            <local:ListViewEx x:Name="CurrentDirectory" Grid.Column="0"
+            <local:ListViewEx x:Name="CurrentDirectory" Grid.Column="0" BorderThickness="0"
                     ItemsSource="{Binding Source={StaticResource ListViewSource}}"
                     VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     BorderBrush="Transparent" SelectedValuePath="Name"
@@ -259,6 +280,7 @@
         </Grid>
     </DockPanel>
     <Window.InputBindings>
+        <KeyBinding Gesture="Ctrl+O" Command="{x:Static local:Commands.OpenFile}"/>
         <KeyBinding Gesture="Ctrl+Q" Command="{x:Static local:Commands.Exit}"/>
         <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Left" Command="{x:Static local:Commands.GoBack}"/>
@@ -266,6 +288,8 @@
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.OpenItem}"   Executed="OpenItemExec"   CanExecute="CanExecuteOnSelected"/>
+        <CommandBinding Command="{x:Static local:Commands.OpenFile}"   Executed="OpenFileExec"   CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.OpenRecent}" Executed="OpenRecentExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.ExtractItem}" Executed="ExtractItemExec"   CanExecute="CanExecuteExtract"/>
         <CommandBinding Command="{x:Static local:Commands.CreateArchive}" Executed="CreateArchiveExec" CanExecute="CanExecuteCreateArchive"/>
         <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteOnPhysicalFile" />
@@ -275,6 +299,7 @@
         <CommandBinding Command="{x:Static local:Commands.GoBack}"     Executed="GoBackExec"     CanExecute="CanExecuteGoBack"/>
         <CommandBinding Command="{x:Static local:Commands.GoForward}"  Executed="GoForwardExec"  CanExecute="CanExecuteGoForward"/>
         <CommandBinding Command="{x:Static local:Commands.Refresh}"    Executed="RefreshExec"    CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.About}"      Executed="AboutExec"      CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
 </Window>

@@ -342,7 +342,22 @@
   <data name="Type_script" xml:space="preserve">
     <value>сценарий</value>
   </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>Открыть...</value>
+  </data>
+  <data name="MenuRecent" xml:space="preserve">
+    <value>Недавние файлы</value>
+  </data>
   <data name="MsgChooseFiles" xml:space="preserve">
     <value>Выберите файлы для извлечения</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Выход</value>
+  </data>
+  <data name="MenuFile" xml:space="preserve">
+    <value>_Файл</value>
+  </data>
+  <data name="MenuHelp" xml:space="preserve">
+    <value>_Справка</value>
   </data>
 </root>

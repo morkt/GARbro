@@ -205,7 +205,7 @@
     <value>files</value>
   </data>
   <data name="MenuAbout" xml:space="preserve">
-    <value>About</value>
+    <value>About Game Resource browser</value>
   </data>
   <data name="MsgDeletedItem" xml:space="preserve">
     <value>Deleted {0}</value>
@@ -330,7 +330,22 @@ Overwrite?</value>
   <data name="MsgCreatingArchive" xml:space="preserve">
     <value>Creating archive {0}</value>
   </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>Open...</value>
+  </data>
+  <data name="MenuRecent" xml:space="preserve">
+    <value>Recent files</value>
+  </data>
   <data name="MsgChooseFiles" xml:space="preserve">
     <value>Choose files to extract</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>E_xit</value>
+  </data>
+  <data name="MenuFile" xml:space="preserve">
+    <value>_File</value>
+  </data>
+  <data name="MenuHelp" xml:space="preserve">
+    <value>_Help</value>
   </data>
 </root>
