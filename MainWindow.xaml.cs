@@ -42,6 +42,7 @@ using GameRes;
 using Rnd.Windows;
 using System.Collections.Specialized;
 using System.Collections.ObjectModel;
+using Microsoft.Win32;
 
 namespace GARbro.GUI
 {
@@ -63,7 +64,8 @@ namespace GARbro.GUI
 
             if (null == Settings.Default.appRecentFiles)
                 Settings.Default.appRecentFiles = new StringCollection();
-            m_recent_files = new ObservableCollection<string> (Settings.Default.appRecentFiles.Cast<string>());
+            m_recent_files = new LinkedList<string> (Settings.Default.appRecentFiles.Cast<string>());
+            RecentFilesMenu.ItemsSource = RecentFiles;
 
             FormatCatalog.Instance.ParametersRequest += OnParametersRequest;
 
@@ -144,24 +146,34 @@ namespace GARbro.GUI
         }
 
         const int MaxRecentFiles = 10;
-        ObservableCollection<string> m_recent_files;
+        LinkedList<string> m_recent_files;
 
-        public ObservableCollection<string> RecentFiles { get { return m_recent_files; } }
+        public IEnumerable<Tuple<string,string>> RecentFiles
+        {
+            get
+            {
+                int i = 1;
+                return m_recent_files.Select (f => new Tuple<string,string> (f, string.Format ("{0} {1}", i++, f)));
+            }
+        }
 
         void PushRecentFile (string file)
         {
-            var found = m_recent_files.IndexOf (file);
-            if (-1 == found)
+            var node = m_recent_files.Find (file);
+            if (node == m_recent_files.First)
+                return;
+            if (null == node)
             {
                 if (MaxRecentFiles == m_recent_files.Count)
-                    m_recent_files.RemoveAt (0);
-                m_recent_files.Add (file);
+                    m_recent_files.RemoveLast();
+                m_recent_files.AddFirst (file);
             }
-            else if (found+1 != m_recent_files.Count)
+            else
             {
-                m_recent_files.RemoveAt (found);
-                m_recent_files.Add (file);
+                m_recent_files.Remove (node);
+                m_recent_files.AddFirst (node);
             }
+            RecentFilesMenu.ItemsSource = RecentFiles;
         }
 
         /// <summary>
@@ -592,6 +604,46 @@ namespace GARbro.GUI
         }
         #endregion
 
+        private void OpenFileExec (object control, ExecutedRoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog {
+                CheckFileExists = true,
+                CheckPathExists = true,
+                Multiselect = false,
+                Title = guiStrings.TextChooseArchive,
+            };
+            if (!dlg.ShowDialog (this).Value)
+                return;
+            OpenFile (dlg.FileName);
+        }
+
+        private void OpenFile (string filename)
+        {
+            if (filename == CurrentPath)
+                return;
+            try
+            {
+                var vm = GetNewViewModel (filename);
+                SaveCurrentPosition();
+                ViewModel = vm;
+                if (null != m_app.CurrentArchive)
+                    SetStatusText (m_app.CurrentArchive.Description);
+                lv_SelectItem (0);
+            }
+            catch (Exception X)
+            {
+                PopupError (string.Format("{0}:\n{1}", filename, X.Message), guiStrings.MsgErrorOpening);
+            }
+        }
+
+        private void OpenRecentExec (object control, ExecutedRoutedEventArgs e)
+        {
+            string filename = e.Parameter as string;
+            if (string.IsNullOrEmpty (filename))
+                return;
+            OpenFile (filename);
+        }
+
         /// <summary>
         /// Open file/directory.
         /// </summary>
@@ -820,7 +872,7 @@ namespace GARbro.GUI
             Application.Current.Shutdown();
         }
  
-        private void MenuAbout_Click (object sender, RoutedEventArgs e)
+        private void AboutExec (object sender, ExecutedRoutedEventArgs e)
         {
             var about = new AboutBox();
             about.Owner = this;
@@ -991,10 +1043,13 @@ namespace GARbro.GUI
     public static class Commands
     {
         public static readonly RoutedCommand OpenItem = new RoutedCommand();
+        public static readonly RoutedCommand OpenFile = new RoutedCommand();
+        public static readonly RoutedCommand OpenRecent = new RoutedCommand();
         public static readonly RoutedCommand ExtractItem = new RoutedCommand();
         public static readonly RoutedCommand CreateArchive = new RoutedCommand();
         public static readonly RoutedCommand SortBy = new RoutedCommand();
         public static readonly RoutedCommand Exit = new RoutedCommand();
+        public static readonly RoutedCommand About = new RoutedCommand();
         public static readonly RoutedCommand GoBack = new RoutedCommand();
         public static readonly RoutedCommand GoForward = new RoutedCommand();
         public static readonly RoutedCommand DeleteItem = new RoutedCommand();
