@@ -17,11 +17,13 @@
             compatibility then delete the requestedExecutionLevel node.
         -->
         <requestedExecutionLevel level="asInvoker" uiAccess="false" />
-      </requestedPrivileges>
+    </requestedPrivileges>
+    <!--
       <applicationRequestMinimum>
         <defaultAssemblyRequest permissionSetReference="Custom" />
         <PermissionSet class="System.Security.PermissionSet" version="1" ID="Custom" SameSite="site" Unrestricted="true" />
       </applicationRequestMinimum>
+    -->
     </security>
   </trustInfo>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
@@ -39,7 +41,7 @@
     </application>
   </compatibility>
   <!-- Enable themes for Windows common controls and dialogs (Windows XP and later) -->
-  <!-- <dependency>
+  <dependency>
     <dependentAssembly>
       <assemblyIdentity
           type="win32"
@@ -50,5 +52,5 @@
           language="*"
         />
     </dependentAssembly>
-  </dependency>-->
+  </dependency>
 </asmv1:assembly>
