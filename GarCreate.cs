@@ -33,6 +33,7 @@ using System.Windows;
 using System.Windows.Input;
 using GameRes;
 using GARbro.GUI.Strings;
+using GARbro.GUI.Properties;
 using Ookii.Dialogs.Wpf;
 
 namespace GARbro.GUI
@@ -71,18 +72,22 @@ namespace GARbro.GUI
         public GarCreate (MainWindow parent)
         {
             m_main = parent;
+            m_arc_name = Settings.Default.appLastCreatedArchive;
         }
 
         public bool Run ()
         {
             Directory.SetCurrentDirectory (m_main.CurrentPath);
-            var items = m_main.CurrentDirectory.SelectedItems.Cast<EntryViewModel>();
-            m_arc_name = Path.GetFileName (m_main.CurrentPath);
-            if (!items.Skip (1).Any()) // items.Count() == 1
+            var items = m_main.CurrentDirectory.SelectedItems.Cast<EntryViewModel> ();
+            if (string.IsNullOrEmpty (m_arc_name))
             {
-                var item = items.First();
-                if (item.IsDirectory)
-                    m_arc_name = Path.GetFileNameWithoutExtension (item.Name);
+                m_arc_name = Path.GetFileName (m_main.CurrentPath);
+                if (!items.Skip (1).Any()) // items.Count() == 1
+                {
+                    var item = items.First();
+                    if (item.IsDirectory)
+                        m_arc_name = Path.GetFileNameWithoutExtension (item.Name);
+                }
             }
 
             var dialog = new CreateArchiveDialog (m_arc_name);
@@ -181,6 +186,7 @@ namespace GARbro.GUI
             m_progress_dialog.Dispose();
             if (null == m_pending_error)
             {
+                Settings.Default.appLastCreatedArchive = m_arc_name;
                 m_main.Dispatcher.Invoke (() => {
                     m_main.SaveCurrentPosition();
                     m_main.SetCurrentPosition (new DirectoryPosition (m_arc_name));

@@ -249,5 +249,17 @@ namespace GARbro.GUI.Properties {
                 this["appRecentFiles"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string appLastCreatedArchive {
+            get {
+                return ((string)(this["appLastCreatedArchive"]));
+            }
+            set {
+                this["appLastCreatedArchive"] = value;
+            }
+        }
     }
 }
