@@ -15,9 +15,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
-namespace GameRes.Formats
+namespace GameRes.Formats.KiriKiri
 {
-    public class TlgMetaData : ImageMetaData
+    internal class TlgMetaData : ImageMetaData
     {
         public int Version;
         public int DataOffset;
