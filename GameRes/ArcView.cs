@@ -99,7 +99,7 @@ namespace GameRes
 
         unsafe public static byte* GetPointer (this MemoryMappedViewAccessor view, long offset)
         {
-            var num = view.PointerOffset % info.dwAllocationGranularity;
+            var num = offset % info.dwAllocationGranularity;
             byte* ptr = null;
             view.SafeMemoryMappedViewHandle.AcquirePointer (ref ptr);
             ptr += num;
@@ -243,8 +243,9 @@ namespace GameRes
                         size = (uint)ArcView.PageSize;
                     if (size > m_arc.MaxOffset-offset)
                         size = (uint)(m_arc.MaxOffset-offset);
-                    m_view.Dispose();
+                    var old_view = m_view;
                     m_view = m_arc.CreateViewAccessor (offset, size);
+                    old_view.Dispose();
                     m_offset = offset;
                     m_size = size;
                 }
