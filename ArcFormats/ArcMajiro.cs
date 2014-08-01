@@ -85,7 +85,7 @@ namespace GameRes.Formats.Majiro
             table_size *= 4 * (version+1);
             if (table_size + 0x1c != names_offset)
                 return null;
-            if (data_offset != file.View.Reserve (0, data_offset))
+            if (data_offset > file.View.Reserve (0, data_offset))
                 return null;
             int names_size = (int)(data_offset - names_offset);
             var names = new byte[names_size];

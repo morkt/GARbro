@@ -58,7 +58,7 @@ namespace GameRes.Formats
             uint dir_size = file.View.ReadUInt32 (12);
             if (dir_size < count * 0x17 || count > 0xfffff)
                 return null;
-            if (dir_size != file.View.Reserve (0x20, dir_size))
+            if (dir_size > file.View.Reserve (0x20, dir_size))
                 return null;
             var parser = new Parser (file, version, count, dir_size);
 
