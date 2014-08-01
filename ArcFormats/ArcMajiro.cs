@@ -68,13 +68,10 @@ namespace GameRes.Formats.Majiro
 
         public override ArcFile TryOpen (ArcView file)
         {
-            byte[] header = new byte[16];
-            file.View.Read (0, header, 0, 16);
-            var char_header = header.Select (b => Convert.ToChar (b));
             int version;
-            if (char_header.SequenceEqual ("MajiroArcV1.000\0"))
+            if (file.View.AsciiEqual (0, "MajiroArcV1.000\0"))
                 version = 1;
-//            else if (char_header.SequenceEqual ("MajiroArcV2.000\0"))
+//            else if (file.View.AsciiEqual (0, "MajiroArcV2.000\0"))
 //                version = 2;
             else
                 return null;
@@ -88,12 +85,13 @@ namespace GameRes.Formats.Majiro
             table_size *= 4 * (version+1);
             if (table_size + 0x1c != names_offset)
                 return null;
+            if (data_offset != file.View.Reserve (0, data_offset))
+                return null;
             int names_size = (int)(data_offset - names_offset);
             var names = new byte[names_size];
             file.View.Read (names_offset, names, 0, (uint)names_size);
             int names_pos = 0;
             uint table_pos = 0x1c;
-            file.View.Reserve (0, data_offset);
             uint offset_next = file.View.ReadUInt32 (table_pos+4);
 
             var dir = new List<Entry> (count);
