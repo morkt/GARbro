@@ -56,6 +56,7 @@
   <ItemGroup>
     <Compile Include="ArcAMI.cs" />
     <Compile Include="ArcINT.cs" />
+    <Compile Include="ArcMajiro.cs" />
     <Compile Include="ArcNPA.cs" />
     <Compile Include="ArcNSA.cs" />
     <Compile Include="ArcSteinsGate.cs" />
@@ -63,6 +64,9 @@
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
     <Compile Include="Blowfish.cs" />
+    <Compile Include="CreateAMIWidget.xaml.cs">
+      <DependentUpon>CreateAMIWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CreateONSWidget.xaml.cs">
       <DependentUpon>CreateONSWidget.xaml</DependentUpon>
     </Compile>
@@ -73,6 +77,7 @@
       <DependentUpon>CreateXP3Widget.xaml</DependentUpon>
     </Compile>
     <Compile Include="ImageHG3.cs" />
+    <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageTLG.cs" />
     <Compile Include="ImageWCG.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -125,6 +130,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="CreateAMIWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="CreateONSWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
