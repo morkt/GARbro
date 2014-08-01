@@ -50,6 +50,11 @@ namespace GARbro.GUI
 
         void ApplicationStartup (object sender, StartupEventArgs e)
         {
+#if DEBUG
+            string trace_dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
+            Trace.Listeners.Add (new TextWriterTraceListener (Path.Combine (trace_dir, "trace.log")));
+            Trace.AutoFlush = true;
+#endif
             Trace.WriteLine ("ApplicationStartup --------------------------------", "GARbro.GUI.App");
             if (0 != e.Args.Length)
             {
