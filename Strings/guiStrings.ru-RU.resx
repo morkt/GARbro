@@ -357,4 +357,13 @@
   <data name="MsgExtractedFiles3" xml:space="preserve">
     <value>Извлечено {0} файлов</value>
   </data>
+  <data name="MsgFiles1" xml:space="preserve">
+    <value>{0} файл</value>
+  </data>
+  <data name="MsgFiles2" xml:space="preserve">
+    <value>{0} файла</value>
+  </data>
+  <data name="MsgFiles3" xml:space="preserve">
+    <value>{0} файлов</value>
+  </data>
 </root>

@@ -345,4 +345,10 @@ Overwrite?</value>
   <data name="MsgExtractedFiles2" xml:space="preserve">
     <value>Extracted {0} files</value>
   </data>
+  <data name="MsgFiles1" xml:space="preserve">
+    <value>{0} file</value>
+  </data>
+  <data name="MsgFiles2" xml:space="preserve">
+    <value>{0} files</value>
+  </data>
 </root>

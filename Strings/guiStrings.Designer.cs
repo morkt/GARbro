@@ -475,6 +475,24 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} file.
+        /// </summary>
+        public static string MsgFiles1 {
+            get {
+                return ResourceManager.GetString("MsgFiles1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} files.
+        /// </summary>
+        public static string MsgFiles2 {
+            get {
+                return ResourceManager.GetString("MsgFiles2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Image {0} x {1} pixels.
         /// </summary>
         public static string MsgImageSize {

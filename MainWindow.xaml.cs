@@ -690,7 +690,8 @@ namespace GARbro.GUI
             SaveCurrentPosition();
             ViewModel = vm;
             if (vm.IsArchive && null != m_app.CurrentArchive)
-                SetStatusText (m_app.CurrentArchive.Description);
+                SetStatusText (string.Format ("{0}: {1}", m_app.CurrentArchive.Description,
+                    Localization.Format ("MsgFiles", m_app.CurrentArchive.Dir.Count())));
             else
                 SetStatusText ("");
             var old_parent = Directory.GetParent (old_dir);
