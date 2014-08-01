@@ -73,7 +73,7 @@ namespace GARbro.GUI
                 if (e.WidthChanged)
                 {
                     pathLine.MinWidth = e.NewSize.Width-79;
-                    this.MinWidth = e.NewSize.Width+65;
+                    this.MinWidth = e.NewSize.Width+79;
                 }
             };
             pathLine.EnterKeyDown += acb_OnKeyDown;
@@ -148,6 +148,7 @@ namespace GARbro.GUI
         const int MaxRecentFiles = 10;
         LinkedList<string> m_recent_files;
 
+        // Item1 = file name, Item2 = menu item string
         public IEnumerable<Tuple<string,string>> RecentFiles
         {
             get

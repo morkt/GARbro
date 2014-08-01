@@ -18,6 +18,7 @@
         <BitmapImage x:Key="Icon32x32Back"      UriSource="Images/32x32/back button.png"/>
         <BitmapImage x:Key="Icon32x32Forward"   UriSource="Images/32x32/forward button.png"/>
         <BitmapImage x:Key="Icon32x32Help"      UriSource="Images/32x32/help.png"/>
+        <BitmapImage x:Key="Icon48x48Refresh"   UriSource="Images/48x48/refresh.png"/>
         <CollectionViewSource x:Key="ListViewSource" Source="{Binding}"/>
         <local:BooleanToCollapsedVisibilityConverter x:Key="booleanToCollapsedVisibilityConverter" />
         <local:EntryTypeConverter x:Key="entryTypeConverter"/>
@@ -94,7 +95,7 @@
     </Window.Resources>
     <DockPanel LastChildFill="True">
         <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Visible"
-              Background="{Binding Path=Background, ElementName=AppStatusBar}">
+              Background="{DynamicResource {x:Static SystemColors.MenuBrushKey}}">
             <MenuItem Header="{x:Static s:guiStrings.MenuFile}">
                 <MenuItem Header="{x:Static s:guiStrings.MenuOpen}" Command="{x:Static local:Commands.OpenFile}" InputGestureText="Ctrl+O"/>
                 <MenuItem Header="{x:Static s:guiStrings.MenuRecent}" x:Name="RecentFilesMenu">
@@ -163,7 +164,14 @@
                 <Image Source="{StaticResource Icon32x32Forward}"/>
             </Button>
             <Separator/>
-            <local:ExtAutoCompleteBox x:Name="pathLine" Height="22" Width="100"/>
+            <StackPanel Orientation="Horizontal" x:Name="PathWidget">
+                <local:ExtAutoCompleteBox x:Name="pathLine" Height="22" Width="100" Margin="0" BorderThickness="1,1,0,1"/>
+                <Button ToolTip="{x:Static s:guiStrings.CtxMenuRefresh}" Height="22" Width="22" Margin="0"
+                        Background="{Binding ElementName=pathLine, Path=Background}"
+                        BorderBrush="{Binding ElementName=pathLine, Path=BorderBrush}" BorderThickness="1">
+                    <Image Source="Images/48x48/refresh.png" Height="16" Width="16"/>
+                </Button>
+            </StackPanel>
             <Button ToolTip="{x:Static s:guiStrings.MenuAbout}" DockPanel.Dock="Right" Margin="0,2,10,2"
                     Command="{x:Static local:Commands.About}">
                 <Image Source="{StaticResource Icon32x32Help}"/>
