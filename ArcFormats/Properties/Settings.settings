@@ -32,5 +32,11 @@
     <Setting Name="ONSCompression" Type="GameRes.Formats.ONScripter.Compression" Scope="User">
       <Value Profile="(Default)">None</Value>
     </Setting>
+    <Setting Name="AMIBaseArchive" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="AMIUseBaseArchive" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

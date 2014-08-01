@@ -141,5 +141,29 @@ namespace GameRes.Formats.Properties {
                 this["ONSCompression"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string AMIBaseArchive {
+            get {
+                return ((string)(this["AMIBaseArchive"]));
+            }
+            set {
+                this["AMIBaseArchive"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AMIUseBaseArchive {
+            get {
+                return ((bool)(this["AMIUseBaseArchive"]));
+            }
+            set {
+                this["AMIUseBaseArchive"] = value;
+            }
+        }
     }
 }

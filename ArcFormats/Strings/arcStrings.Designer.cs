@@ -61,6 +61,33 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Base archive.
+        /// </summary>
+        public static string AMIBaseArchive {
+            get {
+                return ResourceManager.GetString("AMIBaseArchive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New archive will also contain entries from the base archive..
+        /// </summary>
+        public static string AMIBaseTooltip {
+            get {
+                return ResourceManager.GetString("AMIBaseTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select base archive.
+        /// </summary>
+        public static string AMIChooseBase {
+            get {
+                return ResourceManager.GetString("AMIChooseBase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv archive.
         /// </summary>
         public static string AMIDescription {

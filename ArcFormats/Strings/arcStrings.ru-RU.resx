@@ -117,6 +117,15 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AMIBaseArchive" xml:space="preserve">
+    <value>Базовый архив</value>
+  </data>
+  <data name="AMIBaseTooltip" xml:space="preserve">
+    <value>В новый архив будут также включены файлы из базового архива.</value>
+  </data>
+  <data name="AMIChooseBase" xml:space="preserve">
+    <value>Укажите базовый архив</value>
+  </data>
   <data name="AMINoFiles" xml:space="preserve">
     <value>Не найдено файлов, подходящих для архива AMI.</value>
   </data>

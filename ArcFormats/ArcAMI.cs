@@ -35,27 +35,56 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ZLibNet;
 using GameRes.Formats.Strings;
+using GameRes.Formats.Properties;
 
 namespace GameRes.Formats
 {
-    public class AmiEntry : PackedEntry
+    internal class AmiEntry : PackedEntry
     {
-        private Lazy<Tuple<string,string>> m_item;
+        public uint Id;
+
+        private Lazy<string> m_ext;
+        private Lazy<string> m_name;
+        private Lazy<string> m_type;
         public override string Name
         {
-            get { return m_item.Value.Item1; }
-            set { m_item = new Lazy<Tuple<string, string>>(() => new Tuple<string, string>(value, Type)); }
+            get { return m_name.Value; }
+            set { m_name = new Lazy<string> (() => value); }
         }
         public override string Type
         {
-            get { return m_item.Value.Item2; }
-            set { m_item = new Lazy<Tuple<string, string>>(() => new Tuple<string, string>(Name, value)); }
+            get { return m_type.Value; }
+            set { m_type = new Lazy<string> (() => value); }
         }
 
-        public AmiEntry (Func<Tuple<string, string>> factory)
+        public AmiEntry (uint id, Func<string> ext_factory)
         {
-            m_item = new Lazy<Tuple<string, string>> (factory);
+            Id = id;
+            m_ext = new Lazy<string> (ext_factory);
+            m_name = new Lazy<string> (GetName);
+            m_type = new Lazy<string> (GetEntryType);
         }
+
+        private string GetName ()
+        {
+            return string.Format ("{0:x8}.{1}", Id, m_ext.Value);
+        }
+
+        private string GetEntryType ()
+        {
+            var ext = m_ext.Value;
+            if ("grp" == ext)
+                return "image";
+            if ("scr" == ext)
+                return "script";
+            return "";
+        }
+    }
+
+    internal class AmiOptions : ResourceOptions
+    {
+        public bool     UseBaseArchive;
+        public string   BaseArchive;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -93,18 +122,14 @@ namespace GameRes.Formats
                 uint size = file.View.ReadUInt32 (cur_offset+8);
                 uint packed_size = file.View.ReadUInt32 (cur_offset+12);
 
-                var entry = new AmiEntry (() => {
+                var entry = new AmiEntry (id, () => {
                     uint signature = file.View.ReadUInt32 (offset);
-                    string ext, type;
-                    if (0x00524353 == signature) {
-                        ext = "scr"; type = "script";
-                    } else if (0 != packed_size) {
-                        ext = "grp"; type = "image";
-                    } else {
-                        ext = "dat"; type = "";
-                    }
-                    string name = string.Format ("{0:x8}.{1}", id, ext);
-                    return new Tuple<string,string> (name, type);
+                    if (0x00524353 == signature)
+                        return "scr";
+                    else if (0 != packed_size || 0x00505247 == signature)
+                        return "grp";
+                    else
+                        return "dat";
                 });
 
                 entry.Offset = offset;
@@ -132,49 +157,87 @@ namespace GameRes.Formats
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
                                      EntryCallback callback)
         {
-            IDictionary<uint, PackedEntry> file_table = BuildFileTable (list);
-            uint file_count = (uint)file_table.Count;
-            if (0 == file_count)
-                throw new InvalidFormatException (arcStrings.AMINoFiles);
-            if (null != callback)
-                callback ((int)file_count+1, null, null);
-
-            int callback_count = 0;
-            long start_offset = output.Position;
-            uint data_offset = file_count * 16 + 16;
-            output.Seek (data_offset, SeekOrigin.Current);
-            foreach (var entry in file_table)
+            ArcFile base_archive = null;
+            var ami_options = GetOptions<AmiOptions> (options);
+            if (null != ami_options && ami_options.UseBaseArchive && !string.IsNullOrEmpty (ami_options.BaseArchive))
             {
-                if (null != callback)
-                    callback (callback_count++, entry.Value, arcStrings.MsgAddingFile);
-                long current_offset = output.Position;
-                if (current_offset > uint.MaxValue)
-                    throw new FileSizeException();
-                entry.Value.Offset = (uint)current_offset;
-                entry.Value.Size = WriteAmiEntry (entry.Value, output);
+                var base_file = new ArcView (ami_options.BaseArchive);
+                try
+                {
+                    if (base_file.View.ReadUInt32(0) == Signature)
+                        base_archive = TryOpen (base_file);
+                    if (null == base_archive)
+                        throw new InvalidFormatException (string.Format ("{0}: base archive could not be read",
+                            Path.GetFileName (ami_options.BaseArchive)));
+                    base_file = null;
+                }
+                finally
+                {
+                    if (null != base_file)
+                        base_file.Dispose();
+                }
             }
-            if (null != callback)
-                callback (callback_count++, null, arcStrings.MsgWritingIndex);
-            output.Position = start_offset;
-            using (var header = new BinaryWriter (output, Encoding.ASCII, true))
+            try
             {
-                header.Write (Signature);
-                header.Write (file_count);
-                header.Write (data_offset);
-                header.Write ((uint)0);
+                var file_table = new SortedDictionary<uint, PackedEntry>();
+                if (null != base_archive)
+                {
+                    foreach (var entry in base_archive.Dir.Cast<AmiEntry>())
+                        file_table[entry.Id] = entry;
+                }
+                int update_count = UpdateFileTable (file_table, list);
+                if (0 == update_count)
+                    throw new InvalidFormatException (arcStrings.AMINoFiles);
+
+                uint file_count = (uint)file_table.Count;
+                if (null != callback)
+                    callback ((int)file_count+1, null, null);
+
+                int callback_count = 0;
+                long start_offset = output.Position;
+                uint data_offset = file_count * 16 + 16;
+                output.Seek (data_offset, SeekOrigin.Current);
                 foreach (var entry in file_table)
                 {
-                    header.Write (entry.Key);
-                    header.Write ((uint)entry.Value.Offset);
-                    header.Write ((uint)entry.Value.UnpackedSize);
-                    header.Write ((uint)entry.Value.Size);
+                    if (null != callback)
+                        callback (callback_count++, entry.Value, arcStrings.MsgAddingFile);
+                    long current_offset = output.Position;
+                    if (current_offset > uint.MaxValue)
+                        throw new FileSizeException();
+                    if (entry.Value is AmiEntry)
+                        CopyAmiEntry (base_archive, entry.Value, output);
+                    else
+                        entry.Value.Size = WriteAmiEntry (entry.Value, output);
+                    entry.Value.Offset = (uint)current_offset;
                 }
+                if (null != callback)
+                    callback (callback_count++, null, arcStrings.MsgWritingIndex);
+                output.Position = start_offset;
+                using (var header = new BinaryWriter (output, Encoding.ASCII, true))
+                {
+                    header.Write (Signature);
+                    header.Write (file_count);
+                    header.Write (data_offset);
+                    header.Write ((uint)0);
+                    foreach (var entry in file_table)
+                    {
+                        header.Write (entry.Key);
+                        header.Write ((uint)entry.Value.Offset);
+                        header.Write ((uint)entry.Value.UnpackedSize);
+                        header.Write ((uint)entry.Value.Size);
+                    }
+                }
+            }
+            finally
+            {
+                if (null != base_archive)
+                    base_archive.Dispose();
             }
         }
 
-        IDictionary<uint, PackedEntry> BuildFileTable (IEnumerable<Entry> list)
+        int UpdateFileTable (IDictionary<uint, PackedEntry> table, IEnumerable<Entry> list)
         {
-            var table = new SortedDictionary<uint, PackedEntry>();
+            int update_count = 0;
             foreach (var entry in list)
             {
                 string ext = Path.GetExtension (entry.Name).ToLower();
@@ -185,7 +248,7 @@ namespace GameRes.Formats
                                     CultureInfo.InvariantCulture, out id))
                     continue;
                 PackedEntry existing;
-                if (table.TryGetValue (id, out existing))
+                if (table.TryGetValue (id, out existing) && !(existing is AmiEntry))
                 {
                     var file_new = new FileInfo (entry.Name);
                     var file_old = new FileInfo (existing.Name);
@@ -197,8 +260,15 @@ namespace GameRes.Formats
                     Name = entry.Name,
                     Type = entry.Type
                 };
+                ++update_count;
             }
-            return table;
+            return update_count;
+        }
+
+        void CopyAmiEntry (ArcFile base_archive, Entry entry, Stream output)
+        {
+            using (var input = base_archive.File.CreateStream (entry.Offset, entry.Size))
+                input.CopyTo (output);
         }
 
         uint WriteAmiEntry (PackedEntry entry, Stream output)
@@ -246,6 +316,19 @@ namespace GameRes.Formats
                 zstream.Flush();
                 return (uint)zstream.TotalOut;
             }
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new AmiOptions {
+                UseBaseArchive = Settings.Default.AMIUseBaseArchive,
+                BaseArchive    = Settings.Default.AMIBaseArchive,
+            };
+        }
+
+        public override object GetCreationWidget ()
+        {
+            return new GUI.CreateAMIWidget();
         }
     }
 
