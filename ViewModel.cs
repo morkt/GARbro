@@ -141,12 +141,14 @@ namespace GARbro.GUI
         {
             IEnumerable<Entry> dir = Source;
             if (!string.IsNullOrEmpty (root_path))
+            {
                 dir = from entry in dir
                       where entry.Name.StartsWith (root_path+m_delimiter)
                       select entry;
-            if (!dir.Any())
-            {
-                throw new DirectoryNotFoundException (string.Format ("{1}: {0}", guiStrings.MsgDirectoryNotFound, root_path));
+                if (!dir.Any())
+                {
+                    throw new DirectoryNotFoundException (string.Format ("{1}: {0}", guiStrings.MsgDirectoryNotFound, root_path));
+                }
             }
             m_suppress_notification = true;
             try
