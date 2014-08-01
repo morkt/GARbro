@@ -30,8 +30,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using GARbro.GUI.Strings;
+using GARbro.GUI.Properties;
 using GameRes;
 
 namespace GARbro.GUI
@@ -154,6 +158,31 @@ namespace GARbro.GUI
                                                   bitmap.PixelHeight, bitmap.Format.BitsPerPixel));
                 }
             });
+        }
+
+        /// <summary>
+        /// Fit window size to image.
+        /// </summary>
+        private void FitWindowExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var image = PreviewPane.Source;
+            if (null == image)
+                return;
+            var width = image.Width + Settings.Default.lvPanelWidth.Value + 1;
+            var height = image.Height;
+            width = Math.Max (ContentGrid.ActualWidth, width);
+            height = Math.Max (ContentGrid.ActualHeight, height);
+            if (width > ContentGrid.ActualWidth || height > ContentGrid.ActualHeight)
+            {
+                ContentGrid.Width = width;
+                ContentGrid.Height = height;
+                this.SizeToContent = SizeToContent.WidthAndHeight;
+                Dispatcher.InvokeAsync (() => {
+                    this.SizeToContent = SizeToContent.Manual;
+                    ContentGrid.Width = double.NaN;
+                    ContentGrid.Height = double.NaN;
+                }, DispatcherPriority.ContextIdle);
+            }
         }
 
         void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
