@@ -367,6 +367,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Are you sure you want to delete these files?.
+        /// </summary>
+        public static string MsgConfirmDeleteFiles {
+            get {
+                return ResourceManager.GetString("MsgConfirmDeleteFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Creating archive {0}.
         /// </summary>
         public static string MsgCreatingArchive {
@@ -381,6 +390,24 @@ namespace GARbro.GUI.Strings {
         public static string MsgDeletedItem {
             get {
                 return ResourceManager.GetString("MsgDeletedItem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deleted {0} file.
+        /// </summary>
+        public static string MsgDeletedItems1 {
+            get {
+                return ResourceManager.GetString("MsgDeletedItems1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deleted {0} files.
+        /// </summary>
+        public static string MsgDeletedItems2 {
+            get {
+                return ResourceManager.GetString("MsgDeletedItems2", resourceCulture);
             }
         }
         
@@ -654,6 +681,15 @@ namespace GARbro.GUI.Strings {
         public static string TextCreateArchiveError {
             get {
                 return ResourceManager.GetString("TextCreateArchiveError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete files.
+        /// </summary>
+        public static string TextDeleteFiles {
+            get {
+                return ResourceManager.GetString("TextDeleteFiles", resourceCulture);
             }
         }
         

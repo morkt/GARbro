@@ -650,13 +650,12 @@ namespace GARbro.GUI
         /// </summary>
         private void OpenItemExec (object control, ExecutedRoutedEventArgs e)
         {
-            EntryViewModel entry = CurrentDirectory.SelectedItem as EntryViewModel;
+            EntryViewModel entry = null;
+            var lvi = e.OriginalSource as ListViewItem;
+            if (lvi != null)
+                entry = lvi.Content as EntryViewModel;
             if (null == entry)
-            {
-                var lvi = e.OriginalSource as ListViewItem;
-                if (lvi != null)
-                    entry = lvi.Content as EntryViewModel;
-            }
+                entry = CurrentDirectory.SelectedItem as EntryViewModel;
             if (null == entry)
                 return;
 
@@ -784,19 +783,48 @@ namespace GARbro.GUI
         /// </summary>
         private void DeleteItemExec (object sender, ExecutedRoutedEventArgs e)
         {
-            var entry = CurrentDirectory.SelectedItem as EntryViewModel;
-            if (entry == null)
+            var items = CurrentDirectory.SelectedItems.Cast<EntryViewModel>().Where (f => !f.IsDirectory);
+            if (!items.Any())
                 return;
 
             this.IsEnabled = false;
             try
             {
                 m_app.ResetCache();
-                string item_name = Path.Combine (CurrentPath, entry.Name);
-                Trace.WriteLine (item_name, "DeleteItemExec");
-                FileSystem.DeleteFile (item_name, UIOption.AllDialogs, RecycleOption.SendToRecycleBin);
-                DeleteItem (lv_GetCurrentContainer());
-                SetStatusText (string.Format(guiStrings.MsgDeletedItem, item_name));
+                if (!items.Skip (1).Any()) // items.Count() == 1
+                {
+                    string item_name = Path.Combine (CurrentPath, items.First().Name);
+                    Trace.WriteLine (item_name, "DeleteItemExec");
+                    FileSystem.DeleteFile (item_name, UIOption.AllDialogs, RecycleOption.SendToRecycleBin);
+                    DeleteItem (lv_GetCurrentContainer());
+                    SetStatusText (string.Format(guiStrings.MsgDeletedItem, item_name));
+                }
+                else
+                {
+                    var rc = MessageBox.Show (this, guiStrings.MsgConfirmDeleteFiles, guiStrings.TextDeleteFiles,
+                                              MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (MessageBoxResult.Yes != rc)
+                        return;
+                    int count = 0;
+                    StopWatchDirectoryChanges ();
+                    try
+                    {
+                        Trace.WriteLine (string.Format ("deleting multiple files in {0}", CurrentPath), "DeleteItemExec");
+                        foreach (var entry in items)
+                        {
+                            string item_name = Path.Combine (CurrentPath, entry.Name);
+                            FileSystem.DeleteFile (item_name);
+                            ++count;
+                        }
+                    }
+                    catch
+                    {
+                        ResumeWatchDirectoryChanges();
+                        throw;
+                    }
+                    RefreshView();
+                    SetStatusText (Localization.Format ("MsgDeletedItems", count));
+                }
             }
             catch (OperationCanceledException)
             {
@@ -964,6 +992,11 @@ namespace GARbro.GUI
                 }
             }
         }
+
+        private void CanExecuteFitWindow (object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = PreviewPane.Source != null;
+        }
     }
 
     /// <summary>
@@ -1059,5 +1092,6 @@ namespace GARbro.GUI
         public static readonly RoutedCommand ExploreItem = new RoutedCommand();
         public static readonly RoutedCommand Refresh = new RoutedCommand();
         public static readonly RoutedCommand Browse = new RoutedCommand();
+        public static readonly RoutedCommand FitWindow = new RoutedCommand();
     }
 }

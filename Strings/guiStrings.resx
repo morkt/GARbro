@@ -351,4 +351,16 @@ Overwrite?</value>
   <data name="MsgFiles2" xml:space="preserve">
     <value>{0} files</value>
   </data>
+  <data name="MsgConfirmDeleteFiles" xml:space="preserve">
+    <value>Are you sure you want to delete these files?</value>
+  </data>
+  <data name="TextDeleteFiles" xml:space="preserve">
+    <value>Delete files</value>
+  </data>
+  <data name="MsgDeletedItems1" xml:space="preserve">
+    <value>Deleted {0} file</value>
+  </data>
+  <data name="MsgDeletedItems2" xml:space="preserve">
+    <value>Deleted {0} files</value>
+  </data>
 </root>
