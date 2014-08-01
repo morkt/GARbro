@@ -29,9 +29,16 @@ namespace GARbro
 
         void ExtractAll (ArcFile arc)
         {
-            arc.ExtractFiles ((i, entry) => {
-                Console.WriteLine ("Extracting {0} ...", entry.Name);
-                return ExtractAction.Continue;
+            arc.ExtractFiles ((i, entry, msg) => {
+                if (null != entry)
+                {
+                    Console.WriteLine ("Extracting {0} ...", entry.Name);
+                }
+                else if (null != msg)
+                {
+                    Console.WriteLine (msg);
+                }
+                return ArchiveOperation.Continue;
             });
         }
 
