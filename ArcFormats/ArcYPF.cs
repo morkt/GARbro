@@ -53,14 +53,14 @@ namespace GameRes.Formats
 
         public override ArcFile TryOpen (ArcView file)
         {
+            uint version = file.View.ReadUInt32 (4);
             uint count = file.View.ReadUInt32 (8);
             uint dir_size = file.View.ReadUInt32 (12);
-            if (dir_size < count * 0x17)
+            if (dir_size < count * 0x17 || count > 0xfffff)
                 return null;
-            if (0 != ((count - 1) >> 20))
+            if (dir_size != file.View.Reserve (0x20, dir_size))
                 return null;
-            // Reserve (0x20, dir_size)
-            var parser = new Parser (file, count, dir_size);
+            var parser = new Parser (file, version, count, dir_size);
 
             uint key = QueryEncryptionKey();
             var dir = parser.ScanDir (key);
@@ -121,12 +121,12 @@ namespace GameRes.Formats
             uint    m_count;
             uint    m_dir_size;
             
-            public Parser (ArcView file, uint count, uint dir_size)
+            public Parser (ArcView file, uint version, uint count, uint dir_size)
             {
                 m_file = file;
                 m_count = count;
                 m_dir_size = dir_size;
-                m_version = file.View.ReadUInt32 (4);
+                m_version = version;
             }
             // 4-name_checksum, 1-name_count, *-name, 1-file_type
 	        // 1-pack_flag, 4-size, 4-packed_size, 4-offset, 4-packed_adler32
