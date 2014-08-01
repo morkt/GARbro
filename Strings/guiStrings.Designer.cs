@@ -304,24 +304,6 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to file.
-        /// </summary>
-        public static string LPfile1 {
-            get {
-                return ResourceManager.GetString("LPfile1", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to files.
-        /// </summary>
-        public static string LPfile2 {
-            get {
-                return ResourceManager.GetString("LPfile2", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to About Game Resource browser.
         /// </summary>
         public static string MenuAbout {
@@ -448,11 +430,20 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Extracted {0} {1}.
+        ///   Looks up a localized string similar to Extracted {0} file.
         /// </summary>
-        public static string MsgExtractCompletePlural {
+        public static string MsgExtractedFiles1 {
             get {
-                return ResourceManager.GetString("MsgExtractCompletePlural", resourceCulture);
+                return ResourceManager.GetString("MsgExtractedFiles1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Extracted {0} files.
+        /// </summary>
+        public static string MsgExtractedFiles2 {
+            get {
+                return ResourceManager.GetString("MsgExtractedFiles2", resourceCulture);
             }
         }
         

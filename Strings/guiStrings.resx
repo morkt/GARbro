@@ -198,12 +198,6 @@
   <data name="LabelExtractFileTo" xml:space="preserve">
     <value>Extract {0} to</value>
   </data>
-  <data name="LPfile1" xml:space="preserve">
-    <value>file</value>
-  </data>
-  <data name="LPfile2" xml:space="preserve">
-    <value>files</value>
-  </data>
   <data name="MenuAbout" xml:space="preserve">
     <value>About Game Resource browser</value>
   </data>
@@ -225,8 +219,8 @@
   <data name="MsgExtractComplete" xml:space="preserve">
     <value>Extracted {0} into {1}</value>
   </data>
-  <data name="MsgExtractCompletePlural" xml:space="preserve">
-    <value>Extracted {0} {1}</value>
+  <data name="MsgExtractedFiles1" xml:space="preserve">
+    <value>Extracted {0} file</value>
   </data>
   <data name="MsgExtractingArchive" xml:space="preserve">
     <value>Extracting files from {0}</value>
@@ -347,5 +341,8 @@ Overwrite?</value>
   </data>
   <data name="MenuHelp" xml:space="preserve">
     <value>_Help</value>
+  </data>
+  <data name="MsgExtractedFiles2" xml:space="preserve">
+    <value>Extracted {0} files</value>
   </data>
 </root>

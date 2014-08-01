@@ -109,7 +109,7 @@ namespace GARbro.GUI
 
     public static class Localization
     {
-        public static string Plural (int n, string en_singular)
+        public static string Plural (int n, string msg_id)
         {
             string suffix;
             if (CultureInfo.CurrentUICulture.Name == "ru-RU")
@@ -122,13 +122,23 @@ namespace GARbro.GUI
             }
             try
             {
-                var res = guiStrings.ResourceManager.GetString ("LP"+en_singular+suffix);
-                return res ?? en_singular;
+                var res = guiStrings.ResourceManager.GetString (msg_id+suffix);
+                if (null == res && suffix != "1")
+                    res = guiStrings.ResourceManager.GetString (msg_id+"1");
+                if (null == res)
+                    Trace.WriteLine (string.Format ("Missing string resource for '{0}' token", msg_id+suffix));
+                return res ?? msg_id;
             }
-            catch
+            catch (Exception X)
             {
-                return en_singular;
+                Trace.WriteLine (X.Message, "Localization.Plural");
+                return msg_id;
             }
+        }
+
+        public static string Format (string msg_id, int n)
+        {
+            return string.Format (Plural (n, msg_id), n);
         }
 
         // Localization.Format ("{0:file:files} copied", count);

@@ -208,26 +208,24 @@ namespace GARbro.GUI
                 extractProgressDialog.Description = file_list.First().Name;
                 extractProgressDialog.ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar;
             }
+            int extract_count = 0;
             extractProgressDialog.DoWork += (s, e) =>
             {
                 try
                 {
                     int total = file_list.Count();
-                    int i = 0;
                     foreach (var entry in file_list)
                     {
                         if (extractProgressDialog.CancellationPending)
                             break;
                         if (total > 1)
-                            extractProgressDialog.ReportProgress (i*100/total, null, entry.Name);
+                            extractProgressDialog.ReportProgress (extract_count*100/total, null, entry.Name);
                         if (null != image_format && entry.Type == "image")
                             ExtractImage (arc, entry, image_format);
                         else
                             arc.Extract (entry);
-                        ++i;
+                        ++extract_count;
                     }
-                    SetStatusText (string.Format (guiStrings.MsgExtractCompletePlural, i,
-                                                  Localization.Plural (i, "file")));
                 }
                 catch (Exception X)
                 {
@@ -241,6 +239,7 @@ namespace GARbro.GUI
                     arc.Dispose();
                     Dispatcher.Invoke (RefreshView);
                 }
+                SetStatusText (Localization.Format ("MsgExtractedFiles", extract_count));
             };
             extractProgressDialog.ShowDialog (this);
         }

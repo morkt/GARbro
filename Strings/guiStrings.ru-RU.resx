@@ -195,15 +195,6 @@
   <data name="LabelExtractFileTo" xml:space="preserve">
     <value>Извлечь {0} в</value>
   </data>
-  <data name="LPfile1" xml:space="preserve">
-    <value>файл</value>
-  </data>
-  <data name="LPfile2" xml:space="preserve">
-    <value>файла</value>
-  </data>
-  <data name="LPfile3" xml:space="preserve">
-    <value>файлов</value>
-  </data>
   <data name="MenuAbout" xml:space="preserve">
     <value>О программе</value>
   </data>
@@ -224,9 +215,6 @@
   </data>
   <data name="MsgExtractComplete" xml:space="preserve">
     <value>{0} извлечён в {1}</value>
-  </data>
-  <data name="MsgExtractCompletePlural" xml:space="preserve">
-    <value>Извлечено {0} {1}</value>
   </data>
   <data name="MsgExtractingArchive" xml:space="preserve">
     <value>Извлекаются файлы из {0}</value>
@@ -359,5 +347,14 @@
   </data>
   <data name="MenuHelp" xml:space="preserve">
     <value>_Справка</value>
+  </data>
+  <data name="MsgExtractedFiles1" xml:space="preserve">
+    <value>Извлечён {0} файл</value>
+  </data>
+  <data name="MsgExtractedFiles2" xml:space="preserve">
+    <value>Извлечено {0} файла</value>
+  </data>
+  <data name="MsgExtractedFiles3" xml:space="preserve">
+    <value>Извлечено {0} файлов</value>
   </data>
 </root>
