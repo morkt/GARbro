@@ -112,7 +112,6 @@ namespace GameRes.Formats
             private uint m_src;
             private uint m_src_size;
             private uint m_dst_size;
-            private uint esi;
             private uint edi;
 
             private uint m_index_length_limit;
@@ -160,12 +159,12 @@ namespace GameRes.Formats
                 if (data_size > m_src_size)
                     throw new InvalidFormatException ("Invalid compressed data size");
 
-                esi = m_src + index_size*2 + 12;
+                uint data_pos = m_src + index_size*2 + 12;
                 edi = offset;
                 m_next_size = m_src_size - data_size;
-                m_next_ptr = esi + data_size;
+                m_next_ptr = data_pos + data_size;
                 m_src_size = data_size;
-                return DecodeStream (index_size);
+                return DecodeStream (data_pos, index_size);
             }
 
             void ReadIndex (uint index_size)
@@ -176,10 +175,10 @@ namespace GameRes.Formats
                     m_index[i] = m_input.ReadUInt16();
             }
 
-            bool DecodeStream (uint index_size)
+            bool DecodeStream (uint data_pos, uint index_size)
             {
                 ReadIndex (index_size);
-                m_input.BaseStream.Position = esi;
+                m_input.BaseStream.Position = data_pos;
 
                 bool small_index = index_size < 0x1002;
                 m_index_length_limit = small_index ? 0x06u : 0x0eu;
@@ -228,7 +227,6 @@ namespace GameRes.Formats
                     if (0 == m_src_size--)
                         throw new InvalidFormatException ("Unexpected end of file");
                     m_bits = (int)m_input.ReadByte();
-                    esi++;
                     m_bits = (m_bits << 1) + 1;
                     carry = 0 != (m_bits & 0x100);
                 }
