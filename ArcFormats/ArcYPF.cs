@@ -209,14 +209,15 @@ namespace GameRes.Formats
 
             public uint Decrypt (byte value)
             {
-                int pos = s_crypt_table.Length - 0x14;
+                int pos = 4;
                 if (m_version >= 0x100)
                 {
-                    pos -= 4;
                     if (m_version >= 0x12c && m_version < 0x196)
-                        pos += 10;
+                        pos = 10;
+                    else
+                        pos = 0;
                 }
-                pos = Array.FindIndex (s_crypt_table, pos, x => x == value);
+                pos = Array.IndexOf (s_crypt_table, value, pos);
                 if (-1 == pos)
                     return value;
                 if (0 != (pos & 1))
