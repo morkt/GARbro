@@ -290,6 +290,7 @@
     <Window.InputBindings>
         <KeyBinding Gesture="Ctrl+O" Command="{x:Static local:Commands.OpenFile}"/>
         <KeyBinding Gesture="Ctrl+Q" Command="{x:Static local:Commands.Exit}"/>
+        <KeyBinding Gesture="Ctrl+H" Command="{x:Static local:Commands.FitWindow}"/>
         <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Left" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Right" Command="{x:Static local:Commands.GoForward}"/>
@@ -307,6 +308,7 @@
         <CommandBinding Command="{x:Static local:Commands.GoBack}"     Executed="GoBackExec"     CanExecute="CanExecuteGoBack"/>
         <CommandBinding Command="{x:Static local:Commands.GoForward}"  Executed="GoForwardExec"  CanExecute="CanExecuteGoForward"/>
         <CommandBinding Command="{x:Static local:Commands.Refresh}"    Executed="RefreshExec"    CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.FitWindow}"  Executed="FitWindowExec"  CanExecute="CanExecuteFitWindow"/>
         <CommandBinding Command="{x:Static local:Commands.About}"      Executed="AboutExec"      CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
