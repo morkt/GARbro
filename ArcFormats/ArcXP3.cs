@@ -583,7 +583,7 @@ NextEntry:
         }
     }
 
-    public class Xp3Stream : Stream
+    internal class Xp3Stream : Stream
     {
         ArcView     m_file;
         Xp3Entry    m_entry;

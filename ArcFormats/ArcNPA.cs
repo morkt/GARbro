@@ -34,12 +34,12 @@ using GameRes.Formats.Properties;
 
 namespace GameRes.Formats
 {
-    public class NpaEntry : PackedEntry
+    internal class NpaEntry : PackedEntry
     {
         public byte[] RawName;
     }
 
-    public class NpaArchive : ArcFile
+    internal class NpaArchive : ArcFile
     {
         public NpaTitleId   GameId   { get; private set; }
         public int          Key      { get; private set; }
