@@ -123,10 +123,14 @@ namespace GARbro.GUI
             try
             {
                 var res = guiStrings.ResourceManager.GetString (msg_id+suffix);
-                if (null == res && suffix != "1")
-                    res = guiStrings.ResourceManager.GetString (msg_id+"1");
                 if (null == res)
+                {
                     Trace.WriteLine (string.Format ("Missing string resource for '{0}' token", msg_id+suffix));
+                    if (suffix != "1")
+                        res = guiStrings.ResourceManager.GetString (msg_id+"1");
+                    if (null == res)
+                        res = guiStrings.ResourceManager.GetString (msg_id);
+                }
                 return res ?? msg_id;
             }
             catch (Exception X)
