@@ -281,15 +281,8 @@ NextEntry:
 
         ICrypt QueryCryptAlgorithm ()
         {
-            var args = new ParametersRequestEventArgs
-            {
-                Notice = arcStrings.ArcEncryptedNotice,
-            };
-            FormatCatalog.Instance.InvokeParametersRequest (this, args);
-            if (!args.InputResult)
-                throw new OperationCanceledException();
-            
-            return GetOptions<Xp3Options> (args.Options).Scheme;
+            var options = Query<Xp3Options> (arcStrings.ArcEncryptedNotice);
+            return options.Scheme;
         }
 
         public static ICrypt GetScheme (string scheme)

@@ -225,6 +225,16 @@ namespace GameRes
                 options = this.GetDefaultOptions() as OptType;
             return options;
         }
+
+        protected OptType Query<OptType> (string notice) where OptType : ResourceOptions
+        {
+            var args = new ParametersRequestEventArgs { Notice = notice };
+            FormatCatalog.Instance.InvokeParametersRequest (this, args);
+            if (!args.InputResult)
+                throw new OperationCanceledException();
+
+            return GetOptions<OptType> (args.Options);
+        }
     }
 
     public delegate void ParametersRequestEventHandler (object sender, ParametersRequestEventArgs e);
@@ -317,17 +327,17 @@ namespace GameRes
             string ext = Path.GetExtension (filename);
             if (null == ext)
                 return new IResource[0];
-            return LookupTag (ext.TrimStart ('.'));
+            return LookupExtension (ext.TrimStart ('.'));
         }
 
-        public IEnumerable<IResource> LookupTag (string tag)
+        public IEnumerable<IResource> LookupExtension (string ext)
         {
-            return m_extension_map.GetValues (tag.ToUpper(), true);
+            return m_extension_map.GetValues (ext.ToUpper(), true);
         }
 
-        public IEnumerable<Type> LookupTag<Type> (string tag) where Type : IResource
+        public IEnumerable<Type> LookupExtension<Type> (string ext) where Type : IResource
         {
-            return LookupTag (tag).OfType<Type>();
+            return LookupExtension (ext).OfType<Type>();
         }
 
         public IEnumerable<IResource> LookupSignature (uint signature)

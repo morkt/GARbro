@@ -334,15 +334,7 @@ namespace GameRes.Formats
 
         uint? QueryEncryptionInfo ()
         {
-            var args = new ParametersRequestEventArgs
-            {
-                Notice = arcStrings.INTNotice,
-            };
-            FormatCatalog.Instance.InvokeParametersRequest (this, args);
-            if (!args.InputResult)
-                throw new OperationCanceledException();
-
-            var options = GetOptions<IntOptions> (args.Options);
+            var options = Query<IntOptions> (arcStrings.INTNotice);
             return options.EncryptionInfo.GetKey();
         }
     }

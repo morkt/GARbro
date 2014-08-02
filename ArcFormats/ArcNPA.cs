@@ -333,15 +333,7 @@ namespace GameRes.Formats
 
         NpaTitleId QueryGameEncryption ()
         {
-            var args = new ParametersRequestEventArgs
-            {
-                Notice = arcStrings.ArcEncryptedNotice,
-            };
-            FormatCatalog.Instance.InvokeParametersRequest (this, args);
-            if (!args.InputResult)
-                throw new OperationCanceledException();
-
-            var options = GetOptions<NpaOptions> (args.Options);
+            var options = Query<NpaOptions> (arcStrings.ArcEncryptedNotice);
             return options.TitleId;
         }
 

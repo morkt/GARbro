@@ -104,14 +104,8 @@ namespace GameRes.Formats
 
         uint QueryEncryptionKey ()
         {
-            var args = new ParametersRequestEventArgs
-            {
-                Notice = arcStrings.YPFNotice,
-            };
-            FormatCatalog.Instance.InvokeParametersRequest (this, args);
-            if (!args.InputResult)
-                throw new OperationCanceledException();
-            return GetOptions<YpfOptions> (args.Options).Key;
+            var options = Query<YpfOptions> (arcStrings.YPFNotice);
+            return options.Key;
         }
 
         private class Parser
