@@ -44,8 +44,19 @@ namespace GARbro.GUI
 
         public static string Name { get { return "GARbro"; } }
 
+        /// <summary>
+        /// Initial browsing directory.
+        /// </summary>
         public string InitPath { get; private set; }
+
+        /// <summary>
+        /// Path to the currently open archive, or empty string if none.
+        /// </summary>
         public string CurrentPath { get; private set; }
+
+        /// <summary>
+        /// Archive file being browsed, or null.
+        /// </summary>
         public ArcFile CurrentArchive { get; private set; }
 
         void ApplicationStartup (object sender, StartupEventArgs e)
