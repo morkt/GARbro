@@ -154,7 +154,7 @@ namespace GARbro.GUI
                 if (m_current_preview == preview) // compare by reference
                 {
                     PreviewPane.Source = bitmap;
-                    SetStatusText (string.Format ("Image {0} x {1} x {2}bpp", bitmap.PixelWidth,
+                    SetStatusText (string.Format (guiStrings.MsgImageSize, bitmap.PixelWidth,
                                                   bitmap.PixelHeight, bitmap.Format.BitsPerPixel));
                 }
             });
