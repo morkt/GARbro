@@ -25,6 +25,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
@@ -108,7 +109,7 @@ namespace GARbro.GUI
         {
             if (null != m_lvSortByColumn)
             {
-                Settings.Default.lvSortColumn = m_lvSortByColumn.Tag.ToString();
+                Settings.Default.lvSortColumn = SortMode;
                 Settings.Default.lvSortDirection = m_lvSortDirection;
             }
             else
@@ -165,7 +166,7 @@ namespace GARbro.GUI
                 return;
             if (null == node)
             {
-                while (MaxRecentFiles < m_recent_files.Count)
+                while (MaxRecentFiles <= m_recent_files.Count)
                     m_recent_files.RemoveLast();
                 m_recent_files.AddFirst (file);
             }
@@ -200,10 +201,7 @@ namespace GARbro.GUI
                 if (value.IsArchive)
                     PushRecentFile (value.Path);
 
-                if (m_lvSortByColumn != null)
-                    lv_Sort (m_lvSortByColumn.Tag.ToString(), m_lvSortDirection);
-                else
-                    lv_Sort (null, m_lvSortDirection);
+                lv_Sort (SortMode, m_lvSortDirection);
                 if (!value.IsArchive && !string.IsNullOrEmpty (value.Path))
                 {
                     Directory.SetCurrentDirectory (value.Path);
@@ -395,16 +393,14 @@ namespace GARbro.GUI
         GridViewColumnHeader    m_lvSortByColumn = null;
         ListSortDirection       m_lvSortDirection = ListSortDirection.Ascending;
 
-        public bool IsSortByName {
-            get { return m_lvSortByColumn != null && "Name".Equals (m_lvSortByColumn.Tag); }
+        public string SortMode
+        {
+            get { return GetValue (SortModeProperty) as string; }
+            private set { SetValue (SortModeProperty, value); }
         }
-        public bool IsSortByType {
-            get { return m_lvSortByColumn != null && "Type".Equals (m_lvSortByColumn.Tag); }
-        }
-        public bool IsSortBySize {
-            get { return m_lvSortByColumn != null && "Size".Equals (m_lvSortByColumn.Tag); }
-        }
-        public bool IsUnsorted { get { return m_lvSortByColumn == null; } }
+
+        public static readonly DependencyProperty SortModeProperty = 
+            DependencyProperty.RegisterAttached ("SortMode", typeof(string), typeof(MainWindow), new UIPropertyMetadata());
 
         void lv_SetSortMode (string sortBy, ListSortDirection direction)
         {
@@ -427,6 +423,7 @@ namespace GARbro.GUI
                     column.HeaderTemplate = Resources["SortArrowNone"] as DataTemplate;
                 }
             }
+            SortMode = sortBy;
         }
 
         private void lv_Sort (string sortBy, ListSortDirection direction)
@@ -457,6 +454,7 @@ namespace GARbro.GUI
 
             string sortBy = headerClicked.Tag.ToString();
             lv_Sort (sortBy, direction);
+            SortMode = sortBy;
 
             // Remove arrow from previously sorted header 
             if (m_lvSortByColumn != null && m_lvSortByColumn != headerClicked)
@@ -488,20 +486,31 @@ namespace GARbro.GUI
         }
 
         /// <summary>
-        /// Event handler for keys pressed in the right pane
+        /// Event handler for keys pressed in the directory view pane
         /// </summary>
 
         private void lv_TextInput (object sender, TextCompositionEventArgs e)
         {
-            LookupItem (e.Text);
+            LookupItem (e.Text, e.Timestamp);
             e.Handled = true;
         }
 
+        class InputData
+        {
+            public int              LastTime = 0;
+            public StringBuilder    Phrase = new StringBuilder();
+            public bool             Mismatch = false;
+        }
+
+        const int TextLookupTimeout = 1000; // milliseconds
+
+        InputData m_current_input = new InputData();
+
         /// <summary>
-        /// Lookup item in listview pane by first letter.
+        /// Lookup item in listview pane by first letters of name.
         /// </summary>
 
-        private void LookupItem (string key)
+        private void LookupItem (string key, int timestamp)
         {
             if (string.IsNullOrEmpty (key))
                 return;
@@ -509,20 +518,39 @@ namespace GARbro.GUI
             if (source == null)
                 return;
 
-            var current = CurrentDirectory.SelectedItem as EntryViewModel;
-            int index = 0;
-            if (current != null && current.Name.StartsWith (key, StringIgnoreCase))
-                index = CurrentDirectory.SelectedIndex+1;
-
-            for (int i = index, count = source.Count; i < count; ++i)
+            if (timestamp - m_current_input.LastTime > TextLookupTimeout)
             {
-                var entry = source.GetItemAt (i) as EntryViewModel;
-                if (entry != null && entry.Name.StartsWith (key, StringIgnoreCase))
+                m_current_input.Phrase.Clear();
+                m_current_input.Mismatch = false;
+            }
+            m_current_input.LastTime = timestamp;
+            if (m_current_input.Mismatch)
+                return;
+
+            if (1 == m_current_input.Phrase.Length && m_current_input.Phrase[0] == key[0])
+            {
+                // same key repeats, lookup by first letter only
+                int current = CurrentDirectory.SelectedIndex;
+                if (current != -1 && current+1 < source.Count)
                 {
-                    lv_SelectItem (entry);
-                    break;
+                    var next_item = source.GetItemAt (current+1) as EntryViewModel;
+                    if (next_item != null && next_item.Name.StartsWith (key, StringIgnoreCase))
+                    {
+                        lv_SelectItem (next_item);
+                        return;
+                    }
                 }
             }
+            else
+            {
+                m_current_input.Phrase.Append (key);
+            }
+            string input = m_current_input.Phrase.ToString();
+            var matched = source.Cast<EntryViewModel>().Where (e => e.Name.StartsWith (input, StringIgnoreCase)).FirstOrDefault();
+            if (null != matched)
+                lv_SelectItem (matched);
+            else
+                m_current_input.Mismatch = true;
         }
 
         private void acb_OnKeyDown (object sender, KeyEventArgs e)
@@ -1084,6 +1112,23 @@ namespace GARbro.GUI
                 // ignore filesystem errors
             }
             base.OnPopulating (e);
+        }
+    }
+
+    public class SortModeToBooleanConverter : IValueConverter
+    {
+        public object Convert (object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string actual_mode = value as string;
+            string check_mode = parameter as string;
+            if (string.IsNullOrEmpty (check_mode))
+                return string.IsNullOrEmpty (actual_mode);
+            return check_mode.Equals (actual_mode);
+        }
+
+        public object ConvertBack (object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 
