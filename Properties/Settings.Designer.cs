@@ -261,5 +261,41 @@ namespace GARbro.GUI.Properties {
                 this["appLastCreatedArchive"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Visible")]
+        public global::System.Windows.Visibility winMenuBarVisibility {
+            get {
+                return ((global::System.Windows.Visibility)(this["winMenuBarVisibility"]));
+            }
+            set {
+                this["winMenuBarVisibility"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Visible")]
+        public global::System.Windows.Visibility winToolBarVisibility {
+            get {
+                return ((global::System.Windows.Visibility)(this["winToolBarVisibility"]));
+            }
+            set {
+                this["winToolBarVisibility"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Visible")]
+        public global::System.Windows.Visibility winStatusBarVisibility {
+            get {
+                return ((global::System.Windows.Visibility)(this["winStatusBarVisibility"]));
+            }
+            set {
+                this["winStatusBarVisibility"] = value;
+            }
+        }
     }
 }

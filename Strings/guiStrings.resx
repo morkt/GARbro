@@ -363,4 +363,19 @@ Overwrite?</value>
   <data name="MsgDeletedItems2" xml:space="preserve">
     <value>Deleted {0} files</value>
   </data>
+  <data name="MenuFitWindow" xml:space="preserve">
+    <value>Fit preview _window to image</value>
+  </data>
+  <data name="MenuToggleMenuBar" xml:space="preserve">
+    <value>Show/hide main _menu bar</value>
+  </data>
+  <data name="MenuToggleStatusBar" xml:space="preserve">
+    <value>Show/hide _status bar</value>
+  </data>
+  <data name="MenuToggleToolBar" xml:space="preserve">
+    <value>Show/hide _toolbar</value>
+  </data>
+  <data name="MenuView" xml:space="preserve">
+    <value>_View</value>
+  </data>
 </root>

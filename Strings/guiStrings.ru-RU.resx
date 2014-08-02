@@ -381,4 +381,19 @@
   <data name="MsgDeletedItems3" xml:space="preserve">
     <value>Удалено {0} файлов</value>
   </data>
+  <data name="MenuFitWindow" xml:space="preserve">
+    <value>Подогнать размер окна под изображение</value>
+  </data>
+  <data name="MenuToggleMenuBar" xml:space="preserve">
+    <value>Вкл/выкл главное меню</value>
+  </data>
+  <data name="MenuToggleStatusBar" xml:space="preserve">
+    <value>Вкл/выкл полосу статуса</value>
+  </data>
+  <data name="MenuToggleToolBar" xml:space="preserve">
+    <value>Вкл/выкл панель инструментов</value>
+  </data>
+  <data name="MenuView" xml:space="preserve">
+    <value>Просмотр</value>
+  </data>
 </root>

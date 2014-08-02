@@ -331,6 +331,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Fit preview _window to image.
+        /// </summary>
+        public static string MenuFitWindow {
+            get {
+                return ResourceManager.GetString("MenuFitWindow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Help.
         /// </summary>
         public static string MenuHelp {
@@ -354,6 +363,42 @@ namespace GARbro.GUI.Strings {
         public static string MenuRecent {
             get {
                 return ResourceManager.GetString("MenuRecent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show/hide main _menu bar.
+        /// </summary>
+        public static string MenuToggleMenuBar {
+            get {
+                return ResourceManager.GetString("MenuToggleMenuBar", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show/hide _status bar.
+        /// </summary>
+        public static string MenuToggleStatusBar {
+            get {
+                return ResourceManager.GetString("MenuToggleStatusBar", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show/hide _toolbar.
+        /// </summary>
+        public static string MenuToggleToolBar {
+            get {
+                return ResourceManager.GetString("MenuToggleToolBar", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _View.
+        /// </summary>
+        public static string MenuView {
+            get {
+                return ResourceManager.GetString("MenuView", resourceCulture);
             }
         }
         

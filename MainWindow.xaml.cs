@@ -64,7 +64,7 @@ namespace GARbro.GUI
 
             if (null == Settings.Default.appRecentFiles)
                 Settings.Default.appRecentFiles = new StringCollection();
-            m_recent_files = new LinkedList<string> (Settings.Default.appRecentFiles.Cast<string>());
+            m_recent_files = new LinkedList<string> (Settings.Default.appRecentFiles.Cast<string>().Take (MaxRecentFiles));
             RecentFilesMenu.ItemsSource = RecentFiles;
 
             FormatCatalog.Instance.ParametersRequest += OnParametersRequest;
@@ -145,7 +145,7 @@ namespace GARbro.GUI
             Dispatcher.Invoke (() => MessageBox.Show (this, message, title, MessageBoxButton.OK, MessageBoxImage.Error));
         }
 
-        const int MaxRecentFiles = 10;
+        const int MaxRecentFiles = 9;
         LinkedList<string> m_recent_files;
 
         // Item1 = file name, Item2 = menu item string
@@ -154,7 +154,7 @@ namespace GARbro.GUI
             get
             {
                 int i = 1;
-                return m_recent_files.Select (f => new Tuple<string,string> (f, string.Format ("{0} {1}", i++, f)));
+                return m_recent_files.Select (f => new Tuple<string,string> (f, string.Format ("_{0} {1}", i++, f)));
             }
         }
 
@@ -165,7 +165,7 @@ namespace GARbro.GUI
                 return;
             if (null == node)
             {
-                if (MaxRecentFiles == m_recent_files.Count)
+                while (MaxRecentFiles < m_recent_files.Count)
                     m_recent_files.RemoveLast();
                 m_recent_files.AddFirst (file);
             }
@@ -631,6 +631,10 @@ namespace GARbro.GUI
                     SetStatusText (m_app.CurrentArchive.Description);
                 lv_SelectItem (0);
             }
+            catch (OperationCanceledException X)
+            {
+                SetStatusText (X.Message);
+            }
             catch (Exception X)
             {
                 PopupError (string.Format("{0}:\n{1}", filename, X.Message), guiStrings.MsgErrorOpening);
@@ -997,6 +1001,33 @@ namespace GARbro.GUI
         {
             e.CanExecute = PreviewPane.Source != null;
         }
+
+        private void HideStatusBarExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var status = AppStatusBar.Visibility;
+            if (Visibility.Visible == status)
+                AppStatusBar.Visibility = Visibility.Collapsed;
+            else
+                AppStatusBar.Visibility = Visibility.Visible;
+        }
+
+        private void HideMenuBarExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var status = MainMenuBar.Visibility;
+            if (Visibility.Visible == status)
+                MainMenuBar.Visibility = Visibility.Collapsed;
+            else
+                MainMenuBar.Visibility = Visibility.Visible;
+        }
+
+        private void HideToolBarExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var status = MainToolBar.Visibility;
+            if (Visibility.Visible == status)
+                MainToolBar.Visibility = Visibility.Collapsed;
+            else
+                MainToolBar.Visibility = Visibility.Visible;
+        }
     }
 
     /// <summary>
@@ -1093,5 +1124,8 @@ namespace GARbro.GUI
         public static readonly RoutedCommand Refresh = new RoutedCommand();
         public static readonly RoutedCommand Browse = new RoutedCommand();
         public static readonly RoutedCommand FitWindow = new RoutedCommand();
+        public static readonly RoutedCommand HideStatusBar = new RoutedCommand();
+        public static readonly RoutedCommand HideMenuBar = new RoutedCommand();
+        public static readonly RoutedCommand HideToolBar = new RoutedCommand();
     }
 }

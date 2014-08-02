@@ -13,12 +13,17 @@
         Width="{Binding Source={x:Static p:Settings.Default}, Path=winWidth, Mode=TwoWay}"
         WindowState="{Binding Source={x:Static p:Settings.Default}, Path=winState, Mode=TwoWay}">
     <Window.Resources>
+        <!-- alternate colors for directory view -->
         <SolidColorBrush x:Key="AlternateColor1" Color="#f2f5f9" />
         <SolidColorBrush x:Key="AlternateColor2" Color="White" />
+        
+        <!-- toolbar icons -->
         <BitmapImage x:Key="Icon32x32Back"      UriSource="Images/32x32/back button.png"/>
         <BitmapImage x:Key="Icon32x32Forward"   UriSource="Images/32x32/forward button.png"/>
         <BitmapImage x:Key="Icon32x32Help"      UriSource="Images/32x32/help.png"/>
         <BitmapImage x:Key="Icon48x48Refresh"   UriSource="Images/48x48/refresh.png"/>
+
+        <!-- directory view internals -->
         <CollectionViewSource x:Key="ListViewSource" Source="{Binding}"/>
         <local:BooleanToCollapsedVisibilityConverter x:Key="booleanToCollapsedVisibilityConverter" />
         <local:EntryTypeConverter x:Key="entryTypeConverter"/>
@@ -40,9 +45,27 @@
         <DataTemplate x:Key="SortArrowNone">
             <TextBlock Margin="5,0,5,0" Text="{Binding}"/>
         </DataTemplate>
+        
         <Style x:Key="DefaultMenuItemStyle" TargetType="{x:Type MenuItem}">
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
+
+        <!-- Sort-by submenu -->
+        <MenuItem x:Key="sortByMenu" Header="{x:Static s:guiStrings.CtxMenuSortBy}">
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
+                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByName, Mode=OneWay}"
+                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
+                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByType, Mode=OneWay}"
+                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
+                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortBySize, Mode=OneWay}"
+                      Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
+                      IsChecked="{Binding ElementName=AppWindow, Path=IsUnsorted, Mode=OneWay}"
+                      Command="{x:Static local:Commands.SortBy}"/>
+        </MenuItem>
+        <!-- Default listview context menu -->
         <ContextMenu x:Key="lvDirContextMenu">
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuOpen}" InputGestureText="Enter"
                       Style="{StaticResource DefaultMenuItemStyle}"
@@ -94,30 +117,63 @@
 
     </Window.Resources>
     <DockPanel LastChildFill="True">
-        <Menu x:Name="MainMenuBar" DockPanel.Dock="Top" IsMainMenu="True" Visibility="Visible"
-              Background="{DynamicResource {x:Static SystemColors.MenuBrushKey}}">
-            <MenuItem Header="{x:Static s:guiStrings.MenuFile}">
-                <MenuItem Header="{x:Static s:guiStrings.MenuOpen}" Command="{x:Static local:Commands.OpenFile}" InputGestureText="Ctrl+O"/>
-                <MenuItem Header="{x:Static s:guiStrings.MenuRecent}" x:Name="RecentFilesMenu">
-                    <MenuItem.ItemContainerStyle>
-                        <Style TargetType="MenuItem">
-                            <Setter Property="Header" Value="{Binding Path=Item2}"/>
-                            <Setter Property="Command" Value="{x:Static local:Commands.OpenRecent}"/>
-                            <Setter Property="CommandParameter" Value="{Binding Path=Item1}"/>
-                        </Style>
-                    </MenuItem.ItemContainerStyle>
+        <StackPanel x:Name="MainMenuBar" DockPanel.Dock="Top" Orientation="Vertical"
+                    Visibility="{Binding Source={x:Static p:Settings.Default}, Path=winMenuBarVisibility, Mode=TwoWay}">
+            <Menu IsMainMenu="True" Background="{DynamicResource {x:Static SystemColors.MenuBrushKey}}">
+                <MenuItem Header="{x:Static s:guiStrings.MenuFile}">
+                    <MenuItem Header="{x:Static s:guiStrings.MenuOpen}" Command="{x:Static local:Commands.OpenFile}" InputGestureText="Ctrl+O"/>
+                    <MenuItem Header="{x:Static s:guiStrings.CtxMenuCreate}" InputGestureText="F3"
+                              Command="{x:Static local:Commands.CreateArchive}" />
+                    <MenuItem Header="{x:Static s:guiStrings.MenuRecent}" x:Name="RecentFilesMenu">
+                        <MenuItem.ItemContainerStyle>
+                            <Style TargetType="MenuItem">
+                                <Setter Property="Header" Value="{Binding Path=Item2}"/>
+                                <Setter Property="Command" Value="{x:Static local:Commands.OpenRecent}"/>
+                                <Setter Property="CommandParameter" Value="{Binding Path=Item1}"/>
+                            </Style>
+                        </MenuItem.ItemContainerStyle>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="{x:Static s:guiStrings.MenuExit}" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
                 </MenuItem>
-                <Separator/>
-                <MenuItem Header="{x:Static s:guiStrings.MenuExit}" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
-            </MenuItem>
-            <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
-                <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
-            </MenuItem>
-        </Menu>
+                <MenuItem Header="{x:Static s:guiStrings.MenuView}">
+                    <MenuItem Header="{x:Static s:guiStrings.MenuToggleToolBar}" InputGestureText="Alt+Shift+T"
+                          Command="{x:Static local:Commands.HideToolBar}"/>
+                    <MenuItem Header="{x:Static s:guiStrings.MenuToggleMenuBar}" InputGestureText="Alt+Shift+M"
+                          Command="{x:Static local:Commands.HideMenuBar}"/>
+                    <MenuItem Header="{x:Static s:guiStrings.MenuToggleStatusBar}" InputGestureText="Alt+Shift+S"
+                          Command="{x:Static local:Commands.HideStatusBar}"/>
+                    <Separator/>
+                    <MenuItem Header="{x:Static s:guiStrings.MenuFitWindow}" InputGestureText="Ctrl+H"
+                          Command="{x:Static local:Commands.FitWindow}"/>
+                    <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
+                          Command="{x:Static local:Commands.Refresh}"/>
+                    <Separator/>
+                    <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBy}">
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
+                              IsChecked="{Binding ElementName=AppWindow, Path=IsSortByName, Mode=OneWay}"
+                              Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
+                              IsChecked="{Binding ElementName=AppWindow, Path=IsSortByType, Mode=OneWay}"
+                              Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
+                              IsChecked="{Binding ElementName=AppWindow, Path=IsSortBySize, Mode=OneWay}"
+                              Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
+                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
+                              IsChecked="{Binding ElementName=AppWindow, Path=IsUnsorted, Mode=OneWay}"
+                              Command="{x:Static local:Commands.SortBy}"/>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
+                    <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
+                </MenuItem>
+            </Menu>
+            <Separator Height="1" Margin="0"/>
+        </StackPanel>
         <Menu Visibility="Collapsed" x:Name="HelperMenuBar"/>
-        <Separator DockPanel.Dock="Top" Height="1" Margin="0"/>
-        <DockPanel Background="{Binding Path=Background, ElementName=HelperMenuBar}" x:Name="MainToolBar"
-                   HorizontalAlignment="Stretch" DockPanel.Dock="Top">
+        <DockPanel x:Name="MainToolBar" Background="{Binding Path=Background, ElementName=HelperMenuBar}"
+                   HorizontalAlignment="Stretch" DockPanel.Dock="Top"
+                   Visibility="{Binding Source={x:Static p:Settings.Default}, Path=winToolBarVisibility, Mode=TwoWay}">
             <DockPanel.Resources>
                 <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
                     <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
@@ -155,6 +211,7 @@
                     </Style.Triggers>
                 </Style>
             </DockPanel.Resources>
+            <Separator DockPanel.Dock="Bottom" Height="1" Margin="0"/>
             <Button x:Name="ButtonBack" ToolTip="{x:Static s:guiStrings.TooltipBack}" Margin="5,2,0,2"
                     Command="{x:Static local:Commands.GoBack}">
                 <Image Source="{StaticResource Icon32x32Back}"/>
@@ -178,13 +235,15 @@
             </Button>
             <TextBlock Visibility="Hidden"/>
         </DockPanel>
-        <Separator DockPanel.Dock="Top" Height="1" Margin="0"/>
-        <StatusBar DockPanel.Dock="Bottom" x:Name="AppStatusBar">
-            <StatusBarItem>
-                <TextBlock x:Name="appStatusText"/>
-            </StatusBarItem>
-        </StatusBar>
-        <Separator DockPanel.Dock="Bottom" Height="1" Margin="0"/>
+        <StackPanel DockPanel.Dock="Bottom" x:Name="AppStatusBar"
+                    Visibility="{Binding Source={x:Static p:Settings.Default}, Path=winStatusBarVisibility, Mode=TwoWay}">
+            <Separator Height="1" Margin="0"/>
+            <StatusBar>
+                <StatusBarItem>
+                    <TextBlock x:Name="appStatusText"/>
+                </StatusBarItem>
+            </StatusBar>
+        </StackPanel>
         <Grid x:Name="ContentGrid" DockPanel.Dock="Left" VerticalAlignment="Stretch"
               HorizontalAlignment="Stretch" ShowGridLines="False">
             <Grid.ColumnDefinitions>
@@ -294,6 +353,9 @@
         <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Left" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Right" Command="{x:Static local:Commands.GoForward}"/>
+        <KeyBinding Gesture="Alt+Shift+M" Command="{x:Static local:Commands.HideMenuBar}"/>
+        <KeyBinding Gesture="Alt+Shift+T" Command="{x:Static local:Commands.HideToolBar}"/>
+        <KeyBinding Gesture="Alt+Shift+S" Command="{x:Static local:Commands.HideStatusBar}"/>
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.OpenItem}"   Executed="OpenItemExec"   CanExecute="CanExecuteOnSelected"/>
@@ -309,6 +371,9 @@
         <CommandBinding Command="{x:Static local:Commands.GoForward}"  Executed="GoForwardExec"  CanExecute="CanExecuteGoForward"/>
         <CommandBinding Command="{x:Static local:Commands.Refresh}"    Executed="RefreshExec"    CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.FitWindow}"  Executed="FitWindowExec"  CanExecute="CanExecuteFitWindow"/>
+        <CommandBinding Command="{x:Static local:Commands.HideStatusBar}" Executed="HideStatusBarExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.HideMenuBar}" Executed="HideMenuBarExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.HideToolBar}" Executed="HideToolBarExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.About}"      Executed="AboutExec"      CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
