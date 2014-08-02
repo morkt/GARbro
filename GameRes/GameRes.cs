@@ -381,19 +381,9 @@ namespace GameRes
         {
             file.Position = 0;
             uint signature = (byte)file.ReadByte();
-            if (BitConverter.IsLittleEndian)
-            {
-                signature |= (uint)file.ReadByte() << 8;
-                signature |= (uint)file.ReadByte() << 16;
-                signature |= (uint)file.ReadByte() << 24;
-            }
-            else
-            {
-                signature <<= 24;
-                signature |= (uint)file.ReadByte() << 16;
-                signature |= (uint)file.ReadByte() << 8;
-                signature |= (byte)file.ReadByte();
-            }
+            signature |= (uint)file.ReadByte() << 8;
+            signature |= (uint)file.ReadByte() << 16;
+            signature |= (uint)file.ReadByte() << 24;
             return signature;
         }
     }
