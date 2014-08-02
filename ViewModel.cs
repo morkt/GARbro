@@ -71,7 +71,7 @@ namespace GARbro.GUI
             }
             foreach (var entry in Source)
             {
-                int prio = null == entry as SubDirEntry ? 0 : -1;
+                int prio = entry is SubDirEntry ? -1 : 0;
                 Add (new EntryViewModel (entry, prio));
             }
         }
@@ -237,7 +237,7 @@ namespace GARbro.GUI
 
         public string Name { get; private set; }
         public string Type { get { return Source.Type; } }
-        public uint   Size { get { return Source.Size; } }
+        public uint?  Size { get { return IsDirectory ? null : (uint?)Source.Size; } }
         public int    Priority { get; private set; }
         public bool   IsDirectory { get { return Priority < 0; } }
     }
