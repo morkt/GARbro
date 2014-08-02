@@ -294,7 +294,7 @@ namespace GameRes.Formats
 
         uint WriteImageEntry (PackedEntry entry, Stream input, Stream output)
         {
-            var grp = FormatCatalog.Instance.LookupExtension<GrpFormat> ("GRP").FirstOrDefault();
+            var grp = FormatCatalog.Instance.ImageFormats.OfType<GrpFormat>().FirstOrDefault();
             if (null == grp) // probably never happens
                 throw new FileFormatException ("GRP image encoder not available");
             bool is_grp = grp.Signature == FormatCatalog.ReadSignature (input);
