@@ -28,7 +28,7 @@ IN THE SOFTWARE.
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
         xmlns:gr="clr-namespace:GameRes;assembly=GameRes"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
-        Title="{x:Static s:guiStrings.TextAboutTitle}" Height="306" Width="475" ResizeMode="NoResize"
+        Title="{x:Static s:guiStrings.TextAboutTitle}" Height="306" Width="500" ResizeMode="NoResize"
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <Window.Resources>
@@ -42,8 +42,8 @@ IN THE SOFTWARE.
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="43*" />
-            <ColumnDefinition Width="74*" />
+            <ColumnDefinition Width="4*" />
+            <ColumnDefinition Width="7*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition />
