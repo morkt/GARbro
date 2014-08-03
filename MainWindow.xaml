@@ -4,7 +4,6 @@
         xmlns:local="clr-namespace:GARbro.GUI"
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
         xmlns:p="clr-namespace:GARbro.GUI.Properties"
-        xmlns:sdk="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
         Title="GARbro" MinHeight="250" ResizeMode="CanResizeWithGrip"
         Loaded="WindowLoaded"
         Top="{Binding Source={x:Static p:Settings.Default}, Path=winTop, Mode=TwoWay}"
@@ -90,32 +89,7 @@
             -->
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
                       Command="{x:Static local:Commands.Refresh}"/>
-            <!-- Sort-by submenu
-            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBy}">
-                <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
-                          IsChecked="{Binding ElementName=AppWindow, Path=IsSortByName, Mode=OneWay}"
-                          Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
-                <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
-                          IsChecked="{Binding ElementName=AppWindow, Path=IsSortByType, Mode=OneWay}"
-                          Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
-                <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
-                          IsChecked="{Binding ElementName=AppWindow, Path=IsSortBySize, Mode=OneWay}"
-                          Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
-                <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
-                          IsChecked="{Binding ElementName=AppWindow, Path=IsUnsorted, Mode=OneWay}"
-                          Command="{x:Static local:Commands.SortBy}"/>
-            </MenuItem>
-            -->
         </ContextMenu>
-
-        <!--
-        <ItemsPanelTemplate x:Key="MenuPanelWithoutIcon">
-            <StackPanel Margin="-20,0,0,0" Background="{DynamicResource {x:Static SystemColors.MenuBrushKey}}"/>
-        </ItemsPanelTemplate>
-        <Style TargetType="{x:Type MenuItem}">
-            <Setter Property="ItemsPanel" Value="{StaticResource MenuPanelWithoutIcon}"/>
-        </Style>
-        -->
 
     </Window.Resources>
     <DockPanel LastChildFill="True">
@@ -139,17 +113,17 @@
                     <MenuItem Header="{x:Static s:guiStrings.MenuExit}" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuView}">
+                    <MenuItem Header="{x:Static s:guiStrings.MenuFitWindow}" InputGestureText="Ctrl+H"
+                          Command="{x:Static local:Commands.FitWindow}"/>
+                    <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
+                          Command="{x:Static local:Commands.Refresh}"/>
+                    <Separator/>
                     <MenuItem Header="{x:Static s:guiStrings.MenuToggleToolBar}" InputGestureText="Alt+Shift+T"
                           Command="{x:Static local:Commands.HideToolBar}"/>
                     <MenuItem Header="{x:Static s:guiStrings.MenuToggleMenuBar}" InputGestureText="Alt+Shift+M"
                           Command="{x:Static local:Commands.HideMenuBar}"/>
                     <MenuItem Header="{x:Static s:guiStrings.MenuToggleStatusBar}" InputGestureText="Alt+Shift+S"
                           Command="{x:Static local:Commands.HideStatusBar}"/>
-                    <Separator/>
-                    <MenuItem Header="{x:Static s:guiStrings.MenuFitWindow}" InputGestureText="Ctrl+H"
-                          Command="{x:Static local:Commands.FitWindow}"/>
-                    <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
-                          Command="{x:Static local:Commands.Refresh}"/>
                     <Separator/>
                     <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBy}">
                         <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
