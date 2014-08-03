@@ -500,6 +500,12 @@ namespace GARbro.GUI
             public int              LastTime = 0;
             public StringBuilder    Phrase = new StringBuilder();
             public bool             Mismatch = false;
+
+            public void Reset ()
+            {
+                Phrase.Clear ();
+                Mismatch = false;
+            }
         }
 
         const int TextLookupTimeout = 1000; // milliseconds
@@ -520,8 +526,7 @@ namespace GARbro.GUI
 
             if (timestamp - m_current_input.LastTime > TextLookupTimeout)
             {
-                m_current_input.Phrase.Clear();
-                m_current_input.Mismatch = false;
+                m_current_input.Reset();
             }
             m_current_input.LastTime = timestamp;
             if (m_current_input.Mismatch)
@@ -1032,29 +1037,26 @@ namespace GARbro.GUI
 
         private void HideStatusBarExec (object sender, ExecutedRoutedEventArgs e)
         {
-            var status = AppStatusBar.Visibility;
-            if (Visibility.Visible == status)
-                AppStatusBar.Visibility = Visibility.Collapsed;
-            else
-                AppStatusBar.Visibility = Visibility.Visible;
+            ToggleVisibility (AppStatusBar);
         }
 
         private void HideMenuBarExec (object sender, ExecutedRoutedEventArgs e)
         {
-            var status = MainMenuBar.Visibility;
-            if (Visibility.Visible == status)
-                MainMenuBar.Visibility = Visibility.Collapsed;
-            else
-                MainMenuBar.Visibility = Visibility.Visible;
+            ToggleVisibility (MainMenuBar);
         }
 
         private void HideToolBarExec (object sender, ExecutedRoutedEventArgs e)
         {
-            var status = MainToolBar.Visibility;
+            ToggleVisibility (MainToolBar);
+        }
+
+        static void ToggleVisibility (UIElement item)
+        {
+            var status = item.Visibility;
             if (Visibility.Visible == status)
-                MainToolBar.Visibility = Visibility.Collapsed;
+                item.Visibility = Visibility.Collapsed;
             else
-                MainToolBar.Visibility = Visibility.Visible;
+                item.Visibility = Visibility.Visible;
         }
     }
 
