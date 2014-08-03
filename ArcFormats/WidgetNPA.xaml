@@ -5,6 +5,5 @@
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
       MaxWidth="250">
     <ComboBox Name="Scheme" Width="180"
-              ItemsSource="{Binding Source={x:Static fmt:NpaOpener.KnownSchemes}, Mode=OneWay}"
-              SelectedIndex="{Binding Source={x:Static p:Settings.Default}, Path=NPAScheme, Mode=TwoWay}"/>
+              ItemsSource="{Binding Source={x:Static fmt:NpaOpener.KnownSchemes}, Mode=OneWay}"/>
 </Grid>
