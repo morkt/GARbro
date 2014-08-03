@@ -251,6 +251,8 @@ namespace GameRes.Formats
                 if (table.TryGetValue (id, out existing) && !(existing is AmiEntry))
                 {
                     var file_new = new FileInfo (entry.Name);
+                    if (!file_new.Exists)
+                        continue;
                     var file_old = new FileInfo (existing.Name);
                     if (file_new.LastWriteTime <= file_old.LastWriteTime)
                         continue;
