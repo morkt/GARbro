@@ -7,6 +7,6 @@
         <ColumnDefinition Width="Auto"/>
         <ColumnDefinition MinWidth="100" Width="*"/>
     </Grid.ColumnDefinitions>
-    <Label Content="{x:Static s:arcStrings.YPFLabelKey}" Target="{Binding ElementName=Passkey}" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Right"/>
+    <Label Content="{x:Static s:arcStrings.YPFLabelKey}" Target="{Binding ElementName=Passkey}" Grid.Column="0" Grid.Row="0" Padding="0,1" VerticalAlignment="Center" HorizontalAlignment="Right"/>
     <TextBox Name="Passkey" Margin="5" Width="100" Grid.Column="1" Grid.Row="0"/>
 </Grid>
