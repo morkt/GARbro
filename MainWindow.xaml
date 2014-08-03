@@ -15,7 +15,8 @@
         <!-- alternate colors for directory view -->
         <SolidColorBrush x:Key="AlternateColor1" Color="#f2f5f9" />
         <SolidColorBrush x:Key="AlternateColor2" Color="White" />
-        
+        <SolidColorBrush x:Key="InactiveInputBackground" Color="#ebf5fe" />
+
         <!-- toolbar icons -->
         <BitmapImage x:Key="Icon32x32Back"      UriSource="Images/32x32/back button.png"/>
         <BitmapImage x:Key="Icon32x32Forward"   UriSource="Images/32x32/forward button.png"/>
@@ -164,6 +165,24 @@
                 <Style TargetType="{x:Type Separator}" BasedOn="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}">
                     <Setter Property="Margin" Value="5,0,5,0"/>
                 </Style>
+                <!-- Path input textbox mouseover highlight --><!--
+                <Style TargetType="{x:Type local:ExtAutoCompleteBox}">
+                    <Style.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsFocused" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{StaticResource InactiveInputBackground}"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="White"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="Background" Value="White"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+                -->
                 <Style TargetType="{x:Type Image}">
                     <Setter Property="UseLayoutRounding" Value="True"/>
                     <Setter Property="SnapsToDevicePixels" Value="True"/>
