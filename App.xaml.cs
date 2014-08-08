@@ -67,20 +67,20 @@ namespace GARbro.GUI
             Trace.AutoFlush = true;
 #endif
             Trace.WriteLine ("ApplicationStartup --------------------------------", "GARbro.GUI.App");
-            if (0 != e.Args.Length)
+            try
             {
-                InitPath = Path.GetFullPath (e.Args[0]);
-            }
-            else if (!string.IsNullOrEmpty (Settings.Default.appLastDirectory))
-            {
-                try
+                if (0 != e.Args.Length)
+                {
+                    InitPath = Path.GetFullPath (e.Args[0]);
+                }
+                else if (!string.IsNullOrEmpty (Settings.Default.appLastDirectory))
                 {
                     string last_dir = Settings.Default.appLastDirectory;
                     Directory.SetCurrentDirectory (last_dir);
                     InitPath = last_dir;
                 }
-                catch { }
             }
+            catch { }
 
             if (string.IsNullOrEmpty (InitPath))
                 InitPath = Directory.GetCurrentDirectory();
