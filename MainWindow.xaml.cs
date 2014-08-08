@@ -838,21 +838,13 @@ namespace GARbro.GUI
                 }
                 else
                 {
-                    var rc = MessageBox.Show (this, guiStrings.MsgConfirmDeleteFiles, guiStrings.TextDeleteFiles,
-                                              MessageBoxButton.YesNo, MessageBoxImage.Question);
-                    if (MessageBoxResult.Yes != rc)
-                        return;
                     int count = 0;
                     StopWatchDirectoryChanges ();
                     try
                     {
-                        Trace.WriteLine (string.Format ("deleting multiple files in {0}", CurrentPath), "DeleteItemExec");
-                        foreach (var entry in items)
-                        {
-                            string item_name = Path.Combine (CurrentPath, entry.Name);
-                            FileSystem.DeleteFile (item_name);
-                            ++count;
-                        }
+                        var file_list = items.Select (entry => Path.Combine (CurrentPath, entry.Name));
+                        GARbro.Shell.File.Delete (file_list);
+                        count = file_list.Count();
                     }
                     catch
                     {
