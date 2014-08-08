@@ -1067,15 +1067,21 @@ namespace GARbro.GUI
     {
         public delegate void EnterKeyDownEvent (object sender, KeyEventArgs e);
         public event EnterKeyDownEvent EnterKeyDown;
-        /*
-        public event EnterKeyDownEvent EnterKeyDown
+
+        public ExtAutoCompleteBox ()
         {
-            add { AddHandler (KeyEvent, value); }
-            remove { RemoveHandler (KeyEvent, value); }
+            this.GotFocus += (s, e) => { IsTextBoxFocused = true; };
+            this.LostFocus += (s, e) => { IsTextBoxFocused = false; };
         }
-        public static readonly RoutedEvent EnterKeyEvent = EventManager.RegisterRoutedEvent(
-            "EnterKeyDown", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(ExtAutoCompleteBox));
-        */
+
+        public bool IsTextBoxFocused
+        {
+            get { return (bool)GetValue (HasFocusProperty); }
+            private set { SetValue (HasFocusProperty, value); }
+        }
+
+        public static readonly DependencyProperty HasFocusProperty = 
+            DependencyProperty.RegisterAttached ("IsTextBoxFocused", typeof(bool), typeof(ExtAutoCompleteBox), new UIPropertyMetadata());
 
         protected override void OnKeyDown (KeyEventArgs e)
         {
@@ -1088,9 +1094,6 @@ namespace GARbro.GUI
         {
             if (EnterKeyDown != null)
                 EnterKeyDown (this, e);
-
-//            var event_args = new RoutedEventArgs (ExtCompleteBox.EnterKeyEvent);
-//            RaiseEvent (event_args);
         }
 
         protected override void OnPopulating (PopulatingEventArgs e)
