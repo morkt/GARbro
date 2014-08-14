@@ -61,6 +61,7 @@
     <Compile Include="ArcMajiro.cs" />
     <Compile Include="ArcNPA.cs" />
     <Compile Include="ArcNSA.cs" />
+    <Compile Include="ArcPD.cs" />
     <Compile Include="ArcSteinsGate.cs" />
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />
@@ -71,6 +72,9 @@
     </Compile>
     <Compile Include="CreateONSWidget.xaml.cs">
       <DependentUpon>CreateONSWidget.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CreatePDWidget.xaml.cs">
+      <DependentUpon>CreatePDWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="CreateSGWidget.xaml.cs">
       <DependentUpon>CreateSGWidget.xaml</DependentUpon>
@@ -136,6 +140,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CreateONSWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CreatePDWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

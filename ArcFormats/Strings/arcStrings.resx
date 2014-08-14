@@ -186,6 +186,9 @@ predefined encryption scheme.</value>
   <data name="MsgInvalidImageFormat" xml:space="preserve">
     <value>{0}: image format not recognized.</value>
   </data>
+  <data name="MsgTooManyFiles" xml:space="preserve">
+    <value>Number of files exceedes archive limit.</value>
+  </data>
   <data name="MsgUpdatingIndex" xml:space="preserve">
     <value>Updating index...</value>
   </data>
@@ -209,6 +212,12 @@ predefined encryption scheme.</value>
   </data>
   <data name="ONSCompressionNone" xml:space="preserve">
     <value>None</value>
+  </data>
+  <data name="PDDescription" xml:space="preserve">
+    <value>Flying Shine resource archive</value>
+  </data>
+  <data name="PDScrambleContents" xml:space="preserve">
+    <value>Scramble contents</value>
   </data>
   <data name="SCRDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv script file</value>

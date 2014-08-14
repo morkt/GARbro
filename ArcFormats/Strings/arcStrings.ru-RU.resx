@@ -171,6 +171,9 @@
   <data name="MsgInvalidImageFormat" xml:space="preserve">
     <value>{0}: не удалось распознать формат изображения.</value>
   </data>
+  <data name="MsgTooManyFiles" xml:space="preserve">
+    <value>Количество файлов превышает ограничения архива.</value>
+  </data>
   <data name="MsgUpdatingIndex" xml:space="preserve">
     <value>Обновляется оглавление...</value>
   </data>
@@ -185,6 +188,9 @@
   </data>
   <data name="ONSCompressionNone" xml:space="preserve">
     <value>Без компрессии</value>
+  </data>
+  <data name="PDScrambleContents" xml:space="preserve">
+    <value>Шифровать содержимое</value>
   </data>
   <data name="SGLabelEncoding" xml:space="preserve">
     <value>Кодировка имён файлов</value>

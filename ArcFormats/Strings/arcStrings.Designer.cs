@@ -262,6 +262,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Number of files exceedes archive limit..
+        /// </summary>
+        public static string MsgTooManyFiles {
+            get {
+                return ResourceManager.GetString("MsgTooManyFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Updating index....
         /// </summary>
         public static string MsgUpdatingIndex {
@@ -330,6 +339,24 @@ namespace GameRes.Formats.Strings {
         public static string ONSCompressionNone {
             get {
                 return ResourceManager.GetString("ONSCompressionNone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Flying Shine resource archive.
+        /// </summary>
+        public static string PDDescription {
+            get {
+                return ResourceManager.GetString("PDDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Scramble contents.
+        /// </summary>
+        public static string PDScrambleContents {
+            get {
+                return ResourceManager.GetString("PDScrambleContents", resourceCulture);
             }
         }
         
