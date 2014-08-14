@@ -613,6 +613,14 @@ namespace GARbro.GUI
             m_history.Push (GetCurrentPosition());
         }
 
+        public void ChangePosition (DirectoryPosition new_pos)
+        {
+            var current = GetCurrentPosition();
+            if (current.Path != new_pos.Path || current.ArchivePath != new_pos.ArchivePath)
+                SaveCurrentPosition();
+            SetCurrentPosition (new_pos);
+        }
+
         private void GoBackExec (object sender, ExecutedRoutedEventArgs e)
         {
             DirectoryPosition current = m_history.Undo (GetCurrentPosition());

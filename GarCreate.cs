@@ -188,8 +188,7 @@ namespace GARbro.GUI
             {
                 Settings.Default.appLastCreatedArchive = m_arc_name;
                 m_main.Dispatcher.Invoke (() => {
-                    m_main.SaveCurrentPosition();
-                    m_main.SetCurrentPosition (new DirectoryPosition (m_arc_name));
+                    m_main.ChangePosition (new DirectoryPosition (m_arc_name));
                 });
             }
             else
