@@ -29,14 +29,11 @@ using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using GameRes.Formats.Strings;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Majiro
 {
-    internal class MajiroEntry : Entry
-    {
-        public bool IsEncrypted { get; set; }
-    }
-
     internal class MajiroArchive : ArcFile
     {
         public uint Key { get; private set; }
@@ -50,7 +47,8 @@ namespace GameRes.Formats.Majiro
 
     public class MajiroOptions : ResourceOptions
     {
-        public uint Key { get; set; }
+        public uint    Key { get; set; }
+        public int Version { get; set; }
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -60,6 +58,7 @@ namespace GameRes.Formats.Majiro
         public override string Description { get { return "Majiro game engine resource archive"; } }
         public override uint Signature { get { return 0x696a614d; } }
         public override bool IsHierarchic { get { return false; } }
+        public override bool CanCreate { get { return true; } }
 
         public ArcOpener ()
         {
@@ -116,6 +115,103 @@ namespace GameRes.Formats.Majiro
             if (!dir.Any())
                 return null;
             return new ArcFile (file, this, dir);
+        }
+
+        internal class MajiroEntry : Entry
+        {
+            public byte[]   IndexName;
+            public uint     NameHash;
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            int version = 1;
+            int file_count = list.Count();
+            int callback_count = 0;
+            var encoding = Encodings.cp932.WithFatalFallback();
+            if (null != callback)
+                callback (file_count+2, null, null);
+
+            using (var writer = new BinaryWriter (output, encoding, true))
+            {
+                if (null != callback)
+                    callback (callback_count++, null, arcStrings.MsgWritingIndex);
+
+                string signature = string.Format ("MajiroArcV{0}.000\0", version);
+                writer.Write (encoding.GetBytes (signature));
+
+                writer.Write (file_count);
+                int index_offset = 0x1c + (file_count+1) * 8;
+                writer.Write (index_offset);
+
+                // calculate name hashes
+                var real_entry_list = new List<MajiroEntry> (file_count);
+                foreach (var entry in list)
+                {
+                    try
+                    {
+                        string name = Path.GetFileName (entry.Name);
+                        byte[] name_buf = encoding.GetBytes (name);
+                        uint crc32 = Crc32.Compute (name_buf, 0, name_buf.Length);
+                        var maj_entry = new MajiroEntry
+                        {
+                            Name        = entry.Name,
+                            IndexName   = name_buf,
+                            NameHash    = crc32,
+                        };
+                        real_entry_list.Add (maj_entry);
+                    }
+                    catch (EncoderFallbackException X)
+                    {
+                        throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
+                    }
+                }
+                real_entry_list.Sort ((a, b) => a.NameHash.CompareTo (b.NameHash));
+
+                // write names
+                writer.BaseStream.Seek (index_offset, SeekOrigin.Begin);
+                foreach (var entry in real_entry_list)
+                {
+                    writer.Write (entry.IndexName);
+                    writer.Write ((byte)0);
+                }
+
+                // write files
+                uint start_offset = (uint)output.Position;
+                uint current_offset = start_offset;
+                foreach (var entry in real_entry_list)
+                {
+                    if (null != callback)
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                    entry.Offset = current_offset;
+                    using (var input = File.OpenRead (entry.Name))
+                    {
+                        var size = input.Length;
+                        if (size > uint.MaxValue || current_offset + size > uint.MaxValue)
+                            throw new FileSizeException();
+                        current_offset += (uint)size;
+                        entry.Size = (uint)size;
+                        input.CopyTo (output);
+                    }
+                }
+                uint end_offset = (uint)output.Position;
+
+                if (null != callback)
+                    callback (callback_count++, null, arcStrings.MsgUpdatingIndex);
+
+                // at last, go back to index and write hashes/offsets
+                writer.BaseStream.Position = 0x18;
+                writer.Write (start_offset);
+                foreach (var entry in real_entry_list)
+                {
+                    writer.Write (entry.NameHash);
+                    writer.Write ((uint)entry.Offset);
+                }
+                writer.Write ((int)0);
+                writer.Write (end_offset);
+            }
         }
     }
 }
