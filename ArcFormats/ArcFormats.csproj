@@ -70,6 +70,9 @@
     <Compile Include="CreateAMIWidget.xaml.cs">
       <DependentUpon>CreateAMIWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CreateINTWidget.xaml.cs">
+      <DependentUpon>CreateINTWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CreateONSWidget.xaml.cs">
       <DependentUpon>CreateONSWidget.xaml</DependentUpon>
     </Compile>
@@ -136,6 +139,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="CreateAMIWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CreateINTWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

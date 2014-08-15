@@ -136,6 +136,9 @@
   <data name="ArcNoEncryption" xml:space="preserve">
     <value>без шифрования</value>
   </data>
+  <data name="INTCreationNotice" xml:space="preserve">
+    <value>Создание зашифрованных архивов не реализовано.</value>
+  </data>
   <data name="INTKeyRequirement" xml:space="preserve">
     <value>Цифровой ключ должен быть 32-битным шестнадцатиричным числом</value>
   </data>

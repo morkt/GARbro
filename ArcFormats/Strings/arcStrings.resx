@@ -145,6 +145,9 @@ Choose appropriate encryption scheme.</value>
   <data name="GSCDescription" xml:space="preserve">
     <value>Liar-soft proprietary script format</value>
   </data>
+  <data name="INTCreationNotice" xml:space="preserve">
+    <value>Encrypted archives creation is not implemented.</value>
+  </data>
   <data name="INTDescription" xml:space="preserve">
     <value>FrontWing game resource archive</value>
   </data>

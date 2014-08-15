@@ -143,6 +143,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Encrypted archives creation is not implemented..
+        /// </summary>
+        public static string INTCreationNotice {
+            get {
+                return ResourceManager.GetString("INTCreationNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to FrontWing game resource archive.
         /// </summary>
         public static string INTDescription {

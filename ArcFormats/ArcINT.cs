@@ -48,6 +48,7 @@ namespace GameRes.Formats
         }
     }
 
+    [Serializable()]
     public class IntEncryptionInfo
     {
         public uint?    Key      { get; set; }
@@ -85,6 +86,7 @@ namespace GameRes.Formats
         public override string Description { get { return arcStrings.INTDescription; } }
         public override uint Signature { get { return 0x0046494b; } }
         public override bool IsHierarchic { get { return false; } }
+        public override bool CanCreate { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -103,7 +105,7 @@ namespace GameRes.Formats
             }
 
             long current_offset = 8;
-            var dir = new List<Entry>();
+            var dir = new List<Entry> ((int)entry_count);
             for (uint i = 0; i < entry_count; ++i)
             {
                 string name = file.View.ReadString (current_offset, 0x40);
@@ -135,7 +137,7 @@ namespace GameRes.Formats
                 Array.Reverse (blowfish_key);
 
             var blowfish = new Blowfish (blowfish_key);
-            var dir = new List<Entry>();
+            var dir = new List<Entry> ((int)entry_count-1);
             byte[] name_info = new byte[0x40];
             for (uint i = 1; i < entry_count; ++i)
             {
@@ -332,10 +334,92 @@ namespace GameRes.Formats
             return new GUI.WidgetINT ();
         }
 
+        public override object GetCreationWidget ()
+        {
+            return new GUI.CreateINTWidget();
+        }
+
         uint? QueryEncryptionInfo ()
         {
             var options = Query<IntOptions> (arcStrings.INTNotice);
             return options.EncryptionInfo.GetKey();
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            int file_count = list.Count();
+            if (null != callback)
+                callback (file_count+2, null, null);
+            int callback_count = 0;
+            using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                writer.Write (Signature);
+                writer.Write (file_count);
+                long dir_offset = output.Position;
+
+                var encoding = Encodings.cp932.WithFatalFallback();
+                byte[] name_buf = new byte[0x40];
+                int previous_size = 0;
+
+                if (null != callback)
+                    callback (callback_count++, null, arcStrings.MsgWritingIndex);
+
+                // first, write names only
+                foreach (var entry in list)
+                {
+                    string name = Path.GetFileName (entry.Name);
+                    try
+                    {
+                        int size = encoding.GetBytes (name, 0, name.Length, name_buf, 0);
+                        for (int i = size; i < previous_size; ++i)
+                            name_buf[i] = 0;
+                        previous_size = size;
+                    }
+                    catch (EncoderFallbackException X)
+                    {
+                        throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
+                    }
+                    catch (ArgumentException X)
+                    {
+                        throw new InvalidFileName (entry.Name, arcStrings.MsgFileNameTooLong, X);
+                    }
+                    writer.Write (name_buf);
+                    writer.BaseStream.Seek (8, SeekOrigin.Current);
+                }
+
+                // now, write files and remember offset/sizes
+                long current_offset = output.Position;
+                foreach (var entry in list)
+                {
+                    if (null != callback)
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                    entry.Offset = current_offset;
+                    using (var input = File.OpenRead (entry.Name))
+                    {
+                        var size = input.Length;
+                        if (size > uint.MaxValue || current_offset + size > uint.MaxValue)
+                            throw new FileSizeException();
+                        current_offset += (uint)size;
+                        entry.Size = (uint)size;
+                        input.CopyTo (output);
+                    }
+                }
+
+                if (null != callback)
+                    callback (callback_count++, null, arcStrings.MsgUpdatingIndex);
+
+                // at last, go back to directory and write offset/sizes
+                dir_offset += 0x40;
+                foreach (var entry in list)
+                {
+                    writer.BaseStream.Position = dir_offset;
+                    writer.Write ((uint)entry.Offset);
+                    writer.Write (entry.Size);
+                    dir_offset += 0x48;
+                }
+            }
         }
     }
 }
