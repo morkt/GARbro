@@ -23,6 +23,8 @@
 // IN THE SOFTWARE.
 //
 
+using System.IO;
+
 namespace GameRes.Utility
 {
     public static class Binary
@@ -102,7 +104,13 @@ namespace GameRes.Utility
         }
     }
 
-    public sealed class Crc32
+    public interface ICheckSum
+    {
+        uint Value { get; }
+        void Update (byte[] buf, int pos, int len);
+    }
+
+    public sealed class Crc32 : ICheckSum
     {
         /* Table of CRCs of all 8-bit messages. */
         private static readonly uint[] crc_table = InitializeTable();
@@ -174,7 +182,7 @@ namespace GameRes.Utility
     3. This notice may not be removed or altered from any source distribution.
     */
 
-    public sealed class Adler32
+    public sealed class Adler32 : ICheckSum
     {
         const uint BASE = 65521;      /* largest prime smaller than 65536 */
         const int  NMAX = 5552;
@@ -289,14 +297,13 @@ namespace GameRes.Utility
         private uint m_adler = 1;
         public  uint Value { get { return m_adler; } }
 
-        public uint Update (byte[] buf, int pos, int len)
+        public void Update (byte[] buf, int pos, int len)
         {
             unsafe
             {
                 fixed (byte* ptr = &buf[pos])
                 {
                     m_adler = Update (m_adler, ptr, len);
-                    return m_adler;
                 }
             }
         }
@@ -306,5 +313,60 @@ namespace GameRes.Utility
             m_adler = Update (m_adler, buf, len);
             return m_adler;
         }
+    }
+
+    public class CheckedStream : Stream
+    {
+        Stream      m_stream;
+        ICheckSum   m_checksum;
+
+		public override bool  CanRead { get { return m_stream.CanRead; } }
+		public override bool CanWrite { get { return m_stream.CanWrite; } }
+		public override bool  CanSeek { get { return m_stream.CanSeek; } }
+		public override long   Length { get { return m_stream.Length; } }
+
+		public Stream  BaseStream { get { return m_stream; } }
+		public uint CheckSumValue { get { return m_checksum.Value; } }
+
+        public CheckedStream (Stream stream, ICheckSum algorithm)
+        {
+            m_stream = stream;
+            m_checksum = algorithm;
+        }
+
+		public override int Read (byte[] buffer, int offset, int count)
+		{
+			int read = m_stream.Read (buffer, offset, count);
+            if (read > 0)
+                m_checksum.Update (buffer, offset, read);
+			return read;
+		}
+
+		public override void Write (byte[] buffer, int offset, int count)
+		{
+			m_stream.Write (buffer, offset, count);
+            m_checksum.Update (buffer, offset, count);
+		}
+
+		public override long Position
+		{
+			get { return m_stream.Position; }
+			set { m_stream.Position = value; }
+		}
+
+		public override void SetLength (long value)
+		{
+			m_stream.SetLength (value);
+		}
+
+		public override long Seek (long offset, SeekOrigin origin)
+		{
+			return m_stream.Seek (offset, origin);
+		}
+
+		public override void Flush ()
+		{
+			m_stream.Flush();
+		}
     }
 }
