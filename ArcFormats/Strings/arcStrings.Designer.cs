@@ -397,6 +397,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 32-bit key.
+        /// </summary>
+        public static string RPALabelKey {
+            get {
+                return ResourceManager.GetString("RPALabelKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv script file.
         /// </summary>
         public static string SCRDescription {

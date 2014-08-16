@@ -189,5 +189,17 @@ namespace GameRes.Formats.Properties {
                 this["YPFVersion"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1111638594")]
+        public uint RPAKey {
+            get {
+                return ((uint)(this["RPAKey"]));
+            }
+            set {
+                this["RPAKey"] = value;
+            }
+        }
     }
 }

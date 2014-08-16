@@ -80,6 +80,9 @@
     <Compile Include="CreatePDWidget.xaml.cs">
       <DependentUpon>CreatePDWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CreateRPAWidget.xaml.cs">
+      <DependentUpon>CreateRPAWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CreateSGWidget.xaml.cs">
       <DependentUpon>CreateSGWidget.xaml</DependentUpon>
     </Compile>
@@ -155,6 +158,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CreatePDWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CreateRPAWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -201,6 +201,9 @@
   <data name="PDScrambleContents" xml:space="preserve">
     <value>Шифровать содержимое</value>
   </data>
+  <data name="RPALabelKey" xml:space="preserve">
+    <value>32-битный ключ</value>
+  </data>
   <data name="SGLabelEncoding" xml:space="preserve">
     <value>Кодировка имён файлов</value>
   </data>

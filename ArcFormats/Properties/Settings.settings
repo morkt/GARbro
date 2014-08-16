@@ -44,5 +44,8 @@
     <Setting Name="YPFVersion" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">290</Value>
     </Setting>
+    <Setting Name="RPAKey" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">1111638594</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

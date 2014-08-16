@@ -231,6 +231,9 @@ predefined encryption scheme.</value>
   <data name="RPADescription" xml:space="preserve">
     <value>Ren'Py game engine archive</value>
   </data>
+  <data name="RPALabelKey" xml:space="preserve">
+    <value>32-bit key</value>
+  </data>
   <data name="SCRDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv script file</value>
   </data>
