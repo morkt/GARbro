@@ -7,4 +7,5 @@ tags
 *.suo
 *.pfx
 *;*
+*~
 Images
