@@ -228,6 +228,9 @@ predefined encryption scheme.</value>
   <data name="PDScrambleContents" xml:space="preserve">
     <value>Scramble contents</value>
   </data>
+  <data name="RPADescription" xml:space="preserve">
+    <value>Ren'Py game engine archive</value>
+  </data>
   <data name="SCRDescription" xml:space="preserve">
     <value>Amaterasu Translations Muv-Luv script file</value>
   </data>

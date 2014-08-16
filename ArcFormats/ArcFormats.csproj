@@ -62,6 +62,7 @@
     <Compile Include="ArcNPA.cs" />
     <Compile Include="ArcNSA.cs" />
     <Compile Include="ArcPD.cs" />
+    <Compile Include="ArcRPA.cs" />
     <Compile Include="ArcSteinsGate.cs" />
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />

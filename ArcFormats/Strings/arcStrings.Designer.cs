@@ -388,6 +388,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Ren&apos;Py game engine archive.
+        /// </summary>
+        public static string RPADescription {
+            get {
+                return ResourceManager.GetString("RPADescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv script file.
         /// </summary>
         public static string SCRDescription {
