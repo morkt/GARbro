@@ -177,6 +177,9 @@ predefined encryption scheme.</value>
   <data name="MsgCompressingIndex" xml:space="preserve">
     <value>Compressing index...</value>
   </data>
+  <data name="MsgCreationKeyRequired" xml:space="preserve">
+    <value>Encryption key required for archive creation.</value>
+  </data>
   <data name="MsgEncNotImplemented" xml:space="preserve">
     <value>Encryption method not implemented</value>
   </data>
@@ -188,6 +191,9 @@ predefined encryption scheme.</value>
   </data>
   <data name="MsgInvalidImageFormat" xml:space="preserve">
     <value>{0}: image format not recognized.</value>
+  </data>
+  <data name="MsgInvalidVersion" xml:space="preserve">
+    <value>Invalid archive version specified.</value>
   </data>
   <data name="MsgTooManyFiles" xml:space="preserve">
     <value>Number of files exceedes archive limit.</value>
@@ -228,6 +234,9 @@ predefined encryption scheme.</value>
   <data name="SGLabelEncoding" xml:space="preserve">
     <value>Filename encoding</value>
   </data>
+  <data name="TooltipHex" xml:space="preserve">
+    <value>Hex number</value>
+  </data>
   <data name="XFLDescription" xml:space="preserve">
     <value>Liar-soft game resource archive</value>
   </data>
@@ -254,6 +263,9 @@ predefined encryption scheme.</value>
   </data>
   <data name="YPFLabelKey" xml:space="preserve">
     <value>8-bit encryption key</value>
+  </data>
+  <data name="YPFLabelVersion" xml:space="preserve">
+    <value>Archive version</value>
   </data>
   <data name="YPFNotice" xml:space="preserve">
     <value>Archive directory is encrypted.

@@ -177,5 +177,17 @@ namespace GameRes.Formats.Properties {
                 this["PDScrambleContents"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("290")]
+        public uint YPFVersion {
+            get {
+                return ((uint)(this["YPFVersion"]));
+            }
+            set {
+                this["YPFVersion"] = value;
+            }
+        }
     }
 }

@@ -12,12 +12,6 @@ namespace GameRes.Formats.GUI
         public WidgetYPF ()
         {
             InitializeComponent();
-
-            uint key = Settings.Default.YPFKey;
-            if (key < 0x100)
-                this.Passkey.Text = key.ToString();
-            else
-                this.Passkey.Text = null;
         }
 
         public uint? GetKey ()

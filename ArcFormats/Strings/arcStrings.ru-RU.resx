@@ -162,6 +162,9 @@
   <data name="MsgCompressingIndex" xml:space="preserve">
     <value>Сжимается оглавление...</value>
   </data>
+  <data name="MsgCreationKeyRequired" xml:space="preserve">
+    <value>Для создания архива требуется ключ шифрования.</value>
+  </data>
   <data name="MsgEncNotImplemented" xml:space="preserve">
     <value>Метод шифрования не реализован</value>
   </data>
@@ -173,6 +176,9 @@
   </data>
   <data name="MsgInvalidImageFormat" xml:space="preserve">
     <value>{0}: не удалось распознать формат изображения.</value>
+  </data>
+  <data name="MsgInvalidVersion" xml:space="preserve">
+    <value>Указана некорректная версия архива.</value>
   </data>
   <data name="MsgTooManyFiles" xml:space="preserve">
     <value>Количество файлов превышает ограничения архива.</value>
@@ -198,6 +204,9 @@
   <data name="SGLabelEncoding" xml:space="preserve">
     <value>Кодировка имён файлов</value>
   </data>
+  <data name="TooltipHex" xml:space="preserve">
+    <value>Шестнадцатеричное число</value>
+  </data>
   <data name="XP3CompressContents" xml:space="preserve">
     <value>Сжать содержимое</value>
   </data>
@@ -215,6 +224,9 @@
   </data>
   <data name="YPFLabelKey" xml:space="preserve">
     <value>8-битный ключ шифрования</value>
+  </data>
+  <data name="YPFLabelVersion" xml:space="preserve">
+    <value>Версия архива</value>
   </data>
   <data name="YPFNotice" xml:space="preserve">
     <value>Заголовок архива зашифрован.

@@ -33,12 +33,14 @@ using System.Windows.Media.Imaging;
 using ZLibNet;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
+using GameRes.Utility;
 
-namespace GameRes.Formats
+namespace GameRes.Formats.YuRis
 {
     public class YpfOptions : ResourceOptions
     {
-        public uint Key { get; set; }
+        public uint     Key { get; set; }
+        public uint Version { get; set; }
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -48,6 +50,7 @@ namespace GameRes.Formats
         public override string Description { get { return arcStrings.YPFDescription; } }
         public override uint Signature { get { return 0x00465059; } }
         public override bool IsHierarchic { get { return true; } }
+        public override bool CanCreate { get { return true; } }
 
         private const uint DefaultKey = 0xffffffff;
 
@@ -82,19 +85,11 @@ namespace GameRes.Formats
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new YpfOptions { Key = Settings.Default.YPFKey };
-        }
-
-        public override ResourceOptions GetOptions (object w)
-        {
-            var widget = w as GUI.WidgetYPF;
-            if (null != widget)
+            return new YpfOptions
             {
-                uint last_key = widget.GetKey() ?? DefaultKey;
-                Settings.Default.YPFKey = last_key;
-                return new YpfOptions { Key = last_key };
-            }
-            return this.GetDefaultOptions();
+                Key     = Settings.Default.YPFKey,
+                Version = Settings.Default.YPFVersion,
+            };
         }
 
         public override object GetAccessWidget ()
@@ -102,10 +97,157 @@ namespace GameRes.Formats
             return new GUI.WidgetYPF();
         }
 
+        public override object GetCreationWidget ()
+        {
+            return new GUI.CreateYPFWidget();
+        }
+
         uint QueryEncryptionKey ()
         {
             var options = Query<YpfOptions> (arcStrings.YPFNotice);
             return options.Key;
+        }
+
+        internal class YpfEntry : PackedEntry
+        {
+            public byte[]   IndexName;
+            public uint     NameHash;
+            public byte     FileType;
+            public uint     CheckSum;
+        }
+
+        delegate uint ChecksumFunc (byte[] data);
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            var ypf_options = GetOptions<YpfOptions> (options);
+            if (null == ypf_options)
+                throw new ArgumentException ("Invalid archive creation options", "options");
+            if (ypf_options.Key > 0xff)
+                throw new InvalidEncryptionScheme (arcStrings.MsgCreationKeyRequired);
+            if (0 == ypf_options.Version)
+                throw new InvalidFormatException (arcStrings.MsgInvalidVersion);
+
+            int callback_count = 0;
+            var encoding = Encodings.cp932.WithFatalFallback();
+
+            ChecksumFunc Checksum = data => Crc32.Compute (data, 0, data.Length);
+
+            uint data_offset = 0x20;
+            var file_table = new List<YpfEntry>();
+            foreach (var entry in list)
+            {
+                try
+                {
+                    string file_name = entry.Name;
+                    byte[] name_buf = encoding.GetBytes (file_name);
+                    if (name_buf.Length > 0xff)
+                        throw new InvalidFileName (entry.Name, arcStrings.MsgFileNameTooLong);
+                    uint hash = Checksum (name_buf);
+                    byte file_type = GetFileType (ypf_options.Version, file_name);
+
+                    for (int i = 0; i < name_buf.Length; ++i)
+                        name_buf[i] = (byte)(name_buf[i] ^ ypf_options.Key);
+
+                    file_table.Add (new YpfEntry {
+                        Name = file_name,
+                        IndexName = name_buf,
+                        NameHash = hash,
+                        FileType = file_type,
+                        IsPacked = 0 == file_type,
+                    });
+                    data_offset += (uint)(0x17 + name_buf.Length);
+                }
+                catch (EncoderFallbackException X)
+                {
+                    throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
+                }
+            }
+            file_table.Sort ((a, b) => a.NameHash.CompareTo (b.NameHash));
+
+            output.Position = data_offset;
+            uint current_offset = data_offset;
+            foreach (var entry in file_table)
+            {
+                if (null != callback)
+                    callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                entry.Offset = current_offset;
+                using (var input = File.OpenRead (entry.Name))
+                {
+                    var file_size = input.Length;
+                    if (file_size > uint.MaxValue || current_offset + file_size > uint.MaxValue)
+                        throw new FileSizeException();
+                    entry.UnpackedSize = (uint)file_size;
+                    using (var checked_stream = new CheckedStream (output, new Adler32()))
+                    {
+                        if (entry.IsPacked)
+                        {
+                            using (var zstream = new ZLibStream (checked_stream, CompressionMode.Compress, true))
+                            {
+                                input.CopyTo (zstream);
+                                zstream.Flush();
+                                entry.Size = (uint)zstream.TotalOut;
+                            }
+                        }
+                        else
+                        {
+                            input.CopyTo (checked_stream);
+                            entry.Size = entry.UnpackedSize;
+                        }
+                        checked_stream.Flush();
+                        entry.CheckSum = checked_stream.CheckSumValue;
+                        current_offset += entry.Size;
+                    }
+                }
+            }
+
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+
+            output.Position = 0;
+            using (var writer = new BinaryWriter (output, encoding, true))
+            {
+                writer.Write (Signature);
+                writer.Write (ypf_options.Version);
+                writer.Write (file_table.Count);
+                writer.Write (data_offset);
+                writer.BaseStream.Seek (0x20, SeekOrigin.Begin);
+                foreach (var entry in file_table)
+                {
+                    writer.Write (entry.NameHash);
+                    byte name_len = (byte)~Parser.Decrypt (ypf_options.Version, (byte)entry.IndexName.Length);
+                    writer.Write (name_len);
+                    writer.Write (entry.IndexName);
+                    writer.Write (entry.FileType);
+                    writer.Write ((byte)(entry.IsPacked ? 1 : 0));
+                    writer.Write (entry.UnpackedSize);
+                    writer.Write (entry.Size);
+                    writer.Write ((uint)entry.Offset);
+                    writer.Write (entry.CheckSum);
+                }
+            }
+        }
+
+        static byte GetFileType (uint version, string name)
+        {
+            // 0x0F7: 0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-avi, 6-wav, 7-ogg, 8-psd
+            // 0x122, 0x12C, 0x196: 0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-wav, 6-ogg, 7-psd
+            string ext = Path.GetExtension (name).TrimStart ('.').ToLower();
+            if ("ybn" == ext) return 0;
+            if ("bmp" == ext) return 1;
+            if ("png" == ext) return 2;
+            if ("jpg" == ext || "jpeg" == ext) return 3;
+            if ("gif" == ext) return 4;
+            if ("avi" == ext && 0xf7 == version) return 5;
+            byte type = 0;
+            if ("wav" == ext) type = 5;
+            else if ("ogg" == ext) type = 6;
+            else if ("psd" == ext) type = 7;
+            if (0xf7 == version && 0 != type)
+                ++type;
+            return type;
         }
 
         private class Parser
@@ -136,7 +278,7 @@ namespace GameRes.Formats
                         break;
                     dir_remaining -= 0x17;
 
-                    uint name_size = Decrypt ((byte)(m_file.View.ReadByte (dir_offset+4) ^ 0xff));
+                    uint name_size = Decrypt (m_version, (byte)(m_file.View.ReadByte (dir_offset+4) ^ 0xff));
                     if (name_size > dir_remaining)
                         break;
                     dir_remaining -= name_size;
@@ -201,12 +343,12 @@ namespace GameRes.Formats
             // 0x28 0x12C "Suzukaze no Melt" (no recovery - 00 00 00 00)
             // 0xFF 0x196 "Mamono Musume-tachi to no Rakuen ~Slime & Scylla~"
 
-            public uint Decrypt (byte value)
+            static public byte Decrypt (uint version, byte value)
             {
                 int pos = 4;
-                if (m_version >= 0x100)
+                if (version >= 0x100)
                 {
-                    if (m_version >= 0x12c && m_version < 0x196)
+                    if (version >= 0x12c && version < 0x196)
                         pos = 10;
                     else
                         pos = 0;

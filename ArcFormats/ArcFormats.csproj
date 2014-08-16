@@ -85,6 +85,9 @@
     <Compile Include="CreateXP3Widget.xaml.cs">
       <DependentUpon>CreateXP3Widget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CreateYPFWidget.xaml.cs">
+      <DependentUpon>CreateYPFWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageTLG.cs" />
@@ -159,6 +162,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CreateXP3Widget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CreateYPFWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

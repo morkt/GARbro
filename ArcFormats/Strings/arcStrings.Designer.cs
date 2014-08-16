@@ -235,6 +235,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Encryption key required for archive creation..
+        /// </summary>
+        public static string MsgCreationKeyRequired {
+            get {
+                return ResourceManager.GetString("MsgCreationKeyRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encryption method not implemented.
         /// </summary>
         public static string MsgEncNotImplemented {
@@ -267,6 +276,15 @@ namespace GameRes.Formats.Strings {
         public static string MsgInvalidImageFormat {
             get {
                 return ResourceManager.GetString("MsgInvalidImageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid archive version specified..
+        /// </summary>
+        public static string MsgInvalidVersion {
+            get {
+                return ResourceManager.GetString("MsgInvalidVersion", resourceCulture);
             }
         }
         
@@ -388,6 +406,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Hex number.
+        /// </summary>
+        public static string TooltipHex {
+            get {
+                return ResourceManager.GetString("TooltipHex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Liar-soft game resource archive.
         /// </summary>
         public static string XFLDescription {
@@ -465,6 +492,15 @@ namespace GameRes.Formats.Strings {
         public static string YPFLabelKey {
             get {
                 return ResourceManager.GetString("YPFLabelKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive version.
+        /// </summary>
+        public static string YPFLabelVersion {
+            get {
+                return ResourceManager.GetString("YPFLabelVersion", resourceCulture);
             }
         }
         

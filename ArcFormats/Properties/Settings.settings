@@ -41,5 +41,8 @@
     <Setting Name="PDScrambleContents" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="YPFVersion" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">290</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
