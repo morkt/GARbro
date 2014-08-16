@@ -165,6 +165,14 @@ namespace GameRes
             return new ArcStream (this);
         }
 
+        public ArcStream CreateStream (long offset)
+        {
+            var size = this.MaxOffset - offset;
+            if (size > uint.MaxValue)
+                throw new ArgumentOutOfRangeException ("Too large memory mapped stream");
+            return new ArcStream (this, offset, (uint)size);
+        }
+
         public ArcStream CreateStream (long offset, uint size)
         {
             return new ArcStream (this, offset, size);
