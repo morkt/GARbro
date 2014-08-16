@@ -184,7 +184,8 @@ namespace GameRes.Formats.YuRis
                     {
                         if (entry.IsPacked)
                         {
-                            using (var zstream = new ZLibStream (checked_stream, CompressionMode.Compress, true))
+                            using (var zstream = new ZLibStream (checked_stream, CompressionMode.Compress,
+                                                                 CompressionLevel.Level9, true))
                             {
                                 input.CopyTo (zstream);
                                 zstream.Flush();

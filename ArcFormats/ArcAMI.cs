@@ -301,7 +301,7 @@ namespace GameRes.Formats
                 throw new FileFormatException ("GRP image encoder not available");
             bool is_grp = grp.Signature == FormatCatalog.ReadSignature (input);
             input.Position = 0;
-            using (var zstream = new ZLibStream (output, CompressionMode.Compress, true))
+            using (var zstream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true))
             {
                 if (is_grp)
                 {

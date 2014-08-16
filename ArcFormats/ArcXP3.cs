@@ -434,7 +434,8 @@ NextEntry:
                         writer.Write (unpacked_dir_size);
 
                         long dir_start = writer.BaseStream.Position;
-                        using (var zstream = new ZLibStream (writer.BaseStream, CompressionMode.Compress, true))
+                        using (var zstream = new ZLibStream (writer.BaseStream, CompressionMode.Compress,
+                                                             CompressionLevel.Level9, true))
                             header.BaseStream.CopyTo (zstream);
 
                         long packed_dir_size = writer.BaseStream.Position - dir_start;
@@ -468,7 +469,7 @@ NextEntry:
             };
             if (compress)
             {
-                using (var zstream = new ZLibStream (output, CompressionMode.Compress, true))
+                using (var zstream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true))
                 {
                     xp3entry.Hash = CheckedCopy (file, zstream);
                     zstream.Flush();
@@ -505,7 +506,7 @@ NextEntry:
                     bool need_output_dispose = false;
                     if (compress)
                     {
-                        output = new ZLibStream (output, CompressionMode.Compress, true);
+                        output = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true);
                         need_output_dispose = true;
                     }
                     unsafe
