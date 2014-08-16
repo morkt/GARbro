@@ -105,9 +105,9 @@ namespace GARbro
                 }
                 else
                 {
-                    foreach (var entry in arc.Dir)
+                    foreach (var entry in arc.Dir.OrderBy (e => e.Offset))
                     {
-                        Console.WriteLine ("{0,9} {1}", entry.Size, entry.Name);
+                        Console.WriteLine ("{0,9} [{2:X8}] {1}", entry.Size, entry.Name, entry.Offset);
                     }
                 }
             }
