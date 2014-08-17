@@ -332,7 +332,7 @@ namespace GameRes.Formats.RenPy
             do
             {
                 if (!iterator.MoveNext())
-                    return false;
+                    break;
                 var first_item = iterator.Current;
                 if (!iterator.MoveNext())
                 {
