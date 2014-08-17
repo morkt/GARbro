@@ -474,6 +474,7 @@ NextEntry:
                     xp3entry.Hash = CheckedCopy (file, zstream);
                     zstream.Flush();
                     segment.PackedSize = (uint)zstream.TotalOut;
+                    xp3entry.Size = segment.PackedSize;
                 }
             }
             else
@@ -538,6 +539,7 @@ NextEntry:
                             {
                                 output.Flush();
                                 segment.PackedSize = (uint)(output as ZLibStream).TotalOut;
+                                xp3entry.Size = segment.PackedSize;
                             }
                         }
                         finally
