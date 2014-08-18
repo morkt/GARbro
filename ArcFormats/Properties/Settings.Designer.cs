@@ -25,10 +25,10 @@ namespace GameRes.Formats.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("NotEncrypted")]
-        public global::GameRes.Formats.NpaTitleId NPAScheme {
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NPAScheme {
             get {
-                return ((global::GameRes.Formats.NpaTitleId)(this["NPAScheme"]));
+                return ((string)(this["NPAScheme"]));
             }
             set {
                 this["NPAScheme"] = value;
@@ -199,6 +199,42 @@ namespace GameRes.Formats.Properties {
             }
             set {
                 this["RPAKey"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool NPACompressContents {
+            get {
+                return ((bool)(this["NPACompressContents"]));
+            }
+            set {
+                this["NPACompressContents"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1095188814")]
+        public uint NPAKey1 {
+            get {
+                return ((uint)(this["NPAKey1"]));
+            }
+            set {
+                this["NPAKey1"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("555831124")]
+        public uint NPAKey2 {
+            get {
+                return ((uint)(this["NPAKey2"]));
+            }
+            set {
+                this["NPAKey2"] = value;
             }
         }
     }

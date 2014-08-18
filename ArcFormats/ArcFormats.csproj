@@ -74,6 +74,9 @@
     <Compile Include="CreateINTWidget.xaml.cs">
       <DependentUpon>CreateINTWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CreateNPAWidget.xaml.cs">
+      <DependentUpon>CreateNPAWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CreateONSWidget.xaml.cs">
       <DependentUpon>CreateONSWidget.xaml</DependentUpon>
     </Compile>
@@ -150,6 +153,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CreateINTWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CreateNPAWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

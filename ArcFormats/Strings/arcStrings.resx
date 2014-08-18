@@ -139,6 +139,9 @@ Choose appropriate encryption scheme.</value>
   <data name="ArcNoEncryption" xml:space="preserve">
     <value>no encryption</value>
   </data>
+  <data name="ArcReset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
   <data name="GRPDescription" xml:space="preserve">
     <value>âge proprietary image format</value>
   </data>
@@ -204,8 +207,18 @@ predefined encryption scheme.</value>
   <data name="MsgWritingIndex" xml:space="preserve">
     <value>Writing index...</value>
   </data>
+  <data name="NPACompressContents" xml:space="preserve">
+    <value>Compress contents</value>
+  </data>
   <data name="NPADescription" xml:space="preserve">
     <value>Nitro+ resource archive</value>
+  </data>
+  <data name="NPAKeys" xml:space="preserve">
+    <value>Encryption keys
+(required even if contents is not encrypted)</value>
+  </data>
+  <data name="NPALabelScheme" xml:space="preserve">
+    <value>Encryption scheme</value>
   </data>
   <data name="NPASteinsGateDescription" xml:space="preserve">
     <value>Nitro+ Steins;Gate resource archive</value>

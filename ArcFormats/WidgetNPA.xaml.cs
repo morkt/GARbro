@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Linq;
 using GameRes.Formats.Properties;
+using GameRes.Formats.NitroPlus;
 
 namespace GameRes.Formats.GUI
 {
@@ -12,15 +13,14 @@ namespace GameRes.Formats.GUI
     {
         public WidgetNPA ()
         {
+            var selected = Settings.Default.NPAScheme;
             InitializeComponent();
             var sorted = NpaOpener.KnownSchemes.Skip (1).OrderBy (x => x);
             Scheme.ItemsSource = NpaOpener.KnownSchemes.Take(1).Concat (sorted);
-            Scheme.SelectedItem = NpaOpener.KnownSchemes[(int)Settings.Default.NPAScheme];
-        }
-
-        public string GetScheme()
-        {
-            return Scheme.SelectedItem as string;
+            if (NpaTitleId.NotEncrypted == NpaOpener.GetTitleId (selected))
+                Scheme.SelectedIndex = 0;
+            else
+                Scheme.SelectedValue = selected;
         }
     }
 }

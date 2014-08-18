@@ -1,0 +1,67 @@
+﻿<Grid x:Class="GameRes.Formats.GUI.CreateNPAWidget"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:s="clr-namespace:GameRes.Formats.Strings"
+      xmlns:p="clr-namespace:GameRes.Formats.Properties"
+      xmlns:gui="clr-namespace:GameRes.Formats.GUI">
+    <Grid.Resources>
+        <gui:KeyConverter x:Key="keyConverter"/>
+        <Style TargetType="{x:Type TextBox}">
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="ToolTip"
+                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <ControlTemplate x:Key="errorIndicator">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Foreground="Red" FontWeight="Bold" Text="!" VerticalAlignment="Center"/>
+                <Border BorderBrush="Red" BorderThickness="1">
+                    <AdornedElementPlaceholder Name="ValidationAdorner" />
+                </Border>
+            </DockPanel>
+        </ControlTemplate>
+    </Grid.Resources>
+    <Grid.RowDefinitions>
+        <RowDefinition/>
+        <RowDefinition/>
+        <RowDefinition/>
+    </Grid.RowDefinitions>
+    <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Vertical" Margin="0,0,0,5" Grid.Row="0">
+            <Label Content="{x:Static s:arcStrings.NPALabelScheme}" Target="{Binding ElementName=EncryptionWidget}" Padding="4,0,0,5" HorizontalAlignment="Left"/>
+            <gui:WidgetNPA x:Name="EncryptionWidget" HorizontalAlignment="Left"/>
+        </StackPanel>
+        <Button Content="{x:Static s:arcStrings.ArcReset}" Width="70" Height="25" VerticalAlignment="Top" Margin="20,0,0,5" Click="Reset_Click"/>
+    </StackPanel>
+    <StackPanel Orientation="Vertical" Margin="0,0,0,5" Grid.Row="1">
+        <Label Content="{x:Static s:arcStrings.NPAKeys}" Target="{Binding ElementName=Key1Box}" Padding="4,0,0,5"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="70"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Name="Key1Box" Grid.Column="0" Margin="0,0,5,0" Validation.ErrorTemplate="{StaticResource errorIndicator}">
+                <TextBox.Text>
+                    <Binding Path="NPAKey1" Source="{x:Static p:Settings.Default}" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <gui:PasskeyRule/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+            <TextBox Name="Key2Box" Grid.Column="1" Margin="5,0,0,0">
+                <TextBox.Text>
+                    <Binding Path="NPAKey2" Source="{x:Static p:Settings.Default}" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <gui:PasskeyRule/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+        </Grid>
+    </StackPanel>
+    <CheckBox Name="CompressContents" Content="{x:Static s:arcStrings.NPACompressContents}" Grid.Row="2" Margin="0,5,0,5"
+              IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=NPACompressContents, Mode=TwoWay}"/>
+</Grid>

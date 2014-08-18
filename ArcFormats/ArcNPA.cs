@@ -25,6 +25,8 @@
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.ComponentModel.Composition;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -32,11 +34,12 @@ using ZLibNet;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
 
-namespace GameRes.Formats
+namespace GameRes.Formats.NitroPlus
 {
     internal class NpaEntry : PackedEntry
     {
         public byte[] RawName;
+        public int    FolderId;
     }
 
     internal class NpaArchive : ArcFile
@@ -67,18 +70,25 @@ namespace GameRes.Formats
 
     public class NpaOptions : ResourceOptions
     {
-        public NpaTitleId TitleId { get; set; }
+        public NpaTitleId    TitleId { get; set; }
+        public bool CompressContents { get; set; }
+        public int              Key1 { get; set; }
+        public int              Key2 { get; set; }
     }
 
     [Export(typeof(ArchiveFormat))]
     public class NpaOpener : ArchiveFormat
     {
-        public override string Tag { get { return "NPA"; } }
+        public override string         Tag { get { return "NPA"; } }
         public override string Description { get { return arcStrings.NPADescription; } }
-        public override uint Signature { get { return 0x0141504e; } } // NPA\x01
-        public override bool IsHierarchic { get { return true; } }
+        public override uint     Signature { get { return 0x0141504e; } } // NPA\x01
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool     CanCreate { get { return true; } }
 
-        /// <summary>Known encryption schemes.</summary>
+        /// <summary>
+        /// Known encryption schemes.
+        /// Order should match NpaTitleId enumeration.
+        /// </summary>
         public static readonly string[] KnownSchemes = new string[] {
             arcStrings.ArcNoEncryption,
             "Chaos;Head", "Chaos;Head Trial 1", "Chaos;Head Trial 2", "Muramasa Trial", "Muramasa",
@@ -88,6 +98,9 @@ namespace GameRes.Formats
             "Guilty Crown Lost Xmas", "Guilty Crown Lost Xmas Trailer", "DRAMAtical Murder",
             "Kimi to Kanojo to Kanojo no Koi", "Phenomeno", "Nekoda -Nyanda-",
         };
+
+        public const int DefaultKey1 = 0x4147414e;
+        public const int DefaultKey2 = 0x21214f54;
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -130,7 +143,7 @@ namespace GameRes.Formats
                         raw_name[x] += DecryptName (x, i, key);
                     var info_offset = cur_offset + 5 + name_size;
 
-                    uint id = file.View.ReadUInt32 (info_offset);
+                    int  id = file.View.ReadInt32 (info_offset);
                     uint offset = file.View.ReadUInt32 (info_offset+4);
                     uint size = file.View.ReadUInt32 (info_offset+8);
                     uint unpacked_size = file.View.ReadUInt32 (info_offset+12);
@@ -140,12 +153,13 @@ namespace GameRes.Formats
                         Offset      = dir_size+offset+41,
                         Size        = size,
                         UnpackedSize = unpacked_size,
-                        IsPacked    = compressed,
                         RawName     = raw_name,
+                        FolderId    = id,
                     };
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
                     entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                    entry.IsPacked = compressed && entry.Type != "image";
                     dir.Add (entry);
                 }
                 cur_offset += 4 + name_size + 17;
@@ -156,23 +170,94 @@ namespace GameRes.Formats
                 return new ArcFile (file, this, dir);
         }
 
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            var npa_options = GetOptions<NpaOptions> (options);
+            int callback_count = 0;
+
+            // build file index
+            var index = new Indexer (list, npa_options);
+
+            output.Position = 41 + index.Size;
+            long data_offset = 0;
+
+            // write files
+            foreach (var entry in index.Entries.Where (e => e.Type != "directory"))
+            {
+                if (data_offset > uint.MaxValue)
+                    throw new FileSizeException();
+                if (null != callback)
+                    callback (callback_count++, entry, arcStrings.MsgAddingFile);
+                using (var file = File.OpenRead (entry.Name))
+                {
+                    var size = file.Length;
+                    if (size > uint.MaxValue)
+                        throw new FileSizeException();
+                    entry.Offset = data_offset;
+                    entry.UnpackedSize = (uint)size;
+                    if (entry.IsPacked)
+                    {
+                        using (var zstream = new ZLibStream (output, CompressionMode.Compress,
+                                                             CompressionLevel.Level9, true))
+                        {
+                            file.CopyTo (zstream);
+                            zstream.Flush();
+                            entry.Size = (uint)zstream.TotalOut;
+                        }
+                    }
+                    else
+                    {
+                        file.CopyTo (output);
+                        entry.Size = entry.UnpackedSize;
+                    }
+                    data_offset += entry.Size;
+                }
+            }
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+
+            output.Position = 0;
+            using (var header = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                header.Write (Signature);
+                header.Write ((short)0);
+                header.Write ((byte)0);
+                header.Write (npa_options.Key1);
+                header.Write (npa_options.Key2);
+                header.Write (npa_options.CompressContents);
+                header.Write (npa_options.TitleId != NpaTitleId.NotEncrypted);
+                header.Write (index.TotalCount);
+                header.Write (index.FolderCount);
+                header.Write (index.FileCount);
+                header.Write ((long)0);
+                header.Write (index.Size);
+                foreach (var entry in index.Entries)
+                {
+                    header.Write (entry.RawName.Length);
+                    header.Write (entry.RawName);
+                    header.Write ((byte)("directory" == entry.Type ? 1 : 2));
+                    header.Write (entry.FolderId);
+                    header.Write ((uint)entry.Offset);
+                    header.Write (entry.Size);
+                    header.Write (entry.UnpackedSize);
+                }
+            }
+        }
+
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             if (arc is NpaArchive && entry is NpaEntry)
                 return OpenEncryptedEntry (arc as NpaArchive, entry as NpaEntry);
 
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return UnpackEntry (input, entry);
+            return UnpackEntry (input, entry as PackedEntry);
         }
 
-        private Stream UnpackEntry (Stream input, Entry entry)
+        private Stream UnpackEntry (Stream input, PackedEntry entry)
         {
-            if (entry.Type != "image")
-            {
-                var npa_entry = entry as PackedEntry;
-                if (null != npa_entry && npa_entry.IsPacked)
-                    return new ZLibStream (input, CompressionMode.Decompress);
-            }
+            if (null != entry && entry.IsPacked)
+                return new ZLibStream (input, CompressionMode.Decompress);
             return input;
         }
 
@@ -225,7 +310,7 @@ namespace GameRes.Formats
             }
         }
 
-        byte DecryptName (int index, int curfile, int arc_key)
+        public static byte DecryptName (int index, int curfile, int arc_key)
         {
             int key = 0xFC*index;
 
@@ -242,7 +327,7 @@ namespace GameRes.Formats
             return (byte)(key & 0xff);
         }
 
-        byte GetKeyFromEntry (NpaEntry entry, NpaTitleId game_id, int key2)
+        internal static byte GetKeyFromEntry (NpaEntry entry, NpaTitleId game_id, int key2)
         {
             int key1;
             switch (game_id)
@@ -311,24 +396,22 @@ namespace GameRes.Formats
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new NpaOptions { TitleId = Settings.Default.NPAScheme };
-        }
-
-        public override ResourceOptions GetOptions (object w)
-        {
-            var widget = w as GUI.WidgetNPA;
-            if (null != widget)
-            {
-                NpaTitleId scheme = GetTitleId (widget.GetScheme());
-                Settings.Default.NPAScheme = scheme;
-                return new NpaOptions { TitleId = scheme };
-            }
-            return this.GetDefaultOptions();
+            return new NpaOptions {
+                TitleId          = GetTitleId (Settings.Default.NPAScheme),
+                CompressContents = Settings.Default.NPACompressContents,
+                Key1             = (int)Settings.Default.NPAKey1,
+                Key2             = (int)Settings.Default.NPAKey2,
+            };
         }
 
         public override object GetAccessWidget ()
         {
             return new GUI.WidgetNPA();
+        }
+
+        public override object GetCreationWidget ()
+        {
+            return new GUI.CreateNPAWidget();
         }
 
         NpaTitleId QueryGameEncryption ()
@@ -418,5 +501,111 @@ namespace GameRes.Formats
             // NEKODA
             new byte[] { 0xdc,0xdc,0xec,0xcd,0xdb,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0x1e,0x4e,0x66,0xb6 },
         };
+    }
+
+    /// <summary>
+    /// Archive creation helper.
+    /// </summary>
+    internal class Indexer
+    {
+        List<NpaEntry>  m_entries;
+        Encoding        m_encoding = Encodings.cp932.WithFatalFallback();
+        int             m_key;
+        int             m_size = 0;
+        int             m_directory_count = 0;
+        int             m_file_count = 0;
+
+        public IEnumerable<NpaEntry> Entries { get { return m_entries; } }
+
+        public int         Key { get { return m_key; } }
+        public int        Size { get { return m_size; } }
+        public int  TotalCount { get { return m_entries.Count; } }
+        public int FolderCount { get { return m_directory_count; } }
+        public int   FileCount { get { return m_file_count; } }
+
+        public Indexer (IEnumerable<Entry> source_list, NpaOptions options)
+        {
+            m_entries = new List<NpaEntry> (source_list.Count());
+            var game_id = options.TitleId;
+            if (game_id == NpaTitleId.LAMENTO || game_id == NpaTitleId.LAMENTOTR)
+                m_key = options.Key1 + options.Key2;
+            else
+                m_key = options.Key1 * options.Key2;
+
+            foreach (var entry in source_list)
+            {
+                string name = entry.Name;
+                var dir = Path.GetDirectoryName (name);
+                int folder_id = 0;
+                if (!string.IsNullOrEmpty (dir))
+                    folder_id = AddDirectory (dir);
+
+                bool compress = options.CompressContents;
+                if (compress) // don't compress images
+                    compress = !FormatCatalog.Instance.LookupFileName (name).OfType<ImageFormat>().Any();
+                var npa_entry = new NpaEntry
+                {
+                    Name        = name,
+                    IsPacked    = compress,
+                    RawName     = EncodeName (name, m_entries.Count),
+                    FolderId    = folder_id,
+                };
+                ++m_file_count;
+                AddEntry (npa_entry);
+            }
+        }
+
+        byte[] EncodeName (string name, int entry_number)
+        {
+            try
+            {
+                byte[] raw_name = m_encoding.GetBytes (name);
+                for (int i = 0; i < name.Length; ++i)
+                    raw_name[i] -= NpaOpener.DecryptName (i, entry_number, m_key);
+                return raw_name;
+            }
+            catch (EncoderFallbackException X)
+            {
+                throw new InvalidFileName (name, arcStrings.MsgIllegalCharacters, X);
+            }
+        }
+
+        void AddEntry (NpaEntry entry)
+        {
+            m_entries.Add (entry);
+            m_size += 4 + entry.RawName.Length + 17;
+        }
+
+        Dictionary<string, int> m_directory_map = new Dictionary<string, int>();
+
+        int AddDirectory (string dir)
+        {
+            int folder_id = 0;
+            if (m_directory_map.TryGetValue (dir, out folder_id))
+                return folder_id;
+            string path = "";
+            foreach (var component in dir.Split (Path.DirectorySeparatorChar))
+            {
+                path = Path.Combine (path, component);
+                if (m_directory_map.TryGetValue (path, out folder_id))
+                    continue;
+                folder_id = ++m_directory_count;
+                m_directory_map[path] = folder_id;
+
+                var npa_entry = new NpaEntry
+                {
+                    Name        = path,
+                    Type        = "directory",
+                    Offset      = 0,
+                    Size        = 0,
+                    UnpackedSize = 0,
+                    IsPacked    = false,
+                    RawName     = EncodeName (path, m_entries.Count),
+                    FolderId    = folder_id,
+                };
+                m_entries.Add (npa_entry);
+            }
+            return folder_id;
+        }
     }
 }

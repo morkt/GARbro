@@ -125,6 +125,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        public static string ArcReset {
+            get {
+                return ResourceManager.GetString("ArcReset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to âge proprietary image format.
         /// </summary>
         public static string GRPDescription {
@@ -316,11 +325,39 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Compress contents.
+        /// </summary>
+        public static string NPACompressContents {
+            get {
+                return ResourceManager.GetString("NPACompressContents", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Nitro+ resource archive.
         /// </summary>
         public static string NPADescription {
             get {
                 return ResourceManager.GetString("NPADescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encryption keys
+        ///(required even if contents is not encrypted).
+        /// </summary>
+        public static string NPAKeys {
+            get {
+                return ResourceManager.GetString("NPAKeys", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encryption scheme.
+        /// </summary>
+        public static string NPALabelScheme {
+            get {
+                return ResourceManager.GetString("NPALabelScheme", resourceCulture);
             }
         }
         

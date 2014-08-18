@@ -136,6 +136,9 @@
   <data name="ArcNoEncryption" xml:space="preserve">
     <value>без шифрования</value>
   </data>
+  <data name="ArcReset" xml:space="preserve">
+    <value>Сбросить</value>
+  </data>
   <data name="INTCreationNotice" xml:space="preserve">
     <value>Создание зашифрованных архивов не реализовано.</value>
   </data>
@@ -188,6 +191,16 @@
   </data>
   <data name="MsgWritingIndex" xml:space="preserve">
     <value>Записывается оглавление...</value>
+  </data>
+  <data name="NPACompressContents" xml:space="preserve">
+    <value>Сжать содержимое</value>
+  </data>
+  <data name="NPAKeys" xml:space="preserve">
+    <value>Ключи шифрования
+(требуются даже если содержимое не шифруется)</value>
+  </data>
+  <data name="NPALabelScheme" xml:space="preserve">
+    <value>Способ шифрования</value>
   </data>
   <data name="ONSArchiveType" xml:space="preserve">
     <value>Тип архива</value>
