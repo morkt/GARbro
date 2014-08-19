@@ -29,6 +29,7 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel.Composition;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using ZLibNet;
 using GameRes.Formats.Strings;
@@ -64,7 +65,7 @@ namespace GameRes.Formats.NitroPlus
     {
         NotEncrypted,
         CHAOSHEAD, CHAOSHEADTR1, CHAOSHEADTR2, MURAMASATR, MURAMASA, SUMAGA, DJANGO, DJANGOTR,
-        LAMENTO, LAMENTOTR, SWEETPOOL, SUMAGASP, DEMONBANE, MURAMASAAD, AXANAEL, KIKOKUGAI, SONICOMITR2,
+        LAMENTO, SWEETPOOL, SUMAGASP, DEMONBANE, MURAMASAAD, AXANAEL, KIKOKUGAI, SONICOMITR2,
         SUMAGA3P, SONICOMI, LOSTX, LOSTXTRAILER, DRAMATICALMURDER, TOTONO, PHENOMENO, NEKODA,
     }
 
@@ -93,7 +94,7 @@ namespace GameRes.Formats.NitroPlus
             arcStrings.ArcNoEncryption,
             "Chaos;Head", "Chaos;Head Trial 1", "Chaos;Head Trial 2", "Muramasa Trial", "Muramasa",
             "Sumaga", "Zoku Satsuriku no Django", "Zoku Satsuriku no Django Trial", "Lamento",
-            "Lamento Trial", "Sweet Pool", "Sumaga Special", "Demonbane", "MuramasaAD", "Axanael",
+            "Sweet Pool", "Sumaga Special", "Demonbane", "MuramasaAD", "Axanael",
             "Kikokugai", "Sonicomi Trial 2", "Sumaga 3% Trial", "Sonicomi Version 1.0",
             "Guilty Crown Lost Xmas", "Guilty Crown Lost Xmas Trailer", "DRAMAtical Murder",
             "Kimi to Kanojo to Kanojo no Koi", "Phenomeno", "Nekoda -Nyanda-",
@@ -121,11 +122,7 @@ namespace GameRes.Formats.NitroPlus
             if (encrypted)
                 game_id = QueryGameEncryption();
 
-            int key;
-            if (encrypted && (game_id == NpaTitleId.LAMENTO || game_id == NpaTitleId.LAMENTOTR))
-                key = key1 + key2;
-            else
-                key = key1 * key2;
+            int key = GetArchiveKey (game_id, key1, key2);
 
             long cur_offset = 41;
             var dir = new List<Entry> (file_count);
@@ -196,20 +193,31 @@ namespace GameRes.Formats.NitroPlus
                         throw new FileSizeException();
                     entry.Offset = data_offset;
                     entry.UnpackedSize = (uint)size;
-                    if (entry.IsPacked)
+                    Stream destination = output;
+                    if (NpaTitleId.NotEncrypted != npa_options.TitleId)
+                        destination = new EncryptedStream (output, entry, npa_options.TitleId, index.Key);
+                    try
                     {
-                        using (var zstream = new ZLibStream (output, CompressionMode.Compress,
-                                                             CompressionLevel.Level9, true))
+                        if (entry.IsPacked)
                         {
-                            file.CopyTo (zstream);
-                            zstream.Flush();
-                            entry.Size = (uint)zstream.TotalOut;
+                            using (var zstream = new ZLibStream (destination, CompressionMode.Compress,
+                                                                CompressionLevel.Level9, true))
+                            {
+                                file.CopyTo (zstream);
+                                zstream.Flush();
+                                entry.Size = (uint)zstream.TotalOut;
+                            }
+                        }
+                        else
+                        {
+                            file.CopyTo (destination);
+                            entry.Size = entry.UnpackedSize;
                         }
                     }
-                    else
+                    finally
                     {
-                        file.CopyTo (output);
-                        entry.Size = entry.UnpackedSize;
+                        if (destination is EncryptedStream)
+                            destination.Dispose();
                     }
                     data_offset += entry.Size;
                 }
@@ -232,25 +240,31 @@ namespace GameRes.Formats.NitroPlus
                 header.Write (index.FileCount);
                 header.Write ((long)0);
                 header.Write (index.Size);
+                int entry_number = 0;
                 foreach (var entry in index.Entries)
                 {
                     header.Write (entry.RawName.Length);
-                    header.Write (entry.RawName);
+                    for (int i = 0; i < entry.RawName.Length; ++i)
+                    {
+                        header.Write ((byte)(entry.RawName[i] - DecryptName (i, entry_number, index.Key)));
+                    }
                     header.Write ((byte)("directory" == entry.Type ? 1 : 2));
                     header.Write (entry.FolderId);
                     header.Write ((uint)entry.Offset);
                     header.Write (entry.Size);
                     header.Write (entry.UnpackedSize);
+                    ++entry_number;
                 }
             }
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
+            Stream input;
             if (arc is NpaArchive && entry is NpaEntry)
-                return OpenEncryptedEntry (arc as NpaArchive, entry as NpaEntry);
-
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+                input = new EncryptedStream (arc as NpaArchive, entry as NpaEntry);
+            else
+                input = arc.File.CreateStream (entry.Offset, entry.Size);
             return UnpackEntry (input, entry as PackedEntry);
         }
 
@@ -261,56 +275,7 @@ namespace GameRes.Formats.NitroPlus
             return input;
         }
 
-        private Stream OpenEncryptedEntry (NpaArchive arc, NpaEntry entry)
-        {
-            int key = GetKeyFromEntry (entry, arc.GameId, arc.Key);
-            int encrypted_length = 0x1000;
-
-            if (arc.GameId != NpaTitleId.LAMENTO && arc.GameId != NpaTitleId.LAMENTOTR)
-                encrypted_length += entry.RawName.Length;
-            if (encrypted_length > entry.Size)
-                encrypted_length = (int)entry.Size;
-
-            using (var view = arc.File.CreateViewAccessor (entry.Offset, entry.Size))
-            {
-                byte[] buffer = new byte[entry.Size];
-                unsafe
-                {
-                    byte* src = view.GetPointer (entry.Offset);
-                    try
-                    {
-                        int x;
-                        for (x = 0; x < encrypted_length; x++)
-                        {
-                            if (arc.GameId == NpaTitleId.LAMENTO || arc.GameId == NpaTitleId.LAMENTOTR)
-                            {
-                                buffer[x] = (byte)(arc.KeyTable[src[x]] - key);
-                            }
-                            else if (arc.GameId == NpaTitleId.TOTONO)
-                            {
-                                byte r = src[x];
-                                r = arc.KeyTable[r];
-                                r = arc.KeyTable[r];
-                                r = arc.KeyTable[r];
-                                r = (byte)~r;
-                                buffer[x] = (byte)((sbyte)r - key - x);
-                            }
-                            else
-                            {
-                                buffer[x] = (byte)(arc.KeyTable[src[x]] - key - x);
-                            }
-                        }
-                        if (x != entry.Size)
-                            Marshal.Copy ((IntPtr)(src+x), buffer, x, (int)(entry.Size-x));
-                    } finally {
-                        view.SafeMemoryMappedViewHandle.ReleasePointer();
-                    }
-                }
-                return UnpackEntry (new MemoryStream (buffer, false), entry);
-            }
-        }
-
-        public static byte DecryptName (int index, int curfile, int arc_key)
+        internal static byte DecryptName (int index, int curfile, int arc_key)
         {
             int key = 0xFC*index;
 
@@ -327,9 +292,17 @@ namespace GameRes.Formats.NitroPlus
             return (byte)(key & 0xff);
         }
 
-        internal static byte GetKeyFromEntry (NpaEntry entry, NpaTitleId game_id, int key2)
+        internal static int GetArchiveKey (NpaTitleId game_id, int key1, int key2)
         {
-            int key1;
+            if (NpaTitleId.LAMENTO == game_id)
+                return key1 + key2;
+            else
+                return key1 * key2;
+        }
+
+        internal static byte GetKeyFromEntry (NpaEntry entry, NpaTitleId game_id, int arc_key)
+        {
+            int key;
             switch (game_id)
             {
                 case NpaTitleId.AXANAEL:
@@ -339,28 +312,27 @@ namespace GameRes.Formats.NitroPlus
                 case NpaTitleId.LOSTX:
                 case NpaTitleId.DRAMATICALMURDER:
                 case NpaTitleId.PHENOMENO:
-                    key1 = 0x20101118;
+                    key = 0x20101118;
                     break;
                 case NpaTitleId.TOTONO:
-                    key1 = 0x12345678;
+                    key = 0x12345678;
                     break;
                 default:
-                    key1 = unchecked((int)0x87654321);
+                    key = unchecked((int)0x87654321);
                     break;
             }
             var name = entry.RawName;
-            int i;
-            for (i = 0; i < name.Length; ++i)
-                key1 -= name[i];
+            for (int i = 0; i < name.Length; ++i)
+                key -= name[i];
 
-            int key = key1 * i;
+            key *= name.Length;
 
-            if (game_id != NpaTitleId.LAMENTO && game_id != NpaTitleId.LAMENTOTR) // if the game is not Lamento
+            if (game_id != NpaTitleId.LAMENTO) // if the game is not Lamento
             {
-                key += key2;
+                key += arc_key;
                 key *= (int)entry.UnpackedSize;
             }
-            return (byte)(key & 0xff);
+            return (byte)key;
         }
 
         public static byte[] GenerateKeyTable (NpaTitleId title_id)
@@ -383,13 +355,25 @@ namespace GameRes.Formats.NitroPlus
                 var eax = BaseTable[i];
                 table[eax] = (byte)(edx & 0xff);
             }
-            for (int i = 16; i+1 < order.Length; i+=2)
+            for (int i = 17; i < order.Length; i+=2)
             {
-                int ecx = order[i];
-                int edx = order[i+1];
+                int ecx = order[i-1];
+                int edx = order[i];
                 byte tmp = table[ecx];
                 table[ecx] = table[edx];
                 table[edx] = tmp;
+            }
+            if (NpaTitleId.TOTONO == title_id)
+            {
+                var totono_table = new byte[256];
+                for (int i = 0; i < 256; ++i)
+                {
+                    byte r = table[i];
+                    r = table[r];
+                    r = table[r];
+                    totono_table[i] = (byte)~r;
+                }
+                table = totono_table;
             }
             return table;
         }
@@ -422,6 +406,8 @@ namespace GameRes.Formats.NitroPlus
 
         public static NpaTitleId GetTitleId (string title)
         {
+            Debug.Assert (KnownSchemes.Length == OrderTable.Length,
+                          "Number of known encryptions schemes does not match available order tables.");
             var index = Array.IndexOf (KnownSchemes, title);
             if (index != -1)
                 return (NpaTitleId)index;
@@ -467,8 +453,6 @@ namespace GameRes.Formats.NitroPlus
             // DJANGOTR
             new byte[] { 0xed,0xee,0xee,0xef,0xed,0xee,0xee,0xee,0xfe,0xde,0xee,0xef,0xed,0xee,0xfe,0xdf,0x1e,0x4e,0x66,0xb6 },
             // LAMENTO
-            new byte[] { 0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0x1e,0x4e,0x66,0xb6 },
-            // LAMENTOTR
             new byte[] { 0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0x1e,0x4e,0x66,0xb6 },
             // SWEETPOOL
             new byte[] { 0x38,0x9c,0x2a,0x8b,0x8b,0x8b,0x8b,0x8c,0x8a,0x8b,0x8b,0xae,0xae,0xae,0xa8,0xa8 },
@@ -526,47 +510,35 @@ namespace GameRes.Formats.NitroPlus
         public Indexer (IEnumerable<Entry> source_list, NpaOptions options)
         {
             m_entries = new List<NpaEntry> (source_list.Count());
-            var game_id = options.TitleId;
-            if (game_id == NpaTitleId.LAMENTO || game_id == NpaTitleId.LAMENTOTR)
-                m_key = options.Key1 + options.Key2;
-            else
-                m_key = options.Key1 * options.Key2;
+            m_key = NpaOpener.GetArchiveKey (options.TitleId, options.Key1, options.Key2);
 
             foreach (var entry in source_list)
             {
                 string name = entry.Name;
-                var dir = Path.GetDirectoryName (name);
-                int folder_id = 0;
-                if (!string.IsNullOrEmpty (dir))
-                    folder_id = AddDirectory (dir);
-
-                bool compress = options.CompressContents;
-                if (compress) // don't compress images
-                    compress = !FormatCatalog.Instance.LookupFileName (name).OfType<ImageFormat>().Any();
-                var npa_entry = new NpaEntry
+                try
                 {
-                    Name        = name,
-                    IsPacked    = compress,
-                    RawName     = EncodeName (name, m_entries.Count),
-                    FolderId    = folder_id,
-                };
-                ++m_file_count;
-                AddEntry (npa_entry);
-            }
-        }
+                    var dir = Path.GetDirectoryName (name);
+                    int folder_id = 0;
+                    if (!string.IsNullOrEmpty (dir))
+                        folder_id = AddDirectory (dir);
 
-        byte[] EncodeName (string name, int entry_number)
-        {
-            try
-            {
-                byte[] raw_name = m_encoding.GetBytes (name);
-                for (int i = 0; i < name.Length; ++i)
-                    raw_name[i] -= NpaOpener.DecryptName (i, entry_number, m_key);
-                return raw_name;
-            }
-            catch (EncoderFallbackException X)
-            {
-                throw new InvalidFileName (name, arcStrings.MsgIllegalCharacters, X);
+                    bool compress = options.CompressContents;
+                    if (compress) // don't compress images
+                        compress = !FormatCatalog.Instance.LookupFileName (name).OfType<ImageFormat>().Any();
+                    var npa_entry = new NpaEntry
+                    {
+                        Name        = name,
+                        IsPacked    = compress,
+                        RawName     = m_encoding.GetBytes (name),
+                        FolderId    = folder_id,
+                    };
+                    ++m_file_count;
+                    AddEntry (npa_entry);
+                }
+                catch (EncoderFallbackException X)
+                {
+                    throw new InvalidFileName (name, arcStrings.MsgIllegalCharacters, X);
+                }
             }
         }
 
@@ -600,12 +572,188 @@ namespace GameRes.Formats.NitroPlus
                     Size        = 0,
                     UnpackedSize = 0,
                     IsPacked    = false,
-                    RawName     = EncodeName (path, m_entries.Count),
+                    RawName     = m_encoding.GetBytes (path),
                     FolderId    = folder_id,
                 };
-                m_entries.Add (npa_entry);
+                AddEntry (npa_entry);
             }
             return folder_id;
         }
+    }
+
+    /// <summary>
+    /// Stream class for files stored in encrypted NPA archives.
+    /// </summary>
+    internal class EncryptedStream : Stream
+    {
+        private Stream          m_stream;
+        private Lazy<byte[]>    m_encrypted;
+        private int             m_encrypted_length;
+        private bool            m_read_mode;
+        private long            m_base_pos;
+
+        public override bool  CanRead { get { return m_read_mode; } }
+        public override bool  CanSeek { get { return m_stream.CanSeek; } }
+        public override bool CanWrite { get { return !m_read_mode; } }
+        public override long   Length { get { return m_stream.Length - m_base_pos; } }
+        public override long Position
+        {
+            get { return m_stream.Position - m_base_pos; }
+            set { m_stream.Position = m_base_pos + value; }
+        }
+
+        delegate byte CryptFunc (int index, byte value);
+        CryptFunc Encrypt;
+
+        public EncryptedStream (NpaArchive arc, NpaEntry entry)
+        {
+            m_read_mode = true;
+            m_encrypted_length = GetEncryptedLength (entry, arc.GameId);
+            int key = NpaOpener.GetKeyFromEntry (entry, arc.GameId, arc.Key);
+
+            m_stream = arc.File.CreateStream (entry.Offset, entry.Size);
+            m_encrypted = new Lazy<byte[]> (() => InitEncrypted (key, arc.GameId, arc.KeyTable));
+            m_base_pos = m_stream.Position;
+        }
+
+        public EncryptedStream (Stream output, NpaEntry entry, NpaTitleId game_id, int arc_key)
+        {
+            m_read_mode = false;
+            m_encrypted_length = GetEncryptedLength (entry, game_id);
+            int key = NpaOpener.GetKeyFromEntry (entry, game_id, arc_key);
+
+            m_stream = output;
+            m_encrypted = new Lazy<byte[]> (() => new byte[m_encrypted_length]);
+            m_base_pos = m_stream.Position;
+
+            byte[] decrypt_table = NpaOpener.GenerateKeyTable (game_id);
+            byte[] encrypt_table = new byte[256];
+            for (int i = 0; i < 256; ++i)
+                encrypt_table[decrypt_table[i]] = (byte)i;
+
+            if (NpaTitleId.LAMENTO == game_id)
+            {
+                Encrypt = (i, x) => encrypt_table[(x + key) & 0xff];
+            }
+            else
+            {
+                Encrypt = (i, x) => encrypt_table[(x + key + i) & 0xff];
+            }
+        }
+
+        int GetEncryptedLength (NpaEntry entry, NpaTitleId game_id)
+        {
+            int length = 0x1000;
+            if (game_id != NpaTitleId.LAMENTO)
+                length += entry.RawName.Length;
+            return length;
+        }
+
+        byte[] InitEncrypted (int key, NpaTitleId game_id, byte[] key_table)
+        {
+            var position = Position;
+            if (0 != position)
+                Position = 0;
+            byte[] buffer = new byte[m_encrypted_length];
+            m_encrypted_length = m_stream.Read (buffer, 0, m_encrypted_length);
+            Position = position;
+
+            if (game_id == NpaTitleId.LAMENTO)
+            {
+                for (int i = 0; i < m_encrypted_length; i++)
+                    buffer[i] = (byte)(key_table[buffer[i]] - key);
+            }
+            else
+            {
+                for (int i = 0; i < m_encrypted_length; i++)
+                    buffer[i] = (byte)(key_table[buffer[i]] - key - i);
+            }
+            return buffer;
+        }
+
+        #region System.IO.Stream methods
+        public override void Flush()
+        {
+            m_stream.Flush();
+        }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            if (SeekOrigin.Begin == origin)
+                offset += m_base_pos;
+            offset = m_stream.Seek (offset, origin);
+            return offset - m_base_pos;
+        }
+
+        public override void SetLength (long length)
+        {
+            throw new NotSupportedException ("EncryptedStream.SetLength is not supported");
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            var position = Position;
+            if (position >= m_encrypted_length)
+                return m_stream.Read (buffer, offset, count);
+            int read = Math.Min (m_encrypted_length - (int)position, count);
+            Array.Copy (m_encrypted.Value, (int)position, buffer, offset, read);
+            m_stream.Seek (read, SeekOrigin.Current);
+            if (read < count)
+            {
+                read += m_stream.Read (buffer, offset+read, count-read);
+            }
+            return read;
+        }
+
+        public override int ReadByte ()
+        {
+            var position = Position;
+            if (position >= m_encrypted_length)
+                return m_stream.ReadByte();
+            m_stream.Seek (1, SeekOrigin.Current);
+            return m_encrypted.Value[(int)position];
+        }
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            var position = Position;
+            if (position < m_encrypted_length)
+            {
+                int limit = (int)position + Math.Min (m_encrypted_length - (int)position, count);
+                for (int i = (int)position; i < limit; ++i, ++offset, --count)
+                {
+                    m_encrypted.Value[i] = Encrypt (i, buffer[offset]);
+                }
+                m_stream.Write (m_encrypted.Value, (int)position, limit-(int)position);
+            }
+            if (count > 0)
+                m_stream.Write (buffer, offset, count);
+        }
+
+        public override void WriteByte (byte value)
+        {
+            var position = Position;
+            if (position < m_encrypted_length)
+                value = Encrypt ((int)position, value);
+            m_stream.WriteByte (value);
+        }
+        #endregion
+
+        #region IDisposable Members
+        bool disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing && m_read_mode)
+                {
+                    m_stream.Dispose();
+                }
+                m_encrypted = null;
+                disposed = true;
+                base.Dispose (disposing);
+            }
+        }
+        #endregion
     }
 }
