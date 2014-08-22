@@ -47,7 +47,7 @@ namespace GARbro.GUI
             {
                 var format = this.ArchiveFormat.SelectedItem as ArchiveFormat;
                 if (null != format)
-                    initial_name = Path.ChangeExtension (initial_name, format.Extensions.First());
+                    initial_name = Path.ChangeExtension (initial_name, format.Extensions.FirstOrDefault());
             }
             ArchiveName.Text = initial_name;
         }
@@ -136,7 +136,7 @@ namespace GARbro.GUI
             {
                 widget = format.GetCreationWidget();
                 if (!string.IsNullOrEmpty (ArchiveName.Text))
-                    ArchiveName.Text = Path.ChangeExtension (ArchiveName.Text, format.Extensions.First());
+                    ArchiveName.Text = Path.ChangeExtension (ArchiveName.Text, format.Extensions.FirstOrDefault());
             }
             OptionsWidget.Content = widget;
             OptionsWidget.Visibility = null != widget ? Visibility.Visible : Visibility.Hidden;
