@@ -29,6 +29,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Formats.Strings;
@@ -128,7 +129,210 @@ namespace GameRes.Formats.Majiro
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new NotImplementedException ("RctFormat.Write is not implemented.");
+            using (var writer = new Writer (file))
+                writer.Pack (image.Bitmap);
+        }
+
+        internal class Writer : IDisposable
+        {
+            BinaryWriter    m_out;
+            uint[]          m_input;
+            int             m_width;
+            int             m_height;
+
+            int[]           m_shift_table = new int[32];
+
+            const int MaxThunkSize = 0xffff + 0x7f;
+            const int MaxMatchSize = 0xffff;
+
+            struct ChunkPosition
+            {
+                public ushort Offset;
+                public ushort Length;
+            }
+
+            public Writer (Stream output)
+            {
+                m_out = new BinaryWriter (output, Encoding.ASCII, true);
+            }
+
+            void PrepareInput (BitmapSource bitmap)
+            {
+                m_width  = bitmap.PixelWidth;
+                m_height = bitmap.PixelHeight;
+                int pixels = m_width*m_height;
+                m_input = new uint[pixels];
+                if (bitmap.Format != PixelFormats.Bgr32)
+                {
+                    var converted_bitmap = new FormatConvertedBitmap();
+                    converted_bitmap.BeginInit();
+                    converted_bitmap.Source = bitmap;
+                    converted_bitmap.DestinationFormat = PixelFormats.Bgr32;
+                    converted_bitmap.EndInit();
+                    bitmap = converted_bitmap;
+                }
+                unsafe
+                {
+                    fixed (uint* buffer = m_input)
+                    {
+                        bitmap.CopyPixels (Int32Rect.Empty, (IntPtr)buffer, pixels*4, m_width*4);
+                    }
+                }
+                InitShiftTable (m_width);
+            }
+
+            void InitShiftTable (int width)
+            {
+                for (int i = 0; i < 32; ++i)
+                {
+                    int shift = Reader.ShiftTable[i];
+                    int shift_row = shift & 0x0f;
+                    shift >>= 4;
+                    shift_row *= width;
+                    shift -= shift_row;
+                    m_shift_table[i] = shift;
+                }
+            }
+
+            List<byte>  m_buffer = new List<byte>();
+            int         m_buffer_size;
+
+            public void Pack (BitmapSource bitmap)
+            {
+                PrepareInput (bitmap);
+                long data_offset = 0x14;
+                m_out.BaseStream.Position = data_offset;
+                uint pixel = m_input[0];
+                m_out.Write ((byte)pixel);
+                m_out.Write ((byte)(pixel >> 8));
+                m_out.Write ((byte)(pixel >> 16));
+
+                m_buffer.Clear();
+                m_buffer_size = 0;
+                int last    = m_input.Length;
+                int current = 1;
+                while (current != last)
+                {
+                    var chunk_pos = FindLongest (current, last);
+                    if (chunk_pos.Length > 0)
+                    {
+                        Flush();
+                        WritePos (chunk_pos);
+                        current += chunk_pos.Length;
+                    }
+                    else
+                    {
+                        WritePixel (m_input[current++]);
+                    }
+                }
+                Flush();
+                var data_size = m_out.BaseStream.Position - data_offset;
+                m_out.BaseStream.Position = 0;
+                WriteHeader ((uint)data_size);
+            }
+
+            void WriteHeader (uint data_size)
+            {
+                m_out.Write (0x9a925a98u);
+                m_out.Write (0x30304354u);
+                m_out.Write (m_width);
+                m_out.Write (m_height);
+                m_out.Write (data_size);
+            }
+
+            void WritePixel (uint pixel)
+            {
+                if (MaxThunkSize == m_buffer_size)
+                    Flush();
+                m_buffer.Add ((byte)pixel);
+                m_buffer.Add ((byte)(pixel >> 8));
+                m_buffer.Add ((byte)(pixel >> 16));
+                ++m_buffer_size;
+            }
+
+            void Flush ()
+            {
+                if (0 != m_buffer.Count)
+                {
+                    if (m_buffer_size > 0x7f)
+                    {
+                        m_out.Write ((byte)0x7f);
+                        m_out.Write ((ushort)(m_buffer_size-0x80));
+                    }
+                    else
+                        m_out.Write ((byte)(m_buffer_size-1));
+                    foreach (var b in m_buffer)
+                        m_out.Write (b);
+                    m_buffer.Clear();
+                    m_buffer_size = 0;
+                }
+            }
+
+            ChunkPosition FindLongest (int buf_begin, int buf_end)
+            {
+                buf_end = Math.Min (buf_begin + MaxMatchSize, buf_end);
+                ChunkPosition pos = new ChunkPosition { Offset = 0, Length = 0 };
+                for (int i = 0; i < 32; ++i)
+                {
+                    int offset = buf_begin + m_shift_table[i];
+                    if (offset < 0)
+                        continue;
+                    if (m_input[offset] != m_input[buf_begin])
+                        continue;
+                    var last = Mismatch (buf_begin+1, buf_end, offset+1);
+                    int weight = last - offset;
+                    if (weight > pos.Length)
+                    {
+                        pos.Offset = (ushort)i;
+                        pos.Length = (ushort)weight;
+                    }
+                }
+                return pos;
+            }
+
+            int Mismatch (int first1, int last1, int first2)
+            {
+                while (first1 != last1 && m_input[first1] == m_input[first2])
+                {
+                    ++first1;
+                    ++first2;
+                }
+                return first2;
+            }
+
+            void WritePos (ChunkPosition pos)
+            {
+                int code = (pos.Offset << 2) | 0x80;
+                if (pos.Length > 3)
+                    code |= 3;
+                else
+                    code |= pos.Length - 1;
+                m_out.Write ((byte)code);
+                if (pos.Length > 3)
+                    m_out.Write ((ushort)(pos.Length - 4));
+            }
+
+            #region IDisposable Members
+            bool disposed = false;
+
+            public void Dispose ()
+            {
+                Dispose (true);
+                GC.SuppressFinalize (this);
+            }
+
+            protected virtual void Dispose (bool disposing)
+            {
+                if (!disposed)
+                {
+                    if (disposing)
+                    {
+                        m_out.Dispose();
+                    }
+                    disposed = true;
+                }
+            }
+            #endregion
         }
 
         internal class Reader : IDisposable
@@ -146,7 +350,7 @@ namespace GameRes.Formats.Majiro
                 m_input = new BinaryReader (file, Encoding.ASCII, true);
             }
 
-            private static readonly sbyte[] ShiftTable = new sbyte[] {
+            internal static readonly sbyte[] ShiftTable = new sbyte[] {
                 -16, -32, -48, -64, -80, -96,
                 49, 33, 17, 1, -15, -31, -47,
                 50, 34, 18, 2, -14, -30, -46,
