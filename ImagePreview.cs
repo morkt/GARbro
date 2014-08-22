@@ -189,7 +189,7 @@ namespace GARbro.GUI
         {
             using (var file = arc.OpenEntry (entry))
             {
-                string source_ext = Path.GetExtension (entry.Name).TrimStart ('.').ToLower();
+                string source_ext = Path.GetExtension (entry.Name).TrimStart ('.').ToLowerInvariant();
                 if (target_format.Extensions.Any (ext => ext == source_ext))
                 {
                     // source extension matches target image format, copy file as is
@@ -201,9 +201,7 @@ namespace GARbro.GUI
                 if (null == image)
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
                 string target_ext = target_format.Extensions.First();
-                string outdir = Path.GetDirectoryName (entry.Name);
-                string outname = Path.GetFileNameWithoutExtension (entry.Name)+'.'+target_ext;
-                outname = Path.Combine (outdir, outname);
+                string outname = Path.ChangeExtension (entry.Name, target_ext);
                 Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractImage");
                 using (var outfile = arc.CreateFile (new Entry { Name = outname }))
                 {

@@ -109,7 +109,7 @@ namespace GameRes
 
         protected IResource ()
         {
-            m_extensions = new string[] { Tag.ToLower() };
+            m_extensions = new string[] { Tag.ToLowerInvariant() };
             m_signatures = new uint[] { Signature };
         }
     }
@@ -309,7 +309,7 @@ namespace GameRes
             {
                 foreach (var ext in impl.Extensions)
                 {
-                    m_extension_map.Add (ext.ToUpper(), impl);
+                    m_extension_map.Add (ext.ToUpperInvariant(), impl);
                 }
                 foreach (var signature in impl.Signatures)
                 {
@@ -325,14 +325,14 @@ namespace GameRes
         public IEnumerable<IResource> LookupFileName (string filename)
         {
             string ext = Path.GetExtension (filename);
-            if (null == ext)
+            if (string.IsNullOrEmpty (ext))
                 return new IResource[0];
             return LookupExtension (ext.TrimStart ('.'));
         }
 
         public IEnumerable<IResource> LookupExtension (string ext)
         {
-            return m_extension_map.GetValues (ext.ToUpper(), true);
+            return m_extension_map.GetValues (ext.ToUpperInvariant(), true);
         }
 
         public IEnumerable<Type> LookupExtension<Type> (string ext) where Type : IResource
@@ -357,9 +357,9 @@ namespace GameRes
         {
             Entry entry = null;
             string ext = Path.GetExtension (filename);
-            if (null != ext)
+            if (!string.IsNullOrEmpty (ext))
             {
-                ext = ext.TrimStart ('.').ToUpper();
+                ext = ext.TrimStart ('.').ToUpperInvariant();
                 var range = m_extension_map.GetValues (ext, false);
                 if (null != range)
                     entry = range.First().CreateEntry();
