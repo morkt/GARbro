@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArcAMI.cs" />
+    <Compile Include="ArcDRS.cs" />
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcMajiro.cs" />
     <Compile Include="ArcNPA.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="CreateYPFWidget.xaml.cs">
       <DependentUpon>CreateYPFWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ImageDRG.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageTLG.cs" />
