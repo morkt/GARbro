@@ -104,6 +104,8 @@
                     <MenuItem Header="{x:Static s:guiStrings.MenuOpen}" Command="{x:Static local:Commands.OpenFile}" InputGestureText="Ctrl+O"/>
                     <MenuItem Header="{x:Static s:guiStrings.CtxMenuCreate}" InputGestureText="F3"
                               Command="{x:Static local:Commands.CreateArchive}" />
+                    <MenuItem Header="{x:Static s:guiStrings.CtxMenuConvert}" InputGestureText="F6"
+                              Command="{x:Static local:Commands.ConvertImage}" />
                     <MenuItem Header="{x:Static s:guiStrings.MenuRecent}" x:Name="RecentFilesMenu">
                         <MenuItem.ItemContainerStyle>
                             <Style TargetType="MenuItem">
@@ -261,6 +263,7 @@
                     <KeyBinding Gesture="F2" Command="{x:Static local:Commands.RenameItem}"/>
                     <KeyBinding Gesture="F4" Command="{x:Static local:Commands.ExtractItem}"/>
                     <KeyBinding Gesture="F5" Command="{x:Static local:Commands.Refresh}"/>
+                    <KeyBinding Gesture="F6" Command="{x:Static local:Commands.ConvertImage}"/>
                     <KeyBinding Gesture="Delete" Command="{x:Static local:Commands.DeleteItem}"/>
                     <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
                     <MouseBinding Gesture="LeftDoubleClick" Command="{x:Static local:Commands.OpenItem}" />
