@@ -297,5 +297,17 @@ namespace GARbro.GUI.Properties {
                 this["winStatusBarVisibility"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("PNG")]
+        public string appLastImageFormat {
+            get {
+                return ((string)(this["appLastImageFormat"]));
+            }
+            set {
+                this["appLastImageFormat"] = value;
+            }
+        }
     }
 }

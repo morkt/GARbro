@@ -90,6 +90,9 @@
             -->
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
                       Command="{x:Static local:Commands.Refresh}"/>
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuConvert}" InputGestureText="F6"
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.ConvertImage}" />
         </ContextMenu>
 
     </Window.Resources>
@@ -356,6 +359,7 @@
         <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteOnPhysicalFile" />
         <CommandBinding Command="{x:Static local:Commands.RenameItem}" Executed="RenameItemExec" CanExecute="CanExecuteInDirectory" />
         <CommandBinding Command="{x:Static local:Commands.ExploreItem}" Executed="ExploreItemExec" CanExecute="CanExecuteInDirectory" />
+        <CommandBinding Command="{x:Static local:Commands.ConvertImage}" Executed="ConvertImageExec" CanExecute="CanExecuteOnImage" />
         <CommandBinding Command="{x:Static local:Commands.SortBy}"     Executed="SortByExec"     CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.GoBack}"     Executed="GoBackExec"     CanExecute="CanExecuteGoBack"/>
         <CommandBinding Command="{x:Static local:Commands.GoForward}"  Executed="GoForwardExec"  CanExecute="CanExecuteGoForward"/>

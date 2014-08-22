@@ -120,6 +120,9 @@
     <Compile Include="ArcParameters.xaml.cs">
       <DependentUpon>ArcParameters.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ConvertImages.xaml.cs">
+      <DependentUpon>ConvertImages.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CreateArchive.xaml.cs">
       <DependentUpon>CreateArchive.xaml</DependentUpon>
     </Compile>
@@ -131,6 +134,7 @@
     <Compile Include="ExtractFile.xaml.cs">
       <DependentUpon>ExtractFile.xaml</DependentUpon>
     </Compile>
+    <Compile Include="GarConvert.cs" />
     <Compile Include="GarCreate.cs" />
     <Compile Include="GarExtract.cs" />
     <Compile Include="HistoryStack.cs" />
@@ -151,6 +155,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ArcParameters.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ConvertImages.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

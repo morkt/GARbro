@@ -289,12 +289,12 @@ namespace GARbro.GUI
             m_watcher.EnableRaisingEvents = true;
         }
 
-        void StopWatchDirectoryChanges()
+        public void StopWatchDirectoryChanges()
         {
             m_watcher.EnableRaisingEvents = false;
         }
 
-        void ResumeWatchDirectoryChanges ()
+        public void ResumeWatchDirectoryChanges ()
         {
             m_watcher.EnableRaisingEvents = true;
         }
@@ -794,7 +794,7 @@ namespace GARbro.GUI
             RefreshView();
         }
 
-        private void RefreshView ()
+        public void RefreshView ()
         {
             m_app.ResetCache();
             var pos = GetCurrentPosition();
@@ -960,6 +960,12 @@ namespace GARbro.GUI
         private void CanExecuteOnSelected (object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = CurrentDirectory.SelectedIndex != -1;
+        }
+
+        private void CanExecuteOnImage (object sender, CanExecuteRoutedEventArgs e)
+        {
+            var entry = CurrentDirectory.SelectedItem as EntryViewModel;
+            e.CanExecute = !ViewModel.IsArchive && entry != null && entry.Type == "image";
         }
 
         private void CanExecuteInArchive (object sender, CanExecuteRoutedEventArgs e)
@@ -1171,6 +1177,7 @@ namespace GARbro.GUI
         public static readonly RoutedCommand DeleteItem = new RoutedCommand();
         public static readonly RoutedCommand RenameItem = new RoutedCommand();
         public static readonly RoutedCommand ExploreItem = new RoutedCommand();
+        public static readonly RoutedCommand ConvertImage = new RoutedCommand();
         public static readonly RoutedCommand Refresh = new RoutedCommand();
         public static readonly RoutedCommand Browse = new RoutedCommand();
         public static readonly RoutedCommand FitWindow = new RoutedCommand();

@@ -378,4 +378,22 @@ Overwrite?</value>
   <data name="MenuView" xml:space="preserve">
     <value>_View</value>
   </data>
+  <data name="CtxMenuConvert" xml:space="preserve">
+    <value>Convert images...</value>
+  </data>
+  <data name="ButtonConvert" xml:space="preserve">
+    <value>Convert</value>
+  </data>
+  <data name="LabelDestinationFormat" xml:space="preserve">
+    <value>Choose destination format</value>
+  </data>
+  <data name="TextConvertImages" xml:space="preserve">
+    <value>Convert images</value>
+  </data>
+  <data name="MsgConvertingImage" xml:space="preserve">
+    <value>Converting image {0}</value>
+  </data>
+  <data name="TextImageConvertError" xml:space="preserve">
+    <value>Image conversion error</value>
+  </data>
 </root>

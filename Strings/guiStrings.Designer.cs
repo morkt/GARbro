@@ -70,6 +70,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Convert.
+        /// </summary>
+        public static string ButtonConvert {
+            get {
+                return ResourceManager.GetString("ButtonConvert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Extract.
         /// </summary>
         public static string ButtonExtract {
@@ -93,6 +102,15 @@ namespace GARbro.GUI.Strings {
         public static string CtxMenuClose {
             get {
                 return ResourceManager.GetString("CtxMenuClose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Convert images....
+        /// </summary>
+        public static string CtxMenuConvert {
+            get {
+                return ResourceManager.GetString("CtxMenuConvert", resourceCulture);
             }
         }
         
@@ -286,6 +304,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose destination format.
+        /// </summary>
+        public static string LabelDestinationFormat {
+            get {
+                return ResourceManager.GetString("LabelDestinationFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Extract files from {0} to.
         /// </summary>
         public static string LabelExtractAllTo {
@@ -417,6 +444,15 @@ namespace GARbro.GUI.Strings {
         public static string MsgConfirmDeleteFiles {
             get {
                 return ResourceManager.GetString("MsgConfirmDeleteFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Converting image {0}.
+        /// </summary>
+        public static string MsgConvertingImage {
+            get {
+                return ResourceManager.GetString("MsgConvertingImage", resourceCulture);
             }
         }
         
@@ -712,6 +748,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Convert images.
+        /// </summary>
+        public static string TextConvertImages {
+            get {
+                return ResourceManager.GetString("TextConvertImages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Create archive.
         /// </summary>
         public static string TextCreateArchive {
@@ -771,6 +816,15 @@ namespace GARbro.GUI.Strings {
         public static string TextExtractTitle {
             get {
                 return ResourceManager.GetString("TextExtractTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Image conversion error.
+        /// </summary>
+        public static string TextImageConvertError {
+            get {
+                return ResourceManager.GetString("TextImageConvertError", resourceCulture);
             }
         }
         

@@ -393,4 +393,22 @@
   <data name="MenuView" xml:space="preserve">
     <value>Просмотр</value>
   </data>
+  <data name="CtxMenuConvert" xml:space="preserve">
+    <value>Конверсия изображений...</value>
+  </data>
+  <data name="ButtonConvert" xml:space="preserve">
+    <value>Преобразовать</value>
+  </data>
+  <data name="LabelDestinationFormat" xml:space="preserve">
+    <value>Формат преобразования</value>
+  </data>
+  <data name="TextConvertImages" xml:space="preserve">
+    <value>Преобразовать изображения</value>
+  </data>
+  <data name="MsgConvertingImage" xml:space="preserve">
+    <value>Преобразование файла {0}</value>
+  </data>
+  <data name="TextImageConvertError" xml:space="preserve">
+    <value>Ошибка конверсии изображения</value>
+  </data>
 </root>

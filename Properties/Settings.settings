@@ -71,5 +71,8 @@
     <Setting Name="winStatusBarVisibility" Type="System.Windows.Visibility" Scope="User">
       <Value Profile="(Default)">Visible</Value>
     </Setting>
+    <Setting Name="appLastImageFormat" Type="System.String" Scope="User">
+      <Value Profile="(Default)">PNG</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
