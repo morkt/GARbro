@@ -380,12 +380,12 @@ namespace GameRes.Formats.DRS
                 SortedSet<int> found;
                 if (m_dict.TryGetValue (m_input[buf_begin], out found))
                 {
-                    foreach (var win_pos in found)
+                    foreach (var win_pos in found.Reverse())
                     {
                         var match_end = Mismatch (buf_begin+1, buf_end, win_pos+1);
                         int weight = match_end - win_pos;
                         int distance = buf_begin - win_pos;
-                        if (weight > pos.Length || (weight == pos.Length && distance < pos.Offset))
+                        if (weight > pos.Length)
                         {
                             pos.Offset = (ushort)distance;
                             pos.Length = (ushort)weight;
@@ -402,7 +402,7 @@ namespace GameRes.Formats.DRS
                 if (1 == pos.Offset)
                 {
                     uint pixel = m_input[buf];
-                    if (buf+1 == m_input.Length || -1 == Array.FindIndex (m_input, buf+1, x => x != pixel))
+                    if (1 == pos.Length || -1 == Array.FindIndex (m_input, buf+1, pos.Length-1, x => x != pixel))
                     {
                         m_out.Write ((byte)0);
                         m_out.Write ((byte)pos.Length);
