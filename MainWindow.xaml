@@ -55,16 +55,16 @@
         <!-- Sort-by submenu -->
         <MenuItem x:Key="sortByMenu" Header="{x:Static s:guiStrings.CtxMenuSortBy}">
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
-                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByName, Mode=OneWay}"
+                      IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}, ConverterParameter=Name}"
                       Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
-                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortByType, Mode=OneWay}"
+                      IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}, ConverterParameter=Type}"
                       Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
-                      IsChecked="{Binding ElementName=AppWindow, Path=IsSortBySize, Mode=OneWay}"
+                      IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}, ConverterParameter=Size}"
                       Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
-                      IsChecked="{Binding ElementName=AppWindow, Path=IsUnsorted, Mode=OneWay}"
+                      IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}}"
                       Command="{x:Static local:Commands.SortBy}"/>
         </MenuItem>
         <!-- Default listview context menu -->
@@ -131,20 +131,7 @@
                     <MenuItem Header="{x:Static s:guiStrings.MenuToggleStatusBar}" InputGestureText="Alt+Shift+S"
                           Command="{x:Static local:Commands.HideStatusBar}"/>
                     <Separator/>
-                    <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBy}">
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByName}" IsCheckable="True"
-                              IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}, ConverterParameter=Name}"
-                              Command="{x:Static local:Commands.SortBy}" CommandParameter="Name"/>
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortByType}" IsCheckable="True"
-                              IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}, ConverterParameter=Type}"
-                              Command="{x:Static local:Commands.SortBy}" CommandParameter="Type"/>
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuSortBySize}" IsCheckable="True"
-                              IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}, ConverterParameter=Size}"
-                              Command="{x:Static local:Commands.SortBy}" CommandParameter="Size"/>
-                        <MenuItem Header="{x:Static s:guiStrings.CtxMenuUnsorted}" IsCheckable="True"
-                              IsChecked="{Binding ElementName=AppWindow, Path=SortMode, Mode=OneWay, Converter={StaticResource sortModeToBooleanConverter}}"
-                              Command="{x:Static local:Commands.SortBy}"/>
-                    </MenuItem>
+                    <StaticResource ResourceKey="sortByMenu"/>
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
                     <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
