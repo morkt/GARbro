@@ -369,14 +369,6 @@ namespace GameRes.Formats.DRS
                 WindowPosition pos = new WindowPosition { Offset = 0, Length = 0 };
                 if (win_begin == win_end)
                     return pos;
-                if (m_input[win_end-1] == m_input[buf_begin])
-                {
-                    pos.Offset = 1;
-                    var match_end = Mismatch (buf_begin+1, buf_end, win_end);
-                    pos.Length = (ushort)(match_end - (win_end-1));
-                    if (MaxMatchSize == pos.Length)
-                        return pos;
-                }
                 SortedSet<int> found;
                 if (m_dict.TryGetValue (m_input[buf_begin], out found))
                 {
@@ -389,7 +381,7 @@ namespace GameRes.Formats.DRS
                         {
                             pos.Offset = (ushort)distance;
                             pos.Length = (ushort)weight;
-                            if (MaxMatchSize == weight && distance < 0x100)
+                            if (MaxMatchSize == weight)
                                 break;
                         }
                     }
