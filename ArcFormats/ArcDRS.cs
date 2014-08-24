@@ -43,7 +43,7 @@ namespace GameRes.Formats.DRS
 
         public DrsOpener ()
         {
-            Extensions = new string[0]; // DRS archives have no extensions
+            Extensions = Enumerable.Empty<string>(); // DRS archives have no extensions
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -60,7 +60,7 @@ namespace GameRes.Formats.DRS
             int dir_offset = 2;
 
             uint next_offset = file.View.ReadUInt32 (dir_offset+12);
-            if (next_offset > file.MaxOffset)
+            if (next_offset > file.MaxOffset || next_offset < dir_size+2)
                 return null;
             var encoding = Encodings.cp932.WithFatalFallback();
             byte[] name_raw = new byte[12];
@@ -78,7 +78,7 @@ namespace GameRes.Formats.DRS
                 uint offset = next_offset;
                 dir_offset += 0x10;
                 next_offset = file.View.ReadUInt32 (dir_offset+12);
-                if (next_offset > file.MaxOffset)
+                if (next_offset > file.MaxOffset || next_offset < offset)
                     return null;
                 string name = encoding.GetString (name_raw, 0, name_length).ToLowerInvariant();
                 var entry = FormatCatalog.Instance.CreateEntry (name);
