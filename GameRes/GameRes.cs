@@ -326,7 +326,7 @@ namespace GameRes
         {
             string ext = Path.GetExtension (filename);
             if (string.IsNullOrEmpty (ext))
-                return new IResource[0];
+                return Enumerable.Empty<IResource>();
             return LookupExtension (ext.TrimStart ('.'));
         }
 
