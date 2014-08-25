@@ -25,6 +25,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Security.Cryptography;
@@ -50,11 +51,16 @@ namespace GameRes.Formats.Kogado
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "PAK"; } }
+        public override string         Tag { get { return "KOGADO"; } }
         public override string Description { get { return arcStrings.KogadoDescription; } }
         public override uint     Signature { get { return 0x61507948; } } // 'HyPa'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool     CanCreate { get { return true; } }
+
+        public PakOpener ()
+        {
+            Extensions = new string[] { "pak" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -143,11 +149,123 @@ namespace GameRes.Formats.Kogado
             }
         }
 
+        internal class OutputEntry : KogadoEntry
+        {
+            public byte[] IndexName;
+            public byte[] IndexExt;
+        }
+
         // files inside archive are aligned to 0x10 boundary.
         // to convert DateTime structure into entry time:
         // entry.FileTime = file_info.CreationTimeUtc.Ticks;
         //
         // last two bytes of archive is CRC16 of the whole file
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            const long data_offset = 0x10;
+            var encoding = Encodings.cp932.WithFatalFallback();
+            int callback_count = 0;
+
+            var output_list = new List<OutputEntry> (list.Count());
+            foreach (var entry in list)
+            {
+                try
+                {
+                    string name = Path.GetFileNameWithoutExtension (entry.Name);
+                    string ext  = Path.GetExtension (entry.Name).TrimStart ('.').ToLowerInvariant();
+                    byte[] name_buf = new byte[0x15];
+                    byte[] ext_buf  = new byte[3];
+                    encoding.GetBytes (name, 0, name.Length, name_buf, 0);
+                    if (!string.IsNullOrEmpty (ext))
+                        encoding.GetBytes (ext, 0, ext.Length, ext_buf, 0);
+                    var out_entry = new OutputEntry
+                    {
+                        Name      = entry.Name,
+                        IndexName = name_buf,
+                        IndexExt  = ext_buf,
+                    };
+                    output_list.Add (out_entry);
+                }
+                catch (EncoderFallbackException X)
+                {
+                    throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
+                }
+                catch (ArgumentException X)
+                {
+                    throw new InvalidFileName (entry.Name, arcStrings.MsgFileNameTooLong, X);
+                }
+            }
+
+            if (null != callback)
+                callback (output_list.Count+2, null, null);
+
+            output.Position = data_offset;
+            uint current_offset = 0;
+            foreach (var entry in output_list)
+            {
+                if (null != callback)
+                    callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                entry.FileTime = File.GetCreationTimeUtc (entry.Name).Ticks;
+                entry.Offset = current_offset;
+                entry.CompressionType = 0;
+                using (var input = File.OpenRead (entry.Name))
+                {
+                    var size = input.Length;
+                    if (size > uint.MaxValue || current_offset + size + 0x0f > uint.MaxValue)
+                        throw new FileSizeException();
+                    entry.Size = (uint)size;
+                    entry.UnpackedSize = entry.Size;
+                    using (var checked_stream = new CheckedStream (output, new Crc16()))
+                    {
+                        input.CopyTo (checked_stream);
+                        entry.HasCheckSum = true;
+                        entry.CheckSum = (ushort)checked_stream.CheckSumValue;
+                    }
+                    current_offset += (uint)size + 0x0f;
+                    current_offset &= ~0x0fu;
+                    output.Position = data_offset + current_offset;
+                }
+            }
+
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgUpdatingIndex);
+
+            // at last, go back to directory and write offset/sizes
+            uint index_offset = current_offset;
+            using (var index = new BinaryWriter (output, encoding, true))
+            {
+                foreach (var entry in output_list)
+                {
+                    index.Write (entry.IndexName);
+                    index.Write (entry.IndexExt);
+                    index.Write ((uint)entry.Offset);
+                    index.Write (entry.UnpackedSize);
+                    index.Write (entry.Size);
+                    index.Write (entry.CompressionType);
+                    index.Write (entry.HasCheckSum);
+                    index.Write (entry.CheckSum);
+                    index.Write (entry.FileTime);
+                }
+                index.BaseStream.Position = 0;
+                index.Write (Signature);
+                index.Write (0x03006b63);
+                index.Write (index_offset);
+                index.Write (output_list.Count);
+
+                if (null != callback)
+                    callback (callback_count++, null, arcStrings.MsgCalculatingChecksum);
+
+                output.Position = 0;
+                using (var checked_stream = new CheckedStream (output, new Crc16()))
+                {
+                    checked_stream.CopyTo (Stream.Null);
+                    index.Write ((ushort)checked_stream.CheckSumValue);
+                }
+            }
+        }
     }
 
     public sealed class Crc16 : ICheckSum
@@ -261,10 +379,12 @@ namespace GameRes.Formats.Kogado
 
     public sealed class NotTransform : ICryptoTransform
     {
+        private const int BlockSize = 256;
+
         public bool          CanReuseTransform { get { return true; } }
         public bool CanTransformMultipleBlocks { get { return true; } }
-        public int              InputBlockSize { get { return 256; } }
-        public int             OutputBlockSize { get { return 256; } }
+        public int              InputBlockSize { get { return BlockSize; } }
+        public int             OutputBlockSize { get { return BlockSize; } }
 
         public int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount,
                                    byte[] outputBuffer, int outputOffset)

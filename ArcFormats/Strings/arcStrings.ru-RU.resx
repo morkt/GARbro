@@ -162,6 +162,9 @@
   <data name="MsgAddingFile" xml:space="preserve">
     <value>Добавляется файл</value>
   </data>
+  <data name="MsgCalculatingChecksum" xml:space="preserve">
+    <value>Подсчёт контрольной суммы...</value>
+  </data>
   <data name="MsgCompressingIndex" xml:space="preserve">
     <value>Сжимается оглавление...</value>
   </data>

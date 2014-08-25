@@ -180,6 +180,9 @@ predefined encryption scheme.</value>
   <data name="MsgAddingFile" xml:space="preserve">
     <value>Adding file</value>
   </data>
+  <data name="MsgCalculatingChecksum" xml:space="preserve">
+    <value>Calcualting checksum...</value>
+  </data>
   <data name="MsgCompressingIndex" xml:space="preserve">
     <value>Compressing index...</value>
   </data>

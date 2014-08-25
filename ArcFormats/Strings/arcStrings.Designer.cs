@@ -244,6 +244,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Calcualting checksum....
+        /// </summary>
+        public static string MsgCalculatingChecksum {
+            get {
+                return ResourceManager.GetString("MsgCalculatingChecksum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Compressing index....
         /// </summary>
         public static string MsgCompressingIndex {
