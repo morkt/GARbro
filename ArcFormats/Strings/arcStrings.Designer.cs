@@ -217,6 +217,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Kogado game engine resource archive.
+        /// </summary>
+        public static string KogadoDescription {
+            get {
+                return ResourceManager.GetString("KogadoDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Liar-soft image archive.
         /// </summary>
         public static string LWGDescription {
