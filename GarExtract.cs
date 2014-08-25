@@ -234,6 +234,7 @@ namespace GARbro.GUI
             };
             extractProgressDialog.RunWorkerCompleted += (s, e) => {
                 extractProgressDialog.Dispose();
+                this.Activate();
                 if (!ViewModel.IsArchive)
                 {
                     arc.Dispose();
