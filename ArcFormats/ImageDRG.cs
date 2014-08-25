@@ -151,7 +151,7 @@ namespace GameRes.Formats.DRS
                     src_offset = out_pos - 3 * input.ReadByte ();
                     if (count < 0 || count > pixel_count || src_offset < 0 || src_offset == out_pos)
                         return null;
-                    CopyOverlapped (output, src_offset, out_pos, count);
+                    Binary.CopyOverlapped (output, src_offset, out_pos, count);
                     out_pos += count;
                     pixel_count -= count;
                     break;
@@ -163,7 +163,7 @@ namespace GameRes.Formats.DRS
                         src_offset = out_pos - 3 * (off_hi << 8 | off_lo);
                         if (count < 0 || count > pixel_count || src_offset < 0 || src_offset == out_pos)
                             return null;
-                        CopyOverlapped (output, src_offset, out_pos, count);
+                        Binary.CopyOverlapped (output, src_offset, out_pos, count);
                         out_pos += count;
                         pixel_count -= count;
                         break;
@@ -203,20 +203,6 @@ namespace GameRes.Formats.DRS
                 }
             }
             return output;
-        }
-
-        static internal void CopyOverlapped (byte[] data, int src, int dst, int count)
-        {
-            int preceding = dst-src;
-            while (count > 0)
-            {
-                if (preceding > count)
-                    preceding = count;
-                Array.Copy (data, src, data, dst, preceding);
-                src = dst;
-                dst += preceding;
-                count -= preceding;
-            }
         }
 
         internal class Writer : IDisposable

@@ -399,23 +399,9 @@ namespace GameRes.Formats.Majiro
                         shift *= 3;
                         if (shift >= 0 || data_pos+shift < 0)
                             throw new InvalidFormatException();
-                        CopyOverlapped (m_data, data_pos+shift, data_pos, count);
+                        Binary.CopyOverlapped (m_data, data_pos+shift, data_pos, count);
                         data_pos += count;
                     }
-                }
-            }
-
-            static internal void CopyOverlapped (byte[] data, int src, int dst, int count)
-            {
-                int preceding = dst-src;
-                while (count > 0)
-                {
-                    if (preceding > count)
-                        preceding = count;
-                    Array.Copy (data, src, data, dst, preceding);
-                    src = dst;
-                    dst += preceding;
-                    count -= preceding;
                 }
             }
 
@@ -575,7 +561,7 @@ namespace GameRes.Formats.Majiro
                         shift -= shift_row;
                         if (shift >= 0 || data_pos+shift < 0)
                             throw new InvalidFormatException();
-                        RctFormat.Reader.CopyOverlapped (m_data, data_pos+shift, data_pos, count);
+                        Binary.CopyOverlapped (m_data, data_pos+shift, data_pos, count);
                         data_pos += count;
                     }
                 }

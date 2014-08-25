@@ -69,6 +69,20 @@ namespace GameRes.Utility
                     return false;
             return true;
         }
+
+        public static void CopyOverlapped (byte[] data, int src, int dst, int count)
+        {
+            int preceding = dst-src;
+            while (count > 0)
+            {
+                if (preceding > count)
+                    preceding = count;
+                System.Array.Copy (data, src, data, dst, preceding);
+                src = dst;
+                dst += preceding;
+                count -= preceding;
+            }
+        }
     }
 
     public static class LittleEndian
