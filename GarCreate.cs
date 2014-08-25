@@ -184,6 +184,7 @@ namespace GARbro.GUI
         void OnCreateComplete (object sender, RunWorkerCompletedEventArgs e)
         {
             m_progress_dialog.Dispose();
+            m_main.Activate();
             if (null == m_pending_error)
             {
                 Settings.Default.appLastCreatedArchive = m_arc_name;
