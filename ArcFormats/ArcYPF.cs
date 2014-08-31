@@ -222,7 +222,7 @@ namespace GameRes.Formats.YuRis
                     writer.Write (name_len);
                     writer.Write (entry.IndexName);
                     writer.Write (entry.FileType);
-                    writer.Write ((byte)(entry.IsPacked ? 1 : 0));
+                    writer.Write (entry.IsPacked);
                     writer.Write (entry.UnpackedSize);
                     writer.Write (entry.Size);
                     writer.Write ((uint)entry.Offset);
