@@ -294,13 +294,12 @@ namespace GameRes.Formats
             return packed_size;
         }
 
-        static readonly GrpFormat s_grp_format = FormatCatalog.Instance.ImageFormats.OfType<GrpFormat>().FirstOrDefault();
-
         uint WriteImageEntry (PackedEntry entry, Stream input, Stream output)
         {
-            if (null == s_grp_format) // probably never happens
+            var grp = FormatCatalog.Instance.ImageFormats.OfType<GrpFormat>().FirstOrDefault();
+            if (null == grp) // probably never happens
                 throw new FileFormatException ("GRP image encoder not available");
-            bool is_grp = s_grp_format.Signature == FormatCatalog.ReadSignature (input);
+            bool is_grp = grp.Signature == FormatCatalog.ReadSignature (input);
             input.Position = 0;
             using (var zstream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true))
             {
@@ -313,7 +312,7 @@ namespace GameRes.Formats
                     var image = ImageFormat.Read (input);
                     if (null == image)
                         throw new InvalidFormatException (string.Format (arcStrings.MsgInvalidImageFormat, entry.Name));
-                    s_grp_format.Write (zstream, image);
+                    grp.Write (zstream, image);
                     entry.UnpackedSize = (uint)zstream.TotalIn;
                 }
                 zstream.Flush();

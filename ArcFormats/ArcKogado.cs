@@ -174,15 +174,12 @@ namespace GameRes.Formats.Kogado
                 try
                 {
                     string name = Path.GetFileNameWithoutExtension (entry.Name);
-                    string ext  = Path.GetExtension (entry.Name);
+                    string ext  = Path.GetExtension (entry.Name).TrimStart ('.').ToLowerInvariant();
                     byte[] name_buf = new byte[0x15];
                     byte[] ext_buf  = new byte[3];
                     encoding.GetBytes (name, 0, name.Length, name_buf, 0);
                     if (!string.IsNullOrEmpty (ext))
-                    {
-                        ext = ext.TrimStart ('.').ToLowerInvariant();
                         encoding.GetBytes (ext, 0, ext.Length, ext_buf, 0);
-                    }
                     var out_entry = new OutputEntry
                     {
                         Name      = entry.Name,

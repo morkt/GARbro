@@ -594,9 +594,9 @@ namespace GameRes.Formats.NitroPlus
         private bool            m_read_mode;
         private long            m_base_pos;
 
-        public override bool  CanRead { get { return m_read_mode && m_stream.CanRead; } }
+        public override bool  CanRead { get { return m_read_mode; } }
         public override bool  CanSeek { get { return m_stream.CanSeek; } }
-        public override bool CanWrite { get { return !m_read_mode && m_stream.CanWrite; } }
+        public override bool CanWrite { get { return !m_read_mode; } }
         public override long   Length { get { return m_stream.Length - m_base_pos; } }
         public override long Position
         {
