@@ -10,7 +10,7 @@ using System.Windows;
 [assembly: AssemblyTitle("Game Resource browser")]
 [assembly: AssemblyDescription("Game Resource browser")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany ("mørkt")]
 [assembly: AssemblyProduct("GARbro.GUI")]
 [assembly: AssemblyCopyright("Copyright ©  2014 mørkt")]
 [assembly: AssemblyTrademark("")]
@@ -51,5 +51,5 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion ("1.0.1.0")]
+[assembly: AssemblyFileVersion ("1.0.1.0")]
