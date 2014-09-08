@@ -175,7 +175,7 @@ namespace GameRes.Formats.KiriKiri
             else if (!EmitBody2 (program, stage - 1))
                 return false;
 
-            if (!program.Emit (CxByteCode.MOV_EBX_EAX, 2))
+            if (!program.Emit (CxByteCode.MOV_EBX_EAX, 2))  // 0x89 0xc3
                 return false;
 
             if (0 != (program.GetRandom() & 1))
@@ -211,9 +211,10 @@ namespace GameRes.Formats.KiriKiri
             case 2:
                 // MOV EAX, (Random() & 0x3ff)
                 // MOV EAX, EncryptionControlBlock[EAX]
-                rc =   program.Emit (CxByteCode.MOV_EAX_IMMED)        // 0xbe
+                rc =   program.EmitNop (5)                          // 0xbe
+                    && program.Emit (CxByteCode.MOV_EAX_IMMED, 2)   // 0x8b 0x86
                     && program.EmitUInt32 (program.GetRandom() & 0x3ff)
-                    && program.Emit (CxByteCode.MOV_EAX_INDIRECT, 6); // 0x8b 0x86
+                    && program.Emit (CxByteCode.MOV_EAX_INDIRECT, 0);
                 break;
             case 1:
                 rc = program.Emit (CxByteCode.MOV_EAX_EDI, 2);      // 0x8b 0xc7

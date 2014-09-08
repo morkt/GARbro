@@ -232,10 +232,6 @@ namespace GameRes.Formats.KiriKiri
                     if (!string.IsNullOrEmpty (entry.Name) && entry.Segments.Any())
                     {
                         dir.Add (entry);
-//                        Trace.WriteLine (string.Format ("{0,-16} {3:X8} {1,11} {2,12}", entry.Name,
-//                                                        entry.IsEncrypted ? "[encrypted]" : "",
-//                                                        entry.Segments.First().IsCompressed ? "[compressed]" : "",
-//                                                        entry.Hash));
                     }
 NextEntry:
                     header.BaseStream.Position = dir_offset;
@@ -249,6 +245,10 @@ NextEntry:
             var xp3_entry = entry as Xp3Entry;
             if (null == xp3_entry)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
+//            Trace.WriteLine (string.Format ("{0,-16} {3:X8} {1,11} {2,12}", xp3_entry.Name,
+//                                            xp3_entry.IsEncrypted ? "[encrypted]" : "",
+//                                            xp3_entry.Segments.First().IsCompressed ? "[compressed]" : "",
+//                                            xp3_entry.Hash));
             if (1 == xp3_entry.Segments.Count && !xp3_entry.IsEncrypted)
             {
                 var segment = xp3_entry.Segments.First();
