@@ -250,7 +250,6 @@ namespace GameRes.Formats.KiriKiri
                     && program.EmitUInt32 (0x3ff)
                     && program.Emit (CxByteCode.MOV_EAX_INDIRECT, 3); // 0x8b 0x04 0x86
                 break;
-                break;
             case 5:
                 rc =   program.Emit (CxByteCode.PUSH_EBX)           // 0x53
                     && program.Emit (CxByteCode.MOV_EBX_EAX, 2)     // 0x89 0xc3
@@ -632,7 +631,7 @@ namespace GameRes.Formats.KiriKiri
 
     internal class ImoutoStyleCrypt : CxEncryption
     {
-        public ImoutoStyleCrypt () : base (0x1a3, 0xb6)
+        public ImoutoStyleCrypt () : base (0x278, 0xd7)
         {
             PrologOrder     = new byte[] { 2, 1, 0 };
             OddBranchOrder  = new byte[] { 1, 2, 4, 0, 5, 3 };
