@@ -290,11 +290,9 @@ NextEntry:
 
         public static ICrypt GetScheme (string scheme)
         {
-            ICrypt algorithm = NoCryptAlgorithm;
-            if (!string.IsNullOrEmpty (scheme))
-            {
-                KnownSchemes.TryGetValue (scheme, out algorithm);
-            }
+            ICrypt algorithm;
+            if (string.IsNullOrEmpty (scheme) || !KnownSchemes.TryGetValue (scheme, out algorithm))
+                algorithm = NoCryptAlgorithm;
             return algorithm;
         }
 
