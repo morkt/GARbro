@@ -294,9 +294,12 @@ namespace GameRes.Formats
             return packed_size;
         }
 
+        static Lazy<GrpFormat> s_grp_format = new Lazy<GrpFormat> (() => 
+            FormatCatalog.Instance.ImageFormats.OfType<GrpFormat>().FirstOrDefault());
+
         uint WriteImageEntry (PackedEntry entry, Stream input, Stream output)
         {
-            var grp = FormatCatalog.Instance.ImageFormats.OfType<GrpFormat>().FirstOrDefault();
+            var grp = s_grp_format.Value;
             if (null == grp) // probably never happens
                 throw new FileFormatException ("GRP image encoder not available");
             bool is_grp = grp.Signature == FormatCatalog.ReadSignature (input);
