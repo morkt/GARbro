@@ -84,11 +84,14 @@ namespace GameRes.Formats.KiriKiri
 
         public static readonly Dictionary<string, ICrypt> KnownSchemes = new Dictionary<string, ICrypt> {
             { arcStrings.ArcNoEncryption, NoCryptAlgorithm },
-            { "Fate/Stay Night",    new FateCrypt() },
-            { "Swan Song",          new SwanSongCrypt() },
             { "Cafe Sourire",       new XorCrypt (0xcd) },
-            { "Seirei Tenshou",     new SeitenCrypt() },
+            { "Coμ",                new ComyuCrypt() },
+            { "Fate/hollow ataraxia", new FateHACrypt() },
+            { "Fate/stay night",    new FateCrypt() },
+            { "Imouto Style",       new ImoutoStyleCrypt() },
             { "Okiba ga Nai!",      new OkibaCrypt() },
+            { "Seirei Tenshou",     new SeitenCrypt() },
+            { "Swan Song",          new SwanSongCrypt() },
         };
 
         public override ArcFile TryOpen (ArcView file)
@@ -104,7 +107,7 @@ namespace GameRes.Formats.KiriKiri
                     return null;
                 dir_offset = file.View.ReadInt64 (0x20);
             }
-            if (dir_offset >= file.MaxOffset)
+            if (dir_offset < 0x13 || dir_offset >= file.MaxOffset)
                 return null;
 
             int header_type = file.View.ReadByte (dir_offset);
@@ -588,7 +591,7 @@ NextEntry:
         long        m_offset = 0;
         bool        m_eof = false;
 
-        public override bool CanRead  { get { return true; } }
+        public override bool CanRead  { get { return m_stream != null; } }
         public override bool CanSeek  { get { return false; } }
         public override bool CanWrite { get { return false; } }
         public override long Length   { get { return m_entry.UnpackedSize; } }
@@ -616,11 +619,9 @@ NextEntry:
             if (null != m_stream)
                 m_stream.Dispose();
             var segment = m_segment.Current;
+            m_stream = m_file.CreateStream (segment.Offset, segment.Size);
             if (segment.IsCompressed)
-                m_stream = new ZLibStream (m_file.CreateStream (segment.Offset, segment.PackedSize),
-                                           CompressionMode.Decompress);
-            else
-                m_stream = m_file.CreateStream (segment.Offset, segment.Size);
+                m_stream = new ZLibStream (m_stream, CompressionMode.Decompress);
         }
 
         public override int Read (byte[] buffer, int offset, int count)
