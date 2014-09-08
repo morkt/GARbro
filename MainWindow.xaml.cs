@@ -162,7 +162,7 @@ namespace GARbro.GUI
         void PushRecentFile (string file)
         {
             var node = m_recent_files.Find (file);
-            if (node == m_recent_files.First)
+            if (node != null && node == m_recent_files.First)
                 return;
             if (null == node)
             {
