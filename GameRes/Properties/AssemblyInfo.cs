@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("GameRes")]
 [assembly: AssemblyDescription("Game Resources class library")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany ("mørkt")]
 [assembly: AssemblyProduct("GameRes")]
 [assembly: AssemblyCopyright("Copyright ©  2014 mørkt")]
 [assembly: AssemblyTrademark("")]
