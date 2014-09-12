@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArcAMI.cs" />
+    <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcDRS.cs" />
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcKogado.cs" />
