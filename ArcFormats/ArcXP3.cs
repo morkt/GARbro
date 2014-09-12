@@ -423,7 +423,7 @@ NextEntry:
                     }
 
                     header.BaseStream.Position = 0;
-                    writer.Write ((byte)(compress_index ? 1 : 0));
+                    writer.Write (compress_index);
                     long unpacked_dir_size = header.BaseStream.Length;
                     if (compress_index)
                     {
