@@ -49,6 +49,8 @@ namespace GameRes
         /// <summary>Archive contents.</summary>
         public ICollection<Entry> Dir { get { return m_dir; } }
 
+        public event EventHandler<OverwriteEventArgs> OverwriteNotify;
+
         public ArcFile (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
         {
             m_arc = arc;
@@ -147,7 +149,7 @@ namespace GameRes
         /// </summary>
         public Stream CreateFile (Entry entry)
         {
-            return m_interface.CreateFile (entry);
+            return m_interface.CreateFile (entry.Name);
         }
 
         #region IDisposable Members
@@ -170,6 +172,12 @@ namespace GameRes
             }
         }
         #endregion
+    }
+
+    public class OverwriteEventArgs : EventArgs
+    {
+        public string Filename { get; set; }
+        public bool  Overwrite { get; set; }
     }
 
     public class AppendStream : System.IO.Stream
