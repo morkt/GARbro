@@ -392,8 +392,8 @@ namespace GameRes
             private uint        m_size;
             private long        m_position;
 
-            public override bool CanRead  { get { return true; } }
-            public override bool CanSeek { get { return true; } }
+            public override bool CanRead  { get { return !disposed; } }
+            public override bool CanSeek { get { return !disposed; } }
             public override bool CanWrite { get { return false; } }
             public override long Length { get { return m_size; } }
             public override long Position
@@ -410,11 +410,24 @@ namespace GameRes
                 m_position = 0;
             }
 
-            public ArcStream (ArcView file, long offset, uint size)
+            public ArcStream (Frame view)
             {
-                m_view = new Frame (file, offset, size);
+                m_view = view;
                 m_start = m_view.Offset;
                 m_size = m_view.Reserved;
+                m_position = 0;
+            }
+
+            public ArcStream (ArcView file, long offset, uint size)
+                : this (new Frame (file, offset, size))
+            {
+            }
+
+            public ArcStream (Frame view, long offset, uint size)
+            {
+                m_view = view;
+                m_start = offset;
+                m_size = Math.Min (size, m_view.Reserve (offset, size));
                 m_position = 0;
             }
 
