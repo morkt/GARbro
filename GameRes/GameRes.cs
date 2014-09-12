@@ -143,12 +143,7 @@ namespace GameRes
         public void Extract (ArcFile file, Entry entry)
         {
             using (var reader = OpenEntry (file, entry))
-            {
-                using (var writer = CreateFile (entry))
-                {
-                    reader.CopyTo (writer);
-                }
-            }
+                CopyEntry (file, reader, entry);
         }
 
         /// <summary>
@@ -159,13 +154,28 @@ namespace GameRes
             return arc.File.CreateStream (entry.Offset, entry.Size);
         }
 
+        public virtual void CopyEntry (ArcFile arc, Stream input, Entry entry)
+        {
+            using (var output = CreateFile (entry.Name))
+                input.CopyTo (output);
+        }
+
         /// <summary>
         /// Create file corresponding to <paramref name="entry"/> in current directory and open it
         /// for writing. Overwrites existing file, if any.
         /// </summary>
-        public virtual Stream CreateFile (Entry entry)
+        public Stream CreateFile (string filename)
         {
-            string filename = entry.Name;
+            filename = CreatePath (filename);
+            if (File.Exists (filename))
+            {
+                // query somehow whether to overwrite existing file or not.
+            }
+            return File.Create (filename);
+        }
+
+        static public string CreatePath (string filename)
+        {
             string dir = Path.GetDirectoryName (filename);
             if (!string.IsNullOrEmpty (dir)) // check for malformed filenames
             {
@@ -185,7 +195,7 @@ namespace GameRes
                     filename = Path.Combine (dir, filename);
                 }
             }
-            return File.Create (filename);
+            return filename;
         }
 
         /// <summary>
