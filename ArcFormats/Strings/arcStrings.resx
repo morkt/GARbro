@@ -192,6 +192,9 @@ predefined encryption scheme.</value>
   <data name="MsgEncNotImplemented" xml:space="preserve">
     <value>Encryption method not implemented</value>
   </data>
+  <data name="MsgExtensionTooLong" xml:space="preserve">
+    <value>File name extension too long.</value>
+  </data>
   <data name="MsgFileNameTooLong" xml:space="preserve">
     <value>File name is too long</value>
   </data>
@@ -203,6 +206,9 @@ predefined encryption scheme.</value>
   </data>
   <data name="MsgInvalidVersion" xml:space="preserve">
     <value>Invalid archive version specified.</value>
+  </data>
+  <data name="MsgNoExtension" xml:space="preserve">
+    <value>File name without extension.</value>
   </data>
   <data name="MsgTooManyFiles" xml:space="preserve">
     <value>Number of files exceedes archive limit.</value>
@@ -261,6 +267,10 @@ predefined encryption scheme.</value>
   </data>
   <data name="TooltipHex" xml:space="preserve">
     <value>Hex number</value>
+  </data>
+  <data name="WARCLabelLength" xml:space="preserve">
+    <value>Maximum file name length
+(not including extension)</value>
   </data>
   <data name="XFLDescription" xml:space="preserve">
     <value>Liar-soft game resource archive</value>

@@ -93,6 +93,9 @@
     <Compile Include="CreateSGWidget.xaml.cs">
       <DependentUpon>CreateSGWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CreateWARCWidget.xaml.cs">
+      <DependentUpon>CreateWARCWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CreateXP3Widget.xaml.cs">
       <DependentUpon>CreateXP3Widget.xaml</DependentUpon>
     </Compile>
@@ -181,6 +184,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CreateSGWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CreateWARCWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

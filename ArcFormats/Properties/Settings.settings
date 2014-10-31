@@ -56,5 +56,8 @@
     <Setting Name="NPAKey2" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">555831124</Value>
     </Setting>
+    <Setting Name="WARCNameLength" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">8</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

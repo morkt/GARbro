@@ -237,5 +237,17 @@ namespace GameRes.Formats.Properties {
                 this["NPAKey2"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("8")]
+        public int WARCNameLength {
+            get {
+                return ((int)(this["WARCNameLength"]));
+            }
+            set {
+                this["WARCNameLength"] = value;
+            }
+        }
     }
 }

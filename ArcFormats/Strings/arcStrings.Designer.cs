@@ -280,6 +280,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File name extension too long..
+        /// </summary>
+        public static string MsgExtensionTooLong {
+            get {
+                return ResourceManager.GetString("MsgExtensionTooLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File name is too long.
         /// </summary>
         public static string MsgFileNameTooLong {
@@ -312,6 +321,15 @@ namespace GameRes.Formats.Strings {
         public static string MsgInvalidVersion {
             get {
                 return ResourceManager.GetString("MsgInvalidVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File name without extension..
+        /// </summary>
+        public static string MsgNoExtension {
+            get {
+                return ResourceManager.GetString("MsgNoExtension", resourceCulture);
             }
         }
         
@@ -484,6 +502,16 @@ namespace GameRes.Formats.Strings {
         public static string TooltipHex {
             get {
                 return ResourceManager.GetString("TooltipHex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum file name length
+        ///(not including extension).
+        /// </summary>
+        public static string WARCLabelLength {
+            get {
+                return ResourceManager.GetString("WARCLabelLength", resourceCulture);
             }
         }
         
