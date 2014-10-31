@@ -176,9 +176,7 @@ namespace GameRes.Formats.ONScripter
                     break;
                 if (name_buffer.Length == name_len)
                 {
-                    byte[] new_buffer = new byte[checked(name_len/2*3)];
-                    Array.Copy (name_buffer, new_buffer, name_len);
-                    name_buffer = new_buffer;
+                    Array.Resize (ref name_buffer, checked(name_len/2*3));
                 }
                 name_buffer[name_len] = b;
             }

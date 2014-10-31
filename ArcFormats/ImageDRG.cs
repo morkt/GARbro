@@ -95,12 +95,12 @@ namespace GameRes.Formats.DRS
             int stride = (int)info.Width*((info.BPP+7)/8);
             if (8 == info.BPP)
             {
+                file.Position = 44;
                 format = PixelFormats.Indexed8;
                 var palette_data = new byte[0x400];
                 if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
                     throw new InvalidFormatException();
                 var palette = new Color[256];
-                file.Position = 44;
                 for (int i = 0; i < 256; ++i)
                 {
                     palette[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
