@@ -276,6 +276,8 @@ namespace GameRes
         private IEnumerable<ArchiveFormat>  m_arc_formats;
         [ImportMany(typeof(ImageFormat))]
         private IEnumerable<ImageFormat>    m_image_formats;
+        [ImportMany(typeof(AudioFormat))]
+        private IEnumerable<AudioFormat>    m_audio_formats;
         [ImportMany(typeof(ScriptFormat))]
         private IEnumerable<ScriptFormat>   m_script_formats;
         #pragma warning restore 649
@@ -288,6 +290,7 @@ namespace GameRes
 
         public IEnumerable<ArchiveFormat> ArcFormats    { get { return m_arc_formats; } }
         public IEnumerable<ImageFormat>   ImageFormats  { get { return m_image_formats; } }
+        public IEnumerable<AudioFormat>   AudioFormats  { get { return m_audio_formats; } }
         public IEnumerable<ScriptFormat>  ScriptFormats { get { return m_script_formats; } }
 
         public Exception LastError { get; set; }
@@ -310,6 +313,7 @@ namespace GameRes
             container.ComposeParts (this);
             AddResourceImpl (m_arc_formats);
             AddResourceImpl (m_image_formats);
+            AddResourceImpl (m_audio_formats);
             AddResourceImpl (m_script_formats);
         }
 

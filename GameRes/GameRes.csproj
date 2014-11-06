@@ -51,6 +51,8 @@
   <ItemGroup>
     <Compile Include="ArcFile.cs" />
     <Compile Include="ArcView.cs" />
+    <Compile Include="Audio.cs" />
+    <Compile Include="AudioWAV.cs" />
     <Compile Include="GameRes.cs" />
     <Compile Include="Image.cs" />
     <Compile Include="ImageBMP.cs" />
