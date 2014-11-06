@@ -38,6 +38,9 @@
     <BaseAddress>6291456</BaseAddress>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NVorbis">
+      <HintPath>..\packages\NVorbis.0.8.3.0\lib\NVorbis.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
@@ -62,6 +65,7 @@
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcKogado.cs" />
     <Compile Include="ArcMajiro.cs" />
+    <Compile Include="ArcMGPK.cs" />
     <Compile Include="ArcNPA.cs" />
     <Compile Include="ArcNSA.cs" />
     <Compile Include="ArcPD.cs" />
@@ -110,6 +114,7 @@
     <Compile Include="ImageWIP.cs" />
     <Compile Include="KiriKiriCx.cs" />
     <Compile Include="KogadoCocotte.cs" />
+    <Compile Include="AudioOGG.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -153,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>PublicSettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
