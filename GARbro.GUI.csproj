@@ -83,6 +83,9 @@
     <Reference Include="Microsoft.WindowsAPICodePack.Shell">
       <HintPath>packages\WindowsAPICodePack-Shell.1.1\lib\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
     </Reference>
+    <Reference Include="NAudio">
+      <HintPath>packages\NAudio.1.7.1\lib\net35\NAudio.dll</HintPath>
+    </Reference>
     <Reference Include="Ookii.Dialogs.Wpf, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0c15020868fd6249, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>packages\Ookii.Dialogs.1.0\lib\net35\Ookii.Dialogs.Wpf.dll</HintPath>
@@ -141,6 +144,7 @@
     <Compile Include="ImagePreview.cs" />
     <Compile Include="ListViewEx.cs" />
     <Compile Include="ModalWindow.cs" />
+    <Compile Include="NAudio.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Shell.cs" />
     <Compile Include="Strings\guiStrings.Designer.cs">

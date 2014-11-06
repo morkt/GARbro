@@ -44,6 +44,7 @@ using Rnd.Windows;
 using System.Collections.Specialized;
 using System.Collections.ObjectModel;
 using Microsoft.Win32;
+using NAudio.Wave;
 
 namespace GARbro.GUI
 {
@@ -98,6 +99,11 @@ namespace GARbro.GUI
         /// </summary>
         protected override void OnClosing (CancelEventArgs e)
         {
+            if (null != m_audio)
+            {
+                m_audio.Dispose();
+                m_audio = null;
+            }
             SaveSettings();
             base.OnClosing (e);
         }
@@ -707,6 +713,11 @@ namespace GARbro.GUI
             var vm = ViewModel;
             if (null == vm)
                 return;
+            if ("audio" == entry.Type)
+            {
+                PlayFile (entry.Source);
+                return;
+            }
             if (vm.IsArchive) // tried to open file inside archive
             {
                 var arc_vm = vm as ArchiveViewModel;
@@ -769,6 +780,53 @@ namespace GARbro.GUI
                     SetStatusText (X.Message);
                 }
             }
+        }
+
+        Stream OpenEntry (Entry entry)
+        {
+            var vm = ViewModel;
+            if (vm.IsArchive)
+                return m_app.CurrentArchive.OpenEntry (entry);
+            else
+                return File.OpenRead (Path.Combine (vm.Path, entry.Name));
+        }
+
+        WaveOutEvent    m_audio;
+
+        private void PlayFile (Entry entry)
+        {
+            try
+            {
+                using (var input = OpenEntry (entry))
+                {
+                    var sound = AudioFormat.Read (input);
+                    if (null == sound)
+                        return;
+
+                    if (m_audio != null)
+                    {
+                        m_audio.PlaybackStopped -= OnPlaybackStopped;
+                        m_audio.Dispose();
+                    }
+                    var wave_stream = new WaveStreamImpl (sound);
+                    m_audio = new WaveOutEvent();
+                    m_audio.Init (wave_stream);
+                    m_audio.PlaybackStopped += OnPlaybackStopped;
+                    m_audio.Play();
+                    var fmt = wave_stream.WaveFormat;
+                    SetStatusText (string.Format ("Playing {0} / {2}bps / {1}Hz", entry.Name,
+                                                  fmt.SampleRate, sound.SourceBitrate / 1000));
+                }
+            }
+            catch (Exception X)
+            {
+                SetStatusText (X.Message);
+            }
+        }
+
+        private void OnPlaybackStopped (object sender, StoppedEventArgs e)
+        {
+            SetStatusText ("");
         }
 
         /// <summary>
