@@ -799,9 +799,14 @@ namespace GARbro.GUI
             {
                 using (var input = OpenEntry (entry))
                 {
+                    FormatCatalog.Instance.LastError = null;
                     var sound = AudioFormat.Read (input);
                     if (null == sound)
+                    {
+                        if (null != FormatCatalog.Instance.LastError)
+                            throw FormatCatalog.Instance.LastError;
                         return;
+                    }
 
                     if (m_audio != null)
                     {
