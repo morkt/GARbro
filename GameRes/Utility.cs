@@ -77,7 +77,7 @@ namespace GameRes.Utility
             {
                 if (preceding > count)
                     preceding = count;
-                System.Array.Copy (data, src, data, dst, preceding);
+                System.Buffer.BlockCopy (data, src, data, dst, preceding);
                 src = dst;
                 dst += preceding;
                 count -= preceding;

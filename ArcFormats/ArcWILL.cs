@@ -201,7 +201,7 @@ namespace GameRes.Formats.Will
                 header.Write (file_table.Count);
                 foreach (var ext in file_table)
                 {
-                    Array.Copy (ext.Value.Extension, buffer, ext.Value.Extension.Length);
+                    Buffer.BlockCopy (ext.Value.Extension, 0, buffer, 0, ext.Value.Extension.Length);
                     for (int i = ext.Value.Extension.Length; i < 4; ++i)
                         buffer[i] = 0;
                     header.Write (buffer, 0, 4);
@@ -212,7 +212,7 @@ namespace GameRes.Formats.Will
                 {
                     foreach (var entry in ext.Value.Files)
                     {
-                        Array.Copy (entry.RawName, buffer, entry.RawName.Length);
+                        Buffer.BlockCopy (entry.RawName, 0, buffer, 0, entry.RawName.Length);
                         for (int i = entry.RawName.Length; i < buffer.Length; ++i)
                             buffer[i] = 0;
                         header.Write (buffer);

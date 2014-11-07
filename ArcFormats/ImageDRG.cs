@@ -142,7 +142,7 @@ namespace GameRes.Formats.DRS
                         return null;
                     for (int i = 0; i < count; ++i)
                     {
-                        Array.Copy (output, src_offset, output, out_pos, 3);
+                        Buffer.BlockCopy (output, src_offset, output, out_pos, 3);
                         out_pos += 3;
                     }
                     pixel_count -= count * 3;
@@ -174,7 +174,7 @@ namespace GameRes.Formats.DRS
                     src_offset = out_pos - 3 * input.ReadByte ();
                     if (count > pixel_count || src_offset < 0 || src_offset == out_pos)
                         return null;
-                    Array.Copy (output, src_offset, output, out_pos, count);
+                    Buffer.BlockCopy (output, src_offset, output, out_pos, count);
                     out_pos += count;
                     pixel_count -= count;
                     break;
@@ -186,7 +186,7 @@ namespace GameRes.Formats.DRS
                         src_offset = out_pos - 3 * (off_hi << 8 | off_lo);
                         if (count > pixel_count || src_offset < 0 || src_offset == out_pos)
                             return null;
-                        Array.Copy (output, src_offset, output, out_pos, count);
+                        Buffer.BlockCopy (output, src_offset, output, out_pos, count);
                         out_pos += count;
                         pixel_count -= count;
                         break;

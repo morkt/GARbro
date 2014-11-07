@@ -600,7 +600,7 @@ namespace GameRes.Formats.Kogado
                     n++;
                 if (n > 0)
                 {
-                    Array.Copy (m_MTFTable, 0, m_MTFTable, 1, n);
+                    Buffer.BlockCopy (m_MTFTable, 0, m_MTFTable, 1, n);
                     m_MTFTable[0] = c;
                 }
                 dest[i] = n;
@@ -616,7 +616,7 @@ namespace GameRes.Formats.Kogado
                 byte c = m_MTFTable[n];
                 if (n > 0)
                 {
-                    Array.Copy (m_MTFTable, 0, m_MTFTable, 1, n);
+                    Buffer.BlockCopy (m_MTFTable, 0, m_MTFTable, 1, n);
                     m_MTFTable[0] = c;
                 }
                 dest[i] = c;

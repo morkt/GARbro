@@ -700,7 +700,7 @@ namespace GameRes.Formats.NitroPlus
             if (position >= m_encrypted_length)
                 return m_stream.Read (buffer, offset, count);
             int read = Math.Min (m_encrypted_length - (int)position, count);
-            Array.Copy (m_encrypted.Value, (int)position, buffer, offset, read);
+            Buffer.BlockCopy (m_encrypted.Value, (int)position, buffer, offset, read);
             m_stream.Seek (read, SeekOrigin.Current);
             if (read < count)
             {

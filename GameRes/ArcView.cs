@@ -56,9 +56,7 @@ namespace GameRes
                     break;
                 if (buffer.Length == size)
                 {
-                    byte[] new_buffer = new byte[checked(size/2*3)];
-                    Array.Copy (buffer, new_buffer, size);
-                    buffer = new_buffer;
+                    Array.Resize (ref buffer, checked(size/2*3));
                 }
                 buffer[size++] = (byte)b;
             }

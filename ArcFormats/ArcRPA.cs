@@ -893,7 +893,7 @@ namespace GameRes.Formats.RenPy
             if (m_position < m_header.Length)
             {
                 int header_count = Math.Min (count, m_header.Length - (int)m_position);
-                Array.Copy (m_header, (int)m_position, buffer, offset, header_count);
+                Buffer.BlockCopy (m_header, (int)m_position, buffer, offset, header_count);
                 m_position += header_count;
                 read += header_count;
                 offset += header_count;
