@@ -155,7 +155,10 @@ namespace GameRes
                         if (null != sound)
                             return sound;
                     }
-                    catch { }
+                    catch (System.Exception X)
+                    {
+                        FormatCatalog.Instance.LastError = X;
+                    }
                 }
                 if (0 == signature)
                     break;
