@@ -59,9 +59,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArcAFS.cs" />
     <Compile Include="ArcAMI.cs" />
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcDRS.cs" />
+    <Compile Include="ArcInnGrey.cs" />
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcKogado.cs" />
     <Compile Include="ArcMajiro.cs" />
