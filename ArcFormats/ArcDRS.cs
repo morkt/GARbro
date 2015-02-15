@@ -89,4 +89,54 @@ namespace GameRes.Formats.DRS
             return new ArcFile (file, this, dir);
         }
     }
+
+    [Export(typeof(ArchiveFormat))]
+    public class MpxOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "IKURA/GDL"; } }
+        public override string Description { get { return "IKURA GDL Resource archive"; } }
+        public override uint     Signature { get { return 0x4d324d53; } } // 'SM2M'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public MpxOpener ()
+        {
+            Extensions = Enumerable.Empty<string>(); // DRS archives have no extensions
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (4, "PX10") || file.MaxOffset > uint.MaxValue)
+                return null;
+            int count = file.View.ReadInt32 (8);
+            if (count <= 0 || count > 0xfffff)
+                return null;
+            uint index_size = file.View.ReadUInt32 (12);
+            if (index_size > file.MaxOffset)
+                return null;
+            var encoding = Encodings.cp932.WithFatalFallback();
+            byte[] name_raw = new byte[12];
+
+            long dir_offset = 0x20;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                file.View.Read (dir_offset, name_raw, 0, 12);
+                int name_length = name_raw.Length;
+                while (name_length > 0 && 0 == name_raw[name_length-1])
+                    --name_length;
+                if (0 == name_length)
+                    return null;
+                string name = encoding.GetString (name_raw, 0, name_length).ToLowerInvariant();
+                var entry = FormatCatalog.Instance.CreateEntry (name);
+                entry.Offset = file.View.ReadUInt32 (dir_offset+12);
+                entry.Size   = file.View.ReadUInt32 (dir_offset+16);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                dir_offset += 0x14;
+            }
+            return new ArcFile (file, this, dir);
+        }
+    }
 }
