@@ -136,11 +136,13 @@ namespace GameRes
         public const long           PageSize = 4096;
         public long                 MaxOffset { get; private set; }
         public Frame                View { get; private set; }
+        public string               Name { get; private set; }
 
         public ArcView (string name)
         {
             using (var fs = new FileStream(name, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
+                Name = name;
                 MaxOffset = fs.Length;
                 m_map = MemoryMappedFile.CreateFromFile (fs, null, 0,
                     MemoryMappedFileAccess.Read, null, HandleInheritability.None, true);
