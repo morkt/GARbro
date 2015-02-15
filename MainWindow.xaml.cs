@@ -61,6 +61,8 @@ namespace GARbro.GUI
         {
             m_app = Application.Current as App;
             InitializeComponent();
+            if (this.Top < 0) this.Top = 0;
+            if (this.Left < 0) this.Left = 0;
             InitDirectoryChangesWatcher();
             InitPreviewPane();
 
