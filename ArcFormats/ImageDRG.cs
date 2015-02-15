@@ -44,6 +44,7 @@ namespace GameRes.Formats.DRS
 
         public DrgFormat ()
         {
+            Extensions = new string[] { "drg", "ggd" };
             Signatures = new uint[] { ~0x4c4c5546u, ~0x45555254u, ~0x48474948u, ~0x47363532u };
         }
 
@@ -441,6 +442,229 @@ namespace GameRes.Formats.DRS
                 }
             }
             #endregion
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class GgaFormat : ImageFormat
+    {
+        public override string         Tag { get { return "GG2"; } }
+        public override string Description { get { return "IKURA GDL image format"; } }
+        public override uint     Signature { get { return 0x30414747u; } } // 'GGA0'
+
+        internal class GgaMetaData : ImageMetaData
+        {
+            public uint HeaderSize;
+            public uint CompSize;
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new NotImplementedException ("GgaFormat.Write not implemented");
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            var header = new byte[24];
+            if (header.Length != stream.Read (header, 0, header.Length))
+                return null;
+            if (!Binary.AsciiEqual (header, "GGA00000"))
+                return null;
+            return new GgaMetaData {
+                Width  = LittleEndian.ToUInt16 (header, 8),
+                Height = LittleEndian.ToUInt16 (header, 10),
+                BPP    = 32,
+                HeaderSize = LittleEndian.ToUInt32 (header, 16),
+                CompSize = LittleEndian.ToUInt32 (header, 20)
+            };
+        }
+
+        public override ImageData Read (Stream file, ImageMetaData info)
+        {
+            var meta = info as GgaMetaData;
+            if (null == meta)
+                throw new ArgumentException ("GgaFormat.Read should be supplied with GgaMetaData", "info");
+            file.Position = meta.HeaderSize;
+            var pixel_data = DecodeStream (file, meta, (int)(meta.Width*meta.Height*4));
+            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
+                PixelFormats.Bgra32, null, pixel_data, (int)info.Width*4);
+            bitmap.Freeze();
+            return new ImageData (bitmap, info);
+        }
+
+        byte[] DecodeStream (Stream file, GgaMetaData meta, int pixel_count)
+        {
+            using (var input = new BinaryReader (file, Encoding.ASCII, true))
+            using (var output = new MemoryStream (pixel_count))
+            {
+                var buf = new byte[4];
+                uint isize = 0;
+                while (isize < meta.CompSize)
+                {
+                    int ctrl = input.ReadByte();
+                    ++isize;
+                    switch (ctrl)
+                    {
+                    case 0:
+                        {
+                            output.Position -= 4;
+                            output.Read (buf, 0, 4);
+                            byte i = input.ReadByte();
+                            isize++;
+                            for (int j = 0; j < i; ++j)
+                                output.Write (buf, 0, 4);
+                            break;
+                        }
+                    case 1:
+                        {
+                            output.Position -= 4;
+                            output.Read (buf, 0, 4);
+                            int i = input.ReadUInt16();
+                            isize += 2;
+                            for (int j = 0; j < i; ++j)
+                                output.Write (buf, 0, 4);
+                            break;
+                        }
+                    case 2:
+                        {
+                            byte l = input.ReadByte();
+                            isize++;
+                            var curpos = output.Position;
+                            output.Position -= l << 2;
+                            output.Read (buf, 0, 4);
+                            output.Position = curpos;
+                            output.Write (buf, 0, 4);
+                            break;
+                        }
+                    case 3:
+                        {
+                            int l = input.ReadUInt16();
+                            isize += 2;
+                            var curpos = output.Position;
+                            output.Position -= l << 2;
+                            output.Read (buf, 0, 4);
+                            output.Position = curpos;
+                            output.Write (buf, 0, 4);
+                            break;
+                        }
+                    case 4:
+                        {
+                            byte l = input.ReadByte();
+                            var dstpos = output.Position - (l << 2);
+                            int i = input.ReadByte();
+                            isize += 2;
+                            for (int j = 0; j < i; ++j)
+                            {
+                                var curpos = output.Position;
+                                output.Position = dstpos;
+                                dstpos += 4;
+                                output.Read (buf, 0, 4);
+                                output.Position = curpos;
+                                output.Write (buf, 0, 4);
+                            }
+                            break;
+                        }
+                    case 5:
+                        {
+                            byte l = input.ReadByte();
+                            var dstpos = output.Position - (l << 2);
+                            int i = input.ReadUInt16();
+                            isize += 3;
+                            for (int j = 0; j < i; ++j)
+                            {
+                                var curpos = output.Position;
+                                output.Position = dstpos;
+                                dstpos += 4;
+                                output.Read (buf, 0, 4);
+                                output.Position = curpos;
+                                output.Write (buf, 0, 4);
+                            }
+                            break;
+                        }
+                    case 6:
+                        {
+                            int l = input.ReadUInt16();
+                            var dstpos = output.Position - (l << 2);
+                            int i = input.ReadByte();
+                            isize += 3;
+                            for (int j = 0; j < i; ++j)
+                            {
+                                var curpos = output.Position;
+                                output.Position = dstpos;
+                                dstpos += 4;
+                                output.Read (buf, 0, 4);
+                                output.Position = curpos;
+                                output.Write (buf, 0, 4);
+                            }
+                            break;
+                        }
+                    case 7:
+                        {
+                            int l = input.ReadUInt16();
+                            var dstpos = output.Position - (l << 2);
+                            int i = input.ReadUInt16();
+                            isize += 4;
+                            for (int j = 0; j < i; ++j)
+                            {
+                                var curpos = output.Position;
+                                output.Position = dstpos;
+                                dstpos += 4;
+                                output.Read (buf, 0, 4);
+                                output.Position = curpos;
+                                output.Write (buf, 0, 4);
+                            }
+                            break;
+                        }
+                    case 8:
+                        {
+                            var curpos = output.Position;
+                            output.Position -= 4;
+                            output.Read (buf, 0, 4);
+                            output.Position = curpos;
+                            output.Write (buf, 0, 4);
+                            break;
+                        }
+                    case 9:
+                        {
+                            var curpos = output.Position;
+                            output.Position -= meta.Width * 4;
+                            output.Read (buf, 0, 4);
+                            output.Position = curpos;
+                            output.Write (buf, 0, 4);
+                            break;
+                        }
+                    case 0x0a:
+                        {
+                            var curpos = output.Position;
+                            output.Position -= meta.Width * 4 + 4;
+                            output.Read (buf, 0, 4);
+                            output.Position = curpos;
+                            output.Write (buf, 0, 4);
+                            break;
+                        }
+                    case 0x0b:
+                        {
+                            var curpos = output.Position;
+                            output.Position -= meta.Width * 4 - 4;
+                            output.Read (buf, 0, 4);
+                            output.Position = curpos;
+                            output.Write (buf, 0, 4);
+                            break;
+                        }
+                    default:
+                        for (int i = ctrl - 11; i > 0; --i)
+                        {
+                            int read = input.Read (buf, 0, 4);
+                            if (4 != read)
+                                throw new InvalidFormatException ("Unexpected end of input");
+                            output.Write (buf, 0, 4);
+                            isize += 4;
+                        }
+                        break;
+                    }
+                }
+                return output.GetBuffer();
+            }
         }
     }
 }
