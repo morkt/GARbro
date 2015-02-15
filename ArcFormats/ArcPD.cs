@@ -31,6 +31,7 @@ using System.Linq;
 using System.Text;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Fs
 {
@@ -216,6 +217,58 @@ namespace GameRes.Formats.Fs
                     buffer[i] = (byte)~buffer[i];
                 output.Write (buffer, 0, read);
             }
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class FlyingShinePdOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "PD"; } }
+        public override string Description { get { return "Flying Shine resource archive version 2"; } }
+        public override uint     Signature { get { return 0x69796c46; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (4, "ngShinePDFile\0"))
+                return null;
+            uint crc = file.View.ReadUInt16 (0x12);
+            byte key  = file.View.ReadByte (0x14);
+            int count = file.View.ReadInt32 (0x1c);
+            if (count < 0 || count > 0xfffff)
+                return null;
+            uint index_size = (uint)(0x30 * count);
+            if (index_size > file.View.Reserve (0x20, index_size))
+                return null;
+            var enc = Encodings.cp932;
+            var buf = new byte[0x30];
+            long index_offset = 0x20;
+            var dir = new List<Entry> (count);
+            for (uint i = 0; i < count; ++i)
+            {
+                file.View.Read (index_offset, buf, 0, 0x30);
+                DecodeEntry (buf, key);
+                int len = Array.IndexOf (buf, (byte)0);
+                if (len <= 0 || len >= 0x24)
+                    return null;
+                string name = enc.GetString (buf, 0, len);
+                var entry = FormatCatalog.Instance.CreateEntry (name);
+                uint shift  = LittleEndian.ToUInt32 (buf, 0x24);
+                entry.Offset = LittleEndian.ToUInt32 (buf, 0x28) - shift;
+                entry.Size   = LittleEndian.ToUInt32 (buf, 0x2c) - shift;
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 0x30;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        void DecodeEntry (byte[] buf, byte key)
+        {
+            for (int i = 0; i < buf.Length; ++i)
+                buf[i] ^= key;
         }
     }
 }
