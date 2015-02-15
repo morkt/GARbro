@@ -282,12 +282,12 @@
         </member>
         <member name="T:NAudio.CoreAudioApi.AudioClient">
             <summary>
-            Windows Vista CoreAudio AudioClient
+            Windows CoreAudio AudioClient
             </summary>
         </member>
         <member name="M:NAudio.CoreAudioApi.AudioClient.Initialize(NAudio.CoreAudioApi.AudioClientShareMode,NAudio.CoreAudioApi.AudioClientStreamFlags,System.Int64,System.Int64,NAudio.Wave.WaveFormat,System.Guid)">
             <summary>
-            Initialize the Audio Client
+            Initializes the Audio Client
             </summary>
             <param name="shareMode">Share Mode</param>
             <param name="streamFlags">Stream Flags</param>
@@ -302,9 +302,7 @@
             </summary>
             <param name="shareMode">The share mode.</param>
             <param name="desiredFormat">The desired format.</param>
-            <returns>
-            	<c>true</c> if [is format supported] [the specified share mode]; otherwise, <c>false</c>.
-            </returns>
+            <returns>True if the format is supported</returns>
         </member>
         <member name="M:NAudio.CoreAudioApi.AudioClient.IsFormatSupported(NAudio.CoreAudioApi.AudioClientShareMode,NAudio.Wave.WaveFormat,NAudio.Wave.WaveFormatExtensible@)">
             <summary>
@@ -313,9 +311,7 @@
             <param name="shareMode">Share Mode</param>
             <param name="desiredFormat">Desired Format</param>
             <param name="closestMatchFormat">Output The closest match format.</param>
-            <returns>
-            	<c>true</c> if [is format supported] [the specified share mode]; otherwise, <c>false</c>.
-            </returns>
+            <returns>True if the format is supported</returns>
         </member>
         <member name="M:NAudio.CoreAudioApi.AudioClient.Start">
             <summary>
@@ -348,33 +344,35 @@
         </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.MixFormat">
             <summary>
-            Mix Format,
+            Retrieves the stream format that the audio engine uses for its internal processing of shared-mode streams.
             Can be called before initialize
             </summary>
         </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.BufferSize">
             <summary>
-            Gets the buffer size (must initialize first)
+            Retrieves the size (maximum capacity) of the audio buffer associated with the endpoint. (must initialize first)
             </summary>
         </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.StreamLatency">
             <summary>
-            Gets the stream latency (must initialize first)
+            Retrieves the maximum latency for the current stream and can be called any time after the stream has been initialized.
             </summary>
         </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.CurrentPadding">
             <summary>
-            Gets the current padding (must initialize first)
+            Retrieves the number of frames of padding in the endpoint buffer (must initialize first)
             </summary>
         </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.DefaultDevicePeriod">
             <summary>
-            Gets the default device period (can be called before initialize)
+            Retrieves the length of the periodic interval separating successive processing passes by the audio engine on the data in the endpoint buffer.
+            (can be called before initialize)
             </summary>
         </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.MinimumDevicePeriod">
             <summary>
-            Gets the minimum device period (can be called before initialize)
+            Gets the minimum device period 
+            (can be called before initialize)
             </summary>
         </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.AudioClockClient">
@@ -921,7 +919,7 @@
         </member>
         <member name="T:NAudio.CoreAudioApi.Interfaces.IAudioClient">
             <summary>
-            n.b. WORK IN PROGRESS - this code will probably do nothing but crash at the moment
+            Windows CoreAudio IAudioClient interface
             Defined in AudioClient.h
             </summary>
         </member>
@@ -1082,6 +1080,11 @@
             MM Device Enumerator
             </summary>
         </member>
+        <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.#ctor">
+            <summary>
+            Creates a new MM Device Enumerator
+            </summary>
+        </member>
         <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.EnumerateAudioEndPoints(NAudio.CoreAudioApi.DataFlow,NAudio.CoreAudioApi.DeviceState)">
             <summary>
             Enumerate Audio Endpoints
@@ -1105,10 +1108,19 @@
             <param name="id">Device ID</param>
             <returns>Device</returns>
         </member>
-        <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.#ctor">
+        <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.RegisterEndpointNotificationCallback(NAudio.CoreAudioApi.Interfaces.IMMNotificationClient)">
             <summary>
-            Creates a new MM Device Enumerator
+            Registers a call back for Device Events
             </summary>
+            <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface</param>
+            <returns></returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.UnregisterEndpointNotificationCallback(NAudio.CoreAudioApi.Interfaces.IMMNotificationClient)">
+            <summary>
+            Unregisters a call back for Device Events
+            </summary>
+            <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface </param>
+            <returns></returns>
         </member>
         <member name="T:NAudio.CoreAudioApi.PropertyKey">
             <summary>
@@ -1596,6 +1608,51 @@
             <summary>
             This is actually a downwards normalize for data that will clip
             </summary>
+        </member>
+        <member name="T:NAudio.Dsp.WdlResampler">
+            <summary>
+            Fully managed resampler, based on Cockos WDL Resampler
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.WdlResampler.#ctor">
+            <summary>
+            Creates a new Resampler
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.WdlResampler.SetMode(System.Boolean,System.Int32,System.Boolean,System.Int32,System.Int32)">
+            <summary>
+            sets the mode
+            if sinc set, it overrides interp or filtercnt
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.WdlResampler.SetFilterParms(System.Single,System.Single)">
+            <summary>
+            Sets the filter parameters
+            used for filtercnt>0 but not sinc
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.WdlResampler.SetFeedMode(System.Boolean)">
+            <summary>
+            Set feed mode
+            </summary>
+            <param name="wantInputDriven">if true, that means the first parameter to ResamplePrepare will specify however much input you have, not how much you want</param>
+        </member>
+        <member name="M:NAudio.Dsp.WdlResampler.Reset(System.Double)">
+            <summary>
+            Reset
+            </summary>
+        </member>
+        <member name="M:NAudio.Dsp.WdlResampler.ResamplePrepare(System.Int32,System.Int32,System.Single[]@,System.Int32@)">
+            <summary>
+            Prepare
+            note that it is safe to call ResamplePrepare without calling ResampleOut (the next call of ResamplePrepare will function as normal)
+            nb inbuffer was WDL_ResampleSample **, returning a place to put the in buffer, so we return a buffer and offset
+            </summary>
+            <param name="out_samples">req_samples is output samples desired if !wantInputDriven, or if wantInputDriven is input samples that we have</param>
+            <param name="nch"></param>
+            <param name="inbuffer"></param>
+            <param name="inbufferOffset"></param>
+            <returns>returns number of samples desired (put these into *inbuffer)</returns>
         </member>
         <member name="T:NAudio.Wave.ChannelMode">
             <summary>
@@ -7753,13 +7810,6 @@
             initializes MediaFoundation - only needs to be called once per process
             </summary>
         </member>
-        <member name="M:NAudio.MediaFoundation.MediaFoundationApi.EnumerateTransforms(System.Guid)">
-            <summary>
-            Enumerate the installed MediaFoundation transforms in the specified category
-            </summary>
-            <param name="category">A category from MediaFoundationTransformCategories</param>
-            <returns></returns>
-        </member>
         <member name="M:NAudio.MediaFoundation.MediaFoundationApi.Shutdown">
             <summary>
             uninitializes MediaFoundation
@@ -7899,11 +7949,6 @@
             Creates a Microsoft Media Foundation byte stream that wraps an IRandomAccessStream object.
             </summary>
         </member>
-        <member name="M:NAudio.MediaFoundation.MediaFoundationInterop.MFTEnumEx(System.Guid,NAudio.MediaFoundation._MFT_ENUM_FLAG,NAudio.MediaFoundation.MFT_REGISTER_TYPE_INFO,NAudio.MediaFoundation.MFT_REGISTER_TYPE_INFO,System.IntPtr@,System.Int32@)">
-            <summary>
-            Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria. 
-            </summary>
-        </member>
         <member name="M:NAudio.MediaFoundation.MediaFoundationInterop.MFCreateSample(NAudio.MediaFoundation.IMFSample@)">
             <summary>
             Creates an empty media sample.
@@ -7917,11 +7962,6 @@
         <member name="M:NAudio.MediaFoundation.MediaFoundationInterop.MFCreateAttributes(NAudio.MediaFoundation.IMFAttributes@,System.Int32)">
             <summary>
             Creates an empty attribute store. 
-            </summary>
-        </member>
-        <member name="M:NAudio.MediaFoundation.MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(System.Guid,NAudio.MediaFoundation._MFT_ENUM_FLAG,NAudio.MediaFoundation.IMFAttributes,NAudio.MediaFoundation.IMFCollection@)">
-            <summary>
-            Gets a list of output formats from an audio encoder.
             </summary>
         </member>
         <member name="T:NAudio.MediaFoundation.MediaFoundationTransform">
@@ -9968,26 +10008,27 @@
             Reads from this provider
             </summary>
         </member>
-        <member name="T:NAudio.Wave.WaveExtensionMethods">
+        <member name="T:NAudio.Wave.SampleProviders.WdlResamplingSampleProvider">
             <summary>
-            Useful extension methods to make switching between WaveAndSampleProvider easier
+            Fully managed resampling sample provider, based on the WDL Resampler
             </summary>
         </member>
-        <member name="M:NAudio.Wave.WaveExtensionMethods.ToSampleProvider(NAudio.Wave.IWaveProvider)">
+        <member name="M:NAudio.Wave.SampleProviders.WdlResamplingSampleProvider.#ctor(NAudio.Wave.ISampleProvider,System.Int32)">
             <summary>
-            Converts a WaveProvider into a SampleProvider (only works for PCM)
+            Constructs a new resampler
             </summary>
-            <param name="waveProvider">WaveProvider to convert</param>
-            <returns></returns>
+            <param name="source">Source to resample</param>
+            <param name="newSampleRate">Desired output sample rate</param>
         </member>
-        <member name="M:NAudio.Wave.WaveExtensionMethods.Init(NAudio.Wave.IWavePlayer,NAudio.Wave.ISampleProvider,System.Boolean)">
+        <member name="M:NAudio.Wave.SampleProviders.WdlResamplingSampleProvider.Read(System.Single[],System.Int32,System.Int32)">
             <summary>
-            Allows sending a SampleProvider directly to an IWavePlayer without needing to convert
-            back to an IWaveProvider
+            Reads from this sample provider
             </summary>
-            <param name="wavePlayer">The WavePlayer</param>
-            <param name="sampleProvider"></param>
-            <param name="convertTo16Bit"></param>
+        </member>
+        <member name="P:NAudio.Wave.SampleProviders.WdlResamplingSampleProvider.WaveFormat">
+            <summary>
+            Output WaveFormat
+            </summary>
         </member>
         <member name="T:NAudio.Wave.AdpcmWaveFormat">
             <summary>
@@ -11023,93 +11064,6 @@
             </summary>
             <value>The int buffer count.</value>
         </member>
-        <member name="T:NAudio.Wave.MediaFoundationEncoder">
-            <summary>
-            Media Foundation Encoder class allows you to use Media Foundation to encode an IWaveProvider
-            to any supported encoding format
-            </summary>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.GetEncodeBitrates(System.Guid,System.Int32,System.Int32)">
-            <summary>
-            Queries the available bitrates for a given encoding output type, sample rate and number of channels
-            </summary>
-            <param name="audioSubtype">Audio subtype - a value from the AudioSubtypes class</param>
-            <param name="sampleRate">The sample rate of the PCM to encode</param>
-            <param name="channels">The number of channels of the PCM to encode</param>
-            <returns>An array of available bitrates in average bits per second</returns>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.GetOutputMediaTypes(System.Guid)">
-            <summary>
-            Gets all the available media types for a particular 
-            </summary>
-            <param name="audioSubtype">Audio subtype - a value from the AudioSubtypes class</param>
-            <returns>An array of available media types that can be encoded with this subtype</returns>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.EncodeToWma(NAudio.Wave.IWaveProvider,System.String,System.Int32)">
-            <summary>
-            Helper function to simplify encoding Window Media Audio
-            Should be supported on Vista and above (not tested)
-            </summary>
-            <param name="inputProvider">Input provider, must be PCM</param>
-            <param name="outputFile">Output file path, should end with .wma</param>
-            <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.EncodeToMp3(NAudio.Wave.IWaveProvider,System.String,System.Int32)">
-            <summary>
-            Helper function to simplify encoding to MP3
-            By default, will only be available on Windows 8 and above
-            </summary>
-            <param name="inputProvider">Input provider, must be PCM</param>
-            <param name="outputFile">Output file path, should end with .mp3</param>
-            <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.EncodeToAac(NAudio.Wave.IWaveProvider,System.String,System.Int32)">
-            <summary>
-            Helper function to simplify encoding to AAC
-            By default, will only be available on Windows 7 and above
-            </summary>
-            <param name="inputProvider">Input provider, must be PCM</param>
-            <param name="outputFile">Output file path, should end with .mp4 (or .aac on Windows 8)</param>
-            <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.SelectMediaType(System.Guid,NAudio.Wave.WaveFormat,System.Int32)">
-            <summary>
-            Tries to find the encoding media type with the closest bitrate to that specified
-            </summary>
-            <param name="audioSubtype">Audio subtype, a value from AudioSubtypes</param>
-            <param name="inputFormat">Your encoder input format (used to check sample rate and channel count)</param>
-            <param name="desiredBitRate">Your desired bitrate</param>
-            <returns>The closest media type, or null if none available</returns>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.#ctor(NAudio.MediaFoundation.MediaType)">
-            <summary>
-            Creates a new encoder that encodes to the specified output media type
-            </summary>
-            <param name="outputMediaType">Desired output media type</param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.Encode(System.String,NAudio.Wave.IWaveProvider)">
-            <summary>
-            Encodes a file
-            </summary>
-            <param name="outputFile">Output filename (container type is deduced from the filename)</param>
-            <param name="inputProvider">Input provider (should be PCM, some encoders will also allow IEEE float)</param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.Dispose(System.Boolean)">
-            <summary>
-            Disposes this instance
-            </summary>
-            <param name="disposing"></param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.Dispose">
-            <summary>
-            Disposes this instance
-            </summary>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationEncoder.Finalize">
-            <summary>
-            Finalizer
-            </summary>
-        </member>
         <member name="T:NAudio.Wave.PlaybackState">
             <summary>
             Playback State
@@ -11339,42 +11293,6 @@
         <member name="P:NAudio.Wave.BufferedWaveProvider.WaveFormat">
             <summary>
             Gets the WaveFormat
-            </summary>
-        </member>
-        <member name="T:NAudio.Wave.MediaFoundationResampler">
-            <summary>
-            The Media Foundation Resampler Transform
-            </summary>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationResampler.#ctor(NAudio.Wave.IWaveProvider,NAudio.Wave.WaveFormat)">
-            <summary>
-            Creates the Media Foundation Resampler, allowing modifying of sample rate, bit depth and channel count
-            </summary>
-            <param name="sourceProvider">Source provider, must be PCM</param>
-            <param name="outputFormat">Output format, must also be PCM</param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationResampler.#ctor(NAudio.Wave.IWaveProvider,System.Int32)">
-            <summary>
-            Creates a resampler with a specified target output sample rate
-            </summary>
-            <param name="sourceProvider">Source provider</param>
-            <param name="outputSampleRate">Output sample rate</param>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationResampler.CreateTransform">
-            <summary>
-            Creates and configures the actual Resampler transform
-            </summary>
-            <returns>A newly created and configured resampler MFT</returns>
-        </member>
-        <member name="M:NAudio.Wave.MediaFoundationResampler.Dispose(System.Boolean)">
-            <summary>
-            Disposes this resampler
-            </summary>
-        </member>
-        <member name="P:NAudio.Wave.MediaFoundationResampler.ResamplerQuality">
-            <summary>
-            Gets or sets the Resampler quality. n.b. set the quality before starting to resample.
-            1 is lowest quality (linear interpolation) and 60 is best quality
             </summary>
         </member>
         <member name="T:NAudio.Wave.MonoToStereoProvider16">
@@ -12199,6 +12117,27 @@
             <see cref="P:NAudio.Wave.WaveStream.WaveFormat"/>
             </summary>
         </member>
+        <member name="T:NAudio.Wave.WaveExtensionMethods">
+            <summary>
+            Useful extension methods to make switching between WaveAndSampleProvider easier
+            </summary>
+        </member>
+        <member name="M:NAudio.Wave.WaveExtensionMethods.ToSampleProvider(NAudio.Wave.IWaveProvider)">
+            <summary>
+            Converts a WaveProvider into a SampleProvider (only works for PCM)
+            </summary>
+            <param name="waveProvider">WaveProvider to convert</param>
+            <returns></returns>
+        </member>
+        <member name="M:NAudio.Wave.WaveExtensionMethods.Init(NAudio.Wave.IWavePlayer,NAudio.Wave.ISampleProvider,System.Boolean)">
+            <summary>
+            Allows sending a SampleProvider directly to an IWavePlayer without needing to convert
+            back to an IWaveProvider
+            </summary>
+            <param name="wavePlayer">The WavePlayer</param>
+            <param name="sampleProvider"></param>
+            <param name="convertTo16Bit"></param>
+        </member>
         <member name="T:NAudio.Wave.WasapiCaptureRT">
             <summary>
             Audio Capture using Wasapi
@@ -12285,9 +12224,17 @@
         </member>
         <member name="M:NAudio.Wave.IWavePlayer.Init(NAudio.Wave.IWaveProvider)">
             <summary>
+            Obsolete init method
+            </summary>
+            <param name="waveProvider"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NAudio.Wave.IWavePlayer.Init(System.Func{NAudio.Wave.IWaveProvider})">
+            <summary>
             Initialise playback
             </summary>
-            <param name="waveProvider">The waveprovider to be played</param>
+            <param name="waveProviderFunc">Function to create the waveprovider to be played
+            Called on the playback thread</param>
         </member>
         <member name="P:NAudio.Wave.IWavePlayer.PlaybackState">
             <summary>
@@ -12351,9 +12298,21 @@
         </member>
         <member name="M:NAudio.Win8.Wave.WaveOutputs.WasapiOutRT.Init(NAudio.Wave.IWaveProvider)">
             <summary>
+            Old init implementation. Use the func one
+            </summary>
+            <param name="provider"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NAudio.Win8.Wave.WaveOutputs.WasapiOutRT.Init(System.Func{NAudio.Wave.IWaveProvider})">
+            <summary>
+            Initializes with a function to create the provider that is made on the playback thread
+            </summary>
+            <param name="waveProviderFunc">Creates the wave provider</param>
+        </member>
+        <member name="M:NAudio.Win8.Wave.WaveOutputs.WasapiOutRT.Init">
+            <summary>
             Initialize for playing the specified wave stream
             </summary>
-            <param name="waveProvider">IWaveProvider to play</param>
         </member>
         <member name="M:NAudio.Win8.Wave.WaveOutputs.WasapiOutRT.Dispose">
             <summary>

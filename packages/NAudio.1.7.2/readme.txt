@@ -21,9 +21,11 @@ csechet
 ChunkWare Music Software
 CKing
 DaMacc
+Du10
 eejake52
 Florian Rosmann (filoe)
 Giawa
+Harald Petrovitsch
 Hfuy
 Iain McCowan
 Idael Cardaso 
@@ -32,12 +34,15 @@ Jamie Michael Ewins
 jannera
 jbaker8935
 jcameron23
+JoeGaggler
 jonahoffmann
 jontdelorme
 Justin Frankel
 K24A3
 Kassoul
 kevinxxx
+kzych
+LionCash
 Lustild
 Lucian Wischik (ljw1004)
 ManuN
@@ -45,6 +50,8 @@ MeelMarcel
 Michael Feld 
 Michael J
 Michael Lehenbauer
+myrkle
+nelsonkidd
 Nigel Redmon
 Nikolaos Georgiou
 Owen Skriloff
@@ -55,16 +62,19 @@ Pygmy
 Ray Molenkamp
 Robert Bristow-Johnson
 Scott Fleischman 
+Simon Clark
 Sirish Bajpai
 sporn
 Steve Underwood
 Ted Murphy
 Tiny Simple Tools
 Tobias Fleming
+TomBogle
 Tony Cabello
 Tony Sistemas
 TuneBlade
 topher3683
+volmart
 Vladimir Rokovanov
 Ville Koskinen
 Wyatt Rice

@@ -4,9 +4,9 @@
         <name>NVorbis</name>
     </assembly>
     <members>
-        <member name="T:NVorbis.Ogg.ContainerReader">
+        <member name="T:NVorbis.BufferedReadStream">
             <summary>
-            Provides an <see cref="T:NVorbis.IContainerReader"/> implementation for basic Ogg files.
+            A thread-safe, read-only, buffering stream wrapper.
             </summary>
         </member>
         <member name="T:NVorbis.IContainerReader">
@@ -57,137 +57,6 @@
         <member name="E:NVorbis.IContainerReader.NewStream">
             <summary>
             Event raised when a new logical stream is found in the container.
-            </summary>
-        </member>
-        <member name="M:NVorbis.Ogg.ContainerReader.#ctor(System.String)">
-            <summary>
-            Creates a new instance with the specified file.
-            </summary>
-            <param name="path">The full path to the file.</param>
-        </member>
-        <member name="M:NVorbis.Ogg.ContainerReader.#ctor(System.IO.Stream,System.Boolean)">
-            <summary>
-            Creates a new instance with the specified stream.  Optionally sets to close the stream when disposed.
-            </summary>
-            <param name="stream">The stream to read.</param>
-            <param name="closeOnDispose"><c>True</c> to close the stream when <see cref="M:NVorbis.Ogg.ContainerReader.Dispose"/> is called, otherwise <c>False</c>.</param>
-        </member>
-        <member name="M:NVorbis.Ogg.ContainerReader.Init">
-            <summary>
-            Initializes the container and finds the first stream.
-            </summary>
-            <returns><c>True</c> if a valid logical stream is found, otherwise <c>False</c>.</returns>
-        </member>
-        <member name="M:NVorbis.Ogg.ContainerReader.Dispose">
-            <summary>
-            Disposes this instance.
-            </summary>
-        </member>
-        <member name="M:NVorbis.Ogg.ContainerReader.GetStream(System.Int32)">
-            <summary>
-            Gets the <see cref="T:NVorbis.IPacketProvider"/> instance for the specified stream serial.
-            </summary>
-            <param name="streamSerial">The stream serial to look for.</param>
-            <returns>An <see cref="T:NVorbis.IPacketProvider"/> instance.</returns>
-            <exception cref="T:System.ArgumentOutOfRangeException">The specified stream serial was not found.</exception>
-        </member>
-        <member name="M:NVorbis.Ogg.ContainerReader.FindNextStream">
-            <summary>
-            Finds the next new stream in the container.
-            </summary>
-            <returns><c>True</c> if a new stream was found, otherwise <c>False</c>.</returns>
-            <exception cref="T:System.InvalidOperationException"><see cref="P:NVorbis.Ogg.ContainerReader.CanSeek"/> is <c>False</c>.</exception>
-        </member>
-        <member name="M:NVorbis.Ogg.ContainerReader.GetTotalPageCount">
-            <summary>
-            Retrieves the total number of pages in the container.
-            </summary>
-            <returns>The total number of pages.</returns>
-            <exception cref="T:System.InvalidOperationException"><see cref="P:NVorbis.Ogg.ContainerReader.CanSeek"/> is <c>False</c>.</exception>
-        </member>
-        <member name="P:NVorbis.Ogg.ContainerReader.StreamSerials">
-            <summary>
-            Gets the list of stream serials found in the container so far.
-            </summary>
-        </member>
-        <member name="E:NVorbis.Ogg.ContainerReader.NewStream">
-            <summary>
-            Event raised when a new logical stream is found in the container.
-            </summary>
-        </member>
-        <member name="P:NVorbis.Ogg.ContainerReader.PagesRead">
-            <summary>
-            Gets the number of pages that have been read in the container.
-            </summary>
-        </member>
-        <member name="P:NVorbis.Ogg.ContainerReader.CanSeek">
-            <summary>
-            Gets whether the container supports seeking.
-            </summary>
-        </member>
-        <member name="P:NVorbis.Ogg.ContainerReader.WasteBits">
-            <summary>
-            Gets the number of bits in the container that are not associated with a logical stream.
-            </summary>
-        </member>
-        <member name="T:NVorbis.BufferedReadStream">
-            <summary>
-            A thread-safe, read-only, buffering stream wrapper.
-            </summary>
-        </member>
-        <member name="M:NVorbis.IVorbisStreamStatus.ResetStats">
-            <summary>
-            Gets the counters for latency and bitrate calculations, as well as overall bit counts
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.EffectiveBitRate">
-            <summary>
-            Gets the calculated bit rate of audio stream data for the everything decoded so far
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.InstantBitRate">
-            <summary>
-            Gets the calculated bit rate for the last ~1 second of audio
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.PageLatency">
-            <summary>
-            Gets the calculated latency per page
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.PacketLatency">
-            <summary>
-            Gets the calculated latency per packet
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.SecondLatency">
-            <summary>
-            Gets the calculated latency per second of output
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.OverheadBits">
-            <summary>
-            Gets the number of bits read that do not contribute to the output audio
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.AudioBits">
-            <summary>
-            Gets the number of bits read that contribute to the output audio
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.PagesRead">
-            <summary>
-            Gets the number of pages read so far in the current stream
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.TotalPages">
-            <summary>
-            Gets the total number of pages in the current stream
-            </summary>
-        </member>
-        <member name="P:NVorbis.IVorbisStreamStatus.Clipped">
-            <summary>
-            Gets whether the stream has been clipped since the last reset
             </summary>
         </member>
         <member name="T:NVorbis.IPacketProvider">
@@ -264,6 +133,103 @@
         <member name="E:NVorbis.IPacketProvider.ParameterChange">
             <summary>
             Occurs when the stream is about to change parameters.
+            </summary>
+        </member>
+        <member name="T:NVorbis.NewStreamEventArgs">
+            <summary>
+            Event data for when a new logical stream is found in a container.
+            </summary>
+        </member>
+        <member name="M:NVorbis.NewStreamEventArgs.#ctor(NVorbis.IPacketProvider)">
+            <summary>
+            Creates a new instance of <see cref="T:NVorbis.NewStreamEventArgs"/> with the specified <see cref="T:NVorbis.IPacketProvider"/>.
+            </summary>
+            <param name="packetProvider">An <see cref="T:NVorbis.IPacketProvider"/> instance.</param>
+        </member>
+        <member name="P:NVorbis.NewStreamEventArgs.PacketProvider">
+            <summary>
+            Gets new the <see cref="T:NVorbis.IPacketProvider"/> instance.
+            </summary>
+        </member>
+        <member name="P:NVorbis.NewStreamEventArgs.IgnoreStream">
+            <summary>
+            Gets or sets whether to ignore the logical stream associated with the packet provider.
+            </summary>
+        </member>
+        <member name="T:NVorbis.Ogg.ContainerReader">
+            <summary>
+            Provides an <see cref="T:NVorbis.IContainerReader"/> implementation for basic Ogg files.
+            </summary>
+        </member>
+        <member name="M:NVorbis.Ogg.ContainerReader.#ctor(System.String)">
+            <summary>
+            Creates a new instance with the specified file.
+            </summary>
+            <param name="path">The full path to the file.</param>
+        </member>
+        <member name="M:NVorbis.Ogg.ContainerReader.#ctor(System.IO.Stream,System.Boolean)">
+            <summary>
+            Creates a new instance with the specified stream.  Optionally sets to close the stream when disposed.
+            </summary>
+            <param name="stream">The stream to read.</param>
+            <param name="closeOnDispose"><c>True</c> to close the stream when <see cref="M:NVorbis.Ogg.ContainerReader.Dispose"/> is called, otherwise <c>False</c>.</param>
+        </member>
+        <member name="M:NVorbis.Ogg.ContainerReader.Init">
+            <summary>
+            Initializes the container and finds the first stream.
+            </summary>
+            <returns><c>True</c> if a valid logical stream is found, otherwise <c>False</c>.</returns>
+        </member>
+        <member name="M:NVorbis.Ogg.ContainerReader.Dispose">
+            <summary>
+            Disposes this instance.
+            </summary>
+        </member>
+        <member name="M:NVorbis.Ogg.ContainerReader.GetStream(System.Int32)">
+            <summary>
+            Gets the <see cref="T:NVorbis.IPacketProvider"/> instance for the specified stream serial.
+            </summary>
+            <param name="streamSerial">The stream serial to look for.</param>
+            <returns>An <see cref="T:NVorbis.IPacketProvider"/> instance.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">The specified stream serial was not found.</exception>
+        </member>
+        <member name="M:NVorbis.Ogg.ContainerReader.FindNextStream">
+            <summary>
+            Finds the next new stream in the container.
+            </summary>
+            <returns><c>True</c> if a new stream was found, otherwise <c>False</c>.</returns>
+            <exception cref="T:System.InvalidOperationException"><see cref="P:NVorbis.Ogg.ContainerReader.CanSeek"/> is <c>False</c>.</exception>
+        </member>
+        <member name="M:NVorbis.Ogg.ContainerReader.GetTotalPageCount">
+            <summary>
+            Retrieves the total number of pages in the container.
+            </summary>
+            <returns>The total number of pages.</returns>
+            <exception cref="T:System.InvalidOperationException"><see cref="P:NVorbis.Ogg.ContainerReader.CanSeek"/> is <c>False</c>.</exception>
+        </member>
+        <member name="P:NVorbis.Ogg.ContainerReader.StreamSerials">
+            <summary>
+            Gets the list of stream serials found in the container so far.
+            </summary>
+        </member>
+        <member name="E:NVorbis.Ogg.ContainerReader.NewStream">
+            <summary>
+            Event raised when a new logical stream is found in the container.
+            </summary>
+        </member>
+        <member name="P:NVorbis.Ogg.ContainerReader.PagesRead">
+            <summary>
+            Gets the number of pages that have been read in the container.
+            </summary>
+        </member>
+        <member name="P:NVorbis.Ogg.ContainerReader.CanSeek">
+            <summary>
+            Gets whether the container supports seeking.
+            </summary>
+        </member>
+        <member name="P:NVorbis.Ogg.ContainerReader.WasteBits">
+            <summary>
+            Gets the number of bits in the container that are not associated with a logical stream.
             </summary>
         </member>
         <member name="T:NVorbis.DataPacket">
@@ -483,6 +449,63 @@
             Flag for use by inheritors.
             </summary>
         </member>
+        <member name="T:NVorbis.ParameterChangeEventArgs">
+            <summary>
+            Event data for when a logical stream has a parameter change.
+            </summary>
+        </member>
+        <member name="M:NVorbis.ParameterChangeEventArgs.#ctor(NVorbis.DataPacket)">
+            <summary>
+            Creates a new instance of <see cref="T:NVorbis.ParameterChangeEventArgs"/>.
+            </summary>
+            <param name="firstPacket">The first packet after the parameter change.</param>
+        </member>
+        <member name="P:NVorbis.ParameterChangeEventArgs.FirstPacket">
+            <summary>
+            Gets the first packet after the parameter change.  This would typically be the parameters packet.
+            </summary>
+        </member>
+        <member name="M:NVorbis.StreamReadBuffer.Read(System.Int64,System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Reads the number of bytes specified into the buffer given, starting with the offset indicated.
+            </summary>
+            <param name="offset">The offset into the stream to start reading.</param>
+            <param name="buffer">The buffer to read to.</param>
+            <param name="index">The index into the buffer to start writing to.</param>
+            <param name="count">The number of bytes to read.</param>
+            <returns>The number of bytes read.</returns>
+        </member>
+        <member name="M:NVorbis.StreamReadBuffer.DiscardThrough(System.Int64)">
+            <summary>
+            Tells the buffer that it no longer needs to maintain any bytes before the indicated offset.
+            </summary>
+            <param name="offset">The offset to discard through.</param>
+        </member>
+        <member name="P:NVorbis.StreamReadBuffer.MinimalRead">
+            <summary>
+            Gets or Sets whether to limit reads to the smallest size possible.
+            </summary>
+        </member>
+        <member name="P:NVorbis.StreamReadBuffer.MaxSize">
+            <summary>
+            Gets or Sets the maximum size of the buffer.  This is not a hard limit.
+            </summary>
+        </member>
+        <member name="P:NVorbis.StreamReadBuffer.BaseOffset">
+            <summary>
+            Gets the offset of the start of the buffered data.  Reads to offsets before this are likely to require a seek.
+            </summary>
+        </member>
+        <member name="P:NVorbis.StreamReadBuffer.BytesFilled">
+            <summary>
+            Gets the number of bytes currently buffered.
+            </summary>
+        </member>
+        <member name="P:NVorbis.StreamReadBuffer.Length">
+            <summary>
+            Gets the number of bytes the buffer can hold.
+            </summary>
+        </member>
         <member name="M:NVorbis.VorbisReader.ReadSamples(System.Single[],System.Int32,System.Int32)">
             <summary>
             Reads decoded samples from the current logical stream
@@ -590,82 +613,59 @@
             Gets the total length of the current logical stream
             </summary>
         </member>
-        <member name="T:NVorbis.NewStreamEventArgs">
+        <member name="M:NVorbis.IVorbisStreamStatus.ResetStats">
             <summary>
-            Event data for when a new logical stream is found in a container.
+            Gets the counters for latency and bitrate calculations, as well as overall bit counts
             </summary>
         </member>
-        <member name="M:NVorbis.NewStreamEventArgs.#ctor(NVorbis.IPacketProvider)">
+        <member name="P:NVorbis.IVorbisStreamStatus.EffectiveBitRate">
             <summary>
-            Creates a new instance of <see cref="T:NVorbis.NewStreamEventArgs"/> with the specified <see cref="T:NVorbis.IPacketProvider"/>.
-            </summary>
-            <param name="packetProvider">An <see cref="T:NVorbis.IPacketProvider"/> instance.</param>
-        </member>
-        <member name="P:NVorbis.NewStreamEventArgs.PacketProvider">
-            <summary>
-            Gets new the <see cref="T:NVorbis.IPacketProvider"/> instance.
+            Gets the calculated bit rate of audio stream data for the everything decoded so far
             </summary>
         </member>
-        <member name="P:NVorbis.NewStreamEventArgs.IgnoreStream">
+        <member name="P:NVorbis.IVorbisStreamStatus.InstantBitRate">
             <summary>
-            Gets or sets whether to ignore the logical stream associated with the packet provider.
+            Gets the calculated bit rate for the last ~1 second of audio
             </summary>
         </member>
-        <member name="M:NVorbis.StreamReadBuffer.Read(System.Int64,System.Byte[],System.Int32,System.Int32)">
+        <member name="P:NVorbis.IVorbisStreamStatus.PageLatency">
             <summary>
-            Reads the number of bytes specified into the buffer given, starting with the offset indicated.
-            </summary>
-            <param name="offset">The offset into the stream to start reading.</param>
-            <param name="buffer">The buffer to read to.</param>
-            <param name="index">The index into the buffer to start writing to.</param>
-            <param name="count">The number of bytes to read.</param>
-            <returns>The number of bytes read.</returns>
-        </member>
-        <member name="M:NVorbis.StreamReadBuffer.DiscardThrough(System.Int64)">
-            <summary>
-            Tells the buffer that it no longer needs to maintain any bytes before the indicated offset.
-            </summary>
-            <param name="offset">The offset to discard through.</param>
-        </member>
-        <member name="P:NVorbis.StreamReadBuffer.MinimalRead">
-            <summary>
-            Gets or Sets whether to limit reads to the smallest size possible.
+            Gets the calculated latency per page
             </summary>
         </member>
-        <member name="P:NVorbis.StreamReadBuffer.MaxSize">
+        <member name="P:NVorbis.IVorbisStreamStatus.PacketLatency">
             <summary>
-            Gets or Sets the maximum size of the buffer.  This is not a hard limit.
+            Gets the calculated latency per packet
             </summary>
         </member>
-        <member name="P:NVorbis.StreamReadBuffer.BaseOffset">
+        <member name="P:NVorbis.IVorbisStreamStatus.SecondLatency">
             <summary>
-            Gets the offset of the start of the buffered data.  Reads to offsets before this are likely to require a seek.
+            Gets the calculated latency per second of output
             </summary>
         </member>
-        <member name="P:NVorbis.StreamReadBuffer.BytesFilled">
+        <member name="P:NVorbis.IVorbisStreamStatus.OverheadBits">
             <summary>
-            Gets the number of bytes currently buffered.
+            Gets the number of bits read that do not contribute to the output audio
             </summary>
         </member>
-        <member name="P:NVorbis.StreamReadBuffer.Length">
+        <member name="P:NVorbis.IVorbisStreamStatus.AudioBits">
             <summary>
-            Gets the number of bytes the buffer can hold.
+            Gets the number of bits read that contribute to the output audio
             </summary>
         </member>
-        <member name="T:NVorbis.ParameterChangeEventArgs">
+        <member name="P:NVorbis.IVorbisStreamStatus.PagesRead">
             <summary>
-            Event data for when a logical stream has a parameter change.
+            Gets the number of pages read so far in the current stream
             </summary>
         </member>
-        <member name="M:NVorbis.ParameterChangeEventArgs.#ctor(NVorbis.DataPacket)">
+        <member name="P:NVorbis.IVorbisStreamStatus.TotalPages">
             <summary>
-            Creates a new instance of <see cref="T:NVorbis.ParameterChangeEventArgs"/>.
+            Gets the total number of pages in the current stream
             </summary>
-            <param name="firstPacket">The first packet after the parameter change.</param>
         </member>
-        <member name="P:NVorbis.ParameterChangeEventArgs.FirstPacket">
+        <member name="P:NVorbis.IVorbisStreamStatus.Clipped">
             <summary>
-            Gets the first packet after the parameter change.  This would typically be the parameters packet.
+            Gets whether the stream has been clipped since the last reset
             </summary>
         </member>
     </members>
