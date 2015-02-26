@@ -145,7 +145,7 @@ namespace GameRes.Formats.NitroPlus
             }
             if (enc_size == entry.Size)
                 return new MemoryStream (buf, false);
-            return new RenPy.RpaStream (buf, arc.File.CreateStream (entry.Offset+enc_size, entry.Size-enc_size));
+            return new PrefixStream (buf, arc.File.CreateStream (entry.Offset+enc_size, entry.Size-enc_size));
         }
     }
 }

@@ -129,7 +129,7 @@ namespace GameRes.Formats.RenPy
             var rpa_entry = entry as RpaEntry;
             if (null == rpa_entry || null == rpa_entry.Header)
                 return input;
-            return new RpaStream (rpa_entry.Header, input);
+            return new PrefixStream (rpa_entry.Header, input);
         }
 
         public override ResourceOptions GetDefaultOptions ()
@@ -837,115 +837,6 @@ namespace GameRes.Formats.RenPy
         public override string ToString ()
         {
             return Encoding.UTF8.GetString (m_bytes);
-        }
-    }
-
-    public class RpaStream : Stream
-    {
-        byte[]  m_header;
-        Stream  m_stream;
-        long    m_position = 0;
-
-        public RpaStream (byte[] header, Stream main)
-        {
-            m_header = header;
-            m_stream = main;
-        }
-
-        public override bool CanRead  { get { return m_stream.CanRead; } }
-        public override bool CanSeek  { get { return m_stream.CanSeek; } }
-        public override bool CanWrite { get { return false; } }
-        public override long Length   { get { return m_stream.Length + m_header.Length; } }
-        public override long Position
-        {
-            get { return m_position; }
-            set
-            {
-                m_position = Math.Max (value, 0);
-                if (m_position > m_header.Length)
-                {
-                    long stream_pos = m_stream.Seek (m_position - m_header.Length, SeekOrigin.Begin);
-                    m_position = m_header.Length + stream_pos;
-                }
-            }
-        }
-
-        public override void Flush()
-        {
-            m_stream.Flush();
-        }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            if (SeekOrigin.Begin == origin)
-                Position = offset;
-            else if (SeekOrigin.Current == origin)
-                Position = m_position + offset;
-            else
-                Position = Length + offset;
-
-            return m_position;
-        }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            int read = 0;
-            if (m_position < m_header.Length)
-            {
-                int header_count = Math.Min (count, m_header.Length - (int)m_position);
-                Buffer.BlockCopy (m_header, (int)m_position, buffer, offset, header_count);
-                m_position += header_count;
-                read += header_count;
-                offset += header_count;
-                count -= header_count;
-                if (count > 0)
-                    m_stream.Position = 0;
-            }
-            if (count > 0)
-            {
-                int stream_read = m_stream.Read (buffer, offset, count);
-                m_position += stream_read;
-                read += stream_read;
-            }
-            return read;
-        }
-
-        public override int ReadByte ()
-        {
-            if (m_position < m_header.Length)
-                return m_header[m_position++];
-            if (m_position == m_header.Length)
-                m_stream.Position = 0;
-            int b = m_stream.ReadByte();
-            if (-1 != b)
-                m_position++;
-            return b;
-        }
-
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException ("RpaStream.SetLength method is not supported");
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("RpaStream.Write method is not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("RpaStream.WriteByte method is not supported");
-        }
-
-        bool disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!disposed)
-            {
-                m_stream.Dispose();
-                disposed = true;
-                base.Dispose (disposing);
-            }
         }
     }
 }

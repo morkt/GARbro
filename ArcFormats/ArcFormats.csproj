@@ -64,6 +64,7 @@
     <Compile Include="ArcAFS.cs" />
     <Compile Include="ArcAMI.cs" />
     <Compile Include="ArcBGI.cs" />
+    <Compile Include="ArcCommon.cs" />
     <Compile Include="ArcDRS.cs" />
     <Compile Include="ArcFVP.cs" />
     <Compile Include="ArcInnGrey.cs" />
