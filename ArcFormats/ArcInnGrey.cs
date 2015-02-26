@@ -2,7 +2,7 @@
 //! \date       Mon Jan 19 08:57:16 2015
 //! \brief      Innocent Grey archives format.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
