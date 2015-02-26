@@ -94,7 +94,7 @@ namespace GameRes.Formats.DRS
     public class MpxOpener : ArchiveFormat
     {
         public override string         Tag { get { return "IKURA/GDL"; } }
-        public override string Description { get { return "IKURA GDL Resource archive"; } }
+        public override string Description { get { return "IKURA GDL resource archive"; } }
         public override uint     Signature { get { return 0x4d324d53; } } // 'SM2M'
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
