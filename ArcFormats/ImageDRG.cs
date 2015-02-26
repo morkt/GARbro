@@ -107,6 +107,9 @@ namespace GameRes.Formats.DRS
                     palette[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
                 }
                 bitmap_palette = new BitmapPalette (palette);
+                file.Position += 4;
+                /* indexed GGD image is a LZSS-compressed stream */
+                /* currently not implemented */
             }
             else
             {
@@ -485,185 +488,132 @@ namespace GameRes.Formats.DRS
             if (null == meta)
                 throw new ArgumentException ("GgaFormat.Read should be supplied with GgaMetaData", "info");
             file.Position = meta.HeaderSize;
-            var pixel_data = DecodeStream (file, meta, (int)(meta.Width*meta.Height*4));
+            var pixel_data = DecodeStream (file, meta);
             var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
                 PixelFormats.Bgra32, null, pixel_data, (int)info.Width*4);
             bitmap.Freeze();
             return new ImageData (bitmap, info);
         }
 
-        byte[] DecodeStream (Stream file, GgaMetaData meta, int pixel_count)
+        byte[] DecodeStream (Stream file, GgaMetaData meta)
         {
+            int dst = 0;
+            var output = new byte[meta.Width*meta.Height*4];
             using (var input = new BinaryReader (file, Encoding.ASCII, true))
-            using (var output = new MemoryStream (pixel_count))
             {
                 var buf = new byte[4];
-                uint isize = 0;
-                while (isize < meta.CompSize)
+                var end_pos = input.BaseStream.Position + meta.CompSize;
+                while (input.BaseStream.Position < end_pos)
                 {
-                    int ctrl = input.ReadByte();
-                    ++isize;
-                    switch (ctrl)
+                    int code = input.ReadByte();
+                    switch (code)
                     {
                     case 0:
                         {
-                            output.Position -= 4;
-                            output.Read (buf, 0, 4);
-                            byte i = input.ReadByte();
-                            isize++;
-                            for (int j = 0; j < i; ++j)
-                                output.Write (buf, 0, 4);
+                            int src = dst - 4;
+                            int count = input.ReadByte() * 4;
+                            Binary.CopyOverlapped (output, src, dst, count);
+                            dst += count;
                             break;
                         }
                     case 1:
                         {
-                            output.Position -= 4;
-                            output.Read (buf, 0, 4);
-                            int i = input.ReadUInt16();
-                            isize += 2;
-                            for (int j = 0; j < i; ++j)
-                                output.Write (buf, 0, 4);
+                            int src = dst - 4;
+                            int count = input.ReadUInt16() * 4;
+                            Binary.CopyOverlapped (output, src, dst, count);
+                            dst += count;
                             break;
                         }
                     case 2:
                         {
-                            byte l = input.ReadByte();
-                            isize++;
-                            var curpos = output.Position;
-                            output.Position -= l << 2;
-                            output.Read (buf, 0, 4);
-                            output.Position = curpos;
-                            output.Write (buf, 0, 4);
+                            int l = input.ReadByte();
+                            int src = dst - (l << 2);
+                            System.Buffer.BlockCopy (output, src, output, dst, 4);
+                            dst += 4;
                             break;
                         }
                     case 3:
                         {
                             int l = input.ReadUInt16();
-                            isize += 2;
-                            var curpos = output.Position;
-                            output.Position -= l << 2;
-                            output.Read (buf, 0, 4);
-                            output.Position = curpos;
-                            output.Write (buf, 0, 4);
+                            int src = dst - (l << 2);
+                            System.Buffer.BlockCopy (output, src, output, dst, 4);
+                            dst += 4;
                             break;
                         }
                     case 4:
                         {
-                            byte l = input.ReadByte();
-                            var dstpos = output.Position - (l << 2);
-                            int i = input.ReadByte();
-                            isize += 2;
-                            for (int j = 0; j < i; ++j)
-                            {
-                                var curpos = output.Position;
-                                output.Position = dstpos;
-                                dstpos += 4;
-                                output.Read (buf, 0, 4);
-                                output.Position = curpos;
-                                output.Write (buf, 0, 4);
-                            }
+                            int l = input.ReadByte();
+                            int src = dst - (l << 2);
+                            int count = input.ReadByte() * 4;
+                            Binary.CopyOverlapped (output, src, dst, count);
+                            dst += count;
                             break;
                         }
                     case 5:
                         {
-                            byte l = input.ReadByte();
-                            var dstpos = output.Position - (l << 2);
-                            int i = input.ReadUInt16();
-                            isize += 3;
-                            for (int j = 0; j < i; ++j)
-                            {
-                                var curpos = output.Position;
-                                output.Position = dstpos;
-                                dstpos += 4;
-                                output.Read (buf, 0, 4);
-                                output.Position = curpos;
-                                output.Write (buf, 0, 4);
-                            }
+                            int l = input.ReadByte();
+                            int src = dst - (l << 2);
+                            int count = input.ReadUInt16() * 4;
+                            Binary.CopyOverlapped (output, src, dst, count);
+                            dst += count;
                             break;
                         }
                     case 6:
                         {
                             int l = input.ReadUInt16();
-                            var dstpos = output.Position - (l << 2);
-                            int i = input.ReadByte();
-                            isize += 3;
-                            for (int j = 0; j < i; ++j)
-                            {
-                                var curpos = output.Position;
-                                output.Position = dstpos;
-                                dstpos += 4;
-                                output.Read (buf, 0, 4);
-                                output.Position = curpos;
-                                output.Write (buf, 0, 4);
-                            }
+                            int src = dst - (l << 2);
+                            int count = input.ReadByte() * 4;
+                            Binary.CopyOverlapped (output, src, dst, count);
+                            dst += count;
                             break;
                         }
                     case 7:
                         {
                             int l = input.ReadUInt16();
-                            var dstpos = output.Position - (l << 2);
-                            int i = input.ReadUInt16();
-                            isize += 4;
-                            for (int j = 0; j < i; ++j)
-                            {
-                                var curpos = output.Position;
-                                output.Position = dstpos;
-                                dstpos += 4;
-                                output.Read (buf, 0, 4);
-                                output.Position = curpos;
-                                output.Write (buf, 0, 4);
-                            }
+                            int src = dst - (l << 2);
+                            int count = input.ReadUInt16() * 4;
+                            Binary.CopyOverlapped (output, src, dst, count);
+                            dst += count;
                             break;
                         }
                     case 8:
                         {
-                            var curpos = output.Position;
-                            output.Position -= 4;
-                            output.Read (buf, 0, 4);
-                            output.Position = curpos;
-                            output.Write (buf, 0, 4);
+                            System.Buffer.BlockCopy (output, dst-4, output, dst, 4);
+                            dst += 4;
                             break;
                         }
                     case 9:
                         {
-                            var curpos = output.Position;
-                            output.Position -= meta.Width * 4;
-                            output.Read (buf, 0, 4);
-                            output.Position = curpos;
-                            output.Write (buf, 0, 4);
+                            int src = dst - (int)meta.Width * 4;
+                            System.Buffer.BlockCopy (output, src, output, dst, 4);
+                            dst += 4;
                             break;
                         }
                     case 0x0a:
                         {
-                            var curpos = output.Position;
-                            output.Position -= meta.Width * 4 + 4;
-                            output.Read (buf, 0, 4);
-                            output.Position = curpos;
-                            output.Write (buf, 0, 4);
+                            int src = dst - ((int)meta.Width * 4 + 4);
+                            System.Buffer.BlockCopy (output, src, output, dst, 4);
+                            dst += 4;
                             break;
                         }
                     case 0x0b:
                         {
-                            var curpos = output.Position;
-                            output.Position -= meta.Width * 4 - 4;
-                            output.Read (buf, 0, 4);
-                            output.Position = curpos;
-                            output.Write (buf, 0, 4);
+                            int src = dst - ((int)meta.Width * 4 - 4);
+                            System.Buffer.BlockCopy (output, src, output, dst, 4);
+                            dst += 4;
                             break;
                         }
                     default:
-                        for (int i = ctrl - 11; i > 0; --i)
                         {
-                            int read = input.Read (buf, 0, 4);
-                            if (4 != read)
+                            int count = (code-11)*4;
+                            if (count != input.Read (output, dst, count))
                                 throw new InvalidFormatException ("Unexpected end of input");
-                            output.Write (buf, 0, 4);
-                            isize += 4;
+                            dst += count;
+                            break;
                         }
-                        break;
                     }
                 }
-                return output.GetBuffer();
+                return output;
             }
         }
     }
