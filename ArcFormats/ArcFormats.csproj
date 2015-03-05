@@ -116,6 +116,7 @@
     <Compile Include="CreateYPFWidget.xaml.cs">
       <DependentUpon>CreateYPFWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ImageBIP.cs" />
     <Compile Include="ImageBMZ.cs" />
     <Compile Include="ImageDRG.cs" />
     <Compile Include="ImageEDT.cs" />
