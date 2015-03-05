@@ -223,11 +223,16 @@ namespace GameRes.Formats.Fs
     [Export(typeof(ArchiveFormat))]
     public class FlyingShinePdOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "PD"; } }
+        public override string         Tag { get { return "PD/2"; } }
         public override string Description { get { return "Flying Shine resource archive version 2"; } }
-        public override uint     Signature { get { return 0x69796c46; } }
+        public override uint     Signature { get { return 0x69796c46; } } // 'Flyi'
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
+
+        public FlyingShinePdOpener ()
+        {
+            Extensions = new string[] { "pd" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
