@@ -66,6 +66,8 @@ namespace GameRes.Formats.Tactics
             {
                 reader.Unpack();
                 var bmp = reader.Data;
+                if (bmp[0] != 'B' || bmp[1] != 'M')
+                    return null;
                 return new TgfMetaData
                 {
                     Width = LittleEndian.ToUInt32 (bmp, 0x12),
