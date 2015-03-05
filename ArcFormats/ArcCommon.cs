@@ -86,11 +86,11 @@ namespace GameRes.Formats
                 read += header_count;
                 offset += header_count;
                 count -= header_count;
-                if (count > 0)
-                    m_stream.Position = 0;
             }
             if (count > 0)
             {
+                if (m_header.Length == m_position)
+                    m_stream.Position = 0;
                 int stream_read = m_stream.Read (buffer, offset, count);
                 m_position += stream_read;
                 read += stream_read;
