@@ -83,6 +83,8 @@ namespace GameRes.Formats.PS2
                 input.ReadInt32();
                 uint w = input.ReadUInt16();
                 uint h = input.ReadUInt16();
+                if (0 == w || 0 == h)
+                    return null;
                 var meta = new BipMetaData { Width = w, Height = h, BPP = 32 };
                 for (int i = 0; i < tile_count; ++i)
                 {
@@ -100,8 +102,6 @@ namespace GameRes.Formats.PS2
                     tile.Offset = input.ReadUInt32() + data_offset;
                     meta.Tiles.Add (tile);
                 }
-                if (0 == meta.Width || 0 == meta.Height || 0 == meta.Tiles.Count)
-                    return null;
                 return meta;
             }
         }
@@ -146,6 +146,7 @@ namespace GameRes.Formats.PS2
                             pixels[p] = pixels[p+2];
                             pixels[p+2] = r;
                             int a = 0 == alpha ? 0xff : pixels[p+3] * 0xff / 0x80;
+                            if (a > 0xff) a = 0xff;
                             pixels[p+3] = (byte)a;
                         }
                         var rect = new Int32Rect (tile.Left+x, tile.Top+y, converted.PixelWidth, converted.PixelHeight);
