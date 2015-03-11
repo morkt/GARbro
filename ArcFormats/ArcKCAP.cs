@@ -61,7 +61,7 @@ namespace GameRes.Formats.Selene
         public override string         Tag { get { return "KCAP"; } }
         public override string Description { get { return "Selene engine resource archive"; } }
         public override uint     Signature { get { return 0x5041434b; } } // 'KCAP'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         static private string DefaultPassPhrase = "Selene.Default.Password";
