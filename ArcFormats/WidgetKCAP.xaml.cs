@@ -13,10 +13,9 @@ namespace GameRes.Formats.GUI
         public WidgetKCAP ()
         {
             InitializeComponent ();
-            EncScheme.SelectionChanged += OnSchemeChanged;
-
             if (null == EncScheme.SelectedItem)
                 EncScheme.SelectedIndex = 0;
+            EncScheme.SelectionChanged += OnSchemeChanged;
         }
 
         void OnSchemeChanged (object sender, SelectionChangedEventArgs e)

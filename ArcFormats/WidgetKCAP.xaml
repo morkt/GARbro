@@ -20,8 +20,8 @@
              Text="{Binding Source={x:Static p:Settings.Default}, Path=KCAPPassPhrase, Mode=TwoWay}"
              Width="{Binding ElementName=EncScheme, Path=ActualWidth}"/>
     <Label Content="{x:Static s:arcStrings.LabelScheme}" Target="{Binding ElementName=EncScheme}"
-           Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right"/>
-    <ComboBox Name="EncScheme" Grid.Column="1" Grid.Row="2" Margin="0,3,0,0"
-              ItemsSource="{Binding Source={x:Static fmt:PackOpener.KnownSchemes}, Mode=OneWay}"
+           Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right"/>
+    <ComboBox Name="EncScheme" Grid.Column="1" Grid.Row="1" Margin="0,3,0,0"
+              ItemsSource="{Binding Source={x:Static fmt:PackOpener.KnownSchemes}, Path=Keys, Mode=OneWay}"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=KCAPScheme, Mode=TwoWay}" />
 </Grid>

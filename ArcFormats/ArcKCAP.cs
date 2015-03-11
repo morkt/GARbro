@@ -66,13 +66,9 @@ namespace GameRes.Formats.Selene
 
         static private string DefaultPassPhrase = "Selene.Default.Password";
 
-        public static readonly string[] KnownSchemes = new string[] {
-            arcStrings.KCAPDefault,
-            "Okaa-san ga Ippai!",
-        };
-        private static readonly string[] Keys = new string[] {
-            "", // default
-            "hahadata256pasyamada2zikan", // "Okaa-san ga Ippai!"
+        public static readonly Dictionary<string,string> KnownSchemes = new Dictionary<string,string> {
+            { arcStrings.KCAPDefault,   "" },
+            { "Okaa-san ga Ippai!",     "hahadata256pasyamada2zikan" },
         };
 
         public PackOpener ()
@@ -127,13 +123,10 @@ namespace GameRes.Formats.Selene
 
         public static string GetPassPhrase (string title)
         {
-            System.Diagnostics.Debug.Assert (KnownSchemes.Length == Keys.Length,
-                "Number of known encryptions schemes does not match available pass phrases.");
-            var index = Array.IndexOf (KnownSchemes, title);
-            if (index != -1)
-                return Keys[index];
-            else
+            string pass;
+            if (string.IsNullOrEmpty (title) || !KnownSchemes.TryGetValue (title, out pass))
                 return "";
+            return pass;
         }
 
         public override object GetAccessWidget ()
