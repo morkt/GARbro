@@ -155,7 +155,6 @@ namespace GameRes.Formats.Selene
             int pass_len = pass.Length;
             int hash = PasskeyHash (pass); // sub_100E0390
             var hash_table = new KeyTableGenerator (hash);
-//            hash_table.Init (hash); // sub_100E0680
             byte[] table = new byte[0x10000];
             for (int i = 0; i < table.Length; ++i)
             {
