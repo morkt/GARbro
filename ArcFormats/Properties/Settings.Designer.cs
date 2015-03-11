@@ -249,5 +249,29 @@ namespace GameRes.Formats.Properties {
                 this["WARCNameLength"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string KCAPPassPhrase {
+            get {
+                return ((string)(this["KCAPPassPhrase"]));
+            }
+            set {
+                this["KCAPPassPhrase"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string KCAPScheme {
+            get {
+                return ((string)(this["KCAPScheme"]));
+            }
+            set {
+                this["KCAPScheme"] = value;
+            }
+        }
     }
 }

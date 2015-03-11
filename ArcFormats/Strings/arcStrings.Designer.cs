@@ -217,11 +217,38 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default.
+        /// </summary>
+        public static string KCAPDefault {
+            get {
+                return ResourceManager.GetString("KCAPDefault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Kogado game engine resource archive.
         /// </summary>
         public static string KogadoDescription {
             get {
                 return ResourceManager.GetString("KogadoDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Passphrase.
+        /// </summary>
+        public static string LabelPassphrase {
+            get {
+                return ResourceManager.GetString("LabelPassphrase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Scheme.
+        /// </summary>
+        public static string LabelScheme {
+            get {
+                return ResourceManager.GetString("LabelScheme", resourceCulture);
             }
         }
         

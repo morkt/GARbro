@@ -70,6 +70,7 @@
     <Compile Include="ArcGSP.cs" />
     <Compile Include="ArcInnGrey.cs" />
     <Compile Include="ArcINT.cs" />
+    <Compile Include="ArcKCAP.cs" />
     <Compile Include="ArcKogado.cs" />
     <Compile Include="ArcLST.cs" />
     <Compile Include="ArcMajiro.cs" />
@@ -144,6 +145,9 @@
     </Compile>
     <Compile Include="WidgetINT.xaml.cs">
       <DependentUpon>WidgetINT.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WidgetKCAP.xaml.cs">
+      <DependentUpon>WidgetKCAP.xaml</DependentUpon>
     </Compile>
     <Compile Include="WidgetNPA.xaml.cs">
       <DependentUpon>WidgetNPA.xaml</DependentUpon>
@@ -223,6 +227,10 @@
     <Page Include="WidgetINT.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WidgetKCAP.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="WidgetNPA.xaml">
       <SubType>Designer</SubType>

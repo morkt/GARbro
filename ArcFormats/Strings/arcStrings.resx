@@ -171,8 +171,17 @@ Choose appropriate encryption scheme.</value>
 Enter archive encryption key or choose
 predefined encryption scheme.</value>
   </data>
+  <data name="KCAPDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
   <data name="KogadoDescription" xml:space="preserve">
     <value>Kogado game engine resource archive</value>
+  </data>
+  <data name="LabelPassphrase" xml:space="preserve">
+    <value>Passphrase</value>
+  </data>
+  <data name="LabelScheme" xml:space="preserve">
+    <value>Scheme</value>
   </data>
   <data name="LWGDescription" xml:space="preserve">
     <value>Liar-soft image archive</value>

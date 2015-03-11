@@ -159,6 +159,15 @@
 Введите ключ шифрования или выберите
 один из предопределённых вариантов.</value>
   </data>
+  <data name="KCAPDefault" xml:space="preserve">
+    <value>Неизвестно</value>
+  </data>
+  <data name="LabelPassphrase" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="LabelScheme" xml:space="preserve">
+    <value>Вариант</value>
+  </data>
   <data name="MsgAddingFile" xml:space="preserve">
     <value>Добавляется файл</value>
   </data>
