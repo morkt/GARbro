@@ -125,7 +125,7 @@ namespace GameRes.Formats.Neko
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             int length;
             var data = ReadBlock (arc.File.View, pak.Key, entry.Offset, out length);
-            return new MemoryStream (data, false);
+            return new MemoryStream (data, 0, length, false);
         }
 
         static ulong KeyFromHash (uint hash)
@@ -182,7 +182,7 @@ namespace GameRes.Formats.Neko
 
             int aligned_size = (length+7) & ~7;
             byte[] buffer = new byte[aligned_size];
-            view.Read (offset+8, buffer, 0, (uint)length);
+            length = view.Read (offset+8, buffer, 0, (uint)length);
             if (0 != hash)
             {
                 ulong key = KeyFromHash (hash);
