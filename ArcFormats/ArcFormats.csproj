@@ -63,6 +63,7 @@
     <Compile Include="ArcADPACK.cs" />
     <Compile Include="ArcAFS.cs" />
     <Compile Include="ArcAMI.cs" />
+    <Compile Include="ArcAVC.cs" />
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcCommon.cs" />
     <Compile Include="ArcDRS.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="ArcMajiro.cs" />
     <Compile Include="ArcMGPK.cs" />
     <Compile Include="ArcNEKO.cs" />
+    <Compile Include="ArcNexas.cs" />
     <Compile Include="ArcNitro.cs" />
     <Compile Include="ArcNPA.cs" />
     <Compile Include="ArcNSA.cs" />
