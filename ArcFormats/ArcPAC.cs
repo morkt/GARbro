@@ -35,7 +35,7 @@ namespace GameRes.Formats.Riddle
     [Export(typeof(ArchiveFormat))]
     public class PacOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "PAC"; } }
+        public override string         Tag { get { return "PAC1"; } }
         public override string Description { get { return "Riddle Soft resource archive"; } }
         public override uint     Signature { get { return 0x31434150; } } // 'PAC1'
         public override bool  IsHierarchic { get { return false; } }
