@@ -91,41 +91,51 @@ namespace GameRes.Formats.DRS
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            PixelFormat format;
-            BitmapPalette bitmap_palette = null;
-            int stride = (int)info.Width*((info.BPP+7)/8);
+            BitmapSource bitmap;
             if (8 == info.BPP)
-            {
-                file.Position = 44;
-                format = PixelFormats.Indexed8;
-                var palette_data = new byte[0x400];
-                if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
-                    throw new InvalidFormatException();
-                var palette = new Color[256];
-                for (int i = 0; i < 256; ++i)
-                {
-                    palette[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
-                }
-                bitmap_palette = new BitmapPalette (palette);
-                file.Position += 4;
-                /* indexed GGD image is a LZSS-compressed stream */
-                /* currently not implemented */
-            }
+                bitmap = ReadIndexed (file, info);
             else
+                bitmap = ReadTrue (file, info);
+            bitmap.Freeze();
+            return new ImageData (bitmap, info);
+        }
+
+        private BitmapSource ReadIndexed (Stream file, ImageMetaData info)
+        {
+            file.Position = 44;
+            PixelFormat format = PixelFormats.Indexed8;
+            var palette_data = new byte[0x400];
+            if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
+                throw new InvalidFormatException();
+            var palette = new Color[256];
+            for (int i = 0; i < 256; ++i)
             {
-                file.Position = 8;
-                if (24 == info.BPP)
-                    format = PixelFormats.Bgr24;
-                else
-                    format = PixelFormats.Bgr565;
+                palette[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
             }
+            var bitmap_palette = new BitmapPalette (palette);
+            file.Position += 4;
+            int stride = (int)info.Width*((info.BPP+7)/8);
+
+            /* indexed GGD image is a LZSS-compressed stream */
+            /* currently not implemented */
+            throw new NotImplementedException ("DrgFormat.ReadIndexed not implemented");
+        }
+
+        private BitmapSource ReadTrue (Stream file, ImageMetaData info)
+        {
+            file.Position = 8;
+            PixelFormat format;
+            if (24 == info.BPP)
+                format = PixelFormats.Bgr24;
+            else
+                format = PixelFormats.Bgr565;
+
+            int stride = (int)info.Width*((info.BPP+7)/8);
             var pixel_data = DecodeStream (file, stride*(int)info.Height);
             if (null == pixel_data)
                 throw new InvalidFormatException();
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                format, bitmap_palette, pixel_data, (int)stride);
-            bitmap.Freeze();
-            return new ImageData (bitmap, info);
+            return BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
+                format, null, pixel_data, stride);
         }
 
         byte[] DecodeStream (Stream input, int pixel_count)
