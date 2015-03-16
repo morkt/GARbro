@@ -69,6 +69,7 @@ namespace GameRes.Formats.Selene
         public static readonly Dictionary<string,string> KnownSchemes = new Dictionary<string,string> {
             { arcStrings.KCAPDefault,   "" },
             { "Okaa-san ga Ippai!",     "hahadata256pasyamada2zikan" },
+            { "Itazura Mahjong",        "mjdata999pasyamada2zikan" },
         };
 
         public PackOpener ()
@@ -160,8 +161,6 @@ namespace GameRes.Formats.Selene
         static int PasskeyHash (string pass) // sub_100E0390(int a1, unsigned int a2)
         {
             int hash = -1; // eax@1
-            if (0 == pass.Length)
-                return ~hash;
             for (int i = 0; i < pass.Length; ++i) // ecx@1
             {
                 hash = (byte)pass[i] ^ hash; // eax@2
