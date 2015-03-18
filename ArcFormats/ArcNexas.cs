@@ -100,6 +100,7 @@ namespace GameRes.Formats.NeXAS
                 };
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
+                entry.IsPacked = pack_type != 0 && entry.UnpackedSize != entry.Size;
                 dir.Add (entry);
                 offset += 0x4c;
             }
