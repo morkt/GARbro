@@ -127,6 +127,7 @@
     <Compile Include="ImageEDT.cs" />
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageHG3.cs" />
+    <Compile Include="ImageISG.cs" />
     <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageTGF.cs" />
     <Compile Include="ImageTLG.cs" />
