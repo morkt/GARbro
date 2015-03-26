@@ -41,6 +41,11 @@ namespace GameRes.Formats.Riddle
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
+        public PacOpener ()
+        {
+            Extensions = new string[] { "pac" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
