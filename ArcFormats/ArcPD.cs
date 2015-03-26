@@ -276,4 +276,34 @@ namespace GameRes.Formats.Fs
                 buf[i] ^= key;
         }
     }
+
+    [Export(typeof(ArchiveFormat))]
+    public class PbOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "PB"; } }
+        public override string Description { get { return arcStrings.PDDescription; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int count = file.View.ReadInt32 (0);
+            if (count <= 0 || count > 0xfff)
+                return null;
+            var dir = new List<Entry> (count);
+            int index_offset = 0x10;
+            for (int i = 0; i < count; ++i)
+            {
+                var entry = new Entry { Name = i.ToString ("D4") };
+                entry.Offset = file.View.ReadUInt32 (index_offset);
+                entry.Size = file.View.ReadUInt32 (index_offset + 4);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 8;
+            }
+            return new ArcFile (file, this, dir);
+        }
+    }
 }
