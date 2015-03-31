@@ -82,7 +82,7 @@ namespace GameRes.Formats.NeXAS
             var index = HuffmanDecode (index_packed, count*0x4c);
             var dir = new List<Entry> (count);
             int offset = 0;
-            for (int i = 0; i < count; ++i)
+            for (int i = 0; i < count; ++i, offset += 0x4c)
             {
                 int name_length = 0;
                 while (name_length < 0x40 && 0 != index[offset+name_length])
@@ -102,7 +102,6 @@ namespace GameRes.Formats.NeXAS
                     return null;
                 entry.IsPacked = pack_type != 0 && entry.UnpackedSize != entry.Size;
                 dir.Add (entry);
-                offset += 0x4c;
             }
             if (0 == pack_type)
                 return new ArcFile (file, this, dir);
