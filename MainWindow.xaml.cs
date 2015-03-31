@@ -814,6 +814,7 @@ namespace GARbro.GUI
                     {
                         m_audio.PlaybackStopped -= OnPlaybackStopped;
                         m_audio.Dispose();
+                        m_audio = null;
                     }
                     var wave_stream = new WaveStreamImpl (sound);
                     m_audio = new WaveOutEvent();
