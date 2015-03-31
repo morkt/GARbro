@@ -35,6 +35,7 @@ namespace GameRes
         public   uint AverageBytesPerSecond;
         public ushort BlockAlign;
         public ushort BitsPerSample;
+        public ushort ExtraSize;
     }
 
     public abstract class SoundInput : Stream
@@ -121,6 +122,11 @@ namespace GameRes
         public override string Type { get { return "audio"; } }
 
         public abstract SoundInput TryOpen (Stream file);
+
+        public virtual void Write (SoundInput source, Stream output)
+        {
+            throw new System.NotImplementedException ("AudioFormat.Write not implemenented");
+        }
 
         public static SoundInput Read (Stream file)
         {
