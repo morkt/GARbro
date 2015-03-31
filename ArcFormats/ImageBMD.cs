@@ -58,7 +58,7 @@ namespace GameRes.Formats.BlackRainbow
             return new BmdMetaData
             {
                 Width = LittleEndian.ToUInt32 (header, 8),
-                Height = LittleEndian.ToUInt16 (header, 12),
+                Height = LittleEndian.ToUInt32 (header, 12),
                 BPP = 32,
                 PackedSize = LittleEndian.ToUInt32 (header, 4),
                 Flag = LittleEndian.ToInt32 (header, 0x10),
