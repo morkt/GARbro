@@ -67,6 +67,7 @@
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcCommon.cs" />
     <Compile Include="ArcDRS.cs" />
+    <Compile Include="ArcEGO.cs" />
     <Compile Include="ArcFVP.cs" />
     <Compile Include="ArcGSP.cs" />
     <Compile Include="ArcInnGrey.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="ArcKogado.cs" />
     <Compile Include="ArcLST.cs" />
     <Compile Include="ArcMajiro.cs" />
+    <Compile Include="ArcMBL.cs" />
     <Compile Include="ArcMGPK.cs" />
     <Compile Include="ArcNEKO.cs" />
     <Compile Include="ArcNexas.cs" />
@@ -90,6 +92,7 @@
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
+    <Compile Include="AudioWADY.cs" />
     <Compile Include="Blowfish.cs" />
     <Compile Include="CreateAMIWidget.xaml.cs">
       <DependentUpon>CreateAMIWidget.xaml</DependentUpon>
@@ -129,6 +132,7 @@
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageISG.cs" />
+    <Compile Include="ImagePRS.cs" />
     <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageTGF.cs" />
     <Compile Include="ImageTLG.cs" />
