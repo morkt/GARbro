@@ -90,6 +90,7 @@ namespace GameRes.Formats.KiriKiri
             { "Fate/stay night",    new FateCrypt() },
             { "Imouto Style",       new ImoutoStyleCrypt() },
             { "Okiba ga Nai!",      new OkibaCrypt() },
+            { "Ore no Saimin Fantasia", new SaiminCrypt() },
             { "Seirei Tenshou",     new SeitenCrypt() },
             { "Swan Song",          new SwanSongCrypt() },
         };
@@ -937,6 +938,55 @@ NextEntry:
         public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
             Decrypt (entry, offset, values, pos, count);
+        }
+    }
+
+    internal class SaiminCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            byte key = (byte)entry.Hash;
+            if (offset < 0x7B)
+                value ^= (byte)(21 * key);
+            else if (offset < 0xF6)
+                value += (byte)(-32 * key);
+            else if (offset >= 0x171)
+                value += (byte)(-54 * key);
+            else if (offset <= 0xffffffffL)
+                value ^= (byte)(43 * key);
+            return value;
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)entry.Hash;
+            for (int i = 0; i < count && offset <= 0xffffffffL; ++i, ++offset)
+            {
+                if (offset < 0x7B)
+                    values[pos+i] ^= (byte)(21 * key);
+                else if (offset < 0xF6)
+                    values[pos+i] += (byte)(-32 * key);
+                else if (offset >= 0x171)
+                    values[pos+i] += (byte)(-54 * key);
+                else
+                    values[pos+i] ^= (byte)(43 * key);
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)entry.Hash;
+            for (int i = 0; i < count && offset <= 0xffffffffL; ++i, ++offset)
+            {
+                if (offset < 0x7B)
+                    values[pos+i] ^= (byte)(21 * key);
+                else if (offset < 0xF6)
+                    values[pos+i] -= (byte)(-32 * key);
+                else if (offset >= 0x171)
+                    values[pos+i] -= (byte)(-54 * key);
+                else
+                    values[pos+i] ^= (byte)(43 * key);
+            }
         }
     }
 }
