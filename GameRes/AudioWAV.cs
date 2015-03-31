@@ -25,6 +25,7 @@
 
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Text;
 
 namespace GameRes
 {
@@ -69,9 +70,6 @@ namespace GameRes
                             throw new InvalidFormatException ("Invalid WAVE file format");
 
                         ushort tag = input.ReadUInt16();
-                        if (1 != tag)
-                            throw new InvalidFormatException ("Unsupported WAVE file format.");
-
                         var format = new WaveFormat();
                         format.FormatTag                = tag;
                         format.Channels                 = input.ReadUInt16();
@@ -79,6 +77,7 @@ namespace GameRes
                         format.AverageBytesPerSecond    = input.ReadUInt32();
                         format.BlockAlign               = input.ReadUInt16();
                         format.BitsPerSample            = input.ReadUInt16();
+                        format.ExtraSize                = input.ReadUInt16();
                         this.Format = format;
 
                         found_fmt = true;
@@ -153,6 +152,30 @@ namespace GameRes
         public override SoundInput TryOpen (Stream file)
         {
             return new WaveInput (file);
+        }
+
+        public override void Write (SoundInput source, Stream output)
+        {
+            using (var buffer = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                uint total_size = (uint)(0x2e + source.PcmSize);
+                buffer.Write (Signature);
+                buffer.Write (total_size);
+                buffer.Write (0x45564157); // 'WAVE'
+                buffer.Write (0x20746d66); // 'fmt '
+                buffer.Write (0x12);
+                buffer.Write (source.Format.FormatTag);
+                buffer.Write (source.Format.Channels);
+                buffer.Write (source.Format.SamplesPerSecond);
+                buffer.Write (source.Format.AverageBytesPerSecond);
+                buffer.Write (source.Format.BlockAlign);
+                buffer.Write (source.Format.BitsPerSample);
+                buffer.Write ((ushort)0);
+                buffer.Write (0x61746164); // 'data'
+                buffer.Write (source.PcmSize);
+                source.Position = 0;
+                source.CopyTo (output);
+            }
         }
     }
 }
