@@ -72,7 +72,8 @@ namespace GameRes.Formats.BlackRainbow
                 throw new ArgumentException ("BmdFormat.Read should be supplied with BmdMetaData", "info");
 
             stream.Position = 0x14;
-            using (var reader = new Reader (stream, meta))
+            int image_size = (int)(meta.Width*meta.Height*4);
+            using (var reader = new LzssReader (stream, (int)meta.PackedSize, image_size))
             {
                 PixelFormat format = meta.Flag != 0 ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
                 reader.Unpack();
@@ -97,89 +98,6 @@ namespace GameRes.Formats.BlackRainbow
                 output.Write (writer.HasAlpha ? 1 : 0);
                 output.Write (writer.Data, 0, (int)writer.Size);
             }
-        }
-
-        internal class Reader : IDisposable
-        {
-            BinaryReader    m_input;
-            byte[]          m_output;
-            uint            m_size;
-
-            public byte[] Data { get { return m_output; } }
-
-            public Reader (Stream file, BmdMetaData info)
-            {
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
-                m_output = new byte[info.Width*info.Height*4];
-                m_size = info.PackedSize;
-            }
-
-            public void Unpack ()
-            {
-                int dst = 0;
-                int remaining = (int)m_size;
-                byte[] frame = new byte[0x1000];
-                int frame_pos = 0x1000-18;
-                while (remaining > 0)
-                {
-                    int ctl = m_input.ReadByte();
-                    --remaining;
-                    for (int bit = 1; remaining > 0 && bit != 0x100; bit <<= 1)
-                    {
-                        if (dst >= m_output.Length)
-                            return;
-                        if (0 != (ctl & bit))
-                        {
-                            byte b = m_input.ReadByte();
-                            --remaining;
-                            frame[frame_pos++] = b;
-                            frame_pos &= 0xfff;
-                            m_output[dst++] = b;
-                        }
-                        else
-                        {
-                            if (remaining < 2)
-                                return;
-                            int lo = m_input.ReadByte();
-                            int hi = m_input.ReadByte();
-                            remaining -= 2;
-                            int offset = (hi & 0xf0) << 4 | lo;
-                            for (int count = 3 + (hi & 0xF); count != 0; --count)
-                            {
-                                if (dst >= m_output.Length)
-                                    break;
-                                byte v = frame[offset++];
-                                offset &= 0xfff;
-                                frame[frame_pos++] = v;
-                                frame_pos &= 0xfff;
-                                m_output[dst++] = v;
-                            }
-                        }
-                    }
-                }
-            }
-
-            #region IDisposable Members
-            bool disposed = false;
-
-            public void Dispose ()
-            {
-                Dispose (true);
-                GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                    {
-                        m_input.Dispose();
-                    }
-                    disposed = true;
-                }
-            }
-            #endregion
         }
 
         internal class Writer : IDisposable
