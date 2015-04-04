@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Marble
@@ -63,27 +64,21 @@ namespace GameRes.Formats.Marble
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, filename_len);
-                if (name.Length+1 < filename_len)
-                {
-                    uint ext_length = (uint)Math.Min (filename_len-name.Length-1, 3);
-                    string ext = file.View.ReadString (index_offset+name.Length+1, ext_length);
-                    if (!string.IsNullOrEmpty (ext))
-                    {
-                        if ("OG" == ext || "O" == ext)
-                            ext = "OGG";
-                        else if ("PR" == ext || "P" == ext)
-                            ext = "PRS";
-                        else if ("WA" == ext || "W" == ext)
-                            ext = "WAY";
-                        name = Path.ChangeExtension (name, ext);
-                    }
-                }
+                if (0 == name.Length)
+                    return null;
                 name = name.ToLowerInvariant();
-                var entry = FormatCatalog.Instance.CreateEntry (name);
                 index_offset += (uint)filename_len;
-                entry.Offset = file.View.ReadUInt32 (index_offset);
+                uint offset = file.View.ReadUInt32 (index_offset);
+                var entry = new AutoEntry (name, () => {
+                    uint signature = file.View.ReadUInt32 (offset);
+                    var res = FormatCatalog.Instance.LookupSignature (signature);
+                    if (!res.Any() && 0x4259 == (0xffff & signature))
+                        res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "PRS");
+                    return res.FirstOrDefault();
+                });
+                entry.Offset = offset;
                 entry.Size = file.View.ReadUInt32 (index_offset+4);
-                if (!entry.CheckPlacement (file.MaxOffset))
+                if (offset < index_size || !entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 8;
