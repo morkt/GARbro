@@ -950,10 +950,10 @@ NextEntry:
                 value ^= (byte)(21 * key);
             else if (offset < 0xF6)
                 value += (byte)(-32 * key);
-            else if (offset >= 0x171)
-                value += (byte)(-54 * key);
-            else if (offset <= 0xffffffffL)
+            else if (offset < 0x171)
                 value ^= (byte)(43 * key);
+            else if (offset <= 0xffffffffL)
+                value += (byte)(-54 * key);
             return value;
         }
 
