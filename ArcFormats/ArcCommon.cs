@@ -25,9 +25,59 @@
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace GameRes.Formats
 {
+    public class AutoEntry : Entry
+    {
+        private Lazy<IResource> m_res;
+        private Lazy<string> m_name;
+        private Lazy<string> m_type;
+
+        public override string Name
+        {
+            get { return m_name.Value; }
+            set { m_name = new Lazy<string> (() => value); }
+        }
+        public override string Type
+        {
+            get { return m_type.Value; }
+            set { m_type = new Lazy<string> (() => value); }
+        }
+
+        public AutoEntry (string name, Func<IResource> type_checker)
+        {
+            m_res  = new Lazy<IResource> (type_checker);
+            m_name = new Lazy<string> (() => GetName (name));
+            m_type = new Lazy<string> (GetEntryType);
+        }
+
+        public static AutoEntry Create (ArcView file, long offset, string base_name)
+        {
+            return new AutoEntry (base_name, () => {
+                uint signature = file.View.ReadUInt32 (offset);
+                return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+            });
+        }
+
+        private string GetName (string name)
+        {
+            if (null == m_res.Value)
+                return name;
+            var ext = m_res.Value.Extensions.FirstOrDefault();
+            if (string.IsNullOrEmpty (ext))
+                return name;
+            return string.Format ("{0}.{1}", name, ext);
+        }
+
+        private string GetEntryType ()
+        {
+            return null == m_res.Value ? "" : m_res.Value.Type;
+        }
+    }
+
     public class PrefixStream : Stream
     {
         byte[]  m_header;
@@ -135,5 +185,88 @@ namespace GameRes.Formats
                 base.Dispose (disposing);
             }
         }
+    }
+
+    public class LzssReader : IDisposable
+    {
+        BinaryReader    m_input;
+        byte[]          m_output;
+        int             m_size;
+
+        public byte[] Data { get { return m_output; } }
+
+        public LzssReader (Stream input, int input_length, int output_length)
+        {
+            m_input = new BinaryReader (input, Encoding.ASCII, true);
+            m_output = new byte[output_length];
+            m_size = input_length;
+        }
+
+        public void Unpack ()
+        {
+            int dst = 0;
+            var frame = new byte[0x1000];
+            int frame_pos = 0xfee;
+            int remaining = (int)m_size;
+            while (remaining > 0)
+            {
+                int ctl = m_input.ReadByte();
+                --remaining;
+                for (int bit = 1; remaining > 0 && bit != 0x100; bit <<= 1)
+                {
+                    if (dst >= m_output.Length)
+                        return;
+                    if (0 != (ctl & bit))
+                    {
+                        byte b = m_input.ReadByte();
+                        --remaining;
+                        frame[frame_pos++] = b;
+                        frame_pos &= 0xfff;
+                        m_output[dst++] = b;
+                    }
+                    else
+                    {
+                        if (remaining < 2)
+                            return;
+                        int lo = m_input.ReadByte();
+                        int hi = m_input.ReadByte();
+                        remaining -= 2;
+                        int offset = (hi & 0xf0) << 4 | lo;
+                        for (int count = 3 + (hi & 0xF); count != 0; --count)
+                        {
+                            if (dst >= m_output.Length)
+                                break;
+                            byte v = frame[offset++];
+                            offset &= 0xfff;
+                            frame[frame_pos++] = v;
+                            frame_pos &= 0xfff;
+                            m_output[dst++] = v;
+                        }
+                    }
+                }
+            }
+        }
+
+        #region IDisposable Members
+        bool disposed = false;
+
+        public void Dispose ()
+        {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    m_input.Dispose();
+                }
+                disposed = true;
+            }
+        }
+        #endregion
     }
 }
