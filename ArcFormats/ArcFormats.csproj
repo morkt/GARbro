@@ -79,6 +79,7 @@
     <Compile Include="ArcMajiro.cs" />
     <Compile Include="ArcMBL.cs" />
     <Compile Include="ArcMGPK.cs" />
+    <Compile Include="ArcMnoViolet.cs" />
     <Compile Include="ArcNEKO.cs" />
     <Compile Include="ArcNexas.cs" />
     <Compile Include="ArcNitro.cs" />
@@ -124,6 +125,7 @@
     <Compile Include="CreateYPFWidget.xaml.cs">
       <DependentUpon>CreateYPFWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ImageBGI.cs" />
     <Compile Include="ImageBIP.cs" />
     <Compile Include="ImageBMD.cs" />
     <Compile Include="ImageBMZ.cs" />
@@ -132,6 +134,7 @@
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageISG.cs" />
+    <Compile Include="ImageMNV.cs" />
     <Compile Include="ImagePRS.cs" />
     <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageTGF.cs" />
