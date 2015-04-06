@@ -83,18 +83,10 @@ namespace GameRes
         public abstract uint Signature { get; }
 
         /// <summary>Signatures peculiar to the resource (the one above is also included here).</summary>
-        public IEnumerable<uint> Signatures
-        {
-            get { return m_signatures; }
-            protected set { m_signatures = value; }
-        }
+        public IEnumerable<uint> Signatures { get; protected set; }
 
         /// <summary>Filename extensions peculiar to the resource.</summary>
-        public IEnumerable<string> Extensions
-        {
-            get { return m_extensions; }
-            protected set { m_extensions = value; }
-        }
+        public IEnumerable<string> Extensions { get; protected set; }
 
         /// <summary>
         /// Create empty Entry that corresponds to implemented resource.
@@ -104,13 +96,10 @@ namespace GameRes
             return new Entry { Type = this.Type };
         }
 
-        private IEnumerable<string> m_extensions;
-        private IEnumerable<uint>   m_signatures;
-
         protected IResource ()
         {
-            m_extensions = new string[] { Tag.ToLowerInvariant() };
-            m_signatures = new uint[] { Signature };
+            Extensions = new string[] { Tag.ToLowerInvariant() };
+            Signatures = new uint[] { this.Signature };
         }
     }
 
