@@ -98,7 +98,10 @@ namespace GameRes.Formats.AVC
                 while (name_length < 0x100 && 0 != index[index_offset+name_length])
                     name_length++;
                 if (0 == name_length)
+                {
+                    index_offset += 0x113;
                     continue;
+                }
                 var name = Encodings.cp932.GetString (index, index_offset, name_length);
                 var entry = FormatCatalog.Instance.CreateEntry (name);
                 index_offset += 0x107;
