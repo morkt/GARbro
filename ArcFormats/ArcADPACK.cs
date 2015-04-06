@@ -1,6 +1,6 @@
 //! \file       ArcADPACK.cs
 //! \date       Sun Feb 15 09:25:28 2015
-//! \brief      ADPACK32 archive format implementation.
+//! \brief      A98SYS engine archive formats implementation.
 //
 // Copyright (C) 2015 by morkt
 //
@@ -34,13 +34,60 @@ namespace GameRes.Formats.AdPack
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
+        public override string         Tag { get { return "A98"; } }
+        public override string Description { get { return "A98SYS Engine resource archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public PakOpener ()
+        {
+            Extensions = new string[] { "pak" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int count = file.View.ReadInt16 (0);
+            if (count <= 1)
+                return null;
+            long index_offset = 2;
+            uint index_size = (uint)(0x10 * count);
+            if (index_size > file.View.Reserve (index_offset, index_size))
+                return null;
+            --count;
+            var dir = new List<Entry> (count);
+            for (uint i = 0; i < count; ++i)
+            {
+                string name = file.View.ReadString (index_offset, 8).TrimEnd (null);
+                if (0 == name.Length)
+                    return null;
+                string ext  = file.View.ReadString (index_offset+8, 4).TrimEnd (null);
+                if (0 != ext.Length)
+                    name += '.'+ext;
+                var entry = FormatCatalog.Instance.CreateEntry (name);
+                uint offset = file.View.ReadUInt32 (index_offset+12);
+                uint next_offset = file.View.ReadUInt32 (index_offset+0x10+12);
+                entry.Size = next_offset - offset;
+                entry.Offset = offset;
+                if (offset < index_size || !entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 0x10;
+            }
+            return new ArcFile (file, this, dir);
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Pak32Opener : ArchiveFormat
+    {
         public override string         Tag { get { return "ADPACK32"; } }
         public override string Description { get { return "Active Soft resource archive"; } }
         public override uint     Signature { get { return 0x41504441; } } // "ADPA"
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
-        public PakOpener ()
+        public Pak32Opener ()
         {
             Extensions = new string[] { "pak" };
         }
@@ -55,7 +102,7 @@ namespace GameRes.Formats.AdPack
             uint index_size = (uint)(0x20 * count);
             if (index_size > file.View.Reserve (0x10, index_size))
                 return null;
-            var dir = new List<Entry> ((int)count);
+            var dir = new List<Entry> (count);
             long index_offset = 0x10;
             for (uint i = 0; i < count; ++i)
             {
