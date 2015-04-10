@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="ArcADPACK.cs" />
     <Compile Include="ArcAFS.cs" />
+    <Compile Include="ArcALD.cs" />
     <Compile Include="ArcAMI.cs" />
     <Compile Include="ArcAVC.cs" />
     <Compile Include="ArcBGI.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="ImageISG.cs" />
     <Compile Include="ImageMNV.cs" />
     <Compile Include="ImagePRS.cs" />
+    <Compile Include="ImageQNT.cs" />
     <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageTGF.cs" />
     <Compile Include="ImageTLG.cs" />
