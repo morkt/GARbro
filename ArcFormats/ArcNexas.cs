@@ -120,7 +120,7 @@ namespace GameRes.Formats.NeXAS
             {
             case Compression.Lzss:
                 using (input)
-                using (var reader = new LzssReader (input, (int)entry.Size, (int)entry.UnpackedSize))
+                using (var reader = new LzssReader (input, (int)pent.Size, (int)pent.UnpackedSize))
                 {
                     reader.Unpack();
                     return new MemoryStream (reader.Data, false);
