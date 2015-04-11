@@ -74,6 +74,7 @@
     <Compile Include="ArcInnGrey.cs" />
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcISA.cs" />
+    <Compile Include="ArcKAAS.cs" />
     <Compile Include="ArcKCAP.cs" />
     <Compile Include="ArcKogado.cs" />
     <Compile Include="ArcLST.cs" />
@@ -136,6 +137,7 @@
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageISG.cs" />
+    <Compile Include="ImageKAAS.cs" />
     <Compile Include="ImageMNV.cs" />
     <Compile Include="ImagePRS.cs" />
     <Compile Include="ImageQNT.cs" />
