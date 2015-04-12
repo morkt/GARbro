@@ -70,8 +70,8 @@ namespace GameRes.Formats.Majiro
             int version;
             if (file.View.AsciiEqual (0, "MajiroArcV1.000\0"))
                 version = 1;
-//            else if (file.View.AsciiEqual (0, "MajiroArcV2.000\0"))
-//                version = 2;
+            else if (file.View.AsciiEqual (0, "MajiroArcV2.000\0"))
+                version = 2;
             else
                 return null;
             int count = file.View.ReadInt32 (16);
@@ -81,7 +81,8 @@ namespace GameRes.Formats.Majiro
                 || data_offset >= file.MaxOffset)
                 return null;
             int table_size = count + (1 == version ? 1 : 0);
-            table_size *= 4 * (version+1);
+            int entry_size = 4 * (version + 1);
+            table_size *= entry_size;
             if (table_size + 0x1c != names_offset)
                 return null;
             if (data_offset > file.View.Reserve (0, data_offset))
@@ -90,7 +91,7 @@ namespace GameRes.Formats.Majiro
             var names = new byte[names_size];
             file.View.Read (names_offset, names, 0, (uint)names_size);
             int names_pos = 0;
-            uint table_pos = 0x1c;
+            int table_pos = 0x1c;
             uint offset_next = file.View.ReadUInt32 (table_pos+4);
 
             var dir = new List<Entry> (count);
@@ -104,13 +105,17 @@ namespace GameRes.Formats.Majiro
                 names_size -= name_len+1;
                 names_pos = zero+1;
                 uint offset = offset_next;
-                offset_next = file.View.ReadUInt32 (table_pos + 12);
+                offset_next = file.View.ReadUInt32 (table_pos + entry_size + 4);
                 var entry = FormatCatalog.Instance.CreateEntry (name);
                 entry.Offset = offset;
-                entry.Size   = offset_next >= offset ? offset_next - offset : 0;
-                table_pos += 8;
-                if (entry.CheckPlacement (file.MaxOffset))
-                    dir.Add (entry);
+                if (1 == version)
+                    entry.Size = offset_next >= offset ? offset_next - offset : 0;
+                else
+                    entry.Size = file.View.ReadUInt32 (table_pos + 8);
+                table_pos += entry_size;
+                if (offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
             }
             if (!dir.Any())
                 return null;
