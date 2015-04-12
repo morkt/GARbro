@@ -47,7 +47,7 @@ namespace GameRes.Formats.Will
     [Export(typeof(ArchiveFormat))]
     public class ArcOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "WARC"; } }
+        public override string         Tag { get { return "ARC/Will"; } }
         public override string Description { get { return "Will Co. game engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
