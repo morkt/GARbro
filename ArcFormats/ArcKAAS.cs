@@ -52,6 +52,8 @@ namespace GameRes.Formats.KAAS
                 return null;
             int key = file.View.ReadByte (1);
             int count = 0xfff & file.View.ReadUInt16 (index_offset);
+            if (0 == count)
+                return null;
             index_offset += 16;
 
             byte[] index = new byte[count*8];
