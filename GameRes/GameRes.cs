@@ -355,6 +355,8 @@ namespace GameRes
 
         /// <summary>
         /// Create GameRes.Entry corresponding to <paramref name="filename"/> extension.
+        /// <exception cref="System.ArgumentException">May be thrown if filename contains invalid
+        /// characters.</exception>
         /// </summary>
         public Entry CreateEntry (string filename)
         {
