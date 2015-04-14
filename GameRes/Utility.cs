@@ -85,6 +85,19 @@ namespace GameRes.Utility
         }
     }
 
+    public static class BigEndian
+    {
+        public static uint ToUInt32 (byte[] value, int index)
+        {
+            return (uint)(value[index] << 24 | value[index+1] << 16 | value[index+2] << 8 | value[index+3]);
+        }
+
+        public static int ToInt32 (byte[] value, int index)
+        {
+            return (int)ToUInt32 (value, index);
+        }
+    }
+
     public static class LittleEndian
     {
         public static ushort ToUInt16 (byte[] value, int index)
@@ -115,6 +128,41 @@ namespace GameRes.Utility
         public static long ToInt64 (byte[] value, int index)
         {
             return (long)ToUInt64 (value, index);
+        }
+
+        public static void Pack (ushort value, byte[] buf, int index)
+        {
+            buf[index]   = (byte)(value);
+            buf[index+1] = (byte)(value >> 8);
+        }
+
+        public static void Pack (uint value, byte[] buf, int index)
+        {
+            buf[index]   = (byte)(value);
+            buf[index+1] = (byte)(value >> 8);
+            buf[index+2] = (byte)(value >> 16);
+            buf[index+3] = (byte)(value >> 24);
+        }
+
+        public static void Pack (ulong value, byte[] buf, int index)
+        {
+            Pack ((uint)value, buf, index);
+            Pack ((uint)(value >> 32), buf, index+4);
+        }
+
+        public static void Pack (short value, byte[] buf, int index)
+        {
+            Pack ((ushort)value, buf, index);
+        }
+
+        public static void Pack (int value, byte[] buf, int index)
+        {
+            Pack ((uint)value, buf, index);
+        }
+
+        public static void Pack (long value, byte[] buf, int index)
+        {
+            Pack ((ulong)value, buf, index);
         }
     }
 
