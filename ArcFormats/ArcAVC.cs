@@ -34,10 +34,12 @@ namespace GameRes.Formats.AVC
     public class ArchiveFile : ArcFile
     {
         public readonly byte[] Key;
+        public readonly int    HeaderOffset;
 
-        public ArchiveFile (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, byte[] key)
+        public ArchiveFile (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, int offset, byte[] key)
             : base (arc, impl, dir)
         {
+            HeaderOffset = offset;
             Key = key;
         }
     }
@@ -56,61 +58,13 @@ namespace GameRes.Formats.AVC
             Extensions = new string[] { "dat" };
         }
 
-        private static readonly string ArchiveKey = "SETSUEI-";
-
         public override ArcFile TryOpen (ArcView file)
         {
-            var header = new byte[0x34];
-            if (0x34 != file.View.Read (0, header, 0, 0x34))
+            var reader = new AdvReader (file);
+            var dir = reader.GetIndex();
+            if (null == dir)
                 return null;
-            var key = new byte[8];
-            /*
-            for (int i = 0; i < 8; ++i)
-                header[8+i] ^= (byte)ArchiveKey[i];
-            for (int i = 0; i < 0x24; ++i)
-                header[0x10+i] ^= header[8+(i&7)];
-            if (!Binary.AsciiEqual (header, 0x10, "ARCHIVE"))
-                return null;
-            Buffer.BlockCopy (header, 8, key, 0, 8);
-            */
-            for (int i = 0; i < 8; ++i)
-                key[i] = (byte)(header[0x10+i] ^ "ARCHIVE\0"[i]);
-            for (int i = 9; i < 0x24; ++i)
-                header[0x10+i] ^= key[i&7];
-            int index_offset = LittleEndian.ToInt32 (header, 0x20);
-            int count = LittleEndian.ToInt32 (header, 0x24);
-            if (index_offset < 0x24 || index_offset >= file.MaxOffset || count <= 0 || count > 0xfffff)
-                return null;
-            var index = new byte[0x114 * count];
-            int index_size = file.View.Read (index_offset+0x10, index, 0, (uint)index.Length);
-            count = index_size / 0x114;
-            if (count * 0x114 != index_size)
-                return null;
-            for (int i = 0; i < index_size; ++i)
-                index[i] ^= key[(index_offset+i)&7];
-            var dir = new List<Entry> (count);
-            index_offset = 0;
-            for (int i = 0; i < count; ++i)
-            {
-                if (0 != index[index_offset++])
-                    return null;
-                int name_length = 0;
-                while (name_length < 0x100 && 0 != index[index_offset+name_length])
-                    name_length++;
-                if (0 == name_length)
-                {
-                    index_offset += 0x113;
-                    continue;
-                }
-                var name = Encodings.cp932.GetString (index, index_offset, name_length);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
-                index_offset += 0x107;
-                entry.Offset = 0x10 + LittleEndian.ToUInt32 (index, index_offset);
-                entry.Size   = LittleEndian.ToUInt32 (index, index_offset+4);
-                index_offset += 0x0c;
-                dir.Add (entry);
-            }
-            return new ArchiveFile (file, this, dir, key);
+            return new ArchiveFile (file, this, dir, reader.HeaderOffset, reader.Key);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -120,10 +74,121 @@ namespace GameRes.Formats.AVC
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var data = new byte[entry.Size];
             arc.File.View.Read (entry.Offset, data, 0, entry.Size);
-            int base_offset = (int)(entry.Offset-0x10);
+            int base_offset = (int)(entry.Offset-arcf.HeaderOffset);
             for (int i = 0; i < data.Length; ++i)
                 data[i] ^= arcf.Key[((base_offset+i)&7)];
             return new MemoryStream (data, false);
+        }
+
+        internal class AdvReader
+        {
+            ArcView     m_file;
+            byte[]      m_header = new byte[0x80];
+            byte[]      m_key = new byte[8];
+            byte[]      m_index;
+            int         m_index_offset;
+            int         m_count;
+            int         m_header_offset;
+
+            public byte[]       Key { get { return m_key; } }
+            public int HeaderOffset { get { return m_header_offset; } }
+
+            public AdvReader (ArcView file)
+            {
+                m_file = file;
+            }
+
+            public List<Entry> GetIndex ()
+            {
+                if (m_header.Length != m_file.View.Read (0, m_header, 0, (uint)m_header.Length))
+                    return null;
+                foreach (var scheme in KnownSchemes)
+                {
+                    if (!ReadIndex (scheme.KeyOffset, scheme.HeaderOffset))
+                        continue;
+                    try
+                    {
+                        var dir = ParseIndex();
+                        if (null != dir)
+                            return dir;
+                    }
+                    catch { /* ignore parse errors */ }
+                }
+                return null;
+            }
+
+            bool ReadIndex (int key_offset, int header_offset)
+            {
+                // placing predefined string into XORed file is a very smart move
+                for (int i = 0; i < 8; ++i)
+                {
+                    var symbol = m_header[header_offset+i] ^ "ARCHIVE\0"[i];
+                    var check = m_header[key_offset+i] ^ symbol;
+                    if (check < 0x20 || check > 0x7e)
+                        return false;
+                    Key[i] = (byte)symbol;
+                }
+                for (int i = 0x10; i < 0x24; ++i)
+                    m_header[header_offset+i] ^= Key[i&7];
+                int entry_size = LittleEndian.ToInt32 (m_header, header_offset+0x14);
+                if (0x114 != entry_size)
+                    return false;
+                m_index_offset = LittleEndian.ToInt32 (m_header, header_offset+0x10);
+                m_count = LittleEndian.ToInt32 (m_header, header_offset+0x20);
+                if (m_index_offset < 0x24 || (long)m_index_offset+header_offset >= m_file.MaxOffset
+                    || m_count <= 0 || m_count > 0xffff)
+                    return false;
+                int index_size = 0x114 * m_count;
+                if (null == m_index || m_index.Length < index_size)
+                    m_index = new byte[index_size];
+                if (index_size != m_file.View.Read (m_index_offset+header_offset, m_index, 0, (uint)index_size))
+                    return false;
+                m_header_offset = header_offset;
+                return true;
+            }
+
+            List<Entry> ParseIndex()
+            {
+                for (int i = 0; i < 0x114 * m_count; ++i)
+                    m_index[i] ^= Key[(m_index_offset+i)&7];
+                var dir = new List<Entry> (m_count);
+                int index_offset = 0;
+                for (int i = 0; i < m_count; ++i)
+                {
+                    if (0 != m_index[index_offset++])
+                        return null;
+                    int name_length = 0;
+                    while (name_length < 0x100 && 0 != m_index[index_offset+name_length])
+                        name_length++;
+                    if (0 == name_length)
+                    {
+                        index_offset += 0x113;
+                        continue;
+                    }
+                    var name = Encodings.cp932.GetString (m_index, index_offset, name_length);
+                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    index_offset += 0x107;
+                    entry.Offset = m_header_offset + LittleEndian.ToUInt32 (m_index, index_offset);
+                    entry.Size   = LittleEndian.ToUInt32 (m_index, index_offset+4);
+                    index_offset += 0x0c;
+                    dir.Add (entry);
+                }
+                return dir;
+            }
+
+            internal class Scheme
+            {
+                public string   Password;
+                public int      KeyOffset;
+                public int      HeaderOffset;
+            };
+
+            private static readonly Scheme[] KnownSchemes = new Scheme[] {
+                new Scheme { Password="SETSUEI-", KeyOffset=0x08, HeaderOffset=0x10 }, // Setsuei
+                new Scheme { Password="CHOKOPAI", KeyOffset=0x35, HeaderOffset=0x51 }, // Chokotto*Vampire!
+                new Scheme { Password="ClOVeRrE", KeyOffset=0x11, HeaderOffset=0x46 }, // Clover Point
+                new Scheme { Password="-AYASEKE", KeyOffset=0x0c, HeaderOffset=0x15 }, // Ayase Ke no Onna
+            };
         }
     }
 }
