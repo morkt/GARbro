@@ -59,7 +59,7 @@ namespace GameRes.Formats
             return new AutoEntry (base_name, () => {
                 uint signature = file.View.ReadUInt32 (offset);
                 return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
-            });
+            }) { Offset = offset };
         }
 
         private string GetName (string name)
@@ -69,7 +69,7 @@ namespace GameRes.Formats
             var ext = m_res.Value.Extensions.FirstOrDefault();
             if (string.IsNullOrEmpty (ext))
                 return name;
-            return string.Format ("{0}.{1}", name, ext);
+            return Path.ChangeExtension (name, ext);
         }
 
         private string GetEntryType ()
