@@ -24,6 +24,7 @@
 //
 
 using System.IO;
+using System.Text;
 
 namespace GameRes.Utility
 {
@@ -82,6 +83,19 @@ namespace GameRes.Utility
                 dst += preceding;
                 count -= preceding;
             }
+        }
+
+        public static string GetCString (byte[] data, int index, int length_limit, Encoding enc)
+        {
+            int name_length = 0;
+            while (name_length < length_limit && 0 != data[index+name_length])
+                name_length++;
+            return enc.GetString (data, index, name_length);
+        }
+
+        public static string GetCString (byte[] data, int index, int length_limit)
+        {
+            return GetCString (data, index, length_limit, Encodings.cp932);
         }
     }
 
