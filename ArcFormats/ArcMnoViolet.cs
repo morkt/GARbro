@@ -64,7 +64,6 @@ namespace GameRes.Formats.MnoViolet
                 index_offset += name_size;
                 uint offset = file.View.ReadUInt32 (index_offset+4);
                 var entry = AutoEntry.Create (file, offset, name);
-                entry.Offset = offset;
                 entry.Size   = file.View.ReadUInt32 (index_offset);
                 if (offset <= index_size || !entry.CheckPlacement (file.MaxOffset))
                     return null;

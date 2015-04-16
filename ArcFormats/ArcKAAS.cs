@@ -120,8 +120,7 @@ namespace GameRes.Formats.KAAS
                 if (!is_voice)
                     entry = AutoEntry.Create (file, offset, i.ToString ("D4"));
                 else
-                    entry = new Entry { Name = string.Format ("{0:D4}.pb", i), Type = "archive" };
-                entry.Offset = offset;
+                    entry = new Entry { Name = string.Format ("{0:D4}.pb", i), Type = "archive", Offset = offset };
                 entry.Size = file.View.ReadUInt32 (index_offset + 4);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
