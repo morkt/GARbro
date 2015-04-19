@@ -52,6 +52,8 @@ namespace GameRes.Formats.Marble
                 arc = ReadIndex (file, count, filename_len, 8);
             if (null == arc)
                 arc = ReadIndex (file, count, 0x10, 4);
+            if (null == arc)
+                arc = ReadIndex (file, count, 0x38, 4);
             return arc;
         }
 
@@ -60,30 +62,45 @@ namespace GameRes.Formats.Marble
             uint index_size = (8u + filename_len) * (uint)count;
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
+            try
             {
-                string name = file.View.ReadString (index_offset, filename_len);
-                if (0 == name.Length)
+                var dir = new List<Entry> (count);
+                for (int i = 0; i < count; ++i)
+                {
+                    string name = file.View.ReadString (index_offset, filename_len);
+                    if (0 == name.Length)
+                        return null;
+                    if (filename_len-name.Length > 1)
+                    {
+                        string ext = file.View.ReadString (index_offset+name.Length+1, filename_len-(uint)name.Length-1);
+                        if (0 != ext.Length)
+                            name = Path.ChangeExtension (name, ext);
+                    }
+                    name = name.ToLowerInvariant();
+                    index_offset += (uint)filename_len;
+                    uint offset = file.View.ReadUInt32 (index_offset);
+                    var entry = new AutoEntry (name, () => {
+                        uint signature = file.View.ReadUInt32 (offset);
+                        var res = FormatCatalog.Instance.LookupSignature (signature);
+                        if (!res.Any() && 0x4259 == (0xffff & signature))
+                            res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "PRS");
+                        return res.FirstOrDefault();
+                    });
+                    entry.Offset = offset;
+                    entry.Size = file.View.ReadUInt32 (index_offset+4);
+                    if (offset < index_size || !entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                    index_offset += 8;
+                }
+                if (0 == dir.Count)
                     return null;
-                name = name.ToLowerInvariant();
-                index_offset += (uint)filename_len;
-                uint offset = file.View.ReadUInt32 (index_offset);
-                var entry = new AutoEntry (name, () => {
-                    uint signature = file.View.ReadUInt32 (offset);
-                    var res = FormatCatalog.Instance.LookupSignature (signature);
-                    if (!res.Any() && 0x4259 == (0xffff & signature))
-                        res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "PRS");
-                    return res.FirstOrDefault();
-                });
-                entry.Offset = offset;
-                entry.Size = file.View.ReadUInt32 (index_offset+4);
-                if (offset < index_size || !entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-                index_offset += 8;
+                return new ArcFile (file, this, dir);
             }
-            return new ArcFile (file, this, dir);
+            catch
+            {
+                return null;
+            }
         }
     }
 }
