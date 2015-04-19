@@ -12,13 +12,16 @@ class Inflate
     public static void Main (string[] args)
     {
         if (args.Length != 2)
+        {
+            Console.WriteLine ("Usage: deflate INPUT-FILE OUTPUT-FILE");
             return;
+        }
         try
         {
             using (var input = File.Open (args[0], FileMode.Open, FileAccess.Read))
-                using (var output = File.Create (args[1]))
-                    using (var stream = new DeflateStream (output, CompressionMode.Compress, CompressionLevel.Level5))
-                        input.CopyTo (stream);
+            using (var output = File.Create (args[1]))
+            using (var stream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9))
+                input.CopyTo (stream);
             Console.WriteLine ("{0} => {1}", args[0], args[1]);
         }
         catch (Exception X)
