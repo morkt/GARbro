@@ -82,6 +82,8 @@ namespace GameRes.Formats.Ainos
                 offset = next_offset;
                 index_offset += 4;
             }
+            if (0 == dir.Count)
+                return null;
             return new ArcFile (file, this, dir);
         }
     }
