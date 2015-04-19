@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -55,61 +56,12 @@ namespace GameRes
             var meta = metadata as TgaMetaData;
             if (null == meta)
                 throw new System.ArgumentException ("TgaFormat.Read should be supplied with TgaMetaData", "metadata");
-            int colormap_size = meta.ColormapLength * meta.ColormapDepth / 8;
-            int width  = (int)meta.Width;
-            int height = (int)meta.Height;
-            int bpp    = meta.BPP;
-            long image_offset = meta.ColormapOffset;
-            if (1 == meta.ColormapType)
-                image_offset += colormap_size;
-            switch (meta.ImageType)
-            {
-            case 1:  // Uncompressed, color-mapped images.
-            case 3:  // Uncompressed, black and white images.
-            case 9:  // Runlength encoded color-mapped images.
-            case 10: // Runlength encoded RGB images.
-            case 11: // Compressed, black and white images.
-            case 32: // Compressed color-mapped data, using Huffman, Delta, and
-                    // runlength encoding.
-            case 33: // Compressed color-mapped data, using Huffman, Delta, and
-                    // runlength encoding.  4-pass quadtree-type process.
-                throw new System.NotImplementedException();
-            default:
-                throw new InvalidFormatException();
-            case 2:  // Uncompressed, RGB images.
-                {
-                    PixelFormat pixel_format;
-                    switch (bpp)
-                    {
-                    default: throw new InvalidFormatException();
-                    case 24: pixel_format = PixelFormats.Bgr24; break;
-                    case 32: pixel_format = PixelFormats.Bgra32; break;
-                    case 15: pixel_format = PixelFormats.Bgr555; break;
-                    case 16: pixel_format = PixelFormats.Bgr565; break;
-                    }
-                    stream.Position = image_offset;
-                    int stride = width*((bpp+7)/8);
-                    byte[] data = new byte[stride*height];
-                    if (0 != (meta.Descriptor & 0x20))
-                    {
-                        if (data.Length != stream.Read (data, 0, data.Length))
-                            throw new InvalidFormatException();
-                    }
-                    else
-                    {
-                        for (int row = height-1; row >= 0; --row)
-                        {
-                            if (stride != stream.Read (data, row*stride, stride))
-                                throw new InvalidFormatException();
-                        }
-                    }
-                    var bitmap = BitmapSource.Create (width, height, 96, 96, pixel_format, null,
-                                                      data, stride);
-                    bitmap.Freeze();
-                    return new ImageData (bitmap, meta);
-                }
-                throw new InvalidFormatException();
-            }
+            var reader = new Reader (stream, meta);
+            var pixels = reader.Unpack();
+            var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
+                                              reader.Format, reader.Palette, pixels, reader.Stride);
+            bitmap.Freeze();
+            return new ImageData (bitmap, meta);
         }
 
         public override void Write (Stream stream, ImageData image)
@@ -218,6 +170,135 @@ namespace GameRes
                     ColormapDepth   = colormap_depth,
                     Descriptor      = descriptor,
                 };
+            }
+        }
+
+        internal class Reader
+        {
+            Stream          m_input;
+            TgaMetaData     m_meta;
+            int             m_width;
+            int             m_height;
+            int             m_stride;
+            byte[]          m_data;
+            long            m_image_offset;
+
+            public PixelFormat    Format { get; private set; }
+            public BitmapPalette Palette { get; private set; }
+            public int            Stride { get { return m_stride; } }
+            public byte[]           Data { get { return m_data; } }
+
+            public Reader (Stream stream, TgaMetaData meta)
+            {
+                m_input = stream;
+                m_meta = meta;
+                switch (meta.BPP)
+                {
+                default: throw new InvalidFormatException();
+                case 8:  throw new NotImplementedException();
+                case 15: Format = PixelFormats.Bgr555; break;
+                case 16: Format = PixelFormats.Bgr555; break;
+                case 32: Format = PixelFormats.Bgra32; break;
+                case 24:
+                    if (8 == (meta.Descriptor & 0xf))
+                        Format = PixelFormats.Bgr32;
+                    else
+                        Format = PixelFormats.Bgr24;
+                    break;
+                }
+                int colormap_size = meta.ColormapLength * meta.ColormapDepth / 8;
+                m_width  = (int)meta.Width;
+                m_height = (int)meta.Height;
+                m_stride = m_width * ((meta.BPP+7) / 8);
+                m_image_offset = meta.ColormapOffset;
+                if (1 == meta.ColormapType)
+                    m_image_offset += colormap_size;
+                m_data = new byte[m_stride*m_height];
+            }
+
+            public byte[] Unpack ()
+            {
+                switch (m_meta.ImageType)
+                {
+                case 1:  // Uncompressed, color-mapped images.
+                case 3:  // Uncompressed, black and white images.
+                case 9:  // Runlength encoded color-mapped images.
+                case 11: // Compressed, black and white images.
+                case 32: // Compressed color-mapped data, using Huffman, Delta, and
+                        // runlength encoding.
+                case 33: // Compressed color-mapped data, using Huffman, Delta, and
+                        // runlength encoding.  4-pass quadtree-type process.
+                    throw new NotImplementedException();
+                default:
+                    throw new InvalidFormatException();
+                case 2:  // Uncompressed, RGB images.
+                    ReadRGB();
+                    break;
+                case 10: // Runlength encoded RGB images.
+                    ReadRLE ((m_meta.BPP+7)/8);
+                    break;
+                }
+                return Data;
+            }
+
+            void ReadRGB ()
+            {
+                m_input.Position = m_image_offset;
+                if (0 != (m_meta.Descriptor & 0x20))
+                {
+                    if (m_data.Length != m_input.Read (m_data, 0, m_data.Length))
+                        throw new InvalidFormatException();
+                }
+                else
+                {
+                    for (int row = m_height-1; row >= 0; --row)
+                    {
+                        if (m_stride != m_input.Read (m_data, row*m_stride, m_stride))
+                            throw new InvalidFormatException();
+                    }
+                }
+            }
+
+            void ReadRLE (int pixel_size)
+            {
+                m_input.Position = m_image_offset;
+                for (int dst = 0; dst < m_data.Length;)
+                {
+                    int packet = m_input.ReadByte();
+                    if (-1 == packet)
+                        break;
+                    int count = (packet & 0x7f) + 1;
+                    if (0 != (packet & 0x80))
+                    {
+                        if (pixel_size != m_input.Read (m_data, dst, pixel_size))
+                            break;
+                        int src = dst;
+                        dst += pixel_size;
+                        for (int i = 1; i < count && dst < m_data.Length; ++i)
+                        {
+                            Buffer.BlockCopy (m_data, src, m_data, dst, pixel_size);
+                            dst += pixel_size;
+                        }
+                    }
+                    else
+                    {
+                        count *= pixel_size;
+                        if (count != m_input.Read (m_data, dst, count))
+                            break;
+                        dst += count;
+                    }
+                }
+                if (0 == (m_meta.Descriptor & 0x20))
+                {
+                    byte[] flipped = new byte[m_stride*m_height];
+                    int dst = 0;
+                    for (int src = m_stride*(m_height-1); src >= 0; src -= m_stride)
+                    {
+                        Buffer.BlockCopy (m_data, src, flipped, dst, m_stride);
+                        dst += m_stride;
+                    }
+                    m_data = flipped;
+                }
             }
         }
     }
