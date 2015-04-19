@@ -3,11 +3,11 @@
 namespace GameRes.Formats.GUI
 {
     /// <summary>
-    /// Interaction logic for CreateWARCWidget.xaml
+    /// Interaction logic for CreateARCWidget.xaml
     /// </summary>
-    public partial class CreateWARCWidget : Grid
+    public partial class CreateARCWidget : Grid
     {
-        public CreateWARCWidget ()
+        public CreateARCWidget ()
         {
             InitializeComponent ();
         }

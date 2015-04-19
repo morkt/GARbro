@@ -111,12 +111,12 @@ namespace GameRes.Formats.Will
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new ArcOptions { NameLength = Settings.Default.WARCNameLength };
+            return new ArcOptions { NameLength = Settings.Default.ARCNameLength };
         }
 
         public override object GetCreationWidget ()
         {
-            return new GUI.CreateWARCWidget();
+            return new GUI.CreateARCWidget();
         }
 
         internal class ArcEntry : Entry
