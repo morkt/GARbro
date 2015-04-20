@@ -66,11 +66,13 @@
     <Compile Include="ArcAMI.cs" />
     <Compile Include="ArcAVC.cs" />
     <Compile Include="ArcBGI.cs" />
+    <Compile Include="ArcBlackPackage.cs" />
     <Compile Include="ArcCommon.cs" />
     <Compile Include="ArcDRS.cs" />
     <Compile Include="ArcEGO.cs" />
     <Compile Include="ArcFVP.cs" />
     <Compile Include="ArcGSP.cs" />
+    <Compile Include="ArcGsPack.cs" />
     <Compile Include="ArcInnGrey.cs" />
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcISA.cs" />
@@ -91,10 +93,12 @@
     <Compile Include="ArcPD.cs" />
     <Compile Include="ArcRPA.cs" />
     <Compile Include="ArcSteinsGate.cs" />
+    <Compile Include="ArcWARC.cs" />
     <Compile Include="ArcWILL.cs" />
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
+    <Compile Include="AudioOGV.cs" />
     <Compile Include="AudioWADY.cs" />
     <Compile Include="Blowfish.cs" />
     <Compile Include="CreateAMIWidget.xaml.cs">
@@ -118,8 +122,8 @@
     <Compile Include="CreateSGWidget.xaml.cs">
       <DependentUpon>CreateSGWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateWARCWidget.xaml.cs">
-      <DependentUpon>CreateWARCWidget.xaml</DependentUpon>
+    <Compile Include="CreateARCWidget.xaml.cs">
+      <DependentUpon>CreateARCWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="CreateXP3Widget.xaml.cs">
       <DependentUpon>CreateXP3Widget.xaml</DependentUpon>
@@ -140,8 +144,10 @@
     <Compile Include="ImageKAAS.cs" />
     <Compile Include="ImageMNV.cs" />
     <Compile Include="ImagePRS.cs" />
+    <Compile Include="ImagePT1.cs" />
     <Compile Include="ImageQNT.cs" />
     <Compile Include="ImageRCT.cs" />
+    <Compile Include="ImageS25.cs" />
     <Compile Include="ImageTGF.cs" />
     <Compile Include="ImageTLG.cs" />
     <Compile Include="ImageWCG.cs" />
@@ -170,6 +176,9 @@
     <Compile Include="WidgetNPA.xaml.cs">
       <DependentUpon>WidgetNPA.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WidgetWARC.xaml.cs">
+      <DependentUpon>WidgetWARC.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WidgetXP3.xaml.cs">
       <DependentUpon>WidgetXP3.xaml</DependentUpon>
     </Compile>
@@ -192,6 +201,9 @@
       <Link>zlib64.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="Resources\ShiinaRio1.png" />
+    <EmbeddedResource Include="Resources\ShiinaRio2.png" />
+    <EmbeddedResource Include="Resources\ShiinaRio3.jpg" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -200,6 +212,8 @@
       <Generator>PublicSettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <EmbeddedResource Include="Resources\DecodeV1.bin" />
+    <EmbeddedResource Include="Resources\DecodeV241.bin" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="CreateAMIWidget.xaml">
@@ -230,7 +244,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateWARCWidget.xaml">
+    <Page Include="CreateARCWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -253,6 +267,10 @@
     <Page Include="WidgetNPA.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WidgetWARC.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="WidgetXP3.xaml">
       <SubType>Designer</SubType>
