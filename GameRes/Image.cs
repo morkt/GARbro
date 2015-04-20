@@ -24,6 +24,7 @@
 //
 
 using System.IO;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace GameRes
@@ -65,6 +66,16 @@ namespace GameRes
             m_bitmap = data;
             OffsetX = x;
             OffsetY = y;
+        }
+
+        public static ImageData Create (ImageMetaData info, PixelFormat format, BitmapPalette palette,
+                                        byte[] pixel_data)
+        {
+            int stride = (int)info.Width*((format.BitsPerPixel+7)/8);
+            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
+                                              format, palette, pixel_data, stride);
+            bitmap.Freeze();
+            return new ImageData (bitmap, info);
         }
     }
 
