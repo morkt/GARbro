@@ -156,13 +156,12 @@ namespace GameRes.Formats.Gs
         {
             if (0 == entry.Size)
                 return Stream.Null;
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
             var packed_entry = entry as PackedEntry;
             if (null == packed_entry)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
-            byte[] packed = new byte[packed_entry.Size];
-            arc.File.View.Read (entry.Offset, packed, 0, entry.Size);
-            using (var stream = new MemoryStream (packed))
-            using (var reader = new LzssReader (stream, packed.Length, (int)packed_entry.UnpackedSize))
+                return input;
+            using (input)
+            using (var reader = new LzssReader (input, (int)packed_entry.Size, (int)packed_entry.UnpackedSize))
             {
                 reader.Unpack();
                 return new MemoryStream (reader.Data, false);
