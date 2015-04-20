@@ -62,8 +62,10 @@
   <ItemGroup>
     <Compile Include="ArcADPACK.cs" />
     <Compile Include="ArcAFS.cs" />
+    <Compile Include="ArcAil.cs" />
     <Compile Include="ArcALD.cs" />
     <Compile Include="ArcAMI.cs" />
+    <Compile Include="ArcAST.cs" />
     <Compile Include="ArcAVC.cs" />
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcBlackPackage.cs" />
