@@ -277,12 +277,12 @@ namespace GameRes.Formats
 
         ushort[] lhs = new ushort[512];
         ushort[] rhs = new ushort[512];
-        ushort t1032 = 256;
+        ushort token = 256;
 
         int input_pos;
         int remaining;
-        int t8;
-        int t12;
+        int m_cached_bits;
+        int m_cache;
 
         public HuffmanDecoder (byte[] src, int index, int length, byte[] dst)
         {
@@ -290,8 +290,8 @@ namespace GameRes.Formats
             m_dst = dst;
             input_pos = index;
             remaining = length;
-            t8 = 0;
-            t12 = 0;
+            m_cached_bits = 0;
+            m_cache = 0;
         }
 
         public HuffmanDecoder (byte[] src, byte[] dst) : this (src, 0, src.Length, dst)
@@ -300,50 +300,32 @@ namespace GameRes.Formats
 
         public byte[] Unpack ()
         {
-            int a2 = 0;
-            t1032 = 256;
-            ushort v3 = sub_401540();
-            ushort v13 = v3; // [sp+0h] [bp-4h]@1
-            while (a2 < m_dst.Length)
+            int dst = 0;
+            token = 256;
+            ushort v3 = CreateTree();
+            while (dst < m_dst.Length)
             {
-                ushort v6 = v3;
-                if ( v6 >= 0x100u )
+                ushort symbol = v3;
+                while ( symbol >= 0x100u )
                 {
-                    do
-                    {
-                        while ( 0 == t8 )
-                        {
-                            int v8 = m_src[input_pos++];
-                            int v9 = t12;
-                            t8 += 8;
-                            --remaining;
-                            t12 = v8 | (v9 << 8);
-                        }
-                        int v10 = t12;
-                        int v11 = --t8;
-                        uint v12 = (uint)t12;
-                        t12 = v10 & ~(-1 << v11);
-                        if ( 0 != (((-1 << v11) & v12) >> v11) )
-                            v6 = rhs[v6];
-                        else
-                            v6 = lhs[v6];
-                    }
-                    while ( v6 >= 0x100u );
-                    v3 = v13;
+                    if ( 0 != GetBits (1) )
+                        symbol = rhs[symbol];
+                    else
+                        symbol = lhs[symbol];
                 }
-                m_dst[a2++] = (byte)v6;
+                m_dst[dst++] = (byte)symbol;
             }
             return m_dst;
         }
 
-        ushort sub_401540()
+        ushort CreateTree()
         {
             if ( 0 != GetBits (1) )
             {
-                ushort v4 = t1032++;
-                lhs[v4] =  sub_401540();
-                rhs[v4] =  sub_401540();
-                return v4;
+                ushort v = token++;
+                lhs[v] =  CreateTree();
+                rhs[v] =  CreateTree();
+                return v;
             }
             else
             {
@@ -353,18 +335,17 @@ namespace GameRes.Formats
 
         uint GetBits (int n)
         {
-            while ( n > t8 )
+            while ( n > m_cached_bits )
             {
-                int v4 = m_src[input_pos++];
+                int v = m_src[input_pos++];
                 --remaining;
-                t12 = v4 | (t12 << 8);
-                t8 += 8;
+                m_cache = v | (m_cache << 8);
+                m_cached_bits += 8;
             }
-            int v7 = t12;
-            uint v8 = (uint)t12;
-            t8 -= n;
-            t12 = v7 & ~(-1 << t8);
-            return (uint)(((-1 << t8) & v8) >> t8);
+            uint mask = (uint)m_cache;
+            m_cached_bits -= n;
+            m_cache &= ~(-1 << m_cached_bits);
+            return (uint)(((-1 << m_cached_bits) & mask) >> m_cached_bits);
         }
     }
 }
