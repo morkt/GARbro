@@ -58,15 +58,15 @@ namespace GameRes.Formats.BlackPackage
             using (var input = new ArcView.Reader (stream))
             {
                 stream.Seek (0x10, SeekOrigin.Current);
-                uint m_width = input.ReadUInt32();
-                uint m_height = input.ReadUInt32();
+                uint width = input.ReadUInt32();
+                uint height = input.ReadUInt32();
                 uint comp_size = input.ReadUInt32();
                 uint uncomp_size = input.ReadUInt32();
-                if (uncomp_size != m_width*m_height*3u)
+                if (uncomp_size != width*height*3u)
                     return null;
                 return new Pt1MetaData {
-                    Width = m_width,
-                    Height = m_height,
+                    Width = width,
+                    Height = height,
                     BPP = 24,
                     PackedSize = comp_size,
                     UnpackedSize = uncomp_size
@@ -82,16 +82,8 @@ namespace GameRes.Formats.BlackPackage
 
             stream.Position = 0x20;
             var reader = new Reader (stream, meta);
-//            try
-            {
-                reader.UnpackV2();
-            }
-//            catch { }
-            byte[] pixels = reader.Data;
-            var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
-            bitmap.Freeze();
-            return new ImageData (bitmap, meta);
+            reader.UnpackV2();
+            return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data);
         }
 
         internal class Reader
@@ -100,8 +92,8 @@ namespace GameRes.Formats.BlackPackage
             byte[]  m_output;
             int     m_width;
             int     m_height;
+            int     m_stride;
             int     m_left = 0;
-            int     m_stride = 0;
 
             public byte[] Data { get { return m_output; } }
 
