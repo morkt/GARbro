@@ -199,7 +199,12 @@ namespace GameRes.Formats.Kogado
 
         public void InitQSModel()
         {
-            m_qsm = new QSModel (257, 12, 2000, RANGECODER_INITFREQ, false);
+            InitQSModel (257, 12, 2000, RANGECODER_INITFREQ, false);
+        }
+
+        public void InitQSModel (int n, int lg_totf, int rescale, int[] init, bool compress)
+        {
+            m_qsm = new QSModel (n, lg_totf, rescale, init, compress);
         }
 
         /*
@@ -236,13 +241,20 @@ namespace GameRes.Formats.Kogado
 
         public uint Decode (byte[] dest, byte[] src, uint destsize, uint srcsize)
         {
+            return Decode (dest, 0, destsize, src, 0, srcsize);
+        }
+
+        public uint Decode (byte[] dst, uint dst_index, uint dst_size,
+                            byte[] src, uint src_index, uint src_size)
+        {
             int ch, ltfreq, syfreq;
 
-            m_dwSrcIndex = m_dwDestIndex = 0;
+            m_dwSrcIndex = src_index;
+            m_dwDestIndex = dst_index;
             m_pSrcBuffer = src;
-            m_pDestBuffer = dest;
-            m_dwSrcLength = srcsize;
-            m_dwDestLength = destsize;
+            m_pDestBuffer = dst;
+            m_dwSrcLength = src_size;
+            m_dwDestLength = dst_size;
 
             StartDecoding();
 
