@@ -2,7 +2,7 @@
 //! \date       Fri Aug 22 05:58:40 2014
 //! \brief      Digital Romance System image format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -45,7 +45,7 @@ namespace GameRes.Formats.DRS
         public DrgFormat ()
         {
             Extensions = new string[] { "drg", "ggd" };
-            Signatures = new uint[] { ~0x4c4c5546u, ~0x45555254u, ~0x48474948u, ~0x47363532u };
+            Signatures = new uint[] { ~0x4c4c5546u, ~0x45555254u, ~0x48474948u };
         }
 
         public override void Write (Stream file, ImageData image)
@@ -65,22 +65,12 @@ namespace GameRes.Formats.DRS
             case 0x4c4c5546: /* fall through */
             case 0x45555254: bpp = 24; break;
             case 0x48474948: bpp = 16; break;
-            case 0x47363532: bpp = 8; break;
             default: return null;
             }
             using (var input = new BinaryReader (stream, Encoding.ASCII, true))
             {
-                uint width, height;
-                if (8 != bpp)
-                {
-                    width  = input.ReadUInt16();
-                    height = input.ReadUInt16();
-                }
-                else
-                {
-                    width  = input.ReadUInt32();
-                    height = input.ReadUInt32();
-                }
+                uint width = input.ReadUInt16();
+                uint height = input.ReadUInt16();
                 return new ImageMetaData {
                     Width  = width,
                     Height = height,
@@ -90,38 +80,6 @@ namespace GameRes.Formats.DRS
         }
 
         public override ImageData Read (Stream file, ImageMetaData info)
-        {
-            BitmapSource bitmap;
-            if (8 == info.BPP)
-                bitmap = ReadIndexed (file, info);
-            else
-                bitmap = ReadTrue (file, info);
-            bitmap.Freeze();
-            return new ImageData (bitmap, info);
-        }
-
-        private BitmapSource ReadIndexed (Stream file, ImageMetaData info)
-        {
-            file.Position = 44;
-            PixelFormat format = PixelFormats.Indexed8;
-            var palette_data = new byte[0x400];
-            if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
-                throw new InvalidFormatException();
-            var palette = new Color[256];
-            for (int i = 0; i < 256; ++i)
-            {
-                palette[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
-            }
-            var bitmap_palette = new BitmapPalette (palette);
-            file.Position += 4;
-            int stride = (int)info.Width*((info.BPP+7)/8);
-
-            /* indexed GGD image is a LZSS-compressed stream */
-            /* currently not implemented */
-            throw new NotImplementedException ("DrgFormat.ReadIndexed not implemented");
-        }
-
-        private BitmapSource ReadTrue (Stream file, ImageMetaData info)
         {
             file.Position = 8;
             PixelFormat format;
@@ -134,8 +92,10 @@ namespace GameRes.Formats.DRS
             var pixel_data = DecodeStream (file, stride*(int)info.Height);
             if (null == pixel_data)
                 throw new InvalidFormatException();
-            return BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                format, null, pixel_data, stride);
+            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
+                                              format, null, pixel_data, stride);
+            bitmap.Freeze();
+            return new ImageData (bitmap, info);
         }
 
         byte[] DecodeStream (Stream input, int pixel_count)
@@ -458,6 +418,76 @@ namespace GameRes.Formats.DRS
         }
     }
 
+    internal class GgdMetaData : ImageMetaData
+    {
+        public uint HeaderSize;
+        public uint BitmapSize;
+        public bool Flipped;
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class DrgIndexedFormat : ImageFormat
+    {
+        public override string         Tag { get { return "DRG"; } }
+        public override string Description { get { return "Digital Romance System indexed image format"; } }
+        public override uint     Signature { get { return ~0x47363532u; } } // '256G'
+
+        public DrgIndexedFormat ()
+        {
+            Extensions = new string[] { "ggd" };
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            using (var input = new ArcView.Reader (stream))
+            {
+                input.ReadUInt32();
+                var info = new GgdMetaData { BPP = 8 };
+                info.HeaderSize = input.ReadUInt32();
+                info.Width = input.ReadUInt32();
+                int height = input.ReadInt32();
+                if (height < 0)
+                {
+                    height = -height;
+                    info.Flipped = true;
+                }
+                info.Height = (uint)height;
+                input.ReadInt64();
+                info.BitmapSize = input.ReadUInt32();
+                return info;
+            }
+        }
+
+        public override ImageData Read (Stream file, ImageMetaData info)
+        {
+            var meta = info as GgdMetaData;
+            if (null == meta)
+                throw new ArgumentException ("DrgIndexedFormat.Read should be supplied with GgdMetaData", "info");
+            file.Position = meta.HeaderSize + 4;
+            var palette_data = new byte[0x400];
+            if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
+                throw new InvalidFormatException();
+            var colors = new Color[256];
+            for (int i = 0; i < 256; ++i)
+            {
+                colors[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
+            }
+            file.Seek (4, SeekOrigin.Current);
+            int input_size = (int)(file.Length - file.Position);
+            using (var reader = new LzssReader (file, input_size, (int)meta.BitmapSize))
+            {
+                reader.Unpack();
+                var palette = new BitmapPalette (colors);
+                return ImageData.Create (info, PixelFormats.Indexed8, palette, reader.Data);
+            }
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new NotImplementedException ("DrgIndexedFormat.Write not implemented");
+        }
+    }
+
     [Export(typeof(ImageFormat))]
     public class GgaFormat : ImageFormat
     {
@@ -465,8 +495,14 @@ namespace GameRes.Formats.DRS
         public override string Description { get { return "IKURA GDL image format"; } }
         public override uint     Signature { get { return 0x30414747u; } } // 'GGA0'
 
+        public GgaFormat ()
+        {
+            Extensions = new string[] { "gg1", "gg2", "gg3" };
+        }
+
         internal class GgaMetaData : ImageMetaData
         {
+            public uint Flags;
             public uint HeaderSize;
             public uint CompSize;
         }
@@ -486,7 +522,8 @@ namespace GameRes.Formats.DRS
             return new GgaMetaData {
                 Width  = LittleEndian.ToUInt16 (header, 8),
                 Height = LittleEndian.ToUInt16 (header, 10),
-                BPP    = 32,
+                BPP    = header[14],
+                Flags  = header[15],
                 HeaderSize = LittleEndian.ToUInt32 (header, 16),
                 CompSize = LittleEndian.ToUInt32 (header, 20)
             };
@@ -499,10 +536,8 @@ namespace GameRes.Formats.DRS
                 throw new ArgumentException ("GgaFormat.Read should be supplied with GgaMetaData", "info");
             file.Position = meta.HeaderSize;
             var pixel_data = DecodeStream (file, meta);
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                PixelFormats.Bgra32, null, pixel_data, (int)info.Width*4);
-            bitmap.Freeze();
-            return new ImageData (bitmap, info);
+            PixelFormat format = 0 == (meta.Flags & 1) ? PixelFormats.Bgr32 : PixelFormats.Bgra32;
+            return ImageData.Create (info, format, null, pixel_data);
         }
 
         byte[] DecodeStream (Stream file, GgaMetaData meta)
@@ -511,7 +546,6 @@ namespace GameRes.Formats.DRS
             var output = new byte[meta.Width*meta.Height*4];
             using (var input = new BinaryReader (file, Encoding.ASCII, true))
             {
-                var buf = new byte[4];
                 var end_pos = input.BaseStream.Position + meta.CompSize;
                 while (input.BaseStream.Position < end_pos)
                 {
