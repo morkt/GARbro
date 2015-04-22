@@ -67,6 +67,7 @@
     <Compile Include="ArcAMI.cs" />
     <Compile Include="ArcAST.cs" />
     <Compile Include="ArcAVC.cs" />
+    <Compile Include="ArcAZSys.cs" />
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcBlackPackage.cs" />
     <Compile Include="ArcCommon.cs" />
@@ -139,6 +140,7 @@
     <Compile Include="ImageBIP.cs" />
     <Compile Include="ImageBMD.cs" />
     <Compile Include="ImageBMZ.cs" />
+    <Compile Include="ImageCPB.cs" />
     <Compile Include="ImageDRG.cs" />
     <Compile Include="ImageEDT.cs" />
     <Compile Include="ImageELG.cs" />
