@@ -221,8 +221,12 @@
                     Visibility="{Binding Source={x:Static p:Settings.Default}, Path=winStatusBarVisibility, Mode=TwoWay}">
             <Separator Height="1" Margin="0"/>
             <StatusBar>
-                <StatusBarItem>
+                <StatusBarItem Width="{Binding ElementName=CurrentDirectory, Path=ActualWidth}">
                     <TextBlock x:Name="appStatusText"/>
+                </StatusBarItem>
+                <Separator Width="1"/>
+                <StatusBarItem>
+                    <TextBlock x:Name="appResourceText"/>
                 </StatusBarItem>
             </StatusBar>
         </StackPanel>

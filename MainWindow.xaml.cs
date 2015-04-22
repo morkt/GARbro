@@ -146,6 +146,11 @@ namespace GARbro.GUI
             Dispatcher.Invoke (() => { appStatusText.Text = text; });
         }
 
+        public void SetResourceText (string text)
+        {
+            Dispatcher.Invoke (() => { appResourceText.Text = text; });
+        }
+
         /// <summary>
         /// Popup error message box. Could be called from any thread.
         /// </summary>
@@ -822,8 +827,8 @@ namespace GARbro.GUI
                     m_audio.PlaybackStopped += OnPlaybackStopped;
                     m_audio.Play();
                     var fmt = wave_stream.WaveFormat;
-                    SetStatusText (string.Format ("Playing {0} / {2}bps / {1}Hz", entry.Name,
-                                                  fmt.SampleRate, sound.SourceBitrate / 1000));
+                    SetResourceText (string.Format ("Playing {0} / {2}bps / {1}Hz", entry.Name,
+                                                    fmt.SampleRate, sound.SourceBitrate / 1000));
                 }
             }
             catch (Exception X)
@@ -834,7 +839,7 @@ namespace GARbro.GUI
 
         private void OnPlaybackStopped (object sender, StoppedEventArgs e)
         {
-            SetStatusText ("");
+            SetResourceText ("");
         }
 
         /// <summary>
