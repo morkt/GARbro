@@ -81,6 +81,7 @@
     <Compile Include="ArcKAAS.cs" />
     <Compile Include="ArcKCAP.cs" />
     <Compile Include="ArcKogado.cs" />
+    <Compile Include="ArcLPK.cs" />
     <Compile Include="ArcLST.cs" />
     <Compile Include="ArcMajiro.cs" />
     <Compile Include="ArcMBL.cs" />
@@ -140,6 +141,7 @@
     <Compile Include="ImageBMZ.cs" />
     <Compile Include="ImageDRG.cs" />
     <Compile Include="ImageEDT.cs" />
+    <Compile Include="ImageELG.cs" />
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageISG.cs" />
