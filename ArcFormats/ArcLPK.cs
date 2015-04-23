@@ -75,7 +75,7 @@ namespace GameRes.Formats.Lucifen
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
-        public struct Key
+        public class Key
         {
             public uint Key1, Key2;
             public Key (uint k1, uint k2)
@@ -85,9 +85,9 @@ namespace GameRes.Formats.Lucifen
             }
         }
 
-        static Key       BaseKey = new Key { Key1 = 0xA5B9AC6B, Key2 = 0x9A639DE5 };
+        static Key       BaseKey = new Key (0xA5B9AC6B, 0x9A639DE5);
         static byte[] ScriptName = Encoding.ASCII.GetBytes ("SCRIPT");
-        static Key     ScriptKey = new Key { Key1 = 0, Key2 = 0 };
+        static Key     ScriptKey = new Key (0, 0);
 
         Dictionary<string, Key> CurrentScheme = new Dictionary<string, Key>();
 
@@ -121,11 +121,17 @@ namespace GameRes.Formats.Lucifen
             var key = ScriptKey;
             if (name != "SCRIPT.LPK" && !CurrentScheme.TryGetValue (name, out key))
             {
-                ImportKeys (file.Name);
-                if (!CurrentScheme.TryGetValue (name, out key))
+                try
                 {
-                    key = QueryEncryptionKey();
+                    ImportKeys (file.Name);
+                    CurrentScheme.TryGetValue (name, out key);
                 }
+                catch
+                {
+                    key = null;
+                }
+                if (null == key)
+                    key = QueryEncryptionKey (name);
             }
             var basename = Encodings.cp932.GetBytes (Path.GetFileNameWithoutExtension (name));
             return Open (basename, file, key);
@@ -157,16 +163,16 @@ namespace GameRes.Formats.Lucifen
                     input.Read (data, 0, data.Length);
                 }
             }
+            if (larc.Info.WholeCrypt)
+            {
+                for (int i = 0; i < data.Length; ++i)
+                {
+                    int v = data[i] ^ 0x5d;
+                    data[i] = (byte)(v >> 4 | v << 4);
+                }
+            }
             if (larc.Info.IsEncrypted)
             {
-                if (larc.Info.WholeCrypt)
-                {
-                    for (int i = 0; i < data.Length; ++i)
-                    {
-                        int v = data[i] ^ 0x5d;
-                        data[i] = (byte)(v >> 4 | v << 4);
-                    }
-                }
                 int count = Math.Min (data.Length / 4, 0x40);
                 if (count != 0)
                 {
@@ -262,13 +268,13 @@ namespace GameRes.Formats.Lucifen
                 {
                     var init_data = new byte[gameinit.Length];
                     gameinit.Read (init_data, 0, init_data.Length);
-                    if (!GameInit (init_data))
+                    if (!ParseGameInit (init_data))
                         throw new UnknownEncryptionScheme();
                 }
             }
         }
 
-        bool GameInit (byte[] sob)
+        bool ParseGameInit (byte[] sob)
         {
             CurrentScheme.Clear();
             if (!Binary.AsciiEqual (sob, "SOB0"))
@@ -305,7 +311,7 @@ namespace GameRes.Formats.Lucifen
                             }
                             string name = Binary.GetCString (sob, name_index, sob.Length-name_index);
                             name = name.ToUpperInvariant();
-                            CurrentScheme[name] = new Key { Key1 = p[8], Key2 = p[10] };
+                            CurrentScheme[name] = new Key (p[8], p[10]);
                             p += 0x22;
                         } else
                             ++p;
@@ -315,7 +321,7 @@ namespace GameRes.Formats.Lucifen
             }
         }
 
-        Key QueryEncryptionKey ()
+        Key QueryEncryptionKey (string lpk_name)
         {
             var options = Query<LuciOptions> (arcStrings.ArcEncryptedNotice);
             if (null == options)
@@ -340,7 +346,6 @@ namespace GameRes.Formats.Lucifen
             if (!info.Flag1)
                 throw new NotSupportedException ("Not supported LPK index format");
             m_info = info;
-            m_name = new byte[260];
         }
 
         public List<Entry> Read (byte[] index)
@@ -404,7 +409,7 @@ namespace GameRes.Formats.Lucifen
             if (entry_pos+entry_size > m_index.Length)
                 throw new InvalidFormatException ("Invalid LPK entry index");
             entry.Flag = m_index[entry_pos];
-            uint offset = LittleEndian.ToUInt32 (m_index, entry_pos+1);
+            long offset = LittleEndian.ToUInt32 (m_index, entry_pos+1);
             entry.Offset = m_info.AlignedOffset ? offset << 11 : offset;
             entry.Size = LittleEndian.ToUInt32 (m_index, entry_pos+5);
             if (entry.IsPacked)
