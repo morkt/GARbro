@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Linq;
-using GameRes.Formats.KiriKiri;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 
@@ -18,11 +17,6 @@ namespace GameRes.Formats.GUI
             // select the most recent scheme as default
             if (-1 == Scheme.SelectedIndex)
                 Scheme.SelectedIndex = Scheme.ItemsSource.Cast<object>().Count()-1;
-        }
-
-        public ICrypt GetScheme ()
-        {
-            return Xp3Opener.GetScheme (Scheme.SelectedItem as string);
         }
     }
 }
