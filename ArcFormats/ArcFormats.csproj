@@ -91,6 +91,7 @@
     <Compile Include="ArcNEKO.cs" />
     <Compile Include="ArcNexas.cs" />
     <Compile Include="ArcNitro.cs" />
+    <Compile Include="ArcNOA.cs" />
     <Compile Include="ArcNPA.cs" />
     <Compile Include="ArcNSA.cs" />
     <Compile Include="ArcPAC.cs" />
@@ -178,6 +179,10 @@
     </Compile>
     <Compile Include="WidgetKCAP.xaml.cs">
       <DependentUpon>WidgetKCAP.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WidgetLPK.xaml.cs">
+      <SubType>Code</SubType>
+      <DependentUpon>WidgetLPK.xaml</DependentUpon>
     </Compile>
     <Compile Include="WidgetNPA.xaml.cs">
       <DependentUpon>WidgetNPA.xaml</DependentUpon>
@@ -269,6 +274,10 @@
     <Page Include="WidgetKCAP.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WidgetLPK.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="WidgetNPA.xaml">
       <SubType>Designer</SubType>

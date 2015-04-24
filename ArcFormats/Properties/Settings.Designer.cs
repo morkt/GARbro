@@ -285,5 +285,17 @@ namespace GameRes.Formats.Properties {
                 this["WARCScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Default")]
+        public string LPKScheme {
+            get {
+                return ((string)(this["LPKScheme"]));
+            }
+            set {
+                this["LPKScheme"] = value;
+            }
+        }
     }
 }

@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Text;
+using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -41,17 +42,28 @@ namespace GameRes.Formats.Lucifen
 
     internal class LuciArchive : ArcFile
     {
-        public LpkInfo Info;
+        public          LpkInfo Info;
+        public EncryptionScheme Scheme;
 
-        public LuciArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, LpkInfo info)
+        public LuciArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, EncryptionScheme scheme, LpkInfo info)
             : base (arc, impl, dir)
         {
             Info = info;
+            Scheme = scheme;
         }
+    }
+
+    public class EncryptionScheme
+    {
+        public LpkOpener.Key BaseKey;
+        public          byte ContentXor;
+        public          uint RotatePattern;
+        public          bool ImportGameInit;
     }
 
     internal class LuciOptions : ResourceOptions
     {
+        public string Scheme;
         public LpkOpener.Key Key;
     }
 
@@ -85,11 +97,18 @@ namespace GameRes.Formats.Lucifen
             }
         }
 
-        static Key       BaseKey = new Key (0xA5B9AC6B, 0x9A639DE5);
-        static byte[] ScriptName = Encoding.ASCII.GetBytes ("SCRIPT");
-        static Key     ScriptKey = new Key (0, 0);
+        public static readonly Dictionary<string, EncryptionScheme> KnownSchemes =
+            new Dictionary<string, EncryptionScheme> {
+                { "Default", new EncryptionScheme {
+                    BaseKey = new Key (0xA5B9AC6B, 0x9A639DE5), ContentXor = 0x5d, RotatePattern = 0x31746285,
+                    ImportGameInit = true } },
+                { "Lycoris Radiata", new EncryptionScheme {
+                    BaseKey = new Key (0x39A5B67D, 0xD63AB5E9), ContentXor = 0xa6, RotatePattern = 0x36147352,
+                    ImportGameInit = false } },
+            };
 
-        Dictionary<string, Key> CurrentScheme = new Dictionary<string, Key>();
+        EncryptionScheme CurrentScheme = KnownSchemes["Default"];
+        Dictionary<string, Key> CurrentFileMap = new Dictionary<string, Key>();
 
         static Dictionary<string, Dictionary<string, Key>> KnownKeys =
             new Dictionary<string, Dictionary<string, Key>> {
@@ -118,23 +137,29 @@ namespace GameRes.Formats.Lucifen
             string name = Path.GetFileName (file.Name).ToUpperInvariant();
             if (string.IsNullOrEmpty (name))
                 return null;
-            var key = ScriptKey;
-            if (name != "SCRIPT.LPK" && !CurrentScheme.TryGetValue (name, out key))
-            {
-                try
-                {
-                    ImportKeys (file.Name);
-                    CurrentScheme.TryGetValue (name, out key);
-                }
-                catch
-                {
-                    key = null;
-                }
-                if (null == key)
-                    key = QueryEncryptionKey (name);
-            }
+            Key file_key = null;
             var basename = Encodings.cp932.GetBytes (Path.GetFileNameWithoutExtension (name));
-            return Open (basename, file, key);
+            if (name != "SCRIPT.LPK")
+                CurrentFileMap.TryGetValue (name, out file_key);
+            try
+            {
+                var arc = Open (basename, file, CurrentScheme, file_key);
+                if (null != arc)
+                    return arc;
+            }
+            catch { /* unknown encryption, ignore parse errors */ }
+            var new_scheme = QueryEncryptionScheme();
+            if (new_scheme == CurrentScheme && !CurrentScheme.ImportGameInit)
+                return null;
+            CurrentScheme = new_scheme;
+            if (name != "SCRIPT.LPK" && CurrentScheme.ImportGameInit)
+            {
+                if (0 == CurrentFileMap.Count)
+                    ImportKeys (file.Name);
+            }
+            if (!CurrentFileMap.TryGetValue (name, out file_key) && CurrentScheme.ImportGameInit)
+                return null;
+            return Open (basename, file, CurrentScheme, file_key);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -165,34 +190,13 @@ namespace GameRes.Formats.Lucifen
             }
             if (larc.Info.WholeCrypt)
             {
-                for (int i = 0; i < data.Length; ++i)
-                {
-                    int v = data[i] ^ 0x5d;
-                    data[i] = (byte)(v >> 4 | v << 4);
-                }
+                DecryptContent (data, larc.Scheme.ContentXor);
             }
             if (larc.Info.IsEncrypted)
             {
-                int count = Math.Min (data.Length / 4, 0x40);
+                int count = Math.Min (data.Length, 0x100);
                 if (count != 0)
-                {
-                    unsafe
-                    {
-                        fixed (byte* buf_raw = data)
-                        {
-                            uint key = larc.Info.Key;
-                            uint* encoded = (uint*)buf_raw;
-                            uint ecx = 0x31746285;
-                            for (int i = 0; i < count; ++i)
-                            {
-                                encoded[i] ^= key;
-                                ecx = (ecx >> 4) | (ecx << 28);
-                                int cl = (int)(ecx & 0x1f);
-                                key = (key << cl) | (key >> (32-cl));
-                            }
-                        }
-                    }
-                }
+                    DecryptEntry (data, count, larc.Info.Key, larc.Scheme.RotatePattern);
             }
             input = new MemoryStream (data);
             if (null != larc.Info.Prefix)
@@ -201,10 +205,51 @@ namespace GameRes.Formats.Lucifen
                 return input;
         }
 
-        ArcFile Open (byte[] basename, ArcView file, Key key)
+        static void DecryptContent (byte[] data, byte key)
         {
-            uint key1 = BaseKey.Key1;
-            uint key2 = BaseKey.Key2;
+            for (int i = 0; i < data.Length; ++i)
+            {
+                int v = data[i] ^ key;
+                data[i] = (byte)(v >> 4 | v << 4);
+            }
+        }
+
+        static unsafe void DecryptEntry (byte[] data, int length, uint key, uint pattern)
+        {
+            fixed (byte* buf_raw = data)
+            {
+                uint* encoded = (uint*)buf_raw;
+                length /= 4;
+                for (int i = 0; i < length; ++i)
+                {
+                    encoded[i] ^= key;
+                    pattern = (pattern >> 4) | (pattern << 28);
+                    int cl = (int)(pattern & 0x1f);
+                    key = (key << cl) | (key >> (32-cl));
+                }
+            }
+        }
+
+        static unsafe void DecryptIndex (byte[] data, int length, uint key, uint pattern)
+        {
+            fixed (byte* buf_raw = data)
+            {
+                uint* encoded = (uint*)buf_raw;
+                length /= 4;
+                for (int i = 0; i < length; ++i)
+                {
+                    encoded[i] ^= key;
+                    pattern = (pattern << 4) | (pattern >> 28);
+                    int cl = (int)(pattern & 0x1f);
+                    key = (key >> cl) | (key << (32-cl));
+                }
+            }
+        }
+
+        ArcFile Open (byte[] basename, ArcView file, EncryptionScheme scheme, Key key)
+        {
+            uint key1 = scheme.BaseKey.Key1;
+            uint key2 = scheme.BaseKey.Key2;
             for (int b = 0, e = basename.Length-1; e >= 0; ++b, --e)
             {
                 key1 ^= basename[e];
@@ -212,18 +257,22 @@ namespace GameRes.Formats.Lucifen
                 key1 = (key1 << 25) | (key1 >>  7);
                 key2 = (key2 <<  7) | (key2 >> 25);
             }
-            key1 ^= key.Key1;
-            key2 ^= key.Key2;
+            if (null != key)
+            {
+                key1 ^= key.Key1;
+                key2 ^= key.Key2;
+            }
             uint code = file.View.ReadUInt32 (4) ^ key2;
             int index_size = (int)(code & 0xffffff);
             byte flags = (byte)(code >> 24);
             if (0 != (flags & 1))
                 index_size = (index_size << 11) - 8;
-            if (index_size < 5)
+            if (index_size < 5 || index_size >= file.MaxOffset)
                 return null;
             var index = new byte[index_size];
             if (index_size != file.View.Read (8, index, 0, (uint)index_size))
                 return null;
+            DecryptIndex (index, index_size, key2, scheme.RotatePattern);
             var lpk_info = new LpkInfo
             {
                 AlignedOffset = 0 != (flags & 1),
@@ -234,33 +283,22 @@ namespace GameRes.Formats.Lucifen
                 Key           = key1
             };
             var reader = new IndexReader (lpk_info);
-            unsafe
-            {
-                fixed (byte* buf_raw = index)
-                {
-                    uint* encoded = (uint*)buf_raw;
-                    uint ecx = 0x31746285;
-                    for (int i = 0; i < index_size/4; ++i)
-                    {
-                        encoded[i] ^= key2;
-                        ecx = (ecx << 4) | (ecx >> 28);
-                        int cl = (int)(ecx & 0x1f);
-                        key2 = (key2 << (32-cl)) | (key2 >> cl);
-                    }
-                }
-            }
             var dir = reader.Read (index);
             if (null == dir)
                 return null;
-            return new LuciArchive (file, this, dir, reader.Info);
+            return new LuciArchive (file, this, dir, scheme, reader.Info);
         }
+
+        static readonly byte[] ScriptName = Encoding.ASCII.GetBytes ("SCRIPT");
 
         void ImportKeys (string source_name)
         {
             var script_lpk = Path.Combine (Path.GetDirectoryName (source_name), "SCRIPT.LPK");
             using (var script_file = new ArcView (script_lpk))
-            using (var script_arc  = Open (ScriptName, script_file, ScriptKey))
+            using (var script_arc  = Open (ScriptName, script_file, CurrentScheme, null))
             {
+                if (null == script_arc)
+                    throw new UnknownEncryptionScheme();
                 var entry = script_arc.Dir.Where (e => e.Name.Equals ("gameinit.sob", StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
                 if (null == entry)
                     throw new FileNotFoundException ("Missing 'gameinit.sob' entry in SCRIPT.LPK");
@@ -276,7 +314,7 @@ namespace GameRes.Formats.Lucifen
 
         bool ParseGameInit (byte[] sob)
         {
-            CurrentScheme.Clear();
+            CurrentFileMap.Clear();
             if (!Binary.AsciiEqual (sob, "SOB0"))
                 return false;
             int offset = LittleEndian.ToInt32 (sob, 4) + 8;
@@ -304,14 +342,14 @@ namespace GameRes.Formats.Lucifen
                         {
                             byte* lpk = (byte*)p + p[21] - p[2] + 0x34;
                             int name_index = (int)(lpk - buf_raw);
-                            if (name_index >= sob.Length)
+                            if (name_index < 0 || name_index >= sob.Length)
                             {
                                 ++p;
                                 continue;
                             }
                             string name = Binary.GetCString (sob, name_index, sob.Length-name_index);
                             name = name.ToUpperInvariant();
-                            CurrentScheme[name] = new Key (p[8], p[10]);
+                            CurrentFileMap[name] = new Key (p[8], p[10]);
                             p += 0x22;
                         } else
                             ++p;
@@ -321,12 +359,30 @@ namespace GameRes.Formats.Lucifen
             }
         }
 
-        Key QueryEncryptionKey (string lpk_name)
+        public override ResourceOptions GetDefaultOptions ()
         {
+            return new LuciOptions { Scheme = Settings.Default.LPKScheme };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetLPK();
+        }
+
+        EncryptionScheme QueryEncryptionScheme ()
+        {
+            CurrentFileMap.Clear();
             var options = Query<LuciOptions> (arcStrings.ArcEncryptedNotice);
             if (null == options)
-                throw new UnknownEncryptionScheme();
-            return options.Key;
+                return KnownSchemes["Default"];
+            string title = options.Scheme;
+            if (null == options.Key)
+            {
+                Dictionary<string, Key> file_map = null;
+                if (KnownKeys.TryGetValue (title, out file_map))
+                    CurrentFileMap = new Dictionary<string, Key> (file_map);
+            }
+            return KnownSchemes[title];
         }
     }
 
