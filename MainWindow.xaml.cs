@@ -545,18 +545,14 @@ namespace GARbro.GUI
             if (m_current_input.Mismatch)
                 return;
 
+            var items = source.Cast<EntryViewModel>();
             if (1 == m_current_input.Phrase.Length && m_current_input.Phrase[0] == key[0])
             {
                 // same key repeats, lookup by first letter only
                 int current = CurrentDirectory.SelectedIndex;
                 if (current != -1 && current+1 < source.Count)
                 {
-                    var next_item = source.GetItemAt (current+1) as EntryViewModel;
-                    if (next_item != null && next_item.Name.StartsWith (key, StringIgnoreCase))
-                    {
-                        lv_SelectItem (next_item);
-                        return;
-                    }
+                    items = items.Skip (current+1).Concat (items.Take (current+1));
                 }
             }
             else
@@ -564,7 +560,7 @@ namespace GARbro.GUI
                 m_current_input.Phrase.Append (key);
             }
             string input = m_current_input.Phrase.ToString();
-            var matched = source.Cast<EntryViewModel>().Where (e => e.Name.StartsWith (input, StringIgnoreCase)).FirstOrDefault();
+            var matched = items.Where (e => e.Name.StartsWith (input, StringIgnoreCase)).FirstOrDefault();
             if (null != matched)
                 lv_SelectItem (matched);
             else
