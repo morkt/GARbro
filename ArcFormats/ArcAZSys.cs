@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
+using ZLibNet;
 
 namespace GameRes.Formats.AZSys
 {
@@ -81,6 +82,44 @@ namespace GameRes.Formats.AZSys
             if (0 == dir.Count)
                 return null;
             return new ArcFile (file, this, dir);
+        }
+
+        static readonly uint[] KnownKeys = new uint[] { 0x1de71cb9 }; // Triptych
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry.Size < 20
+                || ".asb" != Path.GetExtension (entry.Name).ToLowerInvariant()
+                || !arc.File.View.AsciiEqual (entry.Offset, "ASB\x1a"))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            uint packed   = arc.File.View.ReadUInt32 (entry.Offset+4);
+            uint unpacked = arc.File.View.ReadUInt32 (entry.Offset+8);
+            if (12 + packed != entry.Size)
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+
+            uint key = KnownKeys[0] ^ unpacked;
+            key ^= ((key << 12) | key) << 11;
+
+            uint first = arc.File.View.ReadUInt16 (entry.Offset+16);
+            first = (first - key) & 0xffff;
+            if (first != 0xda78) // doesn't look like zlib stream
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            byte[] input = new byte[packed];
+            arc.File.View.Read (entry.Offset+12, input, 0, packed);
+            unsafe
+            {
+                fixed (byte* raw = input)
+                {
+                    uint* encoded = (uint*)raw;
+                    for (int i = 0; i < input.Length/4; ++i)
+                        encoded[i] -= key;
+                }
+            }
+            // first 4 bytes are CRC32 of the compressed stream
+            uint checksum = LittleEndian.ToUInt32 (input, 0);
+            if (checksum != Crc32.Compute (input, 4, input.Length-4))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            return new ZLibStream (new MemoryStream (input, 4, input.Length-4), CompressionMode.Decompress);
         }
 
         internal class IndexReader
