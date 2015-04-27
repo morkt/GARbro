@@ -83,7 +83,8 @@ namespace GameRes.Formats.AVC
         internal class AdvReader
         {
             ArcView     m_file;
-            byte[]      m_header = new byte[0x80];
+            byte[]      m_input = new byte[0x80];
+            byte[]      m_header = new byte[0x24];
             byte[]      m_key = new byte[8];
             byte[]      m_index;
             int         m_index_offset;
@@ -100,7 +101,7 @@ namespace GameRes.Formats.AVC
 
             public List<Entry> GetIndex ()
             {
-                if (m_header.Length != m_file.View.Read (0, m_header, 0, (uint)m_header.Length))
+                if (m_input.Length != m_file.View.Read (0, m_input, 0, (uint)m_input.Length))
                     return null;
                 foreach (var scheme in KnownSchemes)
                 {
@@ -122,23 +123,23 @@ namespace GameRes.Formats.AVC
                 // placing predefined string into XORed file is a very smart move
                 for (int i = 0; i < 8; ++i)
                 {
-                    var symbol = m_header[header_offset+i] ^ "ARCHIVE\0"[i];
-                    var check = m_header[key_offset+i] ^ symbol;
+                    var symbol = m_input[header_offset+i] ^ "ARCHIVE\0"[i];
+                    var check = m_input[key_offset+i] ^ symbol;
                     if (check < 0x20 || check > 0x7e)
                         return false;
                     Key[i] = (byte)symbol;
                 }
                 for (int i = 0x10; i < 0x24; ++i)
-                    m_header[header_offset+i] ^= Key[i&7];
-                int entry_size = LittleEndian.ToInt32 (m_header, header_offset+0x14);
+                    m_header[i] = (byte)(m_input[header_offset+i] ^ Key[i&7]);
+                int entry_size = LittleEndian.ToInt32 (m_header, 0x14);
                 if (0x114 != entry_size)
                     return false;
-                m_index_offset = LittleEndian.ToInt32 (m_header, header_offset+0x10);
-                m_count = LittleEndian.ToInt32 (m_header, header_offset+0x20);
+                m_index_offset = LittleEndian.ToInt32 (m_header, 0x10);
+                m_count = LittleEndian.ToInt32 (m_header, 0x20);
                 if (m_index_offset < 0x24 || (long)m_index_offset+header_offset >= m_file.MaxOffset
                     || m_count <= 0 || m_count > 0xffff)
                     return false;
-                int index_size = 0x114 * m_count;
+                int index_size = entry_size * m_count;
                 if (null == m_index || m_index.Length < index_size)
                     m_index = new byte[index_size];
                 if (index_size != m_file.View.Read (m_index_offset+header_offset, m_index, 0, (uint)index_size))
