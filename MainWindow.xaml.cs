@@ -810,6 +810,15 @@ namespace GARbro.GUI
                             throw FormatCatalog.Instance.LastError;
                         return;
                     }
+                    if (sound is WaveInput && 0x674f == sound.Format.FormatTag)
+                    {
+                        var ogg = AudioFormat.Read (sound);
+                        if (null != ogg)
+                        {
+                            sound.Dispose();
+                            sound = ogg;
+                        }
+                    }
 
                     if (m_audio != null)
                     {
