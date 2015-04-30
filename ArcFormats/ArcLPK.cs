@@ -97,11 +97,13 @@ namespace GameRes.Formats.Lucifen
             }
         }
 
+        static readonly EncryptionScheme DefaultScheme = new EncryptionScheme {
+            BaseKey = new Key (0xA5B9AC6B, 0x9A639DE5), ContentXor = 0x5d, RotatePattern = 0x31746285,
+            ImportGameInit = true
+        };
         public static readonly Dictionary<string, EncryptionScheme> KnownSchemes =
             new Dictionary<string, EncryptionScheme> {
-                { "Default", new EncryptionScheme {
-                    BaseKey = new Key (0xA5B9AC6B, 0x9A639DE5), ContentXor = 0x5d, RotatePattern = 0x31746285,
-                    ImportGameInit = true } },
+                { "Default", DefaultScheme },
                 { "Lycoris Radiata", new EncryptionScheme {
                     BaseKey = new Key (0x39A5B67D, 0xD63AB5E9), ContentXor = 0xa6, RotatePattern = 0x36147352,
                     ImportGameInit = false } },
@@ -130,6 +132,30 @@ namespace GameRes.Formats.Lucifen
                     { "VOICE.LPK",  new Key (0x30701D73, 0xFB524CE5) },
                     { "ANIME.LPK",  new Key (0x867ABB47, 0xA25F4248) },
                     { "DATA.LPK",   new Key (0x5BCB1333, 0x99325DFA) } } },
+                { "Shinsetsu Ryouki no Ori Dai 2 Shou", new Dictionary<string, Key> {
+                    { "SYS.LPK",    new Key (0x3986AFC9, 0xFC8C32E7) },
+                    { "CHR.LPK",    new Key (0x1B478946, 0x489E83F9) },
+                    { "PIC.LPK",    new Key (0x3F9D8075, 0xA75CBDA3) },
+                    { "BGM.LPK",    new Key (0xEAB5949C, 0x48ABE813) },
+                    { "SE.LPK",     new Key (0x5A95B36B, 0x249F4BEB) },
+                    { "VOICE.LPK",  new Key (0x6B954634, 0xA1CF23CE) },
+                    { "DATA.LPK",   new Key (0x8395C7CB, 0xE4CF9E3B) } } },
+                { "Ore-tachi ni Tsubasa wa Nai", new Dictionary<string, Key> {
+                    { "SYS.LPK",    new Key (0x524657EA, 0x782B5A5C) },
+                    { "CHR.LPK",    new Key (0x8C982BCA, 0x46BC4CDD) },
+                    { "PIC.LPK",    new Key (0xB78C913C, 0x57ECB345) },
+                    { "BGM.LPK",    new Key (0x45E32E7D, 0x4F538CE3) },
+                    { "SE.LPK",     new Key (0x9A5AF6DE, 0xCB1866C7) },
+                    { "VOICE.LPK",  new Key (0x3EB61D34, 0xB451AB16) },
+                    { "DATA.LPK",   new Key (0x7CE5AC6A, 0x49A3A35B) } } },
+                { "Shuffle! Essence+", new Dictionary<string, Key> {
+                    { "SYS.LPK",    new Key (0xA3635FC4, 0xA14A4686) },
+                    { "CHR.LPK",    new Key (0x4E34463C, 0xB4D8BD6D) },
+                    { "PIC.LPK",    new Key (0xF592B54B, 0xACCD3A1C) },
+                    { "BGM.LPK",    new Key (0xC50D2FD6, 0xC89DE7A9) },
+                    { "SE.LPK",     new Key (0xE9CD4E1B, 0x98AD9D63) },
+                    { "VOICE.LPK",  new Key (0x865A8D4E, 0x742DA395) },
+                    { "DATA.LPK",   new Key (0xCEA56246, 0xDE46F9A6) } } },
             };
 
         public override ArcFile TryOpen (ArcView file)
