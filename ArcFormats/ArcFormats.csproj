@@ -105,6 +105,7 @@
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
     <Compile Include="AudioOGV.cs" />
+    <Compile Include="AudioPMW.cs" />
     <Compile Include="AudioWADY.cs" />
     <Compile Include="Blowfish.cs" />
     <Compile Include="CreateAMIWidget.xaml.cs">
@@ -152,6 +153,7 @@
     <Compile Include="ImageKAAS.cs" />
     <Compile Include="ImageMFG.cs" />
     <Compile Include="ImageMNV.cs" />
+    <Compile Include="ImagePMP.cs" />
     <Compile Include="ImagePRS.cs" />
     <Compile Include="ImagePT1.cs" />
     <Compile Include="ImageQNT.cs" />
