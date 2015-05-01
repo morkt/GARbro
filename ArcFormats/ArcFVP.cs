@@ -85,7 +85,7 @@ namespace GameRes.Formats.FVP
                         return new MemoryStream (decoder.Output, false);
                     }
                 }
-                return new ArcView.ArcStream (input);
+                return new ArcView.ArcStream (input, entry_offset, entry.Size);
             }
             catch
             {
@@ -116,6 +116,7 @@ namespace GameRes.Formats.FVP
             int dst = 0;
             int bits = 0;
             var buf = new int[0x8c00];
+            uint dst_left = m_dst_size;
             uint L0 = 0x800000;
             uint edx = 0x102;
             for (;;)
@@ -159,7 +160,7 @@ namespace GameRes.Formats.FVP
                 buf[edx] = dst;
                 if (0 == (eax & 0xff00))
                 {
-                    if (0 == m_dst_size--)
+                    if (0 == dst_left--)
                         throw new EndOfStreamException ("Invalid compressed stream");
                     m_output[dst++] = (byte)(eax & 0xff);
                 }
@@ -169,9 +170,9 @@ namespace GameRes.Formats.FVP
                         throw new EndOfStreamException ("Invalid compressed stream");
                     int src   = buf[eax];
                     int count = buf[eax+1] - src + 1;
-                    if (m_dst_size < count)
+                    if (dst_left < count)
                         throw new EndOfStreamException ("Invalid compressed stream");
-                    m_dst_size -= (uint)count;
+                    dst_left -= (uint)count;
                     Binary.CopyOverlapped (m_output, src, dst, count);
                     dst += count;
                 }
