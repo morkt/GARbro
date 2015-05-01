@@ -38,6 +38,10 @@
     <BaseAddress>6291456</BaseAddress>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NAudio, Version=1.7.2.19, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NAudio.1.7.2\lib\net35\NAudio.dll</HintPath>
+    </Reference>
     <Reference Include="NVorbis, Version=0.8.4.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NVorbis.0.8.4.0\lib\NVorbis.dll</HintPath>
@@ -105,6 +109,7 @@
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
+    <Compile Include="AudioMP3.cs" />
     <Compile Include="AudioOGV.cs" />
     <Compile Include="AudioPMW.cs" />
     <Compile Include="AudioWADY.cs" />
