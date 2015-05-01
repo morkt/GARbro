@@ -1,6 +1,6 @@
 ﻿// Game Resource Browser
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -809,15 +809,6 @@ namespace GARbro.GUI
                         if (null != FormatCatalog.Instance.LastError)
                             throw FormatCatalog.Instance.LastError;
                         return;
-                    }
-                    if (sound is WaveInput && 0x674f == sound.Format.FormatTag)
-                    {
-                        var ogg = AudioFormat.Read (sound);
-                        if (null != ogg)
-                        {
-                            sound.Dispose();
-                            sound = ogg;
-                        }
                     }
 
                     if (m_audio != null)

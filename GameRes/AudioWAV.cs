@@ -2,7 +2,7 @@
 //! \date       Tue Nov 04 18:22:37 2014
 //! \brief      WAVE audio format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -151,7 +151,21 @@ namespace GameRes
 
         public override SoundInput TryOpen (Stream file)
         {
-            return new WaveInput (file);
+            SoundInput sound = new WaveInput (file);
+            if (0x674f == sound.Format.FormatTag || 0x6771 == sound.Format.FormatTag)
+            {
+                try
+                {
+                    var ogg = AudioFormat.Read (sound);
+                    if (null != ogg)
+                    {
+                        sound.Dispose();
+                        sound = ogg;
+                    }
+                }
+                catch { /* ignore errors */ }
+            }
+            return sound;
         }
 
         public override void Write (SoundInput source, Stream output)
