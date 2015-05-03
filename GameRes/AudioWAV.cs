@@ -50,7 +50,7 @@ namespace GameRes
             var reader = new WaveFileReader (file);
             m_input = reader;
             var wf = reader.WaveFormat;
-            if (WaveFormatEncoding.MuLaw == wf.Encoding) // == 7
+            if (WaveFormatEncoding.Adpcm == wf.Encoding || WaveFormatEncoding.MuLaw == wf.Encoding) // 2 || 7
             {
                 var wav = WaveFormatConversionStream.CreatePcmStream (reader);
                 wf = wav.WaveFormat;
