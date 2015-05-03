@@ -52,7 +52,7 @@ namespace GameRes.Formats.ScenePlayer
                 return null;
             int flg = stream.ReadByte() ^ 0x21;
             int fcheck = first << 8 | flg;
-            if (fcheck / 0x1f * 0x1f != fcheck)
+            if (fcheck % 0x1f != 0)
                 return null;
 
             stream.Position = 0;
