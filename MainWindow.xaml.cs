@@ -87,6 +87,7 @@ namespace GARbro.GUI
         {
             lv_SetSortMode (Settings.Default.lvSortColumn, Settings.Default.lvSortDirection);
             Dispatcher.InvokeAsync (WindowRendered, DispatcherPriority.ContextIdle);
+            ImageData.SetDefaultDpi (Desktop.DpiX, Desktop.DpiY);
         }
 
         void WindowRendered ()
@@ -94,6 +95,24 @@ namespace GARbro.GUI
             ViewModel = CreateViewModel (m_app.InitPath);
             lv_SelectItem (0);
             SetStatusText (guiStrings.MsgReady);
+        }
+
+        void WindowKeyDown (object sender, KeyEventArgs e)
+        {
+            if (MainMenuBar.Visibility != Visibility.Visible && Key.System == e.Key)
+            {
+                MainMenuBar.Visibility = Visibility.Visible;
+                MainMenuBar.IsKeyboardFocusWithinChanged += HideMenuBar;
+            }
+        }
+
+        void HideMenuBar (object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (!MainMenuBar.IsKeyboardFocusWithin)
+            {
+                MainMenuBar.IsKeyboardFocusWithinChanged -= HideMenuBar;
+                MainMenuBar.Visibility = Visibility.Collapsed;
+            }
         }
 
         /// <summary>
@@ -168,7 +187,7 @@ namespace GARbro.GUI
             get
             {
                 int i = 1;
-                return m_recent_files.Select (f => new Tuple<string,string> (f, string.Format ("_{0} {1}", i++, f)));
+                return m_recent_files.Select (f => Tuple.Create (f, string.Format ("_{0} {1}", i++, f)));
             }
         }
 
@@ -545,19 +564,21 @@ namespace GARbro.GUI
             if (m_current_input.Mismatch)
                 return;
 
-            var items = source.Cast<EntryViewModel>();
-            if (1 == m_current_input.Phrase.Length && m_current_input.Phrase[0] == key[0])
-            {
-                // same key repeats, lookup by first letter only
-                int current = CurrentDirectory.SelectedIndex;
-                if (current != -1 && current+1 < source.Count)
-                {
-                    items = items.Skip (current+1).Concat (items.Take (current+1));
-                }
-            }
-            else
+            if (!(1 == m_current_input.Phrase.Length && m_current_input.Phrase[0] == key[0]))
             {
                 m_current_input.Phrase.Append (key);
+            }
+            int start_index = CurrentDirectory.SelectedIndex;
+            if (1 == m_current_input.Phrase.Length)
+            {
+                // lookup starting from the next item
+                if (start_index != -1 && start_index+1 < source.Count)
+                    ++start_index;
+            }
+            var items = source.Cast<EntryViewModel>();
+            if (start_index > 0)
+            {
+                items = items.Skip (start_index).Concat (items.Take (start_index));
             }
             string input = m_current_input.Phrase.ToString();
             var matched = items.Where (e => e.Name.StartsWith (input, StringIgnoreCase)).FirstOrDefault();
