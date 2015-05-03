@@ -54,6 +54,20 @@ namespace GameRes
         public int OffsetY { get; set; }
         public int BPP { get { return m_bitmap.Format.BitsPerPixel; } }
 
+        public static double DefaultDpiX { get; set; }
+        public static double DefaultDpiY { get; set; }
+
+        static ImageData ()
+        {
+            SetDefaultDpi (96, 96);
+        }
+
+        public static void SetDefaultDpi (double x, double y)
+        {
+            DefaultDpiX = x;
+            DefaultDpiY = y;
+        }
+
         public ImageData (BitmapSource data, ImageMetaData meta)
         {
             m_bitmap = data;
@@ -72,7 +86,7 @@ namespace GameRes
                                         byte[] pixel_data)
         {
             int stride = (int)info.Width*((format.BitsPerPixel+7)/8);
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
+            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, DefaultDpiX, DefaultDpiY,
                                               format, palette, pixel_data, stride);
             bitmap.Freeze();
             return new ImageData (bitmap, info);
