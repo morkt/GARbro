@@ -84,12 +84,7 @@ namespace GameRes.Formats.NeXAS
             int offset = 0;
             for (int i = 0; i < count; ++i, offset += 0x4c)
             {
-                int name_length = 0;
-                while (name_length < 0x40 && 0 != index[offset+name_length])
-                    name_length++;
-                if (0 == name_length)
-                    continue;
-                var name = Encodings.cp932.GetString (index, offset, name_length);
+                var name = Binary.GetCString (index, offset, 0x40);
                 var entry = new PackedEntry
                 {
                     Name = name,
@@ -100,7 +95,7 @@ namespace GameRes.Formats.NeXAS
                 };
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                entry.IsPacked = pack_type != 0 && entry.UnpackedSize != entry.Size;
+                entry.IsPacked = pack_type != 0;
                 dir.Add (entry);
             }
             if (0 == pack_type)
@@ -113,8 +108,7 @@ namespace GameRes.Formats.NeXAS
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             var pac = arc as PacArchive;
             var pent = entry as PackedEntry;
-            if (null == pac || Compression.None == pac.PackType ||
-                null == pent || pent.Size == pent.UnpackedSize)
+            if (null == pac || null == pent || !pent.IsPacked)
                 return input;
             switch (pac.PackType)
             {
