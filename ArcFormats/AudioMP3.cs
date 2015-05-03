@@ -23,10 +23,8 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using NAudio;
 using NAudio.Wave;
 
 namespace GameRes.Formats
