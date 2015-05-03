@@ -26,17 +26,16 @@
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Text;
+using NAudio.Wave;
 
 namespace GameRes
 {
     public class WaveInput : SoundInput
     {
-        long        m_data_offset;
-
         public override long Position
         {
-            get { return m_input.Position - m_data_offset; }
-            set { m_input.Position = m_data_offset + value; }
+            get { return m_input.Position; }
+            set { m_input.Position = value; }
         }
 
         public override bool CanSeek { get { return m_input.CanSeek; } }
@@ -48,97 +47,29 @@ namespace GameRes
 
         public WaveInput (Stream file) : base (file)
         {
-            using (var input = new BinaryReader (m_input, System.Text.Encoding.UTF8, true))
+            var reader = new WaveFileReader (file);
+            m_input = reader;
+            var wf = reader.WaveFormat;
+            if (WaveFormatEncoding.MuLaw == wf.Encoding) // == 7
             {
-                input.BaseStream.Seek (8, SeekOrigin.Current);
-                uint header = input.ReadUInt32();
-                if (header != 0x45564157)
-                    throw new InvalidFormatException ("Invalid WAVE file format.");
-
-                bool found_fmt = false;
-                bool found_data = false;
-                long current_offset = input.BaseStream.Position;
-
-                while (!found_fmt || !found_data)
-                {
-                    uint header0 = input.ReadUInt32();
-                    uint header1 = input.ReadUInt32();
-
-                    if (!found_fmt && 0x20746d66 == header0)
-                    {
-                        if (header1 < 0x10)
-                            throw new InvalidFormatException ("Invalid WAVE file format");
-
-                        ushort tag = input.ReadUInt16();
-                        var format = new WaveFormat();
-                        format.FormatTag                = tag;
-                        format.Channels                 = input.ReadUInt16();
-                        format.SamplesPerSecond         = input.ReadUInt32();
-                        format.AverageBytesPerSecond    = input.ReadUInt32();
-                        format.BlockAlign               = input.ReadUInt16();
-                        format.BitsPerSample            = input.ReadUInt16();
-                        format.ExtraSize                = input.ReadUInt16();
-                        this.Format = format;
-
-                        found_fmt = true;
-                        current_offset += 8 + ((header1 + 1) & ~1);
-                        input.BaseStream.Seek (current_offset, SeekOrigin.Begin);
-                        continue;
-                    }
-                    if (!found_data && 0x61746164 == header0)
-                    {
-                        found_data = true;
-                        m_data_offset = current_offset + 8;
-                        this.PcmSize = header1;
-                        if (found_fmt)
-                            break;
-                    }
-                    long chunk_size = (header1 + 1) & ~1;
-                    input.BaseStream.Seek (chunk_size, SeekOrigin.Current);
-
-                    current_offset += 8 + chunk_size;
-                }
-                this.Reset();
+                var wav = WaveFormatConversionStream.CreatePcmStream (reader);
+                wf = wav.WaveFormat;
+                m_input = wav;
             }
-        }
-
-        public override void Reset ()
-        {
-            m_input.Seek (m_data_offset, SeekOrigin.Begin);
-        }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            if (SeekOrigin.Begin == origin)
-                offset += m_data_offset;
-            else if (SeekOrigin.Current == origin)
-                offset = m_input.Position + offset;
-            else if (SeekOrigin.End == origin)
-                offset = m_data_offset + PcmSize + offset;
-
-            if (offset < m_data_offset)
-                offset = m_data_offset;
-            else if (offset > m_data_offset + PcmSize)
-                offset = m_data_offset + PcmSize;
-
-            offset = m_input.Seek (offset, SeekOrigin.Begin);
-            return offset - m_data_offset;
+            var format = new GameRes.WaveFormat();
+            format.FormatTag                = (ushort)wf.Encoding;
+            format.Channels                 = (ushort)wf.Channels;
+            format.SamplesPerSecond         = (uint)wf.SampleRate;
+            format.BitsPerSample            = (ushort)wf.BitsPerSample;
+            format.BlockAlign               = (ushort)wf.BlockAlign;
+            format.AverageBytesPerSecond    = (uint)wf.AverageBytesPerSecond;
+            this.Format = format;
+            this.PcmSize = m_input.Length;
         }
 
         public override int Read (byte[] buffer, int offset, int count)
         {
-            long remaining = PcmSize - Position;
-            if (count > remaining)
-                count = (int)remaining;
             return m_input.Read (buffer, offset, count);
-        }
-
-        public override int ReadByte ()
-        {
-            if (Position < PcmSize)
-                return m_input.ReadByte();
-            else
-                return -1;
         }
     }
 
