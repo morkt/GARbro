@@ -221,7 +221,6 @@ namespace GameRes.Formats.MAI
             private int     m_width;
             private int     m_height;
             private int     m_pixel_size;
-            private bool    m_compressed;
             private byte[]  m_output;
             private byte[]  m_alpha;
             private byte[]  m_pixels;
