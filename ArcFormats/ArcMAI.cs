@@ -108,6 +108,8 @@ namespace GameRes.Formats.MAI
                         res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "CMP/MAI");
                     else if (0x4d41 == (signature & 0xffff)) // 'AM'
                         res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "AM/MAI");
+                    else if (0x4d42 == (signature & 0xffff)) // 'BM'
+                        res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "BMP");
                     else
                         res = FormatCatalog.Instance.LookupSignature (signature);
                     return res.FirstOrDefault();
