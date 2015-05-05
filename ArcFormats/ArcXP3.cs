@@ -74,11 +74,16 @@ namespace GameRes.Formats.KiriKiri
     [Export(typeof(ArchiveFormat))]
     public class Xp3Opener : ArchiveFormat
     {
-        public override string Tag { get { return "XP3"; } }
+        public override string         Tag { get { return "XP3"; } }
         public override string Description { get { return arcStrings.XP3Description; } }
-        public override uint Signature { get { return 0x0d335058; } }
-        public override bool IsHierarchic { get { return true; } }
-        public override bool CanCreate { get { return true; } }
+        public override uint     Signature { get { return 0x0d335058; } }
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool     CanCreate { get { return true; } }
+
+        public Xp3Opener ()
+        {
+            Signatures = new uint[] { 0x0d335058, 0 };
+        }
 
         private static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
 
@@ -97,20 +102,20 @@ namespace GameRes.Formats.KiriKiri
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"))
+            long base_offset = 0;
+            if (0x5a4d == file.View.ReadUInt16 (0)) // 'MZ'
+                base_offset = SkipExeHeader (file);
+            if (!file.View.AsciiEqual (base_offset, "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"))
                 return null;
-            long dir_offset = file.View.ReadInt64 (0x0b);
-            if (0x17 == dir_offset)
-            {
-                if (1 != file.View.ReadUInt32 (0x13))
-                    return null;
-                if (0x80 != file.View.ReadUInt32 (0x17))
-                    return null;
-                dir_offset = file.View.ReadInt64 (0x20);
-            }
+            long dir_offset = base_offset + file.View.ReadInt64 (base_offset+0x0b);
             if (dir_offset < 0x13 || dir_offset >= file.MaxOffset)
                 return null;
-
+            if (0x80 == file.View.ReadUInt32 (dir_offset))
+            {
+                dir_offset = base_offset + file.View.ReadInt64 (dir_offset+9);
+                if (dir_offset < 0x13 || dir_offset >= file.MaxOffset)
+                    return null;
+            }
             int header_type = file.View.ReadByte (dir_offset);
             if (0 != header_type && 1 != header_type)
                 return null;
@@ -210,7 +215,7 @@ namespace GameRes.Formats.KiriKiri
                                         }
                                         var segment = new Xp3Segment {
                                             IsCompressed = compressed,
-                                            Offset       = segment_offset,
+                                            Offset       = base_offset+segment_offset,
                                             Size         = (uint)segment_size,
                                             PackedSize   = (uint)segment_packed_size
                                         };
@@ -239,6 +244,37 @@ NextEntry:
                 }
             }
             return new ArcFile (file, this, dir);
+        }
+
+        private long SkipExeHeader (ArcView file)
+        {
+            long offset = 0x10;
+            long pe_offset = file.View.ReadUInt32 (0x3c);
+            if (pe_offset < file.MaxOffset && 0x4550 == file.View.ReadUInt32 (pe_offset)) // 'PE'
+            {
+                int opt_header = file.View.ReadUInt16 (pe_offset+0x14); // SizeOfOptionalHeader
+                offset = file.View.ReadUInt32 (pe_offset+0x54); // SizeOfHeaders
+                long section_table = pe_offset+opt_header+0x18;
+                int count = file.View.ReadUInt16 (pe_offset+6); // NumberOfSections
+                if (section_table + 0x28*count < file.MaxOffset)
+                {
+                    for (int i = 0; i < count; ++i)
+                    {
+                        uint size = file.View.ReadUInt32 (section_table+0x10);
+                        uint addr = file.View.ReadUInt32 (section_table+0x14);
+                        section_table += 0x28;
+                        if (0 != size)
+                            offset = Math.Max ((long)addr + size, offset);
+                    }
+                }
+            }
+            offset = (offset + 0xf) & ~(long)0xf;
+            for (; offset < file.MaxOffset; offset += 0x10)
+            {
+                if (file.View.AsciiEqual (offset, "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"))
+                    return offset;
+            }
+            return 0;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
