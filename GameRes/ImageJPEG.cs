@@ -44,6 +44,7 @@ namespace GameRes
         public JpegFormat ()
         {
             Extensions = new string[] { "jpg", "jpeg" };
+            Signatures = new uint[] { 0xe0ffd8ffu, 0 };
             Quality = 90;
         }
 
