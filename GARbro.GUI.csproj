@@ -284,6 +284,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\48x48\refresh.png" />
+    <SplashScreen Include="Images\splashscreen.png" />
     <Content Include="zlib\zlib32.dll">
       <Link>zlib32.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
