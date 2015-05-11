@@ -103,7 +103,7 @@ namespace GameRes
         {
             using (var buffer = new BinaryWriter (output, Encoding.ASCII, true))
             {
-                uint total_size = (uint)(0x2e + source.PcmSize);
+                uint total_size = (uint)(0x2e - 8 + source.PcmSize);
                 buffer.Write (Signature);
                 buffer.Write (total_size);
                 buffer.Write (0x45564157); // 'WAVE'
