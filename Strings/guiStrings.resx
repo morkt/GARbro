@@ -396,4 +396,7 @@ Overwrite?</value>
   <data name="TextImageConvertError" xml:space="preserve">
     <value>Image conversion error</value>
   </data>
+  <data name="LabelEncoding" xml:space="preserve">
+    <value>Encoding</value>
+  </data>
 </root>

@@ -47,8 +47,8 @@
     <Setting Name="appImageFormat" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="appTextEncoding" Type="System.String" Scope="User">
-      <Value Profile="(Default)">UTF-8</Value>
+    <Setting Name="appTextEncoding" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">65001</Value>
     </Setting>
     <Setting Name="appLastDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)" />

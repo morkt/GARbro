@@ -2,7 +2,7 @@
 //! \date       Sun Jul 06 06:34:56 2014
 //! \brief      preview images.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -37,6 +37,10 @@ using System.Windows.Threading;
 using GARbro.GUI.Strings;
 using GARbro.GUI.Properties;
 using GameRes;
+using System.Text;
+using System.Windows.Documents;
+using System.Windows.Media;
+using System.Globalization;
 
 namespace GARbro.GUI
 {
@@ -45,6 +49,29 @@ namespace GARbro.GUI
         private readonly BackgroundWorker   m_preview_worker = new BackgroundWorker();
         private PreviewFile                 m_current_preview = new PreviewFile();
         private bool                        m_preview_pending = false;
+
+        private UIElement m_active_viewer;
+        public UIElement ActiveViewer
+        {
+            get { return m_active_viewer;  }
+            set
+            {
+                if (value == m_active_viewer)
+                    return;
+                m_active_viewer = value;
+                m_active_viewer.Visibility = Visibility.Visible;
+                bool exists = false;
+                foreach (var c in PreviewPane.Children.Cast<UIElement>())
+                {
+                    if (c != m_active_viewer)
+                        c.Visibility = Visibility.Collapsed;
+                    else
+                        exists = true;
+                }
+                if (!exists)
+                    PreviewPane.Children.Add (m_active_viewer);
+            }
+        }
 
         class PreviewFile
         {
@@ -66,6 +93,31 @@ namespace GARbro.GUI
                 if (m_preview_pending)
                     RefreshPreviewPane();
             };
+            ActiveViewer = ImageView;
+        }
+
+        private IEnumerable<Encoding> m_encoding_list = GetEncodingList();
+        public IEnumerable<Encoding> TextEncodings { get { return m_encoding_list; } }
+
+        private static IEnumerable<Encoding> GetEncodingList ()
+        {
+            var list = new HashSet<Encoding>();
+            list.Add (Encoding.Default);
+            var oem = CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
+            list.Add (Encoding.GetEncoding (oem));
+            list.Add (Encoding.GetEncoding (932));
+            list.Add (Encoding.UTF8);
+            list.Add (Encoding.Unicode);
+            list.Add (Encoding.BigEndianUnicode);
+            return list;
+        }
+ 
+        private void OnEncodingSelect (object sender, SelectionChangedEventArgs e)
+        {
+            var enc = this.EncodingChoice.SelectedItem as Encoding;
+            if (null == enc || null == CurrentTextInput)
+                return;
+            TextView.CurrentEncoding = enc;
         }
 
         /// <summary>
@@ -85,43 +137,110 @@ namespace GARbro.GUI
             if (null != current)
                 UpdatePreviewPane (current.Source);
             else
-                PreviewPane.Source = null;
+                ResetPreviewPane();
+        }
+
+        void ResetPreviewPane ()
+        {
+            ActiveViewer = ImageView;
+            ImageCanvas.Source = null;
+            TextView.Clear();
+            CurrentTextInput = null;
+        }
+
+        bool IsPreviewPossible (Entry entry)
+        {
+            return "image" == entry.Type || "script" == entry.Type
+                || (string.IsNullOrEmpty (entry.Type) && entry.Size < 0x100000);
         }
 
         void UpdatePreviewPane (Entry entry)
         {
             SetStatusText ("");
             var vm = ViewModel;
-            m_current_preview = new PreviewFile { Path = vm.Path, Name = entry.Name };
-            PreviewPane.Source = null;
-            if (entry.Type != "image")
-                return;
-            if (vm.IsArchive)
+            m_current_preview = new PreviewFile { Path = vm.Path, Name = entry.Name, Entry = entry };
+            ImageCanvas.Source = null;
+            TextView.Clear();
+            if (!IsPreviewPossible (entry))
             {
-                m_current_preview.Archive = m_app.CurrentArchive;
-                m_current_preview.Entry = entry;
+                ActiveViewer = ImageView;
+                return;
             }
-            if (!m_preview_worker.IsBusy)
+            if (vm.IsArchive)
+                m_current_preview.Archive = m_app.CurrentArchive;
+            if ("image" != entry.Type)
+                LoadPreviewText (m_current_preview);
+            else if (!m_preview_worker.IsBusy)
                 m_preview_worker.RunWorkerAsync (m_current_preview);
             else
                 m_preview_pending = true;
+        }
+
+        private Stream m_current_text;
+        private Stream CurrentTextInput
+        {
+            get { return m_current_text; }
+            set
+            {
+                if (value == m_current_text)
+                    return;
+                if (null != m_current_text)
+                    m_current_text.Dispose();
+                m_current_text = value;
+            }
+        }
+
+        Stream OpenPreviewStream (PreviewFile preview)
+        {
+            if (null == preview.Archive)
+            {
+                string filename = Path.Combine (preview.Path, preview.Name);
+                return File.OpenRead (filename);
+            }
+            else
+            {
+                return preview.Archive.OpenEntry (preview.Entry);
+            }
+        }
+
+        void LoadPreviewText (PreviewFile preview)
+        {
+            Stream file = null;
+            try
+            {
+                file = OpenPreviewStream (preview);
+                if (!TextView.IsTextFile (file))
+                {
+                    ActiveViewer = ImageView;
+                    return;
+                }
+                var enc = EncodingChoice.SelectedItem as Encoding;
+                if (null == enc)
+                {
+                    enc = TextView.GuessEncoding (file);
+                    EncodingChoice.SelectedItem = enc;
+                }
+                TextView.DisplayStream (file, enc);
+                ActiveViewer = TextView;
+                CurrentTextInput = file;
+                file = null;
+            }
+            catch (Exception X)
+            {
+                SetStatusText (X.Message);
+            }
+            finally
+            {
+                if (file != null)
+                    file.Dispose();
+            }
         }
 
         void LoadPreviewImage (PreviewFile preview)
         {
             try
             {
-                Stream file;
-                if (null == preview.Archive)
-                {
-                    string filename = Path.Combine (preview.Path, preview.Name);
-                    file = new FileStream (filename, FileMode.Open, FileAccess.Read);
-                }
-                else
-                {
-                    file = preview.Archive.OpenEntry (preview.Entry);
-                }
-                using (file)
+                using (var file = OpenPreviewStream (preview))
                 {
                     var data = ImageFormat.Read (file);
                     if (null != data)
@@ -153,7 +272,8 @@ namespace GARbro.GUI
             {
                 if (m_current_preview == preview) // compare by reference
                 {
-                    PreviewPane.Source = bitmap;
+                    ActiveViewer = ImageView;
+                    ImageCanvas.Source = bitmap;
                     SetStatusText (string.Format (guiStrings.MsgImageSize, bitmap.PixelWidth,
                                                   bitmap.PixelHeight, bitmap.Format.BitsPerPixel));
                 }
@@ -165,7 +285,7 @@ namespace GARbro.GUI
         /// </summary>
         private void FitWindowExec (object sender, ExecutedRoutedEventArgs e)
         {
-            var image = PreviewPane.Source;
+            var image = ImageCanvas.Source;
             if (null == image)
                 return;
             var width = image.Width + Settings.Default.lvPanelWidth.Value + 1;

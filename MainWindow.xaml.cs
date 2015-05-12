@@ -120,11 +120,7 @@ namespace GARbro.GUI
         /// </summary>
         protected override void OnClosing (CancelEventArgs e)
         {
-            if (null != m_audio)
-            {
-                m_audio.Dispose();
-                m_audio = null;
-            }
+            CurrentAudio = null;
             SaveSettings();
             base.OnClosing (e);
         }
@@ -816,6 +812,16 @@ namespace GARbro.GUI
         }
 
         WaveOutEvent    m_audio;
+        WaveOutEvent    CurrentAudio
+        {
+            get { return m_audio; }
+            set
+            {
+                if (m_audio != null)
+                    m_audio.Dispose();
+                m_audio = value;
+            }
+        }
 
         private void PlayFile (Entry entry)
         {
@@ -832,17 +838,16 @@ namespace GARbro.GUI
                         return;
                     }
 
-                    if (m_audio != null)
+                    if (CurrentAudio != null)
                     {
-                        m_audio.PlaybackStopped -= OnPlaybackStopped;
-                        m_audio.Dispose();
-                        m_audio = null;
+                        CurrentAudio.PlaybackStopped -= OnPlaybackStopped;
+                        CurrentAudio = null;
                     }
                     var wave_stream = new WaveStreamImpl (sound);
-                    m_audio = new WaveOutEvent();
-                    m_audio.Init (wave_stream);
-                    m_audio.PlaybackStopped += OnPlaybackStopped;
-                    m_audio.Play();
+                    CurrentAudio = new WaveOutEvent();
+                    CurrentAudio.Init (wave_stream);
+                    CurrentAudio.PlaybackStopped += OnPlaybackStopped;
+                    CurrentAudio.Play();
                     var fmt = wave_stream.WaveFormat;
                     SetResourceText (string.Format ("Playing {0} / {2}bps / {1}Hz", entry.Name,
                                                     fmt.SampleRate, sound.SourceBitrate / 1000));
@@ -1126,7 +1131,7 @@ namespace GARbro.GUI
 
         private void CanExecuteFitWindow (object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = PreviewPane.Source != null;
+            e.CanExecute = ImageCanvas.Source != null;
         }
 
         private void HideStatusBarExec (object sender, ExecutedRoutedEventArgs e)

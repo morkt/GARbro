@@ -1,0 +1,5 @@
+﻿<FlowDocumentScrollViewer x:Class="JustView.TextViewer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <FlowDocument PagePadding="2" TextAlignment="Left" IsHyphenationEnabled="False" FontFamily="Consolas, Courier New" FontSize="12"/>
+</FlowDocumentScrollViewer>
