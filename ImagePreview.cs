@@ -209,9 +209,16 @@ namespace GARbro.GUI
             try
             {
                 file = OpenPreviewStream (preview);
+                if (!file.CanSeek)
+                {
+                    var memory = new MemoryStream();
+                    file.CopyTo (memory);
+                    file.Dispose();
+                    file = memory;
+                }
                 if (!TextView.IsTextFile (file))
                 {
-                    ActiveViewer = ImageView;
+                    ResetPreviewPane();
                     return;
                 }
                 var enc = EncodingChoice.SelectedItem as Encoding;
