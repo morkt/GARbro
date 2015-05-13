@@ -39,12 +39,10 @@ namespace JustView
     /// </summary>
     public partial class TextViewer : FlowDocumentScrollViewer
     {
-        Lazy<ScrollViewer>  m_scroll_viewer;
         Lazy<double>        m_default_width;
 
         public TextViewer ()
         {
-            m_scroll_viewer = new Lazy<ScrollViewer> (FindScrollViewer);
             m_default_width = new Lazy<double> (() => GetFixedWidth (80));
             InitializeComponent();
             DefaultZoom = 100;
@@ -56,7 +54,7 @@ namespace JustView
             Input = null;
         }
 
-        public ScrollViewer ScrollViewer { get { return m_scroll_viewer.Value; } }
+        public ScrollViewer ScrollViewer { get { return FindScrollViewer(); } }
         public double       DefaultWidth { get { return m_default_width.Value; } }
         public double        DefaultZoom { get; private set; }
         public Stream              Input { get; set; }
@@ -69,7 +67,8 @@ namespace JustView
             set
             {
                 m_word_wrap = value;
-                ApplyWordWrap (value);
+                if (Input != null)
+                    ApplyWordWrap (value);
             }
         }
 
@@ -189,23 +188,15 @@ namespace JustView
 
         public void ApplyWordWrap (bool word_wrap)
         {
-            if (word_wrap)
+            var scroll = this.ScrollViewer;
+            if (word_wrap && scroll != null)
             {
-                var scroll = this.ScrollViewer;
-                if (scroll != null)
-                {
-                    this.Document.PageWidth = scroll.ViewportWidth;
-                    var width_binding = new Binding ("ViewportWidth");
-                    width_binding.Source = scroll;
-                    width_binding.Mode = BindingMode.OneWay;
-                    width_binding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-                    BindingOperations.SetBinding (this.Document, FlowDocument.PageWidthProperty, width_binding);
-                }
-                else
-                {
-                    BindingOperations.ClearBinding (this.Document, FlowDocument.PageWidthProperty);
-                    this.Document.PageWidth = this.ActualWidth;
-                }
+                this.Document.PageWidth = scroll.ViewportWidth;
+                var width_binding = new Binding ("ViewportWidth");
+                width_binding.Source = scroll;
+                width_binding.Mode = BindingMode.OneWay;
+                width_binding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+                BindingOperations.SetBinding (this.Document, FlowDocument.PageWidthProperty, width_binding);
             }
             else
             {
@@ -214,7 +205,7 @@ namespace JustView
             }
         }
 
-        public ScrollViewer FindScrollViewer ()
+        private ScrollViewer FindScrollViewer ()
         {
             if (VisualTreeHelper.GetChildrenCount (this) == 0)
                 return null;
