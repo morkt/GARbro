@@ -32,15 +32,15 @@ namespace GameRes.Formats
     public class Mp3Input : SoundInput
     {
         int             m_bitrate;
-        Stream          m_source;
+        Mp3FileReader   m_reader;
 
         public override long Position
         {
-            get { return m_input.Position; }
-            set { m_input.Position = value; }
+            get { return m_reader.Position; }
+            set { m_reader.Position = value; }
         }
 
-        public override bool CanSeek { get { return m_input.CanSeek; } }
+        public override bool CanSeek { get { return m_reader.CanSeek; } }
 
         public override int SourceBitrate
         {
@@ -49,39 +49,34 @@ namespace GameRes.Formats
 
         public Mp3Input (Stream file) : base (file)
         {
-            var rdr = new Mp3FileReader (m_input);
-            var wav = WaveFormatConversionStream.CreatePcmStream (rdr);
-            var bar = new BlockAlignReductionStream (wav);
-            m_source = m_input;
-            m_input = bar;
-
-            m_bitrate = rdr.Mp3WaveFormat.AverageBytesPerSecond*8;
+            m_reader = new Mp3FileReader (m_input);
+            m_bitrate = m_reader.Mp3WaveFormat.AverageBytesPerSecond*8;
             var format = new GameRes.WaveFormat();
-            format.FormatTag                = (ushort)wav.WaveFormat.Encoding;
-            format.Channels                 = (ushort)wav.WaveFormat.Channels;
-            format.SamplesPerSecond         = (uint)wav.WaveFormat.SampleRate;
-            format.BitsPerSample            = (ushort)wav.WaveFormat.BitsPerSample;
-            format.BlockAlign               = (ushort)bar.BlockAlign;
-            format.AverageBytesPerSecond    = (uint)wav.WaveFormat.AverageBytesPerSecond;
+            format.FormatTag                = (ushort)m_reader.WaveFormat.Encoding;
+            format.Channels                 = (ushort)m_reader.WaveFormat.Channels;
+            format.SamplesPerSecond         = (uint)m_reader.WaveFormat.SampleRate;
+            format.BitsPerSample            = (ushort)m_reader.WaveFormat.BitsPerSample;
+            format.BlockAlign               = (ushort)m_reader.BlockAlign;
+            format.AverageBytesPerSecond    = (uint)m_reader.WaveFormat.AverageBytesPerSecond;
             this.Format = format;
-            this.PcmSize = m_input.Length;
+            this.PcmSize = m_reader.Length;
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return m_input.Read (buffer, offset, count);
+            return m_reader.Read (buffer, offset, count);
         }
 
         #region IDisposable Members
         protected override void Dispose (bool disposing)
         {
-            if (null != m_source)
+            if (null != m_reader)
             {
                 if (disposing)
                 {
-                    m_source.Dispose();
+                    m_reader.Dispose();
                 }
-                m_source = null;
+                m_reader = null;
                 base.Dispose (disposing);
             }
         }
