@@ -29,13 +29,13 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Utility;
 
-namespace GameRes.Formats.BlackPackage
+namespace GameRes.Formats.Ffa
 {
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "DAT/BP"; } }
-        public override string Description { get { return "Black Package resource archive"; } }
+        public override string         Tag { get { return "FFA/DAT"; } }
+        public override string Description { get { return "FFA System resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
@@ -70,6 +70,26 @@ namespace GameRes.Formats.BlackPackage
                     index_offset += 0x16;
                 }
                 return new ArcFile (file, this, dir);
+            }
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (entry.Size <= 8 || Path.GetExtension (entry.Name).ToLowerInvariant() != ".so4")
+                return input;
+            using (var header = new ArcView.Reader (input))
+            {
+                int packed = header.ReadInt32();
+                int unpacked = header.ReadInt32();
+                if (packed+8 != entry.Size || packed <= 0 || unpacked <= 0)
+                    return input;
+                using (input)
+                using (var reader = new LzssReader (input, packed, unpacked))
+                {
+                    reader.Unpack();
+                    return new MemoryStream (reader.Data);
+                }
             }
         }
     }
