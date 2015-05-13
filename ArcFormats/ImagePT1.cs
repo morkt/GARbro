@@ -1,6 +1,6 @@
 //! \file       ImagePT1.cs
 //! \date       Wed Apr 15 15:17:24 2015
-//! \brief      Black Package image format implementation.
+//! \brief      FFA System image format implementation.
 //
 // Copyright (C) 2015 by morkt
 //
@@ -33,10 +33,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
-namespace GameRes.Formats.BlackPackage
+namespace GameRes.Formats.Ffa
 {
     internal class Pt1MetaData : ImageMetaData
     {
+        public int Type;
         public uint PackedSize;
         public uint UnpackedSize;
     }
@@ -45,8 +46,13 @@ namespace GameRes.Formats.BlackPackage
     public class Pt1Format : ImageFormat
     {
         public override string         Tag { get { return "PT1"; } }
-        public override string Description { get { return "Black Package RGB image format"; } }
+        public override string Description { get { return "FFA System RGB image format"; } }
         public override uint     Signature { get { return 2u; } }
+
+        public Pt1Format ()
+        {
+            Signatures = new uint[] { 1, 2 };
+        }
 
         public override void Write (Stream file, ImageData image)
         {
@@ -57,7 +63,11 @@ namespace GameRes.Formats.BlackPackage
         {
             using (var input = new ArcView.Reader (stream))
             {
-                stream.Seek (0x10, SeekOrigin.Current);
+                int type = input.ReadInt32();
+                if (-1 != input.ReadInt32())
+                    return null;
+                int x = input.ReadInt32();
+                int y = input.ReadInt32();
                 uint width = input.ReadUInt32();
                 uint height = input.ReadUInt32();
                 uint comp_size = input.ReadUInt32();
@@ -67,7 +77,10 @@ namespace GameRes.Formats.BlackPackage
                 return new Pt1MetaData {
                     Width = width,
                     Height = height,
+                    OffsetX = x,
+                    OffsetY = y,
                     BPP = 24,
+                    Type = type,
                     PackedSize = comp_size,
                     UnpackedSize = uncomp_size
                 };
@@ -82,7 +95,7 @@ namespace GameRes.Formats.BlackPackage
 
             stream.Position = 0x20;
             var reader = new Reader (stream, meta);
-            reader.UnpackV2();
+            reader.Unpack();
             return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data);
         }
 
@@ -90,6 +103,7 @@ namespace GameRes.Formats.BlackPackage
         {
             byte[]  m_input;
             byte[]  m_output;
+            int     m_type;
             int     m_width;
             int     m_height;
             int     m_stride;
@@ -99,6 +113,7 @@ namespace GameRes.Formats.BlackPackage
 
             public Reader (Stream input, Pt1MetaData info)
             {
+                m_type = info.Type;
                 m_input = new byte[info.PackedSize+8];
                 if ((int)info.PackedSize != input.Read (m_input, 0, (int)info.PackedSize))
                     throw new InvalidFormatException ("Unexpected end of file");
@@ -106,6 +121,15 @@ namespace GameRes.Formats.BlackPackage
                 m_height = (int)info.Height;
                 m_output = new byte[info.UnpackedSize];
                 m_stride = m_width*3;
+            }
+
+            public byte[] Unpack ()
+            {
+                if (2 == m_type)
+                    UnpackV2();
+                else
+                    UnpackV1();
+                return m_output;
             }
 
             uint edx;
@@ -121,7 +145,7 @@ namespace GameRes.Formats.BlackPackage
                 ch += (byte)(cl & 0xf8);
             }
 
-            public void UnpackV2 ()
+            void UnpackV2 ()
             {
                 src = 0;
                 int dst = 0;
@@ -495,6 +519,64 @@ namespace GameRes.Formats.BlackPackage
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            void UnpackV1 ()
+            {
+                int src = 0; // dword_462E74
+                int dst = 0; // dword_462E78
+                byte[] frame = new byte[0x1000]; // word_461A28
+                int ecx;
+                int fill = 0;
+                for (int al = 0; al < 0x100; ++al)
+                    for (ecx = 0x0d; ecx > 0; --ecx)
+                        frame[fill++] = (byte)al;
+                for (int al = 0; al < 0x100; ++al)
+                    frame[fill++] = (byte)al;
+                for (int al = 0xff; al >= 0; --al)
+                    frame[fill++] = (byte)al;
+                for (ecx = 0x80; ecx > 0; --ecx)
+                    frame[fill++] = 0;
+                for (ecx = 0x6e; ecx > 0; --ecx)
+                    frame[fill++] = 0x20;
+                for (ecx = 0x12; ecx > 0; --ecx)
+                    frame[fill++] = 0;
+                int ebp = 0xfee;
+                while (src < m_input.Length)
+                {
+                    byte ah = m_input[src++];
+                    for (int mask = 1; mask != 0x100; mask <<= 1)
+                    {
+                        if (0 != (ah & mask))
+                        {
+                            byte al = m_input[src++];
+                            frame[ebp++] = al;
+                            ebp &= 0xfff;
+                            m_output[dst++] = al;
+                            m_output[dst++] = al;
+                            m_output[dst++] = al;
+                        }
+                        else
+                        {
+                            int offset = m_input[src++];
+                            int count  = m_input[src++];
+                            offset |= (count & 0xf0) << 4;
+                            count   = (count & 0x0f) + 3;
+                            for (; count != 0; --count)
+                            {
+                                byte al = frame[offset++];
+                                frame[ebp++] = al;
+                                offset &= 0xfff;
+                                ebp &= 0xfff;
+                                m_output[dst++] = al;
+                                m_output[dst++] = al;
+                                m_output[dst++] = al;
+                            }
+                        }
+                        if (dst >= m_output.Length)
+                            return;
                     }
                 }
             }
