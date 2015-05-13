@@ -77,6 +77,7 @@
     <Compile Include="ArcCommon.cs" />
     <Compile Include="ArcDRS.cs" />
     <Compile Include="ArcEGO.cs" />
+    <Compile Include="ArcFFA.cs" />
     <Compile Include="ArcFVP.cs" />
     <Compile Include="ArcGameDat.cs" />
     <Compile Include="ArcGSP.cs" />
@@ -114,6 +115,7 @@
     <Compile Include="AudioMP3.cs" />
     <Compile Include="AudioOGV.cs" />
     <Compile Include="AudioPMW.cs" />
+    <Compile Include="AudioWA1.cs" />
     <Compile Include="AudioWADY.cs" />
     <Compile Include="Blowfish.cs" />
     <Compile Include="CreateAMIWidget.xaml.cs">
