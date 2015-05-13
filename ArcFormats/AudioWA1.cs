@@ -66,8 +66,7 @@ namespace GameRes.Formats.Ffa
                     if (Binary.AsciiEqual (reader.Data, 0, "RIFF"))
                     {
                         var sound = new WaveInput (new MemoryStream (reader.Data));
-                        if (sound != null)
-                            file.Dispose();
+                        file.Dispose();
                         return sound;
                     }
                     input = reader.Data;
@@ -84,8 +83,7 @@ namespace GameRes.Formats.Ffa
             var wa1 = new Wa1Reader (input);
             wa1.Unpack();
             var wav = new WaveInput (new MemoryStream (wa1.Data));
-            if (wav != null)
-                file.Dispose();
+            file.Dispose();
             return wav;
         }
     }
