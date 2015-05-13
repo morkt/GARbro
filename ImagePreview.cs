@@ -94,6 +94,7 @@ namespace GARbro.GUI
                     RefreshPreviewPane();
             };
             ActiveViewer = ImageView;
+            TextView.IsWordWrapEnabled = true;
         }
 
         private IEnumerable<Encoding> m_encoding_list = GetEncodingList();
@@ -199,7 +200,15 @@ namespace GARbro.GUI
             }
             else
             {
-                return preview.Archive.OpenEntry (preview.Entry);
+                var file = preview.Archive.OpenEntry (preview.Entry);
+                if (file.CanSeek)
+                    return file;
+                using (file)
+                {
+                    var memory = new MemoryStream();
+                    file.CopyTo (memory);
+                    return memory;
+                }
             }
         }
 
@@ -209,13 +218,6 @@ namespace GARbro.GUI
             try
             {
                 file = OpenPreviewStream (preview);
-                if (!file.CanSeek)
-                {
-                    var memory = new MemoryStream();
-                    file.CopyTo (memory);
-                    file.Dispose();
-                    file = memory;
-                }
                 if (!TextView.IsTextFile (file))
                 {
                     ResetPreviewPane();
