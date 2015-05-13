@@ -43,11 +43,10 @@ namespace GameRes.Formats.ShiinaRio
                 input = new MemoryStream();
                 file.CopyTo (input);
             }
-            // FIXME: doesn't work for memory streams with non-zero origin
-            var buf = input.GetBuffer();
-            buf[1] = (byte)'g';
-            buf[2] = (byte)'g';
-            buf[3] = (byte)'S';
+            input.Position = 1;
+            input.WriteByte ((byte)'g');
+            input.WriteByte ((byte)'g');
+            input.WriteByte ((byte)'S');
             input.Position = 0;
             var ogg = new OggInput (input);
             if (file != input)
