@@ -40,26 +40,17 @@ namespace GameRes
 
     public abstract class SoundInput : Stream
     {
-        protected Stream    m_input;
-        protected long      m_pcm_size;
-
-        public override bool  CanRead { get { return m_input.CanRead; } }
-        public override bool CanWrite { get { return false; } }
-        public override long   Length { get { return m_pcm_size; } }
-
-        public long PcmSize
-        {
-            get { return m_pcm_size; }
-            protected set { m_pcm_size = value; }
-        }
-
-        public abstract int SourceBitrate { get; }
+        public abstract int   SourceBitrate { get; }
+        public abstract string SourceFormat { get; }
 
         public WaveFormat Format { get; protected set; }
+        public Stream     Source { get; protected set; }
+        public long      PcmSize { get; protected set; }
+
 
         protected SoundInput (Stream input)
         {
-            m_input = input;
+            Source = input;
         }
 
         public virtual void Reset ()
@@ -68,9 +59,13 @@ namespace GameRes
         }
 
         #region System.IO.Stream methods
+        public override bool  CanRead { get { return Source.CanRead; } }
+        public override bool CanWrite { get { return false; } }
+        public override long   Length { get { return PcmSize; } }
+
         public override void Flush()
         {
-            m_input.Flush();
+            Source.Flush();
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -108,7 +103,7 @@ namespace GameRes
             {
                 if (disposing)
                 {
-                    m_input.Dispose();
+                    Source.Dispose();
                 }
                 disposed = true;
                 base.Dispose (disposing);

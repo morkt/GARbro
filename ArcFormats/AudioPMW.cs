@@ -57,6 +57,8 @@ namespace GameRes.Formats.ScenePlayer
                 {
                     if (null == sound)
                         wav.Dispose();
+                    else
+                        file.Dispose();
                 }
                 return sound;
             }

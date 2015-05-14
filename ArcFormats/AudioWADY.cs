@@ -36,30 +36,32 @@ namespace GameRes.Formats.Marble
 
         public override long Position
         {
-            get { return m_input.Position; }
-            set { m_input.Position = value; }
+            get { return Source.Position; }
+            set { Source.Position = value; }
         }
 
-        public override bool CanSeek { get { return m_input.CanSeek; } }
+        public override bool CanSeek { get { return Source.CanSeek; } }
 
         public override int SourceBitrate
         {
             get { return (int)Format.AverageBytesPerSecond * 8; }
         }
 
+        public override string SourceFormat { get { return "raw"; } }
+
         public override long Seek (long offset, SeekOrigin origin)
         {
-            return m_input.Seek (offset, origin);
+            return Source.Seek (offset, origin);
         }
 
         public override int Read (byte[] buffer, int offset, int count)
         {
-            return m_input.Read (buffer, offset, count);
+            return Source.Read (buffer, offset, count);
         }
 
         public override int ReadByte ()
         {
-            return m_input.ReadByte();
+            return Source.ReadByte();
         }
 
         public WadyInput (Stream file) : base (new MemoryStream())
@@ -83,13 +85,13 @@ namespace GameRes.Formats.Marble
                 int remaining = (int)(input.BaseStream.Length-input.BaseStream.Position);
                 if (remaining == src_size)
                 {
-                    (m_input as MemoryStream).Capacity = src_size * 2;
-                    Decode (input, src_size, m_input);
+                    (Source as MemoryStream).Capacity = src_size * 2;
+                    Decode (input, src_size, Source);
                 }
                 else
-                    Decode2 (input, m_input);
-                m_input.Position = 0;
-                this.PcmSize = m_input.Length;
+                    Decode2 (input, Source);
+                Source.Position = 0;
+                this.PcmSize = Source.Length;
             }
         }
 

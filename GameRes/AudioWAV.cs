@@ -32,29 +32,32 @@ namespace GameRes
 {
     public class WaveInput : SoundInput
     {
+        WaveStream  m_reader;
+
         public override long Position
         {
-            get { return m_input.Position; }
-            set { m_input.Position = value; }
+            get { return m_reader.Position; }
+            set { m_reader.Position = value; }
         }
 
-        public override bool CanSeek { get { return m_input.CanSeek; } }
+        public override bool CanSeek { get { return m_reader.CanSeek; } }
 
         public override int SourceBitrate
         {
             get { return (int)Format.AverageBytesPerSecond * 8; }
         }
 
+        public override string SourceFormat { get { return "wav"; } }
+
         public WaveInput (Stream file) : base (file)
         {
-            var reader = new WaveFileReader (file);
-            m_input = reader;
-            var wf = reader.WaveFormat;
+            m_reader = new WaveFileReader (file);
+            var wf = m_reader.WaveFormat;
             if (WaveFormatEncoding.Adpcm == wf.Encoding || WaveFormatEncoding.MuLaw == wf.Encoding) // 2 || 7
             {
-                var wav = WaveFormatConversionStream.CreatePcmStream (reader);
+                var wav = WaveFormatConversionStream.CreatePcmStream (m_reader);
                 wf = wav.WaveFormat;
-                m_input = wav;
+                m_reader = wav;
             }
             var format = new GameRes.WaveFormat();
             format.FormatTag                = (ushort)wf.Encoding;
@@ -64,13 +67,28 @@ namespace GameRes
             format.BlockAlign               = (ushort)wf.BlockAlign;
             format.AverageBytesPerSecond    = (uint)wf.AverageBytesPerSecond;
             this.Format = format;
-            this.PcmSize = m_input.Length;
+            this.PcmSize = m_reader.Length;
         }
 
         public override int Read (byte[] buffer, int offset, int count)
         {
-            return m_input.Read (buffer, offset, count);
+            return m_reader.Read (buffer, offset, count);
         }
+
+        #region IDisposable Members
+        protected override void Dispose (bool disposing)
+        {
+            if (null != m_reader)
+            {
+                if (disposing)
+                {
+                    m_reader.Dispose();
+                }
+                m_reader = null;
+                base.Dispose (disposing);
+            }
+        }
+        #endregion
     }
 
     [Export(typeof(AudioFormat))]

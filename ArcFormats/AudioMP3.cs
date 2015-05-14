@@ -47,9 +47,11 @@ namespace GameRes.Formats
             get { return m_bitrate; }
         }
 
+        public override string SourceFormat { get { return "mp3"; } }
+
         public Mp3Input (Stream file) : base (file)
         {
-            m_reader = new Mp3FileReader (m_input);
+            m_reader = new Mp3FileReader (file);
             m_bitrate = m_reader.Mp3WaveFormat.AverageBytesPerSecond*8;
             var format = new GameRes.WaveFormat();
             format.FormatTag                = (ushort)m_reader.WaveFormat.Encoding;

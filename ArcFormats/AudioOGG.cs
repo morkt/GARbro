@@ -48,16 +48,18 @@ namespace GameRes.Formats
             }
         }
 
-        public override bool CanSeek { get { return m_input.CanSeek; } }
+        public override bool CanSeek { get { return Source.CanSeek; } }
 
         public override int SourceBitrate
         {
             get { return m_reader.NominalBitrate; }
         }
 
+        public override string SourceFormat { get { return "ogg"; } }
+
         public OggInput (Stream file) : base (file)
         {
-            m_reader = new VorbisReader (m_input, false);
+            m_reader = new VorbisReader (Source, false);
             var format = new GameRes.WaveFormat();
             format.FormatTag                = 3; // WAVE_FORMAT_IEEE_FLOAT
             format.Channels                 = (ushort)m_reader.Channels;
