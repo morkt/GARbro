@@ -332,7 +332,7 @@ namespace GARbro.GUI
                 string target_ext = target_format.Extensions.First();
                 string outname = Path.ChangeExtension (entry.Name, target_ext);
                 Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractImage");
-                using (var outfile = arc.CreateFile (new Entry { Name = outname }))
+                using (var outfile = ArchiveFormat.CreateFile (outname))
                 {
                     target_format.Write (outfile, image);
                 }
