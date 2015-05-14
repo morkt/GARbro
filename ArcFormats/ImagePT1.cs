@@ -51,7 +51,7 @@ namespace GameRes.Formats.Ffa
 
         public Pt1Format ()
         {
-            Signatures = new uint[] { 1, 2 };
+            Signatures = new uint[] { 2, 1, 0 };
         }
 
         public override void Write (Stream file, ImageData image)
@@ -64,6 +64,8 @@ namespace GameRes.Formats.Ffa
             using (var input = new ArcView.Reader (stream))
             {
                 int type = input.ReadInt32();
+                if (type < 0 || type > 2)
+                    return null;
                 if (-1 != input.ReadInt32())
                     return null;
                 int x = input.ReadInt32();
@@ -125,10 +127,12 @@ namespace GameRes.Formats.Ffa
 
             public byte[] Unpack ()
             {
-                if (2 == m_type)
-                    UnpackV2();
-                else
-                    UnpackV1();
+                switch (m_type)
+                {
+                case 2: UnpackV2(); break;
+                case 1: UnpackV1(); break;
+                case 0: UnpackV0(); break;
+                }
                 return m_output;
             }
 
@@ -528,21 +532,7 @@ namespace GameRes.Formats.Ffa
                 int src = 0; // dword_462E74
                 int dst = 0; // dword_462E78
                 byte[] frame = new byte[0x1000]; // word_461A28
-                int ecx;
-                int fill = 0;
-                for (int al = 0; al < 0x100; ++al)
-                    for (ecx = 0x0d; ecx > 0; --ecx)
-                        frame[fill++] = (byte)al;
-                for (int al = 0; al < 0x100; ++al)
-                    frame[fill++] = (byte)al;
-                for (int al = 0xff; al >= 0; --al)
-                    frame[fill++] = (byte)al;
-                for (ecx = 0x80; ecx > 0; --ecx)
-                    frame[fill++] = 0;
-                for (ecx = 0x6e; ecx > 0; --ecx)
-                    frame[fill++] = 0x20;
-                for (ecx = 0x12; ecx > 0; --ecx)
-                    frame[fill++] = 0;
+                PopulateLzssFrame (frame);
                 int ebp = 0xfee;
                 while (src < m_input.Length)
                 {
@@ -579,6 +569,65 @@ namespace GameRes.Formats.Ffa
                             return;
                     }
                 }
+            }
+
+            void UnpackV0 ()
+            {
+                int src = 0;
+                int dst = 0;
+                byte[] frame = new byte[0x1000]; // word_461A28
+                PopulateLzssFrame (frame);
+                int ebp = 0xfee;
+                for (;;)
+                {
+                    byte ah = m_input[src++];
+                    for (int mask = 1; mask != 0x100; mask <<= 1)
+                    {
+                        if (0 != (ah & mask))
+                        {
+                            byte al = m_input[src++];
+                            frame[ebp++] = al;
+                            ebp &= 0xfff;
+                            m_output[dst++] = al;
+                        }
+                        else
+                        {
+                            int offset = m_input[src++];
+                            int count  = m_input[src++];
+                            offset |= (count & 0xf0) << 4;
+                            count   = (count & 0x0f) + 3;
+                            for (int i = 0; i < count; ++i)
+                            {
+                                byte al = frame[offset++];
+                                frame[ebp++] = al;
+                                offset &= 0xfff;
+                                ebp &= 0xfff;
+                                m_output[dst++] = al;
+                            }
+                        }
+                        if (dst >= m_output.Length)
+                            return;
+                    }
+                }
+            }
+
+            void PopulateLzssFrame (byte[] frame)
+            {
+                int fill = 0;
+                int ecx;
+                for (int al = 0; al < 0x100; ++al)
+                    for (ecx = 0x0d; ecx > 0; --ecx)
+                        frame[fill++] = (byte)al;
+                for (int al = 0; al < 0x100; ++al)
+                    frame[fill++] = (byte)al;
+                for (int al = 0xff; al >= 0; --al)
+                    frame[fill++] = (byte)al;
+                for (ecx = 0x80; ecx > 0; --ecx)
+                    frame[fill++] = 0;
+                for (ecx = 0x6e; ecx > 0; --ecx)
+                    frame[fill++] = 0x20;
+                for (ecx = 0x12; ecx > 0; --ecx)
+                    frame[fill++] = 0;
             }
         }
     }
