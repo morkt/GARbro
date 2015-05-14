@@ -25,11 +25,11 @@
                 Settings.Default.Upgrade();
                 Settings.Default.UpgradeRequired = false;
                 Settings.Default.Save();
- 
-                // do not restore in minimized state
-                if (Settings.Default.winState == System.Windows.WindowState.Minimized)
-                    Settings.Default.winState = System.Windows.WindowState.Normal;
              }
+ 
+            // do not restore in minimized state
+            if (Settings.Default.winState == System.Windows.WindowState.Minimized)
+                Settings.Default.winState = System.Windows.WindowState.Normal;
         }
 
         private void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e) {
