@@ -74,5 +74,11 @@
     <Setting Name="appLastImageFormat" Type="System.String" Scope="User">
       <Value Profile="(Default)">PNG</Value>
     </Setting>
+    <Setting Name="appConvertAudio" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="appExtractAudio" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

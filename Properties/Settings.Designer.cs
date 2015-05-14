@@ -309,5 +309,29 @@ namespace GARbro.GUI.Properties {
                 this["appLastImageFormat"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool appConvertAudio {
+            get {
+                return ((bool)(this["appConvertAudio"]));
+            }
+            set {
+                this["appConvertAudio"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool appExtractAudio {
+            get {
+                return ((bool)(this["appExtractAudio"]));
+            }
+            set {
+                this["appExtractAudio"] = value;
+            }
+        }
     }
 }

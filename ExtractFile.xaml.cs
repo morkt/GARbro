@@ -1,6 +1,6 @@
 ﻿// Game Resource Browser
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -48,20 +48,40 @@ namespace GARbro.GUI
             DestinationDir.EnterKeyDown += acb_OnEnterKeyDown;
             if ("image" == entry.Type)
             {
-                ImageConversionOptions.Visibility = Visibility.Visible;
-                TextConversionOptions.Visibility  = Visibility.Collapsed;
+                ActiveOption = ImageConversionOptions;
                 InitImageFormats (ImageConversionFormat);
             }
             else if ("script" == entry.Type)
             {
-                ImageConversionOptions.Visibility = Visibility.Collapsed;
-                TextConversionOptions.Visibility  = Visibility.Visible;
+                ActiveOption = TextConversionOptions;
                 TextEncoding.IsEnabled = false;
+            }
+            else if ("audio" == entry.Type)
+            {
+                ActiveOption = AudioConversionOptions;
             }
             else
             {
-                ImageConversionOptions.Visibility = Visibility.Collapsed;
-                TextConversionOptions.Visibility  = Visibility.Collapsed;
+                ActiveOption = null;
+            }
+        }
+
+        private UIElement m_active_option;
+        public UIElement ActiveOption
+        {
+            get { return m_active_option; }
+            set
+            {
+                if (value == m_active_option)
+                    return;
+                m_active_option = value;
+                if (null != m_active_option)
+                    m_active_option.Visibility = Visibility.Visible;
+                foreach (var c in ConversionTypePanel.Children.Cast<UIElement>())
+                {
+                    if (c != m_active_option)
+                        c.Visibility = Visibility.Collapsed;
+                }
             }
         }
 
@@ -75,7 +95,7 @@ namespace GARbro.GUI
         void ExtractButton_Click (object sender, RoutedEventArgs e)
         {
             this.DialogResult = true;
-            if (ImageConversionOptions.Visibility == Visibility.Visible)
+            if (ImageConversionOptions == ActiveOption)
             {
                 ExportImageFormat (ImageConversionFormat);
             }

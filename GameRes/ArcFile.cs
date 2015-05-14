@@ -2,7 +2,7 @@
 //! \date       Tue Jul 08 12:53:45 2014
 //! \brief      Game Archive file class.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -149,7 +149,7 @@ namespace GameRes
         /// </summary>
         public Stream CreateFile (Entry entry)
         {
-            return m_interface.CreateFile (entry.Name);
+            return ArchiveFormat.CreateFile (entry.Name);
         }
 
         #region IDisposable Members

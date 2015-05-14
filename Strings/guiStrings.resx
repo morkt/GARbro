@@ -399,4 +399,13 @@ Overwrite?</value>
   <data name="LabelEncoding" xml:space="preserve">
     <value>Encoding</value>
   </data>
+  <data name="TextConvertAudio" xml:space="preserve">
+    <value>Convert audio to common format</value>
+  </data>
+  <data name="TextExtractAudio" xml:space="preserve">
+    <value>Extract audio</value>
+  </data>
+  <data name="TooltipAudioFormats" xml:space="preserve">
+    <value>Either WAV, MP3 or OGG</value>
+  </data>
 </root>

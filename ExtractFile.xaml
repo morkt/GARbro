@@ -17,14 +17,20 @@
                 Command="{x:Static local:Commands.Browse}">
             <Image Source="{StaticResource IconSearch}" Stretch="Uniform" UseLayoutRounding="True" SnapsToDevicePixels="True" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Button>
-        <StackPanel x:Name="ImageConversionOptions" Visibility="Visible" Orientation="Horizontal" Margin="10,60,0,0" Height="25" VerticalAlignment="Top" HorizontalAlignment="Left" Width="300">
-            <TextBlock Text="{x:Static s:guiStrings.TextSaveAs}" Margin="0,0,7,0" TextWrapping="Wrap" TextAlignment="Right"  VerticalAlignment="Center" HorizontalAlignment="Left"/>
-            <ComboBox x:Name="ImageConversionFormat" DisplayMemberPath="Tag" Margin="0" VerticalAlignment="Center" Height="21" Width="76"/>
-        </StackPanel>
-        <StackPanel x:Name="TextConversionOptions" Visibility="Collapsed" Orientation="Horizontal" Margin="10,60,0,0" Height="25" VerticalAlignment="Top" HorizontalAlignment="Left" Width="300">
-            <TextBlock Text="{x:Static s:guiStrings.TextEncoding}" Margin="0,0,7,0" TextAlignment="Right"  VerticalAlignment="Center" HorizontalAlignment="Right"/>
-            <ComboBox x:Name="TextEncoding" Margin="0" VerticalAlignment="Center" Height="21" HorizontalAlignment="Right" Width="76"/>
-        </StackPanel>
+        <Grid Name="ConversionTypePanel" Margin="10,60,0,0" Height="25" Width="300" VerticalAlignment="Top" HorizontalAlignment="Left">
+            <StackPanel x:Name="ImageConversionOptions" Visibility="Visible" Orientation="Horizontal">
+                <TextBlock Text="{x:Static s:guiStrings.TextSaveAs}" Margin="0,0,7,0" TextWrapping="Wrap" TextAlignment="Right"  VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <ComboBox x:Name="ImageConversionFormat" DisplayMemberPath="Tag" Margin="0" VerticalAlignment="Center" Height="21" Width="76"/>
+            </StackPanel>
+            <StackPanel x:Name="AudioConversionOptions" Visibility="Collapsed" Orientation="Horizontal">
+                <CheckBox x:Name="AudioConversion" Content="{x:Static s:guiStrings.TextConvertAudio}" ToolTip="{x:Static s:guiStrings.TooltipAudioFormats}" Margin="0,0,7,0" VerticalAlignment="Center" Height="21" HorizontalAlignment="Left"
+                          IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=appConvertAudio, Mode=TwoWay}"/>
+            </StackPanel>
+            <StackPanel x:Name="TextConversionOptions" Visibility="Collapsed" Orientation="Horizontal">
+                <TextBlock Text="{x:Static s:guiStrings.TextEncoding}" Margin="0,0,7,0" TextAlignment="Right"  VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                <ComboBox x:Name="TextEncoding" Margin="0" VerticalAlignment="Center" Height="21" HorizontalAlignment="Right" Width="76"/>
+            </StackPanel>
+        </Grid>
         <Button Content="{x:Static s:guiStrings.ButtonExtract}" Click="ExtractButton_Click" HorizontalAlignment="Right" Margin="0,0,102.157,10" Width="75" IsDefault="True" Height="25" VerticalAlignment="Bottom" VerticalContentAlignment="Center"/>
         <Button Content="{x:Static s:guiStrings.ButtonCancel}" Margin="0,0,10.157,10" IsCancel="True" HorizontalAlignment="Right" Width="75" Height="25" VerticalAlignment="Bottom" VerticalContentAlignment="Center"/>
     </Grid>

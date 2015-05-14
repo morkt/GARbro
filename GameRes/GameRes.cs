@@ -2,7 +2,7 @@
 //! \date       Mon Jun 30 20:12:13 2014
 //! \brief      game resources browser.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -153,7 +153,7 @@ namespace GameRes
         /// Create file corresponding to <paramref name="entry"/> in current directory and open it
         /// for writing. Overwrites existing file, if any.
         /// </summary>
-        public Stream CreateFile (string filename)
+        static public Stream CreateFile (string filename)
         {
             filename = CreatePath (filename);
             if (File.Exists (filename))

@@ -414,4 +414,13 @@
   <data name="LabelEncoding" xml:space="preserve">
     <value>Кодировка</value>
   </data>
+  <data name="TextConvertAudio" xml:space="preserve">
+    <value>Преобразовывать аудио в стандартный формат</value>
+  </data>
+  <data name="TextExtractAudio" xml:space="preserve">
+    <value>Извлекать аудио</value>
+  </data>
+  <data name="TooltipAudioFormats" xml:space="preserve">
+    <value>WAV, MP3, либо OGG</value>
+  </data>
 </root>

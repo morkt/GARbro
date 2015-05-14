@@ -2,7 +2,7 @@
 //! \date       Fri Jul 25 05:52:27 2014
 //! \brief      Extract archive frontend.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -138,8 +138,11 @@ namespace GARbro.GUI
             IEnumerable<Entry> file_list = arc.Dir;
             bool skip_images = !extractDialog.ExtractImages.IsChecked.Value;
             bool skip_script = !extractDialog.ExtractText.IsChecked.Value;
-            if (skip_images || skip_script)
-                file_list = file_list.Where (f => !(skip_images && f.Type == "image") && !(skip_script && f.Type == "script"));
+            bool skip_audio  = !extractDialog.ExtractAudio.IsChecked.Value;
+            if (skip_images || skip_script || skip_audio)
+                file_list = file_list.Where (f => !(skip_images && f.Type == "image") && 
+                                                  !(skip_script && f.Type == "script") &&
+                                                  !(skip_audio  && f.Type == "audio"));
 
             if (!file_list.Any())
             {
@@ -208,7 +211,9 @@ namespace GARbro.GUI
                 extractProgressDialog.Description = file_list.First().Name;
                 extractProgressDialog.ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar;
             }
+            bool convert_audio = Settings.Default.appConvertAudio;
             int extract_count = 0;
+            Exception pending_error = null;
             extractProgressDialog.DoWork += (s, e) =>
             {
                 try
@@ -222,6 +227,8 @@ namespace GARbro.GUI
                             extractProgressDialog.ReportProgress (extract_count*100/total, null, entry.Name);
                         if (null != image_format && entry.Type == "image")
                             ExtractImage (arc, entry, image_format);
+                        else if (convert_audio && entry.Type == "audio")
+                            ExtractAudio (arc, entry);
                         else
                             arc.Extract (entry);
                         ++extract_count;
@@ -229,7 +236,7 @@ namespace GARbro.GUI
                 }
                 catch (Exception X)
                 {
-                    SetStatusText (X.Message);
+                    pending_error = X;
                 }
             };
             extractProgressDialog.RunWorkerCompleted += (s, e) => {
@@ -241,6 +248,8 @@ namespace GARbro.GUI
                     Dispatcher.Invoke (RefreshView);
                 }
                 SetStatusText (Localization.Format ("MsgExtractedFiles", extract_count));
+                if (null != pending_error)
+                    PopupError (pending_error.Message, guiStrings.MsgErrorExtracting);
             };
             extractProgressDialog.ShowDialog (this);
         }

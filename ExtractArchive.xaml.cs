@@ -1,6 +1,6 @@
 ﻿// Game Resource Browser
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -49,8 +49,6 @@ namespace GARbro.GUI
             Destination = destination;
             DestinationDir.EnterKeyDown += acb_OnEnterKeyDown;
 
-            ExtractImages.IsChecked = Settings.Default.appExtractImages;
-            ExtractText.IsChecked = Settings.Default.appExtractText;
             ExtractText.IsEnabled = false;
             TextEncoding.IsEnabled = false;
 
@@ -67,15 +65,7 @@ namespace GARbro.GUI
         void ExtractButton_Click (object sender, RoutedEventArgs e)
         {
             this.DialogResult = true;
-            Settings.Default.appExtractImages = this.ExtractImages.IsChecked.Value;
-            Settings.Default.appExtractText = this.ExtractText.IsChecked.Value;
             ExportImageFormat (ImageConversionFormat);
-        }
-
-        public ImageFormat GetImageFormat ()
-        {
-            var selected = ImageConversionFormat.SelectedItem as ImageFormatModel;
-            return null != selected ? selected.Source : null;
         }
     }
 }

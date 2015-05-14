@@ -757,6 +757,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Convert audio to common format.
+        /// </summary>
+        public static string TextConvertAudio {
+            get {
+                return ResourceManager.GetString("TextConvertAudio", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Convert images.
         /// </summary>
         public static string TextConvertImages {
@@ -798,6 +807,15 @@ namespace GARbro.GUI.Strings {
         public static string TextEncoding {
             get {
                 return ResourceManager.GetString("TextEncoding", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Extract audio.
+        /// </summary>
+        public static string TextExtractAudio {
+            get {
+                return ResourceManager.GetString("TextExtractAudio", resourceCulture);
             }
         }
         
@@ -870,6 +888,15 @@ namespace GARbro.GUI.Strings {
         public static string TextTitle {
             get {
                 return ResourceManager.GetString("TextTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Either WAV, MP3 or OGG.
+        /// </summary>
+        public static string TooltipAudioFormats {
+            get {
+                return ResourceManager.GetString("TooltipAudioFormats", resourceCulture);
             }
         }
         
