@@ -1,6 +1,6 @@
 ﻿/// Game Resource browser
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -22,9 +22,11 @@
 //
 
 using System;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Documents;
 using GARbro.GUI.Properties;
 using GARbro.GUI.Strings;
 
@@ -38,12 +40,54 @@ namespace GARbro.GUI
         public AboutBox()
         {
             InitializeComponent();
+            LicenseTabText.Document = GetLicenseDoc();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
+
+        #region License text backend
+
+        static FlowDocument GetLicenseDoc ()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using (var stream = assembly.GetManifestResourceStream ("GARbro.GUI.LICENSE"))
+            {
+                if (null == stream)
+                    return new FlowDocument();
+                using (var reader = new StreamReader (stream))
+                {
+                    var doc = new FlowDocument();
+                    var para = new Paragraph();
+                    for (;;)
+                    {
+                        var line = reader.ReadLine();
+                        if (null == line)
+                            break;
+                        if (line.Length > 0)
+                        {
+                            if (para.Inlines.Count > 0)
+                                para.Inlines.Add (" ");
+                            para.Inlines.Add (line);
+                        }
+                        else
+                        {
+                            if (0 == para.Inlines.Count)
+                                para.Inlines.Add (new LineBreak());
+                            doc.Blocks.Add (para);
+                            para = new Paragraph();
+                        }
+                    }
+                    if (para.Inlines.Count > 0)
+                        doc.Blocks.Add (para);
+                    return doc;
+                }
+            }
+        }
+
+        #endregion
 
         #region Assembly Attribute Accessors
 

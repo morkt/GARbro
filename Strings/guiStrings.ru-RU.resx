@@ -246,11 +246,11 @@
   <data name="TextAboutBuiltin" xml:space="preserve">
     <value>[встроен]</value>
   </data>
-  <data name="TextAboutSupportedArchives" xml:space="preserve">
-    <value>Поддерживаемые архивы:</value>
+  <data name="TextAboutArchives" xml:space="preserve">
+    <value>Архивы</value>
   </data>
-  <data name="TextAboutSupportedImages" xml:space="preserve">
-    <value>Поддерживаемые форматы изображений:</value>
+  <data name="TextAboutImages" xml:space="preserve">
+    <value>Изображения</value>
   </data>
   <data name="TextAboutTitle" xml:space="preserve">
     <value>Об обозревателе игровых ресурсов</value>
@@ -422,5 +422,11 @@
   </data>
   <data name="TooltipAudioFormats" xml:space="preserve">
     <value>WAV, MP3, либо OGG</value>
+  </data>
+  <data name="TextAboutAudio" xml:space="preserve">
+    <value>Аудио</value>
+  </data>
+  <data name="TextAboutLicense" xml:space="preserve">
+    <value>Лицензия</value>
   </data>
 </root>

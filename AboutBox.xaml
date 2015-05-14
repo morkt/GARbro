@@ -1,6 +1,6 @@
 ﻿<!-- Game Resource browser
 
-Copyright (C) 2014 by morkt
+Copyright (C) 2014-2015 by morkt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -28,7 +28,7 @@ IN THE SOFTWARE.
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
         xmlns:gr="clr-namespace:GameRes;assembly=GameRes"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
-        Title="{x:Static s:guiStrings.TextAboutTitle}" Height="306" Width="500" ResizeMode="NoResize"
+        Title="{x:Static s:guiStrings.TextAboutTitle}" Height="306" Width="550" ResizeMode="NoResize"
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <Window.Resources>
@@ -39,71 +39,100 @@ IN THE SOFTWARE.
                 <scm:SortDescription PropertyName="Tag" Direction="Ascending"/>
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
+        <Style x:Key="HiddenHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="Visibility" Value="Collapsed" />
+        </Style>
+        <Style x:Key="DisableSelectionStyle" TargetType="{x:Type ListViewItem}">
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="Margin" Value="-5,-1,-5,-1"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
     </Window.Resources>
-    <Grid>
+    <Grid DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:AboutBox}}}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="4*" />
-            <ColumnDefinition Width="7*" />
+            <ColumnDefinition Width="180"/>
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition />
-            <RowDefinition />
-            <RowDefinition />
-            <RowDefinition />
-        </Grid.RowDefinitions>
-        <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Margin="10"
-                    DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:AboutBox}}}">
-            <Label Content="{Binding Path=AssemblyTitle, Mode=OneWay}" />
-            <Label Content="{Binding Path=VersionString, Mode=OneWay}" />
-            <Label Content="{Binding Path=AssemblyCopyright, Mode=OneWay}" />
+        <StackPanel Grid.Column="0" Margin="10">
+            <TextBox Text="{Binding Path=AssemblyTitle, Mode=OneWay}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="0,0,0,10" />
+            <TextBox Text="{Binding Path=VersionString, Mode=OneWay}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="0,0,0,10" />
+            <TextBox Text="{Binding Path=AssemblyCopyright, Mode=OneWay}" IsReadOnly="True" Background="Transparent" BorderThickness="0" />
         </StackPanel>
-        <Button Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsDefault="true"
+        <Button Grid.Column="0" VerticalAlignment="Bottom" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsDefault="true"
                 Content="{x:Static s:guiStrings.ButtonOK}" Margin="10,0,0,10" Width="70" Height="25" Click="Button_Click" IsCancel="True"/>
-        <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Margin="10,8,10,6">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <TextBlock Text="{x:Static s:guiStrings.TextAboutSupportedArchives}" Grid.Row="0" Margin="0" />
-            <Border Grid.Row="1" BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
-                <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                              Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}"
-                              BorderThickness="1" BorderBrush="Black">
-                    <ItemsControl Name="ArchiveFormats" ItemsSource="{Binding Source={StaticResource FormatsSource}}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Tag}" Margin="3,0,5,0" />
-                                    <TextBlock Text="{Binding Path=CanCreate, Converter={StaticResource guiCanCreateConverter}}" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{Binding Description}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Border>
-        </Grid>
-        <Grid Grid.Column="1" Grid.Row="2" Grid.RowSpan="2" Margin="10,2,10,10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="{x:Static s:guiStrings.TextAboutSupportedImages}" Margin="0" />
-            <Border Grid.Row="1" BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
-                <ScrollViewer VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}" BorderThickness="1" BorderBrush="Black">
-                    <ItemsControl Name="ImageFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ImageFormats, Mode=OneWay}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Tag}" Margin="3,0,5,0" />
-                                    <TextBlock Text="{x:Static s:guiStrings.TextAboutBuiltin}" Margin="0,0,5,0" Visibility="{Binding IsBuiltin, Converter={StaticResource guiBoolToVisibilityConverter}}"/>
-                                    <TextBlock Text="{Binding Description}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Border>
+        <Grid Grid.Column="1" Margin="10">
+            <TabControl>
+                <TabItem Header="{x:Static s:guiStrings.TextAboutArchives}">
+                    <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
+                        <ListView Name="ArchiveFormats" ItemsSource="{Binding Source={StaticResource FormatsSource}}"
+                                  ItemContainerStyle="{StaticResource DisableSelectionStyle}" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.CanContentScroll="False">
+                            <ListView.View>
+                                <GridView ColumnHeaderContainerStyle="{StaticResource HiddenHeaderStyle}">
+                                    <GridViewColumn>
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Tag}" Margin="0"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn>
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Path=CanCreate, Converter={StaticResource guiCanCreateConverter}}" Margin="-6,0,-6,0"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn>
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Description}" Margin="0"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Border> 
+                </TabItem>
+                <TabItem Header="{x:Static s:guiStrings.TextAboutImages}">
+                    <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
+                        <ScrollViewer VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+                            <ItemsControl Name="ImageFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ImageFormats, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Tag}" Margin="3,0,5,0" />
+                                            <TextBlock Text="{x:Static s:guiStrings.TextAboutBuiltin}" Margin="0,0,5,0" Visibility="{Binding IsBuiltin, Converter={StaticResource guiBoolToVisibilityConverter}}"/>
+                                            <TextBlock Text="{Binding Description}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </TabItem>
+                <TabItem Header="{x:Static s:guiStrings.TextAboutAudio}">
+                    <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
+                        <ScrollViewer VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+                            <ItemsControl Name="AudioFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=AudioFormats, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Tag}" Margin="3,0,7,0" />
+                                            <TextBlock Text="{Binding Description}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </TabItem>
+                <TabItem Header="{x:Static s:guiStrings.TextAboutLicense}">
+                    <ScrollViewer>
+                        <RichTextBox Name="LicenseTabText" IsReadOnly="True"/>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </Grid>
     </Grid>
 </w:ModalWindow>

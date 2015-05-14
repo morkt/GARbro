@@ -225,6 +225,7 @@
       <LastGenOutput>guiStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\guiStrings.ru-RU.resx" />
+    <EmbeddedResource Include="LICENSE" />
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">

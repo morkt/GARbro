@@ -252,11 +252,11 @@
   <data name="TextAboutBuiltin" xml:space="preserve">
     <value>[builtin]</value>
   </data>
-  <data name="TextAboutSupportedArchives" xml:space="preserve">
-    <value>Supported archives:</value>
+  <data name="TextAboutArchives" xml:space="preserve">
+    <value>Archives</value>
   </data>
-  <data name="TextAboutSupportedImages" xml:space="preserve">
-    <value>Supported image formats:</value>
+  <data name="TextAboutImages" xml:space="preserve">
+    <value>Images</value>
   </data>
   <data name="TextAboutTitle" xml:space="preserve">
     <value>About Game Resource browser</value>
@@ -407,5 +407,11 @@ Overwrite?</value>
   </data>
   <data name="TooltipAudioFormats" xml:space="preserve">
     <value>Either WAV, MP3 or OGG</value>
+  </data>
+  <data name="TextAboutAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="TextAboutLicense" xml:space="preserve">
+    <value>License</value>
   </data>
 </root>

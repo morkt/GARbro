@@ -676,6 +676,24 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Archives.
+        /// </summary>
+        public static string TextAboutArchives {
+            get {
+                return ResourceManager.GetString("TextAboutArchives", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Audio.
+        /// </summary>
+        public static string TextAboutAudio {
+            get {
+                return ResourceManager.GetString("TextAboutAudio", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to [builtin].
         /// </summary>
         public static string TextAboutBuiltin {
@@ -685,20 +703,20 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supported archives:.
+        ///   Looks up a localized string similar to Images.
         /// </summary>
-        public static string TextAboutSupportedArchives {
+        public static string TextAboutImages {
             get {
-                return ResourceManager.GetString("TextAboutSupportedArchives", resourceCulture);
+                return ResourceManager.GetString("TextAboutImages", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Supported image formats:.
+        ///   Looks up a localized string similar to License.
         /// </summary>
-        public static string TextAboutSupportedImages {
+        public static string TextAboutLicense {
             get {
-                return ResourceManager.GetString("TextAboutSupportedImages", resourceCulture);
+                return ResourceManager.GetString("TextAboutLicense", resourceCulture);
             }
         }
         
