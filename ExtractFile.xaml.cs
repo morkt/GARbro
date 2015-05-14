@@ -72,8 +72,6 @@ namespace GARbro.GUI
             get { return m_active_option; }
             set
             {
-                if (value == m_active_option)
-                    return;
                 m_active_option = value;
                 if (null != m_active_option)
                     m_active_option.Visibility = Visibility.Visible;
