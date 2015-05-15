@@ -210,7 +210,7 @@ namespace GARbro.GUI
         /// Set data context of the ListView.
         /// </summary>
 
-        private DirectoryViewModel ViewModel
+        public DirectoryViewModel ViewModel
         {
             get
             {
@@ -219,7 +219,7 @@ namespace GARbro.GUI
                     return null;
                 return source.SourceCollection as DirectoryViewModel;
             }
-            set
+            private set
             {
                 StopWatchDirectoryChanges();
                 var cvs = this.Resources["ListViewSource"] as CollectionViewSource;

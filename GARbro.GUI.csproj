@@ -140,7 +140,6 @@
     <Compile Include="ExtractFile.xaml.cs">
       <DependentUpon>ExtractFile.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GarAudio.cs" />
     <Compile Include="GarConvert.cs" />
     <Compile Include="GarCreate.cs" />
     <Compile Include="GarExtract.cs" />
