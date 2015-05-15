@@ -240,55 +240,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Images\16x16\add file.png" />
-    <Resource Include="Images\16x16\add folder.png" />
-    <Resource Include="Images\16x16\add note.png" />
-    <Resource Include="Images\16x16\add window.png" />
-    <Resource Include="Images\16x16\add.png" />
-    <Resource Include="Images\16x16\addd.png" />
-    <Resource Include="Images\16x16\flag green.png" />
-    <Resource Include="Images\16x16\folder video.png" />
-    <Resource Include="Images\16x16\folder.png" />
-    <Resource Include="Images\16x16\info.png" />
-    <Resource Include="Images\16x16\play.png" />
-    <Resource Include="Images\16x16\remove.png" />
-    <Resource Include="Images\16x16\tools.png" />
-    <Resource Include="Images\16x16\undo.png" />
-    <Resource Include="Images\16x16\video.png" />
-    <Resource Include="Images\32x32\add file.png" />
-    <Resource Include="Images\32x32\add folder.png" />
-    <Resource Include="Images\32x32\add note.png" />
-    <Resource Include="Images\32x32\add window.png" />
-    <Resource Include="Images\32x32\add.png" />
-    <Resource Include="Images\32x32\addd.png" />
     <Resource Include="Images\32x32\back button.png" />
-    <Resource Include="Images\32x32\back.png" />
-    <Resource Include="Images\32x32\delete.png" />
-    <Resource Include="Images\32x32\flag green.png" />
-    <Resource Include="Images\32x32\folder video.png" />
-    <Resource Include="Images\32x32\folder.png" />
     <Resource Include="Images\32x32\forward button.png" />
     <Resource Include="Images\32x32\help.png" />
-    <Resource Include="Images\32x32\info.png" />
-    <Resource Include="Images\32x32\play.png" />
-    <Resource Include="Images\32x32\remove.png" />
-    <Resource Include="Images\32x32\tools.png" />
-    <Resource Include="Images\32x32\undo.png" />
-    <Resource Include="Images\32x32\video.png" />
-    <Resource Include="Images\64x64\add file.png" />
-    <Resource Include="Images\64x64\add folder.png" />
-    <Resource Include="Images\64x64\add note.png" />
-    <Resource Include="Images\64x64\add window.png" />
-    <Resource Include="Images\64x64\add.png" />
-    <Resource Include="Images\64x64\addd.png" />
-    <Resource Include="Images\64x64\folder video.png" />
-    <Resource Include="Images\64x64\folder.png" />
     <Resource Include="Images\64x64\info.png" />
-    <Resource Include="Images\64x64\play.png" />
-    <Resource Include="Images\64x64\remove.png" />
-    <Resource Include="Images\64x64\tools.png" />
-    <Resource Include="Images\64x64\undo.png" />
-    <Resource Include="Images\64x64\video.png" />
     <Resource Include="Images\sample.ico" />
   </ItemGroup>
   <ItemGroup>
