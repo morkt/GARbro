@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Text;
@@ -49,11 +50,17 @@ namespace GameRes
 
         public override string SourceFormat { get { return "wav"; } }
 
+        static readonly HashSet<WaveFormatEncoding> ConversionRequired = new HashSet<WaveFormatEncoding> {
+            WaveFormatEncoding.Adpcm,       // 2
+            WaveFormatEncoding.MuLaw,       // 7
+            WaveFormatEncoding.DviAdpcm,    // 0x11
+        };
+
         public WaveInput (Stream file) : base (file)
         {
             m_reader = new WaveFileReader (file);
             var wf = m_reader.WaveFormat;
-            if (WaveFormatEncoding.Adpcm == wf.Encoding || WaveFormatEncoding.MuLaw == wf.Encoding) // 2 || 7
+            if (ConversionRequired.Contains (wf.Encoding))
             {
                 var wav = WaveFormatConversionStream.CreatePcmStream (m_reader);
                 wf = wav.WaveFormat;
