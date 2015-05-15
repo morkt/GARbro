@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Ail
@@ -39,6 +40,11 @@ namespace GameRes.Formats.Ail
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
+
+        public DatOpener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -55,8 +61,13 @@ namespace GameRes.Formats.Ail
                 uint size = file.View.ReadUInt32 (index_offset);
                 if (0 != size)
                 {
-                    var entry = AutoEntry.Create (file, offset+6, i.ToString ("D5"));
-                    entry.Size = size - 6;
+                    var entry = new PackedEntry
+                    {
+                        Name = i.ToString ("D5"),
+                        Offset = offset,
+                        Size = size,
+                        IsPacked = false,
+                    };
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
                     dir.Add (entry);
@@ -64,9 +75,122 @@ namespace GameRes.Formats.Ail
                 }
                 index_offset += 4;
             }
-            if (offset != file.MaxOffset)
+            if (offset != file.MaxOffset || 0 == dir.Count)
                 return null;
+            byte[] data_buf = new byte[16];
+            byte[] sign_buf = new byte[4];
+            foreach (var entry in dir.Cast<PackedEntry>())
+            {
+                uint extra = 6;
+                if (extra > entry.Size)
+                    continue;
+                int label = file.View.ReadUInt16 (entry.Offset);
+                if (1 == label)
+                {
+                    entry.IsPacked = true;
+                    entry.UnpackedSize = file.View.ReadUInt32 (entry.Offset+2);
+                }
+                entry.Offset += extra;
+                entry.Size   -= extra;
+                if (entry.IsPacked)
+                {
+                    file.View.Read (entry.Offset, data_buf, 0, (uint)data_buf.Length);
+                    using (var input = new MemoryStream (data_buf))
+                    {
+                        LzssUnpack (input, sign_buf);
+                        uint signature = LittleEndian.ToUInt32 (sign_buf, 0);
+                        SetEntryType (entry, signature);
+                    }
+                }
+                else
+                {
+                    uint signature = file.View.ReadUInt32 (entry.Offset);
+                    SetEntryType (entry, signature);
+                }
+            }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            var pentry = entry as PackedEntry;
+            if (null == pentry || !pentry.IsPacked)
+                return input;
+            using (input)
+            {
+                byte[] data = new byte[pentry.UnpackedSize];
+                LzssUnpack (input, data);
+                return new MemoryStream (data);
+            }
+        }
+
+        static void SetEntryType (Entry entry, uint signature)
+        {
+            var res = FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+            if (null != res)
+            {
+                entry.Type = res.Type;
+                var ext = res.Extensions.FirstOrDefault();
+                if (!string.IsNullOrEmpty (ext))
+                    entry.Name += '.' + ext;
+            }
+        }
+
+        /// <summary>
+        /// Custom LZSS decompression with frame pre-initialization and reveresed control bits meaning.
+        /// </summary>
+        static void LzssUnpack (Stream input, byte[] output)
+        {
+            int frame_pos = 0xfee;
+            byte[] frame = new byte[0x1000];
+            for (int i = 0; i < frame_pos; ++i)
+                frame[i] = 0x20;
+            int dst = 0;
+            int ctl = 0;
+
+            while (dst < output.Length)
+            {
+                ctl >>= 1;
+                if (0 == (ctl & 0x100))
+                {
+                    ctl = input.ReadByte();
+                    if (-1 == ctl)
+                        break;
+                    ctl |= 0xff00;
+                }
+                if (0 == (ctl & 1))
+                {
+                    int v = input.ReadByte();
+                    if (-1 == v)
+                        break;
+                    output[dst++] = (byte)v;
+                    frame[frame_pos++] = (byte)v;
+                    frame_pos &= 0xfff;
+                }
+                else
+                {
+                    int offset = input.ReadByte();
+                    if (-1 == offset)
+                        break;
+                    int count = input.ReadByte();
+                    if (-1 == count)
+                        break;
+                    offset |= (count & 0xf0) << 4;
+                    count   = (count & 0x0f) + 3;
+
+                    for (int i = 0; i < count; i++)
+                    {	
+                        if (dst >= output.Length)
+                            break;
+                        byte v = frame[offset++];
+                        offset &= 0xfff;
+                        frame[frame_pos++] = v;
+                        frame_pos &= 0xfff;
+                        output[dst++] = v;
+                    }
+                }
+            }
         }
     }
 }
