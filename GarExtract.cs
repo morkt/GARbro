@@ -51,6 +51,7 @@ namespace GARbro.GUI
                 SetStatusText (guiStrings.MsgChooseFiles);
                 return;
             }
+            GarExtract extractor = null;
             try
             {
                 if (!ViewModel.IsArchive)
@@ -63,21 +64,19 @@ namespace GARbro.GUI
                         // extract into directory named after archive
                         if (!string.IsNullOrEmpty (Path.GetExtension (entry.Name)))
                             destination = Path.GetFileNameWithoutExtension (source);
-                        using (var extractor = new GarExtract (this, source))
-                            extractor.ExtractAll (destination);
+                        extractor = new GarExtract (this, source);
+                        extractor.ExtractAll (destination);
                     }
                 }
                 else if (null != m_app.CurrentArchive)
                 {
                     var vm = ViewModel as ArchiveViewModel;
                     string destination = Path.GetDirectoryName (vm.Path);
-                    using (var extractor = new GarExtract (this, vm.Path, m_app.CurrentArchive))
-                    {
-                        if (null == entry || (entry.Name == ".." && vm.SubDir == "")) // root entry
-                            extractor.ExtractAll (destination);
-                        else
-                            extractor.Extract (entry, destination);
-                    }
+                    extractor = new GarExtract (this, vm.Path, m_app.CurrentArchive);
+                    if (null == entry || (entry.Name == ".." && vm.SubDir == "")) // root entry
+                        extractor.ExtractAll (destination);
+                    else
+                        extractor.Extract (entry, destination);
                 }
             }
             catch (OperationCanceledException X)
@@ -87,6 +86,11 @@ namespace GARbro.GUI
             catch (Exception X)
             {
                 PopupError (X.Message, guiStrings.MsgErrorExtracting);
+            }
+            finally
+            {
+                if (null != extractor && !extractor.IsActive)
+                    extractor.Dispose();
             }
         }
     }
@@ -109,6 +113,8 @@ namespace GARbro.GUI
         private Exception           m_pending_error;
 
         public static readonly HashSet<string> CommonAudioFormats = new HashSet<string> { "wav", "mp3", "ogg" };
+
+        public bool IsActive { get { return m_extract_in_progress; } }
 
         public GarExtract (MainWindow parent, string source)
         {
@@ -367,16 +373,13 @@ namespace GARbro.GUI
 
         public void Dispose ()
         {
-            if (!m_extract_in_progress)
+            if (!disposed)
             {
-                if (!disposed)
-                {
-                    if (m_should_dispose)
-                        m_arc.Dispose();
-                    disposed = true;
-                }
-                GC.SuppressFinalize (this);
+                if (m_should_dispose)
+                    m_arc.Dispose();
+                disposed = true;
             }
+            GC.SuppressFinalize (this);
         }
 
         ~GarExtract ()
