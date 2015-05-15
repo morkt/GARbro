@@ -101,15 +101,16 @@ namespace GameRes
         public override SoundInput TryOpen (Stream file)
         {
             SoundInput sound = new WaveInput (file);
-            if (0x674f == sound.Format.FormatTag || 0x6771 == sound.Format.FormatTag)
+            if (0x674f == sound.Format.FormatTag || 0x6771 == sound.Format.FormatTag // Vorbis
+                || 0x0055 == sound.Format.FormatTag) // MpegLayer3
             {
                 try
                 {
-                    var ogg = AudioFormat.Read (sound);
-                    if (null != ogg)
+                    var embedded = AudioFormat.Read (sound);
+                    if (null != embedded)
                     {
                         sound.Dispose();
-                        sound = ogg;
+                        sound = embedded;
                     }
                 }
                 catch { /* ignore errors */ }
