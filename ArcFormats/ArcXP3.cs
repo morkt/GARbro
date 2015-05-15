@@ -610,8 +610,7 @@ NextEntry:
         {
             if ("image" == entry.Type || "archive" == entry.Type)
                 return false;
-            var ext = Path.GetExtension (entry.Name);
-            if (!string.IsNullOrEmpty (ext) && ext.Equals (".ogg", StringComparison.OrdinalIgnoreCase))
+            if (entry.Name.EndsWith (".ogg", StringComparison.InvariantCultureIgnoreCase))
                 return false;
             return true;
         }

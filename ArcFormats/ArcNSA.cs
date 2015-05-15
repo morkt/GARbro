@@ -296,8 +296,7 @@ namespace GameRes.Formats.ONScripter
                 var header_entry = new NsaEntry { Name = entry.Name };
                 if (Compression.None != ons_options.CompressionType)
                 {
-                    string ext = Path.GetExtension (entry.Name).ToLower();
-                    if (".bmp" == ext)
+                    if (entry.Name.EndsWith (".bmp", StringComparison.InvariantCultureIgnoreCase))
                         header_entry.CompressionType = ons_options.CompressionType;
                 }
                 index_size += 13;

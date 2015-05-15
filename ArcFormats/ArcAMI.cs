@@ -240,8 +240,7 @@ namespace GameRes.Formats
             int update_count = 0;
             foreach (var entry in list)
             {
-                string ext = Path.GetExtension (entry.Name).ToLower();
-                if (entry.Type != "image" && ext != ".scr")
+                if (entry.Type != "image" && !entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
                     continue;
                 uint id;
                 if (!uint.TryParse (Path.GetFileNameWithoutExtension (entry.Name), NumberStyles.HexNumber,

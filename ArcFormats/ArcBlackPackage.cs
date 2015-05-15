@@ -76,7 +76,7 @@ namespace GameRes.Formats.Ffa
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (entry.Size <= 8 || Path.GetExtension (entry.Name).ToLowerInvariant() != ".so4")
+            if (entry.Size <= 8 || !entry.Name.EndsWith (".so4", StringComparison.InvariantCultureIgnoreCase))
                 return input;
             using (var header = new ArcView.Reader (input))
             {

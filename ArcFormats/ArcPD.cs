@@ -76,7 +76,7 @@ namespace GameRes.Formats.Fs
                 entry.Size = file.View.ReadUInt32 (cur_offset+0x88);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (Path.GetExtension (name).Equals (".dsf", System.StringComparison.OrdinalIgnoreCase))
+                if (name.EndsWith (".dsf", System.StringComparison.InvariantCultureIgnoreCase))
                     entry.Type = "script";
                 dir.Add (entry);
                 cur_offset += 0x90;

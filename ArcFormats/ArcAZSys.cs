@@ -89,7 +89,7 @@ namespace GameRes.Formats.AZSys
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             if (entry.Size < 20
-                || ".asb" != Path.GetExtension (entry.Name).ToLowerInvariant()
+                || !entry.Name.EndsWith (".asb", StringComparison.InvariantCultureIgnoreCase)
                 || !arc.File.View.AsciiEqual (entry.Offset, "ASB\x1a"))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             uint packed   = arc.File.View.ReadUInt32 (entry.Offset+4);
