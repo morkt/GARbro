@@ -77,7 +77,7 @@ namespace GameRes.Formats.Ail
             }
             if (offset != file.MaxOffset || 0 == dir.Count)
                 return null;
-            byte[] data_buf = new byte[16];
+            byte[] preview = new byte[16];
             byte[] sign_buf = new byte[4];
             foreach (var entry in dir.Cast<PackedEntry>())
             {
@@ -94,8 +94,8 @@ namespace GameRes.Formats.Ail
                 entry.Size   -= extra;
                 if (entry.IsPacked)
                 {
-                    file.View.Read (entry.Offset, data_buf, 0, (uint)data_buf.Length);
-                    using (var input = new MemoryStream (data_buf))
+                    file.View.Read (entry.Offset, preview, 0, (uint)preview.Length);
+                    using (var input = new MemoryStream (preview))
                     {
                         LzssUnpack (input, sign_buf);
                         uint signature = LittleEndian.ToUInt32 (sign_buf, 0);
