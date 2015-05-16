@@ -64,41 +64,60 @@ namespace GameRes.Formats.Kogado
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "HyPack\x00"))
+            if (!file.View.AsciiEqual (0, "HyPack"))
                 return null;
-            int version = file.View.ReadByte (7);
-            if (2 != version && 3 != version)
-                return null;
-            uint index_offset = 0x10 + file.View.ReadUInt32 (8);
+            int version = file.View.ReadUInt16 (6);
+            int entry_size;
+            switch (version)
+            {
+            case 0x100: entry_size = 32; break;
+            case 0x200: entry_size = 40; break;
+            case 0x300:
+            case 0x301: entry_size = 48; break;
+            default: return null;
+            }
+            long index_offset = 0x10 + file.View.ReadUInt32 (8);
             if (index_offset >= file.MaxOffset)
                 return null;
-            uint entry_count = file.View.ReadUInt32 (12);
-            if (entry_count > 0xfffff)
+            int entry_count = file.View.ReadInt32 (12);
+            if (entry_count <= 0 || entry_count > 0xfffff)
                 return null;
-            uint index_size = entry_count * 48;
+            uint index_size = (uint)(entry_count * entry_size);
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
             long data_offset = 0x10;
 
-            var dir = new List<Entry> ((int)entry_count);
-            for (uint i = 0; i < entry_count; ++i)
+            var dir = new List<Entry> (entry_count);
+            for (int i = 0; i < entry_count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x15);
                 string ext  = file.View.ReadString (index_offset+0x15, 3);
-                var entry = new KogadoEntry { Name = name+'.'+ext };
+                if (0 == name.Length)
+                    name = i.ToString ("D5");
+                if (0 != ext.Length)
+                    name += '.'+ext;
+                var entry = new KogadoEntry { Name = name };
                 entry.Type          = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                 entry.Offset        = data_offset + file.View.ReadUInt32 (index_offset + 0x18);
-                entry.UnpackedSize  = file.View.ReadUInt32 (index_offset + 0x1c);
-                entry.Size          = file.View.ReadUInt32 (index_offset + 0x20);
+                if (version >= 0x200)
+                {
+                    entry.UnpackedSize  = file.View.ReadUInt32 (index_offset + 0x1c);
+                    entry.Size          = file.View.ReadUInt32 (index_offset + 0x20);
+                    entry.CompressionType = file.View.ReadByte (index_offset + 0x24);
+                    entry.IsPacked      = 0 != entry.CompressionType;
+                    if (version >= 0x300)
+                    {
+                        entry.HasCheckSum = 0 != file.View.ReadByte (index_offset + 0x25);
+                        entry.CheckSum  = file.View.ReadUInt16 (index_offset + 0x26);
+                        entry.FileTime  = file.View.ReadInt64 (index_offset + 0x28);
+                    }
+                }
+                else
+                    entry.Size          = file.View.ReadUInt32 (index_offset + 0x1c);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                entry.CompressionType = file.View.ReadByte (index_offset + 0x24);
-                entry.HasCheckSum   = 0 != file.View.ReadByte (index_offset + 0x25);
-                entry.CheckSum      = file.View.ReadUInt16 (index_offset + 0x26);
-                entry.FileTime      = file.View.ReadInt64 (index_offset + 0x28);
-                entry.IsPacked      = 0 != entry.CompressionType;
                 dir.Add (entry);
-                index_offset += 48;
+                index_offset += entry_size;
             }
             return new ArcFile (file, this, dir);
         }
@@ -141,7 +160,7 @@ namespace GameRes.Formats.Kogado
                 var unpacked = new byte[packed_entry.UnpackedSize];
                 var mariel = new MarielEncoder();
                 mariel.Unpack (input, unpacked, unpacked.Length);
-                return new MemoryStream (unpacked, false);
+                return new MemoryStream (unpacked);
             }
             finally
             {
