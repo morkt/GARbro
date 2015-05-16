@@ -40,7 +40,7 @@ namespace GARbro.GUI
         public AboutBox()
         {
             InitializeComponent();
-            LicenseTabText.Document = GetLicenseDoc();
+            LicenseTabText.Document = GetResourceDoc ("GARbro.GUI.LICENSE");
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -50,40 +50,48 @@ namespace GARbro.GUI
 
         #region License text backend
 
-        static FlowDocument GetLicenseDoc ()
+        static FlowDocument GetResourceDoc (string resource)
         {
             var assembly = Assembly.GetExecutingAssembly();
-            using (var stream = assembly.GetManifestResourceStream ("GARbro.GUI.LICENSE"))
+            using (var stream = assembly.GetManifestResourceStream (resource))
             {
                 if (null == stream)
                     return new FlowDocument();
-                using (var reader = new StreamReader (stream))
+                return ReadPlainText (stream);
+            }
+        }
+
+        /// <summary>
+        /// Read plain text from stream and return it as FlowDocument.
+        /// </summary>
+        static FlowDocument ReadPlainText (Stream stream)
+        {
+            using (var reader = new StreamReader (stream))
+            {
+                var doc = new FlowDocument();
+                var para = new Paragraph();
+                for (;;)
                 {
-                    var doc = new FlowDocument();
-                    var para = new Paragraph();
-                    for (;;)
+                    var line = reader.ReadLine();
+                    if (null == line)
+                        break;
+                    if (line.Length > 0)
                     {
-                        var line = reader.ReadLine();
-                        if (null == line)
-                            break;
-                        if (line.Length > 0)
-                        {
-                            if (para.Inlines.Count > 0)
-                                para.Inlines.Add (" ");
-                            para.Inlines.Add (line);
-                        }
-                        else
-                        {
-                            if (0 == para.Inlines.Count)
-                                para.Inlines.Add (new LineBreak());
-                            doc.Blocks.Add (para);
-                            para = new Paragraph();
-                        }
+                        if (para.Inlines.Count > 0)
+                            para.Inlines.Add (" ");
+                        para.Inlines.Add (line);
                     }
-                    if (para.Inlines.Count > 0)
+                    else
+                    {
+                        if (0 == para.Inlines.Count)
+                            para.Inlines.Add (new LineBreak());
                         doc.Blocks.Add (para);
-                    return doc;
+                        para = new Paragraph();
+                    }
                 }
+                if (para.Inlines.Count > 0)
+                    doc.Blocks.Add (para);
+                return doc;
             }
         }
 
