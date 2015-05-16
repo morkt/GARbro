@@ -120,7 +120,10 @@ namespace GameRes
                         sound = embedded;
                     }
                 }
-                catch { /* ignore errors */ }
+                catch
+                {
+                    sound.Position = 0;
+                }
             }
             return sound;
         }
