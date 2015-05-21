@@ -123,12 +123,12 @@ namespace GameRes.Formats.Eagls
             byte[] input = new byte[entry.Size];
             arc.File.View.Read (entry.Offset, input, 0, entry.Size);
             int text_offset = 3600;
-            int text_length = (int)(entry.Size - 3600 - 2);
-            int seed = input[input.Length-1];
+            int text_length = (int)(entry.Size - text_offset - 2);
+            int seed = (sbyte)input[input.Length-1];
             for (int i = 0; i < text_length; i += 2)
             {
                 seed = seed * 0x343FD + 0x269EC3;
-                int index = (seed >> 16) & 0x7fff;
+                int index = (int)(((uint)seed >> 16) & 0x7fff);
                 input[text_offset + i] ^= (byte)Key[index % Key.Length];
             }
             return new MemoryStream (input);
