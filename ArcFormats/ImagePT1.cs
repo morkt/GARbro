@@ -578,7 +578,7 @@ namespace GameRes.Formats.Ffa
                 byte[] frame = new byte[0x1000]; // word_461A28
                 PopulateLzssFrame (frame);
                 int ebp = 0xfee;
-                for (;;)
+                while (src < m_input.Length)
                 {
                     byte ah = m_input[src++];
                     for (int mask = 1; mask != 0x100; mask <<= 1)
