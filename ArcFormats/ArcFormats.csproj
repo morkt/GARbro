@@ -107,6 +107,7 @@
     <Compile Include="ArcPAC.cs" />
     <Compile Include="ArcPD.cs" />
     <Compile Include="ArcRPA.cs" />
+    <Compile Include="ArcSPack.cs" />
     <Compile Include="ArcSteinsGate.cs" />
     <Compile Include="ArcWARC.cs" />
     <Compile Include="ArcWILL.cs" />
