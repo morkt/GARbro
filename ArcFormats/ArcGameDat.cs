@@ -64,7 +64,7 @@ namespace GameRes.Formats.Pajamas
             int name_offset = 0x10;
             int index_offset = name_offset + name_length*count;
             int base_offset = index_offset + 8*count;
-            if ((uint)base_offset != file.View.Reserve (0, (uint)base_offset))
+            if ((uint)base_offset > file.View.Reserve (0, (uint)base_offset))
                 return null;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
