@@ -48,6 +48,7 @@ namespace GameRes.Formats.Ffa
 
         public override ArcFile TryOpen (ArcView file)
         {
+            #pragma warning disable 219
             string type;
             if (file.View.AsciiEqual (0, "M2TYPE_WAV"))
                 type = "wave";
@@ -57,6 +58,8 @@ namespace GameRes.Formats.Ffa
                 type = "word";
             else
                 return null;
+            #pragma warning restore 219
+
             uint index_size = file.View.ReadUInt32 (file.MaxOffset-12);
             long index_offset = file.MaxOffset-0x14-index_size;
             int count = file.View.ReadInt32 (file.MaxOffset-8);
