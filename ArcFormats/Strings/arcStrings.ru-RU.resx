@@ -210,6 +210,9 @@
   <data name="MsgWritingIndex" xml:space="preserve">
     <value>Записывается оглавление...</value>
   </data>
+  <data name="NOAIgnoreEncryption" xml:space="preserve">
+    <value>Игнорировать шифрование</value>
+  </data>
   <data name="NPACompressContents" xml:space="preserve">
     <value>Сжать содержимое</value>
   </data>

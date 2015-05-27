@@ -315,4 +315,7 @@ predefined encryption scheme.</value>
     <value>Archive directory is encrypted.
 Enter archive encryption key.</value>
   </data>
+  <data name="NOAIgnoreEncryption" xml:space="preserve">
+    <value>Ignore encryption</value>
+  </data>
 </root>

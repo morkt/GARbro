@@ -297,5 +297,29 @@ namespace GameRes.Formats.Properties {
                 this["LPKScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NOAScheme {
+            get {
+                return ((string)(this["NOAScheme"]));
+            }
+            set {
+                this["NOAScheme"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NOAPassPhrase {
+            get {
+                return ((string)(this["NOAPassPhrase"]));
+            }
+            set {
+                this["NOAPassPhrase"] = value;
+            }
+        }
     }
 }
