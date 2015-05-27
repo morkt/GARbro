@@ -97,7 +97,7 @@ namespace GameRes.Formats.Entis
             using (var reader = new ArcView.Reader (stream))
             {
                 var section = ReadEriSection (reader);
-                if (section.Id != "Header  " || section.Length <= 0 || section.Length > 0x200)
+                if (section.Id != "Header  " || section.Length <= 0)
                     return null;
                 int header_size = (int)section.Length;
                 int stream_pos = 0x50 + header_size;
