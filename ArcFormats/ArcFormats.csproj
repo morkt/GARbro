@@ -79,6 +79,7 @@
     <Compile Include="ArcEAGLS.cs" />
     <Compile Include="ArcEGO.cs" />
     <Compile Include="ArcFFA.cs" />
+    <Compile Include="ArcFPK.cs" />
     <Compile Include="ArcFVP.cs" />
     <Compile Include="ArcGameDat.cs" />
     <Compile Include="ArcGSP.cs" />
@@ -161,6 +162,7 @@
     <Compile Include="ImageEDT.cs" />
     <Compile Include="ImageELG.cs" />
     <Compile Include="ImageEPA.cs" />
+    <Compile Include="ImageERI.cs" />
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageGR.cs" />
     <Compile Include="ImageHG3.cs" />
@@ -203,6 +205,9 @@
     <Compile Include="WidgetLPK.xaml.cs">
       <SubType>Code</SubType>
       <DependentUpon>WidgetLPK.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WidgetNOA.xaml.cs">
+      <DependentUpon>WidgetNOA.xaml</DependentUpon>
     </Compile>
     <Compile Include="WidgetNPA.xaml.cs">
       <DependentUpon>WidgetNPA.xaml</DependentUpon>
@@ -298,6 +303,10 @@
     <Page Include="WidgetLPK.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WidgetNOA.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="WidgetNPA.xaml">
       <SubType>Designer</SubType>
