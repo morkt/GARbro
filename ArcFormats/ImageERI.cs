@@ -208,10 +208,15 @@ namespace GameRes.Formats.Entis
         }
     }
 
+/*****************************************************************************
+                         E R I S A - L i b r a r y
+ -----------------------------------------------------------------------------
+    Copyright (C) 2002-2004 Leshade Entis, Entis-soft. All rights reserved.
+ *****************************************************************************/
+
     internal class EriReader
     {
         EriMetaData     m_info;
-        Color[]         m_palette;
         byte[]          m_output;
         ERISADecodeContext m_context;
         int             m_dst;
@@ -240,6 +245,8 @@ namespace GameRes.Formats.Entis
         sbyte[]         m_ptrDecodeBuf;
         sbyte[]         m_ptrArrangeBuf;
         int[]           m_pArrangeTable = new int[4];
+
+        HuffmanTree     m_pHuffmanTree;
 
         PtrProcedure[]  m_pfnColorOperation;
 
@@ -283,11 +290,16 @@ namespace GameRes.Formats.Entis
 
         private void InitializeLossless ()
         {
-            if (EriCode.RunlengthHuffman == m_info.Architecture
-                || EriCode.Nemesis       == m_info.Architecture)
+            switch (m_info.Architecture)
+            {
+            case EriCode.Nemesis:
                 throw new NotSupportedException ("Not supported ERI compression");
-            if (EriCode.RunlengthGamma != m_info.Architecture)
+            case EriCode.RunlengthHuffman:
+            case EriCode.RunlengthGamma:
+                break;
+            default:
                 throw new InvalidFormatException();
+            }
             if (0 == m_info.BlockingDegree)
                 throw new InvalidFormatException();
 
@@ -325,18 +337,21 @@ namespace GameRes.Formats.Entis
             InitializeArrangeTable();
             if (0x00020200 == m_info.Version)
             {
-                /*
                 if (EriCode.RunlengthHuffman == m_info.Architecture)
                 {
-                    m_pHuffmanTree = new ERINA_HUFFMAN_TREE ;
+                    m_pHuffmanTree = new HuffmanTree();
                 }
+                /*
                 else if (EriCode.Nemesis == m_info.Architecture)
                 {
                     m_pProbERISA = new ERISA_PROB_MODEL ;
                 }
                 */
             }
-            m_context = new RLEDecodeContext (0x10000);
+            if (EriCode.RunlengthHuffman == m_info.Architecture)
+                m_context = new HuffmanDecodeContext (0x10000);
+            else
+                m_context = new RLEDecodeContext (0x10000);
         }
 
         int[] m_ptrTable;
@@ -403,13 +418,6 @@ namespace GameRes.Formats.Entis
         {
             uint stride = ((m_info.Width * (uint)m_info.BPP / 8u) + 0x03u) & ~0x03u;
             uint image_bytes = stride * m_info.Height;
-            int dwPaletteLength = 0;
-            if (m_info.BPP <= 8)
-            {
-                dwPaletteLength = 1 << m_info.BPP;
-            }
-            if (0 != dwPaletteLength)
-                m_palette = new Color[dwPaletteLength];
             m_output = new byte[image_bytes];
             m_dwBytesPerLine = (int)stride;
             m_dwClippedPixel = 0;
@@ -467,12 +475,7 @@ namespace GameRes.Formats.Entis
             if (null == pfnRestoreFunc)
                 throw new InvalidFormatException();
             /*
-            if (EriCode.RunlengthHuffman == m_info.Architecture)
-            {
-                Debug.Assert (m_pHuffmanTree != null);
-                m_pHuffmanTree.Initialize();
-            }
-            else if (EriCode.Nemesis == m_info.Architecture)
+            if (EriCode.Nemesis == m_info.Architecture)
             {
                 Debug.Assert (m_pProbERISA != null);
                 m_pProbERISA.Initialize();
@@ -490,13 +493,11 @@ namespace GameRes.Formats.Entis
                     {
                         m_ptrOperations[i] = (byte)(context.GetNBits(4) | 0xC0);
                     }
-                    /*
                     else
                     {
                         Debug.Assert (EriCode.RunlengthHuffman == m_info.Architecture);
-                        m_ptrOperations[i] = (byte) context.GetHuffmanCode (m_pHuffmanTree);
+                        m_ptrOperations[i] = (byte)(context as HuffmanDecodeContext).GetHuffmanCode (m_pHuffmanTree);
                     }
-                    */
                 }
             }
             if (context.GetABit() != 0)
@@ -509,11 +510,11 @@ namespace GameRes.Formats.Entis
                     context.InitGammaContext();
                 }
             }
-            /*
             else if (EriCode.RunlengthHuffman == m_info.Architecture)
             {
-                context.PrepareToDecodeERINACode();
+                (context as HuffmanDecodeContext).PrepareToDecodeERINACode();
             }
+            /*
             else
             {
                 Debug.Assert (EriCode.Nemesis == m_info.Architecture);
@@ -544,11 +545,7 @@ namespace GameRes.Formats.Entis
 
                 for (int nPosX = 0; nPosX < (int)m_nWidthBlocks; ++nPosX)
                 {
-                    m_nDstWidth = m_nBlockSize;
-                    if ((int)m_nDstWidth > nLeftWidth)
-                    {
-                        m_nDstWidth = (uint)nLeftWidth;
-                    }
+                    m_nDstWidth = Math.Min (m_nBlockSize, (uint)nLeftWidth);
 
                     uint dwOperationCode;
                     if (m_nChannelCount >= 3)
@@ -557,14 +554,14 @@ namespace GameRes.Formats.Entis
                         {
                             dwOperationCode = m_ptrOperations[ptrNextOperation++];
                         }
+                        else if (m_info.Architecture == EriCode.RunlengthHuffman)
+                        {
+                            dwOperationCode = (uint)(context as HuffmanDecodeContext).GetHuffmanCode (m_pHuffmanTree);
+                        }
                         /*
                         else if (m_info.Architecture == EriCode.Nemesis)
                         {
                             dwOperationCode = context.DecodeERISACode (m_pProbERISA);
-                        }
-                        else if (m_info.Architecture == EriCode.RunlengthHuffman)
-                        {
-                            dwOperationCode = context.GetHuffmanCode (m_pHuffmanTree);
                         }
                         */
                         else
@@ -693,7 +690,10 @@ namespace GameRes.Formats.Entis
                 Format = PixelFormats.Bgr555;
                 return RestoreRGB16;
             case 8:
-                Format = PixelFormats.Gray8;
+                if (null == Palette)
+                    Format = PixelFormats.Gray8;
+                else
+                    Format = PixelFormats.Indexed8;
                 return RestoreGray8;
             }
             return null;
@@ -915,10 +915,286 @@ namespace GameRes.Formats.Entis
         }
     }
 
+    internal static class Erina
+    {
+        public const int CodeFlag      = int.MinValue;
+        public const int HuffmanEscape = 0x7FFFFFFF;
+        public const int HuffmanNull   = 0x8000;
+        public const int HuffmanMax    = 0x4000;
+        public const int HuffmanRoot   = 0x200;
+    };
+
+    internal class HuffmanNode
+    {
+        public ushort  Weight;
+        public ushort  Parent;
+        public int     ChildCode;
+
+        public void CopyFrom (HuffmanNode other)
+        {
+            this.Weight = other.Weight;
+            this.Parent = other.Parent;
+            this.ChildCode = other.ChildCode;
+        }
+    }
+
+    internal class HuffmanTree
+    {
+        public HuffmanNode[]    m_hnTree = new HuffmanNode[0x201];
+        public int[]            m_iSymLookup = new int[0x100];
+        public int              m_iEscape;
+        public int              m_iTreePointer;
+
+        public HuffmanTree ()
+        {
+            Initialize();
+        }
+
+        public void Initialize ()
+        {
+            for (int i = 0; i < 0x201; i++)
+            {
+                m_hnTree[i] = new HuffmanNode();
+            }
+            for (int i = 0; i < 0x100; i++)
+            {
+                m_iSymLookup[i] = (int)Erina.HuffmanNull;
+            }
+            m_iEscape = (int)Erina.HuffmanNull;
+            m_iTreePointer = (int)Erina.HuffmanRoot;
+            m_hnTree[Erina.HuffmanRoot].Weight = 0;
+            m_hnTree[Erina.HuffmanRoot].Parent = Erina.HuffmanNull;
+            m_hnTree[Erina.HuffmanRoot].ChildCode = Erina.HuffmanNull;
+        }
+
+        public void IncreaseOccuredCount (int iEntry)
+        {
+            m_hnTree[iEntry].Weight++;
+            Normalize (iEntry);
+            if (m_hnTree[Erina.HuffmanRoot].Weight >= Erina.HuffmanMax)
+            {
+                HalfAndRebuild();
+            }
+        }
+
+        private void RecountOccuredCount (int iParent)
+        {
+            int iChild = m_hnTree[iParent].ChildCode;
+            m_hnTree[iParent].Weight = (ushort)(m_hnTree[iChild].Weight + m_hnTree[iChild + 1].Weight);
+        }
+
+        private void Normalize (int iEntry)
+        {
+            while (iEntry < Erina.HuffmanRoot)
+            {
+                int iSwap = iEntry + 1;
+                ushort weight = m_hnTree[iEntry].Weight;
+                while (iSwap < Erina.HuffmanRoot)
+                {
+                    if (m_hnTree[iSwap].Weight >= weight)
+                        break;
+                    ++iSwap;
+                }
+                if (iEntry == --iSwap)
+                {
+                    iEntry = m_hnTree[iEntry].Parent;
+                    RecountOccuredCount (iEntry);
+                    continue;
+                }
+                int iChild, nCode;
+                if (0 == (m_hnTree[iEntry].ChildCode & Erina.CodeFlag))
+                {
+                    iChild = m_hnTree[iEntry].ChildCode;
+                    m_hnTree[iChild].Parent = (ushort)iSwap;
+                    m_hnTree[iChild + 1].Parent = (ushort)iSwap;
+                }
+                else
+                {
+                    nCode = m_hnTree[iEntry].ChildCode & ~Erina.CodeFlag;
+                    if (nCode != Erina.HuffmanEscape)
+                        m_iSymLookup[nCode & 0xFF] = iSwap;
+                    else
+                        m_iEscape = iSwap;
+                }
+                if (0 == (m_hnTree[iSwap].ChildCode & Erina.CodeFlag))
+                {
+                    iChild = m_hnTree[iSwap].ChildCode;
+                    m_hnTree[iChild].Parent = (ushort)iEntry;
+                    m_hnTree[iChild+1].Parent = (ushort)iEntry;
+                }
+                else
+                {
+                    nCode = m_hnTree[iSwap].ChildCode & ~Erina.CodeFlag;
+                    if (nCode != Erina.HuffmanEscape)
+                        m_iSymLookup[nCode & 0xFF] = iEntry;
+                    else
+                        m_iEscape = iEntry;
+                }
+                var node = m_hnTree[iSwap]; // XXX
+                ushort iEntryParent = m_hnTree[iEntry].Parent;
+                ushort iSwapParent  = m_hnTree[iSwap].Parent;
+
+                m_hnTree[iSwap] = m_hnTree[iEntry];
+                m_hnTree[iEntry] = node;
+                m_hnTree[iSwap].Parent = iSwapParent;
+                m_hnTree[iEntry].Parent = iEntryParent;
+
+                RecountOccuredCount (iSwapParent);
+                iEntry = iSwapParent;
+            }
+        }
+
+        public void AddNewEntry (int nNewCode)
+        {
+            if (m_iTreePointer > 0)
+            {
+                m_iTreePointer -= 2;
+                int i = m_iTreePointer;
+                var phnNew = m_hnTree[i];
+                phnNew.Weight = 1;
+                phnNew.ChildCode = Erina.CodeFlag | nNewCode;
+                m_iSymLookup[nNewCode & 0xFF] = i ;
+
+                var phnRoot = m_hnTree[Erina.HuffmanRoot];
+                if (phnRoot.ChildCode != Erina.HuffmanNull)
+                {
+                    var phnParent = m_hnTree[i + 2];
+                    var phnChild  = m_hnTree[i + 1];
+                    phnChild.CopyFrom (phnParent); // m_hnTree[i + 1] = m_hnTree[i + 2];
+
+                    if (0 != (phnChild.ChildCode & Erina.CodeFlag))
+                    {
+                        int nCode = phnChild.ChildCode & ~Erina.CodeFlag;
+                        if (nCode != Erina.HuffmanEscape)
+                            m_iSymLookup[nCode & 0xFF] = i + 1;
+                        else
+                            m_iEscape = i + 1;
+                    }
+                    phnParent.Weight = (ushort)(phnNew.Weight + phnChild.Weight);
+                    phnParent.Parent = phnChild.Parent;
+                    phnParent.ChildCode = i;
+
+                    phnNew.Parent = phnChild.Parent = (ushort)(i + 2);
+                    Normalize (i + 2);
+                }
+                else
+                {
+                    phnNew.Parent = Erina.HuffmanRoot;
+                    m_iEscape = i + 1;
+                    var phnEscape = m_hnTree[m_iEscape];
+                    phnEscape.Weight = 1;
+                    phnEscape.Parent = Erina.HuffmanRoot;
+                    phnEscape.ChildCode = Erina.CodeFlag | Erina.HuffmanEscape;
+
+                    phnRoot.Weight = 2;
+                    phnRoot.ChildCode = i;
+                }
+            }
+            else
+            {
+                int i = m_iTreePointer;
+                var phnEntry = m_hnTree[i];
+                if (phnEntry.ChildCode == (Erina.CodeFlag | Erina.HuffmanEscape))
+                {
+                    phnEntry = m_hnTree[i + 1];
+                }
+                phnEntry.ChildCode = Erina.CodeFlag | nNewCode;
+            }
+        }
+
+        private void HalfAndRebuild ()
+        {
+            int i;
+            int iNextEntry = Erina.HuffmanRoot;
+            for (i = Erina.HuffmanRoot - 1; i >= m_iTreePointer; i--)
+            {
+                if (0 != (m_hnTree[i].ChildCode & Erina.CodeFlag))
+                {
+                    m_hnTree[i].Weight = (ushort)((m_hnTree[i].Weight + 1) >> 1);
+                    m_hnTree[iNextEntry--].CopyFrom (m_hnTree[i]);
+                }
+            }
+            ++iNextEntry;
+
+            int iChild, nCode;
+            i = m_iTreePointer;
+            for (;;)
+            {
+                m_hnTree[i].CopyFrom (m_hnTree[iNextEntry]);
+                m_hnTree[i + 1].CopyFrom (m_hnTree[iNextEntry + 1]);
+                iNextEntry += 2;
+                var phnChild1 = m_hnTree[i];
+                var phnChild2 = m_hnTree[i + 1];
+
+                if (0 == (phnChild1.ChildCode & Erina.CodeFlag))
+                {
+                    iChild = phnChild1.ChildCode; 
+                    m_hnTree[iChild].Parent = (ushort)i;
+                    m_hnTree[iChild + 1].Parent = (ushort)i;
+                }
+                else
+                {
+                    nCode = phnChild1.ChildCode & ~Erina.CodeFlag;
+                    if (Erina.HuffmanEscape == nCode)
+                        m_iEscape = i;
+                    else
+                        m_iSymLookup[nCode & 0xFF] = i;
+                }
+                if (0 == (phnChild2.ChildCode & Erina.CodeFlag))
+                {
+                    iChild = phnChild2.ChildCode;
+                    m_hnTree[iChild].Parent = (ushort)(i + 1);
+                    m_hnTree[iChild + 1].Parent = (ushort)(i + 1);
+                }
+                else
+                {
+                    nCode = phnChild2.ChildCode & ~Erina.CodeFlag;
+                    if (Erina.HuffmanEscape == nCode)
+                        m_iEscape = i + 1;
+                    else
+                        m_iSymLookup[nCode & 0xFF] = i + 1;
+                }
+                ushort weight = (ushort)(phnChild1.Weight + phnChild2.Weight);
+
+                if (iNextEntry <= Erina.HuffmanRoot)
+                {
+                    int j = iNextEntry;
+                    for (;;)
+                    {
+                        if (weight <= m_hnTree[j].Weight)
+                        {
+                            m_hnTree[j - 1].Weight = weight;
+                            m_hnTree[j - 1].ChildCode = i;
+                            break;
+                        }
+                        m_hnTree[j - 1].CopyFrom (m_hnTree[j]);
+                        if (++j > Erina.HuffmanRoot)
+                        {
+                            m_hnTree[Erina.HuffmanRoot].Weight = weight;
+                            m_hnTree[Erina.HuffmanRoot].ChildCode = i;
+                            break;
+                        }
+                    }
+                    --iNextEntry;
+                }
+                else
+                {
+                    m_hnTree[Erina.HuffmanRoot].Weight = weight;
+                    m_hnTree[Erina.HuffmanRoot].Parent = Erina.HuffmanNull;
+                    m_hnTree[Erina.HuffmanRoot].ChildCode = i;
+                    phnChild1.Parent = Erina.HuffmanRoot;
+                    phnChild2.Parent = Erina.HuffmanRoot;
+                    break;
+                }
+                i += 2;
+            }
+        }
+    }
+
     internal class RLEDecodeContext : ERISADecodeContext
     {
-        int     m_flgZero;
-        uint    m_nLength;
+        protected int     m_flgZero;
+        protected uint    m_nLength;
 
         public RLEDecodeContext (uint nBufferingSize) : base (nBufferingSize)
         {
@@ -996,15 +1272,14 @@ namespace GameRes.Formats.Entis
             }
         }
 
-        int GetGammaCode()
+        protected int GetGammaCode()
         {
             if (!PrefetchBuffer())
             {
                 return 0;
             }
-            uint dwIntBuf;
             m_nIntBufCount--;
-            dwIntBuf = m_dwIntBuffer;
+            uint dwIntBuf = m_dwIntBuffer;
             m_dwIntBuffer <<= 1;
             if (0 == (dwIntBuf & 0x80000000))
             {
@@ -1015,7 +1290,7 @@ namespace GameRes.Formats.Entis
                 return 0;
             }
             int nCode = 0;
-            if ((0 != (~m_dwIntBuffer & 0x55000000)) && (m_nIntBufCount >= 8) )
+            if ((0 != (~m_dwIntBuffer & 0x55000000)) && (m_nIntBufCount >= 8))
             {
                 uint i = (m_dwIntBuffer >> 24) << 1;
                 nCode = nGammaCodeLookup[i];
@@ -1102,5 +1377,182 @@ namespace GameRes.Formats.Entis
             14,  6,  14,  6,  14,  6,  14,  6,  28,  8,  0xff, 0xff,  29,  8,  0xff, 0xff,
             15,  6,  15,  6,  15,  6,  15,  6,  30,  8,  0xff, 0xff,  31,  8,  0xff, 0xff
         };
+    }
+
+    internal class HuffmanDecodeContext : RLEDecodeContext
+    {
+        int             m_dwERINAFlags;
+        HuffmanTree     m_pLastHuffmanTree;
+        HuffmanTree[]   m_ppHuffmanTree;
+
+        // ERINAEncodingFlag
+        public const int efERINAOrder0 = 0x0000;
+        public const int efERINAOrder1 = 0x0001;
+
+        public HuffmanDecodeContext (uint nBufferingSize) : base (nBufferingSize)
+        {
+        }
+
+        public void PrepareToDecodeERINACode (int flags = efERINAOrder1)
+        {
+            int i;
+            if (null == m_ppHuffmanTree)
+            {
+                m_ppHuffmanTree = new HuffmanTree[0x101];
+            }
+            m_dwERINAFlags = flags;
+            m_nLength = 0;
+            if (efERINAOrder0 == flags)
+            {
+                m_ppHuffmanTree[0] = new HuffmanTree();
+                m_ppHuffmanTree[0x100] = new HuffmanTree();
+                for (i = 1; i < 0x100; i++)
+                {
+                    m_ppHuffmanTree[i] = m_ppHuffmanTree[0];
+                }
+            }
+            else
+            {
+                for (i = 0; i < 0x101; i++)
+                {
+                    m_ppHuffmanTree[i] = new HuffmanTree();
+                }
+            }
+            m_pLastHuffmanTree = m_ppHuffmanTree[0];
+        }
+
+        public override uint DecodeBytes (Array ptrDst, uint nCount)
+        {
+            return DecodeErinaCodeBytes (ptrDst as sbyte[], nCount);
+        }
+
+        public uint DecodeErinaCodeBytes (sbyte[] ptrDst, uint nCount)
+        {
+            var tree = m_pLastHuffmanTree;
+            int symbol, length;
+            uint i = 0;
+            if (m_nLength > 0)
+            {
+                length = (int)Math.Min (m_nLength, nCount);
+                m_nLength -= (uint)length;
+                do
+                {
+                    ptrDst[i++] = 0;
+                }
+                while (0 != --length);
+            }
+            while (i < nCount)
+            {
+                symbol = GetHuffmanCode (tree);
+                if (Erina.HuffmanEscape == symbol)
+                {
+                    break;
+                }
+                ptrDst[i++] = (sbyte)symbol;
+
+                if (0 == symbol)
+                {
+                    length = GetLengthHuffman (m_ppHuffmanTree[0x100]);
+                    if (Erina.HuffmanEscape == length)
+                    {
+                        break;
+                    }
+                    if (0 != --length)
+                    {
+                        m_nLength = (uint)length;
+                        if (i + length > nCount)
+                        {
+                            length = (int)(nCount - i);
+                        }
+                        m_nLength -= (uint)length;
+                        while (length > 0)
+                        {
+                            ptrDst[i++] = 0;
+                            --length;
+                        }
+                    }
+                }
+                tree = m_ppHuffmanTree[symbol & 0xFF];
+            }
+            m_pLastHuffmanTree = tree;
+            return i;
+        }
+
+        private int GetLengthHuffman (HuffmanTree tree)
+        {
+            int nCode;
+            if (tree.m_iEscape != Erina.HuffmanNull)
+            {
+                int iEntry = Erina.HuffmanRoot;
+                int iChild = tree.m_hnTree[Erina.HuffmanRoot].ChildCode;
+                do
+                {
+                    if (!PrefetchBuffer())
+                    {
+                        return Erina.HuffmanEscape;
+                    }
+                    iEntry = iChild + (int)(m_dwIntBuffer >> 31);
+                    iChild = tree.m_hnTree[iEntry].ChildCode;
+                    m_dwIntBuffer <<= 1;
+                    --m_nIntBufCount;
+                }
+                while (0 == (iChild & Erina.CodeFlag));
+
+                if ((m_dwERINAFlags != efERINAOrder0) ||
+                    (tree.m_hnTree[Erina.HuffmanRoot].Weight < Erina.HuffmanMax-1))
+                {
+                    tree.IncreaseOccuredCount (iEntry);
+                }
+                nCode = iChild & ~Erina.CodeFlag;
+                if (nCode != Erina.HuffmanEscape)
+                {
+                    return nCode ;
+                }
+            }
+            nCode = GetGammaCode();
+            if (-1 == nCode)
+            {
+                return Erina.HuffmanEscape;
+            }
+            tree.AddNewEntry (nCode);
+            return nCode;
+        }
+
+        public int GetHuffmanCode (HuffmanTree tree)
+        {
+            int nCode;
+            if (tree.m_iEscape != Erina.HuffmanNull)
+            {
+                int iEntry = Erina.HuffmanRoot;
+                int iChild = tree.m_hnTree[Erina.HuffmanRoot].ChildCode;
+                do
+                {
+                    if (!PrefetchBuffer())
+                    {
+                        return Erina.HuffmanEscape;
+                    }
+                    iEntry = iChild + (int)(m_dwIntBuffer >> 31);
+                    iChild = tree.m_hnTree[iEntry].ChildCode;
+                    m_dwIntBuffer <<= 1;
+                    --m_nIntBufCount;
+                }
+                while (0 == (iChild & Erina.CodeFlag));
+
+                if ((m_dwERINAFlags != efERINAOrder0) ||
+                    (tree.m_hnTree[Erina.HuffmanRoot].Weight < Erina.HuffmanMax-1))
+                {
+                    tree.IncreaseOccuredCount (iEntry);
+                }
+                nCode = iChild & ~Erina.CodeFlag;
+                if (nCode != Erina.HuffmanEscape)
+                {
+                    return  nCode;
+                }
+            }
+            nCode = (int)GetNBits (8);
+            tree.AddNewEntry (nCode);
+
+            return nCode;
+        }
     }
 }
