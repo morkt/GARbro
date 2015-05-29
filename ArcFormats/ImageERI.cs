@@ -285,6 +285,9 @@ namespace GameRes.Formats.Entis
             m_info = info;
             if (CvType.Lossless_ERI == m_info.Transformation)
                 InitializeLossless();
+            else if (CvType.LOT_ERI == m_info.Transformation
+                     || CvType.DCT_ERI == m_info.Transformation)
+                InitializeLossy();
             else
                 throw new NotSupportedException ("Not supported ERI compression");
             if (null != palette)
@@ -379,6 +382,11 @@ namespace GameRes.Formats.Entis
                 m_context = new RLEDecodeContext (0x10000);
         }
 
+        private void InitializeLossy ()
+        {
+            throw new NotImplementedException ("Lossy ERI compression not implemented");
+        }
+
         int[] m_ptrTable;
 
         void InitializeArrangeTable ()
@@ -459,7 +467,10 @@ namespace GameRes.Formats.Entis
 
         public void DecodeImage ()
         {
-            DecodeLosslessImage (m_context as RLEDecodeContext);
+            if (CvType.Lossless_ERI == m_info.Transformation)
+                DecodeLosslessImage (m_context as RLEDecodeContext);
+            else
+                DecodeLossyImage (m_context as HuffmanDecodeContext);
         }
 
         private delegate void PtrProcedure ();
@@ -625,6 +636,11 @@ namespace GameRes.Formats.Entis
                 }
                 nLeftHeight -= (int)m_nBlockSize;
             }
+        }
+
+        private void DecodeLossyImage (HuffmanDecodeContext context)
+        {
+            throw new NotImplementedException ("Lossy ERI compression not implemented");
         }
 
         void PerformOperation (uint dwOpCode, int nAllBlockLines, sbyte[] pNextLineBuf, int iNextLineIdx )
