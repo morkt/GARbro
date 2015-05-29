@@ -128,9 +128,12 @@ namespace GameRes.Formats.Entis
                 m_stream_pos = m_erif.BaseStream.Position;
 
                 m_pmiod = new MioDecoder (m_info);
-                m_pmioc = new HuffmanDecodeContext (0x10000);
-                int pcm_bitrate = (int)m_info.SamplesPerSec * 16 * m_info.ChannelCount;
+                if (EriCode.Nemesis != m_info.Architecture)
+                    m_pmioc = new HuffmanDecodeContext (0x10000);
+                else
+                    throw new NotImplementedException ("Nemesis encoding not implemented");
 
+                int pcm_bitrate = (int)m_info.SamplesPerSec * 16 * m_info.ChannelCount;
                 var format = new GameRes.WaveFormat();
                 format.FormatTag                = 1;
                 format.Channels                 = (ushort)m_info.ChannelCount;
@@ -140,6 +143,7 @@ namespace GameRes.Formats.Entis
                 format.AverageBytesPerSecond    = (uint)pcm_bitrate/8;
                 this.Format = format;
                 m_decoded_stream = LoadChunks();
+
                 if (0 != m_total_samples)
                     m_bitrate = (int)(stream_size * 8 * m_info.SamplesPerSec / m_total_samples);
                 this.PcmSize = m_decoded_stream.Length;
