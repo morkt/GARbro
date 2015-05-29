@@ -445,4 +445,89 @@ namespace GameRes.Utility
 			m_stream.Flush();
 		}
     }
+
+    public class AsciiString
+    {
+        public byte[] Value { get; set; }
+        public int   Length { get { return Value.Length; } }
+
+        public AsciiString (int size)
+        {
+            Value = new byte[size];
+        }
+
+        public AsciiString (byte[] str)
+        {
+            Value = str;
+        }
+
+        public AsciiString (string str)
+        {
+            Value = Encoding.ASCII.GetBytes (str);
+        }
+
+        public override string ToString ()
+        {
+            return Encoding.ASCII.GetString (Value);
+        }
+
+        public override bool Equals (object o)
+        {
+            if (null == o)
+                return false;
+            var a = o as AsciiString;
+            if (null == (object)a)
+                return false;
+            return this == a;
+        }
+
+        public override int GetHashCode ()
+        {
+            int hash = 5381;
+            for (int i = 0; i < Value.Length; ++i)
+            {
+                hash = ((hash << 5) + hash) ^ Value[i];
+            }
+            return hash ^ (hash * 1566083941);;
+        }
+
+        public static bool operator== (AsciiString a, AsciiString b)
+        {
+            if (ReferenceEquals (a, b))
+                return true;
+            if (null == (object)a || null == (object)b)
+                return false;
+            if (a.Length != b.Length)
+                return false;
+            for (int i = 0; i < a.Length; ++i)
+                if (a.Value[i] != b.Value[i])
+                    return false;
+            return true;
+        }
+
+        public static bool operator!= (AsciiString a, AsciiString b)
+        {
+            return !(a == b);
+        }
+
+        public static bool operator== (AsciiString a, string b)
+        {
+            return Binary.AsciiEqual (a.Value, b);
+        }
+
+        public static bool operator!= (AsciiString a, string b)
+        {
+            return !(a == b);
+        }
+
+        public static bool operator== (string a, AsciiString b)
+        {
+            return b == a;
+        }
+
+        public static bool operator!= (string a, AsciiString b)
+        {
+            return !(b == a);
+        }
+    }
 }
