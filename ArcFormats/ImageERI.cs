@@ -78,6 +78,45 @@ namespace GameRes.Formats.Entis
         SideBySide  = 0x10000000,
     }
 
+    internal class EriFile : BinaryReader
+    {
+        internal struct Section
+        {
+            public AsciiString  Id;
+            public long         Length;
+        }
+
+        public EriFile (Stream stream) : base (stream, System.Text.Encoding.ASCII, true)
+        {
+        }
+
+        public Section ReadSection ()
+        {
+            var section = new Section();
+            section.Id = new AsciiString (8);
+            if (8 != this.Read (section.Id.Value, 0, 8))
+                throw new EndOfStreamException();
+            section.Length = this.ReadInt64();
+            return section;
+        }
+
+        public long FindSection (string name)
+        {
+            var id = new AsciiString (8);
+            for (;;)
+            {
+                if (8 != this.Read (id.Value, 0, 8))
+                    throw new EndOfStreamException();
+                var length = this.ReadInt64();
+                if (length < 0)
+                    throw new EndOfStreamException();
+                if (id == name)
+                    return length;
+                this.BaseStream.Seek (length, SeekOrigin.Current);
+            }
+        }
+    }
+
     [Export(typeof(ImageFormat))]
     public class EriFormat : ImageFormat
     {
@@ -94,9 +133,9 @@ namespace GameRes.Formats.Entis
                 return null;
             if (!Binary.AsciiEqual (header, 0x10, "Entis Rasterized Image"))
                 return null;
-            using (var reader = new ArcView.Reader (stream))
+            using (var reader = new EriFile (stream))
             {
-                var section = ReadEriSection (reader);
+                var section = reader.ReadSection();
                 if (section.Id != "Header  " || section.Length <= 0)
                     return null;
                 int header_size = (int)section.Length;
@@ -104,7 +143,7 @@ namespace GameRes.Formats.Entis
                 EriMetaData info = null;
                 while (header_size > 8)
                 {
-                    section = ReadEriSection (reader);
+                    section = reader.ReadSection();
                     header_size -= 8;
                     if (section.Length <= 0 || section.Length > header_size)
                         break;
@@ -146,12 +185,12 @@ namespace GameRes.Formats.Entis
             if (null == meta)
                 throw new ArgumentException ("EriFormat.Read should be supplied with EriMetaData", "info");
             stream.Position = meta.StreamPos;
-            using (var input = new ArcView.Reader (stream))
+            using (var input = new EriFile (stream))
             {
                 Color[] palette = null;
-                for (;;) // ReadEriSection throws an exception in case of EOF
+                for (;;) // ReadSection throws an exception in case of EOF
                 {
-                    var section = ReadEriSection (input);
+                    var section = input.ReadSection();
                     if ("Stream  " == section.Id)
                         continue;
                     if ("ImageFrm" == section.Id)
@@ -191,20 +230,6 @@ namespace GameRes.Formats.Entis
         public override void Write (Stream file, ImageData image)
         {
             throw new NotImplementedException ("EriFormat.Write not implemented");
-        }
-
-        internal struct Section
-        {
-            public string  Id;
-            public long    Length;
-        }
-
-        static internal Section ReadEriSection (BinaryReader reader)
-        {
-            var section = new Section();
-            section.Id = new string (reader.ReadChars (8));
-            section.Length = reader.ReadInt64();
-            return section;
         }
     }
 
