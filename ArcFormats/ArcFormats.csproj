@@ -115,6 +115,7 @@
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
+    <Compile Include="AudioMIO.cs" />
     <Compile Include="AudioMP3.cs" />
     <Compile Include="AudioOGV.cs" />
     <Compile Include="AudioPMW.cs" />
