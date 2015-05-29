@@ -827,6 +827,7 @@ namespace GARbro.GUI
         {
             try
             {
+                SetBusyState();
                 using (var input = OpenEntry (entry))
                 {
                     FormatCatalog.Instance.LastError = null;
