@@ -429,4 +429,7 @@
   <data name="TextAboutLicense" xml:space="preserve">
     <value>Лицензия</value>
   </data>
+  <data name="Type_audio" xml:space="preserve">
+    <value>звук</value>
+  </data>
 </root>
