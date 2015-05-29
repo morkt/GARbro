@@ -135,8 +135,8 @@ namespace GameRes.Formats.Entis
                 format.FormatTag                = 1;
                 format.Channels                 = (ushort)m_info.ChannelCount;
                 format.SamplesPerSecond         = m_info.SamplesPerSec;
-                format.BitsPerSample            = 16;
-                format.BlockAlign               = (ushort)(2*format.Channels);
+                format.BitsPerSample            = (ushort)m_info.BitsPerSample;
+                format.BlockAlign               = (ushort)(m_info.BitsPerSample/8*format.Channels);
                 format.AverageBytesPerSecond    = (uint)pcm_bitrate/8;
                 this.Format = format;
                 m_decoded_stream = LoadChunks();
@@ -334,6 +334,7 @@ namespace GameRes.Formats.Entis
         int[]               m_ptrBuffer1;
         int[]               m_ptrBuffer2;
         sbyte[]             m_ptrBuffer3;
+        byte[]              m_ptrBuffer4;
         byte[]              m_ptrDivisionTable;
         byte[]              m_ptrRevolveCode;
         int[]               m_ptrWeightCode;
@@ -342,18 +343,17 @@ namespace GameRes.Formats.Entis
         float[]             m_ptrMatrixBuf;
         float[]             m_ptrInternalBuf;
         float[]             m_ptrWorkBuf;
-        float[]             m_ptrWorkBuf2;
         float[]             m_ptrWeightTable;
         float[]             m_ptrLastDCT;
 
         int                 m_ptrNextDivision;
-        byte[]              m_ptrNextRevCode;
+        int                 m_ptrNextRevCode;
         int                 m_ptrNextWeight;
         int                 m_ptrNextCoefficient;
         int                 m_ptrNextSource;
         int                 m_ptrLastDCTBuf;
         int                 m_nSubbandDegree;
-        uint                m_nDegreeNum;
+        int                 m_nDegreeNum;
         EriSinCos[]         m_pRevolveParam;
         readonly int[]      m_nFrequencyPoint = new int[7];
 
@@ -419,7 +419,6 @@ namespace GameRes.Formats.Entis
                 m_ptrMatrixBuf = new float[block_size];
                 m_ptrInternalBuf = new float[block_size];
                 m_ptrWorkBuf = new float[subband];
-                m_ptrWorkBuf2 = new float[subband];
 
                 m_ptrWeightTable = new float[subband];
 
@@ -470,12 +469,91 @@ namespace GameRes.Formats.Entis
 
         bool DecodeSoundPCM8 (ERISADecodeContext context, MioDataHeader datahdr, byte[] ptrWaveBuf, int wave_pos)
         {
-            throw new NotImplementedException ("MioDecoder.DecodeSoundPCM8 not implemented");
+            uint nSampleCount = datahdr.SampleCount;
+            if (nSampleCount > m_nBufLength)
+            {
+                m_ptrBuffer3 = new sbyte [nSampleCount * m_mioih.ChannelCount];
+                m_nBufLength = nSampleCount;
+            }
+            if (0 != (datahdr.Flags & MIO_LEAD_BLOCK))
+            {
+                (context as HuffmanDecodeContext).PrepareToDecodeERINACode();
+            }
+            uint nBytes = nSampleCount * (uint)m_mioih.ChannelCount;
+            if (context.DecodeBytes (m_ptrBuffer3, nBytes) < nBytes)
+            {
+                return false;
+            }
+            int ptrSrcBuf = 0; // (PBYTE) m_ptrBuffer3;
+            int nStep = m_mioih.ChannelCount;
+            for (int i = 0; i < m_mioih.ChannelCount; i ++ )
+            {
+                int ptrDstBuf = wave_pos + i;
+                sbyte bytValue = 0;
+                for (uint j = 0; j < nSampleCount; j++)
+                {
+                    bytValue += m_ptrBuffer3[ptrSrcBuf++];
+                    ptrWaveBuf[ptrDstBuf] = (byte)bytValue;
+                    ptrDstBuf += nStep;
+                }
+            }
+            return true;
         }
 
         bool DecodeSoundPCM16 (ERISADecodeContext context, MioDataHeader datahdr, byte[] ptrWaveBuf, int wave_pos)
         {
-            throw new NotImplementedException ("MioDecoder.DecodeSoundPCM16 not implemented");
+            uint nSampleCount = datahdr.SampleCount;
+            uint nChannelCount = (uint)m_mioih.ChannelCount;
+            uint nAllSampleCount = nSampleCount * nChannelCount;
+
+            if (nSampleCount > m_nBufLength)
+            {
+                m_ptrBuffer3 = new sbyte[nAllSampleCount * sizeof(short)];
+                m_ptrBuffer4 = new byte[nAllSampleCount * sizeof(short)];
+                m_nBufLength = nSampleCount;
+            }
+            if (0 != (datahdr.Flags & MIO_LEAD_BLOCK))
+            {
+                (context as HuffmanDecodeContext).PrepareToDecodeERINACode();
+            }
+            uint nBytes = nAllSampleCount * sizeof(short);
+            if (context.DecodeBytes (m_ptrBuffer3, nBytes) < nBytes)
+            {
+                return false;
+            }
+            int pbytSrcBuf1, pbytSrcBuf2, pbytDstBuf;
+            for (int i = 0; i < m_mioih.ChannelCount; i++)
+            {
+                int nOffset = i * (int)nSampleCount * sizeof(short);
+                pbytSrcBuf1 = nOffset; // ((PBYTE) m_ptrBuffer3) + nOffset;
+                pbytSrcBuf2 = pbytSrcBuf1 + (int)nSampleCount; // pbytSrcBuf1 + nSampleCount;
+                pbytDstBuf = nOffset; // ((PBYTE) m_ptrBuffer4) + nOffset;
+
+                for (uint j = 0; j < nSampleCount; j ++)
+                {
+                    sbyte bytLow  = m_ptrBuffer3[pbytSrcBuf2 + j];
+                    sbyte bytHigh = m_ptrBuffer3[pbytSrcBuf1 + j];
+                    m_ptrBuffer4[pbytDstBuf + j * sizeof(short) + 0] = (byte)bytLow;
+                    m_ptrBuffer4[pbytDstBuf + j * sizeof(short) + 1] = (byte)(bytHigh ^ (bytLow >> 7));
+                }
+            }
+            int ptrSrcBuf = 0; // (SWORD*) m_ptrBuffer4;
+            int nStep = m_mioih.ChannelCount;
+            for (int i = 0; i < m_mioih.ChannelCount; i++)
+            {
+                int ptrDstBuf = wave_pos + i*sizeof(short); // (SWORD*) ptrWaveBuf;
+                short wValue = 0;
+                short wDelta = 0;
+                for (uint j = 0; j < nSampleCount; j++)
+                {
+                    wDelta += LittleEndian.ToInt16 (m_ptrBuffer4, ptrSrcBuf);
+                    wValue += wDelta;
+                    LittleEndian.Pack (wValue, ptrWaveBuf, ptrDstBuf); // *ptrDstBuf = wValue;
+                    ptrSrcBuf += sizeof(short);
+                    ptrDstBuf += nStep;
+                }
+            }
+            return true;
         }
 
         static readonly int[] FreqWidth = new int[7] { -6, -6, -5, -4, -3, -2, -1 };
@@ -490,7 +568,7 @@ namespace GameRes.Formats.Entis
                 j += nFrequencyWidth;
             }
             m_nSubbandDegree = nSubbandDegree;
-            m_nDegreeNum = (1u << nSubbandDegree);
+            m_nDegreeNum = 1 << nSubbandDegree;
         }
 
         const uint MIO_LEAD_BLOCK = 0x01;
@@ -656,7 +734,7 @@ namespace GameRes.Formats.Entis
                             nSamples = pRestSamples[j];
                             if (nSamples > m_nDegreeNum)
                             {
-                                nSamples = m_nDegreeNum;
+                                nSamples = (uint)m_nDegreeNum;
                             }
                             DecodePostBlock (ptrWaveBuf, ptrDstBuf[j], nSamples);
                             pRestSamples[j] -= nSamples;
@@ -682,7 +760,7 @@ namespace GameRes.Formats.Entis
                             nSamples = pRestSamples[j];
                             if (nSamples > m_nDegreeNum)
                             {
-                                nSamples = m_nDegreeNum;
+                                nSamples = (uint)m_nDegreeNum;
                             }
                             DecodeInternalBlock (ptrWaveBuf, ptrDstBuf[j], nSamples);
                             pRestSamples[j] -= nSamples;
@@ -706,7 +784,7 @@ namespace GameRes.Formats.Entis
                     nSamples = pRestSamples[i];
                     if (nSamples > m_nDegreeNum)
                     {
-                        nSamples = m_nDegreeNum;
+                        nSamples = (uint)m_nDegreeNum;
                     }
                     DecodePostBlock (ptrWaveBuf, ptrDstBuf[i], nSamples);
                     pRestSamples[i] -= nSamples;
@@ -720,19 +798,17 @@ namespace GameRes.Formats.Entis
         {
             int nWeightCode = m_ptrWeightCode[m_ptrNextWeight++];
             int nCoefficient = m_ptrCoefficient[m_ptrNextCoefficient++];
-            IQuantumize (m_ptrMatrixBuf, 0, m_ptrBuffer2, m_ptrNextSource, (int)m_nDegreeNum, nWeightCode, nCoefficient);
+            IQuantumize (m_ptrMatrixBuf, 0, m_ptrBuffer2, m_ptrNextSource, m_nDegreeNum, nWeightCode, nCoefficient);
             m_ptrNextSource += (int)m_nDegreeNum;
 
             eriOddGivensInverseMatrix (m_ptrMatrixBuf, 0, m_pRevolveParam, m_nSubbandDegree);
             eriFastIPLOT (m_ptrMatrixBuf, 0, m_nSubbandDegree);
-            eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, m_nSubbandDegree);
+            eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, 0, m_nSubbandDegree);
 
-            for (uint i = 0; i < m_nDegreeNum; i++)
-            {
-                m_ptrLastDCT[m_ptrLastDCTBuf + i] = m_ptrMatrixBuf[i];
-                m_ptrMatrixBuf[i] = m_ptrWorkBuf[i];
-            }
-            eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
+            Array.Copy (m_ptrMatrixBuf, 0, m_ptrLastDCT,   m_ptrLastDCTBuf, m_nDegreeNum);
+            Array.Copy (m_ptrWorkBuf,   0, m_ptrMatrixBuf, 0,               m_nDegreeNum);
+
+            eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 0, 1, m_ptrWorkBuf, m_nSubbandDegree);
             if (nSamples != 0)
             {
                 eriRoundR32ToWordArray (ptrDst, iDst, m_mioih.ChannelCount, m_ptrInternalBuf, (int)nSamples);
@@ -744,13 +820,13 @@ namespace GameRes.Formats.Entis
             int nWeightCode = m_ptrWeightCode[m_ptrNextWeight++];
             int nCoefficient = m_ptrCoefficient[m_ptrNextCoefficient++];
             uint i;
-            uint nHalfDegree = m_nDegreeNum / 2;
+            uint nHalfDegree = (uint)m_nDegreeNum / 2;
             for (i = 0; i < nHalfDegree; i++)
             {
                 m_ptrBuffer1[i * 2]   = 0;
                 m_ptrBuffer1[i * 2 + 1] = m_ptrBuffer2[m_ptrNextSource++];
             }
-            IQuantumize (m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrBuffer1, 0, (int)m_nDegreeNum, nWeightCode, nCoefficient);
+            IQuantumize (m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrBuffer1, 0, m_nDegreeNum, nWeightCode, nCoefficient);
             eriOddGivensInverseMatrix (m_ptrLastDCT, m_ptrLastDCTBuf, m_pRevolveParam, m_nSubbandDegree);
             for (i = 0; i < m_nDegreeNum; i += 2)
             {
@@ -764,13 +840,13 @@ namespace GameRes.Formats.Entis
             int nWeightCode = m_ptrWeightCode[m_ptrNextWeight++];
             int nCoefficient = m_ptrCoefficient[m_ptrNextCoefficient++];
             uint i;
-            uint nHalfDegree = m_nDegreeNum / 2;
+            uint nHalfDegree = (uint)m_nDegreeNum / 2;
             for (i = 0; i < nHalfDegree; i++)
             {
                 m_ptrBuffer1[i * 2] = 0;
                 m_ptrBuffer1[i * 2 + 1] = m_ptrBuffer2[m_ptrNextSource++];
             }
-            IQuantumize (m_ptrMatrixBuf, 0, m_ptrBuffer1, 0, (int)m_nDegreeNum, nWeightCode, nCoefficient);
+            IQuantumize (m_ptrMatrixBuf, 0, m_ptrBuffer1, 0, m_nDegreeNum, nWeightCode, nCoefficient);
             eriOddGivensInverseMatrix (m_ptrMatrixBuf, 0, m_pRevolveParam, m_nSubbandDegree);
 
             for (i = 0; i < m_nDegreeNum; i += 2)
@@ -779,16 +855,352 @@ namespace GameRes.Formats.Entis
             }
 
             eriFastIPLOT (m_ptrMatrixBuf, 0, m_nSubbandDegree);
-            eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, m_nSubbandDegree);
+            eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, 0, m_nSubbandDegree);
 
-            for (i = 0; i < m_nDegreeNum; i++)
-            {
-                m_ptrMatrixBuf[i] = m_ptrWorkBuf[i];
-            }
-            eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
+            Array.Copy (m_ptrWorkBuf, 0, m_ptrMatrixBuf, 0, m_nDegreeNum);
+
+            eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 0, 1, m_ptrWorkBuf, m_nSubbandDegree);
             if (nSamples != 0)
             {
                 eriRoundR32ToWordArray (ptrDst, iDst, m_mioih.ChannelCount, m_ptrInternalBuf, (int)nSamples);
+            }
+        }
+
+        bool DecodeSoundDCT_MSS (ERISADecodeContext context, MioDataHeader datahdr, byte[] ptrWaveBuf, int wave_pos)
+        {
+            uint nDegreeWidth = 1u << m_mioih.SubbandDegree;
+            uint nSampleCount = (datahdr.SampleCount + nDegreeWidth - 1) & ~(nDegreeWidth - 1);
+            uint nSubbandCount = (nSampleCount >> m_mioih.SubbandDegree);
+            uint nChannelCount = (uint)m_mioih.ChannelCount;
+            uint nAllSampleCount = nSampleCount * nChannelCount;
+            uint nAllSubbandCount = nSubbandCount;
+
+            if (nSampleCount > m_nBufLength)
+            {
+                m_ptrBuffer2 = new int[nAllSampleCount];
+                m_ptrBuffer3 = new sbyte[nAllSampleCount * sizeof(short)];
+                m_ptrDivisionTable = new byte[nAllSubbandCount];
+                m_ptrRevolveCode = new byte[nAllSubbandCount * 10];
+                m_ptrWeightCode = new int[nAllSubbandCount * 10];
+                m_ptrCoefficient = new int[nAllSubbandCount * 10];
+                m_nBufLength = nSampleCount;
+            }
+            if (context.GetABit() != 0)
+            {
+                return false;
+            }
+
+            int nLastDivision = -1;
+            m_ptrNextDivision = 0; // within m_ptrDivisionTable;
+            m_ptrNextRevCode = 0; // within m_ptrRevolveCode;
+            m_ptrNextWeight = 0; // within m_ptrWeightCode;
+            m_ptrNextCoefficient = 0; // within m_ptrCoefficient;
+
+            uint i, j, k;
+            for (i = 0; i < nSubbandCount; i ++)
+            {
+                int nDivisionCode = (int)context.GetNBits (2);
+                m_ptrDivisionTable[m_ptrNextDivision++] = (byte)nDivisionCode;
+
+                bool fLeadBlock = false;
+                if (nDivisionCode != nLastDivision)
+                {
+                    if (i != 0)
+                    {
+                        m_ptrRevolveCode[m_ptrNextRevCode++] = (byte)context.GetNBits (2);
+                        m_ptrWeightCode[m_ptrNextWeight++] = (int)context.GetNBits (32);
+                        m_ptrCoefficient[m_ptrNextCoefficient++] = (int)context.GetNBits (16);
+                    }
+                    fLeadBlock = true;
+                    nLastDivision = nDivisionCode;
+                }
+                uint nDivisionCount = 1u << nDivisionCode;
+                for (k = 0; k < nDivisionCount; k++)
+                {
+                    if (fLeadBlock)
+                    {
+                        m_ptrRevolveCode[m_ptrNextRevCode++] = (byte)context.GetNBits (2);
+                        fLeadBlock = false;
+                    }
+                    else
+                    {
+                        m_ptrRevolveCode[m_ptrNextRevCode++] = (byte)context.GetNBits (4);
+                    }
+                    m_ptrWeightCode[m_ptrNextWeight++] = (int)context.GetNBits (32);
+                    m_ptrCoefficient[m_ptrNextCoefficient++] = (int)context.GetNBits (16);
+                }
+            }
+            if (nSubbandCount > 0)
+            {
+                m_ptrRevolveCode[m_ptrNextRevCode++] = (byte)context.GetNBits (2);
+                m_ptrWeightCode[m_ptrNextWeight++] = (int)context.GetNBits (32);
+                m_ptrCoefficient[m_ptrNextCoefficient++] = (int)context.GetNBits (16);
+            }
+            if (context.GetABit() != 0)
+            {
+                return false;
+            }
+            if (0 != (datahdr.Flags & MIO_LEAD_BLOCK))
+            {
+                if (m_mioih.Architecture != EriCode.Nemesis)
+                {
+                    (context as HuffmanDecodeContext).PrepareToDecodeERINACode();
+                }
+                else
+                {
+                    throw new NotImplementedException ("Nemesis encoding not implemented");
+//                    context.PrepareToDecodeERISACode( );
+                }
+            }
+            else if (m_mioih.Architecture == EriCode.Nemesis)
+            {
+                throw new NotImplementedException ("Nemesis encoding not implemented");
+//                context.InitializeERISACode( );
+            }
+            if (m_mioih.Architecture != EriCode.Nemesis)
+            {
+                if (context.DecodeBytes (m_ptrBuffer3, nAllSampleCount * 2) < nAllSampleCount * 2)
+                {
+                    return false;
+                }
+                int ptrHBuf = 0; // within m_ptrBuffer3;
+                int ptrLBuf = (int)nAllSampleCount; // within m_ptrBuffer3
+
+                for (i = 0; i < nDegreeWidth * 2; i++)
+                {
+                    int ptrQuantumized = (int)i; // within (PINT) m_ptrBuffer2
+                    for (j = 0; j < nAllSubbandCount; j++)
+                    {
+                        int nLow  = m_ptrBuffer3[ptrLBuf++];
+                        int nHigh = m_ptrBuffer3[ptrHBuf++] ^ (nLow >> 8);
+                        m_ptrBuffer2[ptrQuantumized] = (nLow & 0xFF) | (nHigh << 8);
+                        ptrQuantumized += (int)nDegreeWidth * 2;
+                    }
+                }
+            }
+            else
+            {
+                throw new NotImplementedException ("Nemesis encoding not implemented");
+                /*
+                if ( context.DecodeERISACodeWords
+                        ( (SWORD*) m_ptrBuffer3, nAllSampleCount ) < nAllSampleCount )
+                {
+                    return false;
+                }
+                for ( i = 0; i < nAllSampleCount; i ++ )
+                {
+                    ((PINT)m_ptrBuffer2)[i] = ((SWORD*)m_ptrBuffer3)[i];
+                }
+                */
+            }
+            uint nSamples;
+            uint nRestSamples = datahdr.SampleCount;
+//            int ptrDstBuf = wave_pos; // within (SWORD*) ptrWaveBuf;
+
+            nLastDivision = -1;
+            m_ptrNextDivision = 0; // m_ptrDivisionTable;
+            m_ptrNextRevCode = 0; // m_ptrRevolveCode;
+            m_ptrNextWeight = 0; // m_ptrWeightCode;
+            m_ptrNextCoefficient = 0; // m_ptrCoefficient;
+            m_ptrNextSource = 0; // (PINT) m_ptrBuffer2;
+
+            for (i = 0; i < nSubbandCount; i++)
+            {
+                int nDivisionCode = m_ptrDivisionTable[m_ptrNextDivision++];
+                uint nDivisionCount = 1u << nDivisionCode;
+
+                bool fLeadBlock = false;
+                if (nLastDivision != nDivisionCode)
+                {
+                    if (i != 0)
+                    {
+                        nSamples = Math.Min (nRestSamples, (uint)m_nDegreeNum);
+                        DecodePostBlock_MSS (ptrWaveBuf, wave_pos, nSamples);
+                        nRestSamples -= nSamples;
+                        wave_pos += (int)(nSamples * nChannelCount * sizeof(short));
+                    }
+                    InitializeWithDegree (m_mioih.SubbandDegree - nDivisionCode);
+                    nLastDivision = nDivisionCode;
+                    fLeadBlock = true;
+                }
+                for (k = 0; k < nDivisionCount; k++)
+                {
+                    if (fLeadBlock)
+                    {
+                        DecodeLeadBlock_MSS();
+                        fLeadBlock = false;
+                    }
+                    else
+                    {
+                        nSamples = nRestSamples;
+                        if (nSamples > m_nDegreeNum)
+                        {
+                            nSamples = (uint)m_nDegreeNum;
+                        }
+                        DecodeInternalBlock_MSS (ptrWaveBuf, wave_pos, nSamples);
+                        nRestSamples -= nSamples;
+                        wave_pos += (int)(nSamples * nChannelCount * sizeof(short));
+                    }
+                }
+            }
+            if (nSubbandCount > 0)
+            {
+                nSamples = nRestSamples;
+                if (nSamples > m_nDegreeNum)
+                {
+                    nSamples = (uint)m_nDegreeNum;
+                }
+                DecodePostBlock_MSS (ptrWaveBuf, wave_pos, nSamples);
+                nRestSamples -= nSamples;
+                wave_pos += (int)(nSamples * nChannelCount) * sizeof(short);
+            }
+            return true;
+        }
+
+        void DecodeLeadBlock_MSS ()
+        {
+            uint i, j;
+            uint nHalfDegree = (uint)m_nDegreeNum / 2;
+            int nWeightCode = m_ptrWeightCode[m_ptrNextWeight++];
+            int nCoefficient = m_ptrCoefficient[m_ptrNextCoefficient++];
+            int ptrLapBuf = 0; // within m_ptrLastDCT;
+
+            for (i = 0; i < 2; i++)
+            {
+                int ptrSrcBuf = 0; // within (PINT) m_ptrBuffer1;
+                for (j = 0; j < nHalfDegree; j++)
+                {
+                    m_ptrBuffer1[ptrSrcBuf + j * 2] = 0;
+                    m_ptrBuffer1[ptrSrcBuf + j * 2 + 1] = m_ptrBuffer2[m_ptrNextSource++];
+                }
+                IQuantumize (m_ptrLastDCT, ptrLapBuf, m_ptrBuffer1, ptrSrcBuf, m_nDegreeNum, nWeightCode, nCoefficient);
+                ptrLapBuf += (int)m_nDegreeNum;
+            }
+            int nRevCode = m_ptrRevolveCode[m_ptrNextRevCode++];
+
+            int ptrLapBuf1 = 0; // m_ptrLastDCT;
+            int ptrLapBuf2 = (int)m_nDegreeNum; // m_ptrLastDCT 
+
+            float rSin = (float)Math.Sin (nRevCode * Math.PI / 8);
+            float rCos = (float)Math.Cos (nRevCode * Math.PI / 8);
+            eriRevolve2x2 (m_ptrLastDCT, ptrLapBuf1, m_ptrLastDCT, ptrLapBuf2, rSin, rCos, 1, m_nDegreeNum);
+
+            ptrLapBuf = 0; //m_ptrLastDCT;
+            for (i = 0; i < 2; i++)
+            {
+                eriOddGivensInverseMatrix (m_ptrLastDCT, ptrLapBuf, m_pRevolveParam, m_nSubbandDegree);
+
+                for (j = 0; j < m_nDegreeNum; j += 2)
+                {
+                    m_ptrLastDCT[ptrLapBuf + j] = m_ptrLastDCT[ptrLapBuf + j + 1];
+                }
+                eriFastIPLOT (m_ptrLastDCT, ptrLapBuf, m_nSubbandDegree);
+                ptrLapBuf += (int)m_nDegreeNum;
+            }
+        }
+
+        void DecodeInternalBlock_MSS (byte[] ptrDst, int iDst, uint nSamples)
+        {
+            int ptrSrcBuf = 0; // m_ptrMatrixBuf;
+            int ptrLapBuf = 0; // m_ptrLastDCT;
+
+            int nWeightCode  = m_ptrWeightCode[m_ptrNextWeight++];
+            int nCoefficient = m_ptrCoefficient[m_ptrNextCoefficient++];
+
+            for (int i = 0; i < 2; i++)
+            {
+                IQuantumize (m_ptrMatrixBuf, ptrSrcBuf, m_ptrBuffer2, m_ptrNextSource, m_nDegreeNum, nWeightCode, nCoefficient);
+                m_ptrNextSource += m_nDegreeNum;
+                ptrSrcBuf += m_nDegreeNum;
+            }
+            int nRevCode = m_ptrRevolveCode[m_ptrNextRevCode++];
+            int nRevCode1 = (nRevCode >> 2) & 0x03;
+            int nRevCode2 = (nRevCode & 0x03);
+
+            int ptrSrcBuf1 = 0; // m_ptrMatrixBuf;
+            int ptrSrcBuf2 = m_nDegreeNum; // m_ptrMatrixBuf + m_nDegreeNum;
+
+            float rSin = (float) Math.Sin (nRevCode1 * Math.PI / 8);
+            float rCos = (float) Math.Cos (nRevCode1 * Math.PI / 8);
+            eriRevolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1, m_ptrMatrixBuf, ptrSrcBuf2, rSin, rCos, 2, m_nDegreeNum / 2);
+
+            rSin = (float) Math.Sin (nRevCode2 * Math.PI / 8);
+            rCos = (float) Math.Cos (nRevCode2 * Math.PI / 8);
+            eriRevolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1 + 1, m_ptrMatrixBuf, ptrSrcBuf2 + 1, rSin, rCos, 2, m_nDegreeNum / 2);
+
+            ptrSrcBuf = 0; // m_ptrMatrixBuf;
+
+            for (int i = 0; i < 2; i++)
+            {
+                eriOddGivensInverseMatrix (m_ptrMatrixBuf, ptrSrcBuf, m_pRevolveParam, m_nSubbandDegree);
+                eriFastIPLOT (m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+                eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, ptrLapBuf, m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+
+                Array.Copy (m_ptrMatrixBuf, ptrSrcBuf, m_ptrLastDCT,   ptrLapBuf, m_nDegreeNum);
+                Array.Copy (m_ptrWorkBuf,   0,         m_ptrMatrixBuf, ptrSrcBuf, m_nDegreeNum);
+
+                eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, ptrSrcBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
+                if (nSamples != 0)
+                {
+                    eriRoundR32ToWordArray (ptrDst, iDst + (int)i*2, 2, m_ptrInternalBuf, (int)nSamples);
+                }
+                ptrSrcBuf += m_nDegreeNum;
+                ptrLapBuf += m_nDegreeNum;
+            }
+        }
+
+        void DecodePostBlock_MSS (byte[] ptrDst, int iDst, uint nSamples)
+        {
+            int ptrLapBuf = 0; // m_ptrLastDCT;
+            int ptrSrcBuf = 0; // m_ptrMatrixBuf;
+
+            int i, j;
+            uint nHalfDegree = (uint)m_nDegreeNum / 2u;
+            int nWeightCode  = m_ptrWeightCode[m_ptrNextWeight++];
+            int nCoefficient = m_ptrCoefficient[m_ptrNextCoefficient++];
+
+            for (i = 0; i < 2; i++)
+            {
+                for (j = 0; j < nHalfDegree; j++)
+                {
+                    m_ptrBuffer1[j * 2] = 0;
+                    m_ptrBuffer1[j * 2 + 1] = m_ptrBuffer2[m_ptrNextSource++];
+                }
+                IQuantumize (m_ptrMatrixBuf, ptrSrcBuf, m_ptrBuffer1, 0, m_nDegreeNum, nWeightCode, nCoefficient);
+                ptrSrcBuf += m_nDegreeNum;
+            }
+            float rSin, rCos;
+            int   nRevCode = m_ptrRevolveCode[m_ptrNextRevCode++];
+
+            int ptrSrcBuf1 = 0; // m_ptrMatrixBuf;
+            int ptrSrcBuf2 = m_nDegreeNum; // m_ptrMatrixBuf + m_nDegreeNum;
+
+            rSin = (float) Math.Sin (nRevCode * Math.PI / 8);
+            rCos = (float) Math.Cos (nRevCode * Math.PI / 8);
+            eriRevolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1, m_ptrMatrixBuf, ptrSrcBuf2, rSin, rCos, 1, m_nDegreeNum);
+
+            ptrSrcBuf = 0; // m_ptrMatrixBuf;
+
+            for (i = 0; i < 2; i ++)
+            {
+                eriOddGivensInverseMatrix (m_ptrMatrixBuf, ptrSrcBuf, m_pRevolveParam, m_nSubbandDegree);
+
+                for (j = 0; j < m_nDegreeNum; j += 2)
+                {
+                    m_ptrMatrixBuf[ptrSrcBuf + j] = -m_ptrMatrixBuf[ptrSrcBuf + j + 1];
+                }
+                eriFastIPLOT (m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+                eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, ptrLapBuf, m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+
+                Array.Copy (m_ptrWorkBuf, 0, m_ptrMatrixBuf, ptrSrcBuf, m_nDegreeNum);
+
+                eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, ptrSrcBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
+                if (nSamples != 0)
+                {
+                    eriRoundR32ToWordArray (ptrDst, iDst + (int)i*2, 2, m_ptrInternalBuf, (int)nSamples);
+                }
+                ptrLapBuf += m_nDegreeNum;
+                ptrSrcBuf += m_nDegreeNum;
             }
         }
 
@@ -837,29 +1249,9 @@ namespace GameRes.Formats.Entis
             }
         }
 
-        bool DecodeSoundDCT_MSS (ERISADecodeContext context, MioDataHeader datahdr, byte[] ptrWaveBuf, int wave_pos)
-        {
-            throw new NotImplementedException ("MioDecoder.DecodeSoundDCT_MSS not implemented");
-        }
-
-        bool DecodeInternalBlock_MSS (byte[] ptrDst, int iDst, uint nSamples)
-        {
-            throw new NotImplementedException ("MioDecoder.DecodeInternalBlock_MSS not implemented");
-        }
-
-        bool DecodeLeadBlock_MSS ()
-        {
-            throw new NotImplementedException ("MioDecoder.DecodeLeadBlock_MSS not implemented");
-        }
-
-        bool DecodePostBlock_MSS (byte[] ptrDst, int iDst, uint nSamples)
-        {
-            throw new NotImplementedException ("MioDecoder.DecodePostBlock_MSS not implemented");
-        }
-
         static readonly float ERI_rCosPI4  = (float)Math.Cos (Math.PI / 4);
         static readonly float ERI_r2CosPI4 = 2 * ERI_rCosPI4;
-        static readonly float[] ERI_DCTofK2 = new float[2];     // = cos ((2*i+1) / 8)
+        static readonly float[] ERI_DCTofK2 = new float[2];     // = cos( (2*i+1) / 8 )
         static readonly float[] ERI_DCTofK4 = new float[4];     // = cos( (2*i+1) / 16 )
         static readonly float[] ERI_DCTofK8 = new float[8];     // = cos( (2*i+1) / 32 )
         static readonly float[] ERI_DCTofK16 = new float[16];   // = cos( (2*i+1) / 64 )
@@ -906,6 +1298,7 @@ namespace GameRes.Formats.Entis
 
         static void eriRoundR32ToWordArray (byte[] ptrDst, int dst, int nStep, float[] ptrSrc, int nCount)
         {
+            nStep *= 2;
             for (int i = 0; i < nCount; i++)
             {
                 int nValue = eriRoundR32ToInt (ptrSrc[i]);
@@ -921,7 +1314,7 @@ namespace GameRes.Formats.Entis
                 {
                     LittleEndian.Pack ((short)nValue, ptrDst, dst);
                 }
-                dst += nStep*2;
+                dst += nStep;
             }
         }
 
@@ -1029,13 +1422,13 @@ namespace GameRes.Formats.Entis
             }
         }
 
-        static void eriFastILOT (float[] ptrDst, float[] ptrSrc1, int src1, float[] ptrSrc2, int nDegreeDCT)
+        static void eriFastILOT (float[] ptrDst, float[] ptrSrc1, int src1, float[] ptrSrc2, int src2, int nDegreeDCT)
         {
             int nDegreeNum = 1 << nDegreeDCT;
             for (int i = 0; i < nDegreeNum; i += 2)
             {
                 float r1 = ptrSrc1[src1 + i];
-                float r2 = ptrSrc2[i + 1];
+                float r2 = ptrSrc2[src2 + i + 1];
                 ptrDst[i]     = r1 + r2;
                 ptrDst[i + 1] = r1 - r2;
             }
@@ -1107,7 +1500,7 @@ namespace GameRes.Formats.Entis
             }
         }
 
-        static void eriFastIDCT (float[] ptrDst, float[] ptrSrc, int nSrcInterval, float[] ptrWorkBuf, int nDegreeDCT)
+        static void eriFastIDCT (float[] ptrDst, float[] srcBuf, int ptrSrc, int nSrcInterval, float[] ptrWorkBuf, int nDegreeDCT)
         {
             Debug.Assert ((nDegreeDCT >= MIN_DCT_DEGREE) && (nDegreeDCT <= MAX_DCT_DEGREE));
 
@@ -1116,14 +1509,14 @@ namespace GameRes.Formats.Entis
                 float[] r32Buf1 = new float[2];
                 float[] r32Buf2 = new float[4];
 
-                r32Buf1[0] = ptrSrc[0];
-                r32Buf1[1] = ERI_rCosPI4 * ptrSrc[nSrcInterval * 2];
+                r32Buf1[0] = srcBuf[ptrSrc];
+                r32Buf1[1] = ERI_rCosPI4 * srcBuf[ptrSrc + nSrcInterval * 2];
 
                 r32Buf2[0] = r32Buf1[0] + r32Buf1[1];
                 r32Buf2[1] = r32Buf1[0] - r32Buf1[1];
 
-                r32Buf1[0] = ERI_DCTofK2[0] * ptrSrc[nSrcInterval];
-                r32Buf1[1] = ERI_DCTofK2[1] * ptrSrc[nSrcInterval * 3];
+                r32Buf1[0] = ERI_DCTofK2[0] * srcBuf[ptrSrc + nSrcInterval];
+                r32Buf1[1] = ERI_DCTofK2[1] * srcBuf[ptrSrc + nSrcInterval * 3];
 
                 r32Buf2[2] =                 r32Buf1[0] + r32Buf1[1];
                 r32Buf2[3] = ERI_r2CosPI4 * (r32Buf1[0] - r32Buf1[1]);
@@ -1137,20 +1530,19 @@ namespace GameRes.Formats.Entis
             }
             else
             {
-                uint i;
                 uint nDegreeNum = 1u << nDegreeDCT;
                 uint nHalfDegree = nDegreeNum >> 1;
                 int nSrcStep = nSrcInterval << 1;
-                eriFastIDCT (ptrDst, ptrSrc, nSrcStep, ptrWorkBuf, nDegreeDCT - 1);
+                eriFastIDCT (ptrDst, srcBuf, ptrSrc, nSrcStep, ptrWorkBuf, nDegreeDCT - 1);
 
                 float[] pDCTofK = ERI_pMatrixDCTofK[nDegreeDCT - 1];
-                int pOddSrc = nSrcInterval; // within ptrSrc
                 int pOddDst = (int)nHalfDegree; // within ptrDst
+                int ptrNext = ptrSrc + nSrcInterval; // within srcBuf
 
-                int ptrNext = pOddSrc;
+                uint i;
                 for (i = 0; i < nHalfDegree; i++)
                 {
-                    ptrWorkBuf[i] = ptrSrc[ptrNext] * pDCTofK[i];
+                    ptrWorkBuf[i] = srcBuf[ptrNext] * pDCTofK[i];
                     ptrNext += nSrcStep;
                 }
 
@@ -1180,6 +1572,21 @@ namespace GameRes.Formats.Entis
                     ptrDst[nHalfDegree + i]     = r32Buf[2];
                     ptrDst[nDegreeNum - 1 - i]  = r32Buf[3];
                 }
+            }
+        }
+
+        void eriRevolve2x2 (float[] buf1, int ptrBuf1, float[] buf2, int ptrBuf2, float rSin, float rCos, int nStep, int nCount)
+        {
+            for (int i = 0; i < nCount; i++)
+            {
+                float r1 = buf1[ptrBuf1];
+                float r2 = buf2[ptrBuf2];
+
+                buf1[ptrBuf1] = r1 * rCos - r2 * rSin;
+                buf2[ptrBuf2] = r1 * rSin + r2 * rCos;
+
+                ptrBuf1 += nStep;
+                ptrBuf2 += nStep;
             }
         }
     }
