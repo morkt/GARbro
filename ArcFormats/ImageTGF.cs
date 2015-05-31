@@ -60,7 +60,7 @@ namespace GameRes.Formats.Tactics
                 return null;
             uint length = LittleEndian.ToUInt32 (header, 0);
             int chunk_size = LittleEndian.ToInt32 (header, 4);
-            if (length > 0xffffff)
+            if (length > 0xffffff || chunk_size <= 0 || length < chunk_size)
                 return null;
             using (var reader = new Reader (stream, (uint)Math.Max (0x20, chunk_size+2), chunk_size))
             {
