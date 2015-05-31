@@ -497,7 +497,7 @@ namespace GameRes.Formats.DRS
 
         public GgaFormat ()
         {
-            Extensions = new string[] { "gg1", "gg2", "gg3" };
+            Extensions = new string[] { "gg1", "gg2", "gg3", "gg0" };
         }
 
         internal class GgaMetaData : ImageMetaData
