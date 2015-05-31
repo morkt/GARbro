@@ -167,6 +167,7 @@
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageGR.cs" />
     <Compile Include="ImageHG3.cs" />
+    <Compile Include="ImageIAF.cs" />
     <Compile Include="ImageISG.cs" />
     <Compile Include="ImageKAAS.cs" />
     <Compile Include="ImageMAI.cs" />
@@ -238,6 +239,7 @@
       <Link>zlib64.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="Resources\ShiinaRio4.jpg" />
     <EmbeddedResource Include="Resources\ShiinaRio1.png" />
     <EmbeddedResource Include="Resources\ShiinaRio2.png" />
     <EmbeddedResource Include="Resources\ShiinaRio3.jpg" />
@@ -251,6 +253,7 @@
     </None>
     <EmbeddedResource Include="Resources\DecodeV1.bin" />
     <EmbeddedResource Include="Resources\DecodeV241.bin" />
+    <EmbeddedResource Include="Resources\DecodeV249.bin" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="CreateAMIWidget.xaml">
