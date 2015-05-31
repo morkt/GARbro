@@ -162,31 +162,35 @@ namespace GameRes.Formats.ShiinaRio
             if (0 != (wentry.Flags & 0x20000000u) && entry.Size > 8)
                 warc.Decoder.Decrypt2 (enc_data, 8, entry.Size-8);
 
-            bool perform_post_crypt = 0 != (wentry.Flags & 0x40000000);
-            byte[] unpacked;
-            if (0x314859 == (sig & 0xffffff)) // 'YH1'
+            byte[] unpacked = enc_data;
+            UnpackMethod unpack = null;
+            switch (sig & 0xffffff)
+            {
+            case 0x314859: // 'YH1'
+                unpack = UnpackYH1;
+                break;
+            case 0x4b5059: // 'YPK'
+                unpack = UnpackYPK;
+                break;
+            case 0x5a4c59: // 'YLZ'
+                unpack = UnpackYPK;
+                break;
+            }
+            if (null != unpack)
             {
                 unpacked = new byte[unpacked_size];
-                UnpackYH1 (enc_data, unpacked);
-            }
-            else if (0x4b5059 == (sig & 0xffffff)) // 'YPK'
-            {
-                unpacked = new byte[unpacked_size];
-                UnpackYPK (enc_data, unpacked);
-            }
-            else
-            {
-                unpacked = enc_data;
-                perform_post_crypt = false;
-            }
-            if (perform_post_crypt)
-            {
-                warc.Decoder.Decrypt2 (unpacked, 0, (uint)unpacked.Length);
-                if (warc.Decoder.SchemeVersion >= 2490)
-                    warc.Decoder.Decrypt3 (unpacked, 0, (uint)unpacked.Length);
+                unpack (enc_data, unpacked);
+                if (0 != (wentry.Flags & 0x40000000))
+                {
+                    warc.Decoder.Decrypt2 (unpacked, 0, (uint)unpacked.Length);
+                    if (warc.Decoder.SchemeVersion >= 2490)
+                        warc.Decoder.Decrypt3 (unpacked, 0, (uint)unpacked.Length);
+                }
             }
             return new MemoryStream (unpacked);
         }
+
+        delegate void UnpackMethod (byte[] input, byte[] output);
 
         void UnpackYH1 (byte[] input, byte[] output)
         {
@@ -226,9 +230,36 @@ namespace GameRes.Formats.ShiinaRio
                     }
                 }
             }
+            if (0x78 != input[8])
+                throw new ApplicationException ("Invalid decryption scheme");
             var src = new MemoryStream (input, 8, input.Length-8);
             using (var zlib = new ZLibStream (src, CompressionMode.Decompress))
                 zlib.Read (output, 0, output.Length);
+        }
+
+        void UnpackYLZ (byte[] input, byte[] output)
+        {
+            if (0 != input[3])
+            {
+                uint key = 0x4b4d4b4du; // 'KMKM'
+                unsafe
+                {
+                    fixed (byte* buf_raw = input)
+                    {
+                        uint* encoded = (uint*)buf_raw;
+                        int i;
+                        for (i = 2; i < input.Length/4; ++i)
+                            encoded[i] ^= key;
+                        for (i *= 4; i < input.Length; ++i)
+                        {
+                            buf_raw[i] ^= (byte)key;
+                            key >>= 8;
+                        }
+                    }
+                }
+            }
+            var decoder = new YlzReader (input, 8, output);
+            decoder.Unpack();
         }
 
         uint UnpackRNG (byte[] input, byte[] output)
@@ -259,6 +290,133 @@ namespace GameRes.Formats.ShiinaRio
         static EncryptionScheme GetScheme (string scheme)
         {
             return Decoder.KnownSchemes.Where (s => s.Name == scheme).FirstOrDefault();
+        }
+    }
+
+    internal class YlzReader
+    {
+        byte[]  m_input;
+        byte[]  m_output;
+        int     m_src;
+        uint    m_ctl = 0;
+        uint    m_mask = 0;
+
+        public YlzReader (byte[] input, int src_offset, byte[] output)
+        {
+            m_input = input;
+            m_src = src_offset;
+            m_output = output;
+        }
+
+        bool GetCtlBit ()
+        {
+            if (0 == m_mask)
+            {
+                m_ctl = LittleEndian.ToUInt32 (m_input, m_src);
+                m_src += 4;
+                m_mask = 0x80000000;
+            }
+            bool bit = 0 != (m_ctl & m_mask);
+            m_mask >>= 1;
+            return bit;
+        }
+
+        int GetBits (int n)
+        {
+            int v = 0;
+            for (int i = 0; i < n; ++i)
+            {
+                v <<= 1;
+                if (GetCtlBit())
+                    v |= 1;
+            }
+            return v;
+        }
+
+        public void Unpack ()
+        {
+            int dst = 0;
+            while (dst < m_output.Length)
+            {
+                if (GetCtlBit())
+                {
+                    m_output[dst++] = m_input[m_src++];
+                    continue;
+                }
+                int offset = m_input[m_src++] | ~0xffff;
+                int ah = 0xff;
+                int count = 0;
+                if (GetCtlBit()) // 5e
+                {
+                    if (GetCtlBit()) // 10d
+                    {
+                        ah = (ah << 1) | GetBits (1);
+                    }
+                    else if (GetCtlBit()) // 13e
+                    {
+                        ah = (ah << 1) | GetBits (1);
+                        offset -= 0x200;
+                    }
+                    else if (GetCtlBit()) // 174
+                    {
+                        ah = (ah << 2) | GetBits (2);
+                        offset -= 0x400;
+                    }
+                    else if (GetCtlBit()) // 1c0
+                    {
+                        ah = (ah << 3) | GetBits (3);
+                        offset -= 0x800;
+                    }
+                    else
+                    {
+                        ah = (ah << 4) | GetBits (4);
+                        offset -= 0x1000;
+                    }
+
+                    if (GetCtlBit()) // 296
+                    {
+                        count = 3;
+                    }
+                    else if (GetCtlBit()) // 2a2
+                    {
+                        count = 4;
+                    }
+                    else if (GetCtlBit()) // 2c2
+                    {
+                        count = 5 + GetBits (1);
+                    }
+                    else if (GetCtlBit()) // 2f8
+                    {
+                        count = 7 + GetBits (2);
+                    }
+                    else if (GetCtlBit()) // 33f
+                    {
+                        count = 0x0b + GetBits (3);
+                    }
+                    else
+                    {
+                        count = 0x13 + m_input[m_src++];
+                    }
+                }
+                else if (GetCtlBit()) // 94
+                {
+                    ah <<= 3; // b2
+                    ah |= GetBits (3);
+                    ah = (ah - 1) & 0xff;
+                    count = 2;
+                }
+                else if (0xff == (offset & 0xff))
+                {
+                    return;
+                }
+                else
+                {
+                    count = 2;
+                }
+                offset += (ah & 0xff) << 8; // 280
+                Binary.CopyOverlapped (m_output, dst + offset, dst, count);
+                dst += count;
+            }
         }
     }
 
@@ -436,6 +594,7 @@ namespace GameRes.Formats.ShiinaRio
                     int stride = bitmap.PixelWidth * bitmap.Format.BitsPerPixel / 8;
                     Int32Rect rect = new Int32Rect (0, 0, width, height);
                     bitmap.CopyPixels (rect, region, stride, 0);
+                    RegionCache[name] = region;
                 }
             }
             return region;
@@ -1035,6 +1194,10 @@ namespace GameRes.Formats.ShiinaRio
                 "Crypt Type 20011002 - Copyright(C) 2000 Y.Yamada/STUDIO よしくん",
                 new uint[] { 0x747C887C, 0xA47EA17C, 0xAF7CA77C, 0xA17C747C, 0x0000A47E },
                 "ShiinaRio3.jpg", "ShiinaRio2.png", "DecodeV1.bin"),
+            EncryptionScheme.Create ("ShiinaRio v2.49", 2490, 0x20,
+                "Crypt Type 20011002 - Copyright(C) 2000 Y.Yamada/STUDIO よしくん",
+                new uint[] { 0x4B535453, 0xA15FA15F, 0, 0, 0 },
+                "ShiinaRio4.jpg", "ShiinaRio2.png", "DecodeV249.bin"),
         };
     }
 }
