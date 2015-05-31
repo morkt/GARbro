@@ -530,4 +530,10 @@ namespace GameRes.Utility
             return !(b == a);
         }
     }
+
+    public interface IDataUnpacker
+    {
+        byte[] Data { get; }
+        void Unpack ();
+    }
 }
