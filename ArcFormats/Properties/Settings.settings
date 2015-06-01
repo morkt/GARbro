@@ -77,5 +77,14 @@
     <Setting Name="NOAPassPhrase" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="DPKKey1" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">65432</Value>
+    </Setting>
+    <Setting Name="DPKKey2" Type="System.UInt32" Scope="User">
+      <Value Profile="(Default)">1139247708</Value>
+    </Setting>
+    <Setting Name="DPKLastScheme" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

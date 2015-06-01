@@ -321,5 +321,41 @@ namespace GameRes.Formats.Properties {
                 this["NOAPassPhrase"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("65432")]
+        public uint DPKKey1 {
+            get {
+                return ((uint)(this["DPKKey1"]));
+            }
+            set {
+                this["DPKKey1"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1139247708")]
+        public uint DPKKey2 {
+            get {
+                return ((uint)(this["DPKKey2"]));
+            }
+            set {
+                this["DPKKey2"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DPKLastScheme {
+            get {
+                return ((string)(this["DPKLastScheme"]));
+            }
+            set {
+                this["DPKLastScheme"] = value;
+            }
+        }
     }
 }

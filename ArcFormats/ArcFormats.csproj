@@ -75,6 +75,7 @@
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcBlackPackage.cs" />
     <Compile Include="ArcCommon.cs" />
+    <Compile Include="ArcDPK.cs" />
     <Compile Include="ArcDRS.cs" />
     <Compile Include="ArcEAGLS.cs" />
     <Compile Include="ArcEGO.cs" />
@@ -201,6 +202,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>arcStrings.resx</DependentUpon>
     </Compile>
+    <Compile Include="WidgetDPK.xaml.cs">
+      <DependentUpon>WidgetDPK.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WidgetINT.xaml.cs">
       <DependentUpon>WidgetINT.xaml</DependentUpon>
     </Compile>
@@ -296,6 +300,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CreateYPFWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WidgetDPK.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

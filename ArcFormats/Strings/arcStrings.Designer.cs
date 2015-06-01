@@ -134,6 +134,24 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Encryption scheme.
+        /// </summary>
+        public static string ArcScheme {
+            get {
+                return ResourceManager.GetString("ArcScheme", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encryption keys.
+        /// </summary>
+        public static string DPKKeys {
+            get {
+                return ResourceManager.GetString("DPKKeys", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to âge proprietary image format.
         /// </summary>
         public static string GRPDescription {

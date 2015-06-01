@@ -318,4 +318,10 @@ Enter archive encryption key.</value>
   <data name="NOAIgnoreEncryption" xml:space="preserve">
     <value>Ignore encryption</value>
   </data>
+  <data name="ArcScheme" xml:space="preserve">
+    <value>Encryption scheme</value>
+  </data>
+  <data name="DPKKeys" xml:space="preserve">
+    <value>Encryption keys</value>
+  </data>
 </root>

@@ -139,6 +139,12 @@
   <data name="ArcReset" xml:space="preserve">
     <value>Сбросить</value>
   </data>
+  <data name="ArcScheme" xml:space="preserve">
+    <value>Способ шифрования</value>
+  </data>
+  <data name="DPKKeys" xml:space="preserve">
+    <value>Ключи шифрования</value>
+  </data>
   <data name="INTCreationNotice" xml:space="preserve">
     <value>Создание зашифрованных архивов не реализовано.</value>
   </data>
