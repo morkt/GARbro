@@ -41,14 +41,12 @@
              DataContext="{Binding ElementName=EncScheme, Path=SelectedItem}">
         <TextBox.Text>
             <Binding Path="Key1" Mode="OneWay" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged"/>
-            </Binding>
         </TextBox.Text>
     </TextBox>
     <TextBox Name="Key2" Grid.Column="1" Grid.Row="3" Margin="0,3,0,3" Width="100" HorizontalAlignment="Left"
              DataContext="{Binding ElementName=EncScheme, Path=SelectedItem}">
         <TextBox.Text>
             <Binding Path="Key2" Mode="OneWay" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged"/>
-            </Binding>
         </TextBox.Text>
     </TextBox>
 </Grid>
