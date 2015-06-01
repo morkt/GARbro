@@ -375,6 +375,17 @@
             (can be called before initialize)
             </summary>
         </member>
+        <member name="P:NAudio.CoreAudioApi.AudioClient.AudioStreamVolume">
+            <summary>
+            Returns the AudioStreamVolume service for this AudioClient.
+            </summary>
+            <remarks>
+            This returns the AudioStreamVolume object ONLY for shared audio streams.
+            </remarks>
+            <exception cref="T:System.InvalidOperationException">
+            This is thrown when an exclusive audio stream is being used.
+            </exception>
+        </member>
         <member name="P:NAudio.CoreAudioApi.AudioClient.AudioClockClient">
             <summary>
             Gets the AudioClockClient service
@@ -739,6 +750,294 @@
             Release the COM object
             </summary>
         </member>
+        <member name="T:NAudio.CoreAudioApi.AudioSessionControl">
+            <summary>
+            AudioSessionControl object for information
+            regarding an audio session
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionControl.#ctor(NAudio.CoreAudioApi.Interfaces.IAudioSessionControl)">
+            <summary>
+            Constructor.
+            </summary>
+            <param name="audioSessionControl"></param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionControl.Dispose">
+            <summary>
+            Dispose
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionControl.Finalize">
+            <summary>
+            Finalizer
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionControl.GetGroupingParam">
+            <summary>
+            the grouping param for an audio session grouping
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionControl.SetGroupingParam(System.Guid,System.Guid)">
+            <summary>
+            For chanigng the grouping param and supplying the context of said change
+            </summary>
+            <param name="groupingId"></param>
+            <param name="context"></param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionControl.RegisterEventClient(NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler)">
+            <summary>
+            Registers an even client for callbacks
+            </summary>
+            <param name="eventClient"></param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionControl.UnRegisterEventClient(NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler)">
+            <summary>
+            Unregisters an event client from receiving callbacks
+            </summary>
+            <param name="eventClient"></param>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.AudioMeterInformation">
+            <summary>
+            Audio meter information of the audio session.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.SimpleAudioVolume">
+            <summary>
+            Simple audio volume of the audio session (for volume and mute status).
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.State">
+            <summary>
+            The current state of the audio session.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.DisplayName">
+            <summary>
+            The name of the audio session.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.IconPath">
+            <summary>
+            the path to the icon shown in the mixer.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.GetSessionIdentifier">
+            <summary>
+            The session identifier of the audio session.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.GetSessionInstanceIdentifier">
+            <summary>
+            The session instance identifier of the audio session.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.GetProcessID">
+            <summary>
+            The process identifier of the audio session.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionControl.IsSystemSoundsSession">
+            <summary>
+            Is the session a system sounds session.
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.AudioSessionEventsCallback">
+            <summary>
+            AudioSessionEvents callback implementation
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents">
+            <summary>
+            Windows CoreAudio IAudioSessionControl interface
+            Defined in AudioPolicy.h
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents.OnDisplayNameChanged(System.String,System.Guid@)">
+            <summary>
+            Notifies the client that the display name for the session has changed.
+            </summary>
+            <param name="displayName">The new display name for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents.OnIconPathChanged(System.String,System.Guid@)">
+            <summary>
+            Notifies the client that the display icon for the session has changed.
+            </summary>
+            <param name="iconPath">The path for the new display icon for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents.OnSimpleVolumeChanged(System.Single,System.Boolean,System.Guid@)">
+            <summary>
+            Notifies the client that the volume level or muting state of the session has changed.
+            </summary>
+            <param name="volume">The new volume level for the audio session.</param>
+            <param name="isMuted">The new muting state.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents.OnChannelVolumeChanged(System.UInt32,System.IntPtr,System.UInt32,System.Guid@)">
+            <summary>
+            Notifies the client that the volume level of an audio channel in the session submix has changed.
+            </summary>
+            <param name="channelCount">The channel count.</param>
+            <param name="newVolumes">An array of volumnes cooresponding with each channel index.</param>
+            <param name="channelIndex">The number of the channel whose volume level changed.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents.OnGroupingParamChanged(System.Guid@,System.Guid@)">
+            <summary>
+            Notifies the client that the grouping parameter for the session has changed.
+            </summary>
+            <param name="groupingId">The new grouping parameter for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents.OnStateChanged(NAudio.CoreAudioApi.Interfaces.AudioSessionState)">
+            <summary>
+            Notifies the client that the stream-activity state of the session has changed.
+            </summary>
+            <param name="state">The new session state.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents.OnSessionDisconnected(NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason)">
+            <summary>
+            Notifies the client that the session has been disconnected.
+            </summary>
+            <param name="disconnectReason">The reason that the audio session was disconnected.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.#ctor(NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler)">
+            <summary>
+            Constructor.
+            </summary>
+            <param name="handler"></param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.OnDisplayNameChanged(System.String,System.Guid@)">
+            <summary>
+            Notifies the client that the display name for the session has changed.
+            </summary>
+            <param name="displayName">The new display name for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.OnIconPathChanged(System.String,System.Guid@)">
+            <summary>
+            Notifies the client that the display icon for the session has changed.
+            </summary>
+            <param name="iconPath">The path for the new display icon for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.OnSimpleVolumeChanged(System.Single,System.Boolean,System.Guid@)">
+            <summary>
+            Notifies the client that the volume level or muting state of the session has changed.
+            </summary>
+            <param name="volume">The new volume level for the audio session.</param>
+            <param name="isMuted">The new muting state.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.OnChannelVolumeChanged(System.UInt32,System.IntPtr,System.UInt32,System.Guid@)">
+            <summary>
+            Notifies the client that the volume level of an audio channel in the session submix has changed.
+            </summary>
+            <param name="channelCount">The channel count.</param>
+            <param name="newVolumes">An array of volumnes cooresponding with each channel index.</param>
+            <param name="channelIndex">The number of the channel whose volume level changed.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.OnGroupingParamChanged(System.Guid@,System.Guid@)">
+            <summary>
+            Notifies the client that the grouping parameter for the session has changed.
+            </summary>
+            <param name="groupingId">The new grouping parameter for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.OnStateChanged(NAudio.CoreAudioApi.Interfaces.AudioSessionState)">
+            <summary>
+            Notifies the client that the stream-activity state of the session has changed.
+            </summary>
+            <param name="state">The new session state.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionEventsCallback.OnSessionDisconnected(NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason)">
+            <summary>
+            Notifies the client that the session has been disconnected.
+            </summary>
+            <param name="disconnectReason">The reason that the audio session was disconnected.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.AudioSessionManager">
+            <summary>
+            AudioSessionManager
+            
+            Designed to manage audio sessions and in particuar the
+            SimpleAudioVolume interface to adjust a session volume
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionManager.RefreshSessions">
+            <summary>
+            Refresh session of current device.
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionManager.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioSessionManager.Finalize">
+            <summary>
+            Finalizer.
+            </summary>
+        </member>
+        <member name="E:NAudio.CoreAudioApi.AudioSessionManager.OnSessionCreated">
+            <summary>
+            Occurs when audio session has been added (for example run another program that use audio playback).
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionManager.SimpleAudioVolume">
+            <summary>
+            SimpleAudioVolume object
+            for adjusting the volume for the user session
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionManager.AudioSessionControl">
+            <summary>
+            AudioSessionControl object
+            for registring for callbacks and other session information
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioSessionManager.Sessions">
+            <summary>
+            Returns list of sessions of current device.
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.AudioSessionManager.SessionCreatedDelegate">
+            <summary>
+            
+            </summary>
+            <param name="sender"></param>
+            <param name="newSession"></param>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionNotification">
+            <summary>
+            Windows CoreAudio IAudioSessionNotification interface
+            Defined in AudioPolicy.h
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionNotification.OnSessionCreated(NAudio.CoreAudioApi.Interfaces.IAudioSessionControl)">
+            <summary>
+            
+            </summary>
+            <param name="newSession">session being added</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
         <member name="T:NAudio.CoreAudioApi.AudioStreamCategory">
             <summary>
             Specifies the category of an audio stream.
@@ -782,6 +1081,66 @@
         <member name="F:NAudio.CoreAudioApi.AudioStreamCategory.GameMedia">
             <summary>
             Background audio for games.
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.AudioStreamVolume">
+            <summary>
+            Manages the AudioStreamVolume for the <see cref="T:NAudio.CoreAudioApi.AudioClient"/>.
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioStreamVolume.CheckChannelIndex(System.Int32,System.String)">
+            <summary>
+            Verify that the channel index is valid.
+            </summary>
+            <param name="channelIndex"></param>
+            <param name="parameter"></param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioStreamVolume.GetAllVolumes">
+            <summary>
+            Return the current stream volumes for all channels
+            </summary>
+            <returns>An array of volume levels between 0.0 and 1.0 for each channel in the audio stream.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioStreamVolume.GetChannelVolume(System.Int32)">
+            <summary>
+            Return the current volume for the requested channel.
+            </summary>
+            <param name="channelIndex">The 0 based index into the channels.</param>
+            <returns>The volume level for the channel between 0.0 and 1.0.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioStreamVolume.SetAllVolumes(System.Single[])">
+            <summary>
+            Set the volume level for each channel of the audio stream.
+            </summary>
+            <param name="levels">An array of volume levels (between 0.0 and 1.0) one for each channel.</param>
+            <remarks>
+            A volume level MUST be supplied for reach channel in the audio stream.
+            </remarks>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            Thrown when <paramref name="levels"/> does not contain <see cref="P:NAudio.CoreAudioApi.AudioStreamVolume.ChannelCount"/> elements.
+            </exception>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioStreamVolume.SetChannelVolume(System.Int32,System.Single)">
+            <summary>
+            Sets the volume level for one channel in the audio stream.
+            </summary>
+            <param name="index">The 0-based index into the channels to adjust the volume of.</param>
+            <param name="level">The volume level between 0.0 and 1.0 for this channel of the audio stream.</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioStreamVolume.Dispose">
+            <summary>
+            Dispose
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.AudioStreamVolume.Dispose(System.Boolean)">
+            <summary>
+            Release/cleanup objects during Dispose/finalization.
+            </summary>
+            <param name="disposing">True if disposing and false if being finalized.</param>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.AudioStreamVolume.ChannelCount">
+            <summary>
+            Returns the current number of channels in this audio stream.
             </summary>
         </member>
         <member name="T:NAudio.CoreAudioApi.AudioVolumeNotificationData">
@@ -945,6 +1304,337 @@
             Defined in AudioClient.h
             </summary>
         </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl">
+            <summary>
+            Windows CoreAudio IAudioSessionControl interface
+            Defined in AudioPolicy.h
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.GetState(NAudio.CoreAudioApi.Interfaces.AudioSessionState@)">
+            <summary>
+            Retrieves the current state of the audio session.
+            </summary>
+            <param name="state">Receives the current session state.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.GetDisplayName(System.String@)">
+            <summary>
+            Retrieves the display name for the audio session.
+            </summary>
+            <param name="displayName">Receives a string that contains the display name.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.SetDisplayName(System.String,System.Guid)">
+            <summary>
+            Assigns a display name to the current audio session.
+            </summary>
+            <param name="displayName">A string that contains the new display name for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.GetIconPath(System.String@)">
+            <summary>
+            Retrieves the path for the display icon for the audio session.
+            </summary>
+            <param name="iconPath">Receives a string that specifies the fully qualified path of the file that contains the icon.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.SetIconPath(System.String,System.Guid)">
+            <summary>
+            Assigns a display icon to the current session.
+            </summary>
+            <param name="iconPath">A string that specifies the fully qualified path of the file that contains the new icon.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.GetGroupingParam(System.Guid@)">
+            <summary>
+            Retrieves the grouping parameter of the audio session.
+            </summary>
+            <param name="groupingId">Receives the grouping parameter ID.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.SetGroupingParam(System.Guid,System.Guid)">
+            <summary>
+            Assigns a session to a grouping of sessions.
+            </summary>
+            <param name="groupingId">The new grouping parameter ID.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.RegisterAudioSessionNotification(NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents)">
+            <summary>
+            Registers the client to receive notifications of session events, including changes in the session state.
+            </summary>
+            <param name="client">A client-implemented <see cref="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents"/> interface.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl.UnregisterAudioSessionNotification(NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents)">
+            <summary>
+            Deletes a previous registration by the client to receive notifications.
+            </summary>
+            <param name="client">A client-implemented <see cref="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents"/> interface.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2">
+            <summary>
+            Windows CoreAudio IAudioSessionControl interface
+            Defined in AudioPolicy.h
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.GetState(NAudio.CoreAudioApi.Interfaces.AudioSessionState@)">
+            <summary>
+            Retrieves the current state of the audio session.
+            </summary>
+            <param name="state">Receives the current session state.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.GetDisplayName(System.String@)">
+            <summary>
+            Retrieves the display name for the audio session.
+            </summary>
+            <param name="displayName">Receives a string that contains the display name.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.SetDisplayName(System.String,System.Guid)">
+            <summary>
+            Assigns a display name to the current audio session.
+            </summary>
+            <param name="displayName">A string that contains the new display name for the session.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.GetIconPath(System.String@)">
+            <summary>
+            Retrieves the path for the display icon for the audio session.
+            </summary>
+            <param name="iconPath">Receives a string that specifies the fully qualified path of the file that contains the icon.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.SetIconPath(System.String,System.Guid)">
+            <summary>
+            Assigns a display icon to the current session.
+            </summary>
+            <param name="iconPath">A string that specifies the fully qualified path of the file that contains the new icon.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.GetGroupingParam(System.Guid@)">
+            <summary>
+            Retrieves the grouping parameter of the audio session.
+            </summary>
+            <param name="groupingId">Receives the grouping parameter ID.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.SetGroupingParam(System.Guid,System.Guid)">
+            <summary>
+            Assigns a session to a grouping of sessions.
+            </summary>
+            <param name="groupingId">The new grouping parameter ID.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.RegisterAudioSessionNotification(NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents)">
+            <summary>
+            Registers the client to receive notifications of session events, including changes in the session state.
+            </summary>
+            <param name="client">A client-implemented <see cref="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents"/> interface.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.UnregisterAudioSessionNotification(NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents)">
+            <summary>
+            Deletes a previous registration by the client to receive notifications.
+            </summary>
+            <param name="client">A client-implemented <see cref="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionEvents"/> interface.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.GetSessionIdentifier(System.String@)">
+            <summary>
+            Retrieves the identifier for the audio session.
+            </summary>
+            <param name="retVal">Receives the session identifier.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.GetSessionInstanceIdentifier(System.String@)">
+            <summary>
+            Retrieves the identifier of the audio session instance.
+            </summary>
+            <param name="retVal">Receives the identifier of a particular instance.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.GetProcessId(System.UInt32@)">
+            <summary>
+            Retrieves the process identifier of the audio session.
+            </summary>
+            <param name="retVal">Receives the process identifier of the audio session.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.IsSystemSoundsSession">
+            <summary>
+            Indicates whether the session is a system sounds session.
+            </summary>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl2.SetDuckingPreference(System.Boolean)">
+            <summary>
+            Enables or disables the default stream attenuation experience (auto-ducking) provided by the system.
+            </summary>
+            <param name="optOut">A variable that enables or disables system auto-ducking.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.AudioSessionState">
+            <summary>
+            Defines constants that indicate the current state of an audio session.
+            </summary>
+            <remarks>
+            MSDN Reference: http://msdn.microsoft.com/en-us/library/dd370792.aspx
+            </remarks>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionState.AudioSessionStateInactive">
+            <summary>
+            The audio session is inactive.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionState.AudioSessionStateActive">
+            <summary>
+            The audio session is active.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionState.AudioSessionStateExpired">
+            <summary>
+            The audio session has expired.
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason">
+            <summary>
+            Defines constants that indicate a reason for an audio session being disconnected.
+            </summary>
+            <remarks>
+            MSDN Reference: Unknown
+            </remarks>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason.DisconnectReasonDeviceRemoval">
+            <summary>
+            The user removed the audio endpoint device.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason.DisconnectReasonServerShutdown">
+            <summary>
+            The Windows audio service has stopped.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason.DisconnectReasonFormatChanged">
+            <summary>
+            The stream format changed for the device that the audio session is connected to.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason.DisconnectReasonSessionLogoff">
+            <summary>
+            The user logged off the WTS session that the audio session was running in.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason.DisconnectReasonSessionDisconnected">
+            <summary>
+            The WTS session that the audio session was running in was disconnected.
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason.DisconnectReasonExclusiveModeOverride">
+            <summary>
+            The (shared-mode) audio session was disconnected to make the audio endpoint device available for an exclusive-mode connection.
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler">
+            <summary>
+            interface to receive session related events
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler.OnVolumeChanged(System.Single,System.Boolean)">
+            <summary>
+            notification of volume changes including muting of audio session
+            </summary>
+            <param name="volume">the current volume</param>
+            <param name="isMuted">the current mute state, true muted, false otherwise</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler.OnDisplayNameChanged(System.String)">
+            <summary>
+            notification of display name changed
+            </summary>
+            <param name="displayName">the current display name</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler.OnIconPathChanged(System.String)">
+            <summary>
+            notification of icon path changed
+            </summary>
+            <param name="iconPath">the current icon path</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler.OnChannelVolumeChanged(System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            notification of the client that the volume level of an audio channel in the session submix has changed
+            </summary>
+            <param name="channelCount">The channel count.</param>
+            <param name="newVolumes">An array of volumnes cooresponding with each channel index.</param>
+            <param name="channelIndex">The number of the channel whose volume level changed.</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler.OnGroupingParamChanged(System.Guid@)">
+            <summary>
+            notification of the client that the grouping parameter for the session has changed
+            </summary>
+            <param name="groupingId">>The new grouping parameter for the session.</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler.OnStateChanged(NAudio.CoreAudioApi.Interfaces.AudioSessionState)">
+            <summary>
+            notification of the client that the stream-activity state of the session has changed
+            </summary>
+            <param name="state">The new session state.</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionEventsHandler.OnSessionDisconnected(NAudio.CoreAudioApi.Interfaces.AudioSessionDisconnectReason)">
+            <summary>
+            notification of the client that the session has been disconnected
+            </summary>
+            <param name="disconnectReason">The reason that the audio session was disconnected.</param>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionManager">
+            <summary>
+            Windows CoreAudio IAudioSessionManager interface
+            Defined in AudioPolicy.h
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionManager.GetAudioSessionControl(System.Guid,System.UInt32,NAudio.CoreAudioApi.Interfaces.IAudioSessionControl@)">
+            <summary>
+            Retrieves an audio session control.
+            </summary>
+            <param name="sessionId">A new or existing session ID.</param>
+            <param name="streamFlags">Audio session flags.</param>
+            <param name="sessionControl">Receives an <see cref="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl"/> interface for the audio session.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionManager.GetSimpleAudioVolume(System.Guid,System.UInt32,NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume@)">
+            <summary>
+            Retrieves a simple audio volume control.
+            </summary>
+            <param name="sessionId">A new or existing session ID.</param>
+            <param name="streamFlags">Audio session flags.</param>
+            <param name="audioVolume">Receives an <see cref="T:NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume"/> interface for the audio session.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionManager2.GetAudioSessionControl(System.Guid,System.UInt32,NAudio.CoreAudioApi.Interfaces.IAudioSessionControl@)">
+            <summary>
+            Retrieves an audio session control.
+            </summary>
+            <param name="sessionId">A new or existing session ID.</param>
+            <param name="streamFlags">Audio session flags.</param>
+            <param name="sessionControl">Receives an <see cref="T:NAudio.CoreAudioApi.Interfaces.IAudioSessionControl"/> interface for the audio session.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.IAudioSessionManager2.GetSimpleAudioVolume(System.Guid,System.UInt32,NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume@)">
+            <summary>
+            Retrieves a simple audio volume control.
+            </summary>
+            <param name="sessionId">A new or existing session ID.</param>
+            <param name="streamFlags">Audio session flags.</param>
+            <param name="audioVolume">Receives an <see cref="T:NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume"/> interface for the audio session.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
         <member name="T:NAudio.CoreAudioApi.Interfaces.IMMEndpoint">
             <summary>
             defined in MMDeviceAPI.h
@@ -987,6 +1677,42 @@
             is defined in propsys.h
             </summary>
         </member>
+        <member name="T:NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume">
+            <summary>
+            Windows CoreAudio ISimpleAudioVolume interface
+            Defined in AudioClient.h
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume.SetMasterVolume(System.Single,System.Guid)">
+            <summary>
+            Sets the master volume level for the audio session.
+            </summary>
+            <param name="levelNorm">The new volume level expressed as a normalized value between 0.0 and 1.0.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume.GetMasterVolume(System.Single@)">
+            <summary>
+            Retrieves the client volume level for the audio session.
+            </summary>
+            <param name="levelNorm">Receives the volume level expressed as a normalized value between 0.0 and 1.0. </param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume.SetMute(System.Boolean,System.Guid)">
+            <summary>
+            Sets the muting state for the audio session.
+            </summary>
+            <param name="isMuted">The new muting state.</param>
+            <param name="eventContext">A user context value that is passed to the notification callback.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume.GetMute(System.Boolean@)">
+            <summary>
+            Retrieves the current muting state for the audio session.
+            </summary>
+            <param name="isMuted">Receives the muting state.</param>
+            <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        </member>
         <member name="T:NAudio.CoreAudioApi.Interfaces.MMDeviceEnumeratorComObject">
             <summary>
             implements IMMDeviceEnumerator
@@ -1022,6 +1748,11 @@
             Audio Endpoint Volume
             </summary>
         </member>
+        <member name="P:NAudio.CoreAudioApi.MMDevice.AudioSessionManager">
+            <summary>
+            AudioSessionManager instance
+            </summary>
+        </member>
         <member name="P:NAudio.CoreAudioApi.MMDevice.Properties">
             <summary>
             Properties
@@ -1035,6 +1766,11 @@
         <member name="P:NAudio.CoreAudioApi.MMDevice.DeviceFriendlyName">
             <summary>
             Friendly name of device
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.MMDevice.IconPath">
+            <summary>
+            Icon path of device
             </summary>
         </member>
         <member name="P:NAudio.CoreAudioApi.MMDevice.ID">
@@ -1100,6 +1836,14 @@
             <param name="dataFlow">Data Flow</param>
             <param name="role">Role</param>
             <returns>Device</returns>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.HasDefaultAudioEndpoint(NAudio.CoreAudioApi.DataFlow,NAudio.CoreAudioApi.Role)">
+            <summary>
+            Check to see if a default audio end point exists without needing an exception.
+            </summary>
+            <param name="dataFlow">Data Flow</param>
+            <param name="role">Role</param>
+            <returns>True if one exists, and false if one does not exist.</returns>
         </member>
         <member name="M:NAudio.CoreAudioApi.MMDeviceEnumerator.GetDevice(System.String)">
             <summary>
@@ -1211,6 +1955,11 @@
         <member name="F:NAudio.CoreAudioApi.PropertyKeys.PKEY_Device_FriendlyName">
             <summary>
             PKEY _Devie_FriendlyName
+            </summary>
+        </member>
+        <member name="F:NAudio.CoreAudioApi.PropertyKeys.PKEY_Device_IconPath">
+            <summary>
+            PKEY _Device_IconPath
             </summary>
         </member>
         <member name="T:NAudio.CoreAudioApi.PropertyStore">
@@ -1335,6 +2084,55 @@
         <member name="F:NAudio.CoreAudioApi.Role.Communications">
             <summary>
             Voice communications (talking to another person).
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.SessionCollection">
+            <summary>
+            Collection of sessions.
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.SessionCollection.Item(System.Int32)">
+            <summary>
+            Returns session at index.
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.SessionCollection.Count">
+            <summary>
+            Number of current sessions.
+            </summary>
+        </member>
+        <member name="T:NAudio.CoreAudioApi.SimpleAudioVolume">
+            <summary>
+            Windows CoreAudio SimpleAudioVolume
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.SimpleAudioVolume.#ctor(NAudio.CoreAudioApi.Interfaces.ISimpleAudioVolume)">
+            <summary>
+            Creates a new Audio endpoint volume
+            </summary>
+            <param name="realSimpleVolume">ISimpleAudioVolume COM interface</param>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.SimpleAudioVolume.Dispose">
+            <summary>
+            Dispose
+            </summary>
+        </member>
+        <member name="M:NAudio.CoreAudioApi.SimpleAudioVolume.Finalize">
+            <summary>
+            Finalizer
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.SimpleAudioVolume.Volume">
+            <summary>
+            Allows the user to adjust the volume from
+            0.0 to 1.0
+            </summary>
+        </member>
+        <member name="P:NAudio.CoreAudioApi.SimpleAudioVolume.Mute">
+            <summary>
+            Mute
             </summary>
         </member>
         <member name="T:NAudio.Dmo.IWMResamplerProps">
@@ -9794,9 +10592,10 @@
         </member>
         <member name="M:NAudio.Wave.SampleProviders.SampleToWaveProvider16.#ctor(NAudio.Wave.ISampleProvider)">
             <summary>
-            Creates a new SampleToWaveProvider16
+            Converts from an ISampleProvider (IEEE float) to a 16 bit PCM IWaveProvider.
+            Number of channels and sample rate remain unchanged.
             </summary>
-            <param name="sourceProvider">the source provider</param>
+            <param name="sourceProvider">The input source provider</param>
         </member>
         <member name="M:NAudio.Wave.SampleProviders.SampleToWaveProvider16.Read(System.Byte[],System.Int32,System.Int32)">
             <summary>
@@ -9815,6 +10614,38 @@
         <member name="P:NAudio.Wave.SampleProviders.SampleToWaveProvider16.Volume">
             <summary>
             Volume of this channel. 1.0 = full scale
+            </summary>
+        </member>
+        <member name="T:NAudio.Wave.SampleProviders.SampleToWaveProvider24">
+            <summary>
+            Converts a sample provider to 24 bit PCM, optionally clipping and adjusting volume along the way
+            </summary>
+        </member>
+        <member name="M:NAudio.Wave.SampleProviders.SampleToWaveProvider24.#ctor(NAudio.Wave.ISampleProvider)">
+            <summary>
+            Converts from an ISampleProvider (IEEE float) to a 16 bit PCM IWaveProvider.
+            Number of channels and sample rate remain unchanged.
+            </summary>
+            <param name="sourceProvider">The input source provider</param>
+        </member>
+        <member name="M:NAudio.Wave.SampleProviders.SampleToWaveProvider24.Read(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Reads bytes from this wave stream, clipping if necessary
+            </summary>
+            <param name="destBuffer">The destination buffer</param>
+            <param name="offset">Offset into the destination buffer</param>
+            <param name="numBytes">Number of bytes read</param>
+            <returns>Number of bytes read.</returns>
+        </member>
+        <member name="P:NAudio.Wave.SampleProviders.SampleToWaveProvider24.WaveFormat">
+            <summary>
+            The Format of this IWaveProvider
+            <see cref="P:NAudio.Wave.IWaveProvider.WaveFormat"/>
+            </summary>
+        </member>
+        <member name="P:NAudio.Wave.SampleProviders.SampleToWaveProvider24.Volume">
+            <summary>
+            Volume of this channel. 1.0 = full scale, 0.0 to mute
             </summary>
         </member>
         <member name="T:NAudio.Wave.SampleProviders.SignalGenerator">
