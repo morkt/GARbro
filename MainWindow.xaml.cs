@@ -1056,6 +1056,18 @@ namespace GARbro.GUI
             e.CanExecute = CurrentDirectory.SelectedIndex != -1;
         }
 
+        private void CanExecuteConvertImage (object sender, CanExecuteRoutedEventArgs e)
+        {
+            if (CurrentDirectory.SelectedItems.Count > 1)
+            {
+                e.CanExecute = !ViewModel.IsArchive;
+            }
+            else
+            {
+                CanExecuteOnImage (sender, e);
+            }
+        }
+
         private void CanExecuteOnImage (object sender, CanExecuteRoutedEventArgs e)
         {
             var entry = CurrentDirectory.SelectedItem as EntryViewModel;

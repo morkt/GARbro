@@ -366,7 +366,7 @@
         <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteOnPhysicalFile" />
         <CommandBinding Command="{x:Static local:Commands.RenameItem}" Executed="RenameItemExec" CanExecute="CanExecuteInDirectory" />
         <CommandBinding Command="{x:Static local:Commands.ExploreItem}" Executed="ExploreItemExec" CanExecute="CanExecuteInDirectory" />
-        <CommandBinding Command="{x:Static local:Commands.ConvertImage}" Executed="ConvertImageExec" CanExecute="CanExecuteOnImage" />
+        <CommandBinding Command="{x:Static local:Commands.ConvertImage}" Executed="ConvertImageExec" CanExecute="CanExecuteConvertImage" />
         <CommandBinding Command="{x:Static local:Commands.SortBy}"     Executed="SortByExec"     CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.GoBack}"     Executed="GoBackExec"     CanExecute="CanExecuteGoBack"/>
         <CommandBinding Command="{x:Static local:Commands.GoForward}"  Executed="GoForwardExec"  CanExecute="CanExecuteGoForward"/>
