@@ -144,6 +144,22 @@ namespace GameRes
         }
 
         /// <summary>
+        /// Open specified <paramref name="entry"/> as a seekable Stream.
+        /// </summary>
+        public Stream OpenSeekableEntry (Entry entry)
+        {
+            var input = OpenEntry (entry);
+            if (input.CanSeek)
+                return input;
+            using (input)
+            {
+                var copy = new MemoryStream ((int)entry.Size);
+                input.CopyTo (copy);
+                return copy;
+            }
+        }
+
+        /// <summary>
         /// Create file corresponding to <paramref name="entry"/> within current directory and open
         /// it for writing.
         /// </summary>
