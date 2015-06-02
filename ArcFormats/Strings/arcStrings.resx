@@ -312,6 +312,9 @@ Enter archive encryption key.</value>
   <data name="ArcDefault" xml:space="preserve">
     <value>Default</value>
   </data>
+  <data name="ArcHex32Bit" xml:space="preserve">
+    <value>32-bit hex number</value>
+  </data>
   <data name="KCAPDefault" xml:space="preserve">
     <value>Default</value>
   </data>

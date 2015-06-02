@@ -125,6 +125,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 32-bit hex number.
+        /// </summary>
+        public static string ArcHex32Bit {
+            get {
+                return ResourceManager.GetString("ArcHex32Bit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to no encryption.
         /// </summary>
         public static string ArcNoEncryption {

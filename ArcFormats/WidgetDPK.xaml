@@ -5,17 +5,6 @@
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
       xmlns:dac="clr-namespace:GameRes.Formats.Dac"
       xmlns:local="clr-namespace:GameRes.Formats.GUI">
-    <Grid.Resources>
-        <local:KeyConverter x:Key="keyConverter"/>
-        <Style TargetType="{x:Type TextBox}">
-            <Style.Triggers>
-                <Trigger Property="Validation.HasError" Value="true">
-                    <Setter Property="ToolTip"
-                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Grid.Resources>
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto"/>
         <ColumnDefinition MinWidth="130" Width="*"/>
@@ -36,17 +25,10 @@
              IsReadOnly="True" TextWrapping="NoWrap" Grid.Column="1" Grid.Row="1" Margin="0,3,0,3"
              DataContext="{Binding ElementName=EncScheme, Path=SelectedItem}"/>
     <Label Content="{x:Static s:arcStrings.DPKKeys}" Target="{Binding ElementName=Key1}"
+           ToolTip="{x:Static s:arcStrings.ArcHex32Bit}"
            Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right"/>
     <TextBox Name="Key1" Grid.Column="1" Grid.Row="2" Margin="0,3,0,3" Width="100" HorizontalAlignment="Left"
-             DataContext="{Binding ElementName=EncScheme, Path=SelectedItem}">
-        <TextBox.Text>
-            <Binding Path="Key1" Mode="OneWay" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged"/>
-        </TextBox.Text>
-    </TextBox>
+             ToolTip="{x:Static s:arcStrings.ArcHex32Bit}"/>
     <TextBox Name="Key2" Grid.Column="1" Grid.Row="3" Margin="0,3,0,3" Width="100" HorizontalAlignment="Left"
-             DataContext="{Binding ElementName=EncScheme, Path=SelectedItem}">
-        <TextBox.Text>
-            <Binding Path="Key2" Mode="OneWay" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged"/>
-        </TextBox.Text>
-    </TextBox>
+             ToolTip="{x:Static s:arcStrings.ArcHex32Bit}"/>
 </Grid>

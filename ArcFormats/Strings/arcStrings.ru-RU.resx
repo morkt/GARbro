@@ -136,6 +136,9 @@
     <value>Содержимое архива зашифровано.
 Выберите алгоритм шифрования.</value>
   </data>
+  <data name="ArcHex32Bit" xml:space="preserve">
+    <value>32-битное шестнадцатеричное число</value>
+  </data>
   <data name="ArcNoEncryption" xml:space="preserve">
     <value>без шифрования</value>
   </data>
