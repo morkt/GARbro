@@ -106,7 +106,6 @@ namespace GARbro.GUI
         private bool                m_skip_audio  = false;
         private bool                m_convert_audio;
         private ImageFormat         m_image_format;
-        private IEnumerable<Entry>  m_file_list;
         private int                 m_extract_count;
         private bool                m_extract_in_progress = false;
         private ProgressDialog      m_progress_dialog;
@@ -243,7 +242,7 @@ namespace GARbro.GUI
                 m_main.SetStatusText (string.Format ("{1}: {0}", guiStrings.MsgNoFiles, m_arc_name));
                 return;
             }
-            m_file_list = file_list.OrderBy (e => e.Offset);
+            file_list = file_list.OrderBy (e => e.Offset);
             m_progress_dialog = new ProgressDialog ()
             {
                 WindowTitle = guiStrings.TextTitle,
@@ -251,26 +250,26 @@ namespace GARbro.GUI
                 Description = "",
                 MinimizeBox = true,
             };
-            if (!m_file_list.Skip (1).Any()) // 1 == m_file_list.Count()
+            if (!file_list.Skip (1).Any()) // 1 == file_list.Count()
             {
-                m_progress_dialog.Description = m_file_list.First().Name;
+                m_progress_dialog.Description = file_list.First().Name;
                 m_progress_dialog.ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar;
             }
             m_convert_audio = !m_skip_audio && Settings.Default.appConvertAudio;
             m_extract_count = 0;
             m_pending_error = null;
-            m_progress_dialog.DoWork += ExtractWorker;
+            m_progress_dialog.DoWork += (s, e) => ExtractWorker (file_list);
             m_progress_dialog.RunWorkerCompleted += OnExtractComplete;
             m_progress_dialog.ShowDialog (m_main);
             m_extract_in_progress = true;
         }
 
-        void ExtractWorker (object sender, DoWorkEventArgs e)
+        void ExtractWorker (IEnumerable<Entry> file_list)
         {
             try
             {
-                int total = m_file_list.Count();
-                foreach (var entry in m_file_list)
+                int total = file_list.Count();
+                foreach (var entry in file_list)
                 {
                     if (m_progress_dialog.CancellationPending)
                         break;
@@ -293,21 +292,22 @@ namespace GARbro.GUI
 
         static void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
         {
-            using (var file = arc.OpenEntry (entry))
+            using (var file = arc.OpenSeekableEntry (entry))
             {
-                string source_ext = Path.GetExtension (entry.Name).TrimStart ('.').ToLowerInvariant();
-                if (target_format.Extensions.Any (ext => ext == source_ext))
+                var src_format = ImageFormat.FindFormat (file);
+                if (null == src_format)
+                    throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
+                file.Position = 0;
+                string target_ext = target_format.Extensions.First();
+                string outname = Path.ChangeExtension (entry.Name, target_ext);
+                if (src_format.Item1 == target_format)
                 {
-                    // source extension matches target image format, copy file as is
-                    using (var output = arc.CreateFile (entry))
+                    // source format is the same as a target, copy file as is
+                    using (var output = ArchiveFormat.CreateFile (outname))
                         file.CopyTo (output);
                     return;
                 }
-                ImageData image = ImageFormat.Read (file);
-                if (null == image)
-                    throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
-                string target_ext = target_format.Extensions.First();
-                string outname = Path.ChangeExtension (entry.Name, target_ext);
+                ImageData image = src_format.Item1.Read (file, src_format.Item2);
                 Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractImage");
                 using (var outfile = ArchiveFormat.CreateFile (outname))
                 {
@@ -341,7 +341,7 @@ namespace GARbro.GUI
             }
             else
             {
-                var wav_format = FormatCatalog.Instance.AudioFormats.Where (f => f.Tag == "WAV").First();
+                var wav_format = FormatCatalog.Instance.AudioFormats.First (f => f.Tag == "WAV");
                 string output_name = Path.ChangeExtension (entry_name, "wav");
                 using (var output = ArchiveFormat.CreateFile (output_name))
                     wav_format.Write (input, output);
