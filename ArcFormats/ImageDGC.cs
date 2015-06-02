@@ -278,7 +278,9 @@ namespace GameRes.Formats.Dac
                         int count = (ctl & 0x3F) + 2;
                         int offset = ctl >> 6;
                         offset *= m_pixel_size;
-                        Buffer.BlockCopy (m_output, dst+offset, m_output, dst, count*m_pixel_size);
+                        count  *= m_pixel_size;
+                        Binary.CopyOverlapped (m_output, dst+offset, dst, count);
+                        dst += count;
                     }
                     else
                     {
@@ -355,8 +357,7 @@ namespace GameRes.Formats.Dac
                         --length;
                         if (0 == (ctl & 0x80))
                         {
-                            int count = ctl + 2;
-                            while (0 != count--)
+                            for (int count = ctl + 2; 0 != count; --count)
                             {
                                 int src = 3 * m_input.ReadByte();
                                 --length;
@@ -373,8 +374,9 @@ namespace GameRes.Formats.Dac
                             int count = (offset & 0x3F) + 4;
                             offset >>= 6;
                             offset *= m_pixel_size;
-                            Buffer.BlockCopy (m_output, dst+offset, m_output, dst, count*m_pixel_size);
-                            dst += count*m_pixel_size;
+                            count  *= m_pixel_size;
+                            Binary.CopyOverlapped (m_output, dst+offset, dst, count);
+                            dst += count;
                         }
                     }
                 }
