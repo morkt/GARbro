@@ -19,6 +19,8 @@ namespace GameRes.Formats.GUI
             uint key2 = Settings.Default.DPKKey2; 
             if (last_scheme.Key1 != key1 || last_scheme.Key2 != key2)
                 EncScheme.SelectedIndex = -1;
+            else if (null == EncScheme.SelectedItem)
+                EncScheme.SelectedIndex = 0;
             Key1.Text = key1.ToString ("X");
             Key2.Text = key2.ToString ("X8");
 
