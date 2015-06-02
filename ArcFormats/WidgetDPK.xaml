@@ -26,7 +26,7 @@
         <RowDefinition/>
         <RowDefinition/>
     </Grid.RowDefinitions>
-    <Label Content="{x:Static s:arcStrings.ArcScheme}" Target="{Binding ElementName=EncScheme}"
+    <Label Content="{x:Static s:arcStrings.LabelEncScheme}" Target="{Binding ElementName=EncScheme}"
            Grid.Column="0" Grid.Row="0" HorizontalAlignment="Right"/>
     <ComboBox Name="EncScheme" Grid.Column="1" Grid.Row="0" Margin="0,3,0,0" Width="200"
               ItemsSource="{Binding Source={x:Static dac:DpkOpener.KnownSchemes}, Mode=OneWay}"

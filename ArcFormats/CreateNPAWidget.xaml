@@ -30,7 +30,7 @@
     </Grid.RowDefinitions>
     <StackPanel Orientation="Horizontal">
         <StackPanel Orientation="Vertical" Margin="0,0,0,5" Grid.Row="0">
-            <Label Content="{x:Static s:arcStrings.NPALabelScheme}" Target="{Binding ElementName=EncryptionWidget}" Padding="4,0,0,5" HorizontalAlignment="Left"/>
+            <Label Content="{x:Static s:arcStrings.LabelEncScheme}" Target="{Binding ElementName=EncryptionWidget}" Padding="4,0,0,5" HorizontalAlignment="Left"/>
             <gui:WidgetNPA x:Name="EncryptionWidget" HorizontalAlignment="Left"/>
         </StackPanel>
         <Button Content="{x:Static s:arcStrings.ArcReset}" Width="70" Height="25" VerticalAlignment="Top" Margin="20,0,0,5" Click="Reset_Click"/>

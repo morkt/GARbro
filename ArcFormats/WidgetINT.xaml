@@ -46,11 +46,11 @@
             </ControlTemplate>
         </Validation.ErrorTemplate>
     </TextBox>
-    <Label Content="{x:Static s:arcStrings.INTLabelPassphrase}" Target="{Binding ElementName=Passphrase}"
+    <Label Content="{x:Static s:arcStrings.LabelPassphrase}" Target="{Binding ElementName=Passphrase}"
            Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right"/>
     <TextBox Name="Passphrase" Grid.Column="1" Grid.Row="1" Margin="0,3,0,3"
              Text="{Binding Path=Password}"/>
-    <Label Content="{x:Static s:arcStrings.INTLabelScheme}" Target="{Binding ElementName=EncScheme}"
+    <Label Content="{x:Static s:arcStrings.LabelScheme}" Target="{Binding ElementName=EncScheme}"
            Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right"/>
     <ComboBox Name="EncScheme" Grid.Column="1" Grid.Row="2" Margin="0,3,0,0"
               ItemsSource="{Binding Source={x:Static fmt:IntOpener.KnownSchemes}, Path=Keys, Mode=OneWay}"

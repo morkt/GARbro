@@ -160,19 +160,10 @@ Choose appropriate encryption scheme.</value>
   <data name="INTLabelNumericKey" xml:space="preserve">
     <value>Numeric key</value>
   </data>
-  <data name="INTLabelPassphrase" xml:space="preserve">
-    <value>Passphrase</value>
-  </data>
-  <data name="INTLabelScheme" xml:space="preserve">
-    <value>Scheme</value>
-  </data>
   <data name="INTNotice" xml:space="preserve">
     <value>Archive directory is encrypted.
 Enter archive encryption key or choose
 predefined encryption scheme.</value>
-  </data>
-  <data name="KCAPDefault" xml:space="preserve">
-    <value>Default</value>
   </data>
   <data name="KogadoDescription" xml:space="preserve">
     <value>Kogado game engine resource archive</value>
@@ -238,9 +229,6 @@ predefined encryption scheme.</value>
     <value>Encryption keys
 (required even if contents is not encrypted)</value>
   </data>
-  <data name="NPALabelScheme" xml:space="preserve">
-    <value>Encryption scheme</value>
-  </data>
   <data name="NPASteinsGateDescription" xml:space="preserve">
     <value>Nitro+ Steins;Gate resource archive</value>
   </data>
@@ -293,9 +281,6 @@ predefined encryption scheme.</value>
   <data name="XP3Description" xml:space="preserve">
     <value>KiriKiri game engine resource archive</value>
   </data>
-  <data name="XP3LabelScheme" xml:space="preserve">
-    <value>Encryption scheme</value>
-  </data>
   <data name="XP3LabelVersion" xml:space="preserve">
     <value>Version</value>
   </data>
@@ -318,10 +303,16 @@ Enter archive encryption key.</value>
   <data name="NOAIgnoreEncryption" xml:space="preserve">
     <value>Ignore encryption</value>
   </data>
-  <data name="ArcScheme" xml:space="preserve">
+  <data name="LabelEncScheme" xml:space="preserve">
     <value>Encryption scheme</value>
   </data>
   <data name="DPKKeys" xml:space="preserve">
     <value>Encryption keys</value>
+  </data>
+  <data name="ArcDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="KCAPDefault" xml:space="preserve">
+    <value>Default</value>
   </data>
 </root>

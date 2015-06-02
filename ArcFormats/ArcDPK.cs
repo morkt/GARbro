@@ -77,7 +77,7 @@ namespace GameRes.Formats.Dac
 
         public static readonly DpkScheme[] KnownSchemes = new DpkScheme[]
         {
-            new DpkScheme { Key1 = 0x0FF98,             Name = "Default",
+            new DpkScheme { Key1 = 0x0FF98,             Name = arcStrings.ArcDefault,
                             Key2 = 0x43E78A5C },
             new DpkScheme { Key1 = 0x0C3BD,             Name = "Inbou no Wakusei",
                             Key2 = 0x577D4861, OriginalTitle = "淫暴の惑星～破壊と欲望の衝動～" },

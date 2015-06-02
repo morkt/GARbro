@@ -106,6 +106,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default.
+        /// </summary>
+        public static string ArcDefault {
+            get {
+                return ResourceManager.GetString("ArcDefault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive content is encrypted.
         ///Choose appropriate encryption scheme..
         /// </summary>
@@ -130,15 +139,6 @@ namespace GameRes.Formats.Strings {
         public static string ArcReset {
             get {
                 return ResourceManager.GetString("ArcReset", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Encryption scheme.
-        /// </summary>
-        public static string ArcScheme {
-            get {
-                return ResourceManager.GetString("ArcScheme", resourceCulture);
             }
         }
         
@@ -206,24 +206,6 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Passphrase.
-        /// </summary>
-        public static string INTLabelPassphrase {
-            get {
-                return ResourceManager.GetString("INTLabelPassphrase", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Scheme.
-        /// </summary>
-        public static string INTLabelScheme {
-            get {
-                return ResourceManager.GetString("INTLabelScheme", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Archive directory is encrypted.
         ///Enter archive encryption key or choose
         ///predefined encryption scheme..
@@ -249,6 +231,15 @@ namespace GameRes.Formats.Strings {
         public static string KogadoDescription {
             get {
                 return ResourceManager.GetString("KogadoDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encryption scheme.
+        /// </summary>
+        public static string LabelEncScheme {
+            get {
+                return ResourceManager.GetString("LabelEncScheme", resourceCulture);
             }
         }
         
@@ -443,15 +434,6 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Encryption scheme.
-        /// </summary>
-        public static string NPALabelScheme {
-            get {
-                return ResourceManager.GetString("NPALabelScheme", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Nitro+ Steins;Gate resource archive.
         /// </summary>
         public static string NPASteinsGateDescription {
@@ -602,15 +584,6 @@ namespace GameRes.Formats.Strings {
         public static string XP3Description {
             get {
                 return ResourceManager.GetString("XP3Description", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Encryption scheme.
-        /// </summary>
-        public static string XP3LabelScheme {
-            get {
-                return ResourceManager.GetString("XP3LabelScheme", resourceCulture);
             }
         }
         

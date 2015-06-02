@@ -20,7 +20,7 @@
             </ComboBox>
         </StackPanel>
         <StackPanel Orientation="Vertical" Margin="0,0,0,5">
-                <Label Content="{x:Static s:arcStrings.XP3LabelScheme}" Target="{Binding ElementName=EncryptionWidget}" Padding="4,0,0,5"/>
+                <Label Content="{x:Static s:arcStrings.LabelEncScheme}" Target="{Binding ElementName=EncryptionWidget}" Padding="4,0,0,5"/>
             <local:WidgetXP3 x:Name="EncryptionWidget"/>
         </StackPanel>
     </StackPanel>

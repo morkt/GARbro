@@ -129,6 +129,9 @@
   <data name="AMINoFiles" xml:space="preserve">
     <value>Не найдено файлов, подходящих для архива AMI.</value>
   </data>
+  <data name="ArcDefault" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
   <data name="ArcEncryptedNotice" xml:space="preserve">
     <value>Содержимое архива зашифровано.
 Выберите алгоритм шифрования.</value>
@@ -138,9 +141,6 @@
   </data>
   <data name="ArcReset" xml:space="preserve">
     <value>Сбросить</value>
-  </data>
-  <data name="ArcScheme" xml:space="preserve">
-    <value>Способ шифрования</value>
   </data>
   <data name="DPKKeys" xml:space="preserve">
     <value>Ключи шифрования</value>
@@ -154,12 +154,6 @@
   <data name="INTLabelNumericKey" xml:space="preserve">
     <value>Цифровой ключ</value>
   </data>
-  <data name="INTLabelPassphrase" xml:space="preserve">
-    <value>Пароль</value>
-  </data>
-  <data name="INTLabelScheme" xml:space="preserve">
-    <value>Вариант</value>
-  </data>
   <data name="INTNotice" xml:space="preserve">
     <value>Заголовок архива зашифрован.
 Введите ключ шифрования или выберите
@@ -167,6 +161,9 @@
   </data>
   <data name="KCAPDefault" xml:space="preserve">
     <value>Неизвестно</value>
+  </data>
+  <data name="LabelEncScheme" xml:space="preserve">
+    <value>Способ шифрования</value>
   </data>
   <data name="LabelPassphrase" xml:space="preserve">
     <value>Пароль</value>
@@ -226,9 +223,6 @@
     <value>Ключи шифрования
 (требуются даже если содержимое не шифруется)</value>
   </data>
-  <data name="NPALabelScheme" xml:space="preserve">
-    <value>Способ шифрования</value>
-  </data>
   <data name="ONSArchiveType" xml:space="preserve">
     <value>Тип архива</value>
   </data>
@@ -259,9 +253,6 @@
   </data>
   <data name="XP3CompressHeader" xml:space="preserve">
     <value>Сжать оглавление</value>
-  </data>
-  <data name="XP3LabelScheme" xml:space="preserve">
-    <value>Способ шифрования</value>
   </data>
   <data name="XP3LabelVersion" xml:space="preserve">
     <value>Версия</value>
