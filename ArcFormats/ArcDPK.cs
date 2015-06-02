@@ -120,6 +120,7 @@ namespace GameRes.Formats.Dac
                 return null;
 
             var options = Query<DpkOptions> (arcStrings.ArcEncryptedNotice);
+            var name_bytes = new byte[0x20];
             var dir = new List<Entry> (count);
             int base_offset = 4 + count * 4;
             for (int i = 0; i < count; ++i)
@@ -133,13 +134,21 @@ namespace GameRes.Formats.Dac
                     continue;
                 if ('z' == index[name_end-1])
                     --name_end; // strip 'z' from file extensions
-                var name = Encodings.cp932.GetString (index, name_begin, name_end-name_begin);
+
+                int name_length = name_end - name_begin;
+                var name = Encodings.cp932.GetString (index, name_begin, name_length);
+                if (name_length > name_bytes.Length)
+                    name_bytes = new byte[name_length];
+                // shift-jis characters sequence may contain '\\' that is not a path delimiter
+                string name_base = Path.GetFileName (name);
+                name_length = Encodings.cp932.GetBytes (name_base, 0, name_base.Length, name_bytes, 0);
+
                 uint size = LittleEndian.ToUInt32 (index, index_offset + 4);
                 var entry = new DpkEntry
                 {
                     Name = name,
                     Type = FormatCatalog.Instance.GetTypeFromName (name),
-                    Hash = GetNameHash (index, name_begin, name_end-name_begin, options.Key1, options.Key2, size),
+                    Hash = GetNameHash (name_bytes, 0, name_length, options.Key1, options.Key2, size),
                     Offset = data_offset + LittleEndian.ToUInt32 (index, index_offset),
                     Size = size,
                 };
@@ -187,7 +196,7 @@ namespace GameRes.Formats.Dac
         private uint GetNameHash (byte[] name, int begin, int length, uint key1, uint key2, uint entry_size)
         {
             uint hash = 0;
-            for (int i = begin+length-1; i >= begin && name[i] != '\\'; --i)
+            for (int i = begin+length-1; i >= begin; --i)
             {
                 hash += key1 + key2 * (entry_size + name[i]);
             }
