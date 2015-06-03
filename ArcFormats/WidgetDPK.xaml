@@ -3,8 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:s="clr-namespace:GameRes.Formats.Strings"
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
-      xmlns:dac="clr-namespace:GameRes.Formats.Dac"
-      xmlns:local="clr-namespace:GameRes.Formats.GUI">
+      xmlns:dac="clr-namespace:GameRes.Formats.Dac">
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto"/>
         <ColumnDefinition MinWidth="130" Width="*"/>
