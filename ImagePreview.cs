@@ -200,15 +200,7 @@ namespace GARbro.GUI
             }
             else
             {
-                var file = preview.Archive.OpenEntry (preview.Entry);
-                if (file.CanSeek)
-                    return file;
-                using (file)
-                {
-                    var memory = new MemoryStream();
-                    file.CopyTo (memory);
-                    return memory;
-                }
+                return preview.Archive.OpenSeekableEntry (preview.Entry);
             }
         }
 
