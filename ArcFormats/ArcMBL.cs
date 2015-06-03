@@ -104,6 +104,10 @@ namespace GameRes.Formats.Marble
                         entry = new Entry { Name = name, Type = "script" };
                         contains_scripts = true;
                     }
+                    else if (name.EndsWith (".prs"))
+                    {
+                        entry = new Entry { Name = name, Type = "image" };
+                    }
                     else
                     {
                         entry = new AutoEntry (name, () => {
@@ -125,7 +129,7 @@ namespace GameRes.Formats.Marble
                     return null;
                 if (contains_scripts)
                 {
-                    var options = Query<MblOptions> ("Archive contains encrypted scripts.\nChoose encryption scheme or enter a passphrase.");
+                    var options = Query<MblOptions> (arcStrings.MBLNotice);
                     if (options.PassPhrase.Length > 0)
                         return new MblArchive (file, this, dir, options.PassPhrase);
                 }
