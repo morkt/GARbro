@@ -216,6 +216,9 @@
       <SubType>Code</SubType>
       <DependentUpon>WidgetLPK.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WidgetMBL.xaml.cs">
+      <DependentUpon>WidgetMBL.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WidgetNOA.xaml.cs">
       <DependentUpon>WidgetNOA.xaml</DependentUpon>
     </Compile>
@@ -319,6 +322,10 @@
     <Page Include="WidgetLPK.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WidgetMBL.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="WidgetNOA.xaml">
       <SubType>Designer</SubType>

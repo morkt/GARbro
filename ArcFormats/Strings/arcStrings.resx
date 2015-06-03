@@ -318,4 +318,8 @@ Enter archive encryption key.</value>
   <data name="KCAPDefault" xml:space="preserve">
     <value>Default</value>
   </data>
+  <data name="MBLNotice" xml:space="preserve">
+      <value>Archive contains encrypted scripts.
+Choose encryption scheme or enter a passphrase.</value>
+  </data>
 </root>

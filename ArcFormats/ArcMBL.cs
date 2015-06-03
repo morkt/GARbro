@@ -28,10 +28,28 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Marble
 {
+    public class MblOptions : ResourceOptions
+    {
+        public string PassPhrase;
+    }
+
+    public class MblArchive : ArcFile
+    {
+        public readonly byte[] Key;
+
+        public MblArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, string password)
+            : base (arc, impl, dir)
+        {
+            Key = Encodings.cp932.GetBytes (password);
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class MblOpener : ArchiveFormat
     {
@@ -64,6 +82,7 @@ namespace GameRes.Formats.Marble
                 return null;
             try
             {
+                bool contains_scripts = false;
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
                 {
@@ -79,13 +98,22 @@ namespace GameRes.Formats.Marble
                     name = name.ToLowerInvariant();
                     index_offset += (uint)filename_len;
                     uint offset = file.View.ReadUInt32 (index_offset);
-                    var entry = new AutoEntry (name, () => {
-                        uint signature = file.View.ReadUInt32 (offset);
-                        var res = FormatCatalog.Instance.LookupSignature (signature);
-                        if (!res.Any() && 0x4259 == (0xffff & signature))
-                            res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "PRS");
-                        return res.FirstOrDefault();
-                    });
+                    Entry entry;
+                    if (name.EndsWith (".s"))
+                    {
+                        entry = new Entry { Name = name, Type = "script" };
+                        contains_scripts = true;
+                    }
+                    else
+                    {
+                        entry = new AutoEntry (name, () => {
+                            uint signature = file.View.ReadUInt32 (offset);
+                            var res = FormatCatalog.Instance.LookupSignature (signature);
+                            if (!res.Any() && 0x4259 == (0xffff & signature))
+                                res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "PRS");
+                            return res.FirstOrDefault();
+                        });
+                    }
                     entry.Offset = offset;
                     entry.Size = file.View.ReadUInt32 (index_offset+4);
                     if (offset < index_size || !entry.CheckPlacement (file.MaxOffset))
@@ -95,12 +123,57 @@ namespace GameRes.Formats.Marble
                 }
                 if (0 == dir.Count)
                     return null;
+                if (contains_scripts)
+                {
+                    var options = Query<MblOptions> ("Archive contains encrypted scripts.\nChoose encryption scheme or enter a passphrase.");
+                    if (options.PassPhrase.Length > 0)
+                        return new MblArchive (file, this, dir, options.PassPhrase);
+                }
                 return new ArcFile (file, this, dir);
             }
             catch
             {
                 return null;
             }
+        }
+
+        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
+            { arcStrings.ArcDefault,    "" },
+            { "Chikatetsu Fuusa Jiken", "naze" }
+        };
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry.Type != "script" || !entry.Name.EndsWith (".s"))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var marc = arc as MblArchive;
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            if (null == marc || null == marc.Key)
+            {
+                for (int i = 0; i < data.Length; ++i)
+                {
+                    data[i] = (byte)-data[i];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < data.Length; ++i)
+                {
+                    data[i] ^= marc.Key[i % marc.Key.Length];
+                }
+            }
+            return new MemoryStream (data);
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new MblOptions { PassPhrase = Settings.Default.MBLPassPhrase };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetMBL();
         }
     }
 }

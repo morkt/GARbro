@@ -280,6 +280,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Archive contains encrypted scripts.Choose encryption scheme or enter a passphrase..
+        /// </summary>
+        public static string MBLNotice {
+            get {
+                return ResourceManager.GetString("MBLNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Adding file.
         /// </summary>
         public static string MsgAddingFile {

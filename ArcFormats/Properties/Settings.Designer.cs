@@ -357,5 +357,17 @@ namespace GameRes.Formats.Properties {
                 this["DPKLastScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string MBLPassPhrase {
+            get {
+                return ((string)(this["MBLPassPhrase"]));
+            }
+            set {
+                this["MBLPassPhrase"] = value;
+            }
+        }
     }
 }
