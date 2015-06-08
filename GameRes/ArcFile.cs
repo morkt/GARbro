@@ -144,6 +144,16 @@ namespace GameRes
         }
 
         /// <summary>
+        /// Open specified <paramref name="entry"/> as memory-mapped view.
+        /// </summary>
+        public ArcView OpenView (Entry entry)
+        {
+            var stream = OpenEntry (entry);
+            uint size = stream.CanSeek ? (uint)stream.Length : entry.Size;
+            return new ArcView (stream, entry.Name, size);
+        }
+
+        /// <summary>
         /// Open specified <paramref name="entry"/> as a seekable Stream.
         /// </summary>
         public Stream OpenSeekableEntry (Entry entry)
@@ -166,6 +176,14 @@ namespace GameRes
         public Stream CreateFile (Entry entry)
         {
             return ArchiveFormat.CreateFile (entry.Name);
+        }
+
+        public IFileSystem CreateFileSystem ()
+        {
+            if (m_interface.IsHierarchic)
+                return new ArchiveFileSystem (this);
+            else
+                return new FlatArchiveFileSystem (this);
         }
 
         #region IDisposable Members
