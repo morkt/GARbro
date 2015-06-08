@@ -39,17 +39,6 @@ using GARbro.GUI.Strings;
 
 namespace GARbro.GUI
 {
-    public class SubDirEntry : GameRes.Entry
-    {
-        public override string Type  { get { return "directory"; } }
-
-        public SubDirEntry (string name)
-        {
-            Name = name;
-            Size = 0;
-        }
-    }
-
     public class DirectoryViewModel : ObservableCollection<EntryViewModel>
     {
         public string Path { get; private set; }
