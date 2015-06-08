@@ -88,6 +88,8 @@ namespace GameRes.Formats.Entis
                 { "Innyuu Famiresu", new Dictionary<string, string> {
                     { "d01.dat", "vdiu$43AfUCfh9aksf" },
                     { "d03.dat", "gaivnwq7365e021gf" } } },
+                { "Konneko", new Dictionary<string, string> {
+                    { "script.noa", "convini_cat" } } },
             };
 
         public override ArcFile TryOpen (ArcView file)
@@ -98,7 +100,7 @@ namespace GameRes.Formats.Entis
             if (0x02000400 != id)
                 return null;
             var reader = new IndexReader (file);
-            if (!reader.ParseDirEntry (0x40, ""))
+            if (!reader.ParseDirEntry (0x40, "") || 0 == reader.Dir.Count)
                 return null;
             if (!reader.HasEncrypted)
                 return new ArcFile (file, this, reader.Dir);
@@ -243,7 +245,9 @@ namespace GameRes.Formats.Entis
 
                     entry.Offset = base_offset + m_file.View.ReadInt64 (dir_offset);
                     if (!entry.CheckPlacement (m_file.MaxOffset))
-                        return false;
+                    {
+                        entry.Size = (uint)(m_file.MaxOffset - entry.Offset);
+                    }
                     dir_offset += 0x10;
 
                     uint extra_length = m_file.View.ReadUInt32 (dir_offset);
@@ -295,7 +299,7 @@ namespace GameRes.Formats.Entis
         protected int       m_ptrNextBuf;
 
         protected Stream    m_pFile;
-        protected bool      m_nFlagEOF;
+        protected ERISADecodeContext m_pContext;
 
         public ERISADecodeContext (uint nBufferingSize)
         {
@@ -304,23 +308,30 @@ namespace GameRes.Formats.Entis
             m_nBufCount = 0;
             m_ptrBuffer = new byte[nBufferingSize];
             m_pFile = null;
-            m_nFlagEOF = false;
+            m_pContext = null;
         }
-
-        public bool EofFlag { get { return m_nFlagEOF; } } // GetEOFFlag
 
         public void AttachInputFile (Stream file)
         {
             m_pFile = file;
+            m_pContext = null;
+        }
+
+        public void AttachInputContext (ERISADecodeContext context)
+        {
+            m_pFile = null;
+            m_pContext = context;
         }
 
         public uint ReadNextData (byte[] ptrBuffer, uint nBytes)
         {
             if (m_pFile != null)
             {
-                uint read = (uint)m_pFile.Read (ptrBuffer, 0, (int)nBytes);
-                m_nFlagEOF = read != nBytes;
-                return read;
+                return (uint)m_pFile.Read (ptrBuffer, 0, (int)nBytes);
+            }
+            else if (m_pContext != null)
+            {
+                return m_pContext.DecodeBytes (ptrBuffer, nBytes);
             }
             else
             {
