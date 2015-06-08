@@ -2,7 +2,7 @@
 //! \date       Mon Jul 07 10:31:10 2014
 //! \brief      Memory mapped view of gameres file.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -78,6 +78,8 @@ namespace GameRes
     {
         static public string ReadString (this MemoryMappedViewAccessor view, long offset, uint size, Encoding enc)
         {
+            if (0 == size)
+                return string.Empty;
             byte[] buffer = new byte[size];
             uint n;
             for (n = 0; n < size; ++n)
@@ -144,14 +146,70 @@ namespace GameRes
             {
                 Name = name;
                 MaxOffset = fs.Length;
-                m_map = MemoryMappedFile.CreateFromFile (fs, null, 0,
-                    MemoryMappedFileAccess.Read, null, HandleInheritability.None, true);
-                try {
-                    View = new Frame (this);
-                } catch {
-                    m_map.Dispose(); // dispose on error only
-                    throw;
+                InitFromFileStream (fs, 0);
+            }
+        }
+
+        public ArcView (Stream input, string name, uint length)
+        {
+            Name = name;
+            MaxOffset = length;
+            if (input is FileStream)
+                InitFromFileStream (input as FileStream, length);
+            else
+                InitFromStream (input, length);
+        }
+
+        private void InitFromFileStream (FileStream fs, uint length)
+        {
+            m_map = MemoryMappedFile.CreateFromFile (fs, null, length,
+                MemoryMappedFileAccess.Read, null, HandleInheritability.None, true);
+            try {
+                View = new Frame (this);
+            } catch {
+                m_map.Dispose(); // dispose on error only
+                throw;
+            }
+        }
+
+        private void InitFromStream (Stream input, uint length)
+        {
+            m_map = MemoryMappedFile.CreateNew (null, length, MemoryMappedFileAccess.ReadWrite,
+                MemoryMappedFileOptions.None, null, HandleInheritability.None);
+            try
+            {
+                using (var view = m_map.CreateViewAccessor (0, length, MemoryMappedFileAccess.Write))
+                {
+                    var buffer = new byte[81920];
+                    unsafe
+                    {
+                        byte* ptr = view.GetPointer (0);
+                        try
+                        {
+                            uint total = 0;
+                            while (total < length)
+                            {
+                                int read = input.Read (buffer, 0, buffer.Length);
+                                if (0 == read)
+                                    break;
+                                read = (int)Math.Min (read, length-total);
+                                Marshal.Copy (buffer, 0, (IntPtr)(ptr+total), read);
+                                total += (uint)read;
+                            }
+                            MaxOffset = total;
+                        }
+                        finally
+                        {
+                            view.SafeMemoryMappedViewHandle.ReleasePointer();
+                        }
+                    }
                 }
+                View = new Frame (this);
+            } 
+            catch
+            {
+                m_map.Dispose();
+                throw;
             }
         }
 
@@ -351,7 +409,7 @@ namespace GameRes
 
             public string ReadString (long offset, uint size, Encoding enc)
             {
-                Reserve (offset, size);
+                size = Math.Min (size, Reserve (offset, size));
                 return m_view.ReadString (offset-m_offset, size, enc);
             }
 
