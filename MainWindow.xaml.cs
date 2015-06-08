@@ -120,6 +120,7 @@ namespace GARbro.GUI
         /// </summary>
         protected override void OnClosing (CancelEventArgs e)
         {
+            AudioDevice = null;
             CurrentAudio = null;
             SaveSettings();
             base.OnClosing (e);
@@ -811,27 +812,40 @@ namespace GARbro.GUI
                 return File.OpenRead (Path.Combine (vm.Path, entry.Name));
         }
 
-        WaveOutEvent    m_audio;
-        WaveOutEvent    CurrentAudio
+        WaveOutEvent    m_audio_device;
+        WaveOutEvent    AudioDevice
         {
-            get { return m_audio; }
+            get { return m_audio_device; }
             set
             {
-                if (m_audio != null)
-                    m_audio.Dispose();
-                m_audio = value;
+                if (m_audio_device != null)
+                    m_audio_device.Dispose();
+                m_audio_device = value;
+            }
+        }
+
+        WaveStream      m_audio_input;
+        WaveStream      CurrentAudio
+        {
+            get { return m_audio_input; }
+            set
+            {
+                if (m_audio_input != null)
+                    m_audio_input.Dispose();
+                m_audio_input = value;
             }
         }
 
         private void PlayFile (Entry entry)
         {
+            SoundInput sound = null;
             try
             {
                 SetBusyState();
                 using (var input = OpenEntry (entry))
                 {
                     FormatCatalog.Instance.LastError = null;
-                    var sound = AudioFormat.Read (input);
+                    sound = AudioFormat.Read (input);
                     if (null == sound)
                     {
                         if (null != FormatCatalog.Instance.LastError)
@@ -839,17 +853,17 @@ namespace GARbro.GUI
                         return;
                     }
 
-                    if (CurrentAudio != null)
+                    if (AudioDevice != null)
                     {
-                        CurrentAudio.PlaybackStopped -= OnPlaybackStopped;
-                        CurrentAudio = null;
+                        AudioDevice.PlaybackStopped -= OnPlaybackStopped;
+                        AudioDevice = null;
                     }
-                    var wave_stream = new WaveStreamImpl (sound);
-                    CurrentAudio = new WaveOutEvent();
-                    CurrentAudio.Init (wave_stream);
-                    CurrentAudio.PlaybackStopped += OnPlaybackStopped;
-                    CurrentAudio.Play();
-                    var fmt = wave_stream.WaveFormat;
+                    CurrentAudio = new WaveStreamImpl (sound);
+                    AudioDevice = new WaveOutEvent();
+                    AudioDevice.Init (CurrentAudio);
+                    AudioDevice.PlaybackStopped += OnPlaybackStopped;
+                    AudioDevice.Play();
+                    var fmt = CurrentAudio.WaveFormat;
                     SetResourceText (string.Format ("Playing {0} / {2}bps / {1}Hz", entry.Name,
                                                     fmt.SampleRate, sound.SourceBitrate / 1000));
                 }
@@ -857,12 +871,15 @@ namespace GARbro.GUI
             catch (Exception X)
             {
                 SetStatusText (X.Message);
+                if (null != sound)
+                    sound.Dispose();
             }
         }
 
         private void OnPlaybackStopped (object sender, StoppedEventArgs e)
         {
             SetResourceText ("");
+            CurrentAudio = null;
         }
 
         /// <summary>
@@ -930,6 +947,7 @@ namespace GARbro.GUI
             try
             {
                 m_app.ResetCache();
+                ResetPreviewPane();
                 if (!items.Skip (1).Any()) // items.Count() == 1
                 {
                     string item_name = Path.Combine (CurrentPath, items.First().Name);
