@@ -108,6 +108,7 @@
     <Compile Include="ArcNPA.cs" />
     <Compile Include="ArcNSA.cs" />
     <Compile Include="ArcPAC.cs" />
+    <Compile Include="ArcPCK.cs" />
     <Compile Include="ArcPD.cs" />
     <Compile Include="ArcRPA.cs" />
     <Compile Include="ArcS25.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />
     <Compile Include="ArcYPF.cs" />
+    <Compile Include="AudioEOG.cs" />
     <Compile Include="AudioMIO.cs" />
     <Compile Include="AudioMP3.cs" />
     <Compile Include="AudioOGV.cs" />
@@ -164,6 +166,7 @@
     <Compile Include="ImageBMD.cs" />
     <Compile Include="ImageBMZ.cs" />
     <Compile Include="ImageCPB.cs" />
+    <Compile Include="ImageCWP.cs" />
     <Compile Include="ImageDGC.cs" />
     <Compile Include="ImageDRG.cs" />
     <Compile Include="ImageEDT.cs" />
@@ -189,6 +192,7 @@
     <Compile Include="ImageTLG.cs" />
     <Compile Include="ImageWCG.cs" />
     <Compile Include="ImageWIP.cs" />
+    <Compile Include="ImageZBM.cs" />
     <Compile Include="KiriKiriCx.cs" />
     <Compile Include="KogadoCocotte.cs" />
     <Compile Include="AudioOGG.cs" />
