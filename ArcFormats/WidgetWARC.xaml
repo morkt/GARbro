@@ -4,9 +4,16 @@
       xmlns:fmt="clr-namespace:GameRes.Formats.ShiinaRio"
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
       MaxWidth="250">
+    <Grid.RowDefinitions>
+        <RowDefinition/>
+        <RowDefinition/>
+    </Grid.RowDefinitions>
     <ComboBox Name="Scheme" ItemsSource="{Binding Source={x:Static fmt:Decoder.KnownSchemes}, Mode=OneWay}"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=WARCScheme, Mode=TwoWay}"
               SelectedValuePath="Name"
               DisplayMemberPath="Name"
-              Width="180"/>
+              Width="200" Grid.Row="0"/>
+    <TextBox Name="Original" Background="Transparent" BorderThickness="0" Text="{Binding Path=OriginalTitle}"
+             IsReadOnly="True" TextWrapping="NoWrap" Grid.Row="1" Margin="0,3,0,3"
+             DataContext="{Binding ElementName=Scheme, Path=SelectedItem}"/>
 </Grid>

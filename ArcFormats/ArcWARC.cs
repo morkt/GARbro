@@ -603,25 +603,31 @@ namespace GameRes.Formats.ShiinaRio
 
     internal class EncryptionScheme
     {
-        public string Name { get; set; }
-        public    int Version;
+        public string Name          { get; set; }
+        public string OriginalTitle { get; set; }
+        public    int Version       { get; set; }
         public    int EntryNameSize;
         public byte[] CryptKey;
-        public uint[] HelperKey;
+        public uint[] HelperKey     { get; set; }
         public byte[] ShiinaImage;
         public byte[] Region;
         public byte[] DecodeBin;
 
         private static CachedResource Resource = new CachedResource();
 
+        public static readonly string DefaultCrypt = "Crypt Type 20011002 - Copyright(C) 2000 Y.Yamada/STUDIO よしくん";
+        public static readonly uint[] ZeroKey = new uint[] { 0, 0, 0, 0, 0 };
+
         public static EncryptionScheme Create (string name, int version, int entry_name_size,
                                                string key1, uint[] key2,
-                                               string image, string region_src, string decode_bin = null)
+                                               string image, string region_src, string decode_bin = null,
+                                               string original_title = "")
         {
             var scheme = new EncryptionScheme
             {
                 Name = name,
                 Version = version,
+                OriginalTitle = original_title,
                 EntryNameSize = entry_name_size,
                 CryptKey = Encodings.cp932.GetBytes (key1),
                 HelperKey = key2,
@@ -631,6 +637,22 @@ namespace GameRes.Formats.ShiinaRio
             if (null != decode_bin)
                 scheme.DecodeBin = Resource.Load (decode_bin);
             return scheme;
+        }
+
+        public static EncryptionScheme Create (int version, string name, string original_title, uint[] key2)
+        {
+            string decode = version < 2490 ? "DecodeV1.bin" : "DecodeV249.bin";
+            string image = version < 2400 ? "ShiinaRio1.png"
+                         : version < 2490 ? "ShiinaRio3.jpg"
+                         : "ShiinaRio4.jpg";
+            int entry_name_size = version < 2390 ? 0x10 : 0x20;
+            return Create (name, version, entry_name_size, DefaultCrypt, key2,
+                           image, "ShiinaRio2.png", decode, original_title);
+        }
+
+        public static EncryptionScheme Create (int version, string name)
+        {
+            return Create (version, name, "", ZeroKey);
         }
     }
 
@@ -1186,16 +1208,46 @@ namespace GameRes.Formats.ShiinaRio
 
         public static EncryptionScheme[] KnownSchemes = new EncryptionScheme[]
         {
-            EncryptionScheme.Create ("ShiinaRio v2.37", 2370, 0x10,
-                "Crypt Type 20011002 - Copyright(C) 2000 Y.Yamada/STUDIO よしくん",
-                new uint[] { 0xF182C682, 0xE882AA82, 0x718E5896, 0x8183CC82, 0xDAC98283 },
-                "ShiinaRio1.png", "ShiinaRio2.png", "DecodeV1.bin"),
-            EncryptionScheme.Create ("ShiinaRio v2.40", 2400, 0x20,
-                "Crypt Type 20011002 - Copyright(C) 2000 Y.Yamada/STUDIO よしくん",
-                new uint[] { 0x747C887C, 0xA47EA17C, 0xAF7CA77C, 0xA17C747C, 0x0000A47E },
-                "ShiinaRio3.jpg", "ShiinaRio2.png", "DecodeV1.bin"),
-            EncryptionScheme.Create ("ShiinaRio v2.49", 2490, 0x20,
-                "Crypt Type 20011002 - Copyright(C) 2000 Y.Yamada/STUDIO よしくん",
+            EncryptionScheme.Create (2360, "ShiinaRio v2.3x"),
+            EncryptionScheme.Create (2480, "Bloody Rondo", "BLOODY†RONDO",
+                new uint[] { 0xFBFBF8F6, 0xFBE6EDF0, 0xFBF0FA, 0, 0 }),
+            EncryptionScheme.Create (2450, "Chuuchuu Nurse", "ちゅうちゅうナース",
+                new uint[] { 0xB0D1ECD1, 0xECD1F7D1, 0xF7D1B0D1, 0x08D23AD0, 0x13D20BD0 }),
+            EncryptionScheme.Create (2370, "Classmate no Okaa-san", "クラスメイトのお母さん",
+                new uint[] { 0xF182C682, 0xE882AA82, 0x718E5896, 0x8183CC82, 0xDAC98283 }),
+            EncryptionScheme.Create (2470, "Damatte Watashi no Muko ni Nare!", "黙って私のムコになれ！",
+                new uint[] { 0x44075C13, 0x010B4107, 0x05064907, 0x4C07D706, 0x6F074D07 }),
+            EncryptionScheme.Create (2470, "Hana to Otome ni Shukufuku wo Royal Bouquet", "花と乙女に祝福を ロイヤルブーケ",
+                new uint[] { 0xE3A7F1AC, 0xB2AA96AC, 0x4FAAECA7, 0xD5A7BAB0, 0x44A754A7 }),
+            EncryptionScheme.Create (2400, "Helter Skelter", "ヘルタースケルター",
+                new uint[] { 0x747C887C, 0xA47EA17C, 0xAF7CA77C, 0xA17C747C, 0x0000A47E }),
+            EncryptionScheme.Create (2470, "Mahou Shoujo no Taisetsu na Koto", "魔法少女の大切なこと。",
+                new uint[] { 0x51879387, 0x869EBC9E, 0xF480DD93, 0xD993C981, 0xD793A093 }),
+            EncryptionScheme.Create (2460, "Mikoko", "みここ",
+                new uint[] { 0x7DAC51AC, 0x51AC7DAC, 0x7DAC7DAC, 0x7DAC51AC, 0x51AC7DAC }),
+            EncryptionScheme.Create (2390, "Nagagutsu wo Haita Deco", "長靴をはいたデコ",
+                new uint[] { 0x486D887E, 0x0F7DBC73, 0x5D7D327D, 0x997C427D, 0x877EAD7C }),
+            EncryptionScheme.Create (2470, "Nakadashi Trilogy", "なかだしトリロジー",
+                new uint[] { 0x928ADB9E, 0xB087BB87, 0x928ADB9E, 0xB087BB87, 0xB087BB87 }),
+            EncryptionScheme.Create (2470, "Onedari Onapet", "おねだりオナペット",
+                new uint[] { 0xD59CB69C, 0xF69CA09C, 0x779D579D, 0x7C9D679D, 0x0000799D }),
+            EncryptionScheme.Create (2480, "Onegan!", "おねガン！",
+                new uint[] { 0xC881AB81, 0x90804880, 0xAB814A82, 0x4880C881, 0x4A829080 }),
+            EncryptionScheme.Create (2470, "Oreimo Plus", "俺妹プラス",
+                new uint[] { 0x24371528, 0x2822D722, 0x1528F922, 0xD7222437, 0xF9222822 }),
+            EncryptionScheme.Create (2470, "Pure Love!", "ぴゅあらっ！",
+                new uint[] { 0x31500050, 0x35507250, 0x87821350, 0x9D9E9780, 0x00009784 }),
+            EncryptionScheme.Create (2470, "Ren'ai Saimin", "恋愛催眠",
+                new uint[] { 0x6E423C5D, 0x7A5C0947, 0x6E423C5D, 0x7A5C0947, 0x6E423C5D }),
+            EncryptionScheme.Create (2480, "Sensei! Shite Ageru", "先生っ！ シてあげる",
+                new uint[] { 0x70562056, 0x87470744, 0x02449045, 0x76446644, 0x8F472F44 }),
+            EncryptionScheme.Create (2480, "Tanetsuke Mura", "種憑け村",
+                new uint[] { 0x7C7C7967, 0x7965574F, 0x4F69647C, 0x00005144, 0 }),
+            EncryptionScheme.Create (2470, "You~Gaku", "よう∽ガク",
+                new uint[] { 0x4DE2AB4D, 0x98AB5D46, 0x66496349, 0x485D685D, 0x5F4D4C5D }),
+            EncryptionScheme.Create (2410, "Zansho Omimai Moushiagemasu", "残暑お見舞い申し上げます。",
+                new uint[] { 0x3A123012, 0x6C3A6C36, 0x3C36323C, 0x6C360F16, 0x369DD012 }),
+            EncryptionScheme.Create ("ShiinaRio v2.49", 2490, 0x20, EncryptionScheme.DefaultCrypt,
                 new uint[] { 0x4B535453, 0xA15FA15F, 0, 0, 0 },
                 "ShiinaRio4.jpg", "ShiinaRio2.png", "DecodeV249.bin"),
         };
