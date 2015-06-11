@@ -187,26 +187,134 @@ namespace GameRes.Formats
         }
     }
 
+    /// <summary>
+    /// Represents a region within existing stream.
+    /// Underlying stream should allow seeking (CanSeek == true).
+    /// </summary>
+    public class StreamRegion : Stream
+    {
+        private Stream  m_stream;
+        private long    m_begin;
+        private long    m_end;
+
+        public StreamRegion (Stream main, long offset, long length)
+        {
+            m_stream = main;
+            m_begin = offset;
+            m_end = Math.Min (offset + length, m_stream.Length);
+            m_stream.Position = m_begin;
+        }
+
+        public StreamRegion (Stream main, long offset) : this (main, offset, main.Length-offset)
+        {
+        }
+
+        public override bool CanRead  { get { return m_stream.CanRead; } }
+        public override bool CanSeek  { get { return true; } }
+        public override bool CanWrite { get { return false; } }
+        public override long Length   { get { return m_end - m_begin; } }
+        public override long Position
+        {
+            get { return m_stream.Position - m_begin; }
+            set { m_stream.Position = Math.Max (m_begin + value, m_begin); }
+        }
+
+        public override void Flush()
+        {
+            m_stream.Flush();
+        }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            if (SeekOrigin.Begin == origin)
+                offset += m_begin;
+            else if (SeekOrigin.Current == origin)
+                offset += m_stream.Position;
+            else
+                offset += m_end;
+            offset = Math.Max (offset, m_begin);
+            m_stream.Position = offset;
+            return offset - m_begin;
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            int read = 0;
+            long available = m_end - m_stream.Position;
+            if (available > 0)
+            {
+                read = m_stream.Read (buffer, offset, (int)Math.Min (count, available));
+            }
+            return read;
+        }
+
+        public override int ReadByte ()
+        {
+            if (m_stream.Position < m_end)
+                return m_stream.ReadByte();
+            else
+                return -1;
+        }
+
+        public override void SetLength (long length)
+        {
+            throw new NotSupportedException ("StreamRegion.SetLength method is not supported");
+        }
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException ("StreamRegion.Write method is not supported");
+        }
+
+        public override void WriteByte (byte value)
+        {
+            throw new NotSupportedException ("StreamRegion.WriteByte method is not supported");
+        }
+
+        bool m_disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!m_disposed)
+            {
+                m_stream.Dispose();
+                m_disposed = true;
+                base.Dispose (disposing);
+            }
+        }
+    }
+
     public class LzssReader : IDisposable
     {
         BinaryReader    m_input;
         byte[]          m_output;
         int             m_size;
 
-        public byte[] Data { get { return m_output; } }
+        public BinaryReader Input { get { return m_input; } }
+        public byte[]        Data { get { return m_output; } }
+        public int      FrameSize { get; set; }
+        public byte     FrameFill { get; set; }
+        public int   FrameInitPos { get; set; }
 
         public LzssReader (Stream input, int input_length, int output_length)
         {
             m_input = new BinaryReader (input, Encoding.ASCII, true);
             m_output = new byte[output_length];
             m_size = input_length;
+
+            FrameSize = 0x1000;
+            FrameFill = 0;
+            FrameInitPos = 0xfee;
         }
 
         public void Unpack ()
         {
             int dst = 0;
-            var frame = new byte[0x1000];
-            int frame_pos = 0xfee;
+            var frame = new byte[FrameSize];
+            if (FrameFill != 0)
+                for (int i = 0; i < frame.Length; ++i)
+                    frame[i] = FrameFill;
+            int frame_pos = FrameInitPos;
+            int frame_mask = FrameSize-1;
             int remaining = (int)m_size;
             while (remaining > 0)
             {
@@ -221,7 +329,7 @@ namespace GameRes.Formats
                         byte b = m_input.ReadByte();
                         --remaining;
                         frame[frame_pos++] = b;
-                        frame_pos &= 0xfff;
+                        frame_pos &= frame_mask;
                         m_output[dst++] = b;
                     }
                     else
@@ -237,9 +345,9 @@ namespace GameRes.Formats
                             if (dst >= m_output.Length)
                                 break;
                             byte v = frame[offset++];
-                            offset &= 0xfff;
+                            offset &= frame_mask;
                             frame[frame_pos++] = v;
-                            frame_pos &= 0xfff;
+                            frame_pos &= frame_mask;
                             m_output[dst++] = v;
                         }
                     }
