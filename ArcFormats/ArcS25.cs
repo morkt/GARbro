@@ -43,6 +43,11 @@ namespace GameRes.Formats.ShiinaRio
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
+        public S25Opener ()
+        {
+            Extensions = new string[0];
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
@@ -59,7 +64,7 @@ namespace GameRes.Formats.ShiinaRio
                 {
                     var entry = new Entry
                     {
-                        Name = string.Format ("{0}@{1:D4}.s25img", base_name, i),
+                        Name = string.Format ("{0}@{1:D4}.tga", base_name, i),
                         Type = "image",
                         Offset = offset,
                     };
@@ -78,6 +83,35 @@ namespace GameRes.Formats.ShiinaRio
                 dir[i].Size = (uint)(next_offset - dir[i].Offset);
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            // emulate TGA image
+            var offset = entry.Offset;
+            var info = new S25MetaData
+            {
+                Width   = arc.File.View.ReadUInt32 (offset),
+                Height  = arc.File.View.ReadUInt32 (offset+4),
+                OffsetX = arc.File.View.ReadInt32 (offset+8),
+                OffsetY = arc.File.View.ReadInt32 (offset+12),
+                BPP     = 32,
+                FirstOffset = (uint)(offset + 0x14),
+            };
+            using (var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset))
+            using (var reader = new S25Format.Reader (input, info))
+            {
+                var pixels = reader.Unpack();
+                var header = new byte[0x12];
+                header[2] = 2;
+                LittleEndian.Pack ((short)info.OffsetX, header, 8);
+                LittleEndian.Pack ((short)info.OffsetY, header, 0xa);
+                LittleEndian.Pack ((ushort)info.Width,  header, 0xc);
+                LittleEndian.Pack ((ushort)info.Height, header, 0xe);
+                header[0x10] = 32;
+                header[0x11] = 0x20;
+                return new PrefixStream (header, new MemoryStream (pixels));
+            }
         }
     }
 }
