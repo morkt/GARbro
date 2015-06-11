@@ -80,10 +80,7 @@ namespace GameRes.Formats.ShiinaRio
             using (var reader = new Reader (stream, meta))
             {
                 var pixels = reader.Unpack();
-                var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                    PixelFormats.Bgra32, null, pixels, (int)info.Width*4);
-                bitmap.Freeze();
-                return new ImageData (bitmap, info);
+                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
             }
         }
 
