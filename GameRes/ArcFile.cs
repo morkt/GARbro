@@ -88,6 +88,11 @@ namespace GameRes
                                 return arc;
                             }
                         }
+                        catch (OperationCanceledException X)
+                        {
+                            FormatCatalog.Instance.LastError = X;
+                            return null;
+                        }
                         catch (Exception X)
                         {
                             // ignore failed open attmepts
