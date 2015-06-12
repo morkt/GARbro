@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
@@ -105,8 +106,83 @@ namespace GameRes.Formats.Crowd
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new System.NotImplementedException ("CwpFormat.Write not implemented");
+            var writer = new Writer (image);
+            writer.Write (file);
+        }
+
+        internal class Writer
+        {
+            BitmapSource    m_bitmap;
+            byte[]          m_buffer = new byte[81920];
+
+            public Writer (ImageData image)
+            {
+                m_bitmap = image.Bitmap;
+                if (m_bitmap.Format.BitsPerPixel < 32)
+                {
+                    m_bitmap = new FormatConvertedBitmap (m_bitmap, PixelFormats.Bgr32, null, 0);
+                }
+                int stride = m_bitmap.PixelWidth * 4;
+                var pixels = new byte[stride*m_bitmap.PixelHeight];
+                m_bitmap.CopyPixels (pixels, stride, 0);
+                for (int i = 0; i < pixels.Length; i += 4)
+                {
+                    byte t = pixels[i];
+                    pixels[i] = pixels[i+2];
+                    pixels[i+2] = t;
+                }
+                m_bitmap = BitmapSource.Create (m_bitmap.PixelWidth, m_bitmap.PixelHeight,
+                    m_bitmap.DpiX, m_bitmap.DpiY, PixelFormats.Bgra32, null, pixels, stride);
+            }
+
+            public void Write (Stream file)
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add (BitmapFrame.Create (m_bitmap));
+                using (var png = new MemoryStream())
+                using (var cwp = new BinaryWriter (file, System.Text.Encoding.ASCII, true))
+                {
+                    encoder.Save (png);
+                    var header = new byte[0x11];
+                    png.Position = 0x10;
+                    png.Read (header, 0, header.Length);
+                    cwp.Write (0x50445743u); // 'CWDP'
+                    cwp.Write (header, 0, header.Length);
+                    var idat = PngFormat.FindChunk (png, "IDAT");
+                    if (-1 == idat)
+                        throw new InvalidFormatException ("CWP conversion failed");
+                    png.Position = idat;
+                    png.Read (header, 0, 8);
+                    int chunk_size = BigEndian.ToInt32 (header, 0) + 4;
+                    cwp.Write (header, 0, 4);
+                    for (;;)
+                    {
+                        CopyChunk (png, file, chunk_size);
+                        if (8 != png.Read (header, 0, 8))
+                            throw new InvalidFormatException ("CWP conversion failed");
+                        if (Binary.AsciiEqual (header, 4, "IEND"))
+                        {
+                            cwp.Write ((byte)0);
+                            break;
+                        }
+                        chunk_size = BigEndian.ToInt32 (header, 0) + 4;
+                        cwp.Write (header, 0, 8);
+                    }
+                }
+            }
+
+            private void CopyChunk (Stream src, Stream dst, int size)
+            {
+                while (size > 0)
+                {
+                    int amount = Math.Min (size, m_buffer.Length);
+                    int read = src.Read (m_buffer, 0, amount);
+                    if (read != amount)
+                        throw new InvalidFormatException ("CWP conversion failed");
+                    dst.Write (m_buffer, 0, amount);
+                    size -= amount;
+                }
+            }
         }
     }
 }
-
