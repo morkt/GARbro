@@ -649,11 +649,20 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to unable to interpret audio format.
+        /// </summary>
+        public static string MsgUnableInterpretAudio {
+            get {
+                return ResourceManager.GetString("MsgUnableInterpretAudio", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to unable to interpret image format.
         /// </summary>
-        public static string MsgUnableInterpret {
+        public static string MsgUnableInterpretImage {
             get {
-                return ResourceManager.GetString("MsgUnableInterpret", resourceCulture);
+                return ResourceManager.GetString("MsgUnableInterpretImage", resourceCulture);
             }
         }
         

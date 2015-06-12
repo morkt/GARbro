@@ -240,7 +240,7 @@
   <data name="MsgReady" xml:space="preserve">
     <value>Ready</value>
   </data>
-  <data name="MsgUnableInterpret" xml:space="preserve">
+  <data name="MsgUnableInterpretImage" xml:space="preserve">
     <value>unable to interpret image format</value>
   </data>
   <data name="MsgUnknownFormat" xml:space="preserve">
@@ -413,5 +413,8 @@ Overwrite?</value>
   </data>
   <data name="TextAboutLicense" xml:space="preserve">
     <value>License</value>
+  </data>
+  <data name="MsgUnableInterpretAudio" xml:space="preserve">
+    <value>unable to interpret audio format</value>
   </data>
 </root>

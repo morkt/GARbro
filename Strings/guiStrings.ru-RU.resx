@@ -234,7 +234,7 @@
   <data name="MsgReady" xml:space="preserve">
     <value>Готов</value>
   </data>
-  <data name="MsgUnableInterpret" xml:space="preserve">
+  <data name="MsgUnableInterpretImage" xml:space="preserve">
     <value>не удалось интерпретировать формат изображения</value>
   </data>
   <data name="MsgUnknownFormat" xml:space="preserve">
@@ -431,5 +431,8 @@
   </data>
   <data name="Type_audio" xml:space="preserve">
     <value>звук</value>
+  </data>
+  <data name="MsgUnableInterpretAudio" xml:space="preserve">
+    <value>не удалось интерпретировать формат аудио</value>
   </data>
 </root>
