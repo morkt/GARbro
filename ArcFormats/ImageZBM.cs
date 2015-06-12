@@ -24,10 +24,8 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Runtime.InteropServices;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Crowd
