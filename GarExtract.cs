@@ -31,6 +31,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using Ookii.Dialogs.Wpf;
 using GameRes;
 using GARbro.GUI.Strings;
@@ -104,6 +105,7 @@ namespace GARbro.GUI
         private bool                m_skip_images = false;
         private bool                m_skip_script = false;
         private bool                m_skip_audio  = false;
+        private bool                m_adjust_image_offset = false;
         private bool                m_convert_audio;
         private ImageFormat         m_image_format;
         private int                 m_extract_count;
@@ -290,13 +292,13 @@ namespace GARbro.GUI
             }
         }
 
-        static void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
+        void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
         {
             using (var file = arc.OpenSeekableEntry (entry))
             {
                 var src_format = ImageFormat.FindFormat (file);
                 if (null == src_format)
-                    throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
+                    throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretImage, entry.Name));
                 file.Position = 0;
                 string target_ext = target_format.Extensions.First();
                 string outname = Path.ChangeExtension (entry.Name, target_ext);
@@ -309,11 +311,44 @@ namespace GARbro.GUI
                 }
                 ImageData image = src_format.Item1.Read (file, src_format.Item2);
                 Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractImage");
+                if (m_adjust_image_offset)
+                {
+                    image = AdjustImageOffset (image);
+                }
                 using (var outfile = ArchiveFormat.CreateFile (outname))
                 {
                     target_format.Write (outfile, image);
                 }
             }
+        }
+
+        static ImageData AdjustImageOffset (ImageData image)
+        {
+            if (0 == image.OffsetX && 0 == image.OffsetY)
+                return image;
+            int width = (int)image.Width + image.OffsetX;
+            int height = (int)image.Height + image.OffsetY;
+            if (width <= 0 || height <= 0)
+                return image;
+
+            int x = Math.Max (image.OffsetX, 0);
+            int y = Math.Max (image.OffsetY, 0);
+            int src_x = image.OffsetX < 0 ? Math.Abs (image.OffsetX) : 0;
+            int src_y = image.OffsetY < 0 ? Math.Abs (image.OffsetY) : 0;
+            int src_stride = (int)image.Width * (image.BPP+7) / 8;
+            int dst_stride = width * (image.BPP+7) / 8;
+            var pixels = new byte[height*dst_stride];
+            int offset = y * dst_stride + x * image.BPP / 8;
+            Int32Rect rect = new Int32Rect (src_x, src_y, (int)image.Width - src_x, 1);
+            for (int row = src_y; row < image.Height; ++row)
+            {
+                rect.Y = row;
+                image.Bitmap.CopyPixels (rect, pixels, src_stride, offset);
+                offset += dst_stride;
+            }
+            var bitmap = BitmapSource.Create (width, height, image.Bitmap.DpiX, image.Bitmap.DpiY,
+                image.Bitmap.Format, image.Bitmap.Palette, pixels, dst_stride);
+            return new ImageData (bitmap);
         }
 
         static void ExtractAudio (ArcFile arc, Entry entry)
@@ -322,7 +357,7 @@ namespace GARbro.GUI
             using (var sound = AudioFormat.Read (file))
             {
                 if (null == sound)
-                    throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpret, entry.Name));
+                    throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretAudio, entry.Name));
                 ConvertAudio (entry.Name, sound);
             }
         }
