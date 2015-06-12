@@ -178,9 +178,8 @@ namespace GameRes
             return meta;
         }
 
-        long FindChunk (Stream stream, string chunk)
+        public static long FindChunk (Stream stream, string chunk)
         {
-            char[] find_name = chunk.ToCharArray();
             long found_offset = -1;
             var file = new ArcView.Reader (stream);
             try
