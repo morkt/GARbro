@@ -112,10 +112,9 @@ namespace GameRes.Formats.Marble
                     {
                         entry = new AutoEntry (name, () => {
                             uint signature = file.View.ReadUInt32 (offset);
-                            var res = FormatCatalog.Instance.LookupSignature (signature);
-                            if (!res.Any() && 0x4259 == (0xffff & signature))
-                                res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "PRS");
-                            return res.FirstOrDefault();
+                            if (0x4259 == (0xffff & signature))
+                                return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "PRS");
+                            return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
                         });
                     }
                     entry.Offset = offset;
