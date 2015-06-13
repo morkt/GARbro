@@ -166,6 +166,7 @@
     <Compile Include="ImageBMD.cs" />
     <Compile Include="ImageBMZ.cs" />
     <Compile Include="ImageCPB.cs" />
+    <Compile Include="ImageCWL.cs" />
     <Compile Include="ImageCWP.cs" />
     <Compile Include="ImageDGC.cs" />
     <Compile Include="ImageDRG.cs" />
