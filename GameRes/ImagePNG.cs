@@ -2,7 +2,7 @@
 //! \date       Sat Jul 05 00:09:15 2014
 //! \brief      PNG image implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -120,8 +120,7 @@ namespace GameRes
             var file = new ArcView.Reader (stream);
             try
             {
-                if (file.ReadUInt32() != Signature)
-                    return null;
+                file.ReadUInt32();
                 if (file.ReadUInt32() != 0x0a1a0a0d)
                     return null;
                 uint chunk_size = Binary.BigEndian (file.ReadUInt32());
