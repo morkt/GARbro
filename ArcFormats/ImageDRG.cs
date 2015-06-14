@@ -428,14 +428,9 @@ namespace GameRes.Formats.DRS
     [Export(typeof(ImageFormat))]
     public class DrgIndexedFormat : ImageFormat
     {
-        public override string         Tag { get { return "DRG"; } }
+        public override string         Tag { get { return "GGD"; } }
         public override string Description { get { return "Digital Romance System indexed image format"; } }
         public override uint     Signature { get { return ~0x47363532u; } } // '256G'
-
-        public DrgIndexedFormat ()
-        {
-            Extensions = new string[] { "ggd" };
-        }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
