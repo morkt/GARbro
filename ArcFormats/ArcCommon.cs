@@ -196,13 +196,15 @@ namespace GameRes.Formats
         private Stream  m_stream;
         private long    m_begin;
         private long    m_end;
+        private bool    m_should_dispose;
 
-        public StreamRegion (Stream main, long offset, long length)
+        public StreamRegion (Stream main, long offset, long length, bool leave_open = false)
         {
             m_stream = main;
             m_begin = offset;
             m_end = Math.Min (offset + length, m_stream.Length);
             m_stream.Position = m_begin;
+            m_should_dispose = !leave_open;
         }
 
         public StreamRegion (Stream main, long offset) : this (main, offset, main.Length-offset)
@@ -276,7 +278,8 @@ namespace GameRes.Formats
         {
             if (!m_disposed)
             {
-                m_stream.Dispose();
+                if (m_should_dispose)
+                    m_stream.Dispose();
                 m_disposed = true;
                 base.Dispose (disposing);
             }
