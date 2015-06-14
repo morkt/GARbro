@@ -109,6 +109,7 @@ namespace GameRes.Formats.Ffa
             m_data_size = LittleEndian.ToInt32 (m_input, 0x2c);
             m_output = new byte[m_data_size+0x2c];
             Buffer.BlockCopy (m_input, 4, m_output, 0, 0x2c);
+            LittleEndian.Pack (m_output.Length-8, m_output, 4);
         }
 
         static ushort[] word_456CA0 = new ushort[] {
