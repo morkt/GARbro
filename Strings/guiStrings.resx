@@ -388,7 +388,7 @@ Overwrite?</value>
     <value>Choose destination format for images</value>
   </data>
   <data name="TextConvertMedia" xml:space="preserve">
-    <value>Convert media</value>
+    <value>Media conversion</value>
   </data>
   <data name="MsgConvertingFile" xml:space="preserve">
     <value>Converting file {0}</value>
@@ -422,5 +422,8 @@ Overwrite?</value>
   </data>
   <data name="TextAudioConversion" xml:space="preserve">
     <value>Audio will be converted to either WAV, MP3 or OGG.</value>
+  </data>
+  <data name="LabelSkipFailures" xml:space="preserve">
+    <value>Skip incovertible files.</value>
   </data>
 </root>

@@ -333,5 +333,17 @@ namespace GARbro.GUI.Properties {
                 this["appExtractAudio"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool appIgnoreConversionErrors {
+            get {
+                return ((bool)(this["appIgnoreConversionErrors"]));
+            }
+            set {
+                this["appIgnoreConversionErrors"] = value;
+            }
+        }
     }
 }

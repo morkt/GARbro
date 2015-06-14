@@ -14,7 +14,9 @@
                       ItemsSource="{Binding Source={x:Static g:FormatCatalog.Instance}, Path=ImageFormats, Mode=OneWay}" SelectedValuePath="Tag"
                       SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=appLastImageFormat, Mode=TwoWay}"/>
         </StackPanel>
-        <TextBlock Text="{x:Static s:guiStrings.TextAudioConversion}" Margin="20,10"/>
+        <TextBlock Text="{x:Static s:guiStrings.TextAudioConversion}" Margin="20,10,20,0"/>
+        <CheckBox Name="IgnoreErrors" Content="{x:Static s:guiStrings.LabelSkipFailures}" Margin="20,10"
+                  IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=appIgnoreConversionErrors, Mode=TwoWay}"/>
         <Separator/>
         <StackPanel Orientation="Horizontal" Margin="10,0,10,10" HorizontalAlignment="Right">
             <Button Content="{x:Static s:guiStrings.ButtonOK}" Click="ConvertButton_Click" Margin="10" Width="75" IsDefault="True" Height="25"/>

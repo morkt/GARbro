@@ -340,6 +340,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Skip incovertible files..
+        /// </summary>
+        public static string LabelSkipFailures {
+            get {
+                return ResourceManager.GetString("LabelSkipFailures", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to About Game Resource browser.
         /// </summary>
         public static string MenuAbout {
@@ -811,7 +820,7 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Convert media.
+        ///   Looks up a localized string similar to Media conversion.
         /// </summary>
         public static string TextConvertMedia {
             get {

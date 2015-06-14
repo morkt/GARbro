@@ -403,7 +403,7 @@
     <value>Формат преобразования изображений</value>
   </data>
   <data name="TextConvertMedia" xml:space="preserve">
-    <value>Преобразовать мультимедиа</value>
+    <value>Преобразование мультимедиа</value>
   </data>
   <data name="MsgConvertingFile" xml:space="preserve">
     <value>Преобразование файла {0}</value>
@@ -434,6 +434,9 @@
   </data>
   <data name="MsgUnableInterpretAudio" xml:space="preserve">
     <value>не удалось интерпретировать формат аудио</value>
+  </data>
+  <data name="LabelSkipFailures" xml:space="preserve">
+    <value>Пропускать файлы, не поддавшиеся конверсии.</value>
   </data>
   <data name="MsgNoMediaFiles" xml:space="preserve">
     <value>Среди выбранных файлов нет мультиемедиа.</value>

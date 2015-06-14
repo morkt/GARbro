@@ -61,7 +61,6 @@ namespace GARbro.GUI
             if (!result)
                 return;
             var format = convert_dialog.ImageConversionFormat.SelectedItem as ImageFormat;
-//            var format = FormatCatalog.Instance.ImageFormats.FirstOrDefault (f => f.Tag == selected);
             if (null == format)
             {
                 Trace.WriteLine ("Format is not selected", "ConvertMediaExec");
@@ -71,6 +70,7 @@ namespace GARbro.GUI
             {
                 Directory.SetCurrentDirectory (ViewModel.Path);
                 var converter = new GarConvertMedia (this);
+                converter.IgnoreErrors = convert_dialog.IgnoreErrors.IsChecked ?? false;
                 converter.Convert (source, format);
             }
             catch (Exception X)
