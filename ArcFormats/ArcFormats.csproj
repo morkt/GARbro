@@ -175,6 +175,7 @@
     <Compile Include="ImageEPA.cs" />
     <Compile Include="ImageERI.cs" />
     <Compile Include="ImageGCP.cs" />
+    <Compile Include="ImageGGP.cs" />
     <Compile Include="ImageGR.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageIAF.cs" />
