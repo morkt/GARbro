@@ -94,7 +94,7 @@
                       Command="{x:Static local:Commands.Refresh}"/>
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuConvert}" InputGestureText="F6"
                       Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
-                      Command="{x:Static local:Commands.ConvertImage}" />
+                      Command="{x:Static local:Commands.ConvertMedia}" />
         </ContextMenu>
 
     </Window.Resources>
@@ -107,7 +107,7 @@
                     <MenuItem Header="{x:Static s:guiStrings.CtxMenuCreate}" InputGestureText="F3"
                               Command="{x:Static local:Commands.CreateArchive}" />
                     <MenuItem Header="{x:Static s:guiStrings.CtxMenuConvert}" InputGestureText="F6"
-                              Command="{x:Static local:Commands.ConvertImage}" />
+                              Command="{x:Static local:Commands.ConvertMedia}" />
                     <MenuItem Header="{x:Static s:guiStrings.MenuRecent}" x:Name="RecentFilesMenu">
                         <MenuItem.ItemContainerStyle>
                             <Style TargetType="MenuItem">
@@ -265,7 +265,7 @@
                     <KeyBinding Gesture="F2" Command="{x:Static local:Commands.RenameItem}"/>
                     <KeyBinding Gesture="F4" Command="{x:Static local:Commands.ExtractItem}"/>
                     <KeyBinding Gesture="F5" Command="{x:Static local:Commands.Refresh}"/>
-                    <KeyBinding Gesture="F6" Command="{x:Static local:Commands.ConvertImage}"/>
+                    <KeyBinding Gesture="F6" Command="{x:Static local:Commands.ConvertMedia}"/>
                     <KeyBinding Gesture="Delete" Command="{x:Static local:Commands.DeleteItem}"/>
                     <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
                     <MouseBinding Gesture="LeftDoubleClick" Command="{x:Static local:Commands.OpenItem}" />
@@ -366,7 +366,7 @@
         <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteOnPhysicalFile" />
         <CommandBinding Command="{x:Static local:Commands.RenameItem}" Executed="RenameItemExec" CanExecute="CanExecuteInDirectory" />
         <CommandBinding Command="{x:Static local:Commands.ExploreItem}" Executed="ExploreItemExec" CanExecute="CanExecuteInDirectory" />
-        <CommandBinding Command="{x:Static local:Commands.ConvertImage}" Executed="ConvertImageExec" CanExecute="CanExecuteConvertImage" />
+        <CommandBinding Command="{x:Static local:Commands.ConvertMedia}" Executed="ConvertMediaExec" CanExecute="CanExecuteConvertMedia" />
         <CommandBinding Command="{x:Static local:Commands.SortBy}"     Executed="SortByExec"     CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.GoBack}"     Executed="GoBackExec"     CanExecute="CanExecuteGoBack"/>
         <CommandBinding Command="{x:Static local:Commands.GoForward}"  Executed="GoForwardExec"  CanExecute="CanExecuteGoForward"/>

@@ -394,22 +394,22 @@
     <value>Просмотр</value>
   </data>
   <data name="CtxMenuConvert" xml:space="preserve">
-    <value>Конверсия изображений...</value>
+    <value>Конверсия мультимедиа...</value>
   </data>
   <data name="ButtonConvert" xml:space="preserve">
     <value>Преобразовать</value>
   </data>
   <data name="LabelDestinationFormat" xml:space="preserve">
-    <value>Формат преобразования</value>
+    <value>Формат преобразования изображений</value>
   </data>
-  <data name="TextConvertImages" xml:space="preserve">
-    <value>Преобразовать изображения</value>
+  <data name="TextConvertMedia" xml:space="preserve">
+    <value>Преобразовать мультимедиа</value>
   </data>
-  <data name="MsgConvertingImage" xml:space="preserve">
+  <data name="MsgConvertingFile" xml:space="preserve">
     <value>Преобразование файла {0}</value>
   </data>
-  <data name="TextImageConvertError" xml:space="preserve">
-    <value>Ошибка конверсии изображения</value>
+  <data name="TextMediaConvertError" xml:space="preserve">
+    <value>Ошибка конверсии мультимедиа</value>
   </data>
   <data name="LabelEncoding" xml:space="preserve">
     <value>Кодировка</value>
@@ -434,5 +434,11 @@
   </data>
   <data name="MsgUnableInterpretAudio" xml:space="preserve">
     <value>не удалось интерпретировать формат аудио</value>
+  </data>
+  <data name="MsgNoMediaFiles" xml:space="preserve">
+    <value>Среди выбранных файлов нет мультиемедиа.</value>
+  </data>
+  <data name="TextAudioConversion" xml:space="preserve">
+    <value>Аудио-файлы будут преобразованы в WAV, MP3 или OGG.</value>
   </data>
 </root>

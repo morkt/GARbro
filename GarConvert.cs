@@ -2,6 +2,26 @@
 //! \date       Fri Aug 22 08:22:47 2014
 //! \brief      Game resources conversion methods.
 //
+// Copyright (C) 2014-2015 by morkt
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+//
 
 using System;
 using System.IO;
@@ -23,53 +43,61 @@ namespace GARbro.GUI
         /// <summary>
         /// Convert selected images to another format.
         /// </summary>
-        void ConvertImageExec (object sender, ExecutedRoutedEventArgs e)
+        void ConvertMediaExec (object sender, ExecutedRoutedEventArgs e)
         {
             if (ViewModel.IsArchive)
                 return;
             var source = CurrentDirectory.SelectedItems.Cast<EntryViewModel>()
-                         .Where (f => f.Type == "image").Select (f => f.Name);
-            var convert_dialog = new ConvertImages();
+                         .Where (f => f.Type == "image" || f.Type == "audio")
+                         .Select (f => f.Source);
+            if (!source.Any())
+            {
+                PopupError (guiStrings.MsgNoMediaFiles, guiStrings.TextMediaConvertError);
+                return;
+            }
+            var convert_dialog = new ConvertMedia();
             convert_dialog.Owner = this;
             var result = convert_dialog.ShowDialog() ?? false;
             if (!result)
                 return;
-            var selected = convert_dialog.ImageConversionFormat.SelectedValue as string;
-            var format = FormatCatalog.Instance.ImageFormats.FirstOrDefault (f => f.Tag == selected);
+            var format = convert_dialog.ImageConversionFormat.SelectedItem as ImageFormat;
+//            var format = FormatCatalog.Instance.ImageFormats.FirstOrDefault (f => f.Tag == selected);
             if (null == format)
             {
-                Trace.WriteLine ("Format is not selected", "ConvertImageExec");
+                Trace.WriteLine ("Format is not selected", "ConvertMediaExec");
                 return;
             }
             try
             {
                 Directory.SetCurrentDirectory (ViewModel.Path);
-                var converter = new GarConvertImages (this);
+                var converter = new GarConvertMedia (this);
                 converter.Convert (source, format);
             }
             catch (Exception X)
             {
-                PopupError (X.Message, guiStrings.TextImageConvertError);
+                PopupError (X.Message, guiStrings.TextMediaConvertError);
             }
         }
     }
 
-    internal class GarConvertImages
+    internal class GarConvertMedia
     {
         private MainWindow      m_main;
         private ProgressDialog  m_progress_dialog;
-        private IEnumerable<string> m_source;
+        private IEnumerable<Entry> m_source;
         private ImageFormat     m_image_format;
         private Exception       m_pending_error;
+        private List<Tuple<string,string>> m_failed = new List<Tuple<string,string>>();
 
         public bool IgnoreErrors { get; set; }
+        public IEnumerable<Tuple<string,string>> FailedFiles { get { return m_failed; } }
 
-        public GarConvertImages (MainWindow parent)
+        public GarConvertMedia (MainWindow parent)
         {
             m_main = parent;
         }
 
-        public void Convert (IEnumerable<string> images, ImageFormat format)
+        public void Convert (IEnumerable<Entry> images, ImageFormat format)
         {
             m_main.StopWatchDirectoryChanges();
             m_source = images;
@@ -91,52 +119,95 @@ namespace GARbro.GUI
             m_pending_error = null;
             try
             {
-                string target_ext = m_image_format.Extensions.First();
                 int total = m_source.Count();
                 int i = 0;
-                foreach (var filename in m_source)
+                foreach (var entry in m_source)
                 {
                     if (m_progress_dialog.CancellationPending)
                         throw new OperationCanceledException();
+                    var filename = entry.Name;
                     int progress = i++*100/total;
-                    string target_name = Path.ChangeExtension (filename, target_ext);
-                    if (filename == target_name)
-                        continue;
-                    string source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
-                    if (m_image_format.Extensions.Any (ext => ext == source_ext))
-                        continue;
+                    m_progress_dialog.ReportProgress (progress, string.Format (guiStrings.MsgConvertingFile,
+                        Path.GetFileName (filename)), null);
                     try
                     {
-                        using (var file = File.OpenRead (filename))
-                        {
-                            m_progress_dialog.ReportProgress (progress, string.Format (guiStrings.MsgConvertingImage,
-                                filename), target_name);
-                            var image = ImageFormat.Read (file);
-                            if (null == image)
-                                continue;
-                            try
-                            {
-                                using (var output = File.Create (target_name))
-                                    m_image_format.Write (output, image);
-                            }
-                            catch // delete destination file on conversion failure
-                            {
-                                File.Delete (target_name);
-                                throw;
-                            }
-                        }
+                        if ("image" == entry.Type)
+                            ConvertImage (filename);
+                        else if ("audio" == entry.Type)
+                            ConvertAudio (filename);
                     }
                     catch (Exception X)
                     {
                         if (!IgnoreErrors)
                             throw;
-                        m_pending_error = X;
+                        m_failed.Add (Tuple.Create (Path.GetFileName (filename), X.Message));
                     }
                 }
             }
             catch (Exception X)
             {
                 m_pending_error = X;
+            }
+        }
+
+        public static readonly HashSet<string> CommonAudioFormats = new HashSet<string> { "wav", "mp3", "ogg" };
+        public static readonly AudioFormat WavFormat = FormatCatalog.Instance.AudioFormats.First (f => f.Tag == "WAV");
+
+        void ConvertAudio (string filename)
+        {
+            using (var file = File.OpenRead (filename))
+            using (var input = AudioFormat.Read (file))
+            {
+                if (null == input)
+                    return;
+                var source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
+                string source_format = input.SourceFormat;
+                if (CommonAudioFormats.Contains (source_format))
+                {
+                    if (source_ext == source_format)
+                        return;
+                    string output_name = Path.ChangeExtension (filename, source_format);
+                    using (var output = File.Create (output_name))
+                    {
+                        input.Source.Position = 0;
+                        input.Source.CopyTo (output);
+                    }
+                }
+                else
+                {
+                    if (source_ext == "wav")
+                        return;
+                    string output_name = Path.ChangeExtension (filename, "wav");
+                    using (var output = File.Create (output_name))
+                        WavFormat.Write (input, output);
+                }
+            }
+        }
+
+        void ConvertImage (string filename)
+        {
+            string target_ext = m_image_format.Extensions.First();
+            string target_name = Path.ChangeExtension (filename, target_ext);
+            if (filename == target_name)
+                return;
+            string source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
+            if (m_image_format.Extensions.Any (ext => ext == source_ext))
+                return;
+            using (var file = File.OpenRead (filename))
+            {
+                var image = ImageFormat.Read (file);
+                if (null == image)
+                    return;
+                try
+                {
+                    using (var output = File.Create (target_name))
+                        m_image_format.Write (output, image);
+                }
+                catch // delete destination file on conversion failure
+                {
+                    File.Delete (target_name);
+                    throw;
+                }
             }
         }
 
@@ -149,7 +220,7 @@ namespace GARbro.GUI
                 if (m_pending_error is OperationCanceledException)
                     m_main.SetStatusText (m_pending_error.Message);
                 else
-                    m_main.PopupError (m_pending_error.Message, guiStrings.TextImageConvertError);
+                    m_main.PopupError (m_pending_error.Message, guiStrings.TextMediaConvertError);
             }
             m_main.Activate();
             m_main.RefreshView();

@@ -379,22 +379,22 @@ Overwrite?</value>
     <value>_View</value>
   </data>
   <data name="CtxMenuConvert" xml:space="preserve">
-    <value>Convert images...</value>
+    <value>Convert multimedia...</value>
   </data>
   <data name="ButtonConvert" xml:space="preserve">
     <value>Convert</value>
   </data>
   <data name="LabelDestinationFormat" xml:space="preserve">
-    <value>Choose destination format</value>
+    <value>Choose destination format for images</value>
   </data>
-  <data name="TextConvertImages" xml:space="preserve">
-    <value>Convert images</value>
+  <data name="TextConvertMedia" xml:space="preserve">
+    <value>Convert media</value>
   </data>
-  <data name="MsgConvertingImage" xml:space="preserve">
-    <value>Converting image {0}</value>
+  <data name="MsgConvertingFile" xml:space="preserve">
+    <value>Converting file {0}</value>
   </data>
-  <data name="TextImageConvertError" xml:space="preserve">
-    <value>Image conversion error</value>
+  <data name="TextMediaConvertError" xml:space="preserve">
+    <value>Multimedia conversion error</value>
   </data>
   <data name="LabelEncoding" xml:space="preserve">
     <value>Encoding</value>
@@ -416,5 +416,11 @@ Overwrite?</value>
   </data>
   <data name="MsgUnableInterpretAudio" xml:space="preserve">
     <value>unable to interpret audio format</value>
+  </data>
+  <data name="MsgNoMediaFiles" xml:space="preserve">
+    <value>No media files selected.</value>
+  </data>
+  <data name="TextAudioConversion" xml:space="preserve">
+    <value>Audio will be converted to either WAV, MP3 or OGG.</value>
   </data>
 </root>

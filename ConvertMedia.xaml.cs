@@ -3,11 +3,11 @@
 namespace GARbro.GUI
 {
     /// <summary>
-    /// Interaction logic for ConvertImages.xaml
+    /// Interaction logic for ConvertMedia.xaml
     /// </summary>
-    public partial class ConvertImages : Window
+    public partial class ConvertMedia : Window
     {
-        public ConvertImages ()
+        public ConvertMedia ()
         {
             InitializeComponent ();
         }

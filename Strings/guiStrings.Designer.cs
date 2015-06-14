@@ -106,7 +106,7 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Convert images....
+        ///   Looks up a localized string similar to Convert multimedia....
         /// </summary>
         public static string CtxMenuConvert {
             get {
@@ -304,7 +304,7 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Choose destination format.
+        ///   Looks up a localized string similar to Choose destination format for images.
         /// </summary>
         public static string LabelDestinationFormat {
             get {
@@ -457,11 +457,11 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Converting image {0}.
+        ///   Looks up a localized string similar to Converting file {0}.
         /// </summary>
-        public static string MsgConvertingImage {
+        public static string MsgConvertingFile {
             get {
-                return ResourceManager.GetString("MsgConvertingImage", resourceCulture);
+                return ResourceManager.GetString("MsgConvertingFile", resourceCulture);
             }
         }
         
@@ -628,6 +628,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No media files selected..
+        /// </summary>
+        public static string MsgNoMediaFiles {
+            get {
+                return ResourceManager.GetString("MsgNoMediaFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File {0}
         ///already exists.
         ///
@@ -757,6 +766,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Audio will be converted to either WAV, MP3 or OGG..
+        /// </summary>
+        public static string TextAudioConversion {
+            get {
+                return ResourceManager.GetString("TextAudioConversion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose archive location.
         /// </summary>
         public static string TextChooseArchive {
@@ -793,11 +811,11 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Convert images.
+        ///   Looks up a localized string similar to Convert media.
         /// </summary>
-        public static string TextConvertImages {
+        public static string TextConvertMedia {
             get {
-                return ResourceManager.GetString("TextConvertImages", resourceCulture);
+                return ResourceManager.GetString("TextConvertMedia", resourceCulture);
             }
         }
         
@@ -874,11 +892,11 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Image conversion error.
+        ///   Looks up a localized string similar to Multimedia conversion error.
         /// </summary>
-        public static string TextImageConvertError {
+        public static string TextMediaConvertError {
             get {
-                return ResourceManager.GetString("TextImageConvertError", resourceCulture);
+                return ResourceManager.GetString("TextMediaConvertError", resourceCulture);
             }
         }
         

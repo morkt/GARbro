@@ -1075,15 +1075,11 @@ namespace GARbro.GUI
             e.CanExecute = CurrentDirectory.SelectedIndex != -1;
         }
 
-        private void CanExecuteConvertImage (object sender, CanExecuteRoutedEventArgs e)
+        private void CanExecuteConvertMedia (object sender, CanExecuteRoutedEventArgs e)
         {
-            if (CurrentDirectory.SelectedItems.Count > 1)
+            if (CurrentDirectory.SelectedItems.Count >= 1)
             {
                 e.CanExecute = !ViewModel.IsArchive;
-            }
-            else
-            {
-                CanExecuteOnImage (sender, e);
             }
         }
 
@@ -1302,7 +1298,7 @@ namespace GARbro.GUI
         public static readonly RoutedCommand DeleteItem = new RoutedCommand();
         public static readonly RoutedCommand RenameItem = new RoutedCommand();
         public static readonly RoutedCommand ExploreItem = new RoutedCommand();
-        public static readonly RoutedCommand ConvertImage = new RoutedCommand();
+        public static readonly RoutedCommand ConvertMedia = new RoutedCommand();
         public static readonly RoutedCommand Refresh = new RoutedCommand();
         public static readonly RoutedCommand Browse = new RoutedCommand();
         public static readonly RoutedCommand FitWindow = new RoutedCommand();

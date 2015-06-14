@@ -126,8 +126,8 @@
     <Compile Include="ArcParameters.xaml.cs">
       <DependentUpon>ArcParameters.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ConvertImages.xaml.cs">
-      <DependentUpon>ConvertImages.xaml</DependentUpon>
+    <Compile Include="ConvertMedia.xaml.cs">
+      <DependentUpon>ConvertMedia.xaml</DependentUpon>
     </Compile>
     <Compile Include="CreateArchive.xaml.cs">
       <DependentUpon>CreateArchive.xaml</DependentUpon>
@@ -168,7 +168,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="ConvertImages.xaml">
+    <Page Include="ConvertMedia.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

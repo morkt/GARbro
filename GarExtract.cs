@@ -113,8 +113,6 @@ namespace GARbro.GUI
         private ProgressDialog      m_progress_dialog;
         private Exception           m_pending_error;
 
-        public static readonly HashSet<string> CommonAudioFormats = new HashSet<string> { "wav", "mp3", "ogg" };
-
         public bool IsActive { get { return m_extract_in_progress; } }
 
         public GarExtract (MainWindow parent, string source)
@@ -365,7 +363,7 @@ namespace GARbro.GUI
         public static void ConvertAudio (string entry_name, SoundInput input)
         {
             string source_format = input.SourceFormat;
-            if (CommonAudioFormats.Contains (source_format))
+            if (GarConvertMedia.CommonAudioFormats.Contains (source_format))
             {
                 string output_name = Path.ChangeExtension (entry_name, source_format);
                 using (var output = ArchiveFormat.CreateFile (output_name))
@@ -376,10 +374,9 @@ namespace GARbro.GUI
             }
             else
             {
-                var wav_format = FormatCatalog.Instance.AudioFormats.First (f => f.Tag == "WAV");
                 string output_name = Path.ChangeExtension (entry_name, "wav");
                 using (var output = ArchiveFormat.CreateFile (output_name))
-                    wav_format.Write (input, output);
+                    GarConvertMedia.WavFormat.Write (input, output);
             }
         }
 
