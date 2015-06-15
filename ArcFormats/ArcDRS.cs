@@ -128,7 +128,11 @@ namespace GameRes.Formats.DRS
                 if (0 == name_length)
                     return null;
                 string name = encoding.GetString (name_raw, 0, name_length).ToLowerInvariant();
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                Entry entry;
+                if (name.EndsWith (".isf", System.StringComparison.InvariantCultureIgnoreCase))
+                    entry = new Entry { Name = name, Type = "script" };
+                else
+                    entry = FormatCatalog.Instance.CreateEntry (name);
                 entry.Offset = file.View.ReadUInt32 (dir_offset+12);
                 entry.Size   = file.View.ReadUInt32 (dir_offset+16);
                 if (!entry.CheckPlacement (file.MaxOffset))
