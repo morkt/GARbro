@@ -110,6 +110,7 @@
     <Compile Include="ArcPAC.cs" />
     <Compile Include="ArcPCK.cs" />
     <Compile Include="ArcPD.cs" />
+    <Compile Include="ArcQLIE.cs" />
     <Compile Include="ArcRPA.cs" />
     <Compile Include="ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
