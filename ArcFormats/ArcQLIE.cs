@@ -65,7 +65,7 @@ namespace GameRes.Formats.Qlie
             if (pack_version != 2)
                 throw new NotSupportedException ("Not supported QLIE archive version");
             int count = file.View.ReadInt32 (index_offset+0x10);
-            if (count < 0 || count > 0xfffff)
+            if (count <= 0 || count > 0xfffff)
                 return null;
             index_offset = file.View.ReadInt64 (index_offset+0x14);
             if (index_offset < 0 || index_offset >= file.MaxOffset)
