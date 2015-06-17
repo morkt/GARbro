@@ -74,6 +74,7 @@
     <Compile Include="ArcAZSys.cs" />
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcBlackPackage.cs" />
+    <Compile Include="ArcCircus.cs" />
     <Compile Include="ArcCommon.cs" />
     <Compile Include="ArcDPK.cs" />
     <Compile Include="ArcDRS.cs" />
@@ -125,6 +126,7 @@
     <Compile Include="AudioMIO.cs" />
     <Compile Include="AudioMP3.cs" />
     <Compile Include="AudioOGV.cs" />
+    <Compile Include="AudioPCM.cs" />
     <Compile Include="AudioPMW.cs" />
     <Compile Include="AudioWA1.cs" />
     <Compile Include="AudioWADY.cs" />
@@ -167,11 +169,13 @@
     <Compile Include="ImageBMD.cs" />
     <Compile Include="ImageBMZ.cs" />
     <Compile Include="ImageCPB.cs" />
+    <Compile Include="ImageCRX.cs" />
     <Compile Include="ImageCWL.cs" />
     <Compile Include="ImageCWP.cs" />
     <Compile Include="ImageDGC.cs" />
     <Compile Include="ImageDRG.cs" />
     <Compile Include="ImageEDT.cs" />
+    <Compile Include="ImageEGN.cs" />
     <Compile Include="ImageELG.cs" />
     <Compile Include="ImageEPA.cs" />
     <Compile Include="ImageERI.cs" />
