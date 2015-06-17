@@ -334,8 +334,7 @@ namespace GARbro.GUI
             if (watcher.Path == ViewModel.Path)
             {
                 watcher.EnableRaisingEvents = false;
-                Dispatcher.Invoke (RefreshView, DispatcherPriority.Send, CancellationToken.None,
-                                   TimeSpan.FromMilliseconds (100));
+                Dispatcher.Invoke (RefreshView);
             }
         }
         #endregion
