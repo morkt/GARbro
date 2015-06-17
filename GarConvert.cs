@@ -47,9 +47,9 @@ namespace GARbro.GUI
         {
             if (ViewModel.IsArchive)
                 return;
-            var source = CurrentDirectory.SelectedItems.Cast<EntryViewModel>()
-                         .Where (f => f.Type == "image" || f.Type == "audio")
-                         .Select (f => f.Source);
+            var source = from entry in CurrentDirectory.SelectedItems.Cast<EntryViewModel>()
+                         where entry.Type == "image" || entry.Type == "audio"
+                         select entry.Source;
             if (!source.Any())
             {
                 PopupError (guiStrings.MsgNoMediaFiles, guiStrings.TextMediaConvertError);
@@ -136,6 +136,12 @@ namespace GARbro.GUI
                         else if ("audio" == entry.Type)
                             ConvertAudio (filename);
                     }
+                    catch (NotImplementedException X)
+                    {
+                        // target format creation not implemented
+                        m_pending_error = X;
+                        break;
+                    }
                     catch (Exception X)
                     {
                         if (!IgnoreErrors)
@@ -186,13 +192,11 @@ namespace GARbro.GUI
 
         void ConvertImage (string filename)
         {
-            string target_ext = m_image_format.Extensions.First();
-            string target_name = Path.ChangeExtension (filename, target_ext);
-            if (filename == target_name)
-                return;
             string source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
             if (m_image_format.Extensions.Any (ext => ext == source_ext))
                 return;
+            string target_ext = m_image_format.Extensions.First();
+            string target_name = Path.ChangeExtension (filename, target_ext);
             using (var file = File.OpenRead (filename))
             {
                 var image = ImageFormat.Read (file);
