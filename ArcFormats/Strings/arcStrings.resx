@@ -319,7 +319,10 @@ Enter archive encryption key.</value>
     <value>Default</value>
   </data>
   <data name="MBLNotice" xml:space="preserve">
-      <value>Archive contains encrypted scripts.
+    <value>Archive contains encrypted scripts.
 Choose encryption scheme or enter a passphrase.</value>
+  </data>
+  <data name="ISFIgnoreEncryption" xml:space="preserve">
+    <value>Ignore encryption</value>
   </data>
 </root>

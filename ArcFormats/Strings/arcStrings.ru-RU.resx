@@ -162,6 +162,9 @@
 Введите ключ шифрования или выберите
 один из предопределённых вариантов.</value>
   </data>
+  <data name="ISFIgnoreEncryption" xml:space="preserve">
+    <value>Игнорировать шифрование</value>
+  </data>
   <data name="KCAPDefault" xml:space="preserve">
     <value>Неизвестно</value>
   </data>

@@ -221,6 +221,9 @@
     <Compile Include="WidgetINT.xaml.cs">
       <DependentUpon>WidgetINT.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WidgetISF.xaml.cs">
+      <DependentUpon>WidgetISF.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WidgetKCAP.xaml.cs">
       <DependentUpon>WidgetKCAP.xaml</DependentUpon>
     </Compile>
@@ -326,6 +329,10 @@
     <Page Include="WidgetINT.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WidgetISF.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="WidgetKCAP.xaml">
       <SubType>Designer</SubType>

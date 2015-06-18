@@ -226,6 +226,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Ignore encryption.
+        /// </summary>
+        public static string ISFIgnoreEncryption {
+            get {
+                return ResourceManager.GetString("ISFIgnoreEncryption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Default.
         /// </summary>
         public static string KCAPDefault {
@@ -280,7 +289,8 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Archive contains encrypted scripts.Choose encryption scheme or enter a passphrase..
+        ///   Looks up a localized string similar to Archive contains encrypted scripts.
+        ///Choose encryption scheme or enter a passphrase..
         /// </summary>
         public static string MBLNotice {
             get {
