@@ -153,9 +153,17 @@ namespace GameRes
         /// </summary>
         public ArcView OpenView (Entry entry)
         {
-            var stream = OpenEntry (entry);
-            uint size = stream.CanSeek ? (uint)stream.Length : entry.Size;
-            return new ArcView (stream, entry.Name, size);
+            using (var stream = OpenEntry (entry))
+            {
+                uint size;
+                if (stream.CanSeek)
+                    size = (uint)stream.Length;
+                else if (entry is PackedEntry)
+                    size = (entry as PackedEntry).UnpackedSize;
+                else
+                    size = entry.Size;
+                return new ArcView (stream, entry.Name, size);
+            }
         }
 
         /// <summary>
