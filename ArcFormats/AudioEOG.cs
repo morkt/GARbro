@@ -39,15 +39,8 @@ namespace GameRes.Formats.Crowd
         public override SoundInput TryOpen (Stream file)
         {
             var ogg = new StreamRegion (file, 8);
-            try
-            {
-                return new OggInput (ogg);
-            }
-            catch
-            {
-                ogg.Dispose();
-                throw;
-            }
+            return new OggInput (ogg);
+            // in case of exception ogg stream is left undisposed
         }
 
         public override void Write (SoundInput source, Stream output)
