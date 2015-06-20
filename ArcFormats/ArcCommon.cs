@@ -180,7 +180,8 @@ namespace GameRes.Formats
         {
             if (!disposed)
             {
-                m_stream.Dispose();
+                if (disposing)
+                    m_stream.Dispose();
                 disposed = true;
                 base.Dispose (disposing);
             }
@@ -278,7 +279,7 @@ namespace GameRes.Formats
         {
             if (!m_disposed)
             {
-                if (m_should_dispose)
+                if (m_should_dispose && disposing)
                     m_stream.Dispose();
                 m_disposed = true;
                 base.Dispose (disposing);
