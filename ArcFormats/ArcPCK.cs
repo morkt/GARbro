@@ -82,6 +82,105 @@ namespace GameRes.Formats.Crowd
             return new ArcFile (file, this, dir);
         }
     }
+
+    internal class PkwEntry : PackedEntry
+    {
+        public WaveFormat   Format;
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class PkwOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "PKWV"; } }
+        public override string Description { get { return "Crowd engine audio archive"; } }
+        public override uint     Signature { get { return 0x56574b50; } } // 'PKWV'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public PkwOpener ()
+        {
+            Extensions = new string[] { "PCK" };
+        }
+
+        const uint WaveHeaderSize = 8/*RIFF*/ + 12/*WAVEfmt*/ + 0x10/*fmt*/ + 8/*data*/;
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int format_count = file.View.ReadUInt16 (4);
+            int count = file.View.ReadUInt16 (6);
+            if (0 == format_count || 0 == count)
+                return null;
+            uint index_offset = 8;
+            long base_offset = index_offset + format_count*0x14 + count*0x18;
+            if (base_offset >= file.MaxOffset)
+                return null;
+            var formats = new List<WaveFormat> (format_count);
+            for (int i = 0; i < format_count; ++i)
+            {
+                var format = new WaveFormat
+                {
+                    FormatTag               = file.View.ReadUInt16 (index_offset),
+                    Channels                = file.View.ReadUInt16 (index_offset+2),
+                    SamplesPerSecond        = file.View.ReadUInt32 (index_offset+4),
+                    AverageBytesPerSecond   = file.View.ReadUInt32 (index_offset+8),
+                    BitsPerSample           = file.View.ReadUInt16 (index_offset+12),
+                    BlockAlign              = file.View.ReadUInt16 (index_offset+14),
+                };
+                index_offset += 0x14;
+                formats.Add (format);
+            }
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                int fmt_index = file.View.ReadUInt16 (index_offset);
+                if (fmt_index > formats.Count)
+                    return null;
+                string name = file.View.ReadString (index_offset+2, 0x0A);
+                var entry = new PkwEntry
+                {
+                    Name = name + ".wav",
+                    Type = "audio",
+                    Offset = base_offset + file.View.ReadInt64 (index_offset+0x10),
+                    Size = file.View.ReadUInt32 (index_offset+0x0C),
+                    IsPacked = true,
+                    Format = formats[fmt_index],
+                };
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                entry.UnpackedSize = entry.Size + WaveHeaderSize;
+                dir.Add (entry);
+                index_offset += 0x18;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var went = entry as PkwEntry;
+            if (null == went)
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var riff = new byte[0x2c];
+            using (var buf = new MemoryStream (riff))
+            using (var wav = new BinaryWriter (buf))
+            {
+                wav.Write (0x46464952); // 'RIFF'
+                uint total_size = went.UnpackedSize - 8;
+                wav.Write (total_size);
+                wav.Write (0x45564157); // 'WAVE'
+                wav.Write (0x20746d66); // 'fmt '
+                wav.Write (0x10);
+                wav.Write (went.Format.FormatTag);
+                wav.Write (went.Format.Channels);
+                wav.Write (went.Format.SamplesPerSecond);
+                wav.Write (went.Format.AverageBytesPerSecond);
+                wav.Write (went.Format.BlockAlign);
+                wav.Write (went.Format.BitsPerSample);
+                wav.Write (0x61746164); // 'data'
+                wav.Write (went.Size);
+                wav.Flush ();
+                var input = arc.File.CreateStream (entry.Offset, entry.Size);
+                return new PrefixStream (riff, input);
+            }
+        }
+    }
 }
-
-
