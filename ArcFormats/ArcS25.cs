@@ -71,6 +71,7 @@ namespace GameRes.Formats.ShiinaRio
                     dir.Add (entry);
                 }
             }
+            dir.Sort ((a, b) => (int)(a.Offset - b.Offset));
             for (int i = 0; i < dir.Count; ++i)
             {
                 long next_offset;
@@ -78,8 +79,6 @@ namespace GameRes.Formats.ShiinaRio
                     next_offset = file.MaxOffset;
                 else
                     next_offset = dir[i+1].Offset;
-                if (next_offset < dir[i].Offset)
-                    return null;
                 dir[i].Size = (uint)(next_offset - dir[i].Offset);
             }
             return new ArcFile (file, this, dir);
