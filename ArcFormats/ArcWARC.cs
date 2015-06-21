@@ -75,7 +75,7 @@ namespace GameRes.Formats.ShiinaRio
                 return null;
             int version = file.View.ReadByte (7) - 0x30;
             version = 100 + version * 10;
-            if (170 != version)
+            if (170 != version && 130 != version)
                 throw new NotSupportedException ("Not supported WARC version");
             uint index_offset = 0xf182ad82u ^ file.View.ReadUInt32 (8);
             if (index_offset >= file.MaxOffset)
@@ -105,7 +105,7 @@ namespace GameRes.Formats.ShiinaRio
             else
             {
                 var unpacked = new byte[max_index_len];
-                index_length = UnpackRNG (enc_index, unpacked);
+                index_length = UnpackRNG (enc_index, 0, index_length, unpacked);
                 if (0 == index_length)
                     return null;
                 index = new MemoryStream (unpacked, 0, (int)index_length);
@@ -173,7 +173,7 @@ namespace GameRes.Formats.ShiinaRio
                 unpack = UnpackYPK;
                 break;
             case 0x5a4c59: // 'YLZ'
-                unpack = UnpackYPK;
+                unpack = UnpackYLZ;
                 break;
             }
             if (null != unpack)
@@ -262,11 +262,11 @@ namespace GameRes.Formats.ShiinaRio
             decoder.Unpack();
         }
 
-        uint UnpackRNG (byte[] input, byte[] output)
+        uint UnpackRNG (byte[] input, int in_start, uint input_size, byte[] output)
         {
             var coder = new Kogado.CRangeCoder();
             coder.InitQSModel (257, 12, 2000, null, false);
-            return coder.Decode (output, 0, (uint)output.Length, input, 1, (uint)input.Length-1);
+            return coder.Decode (output, 0, (uint)output.Length, input, (uint)in_start, input_size);
         }
 
         public override ResourceOptions GetDefaultOptions ()
@@ -310,6 +310,7 @@ namespace GameRes.Formats.ShiinaRio
 
         bool GetCtlBit ()
         {
+            m_mask >>= 1;
             if (0 == m_mask)
             {
                 m_ctl = LittleEndian.ToUInt32 (m_input, m_src);
@@ -317,7 +318,6 @@ namespace GameRes.Formats.ShiinaRio
                 m_mask = 0x80000000;
             }
             bool bit = 0 != (m_ctl & m_mask);
-            m_mask >>= 1;
             return bit;
         }
 
@@ -1208,7 +1208,7 @@ namespace GameRes.Formats.ShiinaRio
 
         public static EncryptionScheme[] KnownSchemes = new EncryptionScheme[]
         {
-            EncryptionScheme.Create (2360, "ShiinaRio v2.3x"),
+            EncryptionScheme.Create (2360, "ShiinaRio v2.36 and older"),
             EncryptionScheme.Create (2480, "Bloody Rondo", "BLOODY†RONDO",
                 new uint[] { 0xFBFBF8F6, 0xFBE6EDF0, 0xFBF0FA, 0, 0 }),
             EncryptionScheme.Create (2450, "Chuuchuu Nurse", "ちゅうちゅうナース",
