@@ -126,6 +126,7 @@
     <Compile Include="AudioMIO.cs" />
     <Compile Include="AudioMP3.cs" />
     <Compile Include="AudioOGV.cs" />
+    <Compile Include="AudioPAD.cs" />
     <Compile Include="AudioPCM.cs" />
     <Compile Include="AudioPMW.cs" />
     <Compile Include="AudioWA1.cs" />
