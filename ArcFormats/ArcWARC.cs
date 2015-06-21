@@ -310,6 +310,7 @@ namespace GameRes.Formats.ShiinaRio
 
         bool GetCtlBit ()
         {
+            bool bit = 0 != (m_ctl & m_mask);
             m_mask >>= 1;
             if (0 == m_mask)
             {
@@ -317,7 +318,6 @@ namespace GameRes.Formats.ShiinaRio
                 m_src += 4;
                 m_mask = 0x80000000;
             }
-            bool bit = 0 != (m_ctl & m_mask);
             return bit;
         }
 
@@ -335,6 +335,7 @@ namespace GameRes.Formats.ShiinaRio
 
         public void Unpack ()
         {
+            GetCtlBit();
             int dst = 0;
             while (dst < m_output.Length)
             {
@@ -343,10 +344,11 @@ namespace GameRes.Formats.ShiinaRio
                     m_output[dst++] = m_input[m_src++];
                     continue;
                 }
+                bool next_bit = GetCtlBit();
                 int offset = m_input[m_src++] | ~0xffff;
                 int ah = 0xff;
                 int count = 0;
-                if (GetCtlBit()) // 5e
+                if (next_bit) // 5e
                 {
                     if (GetCtlBit()) // 10d
                     {
