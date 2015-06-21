@@ -144,8 +144,8 @@ namespace GameRes.Formats.Kogado
     {
         byte[]  m_pSrcBuffer;
         byte[]  m_pDestBuffer;
-        uint    m_dwSrcLength;
-        uint    m_dwDestLength;
+        uint    m_dwSrcEnd;
+        uint    m_dwDestEnd;
         uint    m_dwSrcIndex;
         uint    m_dwDestIndex;
         RangeCoder m_rc = new RangeCoder();
@@ -216,13 +216,13 @@ namespace GameRes.Formats.Kogado
             m_dwSrcIndex = m_dwDestIndex = 0;
             m_pSrcBuffer = src;
             m_pDestBuffer = dest;
-            m_dwSrcLength = srcsize;
-            m_dwDestLength = destsize;
+            m_dwSrcEnd = srcsize;
+            m_dwDestEnd = destsize;
 
             //this->InitQSModel();
             this->StartEncoding();
 
-            while ( m_dwSrcIndex < m_dwSrcLength ) {
+            while ( m_dwSrcIndex < m_dwSrcEnd ) {
                 if ( !this->GetSrcByteImpl( &ch_byte ) )
                     return false;
                 qsgetfreq( &m_qsm, ch_byte, &syfreq, &ltfreq );
@@ -253,20 +253,19 @@ namespace GameRes.Formats.Kogado
             m_dwDestIndex = dst_index;
             m_pSrcBuffer = src;
             m_pDestBuffer = dst;
-            m_dwSrcLength = src_size;
-            m_dwDestLength = dst_size;
+            m_dwSrcEnd = src_index + src_size;
+            m_dwDestEnd = dst_index + dst_size;
 
             StartDecoding();
 
-            while (m_dwSrcIndex < m_dwSrcLength)
+            while (m_dwSrcIndex < m_dwSrcEnd)
             {
                 ltfreq = (int)DecodeCulshift (12);
                 ch = m_qsm.GetSym (ltfreq);
                 if (256 == ch)	// check for end-of-file
                     break;
-                if (m_dwDestIndex >= m_dwDestLength)
+                if (!SetDestByteImpl ((byte)ch))
                     return 0;
-                SetDestByteImpl ((byte)ch);
                 m_qsm.GetFreq (ch, out syfreq, out ltfreq);
                 DecodeUpdate (syfreq, ltfreq, 1 << 12);
                 m_qsm.Update (ch);
@@ -274,7 +273,7 @@ namespace GameRes.Formats.Kogado
             m_qsm.GetFreq (256, out syfreq, out ltfreq);
             DecodeUpdate (syfreq, ltfreq, 1 << 12);
             DoneDecoding();
-            return m_dwDestIndex;
+            return m_dwDestIndex-dst_index;
         }
 /*
         // Encode --------------------------------------------------------
@@ -417,7 +416,7 @@ namespace GameRes.Formats.Kogado
         // I/O -----------------------------------------------------------
         bool GetSrcByteImpl (out byte pData)
         {
-            if (m_dwSrcIndex >= m_dwSrcLength)
+            if (m_dwSrcIndex >= m_dwSrcEnd)
             {
                 pData = 0;
                 return false;
@@ -428,7 +427,7 @@ namespace GameRes.Formats.Kogado
 
         bool SetDestByteImpl (byte byData)
         {
-            if (m_dwDestIndex >= m_dwDestLength)
+            if (m_dwDestIndex >= m_dwDestEnd)
                 return false;
             m_pDestBuffer[m_dwDestIndex++] = byData;
             return true;
