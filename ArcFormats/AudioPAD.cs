@@ -117,7 +117,7 @@ namespace GameRes.Formats.ShiinaRio
                     int next = m_input[src+1];
                     v10 = next & 0xF;
                     v30 = next >> 4;
-                    long v = BitConverter.DoubleToInt64Bits (table[12]) & 0xffffffff;
+                    long v = BitConverter.DoubleToInt64Bits (table[12]) & 0xffffffffL;
                     table[12] = BitConverter.Int64BitsToDouble (v | (long)v10 << 32);
                     src += 2;
                 }
