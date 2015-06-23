@@ -46,7 +46,8 @@ namespace GameRes.Formats.ShiinaRio
         public override string Description { get { return "ShiinaRio image format"; } }
         public override uint     Signature { get { return 0x00353253; } } // 'S25'
 
-        /* FIXME: in current implementation, only the first frame is returned */
+        // in current implementation, only the first frame is returned.
+        // per-frame access is provided by S25Opener class.
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
@@ -91,7 +92,7 @@ namespace GameRes.Formats.ShiinaRio
 
         internal class Reader : IDisposable
         {
-            ArcView.Reader  m_input;
+            BinaryReader    m_input;
             int             m_width;
             int             m_height;
             uint            m_origin;
