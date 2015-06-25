@@ -25,9 +25,7 @@
 
 using System;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
 using System.IO;
-using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
@@ -108,7 +106,6 @@ namespace GameRes.Formats.Cherry
         {
             m_info = info;
             m_input = input;
-            PixelFormat format;
             if (8 == info.BPP)
                 Format = PixelFormats.Indexed8;
             else if (24 == info.BPP)
