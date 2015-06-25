@@ -83,11 +83,13 @@ namespace GameRes.Formats
         byte[]  m_header;
         Stream  m_stream;
         long    m_position = 0;
+        bool    m_should_dispose;
 
-        public PrefixStream (byte[] header, Stream main)
+        public PrefixStream (byte[] header, Stream main, bool leave_open = false)
         {
             m_header = header;
             m_stream = main;
+            m_should_dispose = !leave_open;
         }
 
         public override bool CanRead  { get { return m_stream.CanRead; } }
@@ -180,7 +182,7 @@ namespace GameRes.Formats
         {
             if (!disposed)
             {
-                if (disposing)
+                if (m_should_dispose && disposing)
                     m_stream.Dispose();
                 disposed = true;
                 base.Dispose (disposing);
