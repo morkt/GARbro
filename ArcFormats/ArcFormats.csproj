@@ -74,6 +74,7 @@
     <Compile Include="ArcAZSys.cs" />
     <Compile Include="ArcBGI.cs" />
     <Compile Include="ArcBlackPackage.cs" />
+    <Compile Include="ArcCherry.cs" />
     <Compile Include="ArcCircus.cs" />
     <Compile Include="ArcCommon.cs" />
     <Compile Include="ArcDPK.cs" />
@@ -183,6 +184,7 @@
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageGGP.cs" />
     <Compile Include="ImageGR.cs" />
+    <Compile Include="ImageGRP.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageIAF.cs" />
     <Compile Include="ImageISG.cs" />
