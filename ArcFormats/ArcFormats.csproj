@@ -94,6 +94,7 @@
     <Compile Include="ArcKaguya.cs" />
     <Compile Include="ArcKCAP.cs" />
     <Compile Include="ArcKogado.cs" />
+    <Compile Include="ArcLIB.cs" />
     <Compile Include="ArcLPK.cs" />
     <Compile Include="ArcLST.cs" />
     <Compile Include="ArcMAI.cs" />
@@ -191,6 +192,7 @@
     <Compile Include="ImageKAAS.cs" />
     <Compile Include="ImageMAI.cs" />
     <Compile Include="ImageMFG.cs" />
+    <Compile Include="ImageMGF.cs" />
     <Compile Include="ImageMNV.cs" />
     <Compile Include="ImagePMP.cs" />
     <Compile Include="ImagePRS.cs" />
