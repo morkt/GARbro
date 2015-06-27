@@ -176,8 +176,13 @@ namespace GameRes
                 return input;
             using (input)
             {
-                var copy = new MemoryStream ((int)entry.Size);
+                int capacity = (int)entry.Size;
+                var packed_entry = entry as PackedEntry;
+                if (packed_entry != null && packed_entry.UnpackedSize != 0)
+                    capacity = (int)packed_entry.UnpackedSize;
+                var copy = new MemoryStream (capacity);
                 input.CopyTo (copy);
+                copy.Position = 0;
                 return copy;
             }
         }
