@@ -52,15 +52,8 @@ namespace GameRes.Formats.ShiinaRio
                 return null;
 
             var input = new StreamRegion (file, file.Position);
-            try
-            {
-                return new OggInput (input);
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
-            }
+            return new OggInput (input);
+            // input is left undisposed in case of exception.
         }
     }
 }
