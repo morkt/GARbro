@@ -104,7 +104,7 @@ namespace GameRes.Formats
                 if (4 != file.Read (header, 0, 4))
                     return null;
             }
-            if (0xff != header[0] || 0xf2 != (header[1] & 0xf6) || 0xf0 == (header[2] & 0xf0))
+            if (0xff != header[0] || 0xe2 != (header[1] & 0xe6) || 0xf0 == (header[2] & 0xf0))
                 return null;
             file.Position = 0;
             return new Mp3Input (file);
