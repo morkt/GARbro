@@ -48,7 +48,7 @@ namespace GameRes.Formats.KAAS
         public override ArcFile TryOpen (ArcView file)
         {
             int index_offset = file.View.ReadByte (0);
-            if (index_offset <= 2)
+            if (index_offset <= 2 || index_offset >= file.MaxOffset)
                 return null;
             int key = file.View.ReadByte (1);
             int count = 0xfff & file.View.ReadUInt16 (index_offset);
