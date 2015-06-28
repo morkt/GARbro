@@ -32,7 +32,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Silky
 {
     [Export(typeof(ArchiveFormat))]
-    public class IfsOpener : ArchiveFormat
+    public class IflOpener : ArchiveFormat
     {
         public override string         Tag { get { return "IFL"; } }
         public override string Description { get { return "Silky's engine resource archive"; } }
@@ -64,6 +64,21 @@ namespace GameRes.Formats.Silky
             }
             return new ArcFile (file, this, dir);
         }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry.Size <= 8
+                || !entry.Name.EndsWith (".snc", StringComparison.InvariantCultureIgnoreCase)
+                || !arc.File.View.AsciiEqual (entry.Offset, "CMP_"))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            int unpacked_size = arc.File.View.ReadInt32 (entry.Offset+4);
+            using (var input = arc.File.CreateStream (entry.Offset+8, entry.Size-8))
+            using (var lzss = new LzssReader (input, (int)(entry.Size - 8), unpacked_size))
+            {
+                lzss.FrameFill = 0x20;
+                lzss.Unpack();
+                return new MemoryStream (lzss.Data);
+            }
+        }
     }
 }
-
