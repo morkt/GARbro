@@ -88,6 +88,7 @@
     <Compile Include="ArcGameDat.cs" />
     <Compile Include="ArcGSP.cs" />
     <Compile Include="ArcGsPack.cs" />
+    <Compile Include="ArcIFL.cs" />
     <Compile Include="ArcInnGrey.cs" />
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcISA.cs" />
@@ -191,6 +192,7 @@
     <Compile Include="ImageGRP.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageIAF.cs" />
+    <Compile Include="ImageIGF.cs" />
     <Compile Include="ImageISG.cs" />
     <Compile Include="ImageKAAS.cs" />
     <Compile Include="ImageMAI.cs" />
