@@ -169,7 +169,7 @@ namespace GameRes.Formats.DRS
         {
             if (!m_disposed)
             {
-                if (m_should_dispose)
+                if (m_should_dispose && disposing)
                     m_stream.Dispose();
                 m_disposed = true;
                 base.Dispose (disposing);

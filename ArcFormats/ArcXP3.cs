@@ -721,11 +721,9 @@ NextEntry:
         {
             if (!disposed)
             {
-                m_file = null;
-                if (null != m_stream)
+                if (disposing && null != m_stream)
                 {
                     m_stream.Dispose();
-                    m_stream = null;
                 }
                 disposed = true;
                 base.Dispose (disposing);
