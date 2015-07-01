@@ -146,7 +146,7 @@ namespace GameRes
                 buffer.Write (source.Format.BitsPerSample);
                 buffer.Write ((ushort)0);
                 buffer.Write (0x61746164); // 'data'
-                buffer.Write (source.PcmSize);
+                buffer.Write ((uint)source.PcmSize);
                 source.Position = 0;
                 source.CopyTo (output);
             }
