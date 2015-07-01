@@ -61,7 +61,7 @@ namespace GameRes.Formats.Elf
             {
                 Width = LittleEndian.ToUInt16 (header, 8),
                 Height = LittleEndian.ToUInt16 (header, 10),
-                BPP = 24,
+                BPP = 'm' == header[3] ? 32 : 24,
                 OffsetX = LittleEndian.ToInt16 (header, 4),
                 OffsetY = LittleEndian.ToInt16 (header, 6),
                 Signature = LittleEndian.ToUInt32 (header, 0),
