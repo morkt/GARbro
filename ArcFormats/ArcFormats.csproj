@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArcADPACK.cs" />
+    <Compile Include="ArcAdvCls.cs" />
     <Compile Include="ArcAFS.cs" />
     <Compile Include="ArcAi5Win.cs" />
     <Compile Include="ArcAil.cs" />
