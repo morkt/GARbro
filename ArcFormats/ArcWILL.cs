@@ -1,8 +1,8 @@
 //! \file       ArcWILL.cs
 //! \date       Fri Oct 31 13:37:11 2014
-//! \brief      ARC archive format implementation.
+//! \brief      Will ARC archive format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -109,6 +109,34 @@ namespace GameRes.Formats.Will
             return dir;
         }
 
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            DecodeScript (data);
+            return new MemoryStream (data);
+        }
+
+        private static void DecodeScript (byte[] data)
+        {
+            for (int i = 0; i < data.Length; ++i)
+            {
+                byte v = data[i];
+                data[i] = (byte)(v >> 2 | v << 6);
+            }
+        }
+
+        private static void EncodeScript (byte[] data)
+        {
+            for (int i = 0; i < data.Length; ++i)
+            {
+                byte v = data[i];
+                data[i] = (byte)(v << 2 | v >> 6);
+            }
+        }
+
         public override ResourceOptions GetDefaultOptions ()
         {
             return new ArcOptions { NameLength = Settings.Default.ARCNameLength };
@@ -180,15 +208,10 @@ namespace GameRes.Formats.Will
                     if (null != callback)
                         callback (callback_count++, entry, arcStrings.MsgAddingFile);
                     entry.Offset = data_offset;
-                    using (var input = File.OpenRead (entry.Name))
-                    {
-                        var size = input.Length;
-                        if (size > uint.MaxValue || data_offset + size > uint.MaxValue)
-                            throw new FileSizeException();
-                        data_offset += size;
-                        entry.Size = (uint)size;
-                        input.CopyTo (output);
-                    }
+                    entry.Size = WriteEntry (entry.Name, output);
+                    data_offset += entry.Size;
+                    if (data_offset > uint.MaxValue)
+                        throw new FileSizeException();
                 }
             }
             if (null != callback)
@@ -220,6 +243,28 @@ namespace GameRes.Formats.Will
                         header.Write ((uint)entry.Offset);
                     }
                 }
+            }
+        }
+
+        private uint WriteEntry (string filename, Stream output)
+        {
+            if (!filename.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+            {
+                using (var input = File.OpenRead (filename))
+                {
+                    var size = input.Length;
+                    if (size > uint.MaxValue)
+                        throw new FileSizeException();
+                    input.CopyTo (output);
+                    return (uint)size;
+                }
+            }
+            else
+            {
+                var input = File.ReadAllBytes (filename);
+                EncodeScript (input);
+                output.Write (input, 0, input.Length);
+                return (uint)input.Length;
             }
         }
     }
