@@ -24,6 +24,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -287,6 +288,169 @@ namespace GameRes.Formats
                 base.Dispose (disposing);
             }
         }
+    }
+
+    public enum LzssMode
+    {
+        Decompress,
+        Compress,
+    };
+
+    internal sealed class LzssCoroutine
+    {
+        byte[] m_buffer;
+        int    m_offset;
+        int    m_length;
+
+        Stream  m_input;
+
+        IEnumerator<int> m_unpack;
+
+        public int     FrameSize { get; set; }
+        public byte    FrameFill { get; set; }
+        public int  FrameInitPos { get; set; }
+        public bool          Eof { get; private set; }
+
+        public LzssCoroutine (Stream input)
+        {
+            m_input = input;
+
+            FrameSize = 0x1000;
+            FrameFill = 0;
+            FrameInitPos = 0xfee;
+        }
+
+        public int Continue (byte[] buffer, int offset, int count)
+        {
+            m_buffer = buffer;
+            m_offset = offset;
+            m_length = count;
+            if (null == m_unpack)
+                m_unpack = Unpack();
+            Eof = !m_unpack.MoveNext();
+            return m_offset - offset;
+        }
+
+        private IEnumerator<int> Unpack ()
+        {
+            byte[] frame = new byte[FrameSize];
+            int frame_pos = FrameInitPos;
+            int frame_mask = FrameSize-1;
+            for (;;)
+            {
+                int ctl = m_input.ReadByte();
+                if (-1 == ctl)
+                    yield break;
+                for (int bit = 1; bit != 0x100; bit <<= 1)
+                {
+                    if (0 != (ctl & bit))
+                    {
+                        int b = m_input.ReadByte();
+                        if (-1 == b)
+                            yield break;
+                        frame[frame_pos++] = (byte)b;
+                        frame_pos &= frame_mask;
+                        m_buffer[m_offset++] = (byte)b;
+                        if (0 == --m_length)
+                            yield return m_offset;
+                    }
+                    else
+                    {
+                        int lo = m_input.ReadByte();
+                        if (-1 == lo)
+                            yield break;
+                        int hi = m_input.ReadByte();
+                        if (-1 == hi)
+                            yield break;
+                        int offset = (hi & 0xf0) << 4 | lo;
+                        for (int count = 3 + (hi & 0xF); count != 0; --count)
+                        {
+                            byte v = frame[offset++];
+                            offset &= frame_mask;
+                            frame[frame_pos++] = v;
+                            frame_pos &= frame_mask;
+                            m_buffer[m_offset++] = v;
+                            if (0 == --m_length)
+                                yield return m_offset;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public class LzssStream : Stream
+    {
+        Stream          m_input;
+        LzssCoroutine   m_reader;
+        bool            m_should_dispose;
+
+        public LzssStream (Stream input, LzssMode mode = LzssMode.Decompress, bool leave_open = false)
+        {
+            if (mode != LzssMode.Decompress)
+                throw new NotImplementedException ("LzssStream compression not implemented");
+            m_input = input;
+            m_reader = new LzssCoroutine (input);
+            m_should_dispose = !leave_open;
+        }
+
+        public override bool CanRead  { get { return m_input.CanRead; } }
+        public override bool CanSeek  { get { return false; } }
+        public override bool CanWrite { get { return false; } }
+        public override long Length
+        {
+            get { throw new NotSupportedException ("LzssStream.Length property is not supported"); }
+        }
+        public override long Position
+        {
+            get { throw new NotSupportedException ("LzssStream.Position property is not supported"); }
+            set { throw new NotSupportedException ("LzssStream.Position property is not supported"); }
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            if (!m_reader.Eof && count > 0)
+                return m_reader.Continue (buffer, offset, count);
+            return 0;
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException ("LzssStream.Seek method is not supported");
+        }
+
+        public override void SetLength (long length)
+        {
+            throw new NotSupportedException ("LzssStream.SetLength method is not supported");
+        }
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException ("LzssStream.Write method is not supported");
+        }
+
+        public override void WriteByte (byte value)
+        {
+            throw new NotSupportedException ("LzssStream.WriteByte method is not supported");
+        }
+
+        #region IDisposable Members
+        bool m_disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!m_disposed)
+            {
+                if (m_should_dispose && disposing)
+                    m_input.Dispose();
+                m_disposed = true;
+                base.Dispose (disposing);
+            }
+        }
+        #endregion
     }
 
     public class LzssReader : IDisposable
