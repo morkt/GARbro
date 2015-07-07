@@ -193,6 +193,7 @@
     <Compile Include="ImageGGP.cs" />
     <Compile Include="ImageGR.cs" />
     <Compile Include="ImageGRP.cs" />
+    <Compile Include="ImageGS.cs" />
     <Compile Include="ImageHG3.cs" />
     <Compile Include="ImageIAF.cs" />
     <Compile Include="ImageIGF.cs" />
