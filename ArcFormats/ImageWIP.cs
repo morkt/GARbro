@@ -48,7 +48,7 @@ namespace GameRes.Formats.Will
 
         public WipFormat ()
         {
-            Extensions = new string[] { "wip", "msk" };
+            Extensions = new string[] { "wip", "msk", "mos" };
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
