@@ -62,6 +62,8 @@ namespace GameRes.Formats.Gs
                 info.PackedSize = input.ReadUInt32();
                 info.UnpackedSize = input.ReadUInt32();
                 info.HeaderSize = input.ReadUInt32();
+                if (info.HeaderSize >= stream.Length || info.PackedSize + info.HeaderSize > stream.Length)
+                    return null;
                 input.ReadUInt32();
                 info.Width = input.ReadUInt32();
                 info.Height = input.ReadUInt32();
@@ -77,51 +79,55 @@ namespace GameRes.Formats.Gs
                 throw new ArgumentException ("PicFormat.Read should be supplied with PicMetaData", "info");
 
             stream.Position = meta.HeaderSize;
-            using (var reader = new LzssReader (stream, (int)meta.PackedSize, (int)meta.UnpackedSize))
+            using (var input = new LzssStream (stream, LzssMode.Decompress, true))
             {
-                reader.Unpack();
-                byte[] pixels = reader.Data;
-                int stride = (int)meta.Width*((info.BPP+7)/8);
                 BitmapPalette palette = null;
                 PixelFormat format;
                 if (8 == meta.BPP) // read palette
                 {
                     format = PixelFormats.Indexed8;
-                    var color_data = new Color[256];
-                    for (int i = 0; i < 256; ++i)
-                        color_data[i] = Color.FromRgb (pixels[i*4+2], pixels[i*4+1], pixels[i*4]);
-                    palette = new BitmapPalette (color_data);
-                    var image = new byte[meta.Width*meta.Height];
-                    Buffer.BlockCopy (pixels, 0x400, image, 0, image.Length);
-                    pixels = image;
+                    palette = ReadPalette (input);
                 }
                 else if (24 == meta.BPP)
                     format = PixelFormats.Bgr24;
                 else if (16 == meta.BPP)
                     format = PixelFormats.Bgr565;
                 else
+                    format = PixelFormats.Bgr32;
+
+                int stride = (int)meta.Width*((info.BPP+7)/8);
+                var pixels = new byte[stride*meta.Height];
+                input.Read (pixels, 0, pixels.Length);
+                if (32 == meta.BPP)
                 {
-                    bool has_opaque = false;
                     for (int i = 3; i < pixels.Length; i += 4)
                     {
                         if (0 != pixels[i])
                         {
-                            has_opaque = true;
+                            format = PixelFormats.Bgra32;
                             break;
                         }
                     }
-                    format = has_opaque ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
                 }
-                var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                    format, palette, pixels, stride);
-                bitmap.Freeze();
-                return new ImageData (bitmap, meta);
+                return ImageData.Create (meta, format, palette, pixels);
             }
         }
 
         public override void Write (Stream file, ImageData image)
         {
             throw new NotImplementedException ("PicFormat.Write not implemented");
+        }
+
+        private static BitmapPalette ReadPalette (Stream input)
+        {
+            var colors = new byte[0x400];
+            if (colors.Length != input.Read (colors, 0, colors.Length))
+                throw new InvalidFormatException();
+            var color_data = new Color[0x100];
+            int n = 0;
+            for (int i = 0; i < 0x400; i += 4)
+                color_data[n++] = Color.FromRgb (colors[i+2], colors[i+1], colors[i]);
+            return new BitmapPalette (color_data);
         }
     }
 }
