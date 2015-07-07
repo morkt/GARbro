@@ -89,12 +89,7 @@ namespace GameRes.Formats.AdvCls
             var packed = entry as PackedEntry;
             if (null == packed || !packed.IsPacked)
                 return input;
-            using (input)
-            using (var reader = new LzssReader (input, (int)packed.Size, (int)packed.UnpackedSize))
-            {
-                reader.Unpack();
-                return new MemoryStream (reader.Data);
-            }
+            return new LzssStream (input);
         }
 
         private void DecryptIndex (byte[] data, string key)
