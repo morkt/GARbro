@@ -157,15 +157,32 @@ namespace GameRes.Formats.Gs
             if (0 == entry.Size)
                 return Stream.Null;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            var packed_entry = entry as PackedEntry;
-            if (null == packed_entry)
-                return input;
-            using (input)
-            using (var reader = new LzssReader (input, (int)packed_entry.Size, (int)packed_entry.UnpackedSize))
-            {
-                reader.Unpack();
-                return new MemoryStream (reader.Data, false);
-            }
+            if (entry is PackedEntry)
+                return new LzssStream (input);
+            return input;
+        }
+    }
+
+    [Export(typeof(ScriptFormat))]
+    public class GsScriptFormat : ScriptFormat
+    {
+        public override string         Tag { get { return "SCW"; } }
+        public override string Description { get { return "GsWin script file"; } }
+        public override uint     Signature { get { return 0x20574353; } } // 'SCW '
+
+        public GsScriptFormat ()
+        {
+            Signatures = new uint[] { 0x20574353, 0x35776353, 0x34776353 };
+        }
+
+        public override ScriptData Read (string name, Stream file)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Write (Stream file, ScriptData script)
+        {
+            throw new NotImplementedException();
         }
     }
 }
