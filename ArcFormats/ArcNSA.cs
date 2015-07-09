@@ -86,11 +86,8 @@ namespace GameRes.Formats.ONScripter
                 if (base_offset - cur_offset < 8)
                     return null;
 
-                var entry = new Entry
-                {
-                    Name = Encodings.cp932.GetString (name_buffer, 0, name_len),
-                };
-                entry.Type   = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                string name = Encodings.cp932.GetString (name_buffer, 0, name_len);
+                var entry = FormatCatalog.Instance.CreateEntry (name);
                 entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset)) + (long)base_offset;
                 entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+4));
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -189,16 +186,29 @@ namespace GameRes.Formats.ONScripter
     {
         public override string Tag { get { return "NSA"; } }
 
+        public NsaOpener ()
+        {
+            Extensions = new string[] { "nsa", "dat" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
-            int num_of_files = Binary.BigEndian (file.View.ReadInt16 (0));
+            if (0 != file.View.ReadInt16 (0))
+                return ReadIndex (file, 0);
+            else
+                return ReadIndex (file, 2);
+        }
+
+        private ArcFile ReadIndex (ArcView file, uint base_offset)
+        {
+            int num_of_files = Binary.BigEndian (file.View.ReadInt16 (base_offset));
             if (num_of_files <= 0)
                 return null;
-            uint base_offset = Binary.BigEndian (file.View.ReadUInt32 (2));
+            uint cur_offset = base_offset+6;
+            base_offset += Binary.BigEndian (file.View.ReadUInt32 (base_offset+2));
             if (base_offset >= file.MaxOffset || base_offset < 15 * (uint)num_of_files)
                 return null;
 
-            uint cur_offset = 6;
             var dir = new List<Entry>();
             for (int i = 0; i < num_of_files; ++i)
             {
@@ -232,7 +242,6 @@ namespace GameRes.Formats.ONScripter
                 case 4:  entry.CompressionType = Compression.NBZ; break;
                 default: entry.CompressionType = Compression.Unknown; break;
                 }
-//                Trace.WriteLine (string.Format ("[{0}] {1}", entry.CompressionType, entry.Name));
                 cur_offset += 13;
                 dir.Add (entry);
             }
@@ -353,7 +362,6 @@ namespace GameRes.Formats.ONScripter
             }
         }
     }
-
 
    /*
     *  ONScripter-EN decompression routines.
