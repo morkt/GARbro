@@ -91,6 +91,7 @@
     <Compile Include="ArcGSP.cs" />
     <Compile Include="ArcGsPack.cs" />
     <Compile Include="ArcIFL.cs" />
+    <Compile Include="ArcIKS.cs" />
     <Compile Include="ArcInnGrey.cs" />
     <Compile Include="ArcINT.cs" />
     <Compile Include="ArcISA.cs" />
