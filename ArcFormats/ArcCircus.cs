@@ -48,7 +48,7 @@ namespace GameRes.Formats.Circus
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (count <= 0 || count > 0xfffff)
+            if (count <= 1 || count > 0xfffff)
                 return null;
             var dir = ReadIndex (file, count, 0x30);
             if (null == dir)

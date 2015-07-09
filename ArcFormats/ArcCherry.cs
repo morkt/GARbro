@@ -66,6 +66,8 @@ namespace GameRes.Formats.Cherry
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x10);
+                if (0 == name.Length)
+                    return null;
                 var offset = base_offset + file.View.ReadUInt32 (index_offset+0x10);
                 Entry entry;
                 if (is_grp)

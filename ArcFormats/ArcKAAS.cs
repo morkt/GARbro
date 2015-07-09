@@ -35,7 +35,7 @@ namespace GameRes.Formats.KAAS
     public class PdOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PD/KAAS"; } }
-        public override string Description { get { return "KAAS engine resource archive"; } }
+        public override string Description { get { return "KAAS engine PD resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
@@ -100,7 +100,7 @@ namespace GameRes.Formats.KAAS
     public class PbOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PB"; } }
-        public override string Description { get { return "KAAS engine resource archive"; } }
+        public override string Description { get { return "KAAS engine PB resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
@@ -113,6 +113,7 @@ namespace GameRes.Formats.KAAS
             var dir = new List<Entry> (count);
             int index_offset = 0x10;
             bool is_voice = Path.GetFileName (file.Name).Equals ("voice.pb", StringComparison.InvariantCultureIgnoreCase);
+            int data_offset = index_offset + 8 * count;
             for (int i = 0; i < count; ++i)
             {
                 uint offset = file.View.ReadUInt32 (index_offset);
@@ -122,7 +123,7 @@ namespace GameRes.Formats.KAAS
                 else
                     entry = new Entry { Name = string.Format ("{0:D4}.pb", i), Type = "archive", Offset = offset };
                 entry.Size = file.View.ReadUInt32 (index_offset + 4);
-                if (!entry.CheckPlacement (file.MaxOffset))
+                if (offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 8;
