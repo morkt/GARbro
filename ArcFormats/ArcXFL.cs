@@ -32,7 +32,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using GameRes.Formats.Strings;
 
-namespace GameRes.Formats
+namespace GameRes.Formats.Liar
 {
     [Export(typeof(ArchiveFormat))]
     public class XflOpener : ArchiveFormat
