@@ -234,6 +234,11 @@ namespace GameRes
 
             return GetOptions<OptType> (args.Options);
         }
+
+        protected static bool IsSaneCount (int count)
+        {
+            return count > 0 && count < 0x20000;
+        }
     }
 
     public delegate void ParametersRequestEventHandler (object sender, ParametersRequestEventArgs e);
