@@ -66,6 +66,9 @@ namespace GameRes
         /// </returns>
         public static ArcFile TryOpen (string filename)
         {
+            var info = new FileInfo (filename);
+            if (info.Length < 4)
+                return null;
             var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant());
             var file = new ArcView (filename);
             try
