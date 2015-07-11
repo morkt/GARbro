@@ -125,6 +125,7 @@
     <Compile Include="ArcSPack.cs" />
     <Compile Include="ArcSteinsGate.cs" />
     <Compile Include="ArcWARC.cs" />
+    <Compile Include="ArcWBP.cs" />
     <Compile Include="ArcWILL.cs" />
     <Compile Include="ArcXFL.cs" />
     <Compile Include="ArcXP3.cs" />
@@ -140,6 +141,7 @@
     <Compile Include="AudioWA1.cs" />
     <Compile Include="AudioWADY.cs" />
     <Compile Include="Blowfish.cs" />
+    <Compile Include="Camellia.cs" />
     <Compile Include="CreateAMIWidget.xaml.cs">
       <DependentUpon>CreateAMIWidget.xaml</DependentUpon>
     </Compile>
@@ -184,6 +186,7 @@
     <Compile Include="ImageCWP.cs" />
     <Compile Include="ImageDGC.cs" />
     <Compile Include="ImageDRG.cs" />
+    <Compile Include="ImageDZI.cs" />
     <Compile Include="ImageEDT.cs" />
     <Compile Include="ImageEGN.cs" />
     <Compile Include="ImageELG.cs" />
@@ -212,6 +215,7 @@
     <Compile Include="ImageS25.cs" />
     <Compile Include="ImageTGF.cs" />
     <Compile Include="ImageTLG.cs" />
+    <None Include="ImageWBM.cs" />
     <Compile Include="ImageWCG.cs" />
     <Compile Include="ImageWIP.cs" />
     <Compile Include="ImageZBM.cs" />
