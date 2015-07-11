@@ -83,13 +83,18 @@ namespace GameRes
         }
 
         public static ImageData Create (ImageMetaData info, PixelFormat format, BitmapPalette palette,
-                                        byte[] pixel_data)
+                                        byte[] pixel_data, int stride)
         {
-            int stride = (int)info.Width*((format.BitsPerPixel+7)/8);
             var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, DefaultDpiX, DefaultDpiY,
                                               format, palette, pixel_data, stride);
             bitmap.Freeze();
             return new ImageData (bitmap, info);
+        }
+
+        public static ImageData Create (ImageMetaData info, PixelFormat format, BitmapPalette palette,
+                                        byte[] pixel_data)
+        {
+            return Create (info, format, palette, pixel_data, (int)info.Width*((format.BitsPerPixel+7)/8));
         }
     }
 
