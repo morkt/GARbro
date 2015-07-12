@@ -276,11 +276,17 @@ namespace GARbro.GUI
                     order = s_default_comparer.Compare (prop_a, prop_b) * m_direction;
                 }
                 if (0 == order)
-                    order = NativeMethods.StrCmpLogicalW (v_a.Name, v_b.Name);
+                    order = CompareNames (v_a.Name, v_b.Name);
             }
             else
-                order = NativeMethods.StrCmpLogicalW (v_a.Name, v_b.Name) * m_direction;
+                order = CompareNames (v_a.Name, v_b.Name) * m_direction;
             return order;
+        }
+
+        static int CompareNames (string a, string b)
+        {
+//            return NativeMethods.StrCmpLogicalW (a, b);
+            return string.Compare (a, b, StringComparison.CurrentCultureIgnoreCase);
         }
     }
 
