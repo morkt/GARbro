@@ -206,6 +206,7 @@
     <Compile Include="ImageMAI.cs" />
     <Compile Include="ImageMFG.cs" />
     <Compile Include="ImageMGF.cs" />
+    <Compile Include="ImageMI4.cs" />
     <Compile Include="ImageMNV.cs" />
     <Compile Include="ImagePMP.cs" />
     <Compile Include="ImagePRS.cs" />
