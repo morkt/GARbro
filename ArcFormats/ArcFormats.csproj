@@ -215,7 +215,7 @@
     <Compile Include="ImageS25.cs" />
     <Compile Include="ImageTGF.cs" />
     <Compile Include="ImageTLG.cs" />
-    <None Include="ImageWBM.cs" />
+    <Compile Include="ImageWBM.cs" />
     <Compile Include="ImageWCG.cs" />
     <Compile Include="ImageWIP.cs" />
     <Compile Include="ImageZBM.cs" />
