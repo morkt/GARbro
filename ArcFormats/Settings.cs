@@ -1,4 +1,8 @@
-﻿namespace GameRes.Formats.Properties {
+﻿using System;
+using System.Windows;
+using System.Windows.Threading;
+
+namespace GameRes.Formats.Properties {
     
     
     // This class allows you to handle specific events on the settings class:
@@ -16,8 +20,12 @@
             // this.SettingsSaving += this.SettingsSavingEventHandler;
             //
 
-            if (null != System.Windows.Application.Current)
-                System.Windows.Application.Current.Exit += ApplicationExitHandler;
+            if (null != Application.Current)
+            {
+                Application.Current.Dispatcher.BeginInvoke (DispatcherPriority.Normal, new Action(() => {
+                    Application.Current.Exit += ApplicationExitHandler;
+                }));
+            }
         }
 
         void ApplicationExitHandler (object sender, System.Windows.ExitEventArgs args)
