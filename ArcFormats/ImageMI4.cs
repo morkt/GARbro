@@ -119,7 +119,6 @@ namespace GameRes.Formats.ShiinaRio
                 ResetBits();
                 int dst = 0;
                 byte b = 0, g = 0, r = 0;
-                bool bp = false;
                 while (dst < m_output.Length)
                 {
                     if (GetBit() == 0)
