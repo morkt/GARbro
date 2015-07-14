@@ -26,9 +26,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
 using System.IO;
 using System.Windows.Media;
+using GameRes.Formats.Properties;
 using GameRes.Utility;
 
 namespace GameRes.Formats.FC01
@@ -102,6 +102,7 @@ namespace GameRes.Formats.FC01
         uint    m_width;
         uint    m_height;
         uint    m_pixels;
+        byte    m_key;
 
         public byte[] Data { get { return m_output; } }
 
@@ -115,6 +116,7 @@ namespace GameRes.Formats.FC01
             m_height = info.Height;
             m_pixels = m_width*m_height;
             m_output = new byte[m_pixels*3];
+            m_key = Settings.Default.MCGLastKey;
         }
 
         static readonly byte[] ChannelOrder = { 1, 0, 2 };
@@ -122,9 +124,9 @@ namespace GameRes.Formats.FC01
         public void Unpack ()
         {
             var reader = new MrgDecoder (m_input, 0, m_pixels);
-            for (int key = 0; key < 0x100; ++key)
+            do
             {
-                reader.ResetKey ((byte)key);
+                reader.ResetKey (m_key);
                 try
                 {
                     for (int i = 0; i < 3; ++i)
@@ -141,18 +143,19 @@ namespace GameRes.Formats.FC01
                 }
                 catch (InvalidFormatException)
                 {
+                    m_key++;
                     continue;
                 }
                 Transform();
+                Settings.Default.MCGLastKey = m_key;
                 return;
             }
+            while (m_key != Settings.Default.MCGLastKey);
             throw new UnknownEncryptionScheme();
         }
 
         void Transform ()
         {
-            // esi = m_input
-            // dst = m_output
             uint dst = 0;
             uint stride = (m_width - 1) * 3;
             for (uint y = m_height-1; y > 0; --y) // @@1a

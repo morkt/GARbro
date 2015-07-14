@@ -381,5 +381,17 @@ namespace GameRes.Formats.Properties {
                 this["ISFScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public byte MCGLastKey {
+            get {
+                return ((byte)(this["MCGLastKey"]));
+            }
+            set {
+                this["MCGLastKey"] = value;
+            }
+        }
     }
 }
