@@ -58,7 +58,8 @@ namespace GameRes
                 throw new System.ArgumentException ("TgaFormat.Read should be supplied with TgaMetaData", "metadata");
             var reader = new Reader (stream, meta);
             var pixels = reader.Unpack();
-            var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
+            var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height,
+                                              ImageData.DefaultDpiX, ImageData.DefaultDpiY,
                                               reader.Format, reader.Palette, pixels, reader.Stride);
             bitmap.Freeze();
             return new ImageData (bitmap, meta);
@@ -195,7 +196,7 @@ namespace GameRes
                 switch (meta.BPP)
                 {
                 default: throw new InvalidFormatException();
-                case 8:  throw new NotImplementedException();
+                case 8:  Format = PixelFormats.Indexed8; break;
                 case 15: Format = PixelFormats.Bgr555; break;
                 case 16: Format = PixelFormats.Bgr555; break;
                 case 32: Format = PixelFormats.Bgra32; break;
@@ -212,15 +213,38 @@ namespace GameRes
                 m_stride = m_width * ((meta.BPP+7) / 8);
                 m_image_offset = meta.ColormapOffset;
                 if (1 == meta.ColormapType)
+                {
                     m_image_offset += colormap_size;
+                    m_input.Position = meta.ColormapOffset;
+                    ReadColormap (meta.ColormapLength, meta.ColormapDepth);
+                }
                 m_data = new byte[m_stride*m_height];
+            }
+
+            private void ReadColormap (int length, int depth)
+            {
+                if (24 != depth && 32 != depth)
+                    throw new NotImplementedException();
+                int pixel_size = depth / 8;
+                var palette_data = new byte[length * pixel_size];
+                if (palette_data.Length != m_input.Read (palette_data, 0, palette_data.Length))
+                    throw new InvalidFormatException();
+
+                var palette = new Color[length];
+                for (int i = 0; i < palette.Length; ++i)
+                {
+                    byte b = palette_data[i*pixel_size];
+                    byte g = palette_data[i*pixel_size+1];
+                    byte r = palette_data[i*pixel_size+2];
+                    palette[i] = Color.FromRgb (r, g, b);
+                }
+                Palette = new BitmapPalette (palette);
             }
 
             public byte[] Unpack ()
             {
                 switch (m_meta.ImageType)
                 {
-                case 1:  // Uncompressed, color-mapped images.
                 case 3:  // Uncompressed, black and white images.
                 case 9:  // Runlength encoded color-mapped images.
                 case 11: // Compressed, black and white images.
@@ -231,8 +255,9 @@ namespace GameRes
                     throw new NotImplementedException();
                 default:
                     throw new InvalidFormatException();
+                case 1:  // Uncompressed, color-mapped images.
                 case 2:  // Uncompressed, RGB images.
-                    ReadRGB();
+                    ReadRaw();
                     break;
                 case 10: // Runlength encoded RGB images.
                     ReadRLE ((m_meta.BPP+7)/8);
@@ -241,7 +266,7 @@ namespace GameRes
                 return Data;
             }
 
-            void ReadRGB ()
+            void ReadRaw ()
             {
                 m_input.Position = m_image_offset;
                 if (0 != (m_meta.Descriptor & 0x20))
