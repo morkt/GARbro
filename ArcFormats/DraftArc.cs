@@ -43,7 +43,7 @@ namespace GameRes.Formats.??????
                 return null;
 
             var dir = new List<Entry> (count);
-            for (uint i = 0; i < count; ++i)
+            for (int i = 0; i < count; ++i)
             {
                 var entry = FormatCatalog.Instance.CreateEntry (name);
                 if (!entry.CheckPlacement (file.MaxOffset))
