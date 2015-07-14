@@ -66,10 +66,17 @@ namespace GameRes.Formats.FC01
             var index = new byte[index_size];
             if (index.Length != file.View.Read (0x10, index, 0, index_size))
                 return null;
+            /*
             var key_src = KnownKey;
             if (key1index >= key_src.Item1.Length || key2index >= key_src.Item2.Length)
                 return null;
             byte index_key = (byte)(key_src.Item1[key1index] + key_src.Item2[key2index]);
+            */
+            var key = GuessKey (file, index);
+            if (null == key)
+                throw new UnknownEncryptionScheme();
+            byte index_key = key.Value;
+
             int remaining = index.Length;
             for (int i = 0; i < index.Length; ++i)
             {
@@ -131,6 +138,32 @@ namespace GameRes.Formats.FC01
                 }
             }
             return input;
+        }
+
+        private byte? GuessKey (ArcView file, byte[] index)
+        {
+            uint actual_offset = (uint)file.MaxOffset;
+
+            byte v = index[index.Length-1]; // last_offset
+            v = (byte)(v << 1 | v >> 7);
+            byte key = (byte)(v ^ (actual_offset >> 24));
+
+            int remaining = 1;
+            uint last_offset = (byte)(v ^ key);
+            key -= (byte)++remaining;
+            for (int i = index.Length-2; i >= index.Length-4; --i)
+            {
+                v = index[i];
+                v = (byte)(v << 1 | v >> 7);
+                last_offset = (last_offset << 8) | (uint)(v ^ key);
+                key -= (byte)++remaining;
+            }
+            if (last_offset != actual_offset)
+                return null;
+
+            while (remaining < index.Length)
+                key -= (byte)++remaining;
+            return key;
         }
     }
 
