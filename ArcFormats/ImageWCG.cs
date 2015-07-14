@@ -30,15 +30,21 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Collections.Generic;
 using System.Text;
+using GameRes.Utility;
 
-namespace GameRes.Formats
+namespace GameRes.Formats.Liar
 {
     [Export(typeof(ImageFormat))]
     public class WcgFormat : ImageFormat
     {
-        public override string Tag { get { return "WCG"; } }
+        public override string         Tag { get { return "WCG"; } }
         public override string Description { get { return "Liar-soft proprietary image format"; } }
-        public override uint Signature { get { return 0x02714757; } }
+        public override uint     Signature { get { return 0x02714757; } }
+
+        public WcgFormat ()
+        {
+            Signatures = new uint[] { 0x02714757, 0xF2714757 };
+        }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
@@ -60,15 +66,10 @@ namespace GameRes.Formats
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            uint pixel_size = info.Width * info.Height;
-            using (var reader = new Reader (file, pixel_size))
+            using (var reader = new Reader (file, info.Width * info.Height))
             {
                 reader.Unpack();
-                byte[] pixels = reader.Data;
-                var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                    PixelFormats.Bgra32, null, pixels, (int)info.Width*4);
-                bitmap.Freeze();
-                return new ImageData (bitmap, info);
+                return ImageData.Create (info, PixelFormats.Bgra32, null, reader.Data);
             }
         }
 
@@ -100,7 +101,7 @@ namespace GameRes.Formats
             }
         }
 
-        private class Reader : IDisposable
+        internal class Reader : IDisposable
         {
             private byte[]          m_data;
             private BinaryReader    m_input;
@@ -115,7 +116,7 @@ namespace GameRes.Formats
             private uint edi;
 
             private uint m_index_length_limit;
-            private int  m_bits;
+            private uint m_bits;
 
             public byte[] Data { get { return m_data; } }
 
@@ -218,28 +219,26 @@ namespace GameRes.Formats
                 m_data[edi+1] = (byte)(word >> 8);
             }
 
-            bool GetNextBit ()
+            uint GetNextBit ()
             {
-                bool carry = 0 != (m_bits & 0x80);
                 m_bits <<= 1;
                 if (0 == (m_bits & 0xff))
                 {
                     if (0 == m_src_size--)
                         throw new InvalidFormatException ("Unexpected end of file");
-                    m_bits = (int)m_input.ReadByte();
-                    m_bits = (m_bits << 1) + 1;
-                    carry = 0 != (m_bits & 0x100);
+                    m_bits = (uint)m_input.ReadByte() << 1;
+                    m_bits |= 1;
                 }
-                return carry;
+                return (m_bits >> 8) & 1;
             }
 
             uint GetIndex (uint count)
             {
                 if (0 == --count)
-                    return GetNextBit() ? 1u : 0u;
+                    return GetNextBit();
                 if (count < m_index_length_limit)
                     return GetBits (count, 1);
-                while (GetNextBit())
+                while (0 != GetNextBit())
                 {
                     if (count >= 0x10)
                         throw new InvalidFormatException ("Invalid index count");
@@ -252,8 +251,7 @@ namespace GameRes.Formats
             {
                 do
                 {
-                    bool carry = GetNextBit();
-                    word = (word << 1) + (carry ? 1u : 0u);
+                    word = (word << 1) | GetNextBit();
                 }
                 while (0 != --count);
                 return word;
@@ -487,6 +485,203 @@ namespace GameRes.Formats
                     m_data = null;
                     m_index = null;
                     disposed = true;
+                }
+            }
+            #endregion
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class LimFormat : ImageFormat
+    {
+        public override string         Tag { get { return "LIM"; } }
+        public override string Description { get { return "Liar-soft image format"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            if (0x4C != stream.ReadByte() || 0x4D != stream.ReadByte())
+                return null;
+            int flag = stream.ReadByte() & 0xF;
+            if (flag != 2 && flag != 3)
+                return null;
+            stream.Seek (5, SeekOrigin.Current);
+            using (var file = new ArcView.Reader (stream))
+            {
+                var meta = new ImageMetaData { BPP = 32 };
+                meta.Width  = file.ReadUInt32();
+                meta.Height = file.ReadUInt32();
+                return meta;
+            }
+        }
+
+        public override ImageData Read (Stream file, ImageMetaData info)
+        {
+            file.Position = 0x10;
+            using (var reader = new Reader (file, info))
+            {
+                reader.Unpack();
+                return ImageData.Create (info, reader.Format, null, reader.Data);
+            }
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new NotImplementedException ("LimFormat.Write not implemented");
+        }
+
+        internal class Reader : IDisposable
+        {
+            BinaryReader    m_input;
+            byte[]          m_output;
+            byte[]          m_index;
+            byte[]          m_image;
+            int             m_width;
+            int             m_height;
+
+            public byte[]        Data { get { return m_image; } }
+            public PixelFormat Format { get { return PixelFormats.Bgra32; } }
+
+            public Reader (Stream file, ImageMetaData info)
+            {
+                m_input = new ArcView.Reader (file);
+                m_width = (int)info.Width;
+                m_height = (int)info.Height;
+                m_image = new byte[m_width*m_height*4];
+            }
+
+            int         m_remaining;
+            int         m_current;
+            int         m_bits;
+
+            public void Unpack ()
+            {
+                byte mask = 0xFF;
+                for (int i = 3; i >= 0; --i)
+                {
+                    int channel_size = m_input.ReadInt32();
+                    if (null == m_output)
+                        m_output = new byte[channel_size];
+                    else if (channel_size != m_output.Length)
+                        throw new InvalidFormatException();
+
+                    m_remaining = m_input.ReadInt32();
+                    int index_size = m_input.ReadUInt16();
+                    if (null == m_index || index_size > m_index.Length)
+                        m_index = new byte[index_size];
+                    m_input.ReadInt16(); // ignored
+                    if (m_index.Length != m_input.Read (m_index, 0, m_index.Length))
+                        throw new InvalidFormatException ("Unexpected end of file");
+
+                    UnpackChannel();
+                    int src = 0;
+                    for (int p = i; p < m_image.Length; p += 4)
+                    {
+                        m_image[p] = (byte)(m_output[src++] ^ mask);
+                    }
+                    mask = 0;
+                }
+            }
+
+            void UnpackChannel ()
+            {
+                m_current = 0;
+                int dst = 0;
+                while (dst < m_output.Length)
+                {
+                    int bits = GetBits (3);
+                    if (-1 == bits)
+                        break;
+
+                    if (0 != bits)
+                    {
+                        int index = GetIndex (bits);
+                        if (index < 0)
+                            break;
+                        if (dst + 1 >= m_output.Length)
+                            break;
+
+                        m_output[dst++] = m_index[index];
+                    }
+                    else
+                    {
+                        int count = GetBits (4);
+                        if (-1 == count)
+                            break;
+
+                        bits = GetBits (3);
+                        if (-1 == bits)
+                            break;
+
+                        int index = GetIndex (bits);
+                        if (-1 == index)
+                            break;
+                        count += 2;
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (dst + 1 >= m_output.Length)
+                                return;
+                            m_output[dst++] = m_index[index];
+                        }
+                    }
+                }
+            }
+
+            private int GetBits (int n)
+            {
+                int v = 0;
+                while (n > 0)
+                {
+                    if (0 == m_current)
+                    {
+                        m_bits = m_input.ReadByte();
+                        m_current = 8;
+                    }
+                    v <<= 1;
+                    m_bits <<= 1;
+                    v |= (m_bits >> 8) & 1;
+                    --m_current;
+                    --n;
+                }
+                return v;
+            }
+
+            private int GetIndex (int bits)
+            {
+                if (bits < 7)
+                {
+                    if (0 == bits)
+                        return -1;
+                    if (1 == bits--)
+                        return GetBits (1);
+                    return (1 << bits) | GetBits (bits);
+                }
+                for (int i = 6; i < 12; ++i)
+                {
+                    bits = GetBits (1);
+                    if (-1 == bits)
+                        return -1;
+                    if (0 == bits)
+                        return (1 << i) | GetBits (i);
+                }
+                return -1;
+            }
+
+            #region IDisposable Members
+            bool disposed = false;
+
+            public void Dispose ()
+            {
+                Dispose (true);
+                GC.SuppressFinalize (this);
+            }
+
+            protected virtual void Dispose (bool disposing)
+            {
+                if (!disposed)
+                {
+                    if (disposing)
+                        m_input.Dispose();
                 }
             }
             #endregion
