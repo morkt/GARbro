@@ -142,7 +142,10 @@ namespace GameRes.Formats.Marble
 
         public static Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
             { arcStrings.ArcDefault,    "" },
-            { "Chikatetsu Fuusa Jiken", "naze" }
+            { "Chikatetsu Fuusa Jiken", "naze" }, // 地下鉄封鎖事件
+            { "Eien no Owari ni",       "eientamasoft" }, // 永遠の終わりに
+            { "Sakura Machizaka Stories vol.1", "sakura桜" }, // 桜待坂Stories vol.1
+            { "Trouble Succubus",       "とらぶるサッキュバス-0928-2007" }, // とらぶるサッキュバス
         };
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)

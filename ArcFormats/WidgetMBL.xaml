@@ -8,7 +8,7 @@
         <RowDefinition/>
         <RowDefinition/>
     </Grid.RowDefinitions>
-    <ComboBox Name="EncScheme" Grid.Row="0" Margin="0,3,0,0" Width="160" HorizontalAlignment="Right"
+    <ComboBox Name="EncScheme" Grid.Row="0" Margin="0,3,0,0" Width="180" HorizontalAlignment="Right"
               ItemsSource="{Binding Source={x:Static m:MblOpener.KnownKeys}, Mode=OneWay}"
               DisplayMemberPath="Key" SelectedValuePath="Value"
               SelectedValue="{Binding ElementName=PassPhrase, Path=Text, Mode=TwoWay}"/>
