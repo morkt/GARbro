@@ -98,17 +98,18 @@ namespace GameRes.Formats.Marble
                     name = name.ToLowerInvariant();
                     index_offset += (uint)filename_len;
                     uint offset = file.View.ReadUInt32 (index_offset);
-                    Entry entry;
+                    string type = null;
                     if (name.EndsWith (".s"))
                     {
-                        entry = new Entry { Name = name, Type = "script" };
+                        type = "script";
                         contains_scripts = true;
                     }
-                    else if (name.EndsWith (".prs"))
+                    else if (4 == Path.GetExtension (name).Length)
                     {
-                        entry = new Entry { Name = name, Type = "image" };
+                        type = FormatCatalog.Instance.GetTypeFromName (name);
                     }
-                    else
+                    Entry entry;
+                    if (string.IsNullOrEmpty (type))
                     {
                         entry = new AutoEntry (name, () => {
                             uint signature = file.View.ReadUInt32 (offset);
@@ -116,6 +117,10 @@ namespace GameRes.Formats.Marble
                                 return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "PRS");
                             return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
                         });
+                    }
+                    else
+                    {
+                        entry = new Entry { Name = name, Type = type };
                     }
                     entry.Offset = offset;
                     entry.Size = file.View.ReadUInt32 (index_offset+4);
