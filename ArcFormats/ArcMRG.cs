@@ -61,7 +61,7 @@ namespace GameRes.Formats.FC01
             if (key2index != 0 && key1index == 0)
                 return null;
             uint index_size = file.View.ReadUInt32 (8) - 0x10;
-            if (0 == index_size || index_size >= file.MaxOffset)
+            if (index_size < 0x40 || index_size >= file.MaxOffset)
                 return null;
             var index = new byte[index_size];
             if (index.Length != file.View.Read (0x10, index, 0, index_size))
@@ -150,19 +150,19 @@ namespace GameRes.Formats.FC01
 
             int remaining = 1;
             uint last_offset = (byte)(v ^ key);
-            key -= (byte)++remaining;
             for (int i = index.Length-2; i >= index.Length-4; --i)
             {
+                key -= (byte)++remaining;
                 v = index[i];
                 v = (byte)(v << 1 | v >> 7);
                 last_offset = (last_offset << 8) | (uint)(v ^ key);
-                key -= (byte)++remaining;
             }
             if (last_offset != actual_offset)
                 return null;
 
-            while (remaining < index.Length)
-                key -= (byte)++remaining;
+            while (++remaining < index.Length)
+                key -= (byte)remaining;
+
             return key;
         }
     }
