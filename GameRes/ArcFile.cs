@@ -79,7 +79,7 @@ namespace GameRes
                     var range = FormatCatalog.Instance.LookupSignature<ArchiveFormat> (signature);
                     // check formats that match filename extension first
                     if (range.Skip(1).Any()) // if range.Count() > 1
-                        range = range.OrderByDescending (f => f.Extensions.Any() && f.Extensions.First() == ext.Value);
+                        range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
                     foreach (var impl in range)
                     {
                         try
