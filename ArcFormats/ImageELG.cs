@@ -155,7 +155,7 @@ namespace GameRes.Formats.Lucifen
             void UnpackIndexed (byte[] output)
             {
                 int dst = 0;
-                for (;;)
+                while (dst < m_output.Length)
                 {
                     byte flags = m_input.ReadByte();
                     if (0xff == flags)
@@ -228,7 +228,7 @@ namespace GameRes.Formats.Lucifen
             void UnpackRGBA ()
             {
                 int dst = 0;
-                for (;;)
+                while (dst < m_output.Length)
                 {
                     byte flags = m_input.ReadByte();
                     if (0xff == flags)
@@ -439,7 +439,7 @@ namespace GameRes.Formats.Lucifen
             void UnpackRGB ()
             {
                 int dst = 0;
-                for (;;)
+                while (dst < m_output.Length)
                 {
                     byte flags = m_input.ReadByte();
                     if (0xff == flags)
