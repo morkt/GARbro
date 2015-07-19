@@ -74,14 +74,21 @@ namespace GameRes.Utility
         public static void CopyOverlapped (byte[] data, int src, int dst, int count)
         {
             int preceding = dst-src;
-            while (count > 0)
+            if (preceding > 0)
             {
-                if (preceding > count)
-                    preceding = count;
-                System.Buffer.BlockCopy (data, src, data, dst, preceding);
-                src = dst;
-                dst += preceding;
-                count -= preceding;
+                while (count > 0)
+                {
+                    if (preceding > count)
+                        preceding = count;
+                    System.Buffer.BlockCopy (data, src, data, dst, preceding);
+                    src = dst;
+                    dst += preceding;
+                    count -= preceding;
+                }
+            }
+            else
+            {
+                System.Buffer.BlockCopy (data, src, data, dst, count);
             }
         }
 
