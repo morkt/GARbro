@@ -104,7 +104,7 @@ namespace GameRes.Formats.Lucifen
         public static readonly Dictionary<string, EncryptionScheme> KnownSchemes =
             new Dictionary<string, EncryptionScheme> {
                 { "Default", DefaultScheme },
-                { "Lycoris Radiata", new EncryptionScheme {
+                { "Terios games", new EncryptionScheme {
                     BaseKey = new Key (0x39A5B67D, 0xD63AB5E9), ContentXor = 0xa6, RotatePattern = 0x36147352,
                     ImportGameInit = false } },
             };
@@ -182,9 +182,9 @@ namespace GameRes.Formats.Lucifen
             {
                 if (0 == CurrentFileMap.Count)
                     ImportKeys (file.Name);
+                if (!CurrentFileMap.TryGetValue (name, out file_key))
+                    return null;
             }
-            if (!CurrentFileMap.TryGetValue (name, out file_key) && CurrentScheme.ImportGameInit)
-                return null;
             return Open (basename, file, CurrentScheme, file_key);
         }
 
@@ -421,13 +421,15 @@ namespace GameRes.Formats.Lucifen
         int             m_index_width;
         int             m_entries_offset;
 
-        public LpkInfo Info { get { return m_info; } }
+        public LpkInfo  Info { get { return m_info; } }
+        public int EntrySize { get; private set; }
 
         public IndexReader (LpkInfo info)
         {
             if (!info.Flag1)
                 throw new NotSupportedException ("Not supported LPK index format");
             m_info = info;
+            EntrySize = m_info.PackedEntries ? 13 : 9;
         }
 
         public List<Entry> Read (byte[] index)
@@ -448,6 +450,12 @@ namespace GameRes.Formats.Lucifen
             int letter_table_length = LittleEndian.ToInt32 (m_index, index_offset);
             index_offset += 4;
             m_entries_offset = index_offset + letter_table_length;
+            if (m_entries_offset >= m_index.Length)
+                return null;
+            if ((m_index.Length - m_entries_offset) / EntrySize < count)
+                EntrySize = (m_index.Length - m_entries_offset) / count;
+            if (EntrySize < 8 || m_info.PackedEntries && EntrySize < 12)
+                return null;
 
             m_dir = new List<Entry> (count);
             m_name = new byte[260];
@@ -486,16 +494,16 @@ namespace GameRes.Formats.Lucifen
                 Type = FormatCatalog.Instance.GetTypeFromName (name),
                 IsPacked = m_info.PackedEntries,
             };
-            int entry_size = m_info.PackedEntries ? 13 : 9;
-            int entry_pos = m_entries_offset + entry_size*entry_num;
-            if (entry_pos+entry_size > m_index.Length)
+            int entry_pos = m_entries_offset + EntrySize * entry_num;
+            if (entry_pos+EntrySize > m_index.Length)
                 throw new InvalidFormatException ("Invalid LPK entry index");
-            entry.Flag = m_index[entry_pos];
-            long offset = LittleEndian.ToUInt32 (m_index, entry_pos+1);
+            if (0 != (EntrySize & 1))
+                entry.Flag = m_index[entry_pos++];
+            long offset = LittleEndian.ToUInt32 (m_index, entry_pos);
             entry.Offset = m_info.AlignedOffset ? offset << 11 : offset;
-            entry.Size = LittleEndian.ToUInt32 (m_index, entry_pos+5);
+            entry.Size = LittleEndian.ToUInt32 (m_index, entry_pos+4);
             if (entry.IsPacked)
-                entry.UnpackedSize = LittleEndian.ToUInt32 (m_index, entry_pos+9);
+                entry.UnpackedSize = LittleEndian.ToUInt32 (m_index, entry_pos+8);
             else
                 entry.UnpackedSize = entry.Size;
             m_dir.Add (entry);
