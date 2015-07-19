@@ -124,6 +124,7 @@
     <Compile Include="ArcRPA.cs" />
     <Compile Include="ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
+    <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="ArcSteinsGate.cs" />
     <Compile Include="ArcWARC.cs" />
@@ -219,6 +220,7 @@
     <Compile Include="ImageQNT.cs" />
     <Compile Include="ImageRCT.cs" />
     <Compile Include="ImageS25.cs" />
+    <Compile Include="ImageSeraph.cs" />
     <Compile Include="ImageTGF.cs" />
     <Compile Include="ImageTLG.cs" />
     <Compile Include="ImageWBM.cs" />
