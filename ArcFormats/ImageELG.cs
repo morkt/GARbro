@@ -155,10 +155,10 @@ namespace GameRes.Formats.Lucifen
             void UnpackIndexed (byte[] output)
             {
                 int dst = 0;
-                while (dst < m_output.Length)
+                for (;;)
                 {
                     byte flags = m_input.ReadByte();
-                    if (0xff == flags)
+                    if (0xff == flags || dst >= m_output.Length)
                         break;
                     int count, pos;
 
@@ -228,10 +228,10 @@ namespace GameRes.Formats.Lucifen
             void UnpackRGBA ()
             {
                 int dst = 0;
-                while (dst < m_output.Length)
+                for (;;)
                 {
                     byte flags = m_input.ReadByte();
-                    if (0xff == flags)
+                    if (0xff == flags || dst >= m_output.Length)
                         break;
                     int count, pos, src;
 
@@ -255,7 +255,7 @@ namespace GameRes.Formats.Lucifen
                         if (0 != (flags & 0x20))
                             count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 34;
                         else
-                            count = (flags & 0x1f) + 2;			
+                            count = (flags & 0x1f) + 2;
 
                         byte b = m_input.ReadByte();
                         byte g = m_input.ReadByte();
@@ -354,10 +354,10 @@ namespace GameRes.Formats.Lucifen
             public void UnpackAlpha ()
             {
                 int dst = 3;
-                while (dst < m_output.Length)
+                for (;;)
                 {
                     byte flags = m_input.ReadByte();
-                    if (0xff == flags)
+                    if (0xff == flags || dst >= m_output.Length)
                         break;
 
                     int count, pos;
@@ -439,10 +439,10 @@ namespace GameRes.Formats.Lucifen
             void UnpackRGB ()
             {
                 int dst = 0;
-                while (dst < m_output.Length)
+                for (;;)
                 {
                     byte flags = m_input.ReadByte();
-                    if (0xff == flags)
+                    if (0xff == flags || dst >= m_output.Length)
                         break;
                     int count, pos, src;
                     if (0 == (flags & 0xc0))
