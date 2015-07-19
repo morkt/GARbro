@@ -160,7 +160,7 @@ namespace GameRes.Formats.FC01
             if (last_offset != actual_offset)
                 return null;
 
-            while (++remaining < index.Length)
+            while (remaining++ < index.Length)
                 key -= (byte)remaining;
 
             return key;
