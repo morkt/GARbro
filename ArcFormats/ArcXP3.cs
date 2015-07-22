@@ -2,7 +2,7 @@
 //! \date       Wed Jul 16 13:58:17 2014
 //! \brief      KiriKiri engine archive implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -739,13 +739,14 @@ NextEntry:
         /// </summary>
         public virtual bool HashAfterCrypt { get { return false; } }
 
-        public abstract byte Decrypt (Xp3Entry entry, long offset, byte value);
-
-        public virtual void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        public virtual byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
-            for (int i = 0; i < count; ++i)
-                values[pos+i] = this.Decrypt (entry, offset+i, values[pos+i]);
+            byte[] buffer = new byte[1] { value };
+            Decrypt (entry, offset, buffer, 0, 1);
+            return buffer[0];
         }
+
+        public abstract void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count);
 
         public virtual void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
@@ -902,6 +903,34 @@ NextEntry:
                 value -= (byte)(key >> (int)(key & 0x10));
             }
             return value;
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                int shift;
+                uint key = entry.Hash ^ (uint)offset;
+                byte v = buffer[pos+i];
+                if (0 != (key & 2))
+                {
+                    shift = (int)key & 0x18;
+                    uint ebx = key >> shift;
+                    shift &= 8;
+                    v ^= (byte)(ebx | (key >> shift));
+                }
+                if (0 != (key & 4))
+                {
+                    v += (byte)key;
+                }
+                if (0 != (key & 8))
+                {
+                    shift = (int)key & 0x10;
+                    v -= (byte)(key >> shift);
+                }
+                buffer[pos+i] = v;
+                ++offset;
+            }
         }
 
         public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
