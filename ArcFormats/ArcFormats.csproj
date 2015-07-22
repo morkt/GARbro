@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="ArcADPACK.cs" />
     <Compile Include="ArcAdvCls.cs" />
+    <Compile Include="ArcAdvSysT.cs" />
     <Compile Include="ArcAFS.cs" />
     <Compile Include="ArcAi5Win.cs" />
     <Compile Include="ArcAil.cs" />
@@ -200,6 +201,7 @@
     <Compile Include="ImageGCP.cs" />
     <Compile Include="ImageGGP.cs" />
     <Compile Include="ImageGR.cs" />
+    <Compile Include="ImageGR2.cs" />
     <Compile Include="ImageGRP.cs" />
     <Compile Include="ImageGRX.cs" />
     <Compile Include="ImageGS.cs" />
