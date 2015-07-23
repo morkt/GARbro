@@ -102,7 +102,7 @@ namespace GameRes.Formats.SPack
             if (null == packed_entry || !packed_entry.IsPacked)
                 return input;
             if (1 == packed_entry.Method)
-                return new CryptoStream (input, new Kogado.NotTransform(), CryptoStreamMode.Read);
+                return new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read);
             if (2 == packed_entry.Method)
             {
                 using (var reader = new PackedReader (packed_entry, input))
