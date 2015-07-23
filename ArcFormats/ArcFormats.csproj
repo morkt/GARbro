@@ -128,6 +128,7 @@
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="ArcSteinsGate.cs" />
+    <Compile Include="ArcTactics.cs" />
     <Compile Include="ArcWARC.cs" />
     <Compile Include="ArcWBP.cs" />
     <Compile Include="ArcWILL.cs" />
@@ -189,6 +190,7 @@
     <Compile Include="ImageCRX.cs" />
     <Compile Include="ImageCWL.cs" />
     <Compile Include="ImageCWP.cs" />
+    <Compile Include="ImageDDS.cs" />
     <Compile Include="ImageDGC.cs" />
     <Compile Include="ImageDRG.cs" />
     <Compile Include="ImageDZI.cs" />
