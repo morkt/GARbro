@@ -28,13 +28,18 @@ using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
-namespace GameRes.Formats.InnocentGrey
+namespace GameRes.Formats.SystemEpsylon
 {
+    internal class PackDatEntry : PackedEntry
+    {
+        public uint Flags;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PACKDAT"; } }
-        public override string Description { get { return "Innocent Grey resource archive"; } }
+        public override string Description { get { return "SYSTEM-ε resource archive"; } }
         public override uint     Signature { get { return 0x4B434150; } } // "PACK"
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
@@ -59,15 +64,46 @@ namespace GameRes.Formats.InnocentGrey
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x20);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = new PackDatEntry { Name = name };
+                entry.Type   = FormatCatalog.Instance.GetTypeFromName (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x20);
+                entry.Flags  = file.View.ReadUInt32 (index_offset+0x24);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x28);
+                entry.UnpackedSize = file.View.ReadUInt32 (index_offset+0x2c);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 0x30;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var pentry = entry as PackDatEntry;
+            if (null == pentry || 0 == (pentry.Flags & 0x10000))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+
+            byte[] input = new byte[pentry.Size];
+            if (pentry.Size != arc.File.View.Read (entry.Offset, input, 0, pentry.Size))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+
+            unsafe
+            {
+                fixed (byte* buf_raw = input)
+                {
+                    uint* encoded = (uint*)buf_raw;
+                    uint key = pentry.Size >> 2;
+                    key = (key << (((int)key & 7) + 8)) ^ key;
+                    for (uint i = entry.Size / 4; i != 0; --i )
+                    {
+                        *encoded ^= key;
+                        int cl = (int)(*encoded++ % 24);
+                        key = (key << cl) | (key >> (32 - cl));
+                    }
+                }
+            }
+            return new MemoryStream (input);
         }
     }
 }
