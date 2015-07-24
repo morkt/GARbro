@@ -26,12 +26,15 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Triangle
 {
     internal class IafMetaData : ImageMetaData
     {
+        public int DataOffset;
+        public int PackedSize;
         public int UnpackedSize;
         public int PackType;
     }
@@ -45,16 +48,35 @@ namespace GameRes.Formats.Triangle
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
-            var header = new byte[12];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = new byte[0x14];
+            if (12 != stream.Read (header, 0, 12))
                 return null;
-            int x = LittleEndian.ToInt32 (header, 0);
-            int y = LittleEndian.ToInt32 (header, 4);
+            int data_offset;
+            int packed_size = LittleEndian.ToInt32 (header, 1);
+            int x, y, unpacked_size;
+            if (5+packed_size+0x14 == stream.Length)
+            {
+                data_offset = 5;
+                stream.Seek (-0x14, SeekOrigin.End);
+                if (0x14 != stream.Read (header, 0, 0x14))
+                    return null;
+                x = LittleEndian.ToInt32 (header, 0);
+                y = LittleEndian.ToInt32 (header, 4);
+                unpacked_size = LittleEndian.ToInt32 (header, 0x10);
+            }
+            else
+            {
+                data_offset = 12;
+                x = LittleEndian.ToInt32 (header, 0);
+                y = LittleEndian.ToInt32 (header, 4);
+                unpacked_size = LittleEndian.ToInt32 (header, 8);
+                packed_size = (int)stream.Length-12;
+            }
             if (Math.Abs (x) > 4096 || Math.Abs (y) > 4096)
                 return null;
-            int unpacked_size = LittleEndian.ToInt32 (header, 8);
             int pack_type = (unpacked_size >> 30) & 3;
             unpacked_size &= (int)~0xC0000000;
+            stream.Position = data_offset;
             byte[] bmp;
             if (0 == pack_type)
             {
@@ -93,6 +115,8 @@ namespace GameRes.Formats.Triangle
                 OffsetX = x,
                 OffsetY = y,
                 BPP = bpp,
+                DataOffset = data_offset,
+                PackedSize = packed_size,
                 UnpackedSize = unpacked_size,
                 PackType = pack_type,
             };
@@ -104,44 +128,90 @@ namespace GameRes.Formats.Triangle
             if (null == meta)
                 throw new ArgumentException ("IafFormat.Read should be supplied with IafMetaData", "info");
 
-            stream.Position = 12;
-            int packed_size = (int)stream.Length-12;
-            byte[] pixels;
+            stream.Position = meta.DataOffset;
+            byte[] bitmap;
             if (2 == meta.PackType)
             {
-                using (var reader = new RleReader (stream, packed_size, meta.UnpackedSize))
+                using (var reader = new RleReader (stream, meta.PackedSize, meta.UnpackedSize))
                 {
                     reader.Unpack();
-                    pixels = reader.Data;
+                    bitmap = reader.Data;
                 }
             }
             else if (0 == meta.PackType)
             {
-                using (var reader = new LzssReader (stream, packed_size, meta.UnpackedSize))
+                using (var reader = new LzssReader (stream, meta.PackedSize, meta.UnpackedSize))
                 {
                     reader.Unpack();
-                    pixels = reader.Data;
+                    bitmap = reader.Data;
                 }
             }
             else
             {
-                pixels = new byte[meta.UnpackedSize];
-                if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+                bitmap = new byte[meta.UnpackedSize];
+                if (bitmap.Length != stream.Read (bitmap, 0, bitmap.Length))
                     throw new InvalidFormatException ("Unexpected end of file");
             }
-            if ('C' == pixels[0])
+            if ('C' == bitmap[0])
             {
-                pixels[0] = (byte)'B';
+                bitmap[0] = (byte)'B';
                 if (info.BPP > 8)
-                    pixels = ConvertCM (pixels, (int)info.Width, (int)info.Height, info.BPP);
+                    bitmap = ConvertCM (bitmap, (int)info.Width, (int)info.Height, info.BPP);
             }
-            using (var bmp = new MemoryStream (pixels))
+            if (meta.BPP >= 24) // currently alpha channel could be applied to 24+bpp bitmaps only
+            {
+                try
+                {
+                    int bmp_size = LittleEndian.ToInt32 (bitmap, 2);
+                    if (bitmap.Length - bmp_size > 0x36) // size of bmp header
+                    {
+                        if ('B' == bitmap[bmp_size] && 'M' == bitmap[bmp_size+1] &&
+                            8 == bitmap[bmp_size+0x1c]) // 8bpp
+                        {
+                            uint alpha_width = LittleEndian.ToUInt32 (bitmap, bmp_size+0x12);
+                            uint alpha_height = LittleEndian.ToUInt32 (bitmap, bmp_size+0x16);
+                            if (info.Width == alpha_width && info.Height == alpha_height)
+                                return BitmapWithAlphaChannel (meta, bitmap, bmp_size);
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore any errors occured during alpha-channel read attempt,
+                    // fallback to a plain bitmap
+                }
+            }
+            using (var bmp = new MemoryStream (bitmap))
                 return base.Read (bmp, info);
         }
 
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("IafFormat.Write not implemented");
+        }
+
+        static ImageData BitmapWithAlphaChannel (ImageMetaData info, byte[] bitmap, int alpha_offset)
+        {
+            int src_pixel_size = info.BPP/8;
+            int src_stride = (int)info.Width*src_pixel_size;
+            int src_pixels = LittleEndian.ToInt32 (bitmap, 0x0A);
+            int src_alpha  = alpha_offset + LittleEndian.ToInt32 (bitmap, alpha_offset+0x0A);
+            var pixels = new byte[info.Width * info.Height * 4];
+            int dst = 0;
+            for (int y = (int)info.Height-1; y >= 0; --y)
+            {
+                int src = src_pixels + y*src_stride;
+                int alpha = src_alpha + y*(int)info.Width;
+                for (uint x = 0; x < info.Width; ++x)
+                {
+                    pixels[dst++] = bitmap[src];
+                    pixels[dst++] = bitmap[src+1];
+                    pixels[dst++] = bitmap[src+2];
+                    pixels[dst++] = (byte)~bitmap[alpha++];
+                    src += src_pixel_size;
+                }
+            }
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
 
         static byte[] ConvertCM (byte[] input, int width, int height, int bpp)
