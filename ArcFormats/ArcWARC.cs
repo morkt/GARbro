@@ -36,7 +36,7 @@ using GameRes.Formats.Strings;
 using GameRes.Utility;
 using ZLibNet;
 
-namespace GameRes.Formats.ShiinaRio
+namespace GameRes.Formats.ShiinaRio // 椎名里緒
 {
     internal class WarOptions : ResourceOptions
     {
@@ -1223,6 +1223,11 @@ namespace GameRes.Formats.ShiinaRio
                 new uint[] { 0xE3A7F1AC, 0xB2AA96AC, 0x4FAAECA7, 0xD5A7BAB0, 0x44A754A7 }),
             EncryptionScheme.Create (2400, "Helter Skelter", "ヘルタースケルター",
                 new uint[] { 0x747C887C, 0xA47EA17C, 0xAF7CA77C, 0xA17C747C, 0x0000A47E }),
+
+            EncryptionScheme.Create ("Hitozuma Onna Kyoushi Reika", 2390, 0x10, EncryptionScheme.DefaultCrypt,
+                new uint[] { 0x3772936F, 0x4C746870, 0x12688b71, 0x0A687E72, 0x3A6B4076 },
+                "ShiinaRio3.jpg", "ShiinaRio2.png", "DecodeV1.bin", "人妻女教師・麗香"),
+
             EncryptionScheme.Create (2470, "Mahou Shoujo no Taisetsu na Koto", "魔法少女の大切なこと。",
                 new uint[] { 0x51879387, 0x869EBC9E, 0xF480DD93, 0xD993C981, 0xD793A093 }),
             EncryptionScheme.Create (2460, "Mikoko", "みここ",
