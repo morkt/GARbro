@@ -23,7 +23,9 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -109,6 +111,11 @@ namespace GameRes
 
         public static ImageData Read (Stream file)
         {
+            return Read (null, file);
+        }
+
+        public static ImageData Read (string filename, Stream file)
+        {
             bool need_dispose = false;
             try
             {
@@ -119,7 +126,7 @@ namespace GameRes
                     file = stream;
                     need_dispose = true;
                 }
-                var format = FindFormat (file);
+                var format = FindFormat (file, filename);
                 if (null == format)
                     return null;
                 file.Position = 0;
@@ -132,12 +139,18 @@ namespace GameRes
             }
         }
 
-        public static System.Tuple<ImageFormat, ImageMetaData> FindFormat (Stream file)
+        public static System.Tuple<ImageFormat, ImageMetaData> FindFormat (Stream file, string filename = null)
         {
             uint signature = FormatCatalog.ReadSignature (file);
+            Lazy<string> ext = null;
+            if (!string.IsNullOrEmpty (filename))
+                ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant());
             for (;;)
             {
                 var range = FormatCatalog.Instance.LookupSignature<ImageFormat> (signature);
+                // check formats that match filename extension first
+                if (ext != null && range.Skip(1).Any())
+                    range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
                 foreach (var impl in range)
                 {
                     try
