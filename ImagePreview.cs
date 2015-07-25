@@ -243,7 +243,7 @@ namespace GARbro.GUI
             {
                 using (var file = OpenPreviewStream (preview))
                 {
-                    var data = ImageFormat.Read (file);
+                    var data = ImageFormat.Read (preview.Name, file);
                     if (null != data)
                         SetPreviewImage (preview, data.Bitmap);
                     else

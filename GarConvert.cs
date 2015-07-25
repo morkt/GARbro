@@ -199,7 +199,7 @@ namespace GARbro.GUI
             string target_name = Path.ChangeExtension (filename, target_ext);
             using (var file = File.OpenRead (filename))
             {
-                var image = ImageFormat.Read (file);
+                var image = ImageFormat.Read (filename, file);
                 if (null == image)
                     return;
                 try

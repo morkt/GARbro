@@ -294,7 +294,7 @@ namespace GARbro.GUI
         {
             using (var file = arc.OpenSeekableEntry (entry))
             {
-                var src_format = ImageFormat.FindFormat (file);
+                var src_format = ImageFormat.FindFormat (file, entry.Name);
                 if (null == src_format)
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretImage, entry.Name));
                 file.Position = 0;
