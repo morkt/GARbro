@@ -159,10 +159,11 @@ namespace GameRes
             using (var stream = OpenEntry (entry))
             {
                 uint size;
+                var packed_entry = entry as PackedEntry;
                 if (stream.CanSeek)
                     size = (uint)stream.Length;
-                else if (entry is PackedEntry)
-                    size = (entry as PackedEntry).UnpackedSize;
+                else if (null != packed_entry && packed_entry.IsPacked)
+                    size = packed_entry.UnpackedSize;
                 else
                     size = entry.Size;
                 return new ArcView (stream, entry.Name, size);
