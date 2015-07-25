@@ -644,10 +644,10 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public static EncryptionScheme Create (int version, string name, string original_title, uint[] key2)
         {
             string decode = version < 2490 ? "DecodeV1.bin" : "DecodeV249.bin";
-            string image = version < 2400 ? "ShiinaRio1.png"
+            string image = version < 2390 ? "ShiinaRio1.png"
                          : version < 2490 ? "ShiinaRio3.jpg"
                          : "ShiinaRio4.jpg";
-            int entry_name_size = version < 2390 ? 0x10 : 0x20;
+            int entry_name_size = version <= 2390 ? 0x10 : 0x20;
             return Create (name, version, entry_name_size, DefaultCrypt, key2,
                            image, "ShiinaRio2.png", decode, original_title);
         }
@@ -1211,23 +1211,21 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public static EncryptionScheme[] KnownSchemes = new EncryptionScheme[]
         {
             EncryptionScheme.Create (2360, "ShiinaRio v2.36 and older"),
+            EncryptionScheme.Create (2370, "ShiinaRio v2.37", "椎名里緒 v2.37",
+                new uint[] { 0xF182C682, 0xE882AA82, 0x718E5896, 0x8183CC82, 0xDAC98283 }),
+
             EncryptionScheme.Create (2480, "Bloody Rondo", "BLOODY†RONDO",
                 new uint[] { 0xFBFBF8F6, 0xFBE6EDF0, 0xFBF0FA, 0, 0 }),
             EncryptionScheme.Create (2450, "Chuuchuu Nurse", "ちゅうちゅうナース",
                 new uint[] { 0xB0D1ECD1, 0xECD1F7D1, 0xF7D1B0D1, 0x08D23AD0, 0x13D20BD0 }),
-            EncryptionScheme.Create (2370, "Classmate no Okaa-san", "クラスメイトのお母さん",
-                new uint[] { 0xF182C682, 0xE882AA82, 0x718E5896, 0x8183CC82, 0xDAC98283 }),
             EncryptionScheme.Create (2470, "Damatte Watashi no Muko ni Nare!", "黙って私のムコになれ！",
                 new uint[] { 0x44075C13, 0x010B4107, 0x05064907, 0x4C07D706, 0x6F074D07 }),
             EncryptionScheme.Create (2470, "Hana to Otome ni Shukufuku wo Royal Bouquet", "花と乙女に祝福を ロイヤルブーケ",
                 new uint[] { 0xE3A7F1AC, 0xB2AA96AC, 0x4FAAECA7, 0xD5A7BAB0, 0x44A754A7 }),
             EncryptionScheme.Create (2400, "Helter Skelter", "ヘルタースケルター",
                 new uint[] { 0x747C887C, 0xA47EA17C, 0xAF7CA77C, 0xA17C747C, 0x0000A47E }),
-
-            EncryptionScheme.Create ("Hitozuma Onna Kyoushi Reika", 2390, 0x10, EncryptionScheme.DefaultCrypt,
-                new uint[] { 0x3772936F, 0x4C746870, 0x12688b71, 0x0A687E72, 0x3A6B4076 },
-                "ShiinaRio3.jpg", "ShiinaRio2.png", "DecodeV1.bin", "人妻女教師・麗香"),
-
+            EncryptionScheme.Create (2390, "Hitozuma Onna Kyoushi Reika", "人妻女教師・麗香",
+                new uint[] { 0x3772936F, 0x4C746870, 0x12688b71, 0x0A687E72, 0x3A6B4076 }),
             EncryptionScheme.Create (2470, "Mahou Shoujo no Taisetsu na Koto", "魔法少女の大切なこと。",
                 new uint[] { 0x51879387, 0x869EBC9E, 0xF480DD93, 0xD993C981, 0xD793A093 }),
             EncryptionScheme.Create (2460, "Mikoko", "みここ",
