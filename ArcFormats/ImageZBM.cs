@@ -26,6 +26,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Crowd

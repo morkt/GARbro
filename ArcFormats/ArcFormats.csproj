@@ -235,6 +235,7 @@
     <Compile Include="KiriKiriCx.cs" />
     <Compile Include="KogadoCocotte.cs" />
     <Compile Include="AudioOGG.cs" />
+    <Compile Include="LzssStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

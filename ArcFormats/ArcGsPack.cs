@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Gs

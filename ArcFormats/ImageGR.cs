@@ -27,6 +27,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.Windows.Media;
 using System.IO;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Eagls

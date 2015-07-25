@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Text;
+using GameRes.Compression;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;

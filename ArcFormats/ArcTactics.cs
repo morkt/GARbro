@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Tactics

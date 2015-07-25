@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Media;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Elf
