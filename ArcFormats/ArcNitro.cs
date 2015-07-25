@@ -41,7 +41,7 @@ namespace GameRes.Formats.NitroPlus
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "NITRO+/PAK"; } }
+        public override string         Tag { get { return "PAK/NITRO+"; } }
         public override string Description { get { return "Nitro+ resource archive"; } }
         public override uint     Signature { get { return 0x03; } }
         public override bool  IsHierarchic { get { return false; } }

@@ -42,7 +42,7 @@ namespace GameRes.Formats.Qlie
     [Export(typeof(ArchiveFormat))]
     public class PackOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "QLIE/PACK"; } }
+        public override string         Tag { get { return "PACK/QLIE"; } }
         public override string Description { get { return "QLIE engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }

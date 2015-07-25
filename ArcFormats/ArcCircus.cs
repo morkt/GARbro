@@ -34,7 +34,7 @@ namespace GameRes.Formats.Circus
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "CIRCUS/DAT"; } }
+        public override string         Tag { get { return "DAT/CIRCUS"; } }
         public override string Description { get { return "Circus resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
