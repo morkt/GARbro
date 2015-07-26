@@ -65,7 +65,7 @@ namespace GameRes.Formats.Entis
         public override string         Tag { get { return "NOA"; } }
         public override string Description { get { return "Entis GLS engine resource archive"; } }
         public override uint     Signature { get { return 0x69746e45; } } // 'Enti'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         public NoaOpener ()
@@ -76,12 +76,9 @@ namespace GameRes.Formats.Entis
         public static readonly Dictionary<string, Dictionary<string, string>> KnownKeys =
             new Dictionary<string, Dictionary<string, string>> {
                 { arcStrings.NOAIgnoreEncryption, new Dictionary<string, string>() },
-                { "Yatohime Zankikou", new Dictionary<string, string> {
-                    { "data1.noa", "arcdatapass" },
-                    { "data6.noa", "cfe7231hf9qccda" },
-                    { "data7.noa", "ceiuvw86680efq0hHDUHF673j" } } },
-                { "You! Apron Chakuyou", new Dictionary<string, string> {
-                    { "containerb.noa", "7DQ1Xm7ZahIv1ZwlFgyMTMryKC6OP9V6cAgL64WD5JLyvmeEyqTSA5rUbRigOtebnnK4MuOptwsbOf4K8UBDH4kpAUOQgB71Qr1qxtHGxQl8KZKj6WIYWpPh0G3JOJat" } } },
+                { "Alea Akaki Tsuki o Haruka ni Nozomi", new Dictionary<string, string> {
+                    { "data2.noa", "pnnAiYVqktMdLlVq9pnrXs1795vhu8ZluLh3MxmXyBBrhrhLoP2rlGn5dxcBP6d1cAAz08TMRIXNUFatVdJFWAwVphtAh4hx5NHMmLs8LoBE2KHAA8GnKJB1PpKeyMHu" },
+                    { "data4.noa", "yEbgydEFtIq3YiGUNMpCarJwR9mZbufPrbXtsoqbrJwT4F278kOWIgYzLtm1nP1Hns81u3F4Stwc42gdtrWIbnp9XfX3LsKiZe1TFUyrlTqsbhX8R8dEAVxLk9SVvCE7" } } },
                 { "Do S Ane to Boku no Hounyou Kankei", new Dictionary<string, string> {
                     { "d02.dat", "vwerc7s65r21bnfu" },
                     { "d03.dat", "ctfvgbhnj67y8u" } } },
@@ -90,6 +87,12 @@ namespace GameRes.Formats.Entis
                     { "d03.dat", "gaivnwq7365e021gf" } } },
                 { "Konneko", new Dictionary<string, string> {
                     { "script.noa", "convini_cat" } } },
+                { "Yatohime Zankikou", new Dictionary<string, string> {
+                    { "data1.noa", "arcdatapass" },
+                    { "data6.noa", "cfe7231hf9qccda" },
+                    { "data7.noa", "ceiuvw86680efq0hHDUHF673j" } } },
+                { "You! Apron Chakuyou", new Dictionary<string, string> {
+                    { "containerb.noa", "7DQ1Xm7ZahIv1ZwlFgyMTMryKC6OP9V6cAgL64WD5JLyvmeEyqTSA5rUbRigOtebnnK4MuOptwsbOf4K8UBDH4kpAUOQgB71Qr1qxtHGxQl8KZKj6WIYWpPh0G3JOJat" } } },
             };
 
         public override ArcFile TryOpen (ArcView file)
@@ -100,7 +103,7 @@ namespace GameRes.Formats.Entis
             if (0x02000400 != id)
                 return null;
             var reader = new IndexReader (file);
-            if (!reader.ParseDirEntry (0x40, "") || 0 == reader.Dir.Count)
+            if (!reader.ParseRoot() || 0 == reader.Dir.Count)
                 return null;
             if (!reader.HasEncrypted)
                 return new ArcFile (file, this, reader.Dir);
@@ -157,7 +160,8 @@ namespace GameRes.Formats.Entis
                 uint decoded = pBSHF.DecodeBSHFCodeBytes (buf, nTotalBytes);
                 if (decoded < nTotalBytes)
                     throw new EndOfStreamException ("Unexpected end of encrypted stream");
-                /*
+
+                /* Something wrong with preceding length calculation, resulting CRC doesn't match
                 byte[] bufCRC = new byte[4];
                 int iCRC = 0;
                 for (int i = 0; i < buf.Length; ++i)
@@ -214,7 +218,12 @@ namespace GameRes.Formats.Entis
                 m_file = file;
             }
 
-            public bool ParseDirEntry (long dir_offset, string cur_dir)
+            public bool ParseRoot ()
+            {
+                return ParseDirEntry (0x40, "");
+            }
+
+            private bool ParseDirEntry (long dir_offset, string cur_dir)
             {
                 if (!m_file.View.AsciiEqual (dir_offset, "DirEntry"))
                     return false;
