@@ -204,11 +204,7 @@ namespace GameRes.Formats.Entis
                 }
                 var reader = new EriReader (stream, meta, palette);
                 reader.DecodeImage();
-                var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height,
-                                                  ImageData.DefaultDpiX, ImageData.DefaultDpiY,
-                                                  reader.Format, reader.Palette, reader.Data, reader.Stride);
-                bitmap.Freeze();
-                return new ImageData (bitmap, info);
+                return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
             }
         }
 
