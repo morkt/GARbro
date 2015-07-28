@@ -61,6 +61,7 @@ namespace GameRes.Compression
     {
         DeflateStream   m_stream;
         CheckedStream   m_adler;
+        bool            m_should_dispose_base;
         bool            m_writing;
         int             m_total_in = 0;
 
@@ -79,22 +80,23 @@ namespace GameRes.Compression
         public ZLibStream (Stream stream, CompressionMode mode, CompressionLevel level, bool leave_open = false)
 		{
             if (CompressionMode.Decompress == mode)
-                InitDecompress (stream, leave_open);
+                InitDecompress (stream);
             else
-                InitCompress (stream, level, leave_open);
+                InitCompress (stream, level);
+            m_should_dispose_base = !leave_open;
 		}
 
-        private void InitDecompress (Stream stream, bool leave_open)
+        private void InitDecompress (Stream stream)
         {
             int b1 = stream.ReadByte();
             int b2 = stream.ReadByte();
-            if (0x78 != b1 || 0 != (b1 << 8 | b2) % 31)
+            if ((0x78 != b1 && 0x58 != b1) || 0 != (b1 << 8 | b2) % 31)
                 throw new InvalidDataException ("Data not recoginzed as zlib-compressed stream");
-            m_stream = new DeflateStream (stream, System.IO.Compression.CompressionMode.Decompress, leave_open);
+            m_stream = new DeflateStream (stream, System.IO.Compression.CompressionMode.Decompress, true);
             m_writing = false;
         }
 
-        private void InitCompress (Stream stream, CompressionLevel level, bool leave_open)
+        private void InitCompress (Stream stream, CompressionLevel level)
         {
             int flevel = (int)level;
             System.IO.Compression.CompressionLevel sys_level;
@@ -116,9 +118,18 @@ namespace GameRes.Compression
             cmf = ((cmf + 30) / 31) * 31;
             stream.WriteByte ((byte)(cmf >> 8));
             stream.WriteByte ((byte)cmf);
-            m_stream = new DeflateStream (stream, sys_level, leave_open);
+            m_stream = new DeflateStream (stream, sys_level, true);
             m_adler  = new CheckedStream (m_stream, new Adler32());
             m_writing = true;
+        }
+
+        void WriteCheckSum (Stream output)
+        {
+            uint checksum = m_adler.CheckSumValue;
+            output.WriteByte ((byte)(checksum >> 24));
+            output.WriteByte ((byte)(checksum >> 16));
+            output.WriteByte ((byte)(checksum >> 8));
+            output.WriteByte ((byte)(checksum));
         }
 
         #region IO.Stream Members
@@ -180,17 +191,15 @@ namespace GameRes.Compression
                 {
                     if (disposing)
                     {
+                        var output = m_stream.BaseStream;
+                        m_stream.Dispose();
                         if (m_writing)
                         {
-                            uint checksum = m_adler.CheckSumValue;
-                            m_stream.Flush();
-                            m_stream.BaseStream.WriteByte ((byte)(checksum >> 24));
-                            m_stream.BaseStream.WriteByte ((byte)(checksum >> 16));
-                            m_stream.BaseStream.WriteByte ((byte)(checksum >> 8));
-                            m_stream.BaseStream.WriteByte ((byte)(checksum));
+                            WriteCheckSum (output);
                             m_adler.Dispose();
                         }
-                        m_stream.Dispose();
+                        if (m_should_dispose_base)
+                            output.Dispose();
                     }
                     m_disposed = true;
                 }
