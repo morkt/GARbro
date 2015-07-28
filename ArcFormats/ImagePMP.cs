@@ -26,8 +26,8 @@
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Text;
+using GameRes.Compression;
 using GameRes.Utility;
-using ZLibNet;
 
 namespace GameRes.Formats.ScenePlayer
 {
@@ -49,10 +49,6 @@ namespace GameRes.Formats.ScenePlayer
         {
             int first = stream.ReadByte() ^ 0x21;
             if (first != 0x78) // doesn't look like zlib stream
-                return null;
-            int flg = stream.ReadByte() ^ 0x21;
-            int fcheck = first << 8 | flg;
-            if (fcheck % 0x1f != 0)
                 return null;
 
             stream.Position = 0;

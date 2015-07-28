@@ -27,6 +27,7 @@ using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -34,8 +35,8 @@ using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Diagnostics;
+using GameRes.Compression;
 using GameRes.Utility;
-using ZLibNet;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
 
@@ -174,7 +175,7 @@ namespace GameRes.Formats.KiriKiri
                                 entry.IsEncrypted = 0 != header.ReadUInt32();
                                 long file_size = header.ReadInt64();
                                 long packed_size = header.ReadInt64();
-                                if (file_size > uint.MaxValue || packed_size > uint.MaxValue)
+                                if (file_size > uint.MaxValue || packed_size > uint.MaxValue || packed_size > file.MaxOffset)
                                 {
                                     goto NextEntry;
                                 }
@@ -193,7 +194,7 @@ namespace GameRes.Formats.KiriKiri
                                     entry.Cipher = NoCryptAlgorithm;
 
                                 char[] name = header.ReadChars (name_size);
-                                entry.Name = new string (name);
+                                entry.Name = NormalizePath (new string (name));
                                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                                 break;
                             }
@@ -244,6 +245,13 @@ NextEntry:
                 }
             }
             return new ArcFile (file, this, dir);
+        }
+
+        static readonly Regex PathRe = new Regex (@"[^\\/]+[\\/]\.\.[\\/]");
+
+        private static string NormalizePath (string filename)
+        {
+            return PathRe.Replace (filename, "");
         }
 
         private long SkipExeHeader (ArcView file)
@@ -507,13 +515,13 @@ NextEntry:
             };
             if (compress)
             {
+                var start = output.Position;
                 using (var zstream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true))
                 {
                     xp3entry.Hash = CheckedCopy (file, zstream);
-                    zstream.Flush();
-                    segment.PackedSize = (uint)zstream.TotalOut;
-                    xp3entry.Size = segment.PackedSize;
                 }
+                segment.PackedSize = (uint)(output.Position - start);
+                xp3entry.Size = segment.PackedSize;
             }
             else
             {
@@ -542,11 +550,9 @@ NextEntry:
                         PackedSize   = unpacked_size,
                     };
                     xp3entry.Segments.Add (segment);
-                    bool need_output_dispose = false;
                     if (compress)
                     {
                         output = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true);
-                        need_output_dispose = true;
                     }
                     unsafe
                     {
@@ -573,18 +579,17 @@ NextEntry:
                             }
                             if (hash_after_crypt)
                                 xp3entry.Hash = checksum.Value;
-                            if (compress)
-                            {
-                                output.Flush();
-                                segment.PackedSize = (uint)(output as ZLibStream).TotalOut;
-                                xp3entry.Size = segment.PackedSize;
-                            }
                         }
                         finally
                         {
                             view.SafeMemoryMappedViewHandle.ReleasePointer();
-                            if (need_output_dispose)
+                            if (compress)
+                            {
+                                var dest = (output as ZLibStream).BaseStream;
                                 output.Dispose();
+                                segment.PackedSize = (uint)(dest.Position - segment.Offset);
+                                xp3entry.Size = segment.PackedSize;
+                            }
                         }
                     }
                 }

@@ -30,7 +30,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using ZLibNet;
+using GameRes.Compression;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
 using GameRes.Utility;
@@ -184,13 +184,13 @@ namespace GameRes.Formats.YuRis
                     {
                         if (entry.IsPacked)
                         {
+                            var start = output.Position;
                             using (var zstream = new ZLibStream (checked_stream, CompressionMode.Compress,
                                                                  CompressionLevel.Level9, true))
                             {
                                 input.CopyTo (zstream);
-                                zstream.Flush();
-                                entry.Size = (uint)zstream.TotalOut;
                             }
+                            entry.Size = (uint)(output.Position - start);
                         }
                         else
                         {

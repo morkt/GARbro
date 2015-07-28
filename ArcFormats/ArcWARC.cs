@@ -31,10 +31,10 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using GameRes.Compression;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
-using ZLibNet;
 
 namespace GameRes.Formats.ShiinaRio // 椎名里緒
 {
@@ -97,7 +97,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             Stream index;
             if (version >= 170)
             {
-                if (0x78 != enc_index[8]) // FIXME: check if it looks like ZLib stream
+                if (0x78 != enc_index[8]) // check if it looks like ZLib stream
                     return null;
                 var zindex = new MemoryStream (enc_index, 8, (int)index_length-8);
                 index = new ZLibStream (zindex, CompressionMode.Decompress);

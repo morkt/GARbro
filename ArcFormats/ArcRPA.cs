@@ -31,9 +31,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using GameRes.Compression;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
-using ZLibNet;
 
 namespace GameRes.Formats.RenPy
 {

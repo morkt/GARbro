@@ -27,7 +27,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Text;
 using GameRes.Utility;
-using ZLibNet;
+using GameRes.Compression;
 
 namespace GameRes.Formats.BlackRainbow
 {

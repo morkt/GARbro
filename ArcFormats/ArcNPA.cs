@@ -31,7 +31,7 @@ using System.ComponentModel.Composition;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using ZLibNet;
+using GameRes.Compression;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
 
@@ -200,13 +200,13 @@ namespace GameRes.Formats.NitroPlus
                     {
                         if (entry.IsPacked)
                         {
+                            var start = destination.Position;
                             using (var zstream = new ZLibStream (destination, CompressionMode.Compress,
                                                                 CompressionLevel.Level9, true))
                             {
                                 file.CopyTo (zstream);
-                                zstream.Flush();
-                                entry.Size = (uint)zstream.TotalOut;
                             }
+                            entry.Size = (uint)(destination.Position - start);
                         }
                         else
                         {

@@ -32,7 +32,6 @@ using System.ComponentModel.Composition;
 using GameRes.Compression;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
-using ZLibNet;
 
 namespace GameRes.Formats.NeXAS
 {

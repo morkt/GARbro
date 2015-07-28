@@ -25,7 +25,7 @@
 
 using System.ComponentModel.Composition;
 using System.IO;
-using ZLibNet;
+using GameRes.Compression;
 
 namespace GameRes.Formats.ScenePlayer
 {

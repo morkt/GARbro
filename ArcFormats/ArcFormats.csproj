@@ -51,6 +51,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -58,10 +59,6 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
-    <Reference Include="zlibnet, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\zlib\zlibnet.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArcADPACK.cs" />
@@ -125,6 +122,7 @@
     <Compile Include="ArcRPA.cs" />
     <Compile Include="ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
+    <Compile Include="ZLibStream.cs" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="ArcSteinsGate.cs" />
@@ -290,14 +288,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\zlib\zlib32.dll">
-      <Link>zlib32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\zlib\zlib64.dll">
-      <Link>zlib64.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <EmbeddedResource Include="Resources\ShiinaRio4.jpg" />
     <EmbeddedResource Include="Resources\ShiinaRio1.png" />
     <EmbeddedResource Include="Resources\ShiinaRio2.png" />

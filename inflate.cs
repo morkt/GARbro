@@ -5,7 +5,7 @@
 
 using System;
 using System.IO;
-using ZLibNet;
+using System.IO.Compression;
 
 class Inflate
 {
@@ -16,10 +16,10 @@ class Inflate
         try
         {
             var input = File.Open (args[0], FileMode.Open, FileAccess.Read);
-//            input.Position = 2;
-            using (var stream = new ZLibStream (input, CompressionMode.Decompress))
-                using (var output = File.Create (args[1]))
-                    stream.CopyTo (output);
+            input.Position = 2;
+            using (var stream = new DeflateStream (input, CompressionMode.Decompress))
+            using (var output = File.Create (args[1]))
+                stream.CopyTo (output);
             Console.WriteLine ("{0} => {1}", args[0], args[1]);
         }
         catch (Exception X)

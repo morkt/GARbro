@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
-using ZLibNet;
+using GameRes.Compression;
 
 namespace GameRes.Formats.Seraphim
 {

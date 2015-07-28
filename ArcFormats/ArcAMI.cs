@@ -33,7 +33,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using ZLibNet;
+using GameRes.Compression;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
 
@@ -303,6 +303,7 @@ namespace GameRes.Formats
                 throw new FileFormatException ("GRP image encoder not available");
             bool is_grp = grp.Signature == FormatCatalog.ReadSignature (input);
             input.Position = 0;
+            var start = output.Position;
             using (var zstream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true))
             {
                 if (is_grp)
@@ -317,9 +318,8 @@ namespace GameRes.Formats
                     grp.Write (zstream, image);
                     entry.UnpackedSize = (uint)zstream.TotalIn;
                 }
-                zstream.Flush();
-                return (uint)zstream.TotalOut;
             }
+            return (uint)(output.Position - start);
         }
 
         public override ResourceOptions GetDefaultOptions ()

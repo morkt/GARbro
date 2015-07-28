@@ -28,7 +28,7 @@ using System.IO;
 using System.ComponentModel.Composition;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
-using ZLibNet;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats
