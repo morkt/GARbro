@@ -94,5 +94,75 @@ namespace GameRes.Formats.Elf
             }
             return new ArcFile (file, this, dir);
         }
+
+        /*
+        internal class IndexReader
+        {
+            ArcView     m_file;
+            int         m_count;
+            byte[]      m_first = new byte[0x108];
+
+            public const int MinNameLength = 0x10;
+            public const int MaxNameLength = 0x100;
+
+            public IndexReader (ArcView file)
+            {
+                m_file = file;
+                m_count = m_file.View.ReadInt32 (0);
+                m_file.View.Read (4, m_first, 0, m_first.Length);
+            }
+
+            ArcIndexScheme  m_scheme = new ArcIndexScheme();
+
+            public ArcIndexScheme Parse ()
+            {
+                if (m_count <= 0 || m_count > 0xfffff)
+                    return null;
+
+                uint supposed_first_offset = (uint)(m_count * (name_length + 8));
+
+                uint first_size = LittleEndian.ToUInt32 (first_entry, name_length);
+                uint first_offset = LittleEndian.ToUInt32 (first_entry, name_length+4);
+
+                uint supposed_offset_key = first_offset ^ supposed_first_offset;
+                int last_index_offset = 4 + (m_count - 1) * (name_length + 8);
+                uint last_size   = m_file.View.ReadUInt32 (last_index_offset + name_length);
+                uint last_offset = m_file.View.ReadUInt32 (last_index_offset + name_length + 4);
+                last_offset ^= supposed_offset_key;
+            }
+
+            bool ParseFirstEntry (int name_length)
+            {
+                int index_offset = 4;
+            }
+
+            public byte NameKey { get; private set; }
+
+            int GuessNameLength (int initial)
+            {
+                int name_pos = initial;
+                byte sym;
+                do
+                {
+                    do
+                    {
+                        sym = first_entry[name_pos++];
+                    }
+                    while (name_pos < MaxNameLength && sym != first_entry[name_pos]);
+                    if (MaxNameLength == name_pos)
+                        return 0;
+                    while (name_pos < MaxNameLength && sym == first_entry[name_pos])
+                    {
+                        ++name_pos;
+                    }
+                    if (MaxNameLength == name_pos && sym == first_entry[name_pos] && sym == first_entry[name_pos+1])
+                        return 0;
+                }
+                while (name_pos < MinNameLength || 0 != (name_pos & 1));
+                NameKey = sym;
+                return name_pos;
+            }
+        }
+        */
     }
 }
