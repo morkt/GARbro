@@ -263,6 +263,7 @@
                     <KeyBinding Key="Enter" Command="{x:Static local:Commands.OpenItem}"/>
                     <KeyBinding Gesture="Ctrl+E" Command="{x:Static local:Commands.ExploreItem}"/>
                     <KeyBinding Gesture="F2" Command="{x:Static local:Commands.RenameItem}"/>
+                    <KeyBinding Gesture="F3" Command="{x:Static local:Commands.CreateArchive}"/>
                     <KeyBinding Gesture="F4" Command="{x:Static local:Commands.ExtractItem}"/>
                     <KeyBinding Gesture="F5" Command="{x:Static local:Commands.Refresh}"/>
                     <KeyBinding Gesture="F6" Command="{x:Static local:Commands.ConvertMedia}"/>
