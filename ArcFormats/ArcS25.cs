@@ -96,6 +96,7 @@ namespace GameRes.Formats.ShiinaRio
                 OffsetY = arc.File.View.ReadInt32 (offset+12),
                 BPP     = 32,
                 FirstOffset = (uint)(offset + 0x14),
+                Incremental = 0 != (arc.File.View.ReadUInt32 (offset+0x10) & 0x80000000u),
             };
             using (var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset))
             using (var reader = new S25Format.Reader (input, info))
