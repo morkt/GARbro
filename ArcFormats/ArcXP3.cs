@@ -209,8 +209,7 @@ namespace GameRes.Formats.KiriKiri
                                         long segment_offset = header.ReadInt64();
                                         long segment_size   = header.ReadInt64();
                                         long segment_packed_size = header.ReadInt64();
-                                        if (segment_offset > file.MaxOffset || segment_size > file.MaxOffset
-                                            || segment_packed_size > file.MaxOffset)
+                                        if (segment_offset > file.MaxOffset || segment_packed_size > file.MaxOffset)
                                         {
                                             goto NextEntry;
                                         }
