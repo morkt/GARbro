@@ -559,10 +559,15 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public static Stream Open (string name)
         {
             var assembly = typeof(CachedResource).Assembly;
-            var stream = assembly.GetManifestResourceStream ("GameRes.Formats.Resources." + name);
-            if (null == stream)
-                throw new FileNotFoundException ("Resource not found", name);
-            return stream;
+            string qualified_name = "GameRes.Formats.Resources." + name;
+            Stream stream = assembly.GetManifestResourceStream (qualified_name);
+            if (null != stream)
+                return stream;
+            stream = assembly.GetManifestResourceStream (qualified_name + ".z");
+            if (null != stream)
+                using (stream)
+                    return ZLibCompressor.DeCompress (stream);
+            throw new FileNotFoundException ("Resource not found", name);
         }
 
         public byte[] Load (string name)
@@ -643,7 +648,9 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
 
         public static EncryptionScheme Create (int version, string name, string original_title, uint[] key2)
         {
-            string decode = version < 2490 ? "DecodeV1.bin" : "DecodeV249.bin";
+            string decode = version < 2410 ? "DecodeV1.bin"
+                          : version < 2490 ? "DecodeV241.bin"
+                          : "DecodeV249.bin";
             string image = version < 2390 ? "ShiinaRio1.png"
                          : version < 2490 ? "ShiinaRio3.jpg"
                          : "ShiinaRio4.jpg";
@@ -1216,6 +1223,14 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
 
             EncryptionScheme.Create (2480, "Bloody Rondo", "BLOODY†RONDO",
                 new uint[] { 0xFBFBF8F6, 0xFBE6EDF0, 0xFBF0FA, 0, 0 }),
+
+            EncryptionScheme.Create (2460, "Chikan Circle", "痴漢サークル",
+                new uint[] { 0x6B6B6E70, 0x6E724058, 0x587E736B, 0x00003653, 0 }),
+            EncryptionScheme.Create (2470, "Chikan Circle 2", "痴漢サークル2",
+                new uint[] { 0x6464617F, 0x617D4F57, 0x57717C64, 0x00003A5C, 0 }),
+            EncryptionScheme.Create (2470, "Chikan Circle 3", "痴漢サークル3",
+                new uint[] { 0x6565607E, 0x607C4E56, 0x56707D65, 0x00003A4A, 0 }),
+
             EncryptionScheme.Create (2450, "Chuuchuu Nurse", "ちゅうちゅうナース",
                 new uint[] { 0xB0D1ECD1, 0xECD1F7D1, 0xF7D1B0D1, 0x08D23AD0, 0x13D20BD0 }),
             EncryptionScheme.Create (2470, "Damatte Watashi no Muko ni Nare!", "黙って私のムコになれ！",
@@ -1230,6 +1245,8 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 new uint[] { 0x51879387, 0x869EBC9E, 0xF480DD93, 0xD993C981, 0xD793A093 }),
             EncryptionScheme.Create (2460, "Mikoko", "みここ",
                 new uint[] { 0x7DAC51AC, 0x51AC7DAC, 0x7DAC7DAC, 0x7DAC51AC, 0x51AC7DAC }),
+            EncryptionScheme.Create (2470, "Najimi no Oba-chan", "馴染みのオバちゃん",
+                new uint[] { 0x6161647A, 0x64784A52, 0x52747961, 0x00004C43, 0 }),
             EncryptionScheme.Create (2390, "Nagagutsu wo Haita Deco", "長靴をはいたデコ",
                 new uint[] { 0x486D887E, 0x0F7DBC73, 0x5D7D327D, 0x997C427D, 0x877EAD7C }),
             EncryptionScheme.Create (2470, "Nakadashi Trilogy", "なかだしトリロジー",
@@ -1252,6 +1269,8 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 new uint[] { 0x4DE2AB4D, 0x98AB5D46, 0x66496349, 0x485D685D, 0x5F4D4C5D }),
             EncryptionScheme.Create (2410, "Zansho Omimai Moushiagemasu", "残暑お見舞い申し上げます。",
                 new uint[] { 0x3A123012, 0x6C3A6C36, 0x3C36323C, 0x6C360F16, 0x369DD012 }),
+            EncryptionScheme.Create (2490, "Shojo Mama", "処女ママ",
+                new uint[] { 0x4B535453, 0xA15FA15F, 0, 0, 0 }),
             EncryptionScheme.Create ("ShiinaRio v2.49", 2490, 0x20, EncryptionScheme.DefaultCrypt,
                 new uint[] { 0x4B535453, 0xA15FA15F, 0, 0, 0 },
                 "ShiinaRio4.jpg", "ShiinaRio2.png", "DecodeV249.bin"),
