@@ -55,13 +55,15 @@ namespace GARbro.GUI
             GarExtract extractor = null;
             try
             {
+                string destination = Settings.Default.appLastDestination;
                 if (!ViewModel.IsArchive)
                 {
                     if (!entry.IsDirectory)
                     {
                         var arc_dir = CurrentPath;
                         var source = Path.Combine (arc_dir, entry.Name);
-                        string destination = arc_dir;
+                        if (string.IsNullOrEmpty (destination))
+                            destination = arc_dir;
                         // extract into directory named after archive
                         if (!string.IsNullOrEmpty (Path.GetExtension (entry.Name)))
                             destination = Path.GetFileNameWithoutExtension (source);
@@ -72,7 +74,8 @@ namespace GARbro.GUI
                 else if (null != m_app.CurrentArchive)
                 {
                     var vm = ViewModel as ArchiveViewModel;
-                    string destination = Path.GetDirectoryName (vm.Path);
+                    if (string.IsNullOrEmpty (destination))
+                        destination = Path.GetDirectoryName (vm.Path);
                     extractor = new GarExtract (this, vm.Path, m_app.CurrentArchive);
                     if (null == entry || (entry.Name == ".." && vm.SubDir == "")) // root entry
                         extractor.ExtractAll (destination);
@@ -150,6 +153,7 @@ namespace GARbro.GUI
             {
                 Directory.CreateDirectory (destination);
                 Directory.SetCurrentDirectory (destination);
+                Settings.Default.appLastDestination = destination;
             }
             finally
             {
