@@ -88,6 +88,7 @@
     <Compile Include="ArcGameDat.cs" />
     <Compile Include="ArcGSP.cs" />
     <Compile Include="ArcGsPack.cs" />
+    <Compile Include="ArcHED.cs" />
     <Compile Include="ArcIFL.cs" />
     <Compile Include="ArcIKS.cs" />
     <Compile Include="ArcInnGrey.cs" />
@@ -122,6 +123,7 @@
     <Compile Include="ArcRPA.cs" />
     <Compile Include="ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
+    <Compile Include="ImageHIZ.cs" />
     <Compile Include="ZLibStream.cs" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
