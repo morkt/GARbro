@@ -345,5 +345,17 @@ namespace GARbro.GUI.Properties {
                 this["appIgnoreConversionErrors"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string appLastDestination {
+            get {
+                return ((string)(this["appLastDestination"]));
+            }
+            set {
+                this["appLastDestination"] = value;
+            }
+        }
     }
 }
