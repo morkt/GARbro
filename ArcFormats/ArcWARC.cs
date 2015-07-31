@@ -1261,6 +1261,12 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 new uint[] { 0x31500050, 0x35507250, 0x87821350, 0x9D9E9780, 0x00009784 }),
             EncryptionScheme.Create (2470, "Ren'ai Saimin", "恋愛催眠",
                 new uint[] { 0x6E423C5D, 0x7A5C0947, 0x6E423C5D, 0x7A5C0947, 0x6E423C5D }),
+ 
+            EncryptionScheme.Create (2470, "Ran→Sem", "RAN→SEM～白濁デルモ妻のミイラ捕り～",
+                new uint[] { 0x63636678, 0x667A4850, 0x50767B63, 0x00004E5D, 0 }),
+            EncryptionScheme.Create (2470, "Rin x Sen", "RIN×SEN～白濁女教師と野郎ども～",
+                new uint[] { 0x6666637D, 0x637F4D55, 0x55737E66, 0x00004F58, 0 }),
+
             EncryptionScheme.Create (2480, "Sensei! Shite Ageru", "先生っ！ シてあげる",
                 new uint[] { 0x70562056, 0x87470744, 0x02449045, 0x76446644, 0x8F472F44 }),
             EncryptionScheme.Create (2480, "Tanetsuke Mura", "種憑け村",
