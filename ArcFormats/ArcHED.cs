@@ -50,7 +50,7 @@ namespace GameRes.Formats.Elf
         public override ArcFile TryOpen (ArcView file)
         {
             string pak_name = Path.ChangeExtension (file.Name, "pak");
-            if (!File.Exists (pak_name))
+            if (pak_name == file.Name || !File.Exists (pak_name))
                 return null;
             var file_map = GetFileMap (pak_name);
             if (null == file_map)
@@ -66,16 +66,16 @@ namespace GameRes.Formats.Elf
                     return null;
                 List<Entry> dir;
                 if ("cg" == base_name)
-                    dir = ReadCgPak (pak, file_map);
+                    dir = ReadCgPak (pak, file, file_map);
                 else
-                    dir = ReadVoicePak (pak, file_map);
+                    dir = ReadVoicePak (pak, file, file_map);
                 if (null == dir)
                     return null;
                 return new ArcFile (file, this, dir);
             }
         }
 
-        List<Entry> ReadCgPak (ArcView pak, List<string> file_map)
+        List<Entry> ReadCgPak (ArcView pak, ArcView bin, List<string> file_map)
         {
             uint index_offset = 8;
             uint index_size = (uint)file_map.Count * 8u;
@@ -87,13 +87,15 @@ namespace GameRes.Formats.Elf
                 var entry = FormatCatalog.Instance.CreateEntry (file_map[i]);
                 entry.Offset = pak.View.ReadUInt32 (index_offset);
                 entry.Size   = pak.View.ReadUInt32 (index_offset + 4);
+                if (!entry.CheckPlacement (bin.MaxOffset))
+                    return null;
                 dir.Add (entry);
                 index_offset += 8;
             }
             return dir;
         }
 
-        List<Entry> ReadVoicePak (ArcView pak, List<string> file_map)
+        List<Entry> ReadVoicePak (ArcView pak, ArcView bin, List<string> file_map)
         {
             uint index_offset = 8;
             uint index_size = (uint)file_map.Count * 0x18u;
@@ -105,6 +107,8 @@ namespace GameRes.Formats.Elf
                 var entry = FormatCatalog.Instance.CreateEntry (file_map[i]);
                 entry.Offset = pak.View.ReadUInt32 (index_offset);
                 entry.Size   = pak.View.ReadUInt32 (index_offset + 4);
+                if (!entry.CheckPlacement (bin.MaxOffset))
+                    return null;
                 dir.Add (entry);
                 index_offset += 0x18;
             }
