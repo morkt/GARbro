@@ -56,6 +56,8 @@ namespace GARbro.GUI
             try
             {
                 string destination = Settings.Default.appLastDestination;
+                if (!Directory.Exists (destination))
+                    destination = "";
                 if (!ViewModel.IsArchive)
                 {
                     if (!entry.IsDirectory)
