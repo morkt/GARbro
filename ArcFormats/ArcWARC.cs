@@ -628,7 +628,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public static EncryptionScheme Create (string name, int version, int entry_name_size,
                                                string key1, uint[] key2,
                                                string image, string region_src, string decode_bin = null,
-                                               string original_title = "")
+                                               string original_title = "", uint? decode_patch = null)
         {
             var scheme = new EncryptionScheme
             {
@@ -642,11 +642,18 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 Region = Resource.LoadRegion (region_src, 48, 48),
             };
             if (null != decode_bin)
+            {
                 scheme.DecodeBin = Resource.Load (decode_bin);
+                if (null != decode_patch)
+                {
+                    scheme.DecodeBin = scheme.DecodeBin.Clone() as byte[];
+                    LittleEndian.Pack (decode_patch.Value, scheme.DecodeBin, 0x1020);
+                }
+            }
             return scheme;
         }
 
-        public static EncryptionScheme Create (int version, string name, string original_title, uint[] key2)
+        public static EncryptionScheme Create (int version, string name, string original_title, uint[] key2, uint? decode_patch = null)
         {
             string decode = version < 2410 ? "DecodeV1.bin"
                           : version < 2490 ? "DecodeV241.bin"
@@ -656,7 +663,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                          : "ShiinaRio4.jpg";
             int entry_name_size = version <= 2390 ? 0x10 : 0x20;
             return Create (name, version, entry_name_size, DefaultCrypt, key2,
-                           image, "ShiinaRio2.png", decode, original_title);
+                           image, "ShiinaRio2.png", decode, original_title, decode_patch);
         }
 
         public static EncryptionScheme Create (int version, string name)
@@ -1227,9 +1234,9 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             EncryptionScheme.Create (2460, "Chikan Circle", "痴漢サークル",
                 new uint[] { 0x6B6B6E70, 0x6E724058, 0x587E736B, 0x00003653, 0 }),
             EncryptionScheme.Create (2470, "Chikan Circle 2", "痴漢サークル2",
-                new uint[] { 0x6464617F, 0x617D4F57, 0x57717C64, 0x00003A5C, 0 }),
+                new uint[] { 0x6464617F, 0x617D4F57, 0x57717C64, 0x00003A5C, 0 }, 0x20080108),
             EncryptionScheme.Create (2470, "Chikan Circle 3", "痴漢サークル3",
-                new uint[] { 0x6565607E, 0x607C4E56, 0x56707D65, 0x00003A4A, 0 }),
+                new uint[] { 0x6565607E, 0x607C4E56, 0x56707D65, 0x00003A4A, 0 }, 0x20090706),
 
             EncryptionScheme.Create (2450, "Chuuchuu Nurse", "ちゅうちゅうナース",
                 new uint[] { 0xB0D1ECD1, 0xECD1F7D1, 0xF7D1B0D1, 0x08D23AD0, 0x13D20BD0 }),
@@ -1263,7 +1270,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 new uint[] { 0x6E423C5D, 0x7A5C0947, 0x6E423C5D, 0x7A5C0947, 0x6E423C5D }),
  
             EncryptionScheme.Create (2470, "Ran→Sem", "RAN→SEM～白濁デルモ妻のミイラ捕り～",
-                new uint[] { 0x63636678, 0x667A4850, 0x50767B63, 0x00004E5D, 0 }),
+                new uint[] { 0x63636678, 0x667A4850, 0x50767B63, 0x00004E5D, 0 }, 0x20100427),
             EncryptionScheme.Create (2470, "Rin x Sen", "RIN×SEN～白濁女教師と野郎ども～",
                 new uint[] { 0x6666637D, 0x637F4D55, 0x55737E66, 0x00004F58, 0 }),
 
