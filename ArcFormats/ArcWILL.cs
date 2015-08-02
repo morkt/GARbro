@@ -111,7 +111,8 @@ namespace GameRes.Formats.Will
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase)
+                && !entry.Name.EndsWith (".wsc", StringComparison.InvariantCultureIgnoreCase))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var data = new byte[entry.Size];
             arc.File.View.Read (entry.Offset, data, 0, entry.Size);
