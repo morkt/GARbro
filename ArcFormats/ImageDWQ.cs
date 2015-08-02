@@ -45,17 +45,19 @@ namespace GameRes.Formats.BlackCyc
 
         public static ResourceHeader Read (Stream file)
         {
-            var header = new ResourceHeader { Bytes = new byte[0x40] };
-            if (0x40 != file.Read (header.Bytes, 0, 0x40))
+            var header = new byte[0x40];
+            if (0x40 != file.Read (header, 0, 0x40))
                 return null;
 
-            var header_string = Encoding.ASCII.GetString (header.Bytes, 0x30, 0x10);
+            var header_string = Encoding.ASCII.GetString (header, 0x30, 0x10);
             var match = PackTypeRe.Match (header_string);
             if (!match.Success)
                 return null;
-            header.PackType = ushort.Parse (match.Groups[1].Value);
-            header.AType = match.Groups[2].Value.Length > 0;
-            return header;
+            return new ResourceHeader {
+                Bytes = header,
+                PackType = ushort.Parse (match.Groups[1].Value),
+                AType = match.Groups[2].Value.Length > 0,
+            };
         }
     }
 
