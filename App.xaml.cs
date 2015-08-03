@@ -67,6 +67,12 @@ namespace GARbro.GUI
             Trace.AutoFlush = true;
 #endif
             Trace.WriteLine ("ApplicationStartup --------------------------------", "GARbro.GUI.App");
+            this.DispatcherUnhandledException += (s, args) =>
+            {
+                Trace.WriteLine (string.Format ("Unhandled exception caught: {1}", args.Exception.Message),
+                                 "GARbro.GUI.App");
+                Trace.WriteLine (args.Exception.StackTrace, "Stack trace");
+            };
             try
             {
                 if (0 != e.Args.Length)
@@ -85,7 +91,7 @@ namespace GARbro.GUI
             if (string.IsNullOrEmpty (InitPath))
                 InitPath = Directory.GetCurrentDirectory();
 
-           CurrentPath = "";
+            CurrentPath = "";
         }
 
         void ApplicationExit (object sender, ExitEventArgs e)
