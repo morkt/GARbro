@@ -138,12 +138,6 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             }
         }
 
-        private void Dump (string name, byte[] data)
-        {
-            using (var dump = File.Create (name))
-                dump.Write (data, 0, data.Length);
-        }
-
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var warc = arc as WarcFile;
