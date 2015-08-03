@@ -1,0 +1,17 @@
+﻿<Window x:Class="GARbro.GUI.EnterMaskDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:GARbro.GUI.Strings"
+        xmlns:ctl="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+        Title="{x:Static s:guiStrings.TextSelectFiles}" SizeToContent="WidthAndHeight" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <StackPanel Orientation="Vertical" Margin="10">
+        <TextBlock Text="{x:Static s:guiStrings.LabelEnterMask}"/>
+        <TextBox Name="Mask"/>
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Width="75" Height="25" Content="{x:Static s:guiStrings.ButtonOK}" IsDefault="True" Margin="0,0,10,0" Click="Button_Click"/>
+            <Button Width="75" Height="25" Content="{x:Static s:guiStrings.ButtonCancel}" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
