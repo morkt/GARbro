@@ -45,6 +45,7 @@ using System.Collections.Specialized;
 using System.Collections.ObjectModel;
 using Microsoft.Win32;
 using NAudio.Wave;
+using System.Text.RegularExpressions;
 
 namespace GARbro.GUI
 {
@@ -394,6 +395,21 @@ namespace GARbro.GUI
             if (entry == null)
                 return;
             PreviewEntry (entry.Source);
+        }
+
+        EntryViewModel m_last_selected = null;
+
+        void lv_SelectionChanged (object sender, SelectionChangedEventArgs args)
+        {
+            var lv = sender as ListView;
+            if (null == lv)
+                return;
+            var item = lv.SelectedItem as EntryViewModel;
+            if (item != null && m_last_selected != item)
+            {
+                m_last_selected = item;
+                PreviewEntry (item.Source);
+            }
         }
 
         void lvi_DoubleClick (object sender, MouseButtonEventArgs args)
@@ -1044,6 +1060,54 @@ namespace GARbro.GUI
         }
 
         /// <summary>
+        /// Select files matching mask.
+        /// </summary>
+        void AddSelectionExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var mask_list = new SortedSet<string>();
+            foreach (var entry in ViewModel)
+            {
+                var ext = Path.GetExtension (entry.Name).ToLowerInvariant();
+                if (!string.IsNullOrEmpty (ext))
+                    mask_list.Add ("*" + ext);
+            }
+            var selection = new EnterMaskDialog (mask_list);
+            selection.Owner = this;
+            var result = selection.ShowDialog();
+            if (!result.Value)
+                return;
+            if ("*.*" == selection.Mask.Text)
+            {
+                CurrentDirectory.SelectAll();
+                return;
+            }
+            var mask = Regex.Escape (selection.Mask.Text).Replace (@"\*", ".*").Replace (@"\?", ".");
+            var glob = new Regex ("^"+mask+"$", RegexOptions.IgnoreCase);
+            var matching = ViewModel.Where (entry => glob.IsMatch (entry.Name));
+            if (!matching.Any())
+            {
+                SetStatusText (string.Format (guiStrings.MsgNoMatching, selection.Mask.Text));
+                return;
+            }
+            int count = 0;
+            foreach (var item in matching)
+            {
+                if (!CurrentDirectory.SelectedItems.Contains (item))
+                {
+                    CurrentDirectory.SelectedItems.Add (item);
+                    ++count;
+                }
+            }
+            if (count != 0)
+                SetStatusText (Localization.Format ("MsgSelectedFiles", count));
+        }
+
+        void SelectAllExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            CurrentDirectory.SelectAll();
+        }
+
+        /// <summary>
         /// Handle "Exit" command.
         /// </summary>
         void ExitExec (object sender, ExecutedRoutedEventArgs e)
@@ -1228,7 +1292,7 @@ namespace GARbro.GUI
             try
             {
                 string dirname = Path.GetDirectoryName (this.Text);
-                if (!string.IsNullOrEmpty (this.Text) && Directory.Exists (dirname))
+                if (!string.IsNullOrEmpty (dirname) && Directory.Exists (dirname))
                 {
                     foreach (var dir in Directory.GetDirectories (dirname))
                     {
@@ -1304,5 +1368,7 @@ namespace GARbro.GUI
         public static readonly RoutedCommand HideStatusBar = new RoutedCommand();
         public static readonly RoutedCommand HideMenuBar = new RoutedCommand();
         public static readonly RoutedCommand HideToolBar = new RoutedCommand();
+        public static readonly RoutedCommand AddSelection = new RoutedCommand();
+        public static readonly RoutedCommand SelectAll = new RoutedCommand();
     }
 }

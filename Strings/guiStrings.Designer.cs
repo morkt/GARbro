@@ -322,6 +322,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enter wildcard mask.
+        /// </summary>
+        public static string LabelEnterMask {
+            get {
+                return ResourceManager.GetString("LabelEnterMask", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Extract files from {0} to.
         /// </summary>
         public static string LabelExtractAllTo {
@@ -637,6 +646,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No entries matching &quot;{0}&quot;.
+        /// </summary>
+        public static string MsgNoMatching {
+            get {
+                return ResourceManager.GetString("MsgNoMatching", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No media files selected..
         /// </summary>
         public static string MsgNoMediaFiles {
@@ -663,6 +681,24 @@ namespace GARbro.GUI.Strings {
         public static string MsgReady {
             get {
                 return ResourceManager.GetString("MsgReady", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} file added to selection.
+        /// </summary>
+        public static string MsgSelectedFiles1 {
+            get {
+                return ResourceManager.GetString("MsgSelectedFiles1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} files added to selection.
+        /// </summary>
+        public static string MsgSelectedFiles2 {
+            get {
+                return ResourceManager.GetString("MsgSelectedFiles2", resourceCulture);
             }
         }
         
@@ -933,6 +969,15 @@ namespace GARbro.GUI.Strings {
         public static string TextSaveImagesAs {
             get {
                 return ResourceManager.GetString("TextSaveImagesAs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select files.
+        /// </summary>
+        public static string TextSelectFiles {
+            get {
+                return ResourceManager.GetString("TextSelectFiles", resourceCulture);
             }
         }
         

@@ -133,6 +133,9 @@
       <DependentUpon>CreateArchive.xaml</DependentUpon>
     </Compile>
     <Compile Include="DragScroll.cs" />
+    <Compile Include="EnterMaskDialog.xaml.cs">
+      <DependentUpon>EnterMaskDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ExtractArchive.xaml.cs">
       <DependentUpon>ExtractArchive.xaml</DependentUpon>
     </Compile>
@@ -173,6 +176,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CreateArchive.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EnterMaskDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -426,4 +426,19 @@ Overwrite?</value>
   <data name="LabelSkipFailures" xml:space="preserve">
     <value>Skip incovertible files.</value>
   </data>
+  <data name="MsgNoMatching" xml:space="preserve">
+    <value>No entries matching "{0}"</value>
+  </data>
+  <data name="MsgSelectedFiles1" xml:space="preserve">
+    <value>{0} file added to selection</value>
+  </data>
+  <data name="MsgSelectedFiles2" xml:space="preserve">
+    <value>{0} files added to selection</value>
+  </data>
+  <data name="LabelEnterMask" xml:space="preserve">
+    <value>Enter wildcard mask</value>
+  </data>
+  <data name="TextSelectFiles" xml:space="preserve">
+    <value>Select files</value>
+  </data>
 </root>

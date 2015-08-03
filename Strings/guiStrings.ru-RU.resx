@@ -444,4 +444,22 @@
   <data name="TextAudioConversion" xml:space="preserve">
     <value>Аудио-файлы будут преобразованы в WAV, MP3 или OGG.</value>
   </data>
+  <data name="MsgNoMatching" xml:space="preserve">
+    <value>Нет файлов, подходящих под маску "{0}"</value>
+  </data>
+  <data name="MsgSelectedFiles1" xml:space="preserve">
+    <value>{0} файл добавлен к выбранным</value>
+  </data>
+  <data name="MsgSelectedFiles2" xml:space="preserve">
+    <value>{0} файла добавлено к выбранным</value>
+  </data>
+  <data name="MsgSelectedFiles3" xml:space="preserve">
+    <value>{0} файлов добавлено к выбранным</value>
+  </data>
+  <data name="LabelEnterMask" xml:space="preserve">
+    <value>Маска для имён файлов</value>
+  </data>
+  <data name="TextSelectFiles" xml:space="preserve">
+    <value>Выбрать файлы</value>
+  </data>
 </root>
