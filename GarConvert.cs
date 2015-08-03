@@ -173,7 +173,7 @@ namespace GARbro.GUI
                     if (source_ext == source_format)
                         return;
                     string output_name = Path.ChangeExtension (filename, source_format);
-                    using (var output = File.Create (output_name))
+                    using (var output = CreateNewFile (output_name))
                     {
                         input.Source.Position = 0;
                         input.Source.CopyTo (output);
@@ -184,7 +184,7 @@ namespace GARbro.GUI
                     if (source_ext == "wav")
                         return;
                     string output_name = Path.ChangeExtension (filename, "wav");
-                    using (var output = File.Create (output_name))
+                    using (var output = CreateNewFile (output_name))
                         WavFormat.Write (input, output);
                 }
             }
@@ -204,7 +204,7 @@ namespace GARbro.GUI
                     return;
                 try
                 {
-                    using (var output = File.Create (target_name))
+                    using (var output = CreateNewFile (target_name))
                         m_image_format.Write (output, image);
                 }
                 catch // delete destination file on conversion failure
@@ -212,6 +212,31 @@ namespace GARbro.GUI
                     File.Delete (target_name);
                     throw;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Creates new file with specified filename, or, if it's already exists, tries to open
+        /// files named "FILENAME.1.EXT", "FILENAME.2.EXT" and so on.
+        /// <exception cref="System.IOException">Throws exception after 100th failed attempt.</exception>
+        /// </summary>
+
+        public static Stream CreateNewFile (string filename)
+        {
+            string name = filename;
+            var ext = new Lazy<string> (() => Path.GetExtension (filename));
+            for (int attempt = 1; ; ++attempt)
+            {
+                try
+                {
+                    return File.Open (name, FileMode.CreateNew);
+                }
+                catch (IOException) // file already exists
+                {
+                    if (100 == attempt) // limit number of attempts
+                        throw;
+                }
+                name = Path.ChangeExtension (filename, attempt.ToString()+ext.Value);
             }
         }
 

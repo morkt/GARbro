@@ -305,7 +305,7 @@ namespace GARbro.GUI
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretImage, entry.Name));
                 file.Position = 0;
                 string target_ext = target_format.Extensions.First();
-                string outname = Path.ChangeExtension (entry.Name, target_ext);
+                string outname = FindUniqueFileName (entry.Name, target_ext);
                 if (src_format.Item1 == target_format)
                 {
                     // source format is the same as a target, copy file as is
@@ -371,7 +371,7 @@ namespace GARbro.GUI
             string source_format = input.SourceFormat;
             if (GarConvertMedia.CommonAudioFormats.Contains (source_format))
             {
-                string output_name = Path.ChangeExtension (entry_name, source_format);
+                string output_name = FindUniqueFileName (entry_name, source_format);
                 using (var output = ArchiveFormat.CreateFile (output_name))
                 {
                     input.Source.Position = 0;
@@ -380,10 +380,23 @@ namespace GARbro.GUI
             }
             else
             {
-                string output_name = Path.ChangeExtension (entry_name, "wav");
+                string output_name = FindUniqueFileName (entry_name, "wav");
                 using (var output = ArchiveFormat.CreateFile (output_name))
                     GarConvertMedia.WavFormat.Write (input, output);
             }
+        }
+
+        public static string FindUniqueFileName (string source_filename, string target_ext)
+        {
+            string ext = target_ext;
+            for (int attempt = 1; attempt < 100; ++attempt)
+            {
+                string filename = Path.ChangeExtension (source_filename, ext);
+                if (!File.Exists (filename))
+                    return filename;
+                ext = string.Format ("{0}.{1}", attempt, target_ext);
+            }
+            throw new IOException ("File aready exists");
         }
 
         void OnExtractComplete (object sender, RunWorkerCompletedEventArgs e)
