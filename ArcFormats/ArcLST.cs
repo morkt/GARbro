@@ -105,8 +105,6 @@ namespace GameRes.Formats.Nexton
             key |= key << 8;
             key |= key << 16;
             int count = (int)(lst.View.ReadUInt32 (0) ^ key);
-            if (0 == count)
-                return null;
             if (count <= 0 || (4 + count*0x4c) > lst.MaxOffset)
                 return null;
             var cp932 = Encodings.cp932.WithFatalFallback();
