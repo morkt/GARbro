@@ -56,55 +56,29 @@ namespace GameRes.Formats.Tactics
 
         public ArcOpener ()
         {
-            Extensions = new string[] { "arc" };
+            Extensions = new string[] { "arc", "adf" };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "ICS_ARC_FILE"))
                 return null;
-            uint packed_size = file.View.ReadUInt32 (0x10);
-            uint unpacked_size = file.View.ReadUInt32 (0x14);
-            int count = file.View.ReadInt32 (0x18);
-            if (!IsSaneCount (count))
-                return null;
 
-            var index = new byte[unpacked_size];
-            using (var input = file.CreateStream (0x20, packed_size))
-            using (var xored = new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read))
-            using (var lzss = new LzssStream (xored))
-                lzss.Read (index, 0, index.Length);
-
-            int index_offset = Array.IndexOf (index, (byte)0);
-            if (-1 == index_offset || 0 == index_offset)
+            var reader = new IndexReader (file);
+            var dir = reader.ReadIndex();
+            if (null == dir)
                 return null;
-            var password = index.Take (index_offset++).ToArray();
-            long base_offset = 0x20 + packed_size;
-            
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
-            {
-                var entry = new PackedEntry();
-                entry.Offset = LittleEndian.ToUInt32 (index, index_offset) + base_offset;
-                entry.Size   = LittleEndian.ToUInt32 (index, index_offset + 4);
-                entry.UnpackedSize = LittleEndian.ToUInt32 (index, index_offset + 8);
-                entry.IsPacked = entry.UnpackedSize != 0;
-                int name_len = LittleEndian.ToInt32 (index, index_offset + 0xC);
-                entry.Name = Encodings.cp932.GetString (index, index_offset+0x18, name_len);
-                entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-                index_offset += 0x18 + name_len;
-            }
-            return new TacticsArcFile (file, this, dir, password);
+            return new TacticsArcFile (file, this, dir, reader.Password);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var tarc = arc as TacticsArcFile;
-            if (null == tarc)
+            var tent = entry as PackedEntry;
+            if (null == tarc || null == tarc.Password && !tent.IsPacked)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
+            if (null == tarc.Password)
+                return new LzssStream (arc.File.CreateStream (entry.Offset, entry.Size));
 
             var data = new byte[entry.Size];
             arc.File.View.Read (entry.Offset, data, 0, entry.Size);
@@ -116,10 +90,125 @@ namespace GameRes.Formats.Tactics
                     p = 0;
             }
             var input = new MemoryStream (data);
-            var tent = entry as PackedEntry;
             if (null == tent || !tent.IsPacked)
                 return input;
             return new LzssStream (input);
+        }
+
+        internal class IndexReader
+        {
+            ArcView         m_file;
+            uint            m_packed_size;
+            uint            m_unpacked_size;
+            int             m_count;
+            byte[]          m_index;
+            Lazy<List<Entry>> m_dir;
+
+            public byte[] Password { get; private set; }
+
+            public IndexReader (ArcView file)
+            {
+                m_file = file;
+                m_packed_size = m_file.View.ReadUInt32 (0x10);
+                m_unpacked_size = m_file.View.ReadUInt32 (0x14);
+                m_count = m_file.View.ReadInt32 (0x18);
+                m_dir = new Lazy<List<Entry>> (() => new List<Entry> (m_count));
+            }
+
+            public List<Entry> ReadIndex ()
+            {
+                if (!IsSaneCount (m_count) || m_packed_size+0x20L > m_file.MaxOffset)
+                    return null;
+                m_index = new byte[m_unpacked_size];
+                using (var input = m_file.CreateStream (0x20, m_packed_size))
+                {
+                    try
+                    {
+                        if (ReadV0 (input))
+                            return m_dir.Value;
+                    }
+                    catch { /* ignore V0 parse errors, try V1 */ }
+
+                    input.Position = 0;
+                    if (ReadV1 (input))
+                        return m_dir.Value;
+                    return null;
+                }
+            }
+
+            bool ReadV1 (Stream input)
+            {
+                // NOTE CryptoStream will close an input stream
+                using (var xored = new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read))
+                using (var lzss = new LzssStream (xored))
+                    lzss.Read (m_index, 0, m_index.Length);
+
+                int index_offset = Array.IndexOf (m_index, (byte)0);
+                if (-1 == index_offset || 0 == index_offset)
+                    return false;
+                Password = m_index.Take (index_offset++).ToArray();
+                long base_offset = 0x20 + m_packed_size;
+
+                for (int i = 0; i < m_count; ++i)
+                {
+                    var entry = new PackedEntry();
+                    entry.Offset = LittleEndian.ToUInt32 (m_index, index_offset) + base_offset;
+                    entry.Size   = LittleEndian.ToUInt32 (m_index, index_offset + 4);
+                    entry.UnpackedSize = LittleEndian.ToUInt32 (m_index, index_offset + 8);
+                    entry.IsPacked = entry.UnpackedSize != 0;
+                    if (!entry.CheckPlacement (m_file.MaxOffset))
+                        return false;
+                    int name_len = LittleEndian.ToInt32 (m_index, index_offset + 0xC);
+                    entry.Name = Encodings.cp932.GetString (m_index, index_offset+0x18, name_len);
+                    entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                    m_dir.Value.Add (entry);
+                    index_offset += 0x18 + name_len;
+                }
+                return true;
+            }
+
+            bool ReadV0 (Stream input)
+            {
+                long current_offset = 0x20 + m_packed_size;
+                uint offset_table_size = (uint)m_count * 0x10;
+                if (offset_table_size > m_file.View.Reserve (current_offset, offset_table_size))
+                    return false;
+
+                using (var lzss = new LzssStream (input, LzssMode.Decompress, true))
+                    lzss.Read (m_index, 0, m_index.Length);
+
+                for (int i = 0; i < m_index.Length; ++i)
+                {
+                    m_index[i] = (byte)(~m_index[i] - 5);
+                }
+                int index_offset = Array.IndexOf (m_index, (byte)0);
+                if (-1 == index_offset || 0 == index_offset)
+                    return false;
+                index_offset++;
+//                Password = m_index.Take (index_offset++).ToArray();
+
+                for (int i = 0; i < m_count && index_offset < m_index.Length; ++i)
+                {
+                    int name_end = Array.IndexOf (m_index, (byte)0, index_offset);
+                    if (-1 == name_end)
+                        name_end = m_index.Length;
+                    if (index_offset == name_end)
+                        return false;
+                    var entry = new PackedEntry();
+                    entry.Offset = m_file.View.ReadUInt32 (current_offset);
+                    entry.Size   = m_file.View.ReadUInt32 (current_offset+4);
+                    entry.UnpackedSize = m_file.View.ReadUInt32 (current_offset+8);
+                    entry.IsPacked = entry.UnpackedSize != 0;
+                    if (!entry.CheckPlacement (m_file.MaxOffset))
+                        return false;
+                    entry.Name = Encodings.cp932.GetString (m_index, index_offset, name_end-index_offset);
+                    entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                    m_dir.Value.Add (entry);
+                    index_offset = name_end+1;
+                    current_offset += 0x10;
+                }
+                return true;
+            }
         }
     }
 }
