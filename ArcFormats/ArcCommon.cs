@@ -401,4 +401,16 @@ namespace GameRes.Formats
             System.GC.SuppressFinalize (this);
         }
     }
+
+    public static class Dump
+    {
+        public static string DirectoryName = Environment.GetFolderPath (Environment.SpecialFolder.UserProfile);
+
+        [System.Diagnostics.Conditional("DEBUG")]
+        public static void Write (byte[] mem, string filename = "index.dat")
+        {
+            using (var dump = File.Create (Path.Combine (DirectoryName, filename)))
+                dump.Write (mem, 0, mem.Length);
+        }
+    }
 }
