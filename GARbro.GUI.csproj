@@ -126,6 +126,7 @@
     <Compile Include="ArcParameters.xaml.cs">
       <DependentUpon>ArcParameters.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AutoComplete.cs" />
     <Compile Include="ConvertMedia.xaml.cs">
       <DependentUpon>ConvertMedia.xaml</DependentUpon>
     </Compile>

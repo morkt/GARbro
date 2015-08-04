@@ -24,28 +24,25 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
-using System.Threading;
 using Microsoft.VisualBasic.FileIO;
 using GARbro.GUI.Properties;
 using GARbro.GUI.Strings;
 using GameRes;
 using Rnd.Windows;
-using System.Collections.Specialized;
-using System.Collections.ObjectModel;
 using Microsoft.Win32;
 using NAudio.Wave;
-using System.Text.RegularExpressions;
 
 namespace GARbro.GUI
 {
@@ -1247,66 +1244,6 @@ namespace GARbro.GUI
                 item.Visibility = Visibility.Collapsed;
             else
                 item.Visibility = Visibility.Visible;
-        }
-    }
-
-    /// <summary>
-    /// TextBox that uses filesystem as source for autocomplete.
-    /// </summary>
-    public class ExtAutoCompleteBox : AutoCompleteBox
-    {
-        public delegate void EnterKeyDownEvent (object sender, KeyEventArgs e);
-        public event EnterKeyDownEvent EnterKeyDown;
-
-        public ExtAutoCompleteBox ()
-        {
-            this.GotFocus += (s, e) => { IsTextBoxFocused = true; };
-            this.LostFocus += (s, e) => { IsTextBoxFocused = false; };
-        }
-
-        public bool IsTextBoxFocused
-        {
-            get { return (bool)GetValue (HasFocusProperty); }
-            private set { SetValue (HasFocusProperty, value); }
-        }
-
-        public static readonly DependencyProperty HasFocusProperty = 
-            DependencyProperty.RegisterAttached ("IsTextBoxFocused", typeof(bool), typeof(ExtAutoCompleteBox), new UIPropertyMetadata());
-
-        protected override void OnKeyDown (KeyEventArgs e)
-        {
-            base.OnKeyDown (e);
-            if (e.Key == Key.Enter)
-                RaiseEnterKeyDownEvent (e);
-        }
-
-        private void RaiseEnterKeyDownEvent (KeyEventArgs e)
-        {
-            if (EnterKeyDown != null)
-                EnterKeyDown (this, e);
-        }
-
-        protected override void OnPopulating (PopulatingEventArgs e)
-        {
-            var candidates = new List<string>();
-            try
-            {
-                string dirname = Path.GetDirectoryName (this.Text);
-                if (!string.IsNullOrEmpty (dirname) && Directory.Exists (dirname))
-                {
-                    foreach (var dir in Directory.GetDirectories (dirname))
-                    {
-                        if (dir.StartsWith (dirname, StringComparison.CurrentCultureIgnoreCase))
-                            candidates.Add (dir);
-                    }
-                }
-                this.ItemsSource = candidates;
-            }
-            catch
-            {
-                // ignore filesystem errors
-            }
-            base.OnPopulating (e);
         }
     }
 
