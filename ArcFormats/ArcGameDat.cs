@@ -81,5 +81,23 @@ namespace GameRes.Formats.Pajamas
             }
             return new ArcFile (file, this, dir);
         }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!entry.Name.Equals ("textdata.bin", StringComparison.InvariantCultureIgnoreCase))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            if (!Binary.AsciiEqual (data, 0, "PJADV"))
+            {
+                byte key = 0xC5;
+                for (int i = 0; i < data.Length; ++i)
+                {
+                    data[i] ^= key;
+                    key += 0x5C;
+                }
+            }
+            return new MemoryStream (data);
+        }
     }
 }
