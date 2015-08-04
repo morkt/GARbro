@@ -300,8 +300,8 @@ namespace GameRes.Formats
         ushort[] rhs = new ushort[512];
         ushort token = 256;
 
-        int input_pos;
-        int remaining;
+        int m_input_pos;
+        int m_remaining;
         int m_cached_bits;
         int m_cache;
 
@@ -309,8 +309,8 @@ namespace GameRes.Formats
         {
             m_src = src;
             m_dst = dst;
-            input_pos = index;
-            remaining = length;
+            m_input_pos = index;
+            m_remaining = length;
             m_cached_bits = 0;
             m_cache = 0;
         }
@@ -356,10 +356,12 @@ namespace GameRes.Formats
 
         uint GetBits (int n)
         {
-            while ( n > m_cached_bits )
+            while (n > m_cached_bits)
             {
-                int v = m_src[input_pos++];
-                --remaining;
+                if (0 == m_remaining)
+                    throw new ApplicationException ("Invalid huffman-compressed stream");
+                int v = m_src[m_input_pos++];
+                --m_remaining;
                 m_cache = v | (m_cache << 8);
                 m_cached_bits += 8;
             }
