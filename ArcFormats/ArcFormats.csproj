@@ -69,6 +69,7 @@
     <Compile Include="ArcAil.cs" />
     <Compile Include="ArcALD.cs" />
     <Compile Include="ArcAMI.cs" />
+    <Compile Include="ArcAOS.cs" />
     <Compile Include="ArcAST.cs" />
     <Compile Include="ArcAVC.cs" />
     <Compile Include="ArcAZSys.cs" />
@@ -126,8 +127,10 @@
     <Compile Include="ArcSAF.cs" />
     <Compile Include="ArcVPK.cs" />
     <Compile Include="AudioVAW.cs" />
+    <Compile Include="EriReader.cs" />
     <Compile Include="ImageDWQ.cs" />
     <Compile Include="ImageHIZ.cs" />
+    <Compile Include="MioDecoder.cs" />
     <Compile Include="ZLibStream.cs" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
