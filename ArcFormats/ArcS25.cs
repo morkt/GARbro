@@ -43,11 +43,6 @@ namespace GameRes.Formats.ShiinaRio
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
-        public S25Opener ()
-        {
-            Extensions = new string[0];
-        }
-
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
