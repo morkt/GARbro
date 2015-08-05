@@ -2,7 +2,7 @@
 //! \date       Fri Jul 04 07:24:38 2014
 //! \brief      Targa image implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -58,11 +58,7 @@ namespace GameRes
                 throw new System.ArgumentException ("TgaFormat.Read should be supplied with TgaMetaData", "metadata");
             var reader = new Reader (stream, meta);
             var pixels = reader.Unpack();
-            var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height,
-                                              ImageData.DefaultDpiX, ImageData.DefaultDpiY,
-                                              reader.Format, reader.Palette, pixels, reader.Stride);
-            bitmap.Freeze();
-            return new ImageData (bitmap, meta);
+            return ImageData.Create (meta, reader.Format, reader.Palette, pixels, reader.Stride);
         }
 
         public override void Write (Stream stream, ImageData image)
@@ -210,7 +206,7 @@ namespace GameRes
                 int colormap_size = meta.ColormapLength * meta.ColormapDepth / 8;
                 m_width  = (int)meta.Width;
                 m_height = (int)meta.Height;
-                m_stride = m_width * ((meta.BPP+7) / 8);
+                m_stride = m_width * ((Format.BitsPerPixel+7) / 8);
                 m_image_offset = meta.ColormapOffset;
                 if (1 == meta.ColormapType)
                 {
