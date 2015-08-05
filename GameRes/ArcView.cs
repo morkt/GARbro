@@ -371,6 +371,12 @@ namespace GameRes
                 return m_view.ReadByte (offset-m_offset);
             }
 
+            public sbyte ReadSByte (long offset)
+            {
+                Reserve (offset, 1);
+                return m_view.ReadSByte (offset-m_offset);
+            }
+
             public ushort ReadUInt16 (long offset)
             {
                 Reserve (offset, 2);
