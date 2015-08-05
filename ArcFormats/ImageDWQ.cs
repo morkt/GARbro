@@ -78,7 +78,13 @@ namespace GameRes.Formats.BlackCyc
 
         public DwqFormat ()
         {
-            Signatures = new uint[] { 0x4745504A, 0x20504D42, 0x20474E50, 0x4B434150 };
+            Signatures = new uint[] {
+                0x4745504A, // JPEG
+                0x20504D42, // BMP
+                0x20474E50, // PNG
+                0x4B434150, // PACKBMP
+                0x2B504D42, // BMP+MASK
+            };
         }
 
         static ImageFormat GetFormat (string tag)
@@ -94,6 +100,24 @@ namespace GameRes.Formats.BlackCyc
             var header = ResourceHeader.Read (stream);
             if (null == header)
                 return null;
+            int packed_size;
+            switch (header.PackType)
+            {
+            case 0: // BMP
+            case 5: // JPEG
+            case 8: // PNG
+                packed_size = (int)(stream.Length-0x40);
+                break;
+
+            case 2: // BMP+MASK
+            case 3: // PACKBMP+MASK
+            case 7: // JPEG+MASK
+                packed_size = LittleEndian.ToInt32 (header.Bytes, 0x20);
+                break;
+
+            default: // unknown format
+                return null;
+            }
             return new DwqMetaData
             {
                 Width  = LittleEndian.ToUInt32 (header.Bytes, 0x24),
@@ -113,43 +137,38 @@ namespace GameRes.Formats.BlackCyc
                 throw new ArgumentException ("DwqFormat.Read should be supplied with DwqMetaData", "info");
 
             BitmapSource bitmap = null;
-            switch (meta.PackType)
+            using (var input = new StreamRegion (stream, 0x40, meta.PackedSize, true))
             {
-            case 5: // JPEG
-                using (var jpeg = new StreamRegion (stream, 0x40, stream.Length-0x40, true))
-                    return JpegFormat.Value.Read (jpeg, info);
-
-            case 8: // PNG
-                using (var png = new StreamRegion (stream, 0x40, stream.Length-0x40, true))
-                    return PngFormat.Value.Read (png, info);
-
-            case 0: // BMP
-                using (var bmp = new StreamRegion (stream, 0x40, stream.Length-0x40, true))
+                switch (meta.PackType)
                 {
-                    var decoder = new BmpBitmapDecoder (bmp, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                    // non-conforming BMP, flip image vertically
-                    bitmap = new TransformedBitmap (decoder.Frames[0], new ScaleTransform { ScaleY = -1 });
-                    return new ImageData (bitmap, info);
-                }
+                case 5: // JPEG
+                    return JpegFormat.Value.Read (input, info);
 
-            case 7: // JPEG+MASK
-                using (var jpeg = new StreamRegion (stream, 0x40, meta.PackedSize, true))
-                {
-                    var decoder = new JpegBitmapDecoder (jpeg, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                    bitmap = decoder.Frames[0];
-                }
-                break;
+                case 8: // PNG
+                    return PngFormat.Value.Read (input, info);
 
-            case 3: // PACKBMP+MASK
-                using (var bmp = new StreamRegion (stream, 0x40, meta.PackedSize, true))
-                {
-                    var reader = new DwqBmpReader (bmp, meta);
-                    reader.Unpack();
-                    bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height,
-                                ImageData.DefaultDpiX, ImageData.DefaultDpiY,
-                                reader.Format, reader.Palette, reader.Data, reader.Stride);
+                case 0: // BMP
+                case 2: // BMP+MASK
+                    bitmap = ReadFuckedUpBmpImage (input, info);
+                    break;
+
+                case 7: // JPEG+MASK
+                    {
+                        var decoder = new JpegBitmapDecoder (input, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                        bitmap = decoder.Frames[0];
+                        break;
+                    }
+
+                case 3: // PACKBMP+MASK
+                    {
+                        var reader = new DwqBmpReader (input, meta);
+                        reader.Unpack();
+                        bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height,
+                                    ImageData.DefaultDpiX, ImageData.DefaultDpiY,
+                                    reader.Format, reader.Palette, reader.Data, reader.Stride);
+                        break;
+                    }
                 }
-                break;
             }
             if (null == bitmap)
                 throw new NotImplementedException();
@@ -170,7 +189,7 @@ namespace GameRes.Formats.BlackCyc
                             int A = (color.R + color.G + color.B) / 3;
                             alpha[i] = (byte)A;
                         }
-                        bitmap = ApplyAlphaChannel (bitmap, reader.Data);
+                        bitmap = ApplyAlphaChannel (bitmap, alpha);
                     }
                 }
             }
@@ -199,6 +218,39 @@ namespace GameRes.Formats.BlackCyc
             return BitmapSource.Create (bitmap.PixelWidth, bitmap.PixelHeight,
                         ImageData.DefaultDpiX, ImageData.DefaultDpiY,
                         PixelFormats.Bgra32, null, pixels, stride);
+        }
+
+        private BitmapSource ReadFuckedUpBmpImage (Stream file, ImageMetaData info)
+        {
+            var header = new byte[0x36];
+            if (header.Length != file.Read (header, 0, header.Length))
+                throw new InvalidFormatException();
+            int bpp = LittleEndian.ToUInt16 (header, 0x1c);
+            if (bpp != 24 && bpp != 32)
+            {
+                file.Position = 0;
+                var decoder = new BmpBitmapDecoder (file, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                // non-conforming BMP, flip image vertically
+                return new TransformedBitmap (decoder.Frames[0], new ScaleTransform { ScaleY = -1 });
+            }
+            int pixel_size = bpp / 8;
+            int stride = ((int)info.Width * pixel_size + 3) & ~3;
+            var pixels = new byte[stride * info.Height];
+            if (pixels.Length != file.Read (pixels, 0, pixels.Length))
+                throw new EndOfStreamException();
+            for (int row = 0; row < pixels.Length; row += stride)
+            {
+                for (int i = 2; i < stride; i += pixel_size)
+                {
+                    var t = pixels[row+i];
+                    pixels[row+i] = pixels[row+i-2];
+                    pixels[row+i-2] = t;
+                }
+            }
+            PixelFormat format = 32 == bpp ? PixelFormats.Bgr32 : PixelFormats.Bgr24;
+            return BitmapSource.Create ((int)info.Width, (int)info.Height,
+                                        ImageData.DefaultDpiX, ImageData.DefaultDpiY,
+                                        format, null, pixels, stride);
         }
     }
 
