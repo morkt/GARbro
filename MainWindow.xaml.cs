@@ -771,8 +771,8 @@ namespace GARbro.GUI
             vm = TryCreateViewModel (new_dir);
             if (null == vm)
             {
-                if (entry.Type != "archive")
-                    SystemOpen (new_dir);
+//                if (entry.Type != "archive")
+//                    SystemOpen (new_dir);
                 return;
             }
             SaveCurrentPosition();
