@@ -305,8 +305,8 @@ namespace GameRes
 
             //Fill the imports of this object
             container.ComposeParts (this);
-            AddResourceImpl (m_arc_formats);
             AddResourceImpl (m_image_formats);
+            AddResourceImpl (m_arc_formats);
             AddResourceImpl (m_audio_formats);
             AddResourceImpl (m_script_formats);
         }
