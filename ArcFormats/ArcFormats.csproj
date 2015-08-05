@@ -61,6 +61,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArcABM.cs" />
     <Compile Include="ArcADPACK.cs" />
     <Compile Include="ArcAdvCls.cs" />
     <Compile Include="ArcAdvSysT.cs" />
@@ -128,6 +129,7 @@
     <Compile Include="ArcVPK.cs" />
     <Compile Include="AudioVAW.cs" />
     <Compile Include="EriReader.cs" />
+    <Compile Include="ImageABM.cs" />
     <Compile Include="ImageDWQ.cs" />
     <Compile Include="ImageHIZ.cs" />
     <Compile Include="MioDecoder.cs" />
