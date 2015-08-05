@@ -87,10 +87,11 @@ namespace GameRes.Formats.Lilim
             var dir = new List<Entry> (count);
             long next_offset = file.View.ReadUInt32 (0x42);
             uint current_offset = 0x46;
+            string base_name = Path.GetFileNameWithoutExtension (file.Name);
             for (int i = 0; i < count; ++i)
             {
                 var entry = new AbmEntry {
-                    Name = i.ToString ("D4") + ".tga",
+                    Name = string.Format ("{0}#{1:D4}.tga", base_name, i),
                     Type = "image",
                     Offset = next_offset,
                     Index = i,
