@@ -43,13 +43,13 @@ namespace GameRes.Formats.Ail
 
         public DatOpener ()
         {
-            Extensions = new string[] { "dat" };
+            Extensions = new string[] { "dat", "snl" };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             long offset = 4+count*4;
             if (offset >= file.MaxOffset)
@@ -92,21 +92,22 @@ namespace GameRes.Formats.Ail
                 }
                 entry.Offset += extra;
                 entry.Size   -= extra;
+                uint signature;
                 if (entry.IsPacked)
                 {
                     file.View.Read (entry.Offset, preview, 0, (uint)preview.Length);
                     using (var input = new MemoryStream (preview))
                     {
                         LzssUnpack (input, sign_buf);
-                        uint signature = LittleEndian.ToUInt32 (sign_buf, 0);
-                        SetEntryType (entry, signature);
+                        signature = LittleEndian.ToUInt32 (sign_buf, 0);
                     }
                 }
                 else
                 {
-                    uint signature = file.View.ReadUInt32 (entry.Offset);
-                    SetEntryType (entry, signature);
+                    signature = file.View.ReadUInt32 (entry.Offset);
                 }
+                if (0 != signature)
+                    SetEntryType (entry, signature);
             }
             return new ArcFile (file, this, dir);
         }
