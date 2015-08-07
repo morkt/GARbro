@@ -124,7 +124,7 @@ namespace GameRes.Formats.BlackCyc
                 Height = LittleEndian.ToUInt32 (header.Bytes, 0x28),
                 BPP = 32,
                 BaseType = Encoding.ASCII.GetString (header.Bytes, 0, 0x10).TrimEnd(),
-                PackedSize = LittleEndian.ToInt32 (header.Bytes, 0x20),
+                PackedSize = packed_size,
                 PackType = header.PackType,
                 AType = header.AType,
             };
@@ -225,32 +225,47 @@ namespace GameRes.Formats.BlackCyc
             var header = new byte[0x36];
             if (header.Length != file.Read (header, 0, header.Length))
                 throw new InvalidFormatException();
+            int w = LittleEndian.ToInt32 (header, 0x12);
+            int h = LittleEndian.ToInt32 (header, 0x16);
+            if (w != info.Width || h != info.Height)
+                throw new InvalidFormatException();
+
             int bpp = LittleEndian.ToUInt16 (header, 0x1c);
-            if (bpp != 24 && bpp != 32)
+            PixelFormat format;
+            switch (bpp)
             {
-                file.Position = 0;
-                var decoder = new BmpBitmapDecoder (file, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                // non-conforming BMP, flip image vertically
-                return new TransformedBitmap (decoder.Frames[0], new ScaleTransform { ScaleY = -1 });
+            case 32: format = PixelFormats.Bgr32; break;
+            case 24: format = PixelFormats.Bgr24; break;
+            case 16: format = PixelFormats.Bgr565; break;
+            case 8:  format = PixelFormats.Indexed8; break;
+            default: throw new NotImplementedException();
+            }
+            BitmapPalette palette = null;
+            if (8 == bpp)
+            {
+                int colors = Math.Min (LittleEndian.ToInt32 (header, 0x2E), 0x100);
+                palette = DwqBmpReader.ReadPalette (file, colors);
             }
             int pixel_size = bpp / 8;
             int stride = ((int)info.Width * pixel_size + 3) & ~3;
             var pixels = new byte[stride * info.Height];
             if (pixels.Length != file.Read (pixels, 0, pixels.Length))
                 throw new EndOfStreamException();
-            for (int row = 0; row < pixels.Length; row += stride)
+            if (bpp >= 24)
             {
-                for (int i = 2; i < stride; i += pixel_size)
+                for (int row = 0; row < pixels.Length; row += stride)
                 {
-                    var t = pixels[row+i];
-                    pixels[row+i] = pixels[row+i-2];
-                    pixels[row+i-2] = t;
+                    for (int i = 2; i < stride; i += pixel_size)
+                    {
+                        var t = pixels[row+i];
+                        pixels[row+i] = pixels[row+i-2];
+                        pixels[row+i-2] = t;
+                    }
                 }
             }
-            PixelFormat format = 32 == bpp ? PixelFormats.Bgr32 : PixelFormats.Bgr24;
             return BitmapSource.Create ((int)info.Width, (int)info.Height,
                                         ImageData.DefaultDpiX, ImageData.DefaultDpiY,
-                                        format, null, pixels, stride);
+                                        format, palette, pixels, stride);
         }
     }
 
@@ -291,28 +306,28 @@ namespace GameRes.Formats.BlackCyc
             if (8 == bpp)
             {
                 int colors = Math.Min (LittleEndian.ToInt32 (header, 0x2E), 0x100);
-                ReadPalette (colors);
+                Palette = ReadPalette (m_input, colors);
             }
             uint data_position = LittleEndian.ToUInt32 (header, 0xA);
             m_input.Position = data_position;
             m_pixels = new byte[Stride*m_height];
         }
 
-        private void ReadPalette (int colors)
+        public static BitmapPalette ReadPalette (Stream input, int colors)
         {
             int palette_size = colors * 4;
             var palette_data = new byte[palette_size];
-            if (palette_size != m_input.Read (palette_data, 0, palette_size))
+            if (palette_size != input.Read (palette_data, 0, palette_size))
                 throw new InvalidFormatException();
             var palette = new Color[colors];
             for (int i = 0; i < palette.Length; ++i)
             {
-                byte r = palette_data[i*4];
+                byte r = palette_data[i*4+2];
                 byte g = palette_data[i*4+1];
-                byte b = palette_data[i*4+2];
+                byte b = palette_data[i*4];
                 palette[i] = Color.FromRgb (r, g, b);
             }
-            Palette = new BitmapPalette (palette);
+            return new BitmapPalette (palette);
         }
 
         public void Unpack () // sub_408990
