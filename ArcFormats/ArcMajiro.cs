@@ -34,17 +34,6 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Majiro
 {
-    internal class MajiroArchive : ArcFile
-    {
-        public uint Key { get; private set; }
-
-        public MajiroArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, uint key)
-            : base (arc, impl, dir)
-        {
-            Key = key;
-        }
-    }
-
     public class MajiroOptions : ResourceOptions
     {
         public uint    Key { get; set; }
@@ -56,7 +45,7 @@ namespace GameRes.Formats.Majiro
     {
         public override string Tag { get { return "MAJIRO"; } }
         public override string Description { get { return "Majiro game engine resource archive"; } }
-        public override uint Signature { get { return 0x696a614d; } }
+        public override uint Signature { get { return 0x696a614d; } } // 'Maji'
         public override bool IsHierarchic { get { return false; } }
         public override bool CanCreate { get { return true; } }
 
@@ -67,18 +56,15 @@ namespace GameRes.Formats.Majiro
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int version;
-            if (file.View.AsciiEqual (0, "MajiroArcV1.000\0"))
-                version = 1;
-            else if (file.View.AsciiEqual (0, "MajiroArcV2.000\0"))
-                version = 2;
-            else
+            if (!file.View.AsciiEqual (4, "roArcV"))
+                return null;
+            int version = file.View.ReadByte (0xA) - '0';
+            if (version < 1 || version > 3 || !file.View.AsciiEqual (0xB, ".000\0"))
                 return null;
             int count = file.View.ReadInt32 (16);
             uint names_offset = file.View.ReadUInt32 (20);
             uint data_offset = file.View.ReadUInt32 (24);
-            if (data_offset <= names_offset || count > 0xfffff || count < 0
-                || data_offset >= file.MaxOffset)
+            if (data_offset <= names_offset || data_offset >= file.MaxOffset || !IsSaneCount (count))
                 return null;
             int table_size = count + (1 == version ? 1 : 0);
             int entry_size = 4 * (version + 1);
@@ -92,7 +78,8 @@ namespace GameRes.Formats.Majiro
             file.View.Read (names_offset, names, 0, (uint)names_size);
             int names_pos = 0;
             int table_pos = 0x1c;
-            uint offset_next = file.View.ReadUInt32 (table_pos+4);
+            int hash_size = version < 3 ? 4 : 8;
+            uint offset_next = file.View.ReadUInt32 (table_pos+hash_size);
 
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
@@ -105,13 +92,13 @@ namespace GameRes.Formats.Majiro
                 names_size -= name_len+1;
                 names_pos = zero+1;
                 uint offset = offset_next;
-                offset_next = file.View.ReadUInt32 (table_pos + entry_size + 4);
+                offset_next = file.View.ReadUInt32 (table_pos + entry_size + hash_size);
                 var entry = FormatCatalog.Instance.CreateEntry (name);
                 entry.Offset = offset;
                 if (1 == version)
                     entry.Size = offset_next >= offset ? offset_next - offset : 0;
                 else
-                    entry.Size = file.View.ReadUInt32 (table_pos + 8);
+                    entry.Size = file.View.ReadUInt32 (table_pos + hash_size + 4);
                 table_pos += entry_size;
                 if (offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
                     return null;
