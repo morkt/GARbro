@@ -198,6 +198,8 @@ namespace GameRes.Utility
         /* Table of CRCs of all 8-bit messages. */
         private static readonly uint[] crc_table = InitializeTable();
 
+        public static uint[] Table { get { return crc_table; } }
+
         /* Make the table for a fast CRC. */
         private static uint[] InitializeTable ()
         {
