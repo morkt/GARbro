@@ -1061,42 +1061,49 @@ namespace GARbro.GUI
         /// </summary>
         void AddSelectionExec (object sender, ExecutedRoutedEventArgs e)
         {
-            var mask_list = new SortedSet<string>();
-            foreach (var entry in ViewModel)
+            try
             {
-                var ext = Path.GetExtension (entry.Name).ToLowerInvariant();
-                if (!string.IsNullOrEmpty (ext))
-                    mask_list.Add ("*" + ext);
-            }
-            var selection = new EnterMaskDialog (mask_list);
-            selection.Owner = this;
-            var result = selection.ShowDialog();
-            if (!result.Value)
-                return;
-            if ("*.*" == selection.Mask.Text)
-            {
-                CurrentDirectory.SelectAll();
-                return;
-            }
-            var mask = Regex.Escape (selection.Mask.Text).Replace (@"\*", ".*").Replace (@"\?", ".");
-            var glob = new Regex ("^"+mask+"$", RegexOptions.IgnoreCase);
-            var matching = ViewModel.Where (entry => glob.IsMatch (entry.Name));
-            if (!matching.Any())
-            {
-                SetStatusText (string.Format (guiStrings.MsgNoMatching, selection.Mask.Text));
-                return;
-            }
-            int count = 0;
-            foreach (var item in matching)
-            {
-                if (!CurrentDirectory.SelectedItems.Contains (item))
+                var ext_list = new SortedSet<string>();
+                foreach (var entry in ViewModel)
                 {
-                    CurrentDirectory.SelectedItems.Add (item);
-                    ++count;
+                    var ext = Path.GetExtension (entry.Name).ToLowerInvariant();
+                    if (!string.IsNullOrEmpty (ext))
+                        ext_list.Add (ext);
                 }
+                var selection = new EnterMaskDialog (ext_list.Select (ext => "*"+ext));
+                selection.Owner = this;
+                var result = selection.ShowDialog();
+                if (!result.Value)
+                    return;
+                if ("*.*" == selection.Mask.Text)
+                {
+                    CurrentDirectory.SelectAll();
+                    return;
+                }
+                var mask = Regex.Escape (selection.Mask.Text).Replace (@"\*", ".*").Replace (@"\?", ".");
+                var glob = new Regex ("^"+mask+"$", RegexOptions.IgnoreCase);
+                var matching = ViewModel.Where (entry => glob.IsMatch (entry.Name));
+                if (!matching.Any())
+                {
+                    SetStatusText (string.Format (guiStrings.MsgNoMatching, selection.Mask.Text));
+                    return;
+                }
+                int count = 0;
+                foreach (var item in matching)
+                {
+                    if (!CurrentDirectory.SelectedItems.Contains (item))
+                    {
+                        CurrentDirectory.SelectedItems.Add (item);
+                        ++count;
+                    }
+                }
+                if (count != 0)
+                    SetStatusText (Localization.Format ("MsgSelectedFiles", count));
             }
-            if (count != 0)
-                SetStatusText (Localization.Format ("MsgSelectedFiles", count));
+            catch (Exception X)
+            {
+                SetStatusText (X.Message);
+            }
         }
 
         void SelectAllExec (object sender, ExecutedRoutedEventArgs e)
