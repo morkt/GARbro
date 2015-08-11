@@ -245,6 +245,12 @@
   <data name="PDScrambleContents" xml:space="preserve">
     <value>Шифровать содержимое</value>
   </data>
+  <data name="RCTChoose" xml:space="preserve">
+    <value>Выберите наименование или введите пароль</value>
+  </data>
+  <data name="RCTNotice" xml:space="preserve">
+    <value>Изображение зашифровано.</value>
+  </data>
   <data name="RPALabelKey" xml:space="preserve">
     <value>32-битный ключ</value>
   </data>

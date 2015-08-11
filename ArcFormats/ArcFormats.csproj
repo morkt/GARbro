@@ -127,12 +127,18 @@
     <Compile Include="ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
     <Compile Include="ArcVPK.cs" />
+    <Compile Include="ArcXuse.cs" />
     <Compile Include="AudioVAW.cs" />
+    <Compile Include="AudioWPN.cs" />
+    <Compile Include="AudioWWA.cs" />
     <Compile Include="EriReader.cs" />
     <Compile Include="ImageABM.cs" />
     <Compile Include="ImageDWQ.cs" />
     <Compile Include="ImageHIZ.cs" />
     <Compile Include="MioDecoder.cs" />
+    <Compile Include="WidgetRCT.xaml.cs">
+      <DependentUpon>WidgetRCT.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ZLibStream.cs" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
@@ -385,6 +391,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="WidgetNPA.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WidgetRCT.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

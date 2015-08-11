@@ -393,5 +393,29 @@ namespace GameRes.Formats.Properties {
                 this["MCGLastKey"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string RCTPassword {
+            get {
+                return ((string)(this["RCTPassword"]));
+            }
+            set {
+                this["RCTPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string RCTTitle {
+            get {
+                return ((string)(this["RCTTitle"]));
+            }
+            set {
+                this["RCTTitle"] = value;
+            }
+        }
     }
 }

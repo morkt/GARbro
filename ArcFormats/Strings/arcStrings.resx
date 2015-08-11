@@ -325,4 +325,10 @@ Choose encryption scheme or enter a passphrase.</value>
   <data name="ISFIgnoreEncryption" xml:space="preserve">
     <value>Ignore encryption</value>
   </data>
+  <data name="RCTNotice" xml:space="preserve">
+    <value>Image is encrypted.</value>
+  </data>
+  <data name="RCTChoose" xml:space="preserve">
+    <value>Choose title or enter a password</value>
+  </data>
 </root>

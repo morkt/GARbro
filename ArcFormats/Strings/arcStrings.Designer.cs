@@ -525,6 +525,24 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose title or enter a password.
+        /// </summary>
+        public static string RCTChoose {
+            get {
+                return ResourceManager.GetString("RCTChoose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Image is encrypted..
+        /// </summary>
+        public static string RCTNotice {
+            get {
+                return ResourceManager.GetString("RCTNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Ren&apos;Py game engine archive.
         /// </summary>
         public static string RPADescription {

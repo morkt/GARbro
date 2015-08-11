@@ -2,7 +2,7 @@
 //! \date       Fri Aug 01 11:36:31 2014
 //! \brief      RCT/RC8 image format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -29,9 +29,11 @@ using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -46,12 +48,23 @@ namespace GameRes.Formats.Majiro
         public uint AddSize;
     }
 
+    internal class RctOptions : ResourceOptions
+    {
+        public string Password;
+    }
+
     [Export(typeof(ImageFormat))]
     public class RctFormat : ImageFormat
     {
         public override string Tag { get { return "RCT"; } }
         public override string Description { get { return "Majiro game engine RGB image format"; } }
         public override uint Signature { get { return 0x9a925a98; } }
+
+        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
+            { "Akatsuki no Goei",               "おぬぐり食べる？" },
+            { "Nagisa no",                      "青い空に向かって、溜息を一つこぼす。" },
+            { "White ~blanche comme la lune~",  "たった３枚の紙" },
+        };
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
@@ -99,6 +112,8 @@ namespace GameRes.Formats.Majiro
             }
         }
 
+        byte[] Key = null;
+
         public override ImageData Read (Stream file, ImageMetaData info)
         {
             var meta = info as RctMetaData;
@@ -110,22 +125,83 @@ namespace GameRes.Formats.Majiro
                 file.Position = meta.DataOffset;
                 byte[] data = new byte[meta.AddSize];
                 if (data.Length != file.Read (data, 0, data.Length))
-                    return null;
+                    throw new EndOfStreamException();
             }
             file.Position = meta.DataOffset + meta.AddSize;
             if (meta.IsEncrypted)
             {
-                throw new NotImplementedException ("RCT image decryption is not implemented");
+                if (null == Key)
+                {
+                    var password = QueryPassword();
+                    if (string.IsNullOrEmpty (password))
+                        throw new UnknownEncryptionScheme();
+                    Key = InitDecryptionKey (password);
+                }
+                byte[] data = new byte[meta.DataSize];
+                if (data.Length != file.Read (data, 0, data.Length))
+                    throw new EndOfStreamException();
+
+                for (int i = 0; i < data.Length; ++i)
+                {
+                    data[i] ^= Key[i & 0x3FF];
+                }
+                file = new MemoryStream (data);
             }
-            using (var reader = new Reader (file, meta))
+            try
             {
-                reader.Unpack();
-                byte[] pixels = reader.Data;
-                var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                    PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
-                bitmap.Freeze();
-                return new ImageData (bitmap, meta);
+                using (var reader = new Reader (file, meta))
+                {
+                    reader.Unpack();
+                    return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data, (int)meta.Width*3);
+                }
             }
+            catch
+            {
+                if (meta.IsEncrypted)
+                    Key = null; // probably incorrect encryption scheme caused exception, reset key
+                throw;
+            }
+        }
+
+        private byte[] InitDecryptionKey (string password)
+        {
+            byte[] bin_pass = Encodings.cp932.GetBytes (password);
+            uint crc32 = Crc32.Compute (bin_pass, 0, bin_pass.Length);
+            byte[] key_table = new byte[0x400];
+            unsafe
+            {
+                fixed (byte* key_ptr = key_table)
+                {
+                    uint* key32 = (uint*)key_ptr;
+                    for (int i = 0; i < 0x100; ++i)
+                        *key32++ = crc32 ^ Crc32.Table[(i + crc32) & 0xFF];
+                }
+            }
+            return key_table;
+        }
+
+        private string QueryPassword ()
+        {
+            var options = Query<RctOptions> (arcStrings.RCTNotice);
+            return options.Password;
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new RctOptions { Password = Settings.Default.RCTPassword };
+        }
+
+        public override ResourceOptions GetOptions (object widget)
+        {
+            var w = widget as GUI.WidgetRCT;
+            if (null != w)
+                Settings.Default.RCTPassword = w.Password.Text;
+            return GetDefaultOptions();
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetRCT();
         }
 
         public override void Write (Stream file, ImageData image)
