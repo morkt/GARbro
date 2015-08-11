@@ -84,7 +84,7 @@ namespace GameRes.Formats.Kaguya
         {
             string ari_name = Path.ChangeExtension (file.Name, "ari");
             List<Entry> dir = null;
-            if (File.Exists (ari_name))
+            if (file.Name != ari_name && File.Exists (ari_name))
                 dir = ReadAriIndex (file, ari_name);
             if (null == dir || 0 == dir.Count)
                 dir = BuildIndex (file);
@@ -269,7 +269,7 @@ namespace GameRes.Formats.Kaguya
                     return -1;
                 m_curbit = 0;
             }
-            return 0 == (m_curbyte & (1 << (7 - m_curbit++))) ? 0 : 1;
+            return (m_curbyte >> (7 - m_curbit++)) & 1;
         }
     }
 }
