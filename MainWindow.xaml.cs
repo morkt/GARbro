@@ -69,7 +69,7 @@ namespace GARbro.GUI
             m_recent_files = new LinkedList<string> (Settings.Default.appRecentFiles.Cast<string>().Take (MaxRecentFiles));
             RecentFilesMenu.ItemsSource = RecentFiles;
 
-            FormatCatalog.Instance.ParametersRequest += OnParametersRequest;
+            FormatCatalog.Instance.ParametersRequest += (s, e) => Dispatcher.Invoke (() => OnParametersRequest (s, e));
 
             CurrentDirectory.SizeChanged += (s, e) => {
                 if (e.WidthChanged)
@@ -1206,7 +1206,7 @@ namespace GARbro.GUI
 
         private void OnParametersRequest (object sender, ParametersRequestEventArgs e)
         {
-            var format = sender as ArchiveFormat;
+            var format = sender as IResource;
             if (null != format)
             {
                 var control = format.GetAccessWidget() as UIElement;
