@@ -38,29 +38,95 @@ namespace GameRes.Formats.NitroPlus
         public uint Key;
     }
 
+    internal class NitroPak : ArcFile
+    {
+        public int Version;
+
+        public NitroPak (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, int version)
+            : base (arc, impl, dir)
+        {
+            Version = version;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PAK/NITRO+"; } }
         public override string Description { get { return "Nitro+ resource archive"; } }
         public override uint     Signature { get { return 0x03; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         public PakOpener ()
         {
             Extensions = new string[] { "pak" };
+            Signatures = new uint[] { 2, 3 };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            byte[] name_buf = new byte[0x100];
+            int version = file.View.ReadInt32 (0);
+            List<Entry> dir = null;
+            if (2 == version)
+                dir = OpenPakV2 (file);
+            else if (3 == version)
+                dir = OpenPakV3 (file);
+            if (null == dir)
+                return null;
+            return new NitroPak (file, this, dir, version);
+        }
+
+        private List<Entry> OpenPakV2 (ArcView file)
+        {
+            int count = file.View.ReadInt32 (4);
+            if (!IsSaneCount (count))
+                return null;
+            int unpacked_size = file.View.ReadInt32 (8);
+            uint packed_size = file.View.ReadUInt32 (0xC);
+            var input = file.CreateStream (0x114, packed_size);
+            using (var header_stream = new ZLibStream (input, CompressionMode.Decompress))
+            using (var header = new BinaryReader (header_stream, Encoding.ASCII, true))
+            {
+                long base_offset = 0x114 + packed_size;
+                var name_buf = new byte[0x40];
+                var dir = new List<Entry> (count);
+                for (int i = 0; i < count; ++i)
+                {
+                    int name_length = header.ReadInt32();
+                    if (name_length <= 0)
+                        return null;
+                    if (name_length > name_buf.Length)
+                        name_buf = new byte[name_length];
+                    if (name_length != header.Read (name_buf, 0, name_length))
+                        return null;
+                    var name = Encodings.cp932.GetString (name_buf, 0, name_length);
+                    var entry = new PackedEntry { Name = name };
+                    entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                    entry.Offset = base_offset + header.ReadUInt32();
+                    entry.UnpackedSize = header.ReadUInt32();
+                    entry.Size = header.ReadUInt32();
+                    entry.IsPacked = header.ReadInt32() != 0;
+                    uint psize = header.ReadUInt32();
+                    if (entry.IsPacked)
+                        entry.Size = psize;
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                }
+                return dir;
+            }
+        }
+
+        private List<Entry> OpenPakV3 (ArcView file)
+        {
             if (0x110 > file.View.Reserve (4, 0x110))
                 return null;
 
             uint size_xor = file.View.ReadUInt32 (0x104);
             if (0x64 != size_xor)
                 return null;
+            byte[] name_buf = new byte[0x100];
             file.View.Read (4, name_buf, 0, 0x100);
             int name_len = 0;
             for (int i = 0; i < name_buf.Length; ++i)
@@ -77,7 +143,7 @@ namespace GameRes.Formats.NitroPlus
             uint header_key = GetKey (name_buf, name_len);
             uint unpacked = file.View.ReadUInt32 (0x108) ^ header_key;
             int count = (int)(file.View.ReadUInt32 (0x10c) ^ header_key);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
 
             var dir = new List<Entry> (count);
@@ -112,7 +178,7 @@ namespace GameRes.Formats.NitroPlus
                     entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                     dir.Add (entry);
                 }
-                return new ArcFile (file, this, dir);
+                return dir;
             }
         }
 
@@ -130,14 +196,37 @@ namespace GameRes.Formats.NitroPlus
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var pak_entry = entry as PakEntry;
-            if (null == pak_entry)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+            if (pak_entry != null)
+                return OpenV3Entry (arc, pak_entry);
+
+            var packed_entry = entry as PackedEntry;
+            if (packed_entry != null && packed_entry.IsPacked)
+                return UnpackV2Entry (arc, packed_entry);
+            return arc.File.CreateStream (entry.Offset, entry.Size);
+        }
+
+        private Stream UnpackV2Entry (ArcFile arc, PackedEntry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            try
+            {
+                return new ZLibStream (input, CompressionMode.Decompress);
+            }
+            catch
+            {
+                input.Dispose();
+                throw;
+            }
+        }
+
+        private Stream OpenV3Entry (ArcFile arc, PakEntry entry)
+        {
             uint enc_size = Math.Min (entry.Size, 0x10u);
             if (0 == enc_size)
                 return Stream.Null;
             var buf = new byte[enc_size];
             arc.File.View.Read (entry.Offset, buf, 0, enc_size);
-            uint key = pak_entry.Key;
+            uint key = entry.Key;
             for (int i = 0; i < buf.Length; ++i)
             {
                 buf[i] ^= (byte)key;
