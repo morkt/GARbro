@@ -101,6 +101,44 @@ namespace GameRes
             Extensions = new string[] { Tag.ToLowerInvariant() };
             Signatures = new uint[] { this.Signature };
         }
+
+        public virtual ResourceOptions GetDefaultOptions ()
+        {
+            return null;
+        }
+
+        public virtual ResourceOptions GetOptions (object widget)
+        {
+            return GetDefaultOptions();
+        }
+
+        public virtual object GetCreationWidget ()
+        {
+            return null;
+        }
+
+        public virtual object GetAccessWidget ()
+        {
+            return null;
+        }
+
+        protected OptType GetOptions<OptType> (ResourceOptions res_options) where OptType : ResourceOptions
+        {
+            var options = res_options as OptType;
+            if (null == options)
+                options = this.GetDefaultOptions() as OptType;
+            return options;
+        }
+
+        protected OptType Query<OptType> (string notice) where OptType : ResourceOptions
+        {
+            var args = new ParametersRequestEventArgs { Notice = notice };
+            FormatCatalog.Instance.InvokeParametersRequest (this, args);
+            if (!args.InputResult)
+                throw new OperationCanceledException();
+
+            return GetOptions<OptType> (args.Options);
+        }
     }
 
     public class ResourceOptions
@@ -195,44 +233,6 @@ namespace GameRes
                                     EntryCallback callback = null)
         {
             throw new NotImplementedException ("ArchiveFormat.Create is not implemented");
-        }
-
-        public virtual ResourceOptions GetDefaultOptions ()
-        {
-            return null;
-        }
-
-        public virtual ResourceOptions GetOptions (object widget)
-        {
-            return GetDefaultOptions();
-        }
-
-        public virtual object GetCreationWidget ()
-        {
-            return null;
-        }
-
-        public virtual object GetAccessWidget ()
-        {
-            return null;
-        }
-
-        protected OptType GetOptions<OptType> (ResourceOptions res_options) where OptType : ResourceOptions
-        {
-            var options = res_options as OptType;
-            if (null == options)
-                options = this.GetDefaultOptions() as OptType;
-            return options;
-        }
-
-        protected OptType Query<OptType> (string notice) where OptType : ResourceOptions
-        {
-            var args = new ParametersRequestEventArgs { Notice = notice };
-            FormatCatalog.Instance.InvokeParametersRequest (this, args);
-            if (!args.InputResult)
-                throw new OperationCanceledException();
-
-            return GetOptions<OptType> (args.Options);
         }
 
         protected static bool IsSaneCount (int count)
