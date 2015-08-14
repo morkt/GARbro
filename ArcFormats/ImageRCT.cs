@@ -29,7 +29,6 @@ using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
-using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -56,11 +55,13 @@ namespace GameRes.Formats.Majiro
     [Export(typeof(ImageFormat))]
     public class RctFormat : ImageFormat
     {
-        public override string Tag { get { return "RCT"; } }
+        public override string         Tag { get { return "RCT"; } }
         public override string Description { get { return "Majiro game engine RGB image format"; } }
-        public override uint Signature { get { return 0x9a925a98; } }
+        public override uint     Signature { get { return 0x9a925a98; } }
 
-        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
+        public bool OverlayFrames = true;
+
+        public static readonly Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
             { "Akatsuki no Goei",               "おぬぐり食べる？" },
             { "Nagisa no",                      "青い空に向かって、溜息を一つこぼす。" },
             { "White ~blanche comme la lune~",  "たった３枚の紙" },
@@ -119,40 +120,22 @@ namespace GameRes.Formats.Majiro
             var meta = info as RctMetaData;
             if (null == meta)
                 throw new ArgumentException ("RctFormat.Read should be supplied with RctMetaData", "info");
-            if (meta.AddSize > 0)
-            {
-                Trace.WriteLine (string.Format ("{0} bytes of additional data", meta.AddSize), "RctFormat.Read");
-                file.Position = meta.DataOffset;
-                byte[] data = new byte[meta.AddSize];
-                if (data.Length != file.Read (data, 0, data.Length))
-                    throw new EndOfStreamException();
-            }
+            byte[] base_image = null;
+            if (meta.AddSize > 0 && OverlayFrames)
+                base_image = ReadBaseImage (file, meta);
+
             file.Position = meta.DataOffset + meta.AddSize;
             if (meta.IsEncrypted)
-            {
-                if (null == Key)
-                {
-                    var password = QueryPassword();
-                    if (string.IsNullOrEmpty (password))
-                        throw new UnknownEncryptionScheme();
-                    Key = InitDecryptionKey (password);
-                }
-                byte[] data = new byte[meta.DataSize];
-                if (data.Length != file.Read (data, 0, data.Length))
-                    throw new EndOfStreamException();
-
-                for (int i = 0; i < data.Length; ++i)
-                {
-                    data[i] ^= Key[i & 0x3FF];
-                }
-                file = new MemoryStream (data);
-            }
+                file = OpenEncryptedStream (file, meta.DataSize);
             try
             {
                 using (var reader = new Reader (file, meta))
                 {
                     reader.Unpack();
-                    return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data, (int)meta.Width*3);
+                    var pixels = reader.Data;
+                    if (base_image != null)
+                        pixels = CombineImage (base_image, pixels);
+                    return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
                 }
             }
             catch
@@ -161,6 +144,74 @@ namespace GameRes.Formats.Majiro
                     Key = null; // probably incorrect encryption scheme caused exception, reset key
                 throw;
             }
+        }
+
+        byte[] CombineImage (byte[] base_image, byte[] overlay)
+        {
+            for (int i = 2; i < base_image.Length; i += 3)
+            {
+                if (0 == overlay[i-2] && 0 == overlay[i-1] && 0xff == overlay[i])
+                {
+                    overlay[i-2] = base_image[i-2];
+                    overlay[i-1] = base_image[i-1];
+                    overlay[i]   = base_image[i];
+                }
+            }
+            return overlay;
+        }
+
+        byte[] ReadBaseImage (Stream file, RctMetaData meta)
+        {
+            file.Position = meta.DataOffset;
+            byte[] name_bin = new byte[meta.AddSize];
+            if (name_bin.Length != file.Read (name_bin, 0, name_bin.Length))
+                throw new EndOfStreamException();
+            try
+            {
+                string name = Encodings.cp932.GetString (name_bin, 0, name_bin.Length-1);
+                if (File.Exists (name))
+                {
+                    using (var base_file = File.OpenRead (name))
+                    {
+                        var base_info = ReadMetaData (base_file) as RctMetaData;
+                        if (null != base_info && 0 == base_info.AddSize
+                            && meta.Width == base_info.Width && meta.Height == base_info.Height)
+                        {
+                            base_file.Position = base_info.DataOffset;
+                            Stream input = base_file;
+                            if (base_info.IsEncrypted)
+                                input = OpenEncryptedStream (base_file, base_info.DataSize);
+                            using (var reader = new Reader (input, base_info))
+                            {
+                                reader.Unpack();
+                                return reader.Data;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { /* ignore baseline image read errors */ }
+            return null;
+        }
+
+        Stream OpenEncryptedStream (Stream file, uint data_size)
+        {
+            if (null == Key)
+            {
+                var password = QueryPassword();
+                if (string.IsNullOrEmpty (password))
+                    throw new UnknownEncryptionScheme();
+                Key = InitDecryptionKey (password);
+            }
+            byte[] data = new byte[data_size];
+            if (data.Length != file.Read (data, 0, data.Length))
+                throw new EndOfStreamException();
+
+            for (int i = 0; i < data.Length; ++i)
+            {
+                data[i] ^= Key[i & 0x3FF];
+            }
+            return new MemoryStream (data);
         }
 
         private byte[] InitDecryptionKey (string password)
