@@ -120,30 +120,15 @@ namespace GameRes.Formats.Majiro
             var meta = info as RctMetaData;
             if (null == meta)
                 throw new ArgumentException ("RctFormat.Read should be supplied with RctMetaData", "info");
+
             byte[] base_image = null;
             if (meta.FileName != null && meta.AddSize > 0 && OverlayFrames)
                 base_image = ReadBaseImage (file, meta);
 
-            file.Position = meta.DataOffset + meta.AddSize;
-            if (meta.IsEncrypted)
-                file = OpenEncryptedStream (file, meta.DataSize);
-            try
-            {
-                using (var reader = new Reader (file, meta))
-                {
-                    reader.Unpack();
-                    var pixels = reader.Data;
-                    if (base_image != null)
-                        pixels = CombineImage (base_image, pixels);
-                    return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
-                }
-            }
-            catch
-            {
-                if (meta.IsEncrypted)
-                    Key = null; // probably incorrect encryption scheme caused exception, reset key
-                throw;
-            }
+            var pixels = ReadPixelsData (file, meta);
+            if (base_image != null)
+                pixels = CombineImage (base_image, pixels);
+            return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
         }
 
         byte[] CombineImage (byte[] base_image, byte[] overlay)
@@ -158,6 +143,27 @@ namespace GameRes.Formats.Majiro
                 }
             }
             return overlay;
+        }
+
+        byte[] ReadPixelsData (Stream file, RctMetaData meta)
+        {
+            file.Position = meta.DataOffset + meta.AddSize;
+            if (meta.IsEncrypted)
+                file = OpenEncryptedStream (file, meta.DataSize);
+            try
+            {
+                using (var reader = new Reader (file, meta))
+                {
+                    reader.Unpack();
+                    return reader.Data;
+                }
+            }
+            catch
+            {
+                if (meta.IsEncrypted)
+                    Key = null; // probably incorrect encryption scheme caused exception, reset key
+                throw;
+            }
         }
 
         byte[] ReadBaseImage (Stream file, RctMetaData meta)
@@ -180,15 +186,7 @@ namespace GameRes.Formats.Majiro
                             && meta.Width == base_info.Width && meta.Height == base_info.Height)
                         {
                             base_info.FileName = name;
-                            base_file.Position = base_info.DataOffset;
-                            Stream input = base_file;
-                            if (base_info.IsEncrypted)
-                                input = OpenEncryptedStream (base_file, base_info.DataSize);
-                            using (var reader = new Reader (input, base_info))
-                            {
-                                reader.Unpack();
-                                return reader.Data;
-                            }
+                            return ReadPixelsData (base_file, base_info);
                         }
                     }
                 }
