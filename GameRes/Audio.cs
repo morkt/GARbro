@@ -23,7 +23,9 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.IO;
+using System.Linq;
 
 namespace GameRes
 {
@@ -167,5 +169,9 @@ namespace GameRes
             }
             return null;
         }
+
+        public static AudioFormat Wav { get { return s_WavFormat.Value; } }
+
+        static readonly Lazy<AudioFormat> s_WavFormat = new Lazy<AudioFormat> (() => FormatCatalog.Instance.AudioFormats.FirstOrDefault (x => x.Tag == "WAV"));
     }
 }
