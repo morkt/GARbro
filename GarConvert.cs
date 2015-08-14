@@ -157,7 +157,6 @@ namespace GARbro.GUI
         }
 
         public static readonly HashSet<string> CommonAudioFormats = new HashSet<string> { "wav", "mp3", "ogg" };
-        public static readonly AudioFormat WavFormat = FormatCatalog.Instance.AudioFormats.First (f => f.Tag == "WAV");
 
         void ConvertAudio (string filename)
         {
@@ -185,7 +184,7 @@ namespace GARbro.GUI
                         return;
                     string output_name = Path.ChangeExtension (filename, "wav");
                     using (var output = CreateNewFile (output_name))
-                        WavFormat.Write (input, output);
+                        AudioFormat.Wav.Write (input, output);
                 }
             }
         }

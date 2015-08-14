@@ -382,7 +382,7 @@ namespace GARbro.GUI
             {
                 string output_name = FindUniqueFileName (entry_name, "wav");
                 using (var output = ArchiveFormat.CreateFile (output_name))
-                    GarConvertMedia.WavFormat.Write (input, output);
+                    AudioFormat.Wav.Write (input, output);
             }
         }
 
