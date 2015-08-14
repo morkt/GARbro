@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Yuka
@@ -45,7 +46,7 @@ namespace GameRes.Formats.Yuka
         public override string Description { get { return "Yuka engine resource archive"; } }
         public override uint     Signature { get { return 0x30434B59; } } // 'YKC0'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool     CanCreate { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -79,6 +80,78 @@ namespace GameRes.Formats.Yuka
                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            output.Position = 0x18;
+            int callback_count = 0;
+            foreach (var entry in list)
+            {
+                using (var file = File.OpenRead (entry.Name))
+                {
+                    var file_size = file.Length;
+                    if (file_size > uint.MaxValue)
+                        throw new FileSizeException();
+                    long file_offset = output.Position;
+                    if (file_offset+file_size > uint.MaxValue)
+                        throw new FileSizeException();
+                    entry.Offset = file_offset;
+                    entry.Size = (uint)file_size;
+                    if (null != callback)
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                    file.CopyTo (output);
+                }
+            }
+
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+
+            byte[] name_buf = new byte[0x40];
+            var encoding = Encodings.cp932.WithFatalFallback();
+            int count = list.Count();
+            var name_offsets = new uint[count];
+            var name_sizes   = new  int[count];
+            int i = 0;
+            foreach (var entry in list)
+            {
+                int length = encoding.GetByteCount (entry.Name);
+                if (length+1 > name_buf.Length)
+                    name_buf = new byte[length+2];
+                length = encoding.GetBytes (entry.Name, 0, entry.Name.Length, name_buf, 0);
+                name_buf[length++] = 0;
+
+                name_offsets[i] = (uint)output.Position;
+                output.Write (name_buf, 0, length);
+                name_sizes[i] = length;
+                ++i;
+                if (output.Position > uint.MaxValue)
+                    throw new FileSizeException();
+            }
+            uint index_offset = (uint)output.Position;
+            using (var writer = new BinaryWriter (output, encoding, true))
+            {
+                i = 0;
+                foreach (var entry in list)
+                {
+                    writer.Write (name_offsets[i]);
+                    writer.Write (name_sizes[i]);
+                    writer.Write ((uint)entry.Offset);
+                    writer.Write (entry.Size);
+                    writer.Write (0);
+                    ++i;
+                }
+                uint index_length = (uint)(output.Position - index_offset);
+                output.Position = 0;
+                encoding.GetBytes ("YKC001\0\0", 0, 8, name_buf, 0);
+                writer.Write (name_buf, 0, 8);
+                writer.Write (0x18);
+                output.Position = 0x10;
+                writer.Write (index_offset);
+                writer.Write (index_length);
+            }
         }
     }
 }
