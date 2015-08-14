@@ -38,6 +38,7 @@ namespace GameRes
         public int OffsetX { get; set; }
         public int OffsetY { get; set; }
         public int BPP { get; set; }
+        public string FileName { get; set; }
     }
 
     public class ImageEntry : Entry
@@ -158,7 +159,10 @@ namespace GameRes
                         file.Position = 0;
                         ImageMetaData metadata = impl.ReadMetaData (file);
                         if (null != metadata)
-                            return new System.Tuple<ImageFormat, ImageMetaData> (impl, metadata);
+                        {
+                            metadata.FileName = filename;
+                            return Tuple.Create (impl, metadata);
+                        }
                     }
                     catch { }
                 }
