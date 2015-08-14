@@ -75,6 +75,8 @@ namespace GameRes.Formats.Marble
             return arc;
         }
 
+        static readonly Lazy<ImageFormat> PrsFormat = new Lazy<ImageFormat> (() => FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "PRS"));
+
         private ArcFile ReadIndex (ArcView file, int count, uint filename_len, uint index_offset)
         {
             uint index_size = (8u + filename_len) * (uint)count;
@@ -114,8 +116,11 @@ namespace GameRes.Formats.Marble
                         entry = new AutoEntry (name, () => {
                             uint signature = file.View.ReadUInt32 (offset);
                             if (0x4259 == (0xffff & signature))
-                                return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "PRS");
-                            return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+                                return PrsFormat.Value;
+                            else if (0 != signature)
+                                return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+                            else
+                                return null;
                         });
                     }
                     else
