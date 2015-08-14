@@ -128,6 +128,7 @@
     <Compile Include="ArcSAF.cs" />
     <Compile Include="ArcVPK.cs" />
     <Compile Include="ArcXuse.cs" />
+    <Compile Include="ArcYKC.cs" />
     <Compile Include="AudioVAW.cs" />
     <Compile Include="AudioWPN.cs" />
     <Compile Include="AudioWWA.cs" />
@@ -135,6 +136,7 @@
     <Compile Include="ImageABM.cs" />
     <Compile Include="ImageDWQ.cs" />
     <Compile Include="ImageHIZ.cs" />
+    <Compile Include="ImageYKG.cs" />
     <Compile Include="MioDecoder.cs" />
     <Compile Include="WidgetRCT.xaml.cs">
       <DependentUpon>WidgetRCT.xaml</DependentUpon>
