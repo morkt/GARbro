@@ -87,14 +87,6 @@ namespace GameRes.Formats.BlackCyc
             };
         }
 
-        static ImageFormat GetFormat (string tag)
-        {
-            return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == tag);
-        }
-
-        static readonly Lazy<ImageFormat> JpegFormat = new Lazy<ImageFormat> (() => GetFormat ("JPEG"));
-        static readonly Lazy<ImageFormat> PngFormat  = new Lazy<ImageFormat> (() => GetFormat ("PNG"));
-
         public override ImageMetaData ReadMetaData (Stream stream)
         {
             var header = ResourceHeader.Read (stream);
@@ -142,10 +134,10 @@ namespace GameRes.Formats.BlackCyc
                 switch (meta.PackType)
                 {
                 case 5: // JPEG
-                    return JpegFormat.Value.Read (input, info);
+                    return Jpeg.Read (input, info);
 
                 case 8: // PNG
-                    return PngFormat.Value.Read (input, info);
+                    return Png.Read (input, info);
 
                 case 0: // BMP
                 case 2: // BMP+MASK

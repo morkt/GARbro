@@ -44,7 +44,6 @@ namespace GameRes.Formats.BlackCyc
             Extensions = new string[] { "vaw", "wgq" };
         }
 
-        static readonly Lazy<AudioFormat> WavFormat = new Lazy<AudioFormat> (() => FormatCatalog.Instance.AudioFormats.FirstOrDefault (x => x.Tag == "WAV"));
         static readonly Lazy<AudioFormat> OggFormat = new Lazy<AudioFormat> (() => FormatCatalog.Instance.AudioFormats.FirstOrDefault (x => x.Tag == "OGG"));
 
         public override SoundInput TryOpen (Stream file)
@@ -60,7 +59,7 @@ namespace GameRes.Formats.BlackCyc
                     return null;
                 if (!Binary.AsciiEqual (header.Bytes, "RIFF"))
                     return null;
-                format = WavFormat.Value;
+                format = Wav;
                 offset = 0x40;
             }
             else if (2 == header.PackType)
