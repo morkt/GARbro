@@ -101,18 +101,18 @@ namespace GameRes.Formats.MAI
                 var offset = file.View.ReadUInt32 (index_offset+0x10);
                 var entry = new AutoEntry (Path.Combine (current_folder, name), () => {
                     uint signature = file.View.ReadUInt32 (offset);
-                    IEnumerable<IResource> res;
                     if (is_mask_arc)
-                        res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "MSK/MAI");
+                        return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "MSK/MAI");
                     else if (0x4d43 == (signature & 0xffff)) // 'CM'
-                        res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "CMP/MAI");
+                        return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "CMP/MAI");
                     else if (0x4d41 == (signature & 0xffff)) // 'AM'
-                        res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "AM/MAI");
+                        return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "AM/MAI");
                     else if (0x4d42 == (signature & 0xffff)) // 'BM'
-                        res = FormatCatalog.Instance.ImageFormats.Where (x => x.Tag == "BMP");
+                        return ImageFormat.Bmp;
+                    else if (signature != 0)
+                        return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
                     else
-                        res = FormatCatalog.Instance.LookupSignature (signature);
-                    return res.FirstOrDefault();
+                        return null;
                 });
                 entry.Offset = offset;
                 entry.Size = file.View.ReadUInt32 (index_offset+0x14);
