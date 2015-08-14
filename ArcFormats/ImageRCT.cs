@@ -121,7 +121,7 @@ namespace GameRes.Formats.Majiro
             if (null == meta)
                 throw new ArgumentException ("RctFormat.Read should be supplied with RctMetaData", "info");
             byte[] base_image = null;
-            if (meta.AddSize > 0 && OverlayFrames)
+            if (meta.FileName != null && meta.AddSize > 0 && OverlayFrames)
                 base_image = ReadBaseImage (file, meta);
 
             file.Position = meta.DataOffset + meta.AddSize;
@@ -169,6 +169,8 @@ namespace GameRes.Formats.Majiro
             try
             {
                 string name = Encodings.cp932.GetString (name_bin, 0, name_bin.Length-1);
+                string dir_name = Path.GetDirectoryName (meta.FileName);
+                name = Path.Combine (dir_name, name);
                 if (File.Exists (name))
                 {
                     using (var base_file = File.OpenRead (name))
@@ -177,6 +179,7 @@ namespace GameRes.Formats.Majiro
                         if (null != base_info && 0 == base_info.AddSize
                             && meta.Width == base_info.Width && meta.Height == base_info.Height)
                         {
+                            base_info.FileName = name;
                             base_file.Position = base_info.DataOffset;
                             Stream input = base_file;
                             if (base_info.IsEncrypted)
