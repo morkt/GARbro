@@ -27,17 +27,29 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Xuse
 {
+    internal class WagArchive : ArcFile
+    {
+        public readonly byte[] Key;
+
+        public WagArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, byte[] key)
+            : base (arc, impl, dir)
+        {
+            Key = key;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class WagOpener : ArchiveFormat
     {
         public override string         Tag { get { return "WAG"; } }
         public override string Description { get { return "Xuse/Eternal resource archive"; } }
         public override uint     Signature { get { return 0x40474157; } } // 'WAG@'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         public WagOpener ()
@@ -54,15 +66,170 @@ namespace GameRes.Formats.Xuse
             if (!IsSaneCount (count))
                 return null;
 
+            byte[] title = new byte[0x40];
+            if (0x40 != file.View.Read (6, title, 0, 0x40))
+                return null;
+            int title_length = Array.IndexOf<byte> (title, 0);
+            if (-1 == title_length)
+                title_length = title.Length;
+            string arc_filename = Path.GetFileName (file.Name).ToLowerInvariant();
+            byte[] bin_filename = Encodings.cp932.GetBytes (arc_filename);
+
+            byte[] name_key = GenerateKey (bin_filename);
+
+            uint key_sum = (uint)name_key.Select (x => (int)x).Sum();
+            uint index_offset = 0x200 + key_sum;
+            for (int i = 0; i < name_key.Length; ++i)
+            {
+                index_offset ^= name_key[i];
+                index_offset = index_offset << 31 | index_offset >> 1;
+            }
+            for (int i = 0; i < name_key.Length; ++i)
+            {
+                index_offset ^= name_key[i];
+                index_offset = index_offset << 31 | index_offset >> 1;
+            }
+            index_offset %= 0x401;
+
+            index_offset += 0x4A;
+            byte[] index = new byte[4*count];
+            if (index.Length != file.View.Read (index_offset, index, 0, (uint)index.Length))
+                return null;
+
+            byte[] index_key = new byte[index.Length];
+            for (int i = 0; i < index_key.Length; ++i)
+            {
+                int v = name_key[(i+1) % name_key.Length] ^ (name_key[i % name_key.Length] + (i & 0xFF));
+                index_key[i] = (byte)(count + v);
+            }
+            Decrypt (index_offset, index_key, index);
+
             var dir = new List<Entry> (count);
+            int current_offset = 0;
+            uint next_offset = LittleEndian.ToUInt32 (index, current_offset);
+            byte[] data_key = GenerateKey (title, 0, title_length);
+            string base_filename = Path.GetFileNameWithoutExtension (arc_filename);
+            byte[] chunk_buf = new byte[8];
+            byte[] filename_buf = new byte[0x40];
             for (int i = 0; i < count; ++i)
             {
-                var entry = FormatCatalog.Instance.CreateEntry (name);
-                if (!entry.CheckPlacement (file.MaxOffset))
+                current_offset += 4;
+                uint entry_offset = next_offset;
+                if (i + 1 == count)
+                    next_offset = (uint)file.MaxOffset;
+                else
+                    next_offset = LittleEndian.ToUInt32 (index, current_offset);
+                uint entry_size = next_offset - entry_offset;
+                if (8 != file.View.Read (entry_offset, chunk_buf, 0, 8))
                     return null;
+
+                Decrypt (entry_offset, data_key, chunk_buf);
+                if (!Binary.AsciiEqual (chunk_buf, "DSET"))
+                    return null;
+                uint chunk_offset = entry_offset + 10;
+                int chunk_count = LittleEndian.ToInt32 (chunk_buf, 4);
+                string filename = null;
+                string type = null;
+                for (int chunk = 0; chunk < chunk_count; ++chunk)
+                {
+                    if (8 != file.View.Read (chunk_offset, chunk_buf, 0, 8))
+                        return null;
+                    Decrypt (chunk_offset, data_key, chunk_buf);
+                    int chunk_size = LittleEndian.ToInt32 (chunk_buf, 4);
+                    if (chunk_size <= 0)
+                        return null;
+                    if (Binary.AsciiEqual (chunk_buf, "PICT"))
+                    {
+                        if (null == type)
+                        {
+                            type = "image";
+                            entry_offset = chunk_offset + 0x10;
+                            entry_size = (uint)chunk_size - 6;
+                        }
+                    }
+                    else if (null == filename && Binary.AsciiEqual (chunk_buf, "FTAG"))
+                    {
+                        if (chunk_size > filename_buf.Length)
+                            filename_buf = new byte[chunk_size];
+                        if (chunk_size != file.View.Read (chunk_offset+10, filename_buf, 0, (uint)chunk_size))
+                            return null;
+                        Decrypt (chunk_offset+10, data_key, filename_buf, 0, chunk_size-2);
+                        filename = Encodings.cp932.GetString (filename_buf, 0, chunk_size-2);
+                    }
+                    chunk_offset += 10 + (uint)chunk_size;
+                }
+                Entry entry;
+                if (!string.IsNullOrEmpty (filename))
+                {
+                    filename = filename.TrimStart ('\\');
+                    entry = FormatCatalog.Instance.CreateEntry (filename);
+                }
+                else
+                {
+                    entry = new Entry {
+                        Name = string.Format ("{0}#{1:D4}", base_filename, i),
+                        Type = type ?? ""
+                    };
+                }
+                entry.Offset = entry_offset;
+                entry.Size = entry_size;
                 dir.Add (entry);
             }
-            return new ArcFile (file, this, dir);
+            return new WagArchive (file, this, dir, data_key);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var warc = arc as WagArchive;
+            if (null == warc)
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            Decrypt ((uint)entry.Offset, warc.Key, data);
+            return new MemoryStream (data);
+        }
+
+        private byte[] GenerateKey (byte[] keyword)
+        {
+            return GenerateKey (keyword, 0, keyword.Length);
+        }
+
+        private byte[] GenerateKey (byte[] keyword, int index, int length)
+        {
+            uint hash = 0;
+            for (uint i = 0; i < length; ++i)
+                hash = ((keyword[i+index] + i) ^ hash) + (uint)length;
+
+            uint key_length = (hash & 0xFF) + 0x40;
+
+            for (int i = 0; i < length; ++i)
+                hash += keyword[i+index];
+
+            byte[] key = new byte[key_length--];
+            key[1] = (byte)(hash >> 8);
+            hash &= 0xF;
+            key[0] = (byte)hash;
+            key[2] = 0x46;
+            key[3] = 0x88;
+
+            for (uint i = 4; i < key_length; ++i)
+            {
+                hash += ((keyword[i % length] ^ hash) + i) & 0xFF;
+                key[i] = (byte)hash;
+            }
+            return key;
+        }
+
+        private void Decrypt (uint offset, byte[] key, byte[] index)
+        {
+            Decrypt (offset, key, index, 0, index.Length);
+        }
+
+        private void Decrypt (uint offset, byte[] key, byte[] index, int pos, int length)
+        {
+            uint key_last = (uint)key.Length-1;
+            for (uint i = 0; i < length; ++i)
+                index[pos+i] ^= key[(offset + i) % key_last];
         }
     }
 }

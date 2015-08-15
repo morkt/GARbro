@@ -127,6 +127,7 @@
     <Compile Include="ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
     <Compile Include="ArcVPK.cs" />
+    <Compile Include="ArcWAG.cs" />
     <Compile Include="ArcXuse.cs" />
     <Compile Include="ArcYKC.cs" />
     <Compile Include="AudioVAW.cs" />
