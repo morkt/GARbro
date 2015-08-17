@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Xuse
@@ -161,7 +162,7 @@ namespace GameRes.Formats.Xuse
                 Entry entry;
                 if (!string.IsNullOrEmpty (filename))
                 {
-                    filename = filename.TrimStart ('\\');
+                    filename = DriveRe.Replace (filename, "");
                     entry = FormatCatalog.Instance.CreateEntry (filename);
                 }
                 else
@@ -177,6 +178,8 @@ namespace GameRes.Formats.Xuse
             }
             return new WagArchive (file, this, dir, data_key);
         }
+
+        static readonly Regex DriveRe = new Regex (@"^(?:.+:)?\\+");
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
