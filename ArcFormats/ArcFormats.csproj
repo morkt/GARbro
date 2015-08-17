@@ -137,6 +137,7 @@
     <Compile Include="ImageABM.cs" />
     <Compile Include="ImageDWQ.cs" />
     <Compile Include="ImageHIZ.cs" />
+    <Compile Include="ImageKG.cs" />
     <Compile Include="ImageYKG.cs" />
     <Compile Include="MioDecoder.cs" />
     <Compile Include="WidgetRCT.xaml.cs">
