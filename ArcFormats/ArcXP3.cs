@@ -86,6 +86,8 @@ namespace GameRes.Formats.KiriKiri
             Signatures = new uint[] { 0x0d335058, 0 };
         }
 
+        public bool ForceEncryptionQuery = true;
+
         private static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
 
         public static readonly Dictionary<string, ICrypt> KnownSchemes = new Dictionary<string, ICrypt> {
@@ -95,6 +97,7 @@ namespace GameRes.Formats.KiriKiri
             { "Damegane",           new DameganeCrypt() },
             { "Fate/hollow ataraxia", new FateHACrypt() },
             { "Fate/stay night",    new FateCrypt() },
+            { "Hime to Majin to Koi Suru Tamashii", new HashCrypt() },
             { "Imouto Style",       new ImoutoStyleCrypt() },
             { "Okiba ga Nai!",      new OkibaCrypt() },
             { "Ore no Saimin Fantasia", new SaiminCrypt() },
@@ -176,7 +179,7 @@ namespace GameRes.Formats.KiriKiri
                                 entry.IsEncrypted = 0 != header.ReadUInt32();
                                 long file_size = header.ReadInt64();
                                 long packed_size = header.ReadInt64();
-                                if (file_size > uint.MaxValue || packed_size > uint.MaxValue || packed_size > file.MaxOffset)
+                                if (file_size >= uint.MaxValue || packed_size > uint.MaxValue || packed_size > file.MaxOffset)
                                 {
                                     goto NextEntry;
                                 }
@@ -189,10 +192,11 @@ namespace GameRes.Formats.KiriKiri
                                 {
                                     goto NextEntry;
                                 }
-                                if (entry.IsEncrypted)
+                                if (entry.IsEncrypted || ForceEncryptionQuery)
                                     entry.Cipher = crypt_algorithm.Value;
                                 else
                                     entry.Cipher = NoCryptAlgorithm;
+                                entry.IsEncrypted = entry.Cipher != NoCryptAlgorithm;
 
                                 char[] name = header.ReadChars (name_size);
                                 entry.Name = NormalizePath (new string (name));
@@ -207,7 +211,7 @@ namespace GameRes.Formats.KiriKiri
                                     for (int i = 0; i < segment_count; ++i)
                                     {
                                         bool compressed  = 0 != header.ReadInt32();
-                                        long segment_offset = header.ReadInt64();
+                                        long segment_offset = base_offset+header.ReadInt64();
                                         long segment_size   = header.ReadInt64();
                                         long segment_packed_size = header.ReadInt64();
                                         if (segment_offset > file.MaxOffset || segment_packed_size > file.MaxOffset)
@@ -216,7 +220,7 @@ namespace GameRes.Formats.KiriKiri
                                         }
                                         var segment = new Xp3Segment {
                                             IsCompressed = compressed,
-                                            Offset       = base_offset+segment_offset,
+                                            Offset       = segment_offset,
                                             Size         = (uint)segment_size,
                                             PackedSize   = (uint)segment_packed_size
                                         };
@@ -803,6 +807,28 @@ NextEntry:
                 return;
             if (offset + count > 0x13)
                 values[pos+0x13-offset] ^= 1;
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
+
+    internal class HashCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ entry.Hash);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)entry.Hash;
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= key;
+            }
         }
 
         public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
