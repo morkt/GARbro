@@ -145,7 +145,7 @@ namespace GameRes.Formats.Xuse
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                var entry = new Entry {
+                var entry = new PackedEntry {
                     Name = string.Format ("{0}#{1:D4}.ogg", base_name, i),
                     Type = "audio",
                     Offset = next_offset,
@@ -158,6 +158,11 @@ namespace GameRes.Formats.Xuse
                 else
                     next_offset = file.MaxOffset;
                 entry.Size = (uint)(next_offset - entry.Offset);
+                if (entry.Size >= 0x32)
+                {
+                    entry.IsPacked = true;
+                    entry.UnpackedSize = entry.Size - 0x32;
+                }
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
