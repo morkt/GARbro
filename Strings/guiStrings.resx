@@ -441,4 +441,9 @@ Overwrite?</value>
   <data name="TextSelectFiles" xml:space="preserve">
     <value>Select files</value>
   </data>
+  <data name="TextErrorExtracting" xml:space="preserve">
+    <value>Error occured while extracting file
+{0}
+{1}</value>
+  </data>
 </root>

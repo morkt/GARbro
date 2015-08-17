@@ -901,6 +901,17 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error occured while extracting file
+        ///{0}
+        ///{1}.
+        /// </summary>
+        public static string TextErrorExtracting {
+            get {
+                return ResourceManager.GetString("TextErrorExtracting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Extract audio.
         /// </summary>
         public static string TextExtractAudio {

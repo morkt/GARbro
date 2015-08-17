@@ -414,7 +414,11 @@ namespace GARbro.GUI
                 if (m_pending_error is OperationCanceledException)
                     m_main.SetStatusText (m_pending_error.Message);
                 else
-                    m_main.PopupError (m_pending_error.Message, guiStrings.MsgErrorExtracting);
+                {
+                    string message = string.Format (guiStrings.TextErrorExtracting,
+                                                    m_progress_dialog.Description, m_pending_error.Message);
+                    m_main.PopupError (message, guiStrings.MsgErrorExtracting);
+                }
             }
             this.Dispose();
         }

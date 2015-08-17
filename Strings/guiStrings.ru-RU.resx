@@ -462,4 +462,9 @@
   <data name="TextSelectFiles" xml:space="preserve">
     <value>Выбрать файлы</value>
   </data>
+  <data name="TextErrorExtracting" xml:space="preserve">
+    <value>Произошёл сбой во время извлечения файла
+{0}
+{1}</value>
+  </data>
 </root>
