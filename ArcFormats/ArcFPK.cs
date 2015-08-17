@@ -35,7 +35,7 @@ namespace GameRes.Formats.CandySoft
     public class FpkOpener : ArchiveFormat
     {
         public override string         Tag { get { return "FPK"; } }
-        public override string Description { get { return "Candy Soft resource archive"; } }
+        public override string Description { get { return "Interheart/Candy Soft resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
@@ -45,23 +45,38 @@ namespace GameRes.Formats.CandySoft
             int count = file.View.ReadInt32 (0);
             if (count <= 0 || count > 0xfffff)
                 return null;
+            List<Entry> dir = null;
+            try
+            {
+                dir = ReadIndex (file, count, 0x10);
+            }
+            catch { /* read failed, try another filename length */ }
+            if (null == dir)
+                dir = ReadIndex (file, count, 0x18);
+            if (null == dir)
+                return null;
+            return new ArcFile (file, this, dir);
+        }
+
+        private List<Entry> ReadIndex (ArcView file, int count, int name_size)
+        {
             long index_offset = 4;
-            uint index_size = (uint)(0x18 * count);
+            uint index_size = (uint)((8 + name_size) * count);
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                string name = file.View.ReadString (index_offset+8, 0x10);
+                string name = file.View.ReadString (index_offset+8, (uint)name_size);
                 var entry = FormatCatalog.Instance.CreateEntry (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
                 if (entry.Offset < index_size || !entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
-                index_offset += 0x18;
+                index_offset += 8 + name_size;
             }
-            return new ArcFile (file, this, dir);
+            return dir;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
