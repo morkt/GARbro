@@ -133,26 +133,81 @@ namespace GameRes.Formats.WildBug
         #endregion
     }
 
-    internal class WwaReader
+    internal class WwaReader : WpxDecoder
     {
-        Stream      m_input;
-        int         m_packed_size;
-        byte[]      m_output;
-
-        public byte[] Data { get { return m_output; } }
-
-        public WwaReader (Stream input, WpxSection section)
+        public WwaReader (Stream input, WpxSection section) : base (input, section)
         {
-            m_input = input;
-            m_input.Position = section.Offset;
-            m_packed_size = section.PackedSize;
-            m_output = new byte[section.UnpackedSize];
+            ResetInput();
         }
 
-        public byte[] Unpack (int format)
+        public byte[] Unpack (int flags) // sub_46B16C
         {
-            throw new NotImplementedException();
-            // sub_46B9B7 ??
+            if (0 == (flags & 0x80) && 0 != PackedSize)
+            {
+                if (0 != (flags & 8))
+                {
+                    if (0 != (flags & 4))
+                        throw new NotImplementedException ();
+                    else if (0 != (flags & 2))
+                        return UnpackVB(); // sub_461B34
+                }
+                throw new NotImplementedException ();
+            }
+            else
+                return ReadUncompressed();
+        }
+
+        byte[] UnpackVB ()
+        {
+            m_available = FillBuffer();
+            if (0 == m_available)
+                return null;
+            var ref_table = new byte[0x10000];
+            int v6 = -1 & 3;
+            m_output[0] = m_buffer[0];
+            int dst = 1;
+            int remaining = m_output.Length - 1;
+            m_current = 1 + v6 + 128;
+
+            if (!FillRefTable (ref_table, 1 + v6))
+                return null;
+            while (remaining > 0)
+            {
+                while (0 != GetNextBit())
+                {
+                    int v23 = 0;
+                    int v24 = 0;
+                    int v25 = 16384;
+                    for (;;)
+                    {
+                        ++v23;
+                        if (0 != GetNextBit())
+                            v24 |= v25;
+                        if (ref_table[2 * v24] == v23)
+                            break;
+                        v25 >>= 1;
+                        if (0 == v25)
+                            return null;
+                    }
+                    m_output[dst++] = ref_table[2 * v24 + 1];
+                    --remaining;
+                    if (0 == remaining)
+                        return m_output;
+                }
+                int v26 = ReadNext();
+                int src_offset = dst - v26 - 1;
+                int count = 2;
+                if (0 == GetNextBit())
+                {
+                    count += ReadCount();
+                }
+                if (remaining < count)
+                    return null;
+                Binary.CopyOverlapped (m_output, src_offset, dst, count);
+                dst += count;
+                remaining -= count;
+            }
+            return m_output;
         }
     }
 }
