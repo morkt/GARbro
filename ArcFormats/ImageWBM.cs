@@ -185,21 +185,10 @@ namespace GameRes.Formats.WildBug
         }
     }
 
-    internal class WbmReader
+    internal class WbmReader : WpxDecoder
     {
-        Stream      m_input;
-        byte[]      m_output;
-        int         m_packed_size;
-        int         m_start_pos;
-
-        public byte[] Data { get { return m_output; } }
-
-        public WbmReader (Stream input, WpxSection section)
+        public WbmReader (Stream input, WpxSection section) : base (input, section)
         {
-            m_input = input;
-            m_start_pos = section.Offset;
-            m_output = new byte[section.UnpackedSize];
-            m_packed_size = section.PackedSize;
         }
 
         void GenerateOffsetTableV1 (int[] offset_table, int stride, int pixel_size)
@@ -259,7 +248,7 @@ namespace GameRes.Formats.WildBug
                 try
                 {
                     ResetInput();
-                    if (0 == (flags & 0x80) && 0 != m_packed_size)
+                    if (0 == (flags & 0x80) && 0 != PackedSize)
                     {
                         byte[] ref_table = new byte[0x10000];
                         if (0 != (flags & 1))
@@ -287,8 +276,8 @@ namespace GameRes.Formats.WildBug
                         else
                             return UnpackV0 (offset_table, pixel_size);
                     }
-                    else if (m_output.Length == m_input.Read (m_output, 0, m_output.Length))
-                        return m_output;
+                    else
+                        return ReadUncompressed();
                 }
                 catch
                 {
@@ -467,8 +456,6 @@ namespace GameRes.Formats.WildBug
         {
             byte[] v46 = BuildTable();
             int min_count = 1 == pixel_size ? 2 : 1;
-            if (0 == m_packed_size)
-                return null;
             m_available = FillBuffer();
             if (0 == m_available)
                 return null;
@@ -553,8 +540,6 @@ namespace GameRes.Formats.WildBug
         {
             byte[] v48 = BuildTable();
             int min_count = 1 == pixel_size ? 2 : 1;
-            if (0 == m_packed_size)
-                return null;
             m_available = FillBuffer();
             if (0 == m_available)
                 return null;
@@ -633,8 +618,6 @@ namespace GameRes.Formats.WildBug
 //        int sub_409F70(void *a1, FILE *stream, void *ptr, void *a4, unsigned int packed_size, int *offset_table, int unpacked_size, unsigned int pixel_size)
         {
             int min_count = 1 == pixel_size ? 2 : 1;
-            if (0 == m_packed_size)
-                return null;
 
             m_available = FillBuffer();
             if (0 == m_available)
@@ -709,8 +692,6 @@ namespace GameRes.Formats.WildBug
         {
             byte[] v48 = BuildTable();
             int min_count = 1 == pixel_size ? 2 : 1;
-            if (0 == m_packed_size)
-                return null;
             m_available = FillBuffer();
             if (0 == m_available)
                 return null;
@@ -778,8 +759,6 @@ namespace GameRes.Formats.WildBug
         //int sub_40A3C4(void *a1, FILE *stream, const void *ptr, unsigned int packed_size, int *offset_table, int unpacked_size, unsigned int pixel_size)
         {
             int min_count = 1 == pixel_size ? 2 : 1;
-            if (0 == m_packed_size)
-                return null;
             m_available = FillBuffer();
             if (0 == m_available)
                 return null;
@@ -835,8 +814,6 @@ namespace GameRes.Formats.WildBug
 //        int sub_40B83C(void *a1, FILE *stream, const void *ptr, unsigned int packed_size, int *a5, int unpacked_size, unsigned int pixel_size)
         {
             int min_count = 1 == pixel_size ? 2 : 1;
-            if (0 == m_packed_size)
-                return null;
             m_available = FillBuffer();
             if (0 == m_available)
                 return null;
@@ -883,23 +860,35 @@ namespace GameRes.Formats.WildBug
             }
             return m_output;
         }
+    }
 
-        int ReadCount ()
+    internal class WpxDecoder
+    {
+        Stream              m_input;
+        protected byte[]    m_output;
+        int                 m_packed_size;
+        int                 m_start_pos;
+
+        public byte[] Data { get { return m_output; } }
+        protected int PackedSize { get { return m_packed_size; } }
+
+        protected WpxDecoder (Stream input, WpxSection section)
         {
-            int n = 1;
-            while (0 == GetNextBit())
-            {
-                ++n;
-            }
-            int count = 1;
-            for (int i = 0; i < n; ++i)
-            {
-                count += count + GetNextBit();
-            }
-            return count - 1;
+            m_input = input;
+            m_start_pos = section.Offset;
+            m_output = new byte[section.UnpackedSize];
+            m_packed_size = section.PackedSize;
         }
 
-        static byte[] BuildTable () // sub_4090E0
+        protected byte[] ReadUncompressed ()
+        {
+            if (m_output.Length == m_input.Read (m_output, 0, m_output.Length))
+                return m_output;
+            else
+                return null;
+        }
+
+        protected static byte[] BuildTable () // sub_4090E0
         {
             var table = new byte[0x100*0x100];
             for (int i = 0; i < 0x100; ++i)
@@ -913,59 +902,7 @@ namespace GameRes.Formats.WildBug
             return table;
         }
 
-        byte[]  m_buffer = new byte[0x8000];
-        int     m_current = 0;
-        int     m_available = 0;
-
-        byte ReadNext ()
-        {
-            if (m_current >= m_available)
-            {
-                m_available = FillBuffer();
-                if (0 == m_available)
-                    throw new InvalidFormatException ("Unexpected end of file");
-                m_current = 0;
-            }
-            return m_buffer[m_current++];
-        }
-
-        int m_input_remaining;
-
-        void ResetInput ()
-        {
-            m_input.Position = m_start_pos;
-            m_input_remaining = m_packed_size;
-        }
-
-        int FillBuffer () // sub_409B02
-        {
-            int read = 0;
-            if (m_input_remaining > 0)
-            {
-                int size = Math.Min (m_input_remaining, 0x8000);
-                m_input_remaining -= size;
-                read = m_input.Read (m_buffer, 0, size);
-            }
-            return read;
-        }
-
-        byte m_bits;
-        int  m_bit_count = 0;
-
-        int GetNextBit ()
-        {
-            if (0 == m_bit_count)
-            {
-                m_bits = ReadNext();
-                m_bit_count = 8;
-            }
-            int bit = m_bits >> 7;
-            m_bits <<= 1;
-            --m_bit_count;
-            return bit;
-        }
-
-        bool FillRefTable (byte[] table, int src)
+        protected bool FillRefTable (byte[] table, int src)
         {
             m_bits = m_buffer[m_current++];
             m_bit_count = 8;
@@ -1002,6 +939,73 @@ namespace GameRes.Formats.WildBug
                 }
             }
             return true;
+        }
+
+        protected byte[]  m_buffer = new byte[0x8000];
+        protected int     m_current = 0;
+        protected int     m_available = 0;
+
+        protected byte ReadNext ()
+        {
+            if (m_current >= m_available)
+            {
+                m_available = FillBuffer();
+                if (0 == m_available)
+                    throw new InvalidFormatException ("Unexpected end of file");
+                m_current = 0;
+            }
+            return m_buffer[m_current++];
+        }
+
+        protected int ReadCount ()
+        {
+            int n = 1;
+            while (0 == GetNextBit())
+            {
+                ++n;
+            }
+            int count = 1;
+            for (int i = 0; i < n; ++i)
+            {
+                count += count + GetNextBit();
+            }
+            return count - 1;
+        }
+
+        protected int m_input_remaining;
+
+        protected void ResetInput ()
+        {
+            m_input.Position = m_start_pos;
+            m_input_remaining = m_packed_size;
+        }
+
+        protected int FillBuffer () // sub_409B02
+        {
+            int read = 0;
+            if (m_input_remaining > 0)
+            {
+                int size = Math.Min (m_input_remaining, 0x8000);
+                m_input_remaining -= size;
+                read = m_input.Read (m_buffer, 0, size);
+            }
+            return read;
+        }
+
+        protected byte m_bits;
+        protected int  m_bit_count = 0;
+
+        protected int GetNextBit ()
+        {
+            if (0 == m_bit_count)
+            {
+                m_bits = ReadNext();
+                m_bit_count = 8;
+            }
+            int bit = m_bits >> 7;
+            m_bits <<= 1;
+            --m_bit_count;
+            return bit;
         }
     }
 }
