@@ -314,7 +314,6 @@ namespace GARbro.GUI
                     return;
                 }
                 ImageData image = src_format.Item1.Read (file, src_format.Item2);
-                Trace.WriteLine (string.Format ("{0} => {1}", entry.Name, outname), "ExtractImage");
                 if (m_adjust_image_offset)
                 {
                     image = AdjustImageOffset (image);
