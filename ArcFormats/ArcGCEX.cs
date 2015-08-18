@@ -155,10 +155,8 @@ namespace GameRes.Formats.G2
         {
             m_dst = 0;
             byte[] id = new byte[4];
-            while (m_input.BaseStream.Position < m_input.BaseStream.Length)
+            while (4 == m_input.Read (id, 0, 4))
             {
-                if (4 != m_input.Read (id, 0, 4))
-                    break;
                 int segment_length = m_input.ReadInt32();
                 if (Binary.AsciiEqual (id, "GCE1"))
                 {
@@ -171,7 +169,7 @@ namespace GameRes.Formats.G2
                     ReadControlStream (cmd_pos, cmd_len);
 
                     int next = m_dst + segment_length;
-                    UnpackGce1Segment (data_length, segment_length);
+                    UnpackGce1Segment (segment_length);
                     m_dst = next;
                     m_input.BaseStream.Position = cmd_pos + cmd_len;
                 }
@@ -190,22 +188,17 @@ namespace GameRes.Formats.G2
 
         int[] m_frame = new int[0x10000];
 
-        void UnpackGce1Segment (int data_len, int segment_length)
+        void UnpackGce1Segment (int segment_length)
         {
-            for (int i = 0; i < m_frame.Length; ++i)
-                m_frame[i] = 0;
             int frame_pos = 0;
-
-            int data_pos = 0;
             int dst_end = m_dst + segment_length;
-            while (data_pos < data_len && m_dst < dst_end)
+            while (m_dst < dst_end)
             {
                 int n = GetLength();
                 while (n --> 0)
                 {
                     m_frame[frame_pos] = m_dst;
                     byte b = m_input.ReadByte();
-                    data_pos++;
                     frame_pos = ((frame_pos << 8) | b) & 0xFFFF;
                     m_output[m_dst++] = b;
                 }
@@ -237,7 +230,7 @@ namespace GameRes.Formats.G2
             return v;
         }
 
-        byte[] m_control;
+        byte[]  m_control;
         int     m_control_pos;
         int     m_control_len;
         int     m_bit_pos;
