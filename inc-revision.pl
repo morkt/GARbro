@@ -34,7 +34,7 @@ chdir $project_dir or die "$project_dir: $!\n";
 my $git_exe = get_git_exe;
 my $prop_dir = File::Spec->catfile ('.', 'Properties');
 my $assembly_info = File::Spec->catfile ($prop_dir, 'AssemblyInfo.cs');
-my $revision = `$git_exe rev-list master --count $project_file`;
+my $revision = `$git_exe rev-list HEAD --count .`;
 die "git.exe failed\n" if $? != 0;
 chomp $revision;
 
