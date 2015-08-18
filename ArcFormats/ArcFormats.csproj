@@ -88,6 +88,7 @@
     <Compile Include="ArcFPK.cs" />
     <Compile Include="ArcFVP.cs" />
     <Compile Include="ArcGameDat.cs" />
+    <Compile Include="ArcGCEX.cs" />
     <Compile Include="ArcGPK.cs" />
     <Compile Include="ArcGSP.cs" />
     <Compile Include="ArcGsPack.cs" />
@@ -135,6 +136,7 @@
     <Compile Include="AudioWWA.cs" />
     <Compile Include="EriReader.cs" />
     <Compile Include="ImageABM.cs" />
+    <Compile Include="ImageBGRA.cs" />
     <Compile Include="ImageDWQ.cs" />
     <Compile Include="ImageHIZ.cs" />
     <Compile Include="ImageKG.cs" />
