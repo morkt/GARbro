@@ -61,9 +61,9 @@ namespace GameRes.Formats.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        public global::GameRes.Formats.IntEncryptionInfo INTEncryption {
+        public global::GameRes.Formats.CatSystem.IntEncryptionInfo INTEncryption {
             get {
-                return ((global::GameRes.Formats.IntEncryptionInfo)(this["INTEncryption"]));
+                return ((global::GameRes.Formats.CatSystem.IntEncryptionInfo)(this["INTEncryption"]));
             }
             set {
                 this["INTEncryption"] = value;

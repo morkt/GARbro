@@ -11,7 +11,7 @@
     <Setting Name="YPFKey" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">4294967295</Value>
     </Setting>
-    <Setting Name="INTEncryption" Type="GameRes.Formats.IntEncryptionInfo" Scope="User">
+    <Setting Name="INTEncryption" Type="GameRes.Formats.CatSystem.IntEncryptionInfo" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="XP3CompressHeader" Type="System.Boolean" Scope="User">

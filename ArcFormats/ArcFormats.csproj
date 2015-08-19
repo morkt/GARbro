@@ -61,199 +61,200 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArcABM.cs" />
-    <Compile Include="ArcADPACK.cs" />
+    <Compile Include="Amaterasu\ImageGRP.cs" />
+    <Compile Include="Lilim\ArcABM.cs" />
+    <Compile Include="ActiveSoft\ArcADPACK.cs" />
     <Compile Include="ArcAdvCls.cs" />
-    <Compile Include="ArcAdvSysT.cs" />
+    <Compile Include="AdvSys\ArcAdvSysT.cs" />
     <Compile Include="ArcAFS.cs" />
-    <Compile Include="ArcAi5Win.cs" />
+    <Compile Include="elf\ArcAi5Win.cs" />
     <Compile Include="ArcAil.cs" />
-    <Compile Include="ArcALD.cs" />
-    <Compile Include="ArcAMI.cs" />
-    <Compile Include="ArcAOS.cs" />
+    <Compile Include="AliceSoft\ArcALD.cs" />
+    <Compile Include="Amaterasu\ArcAMI.cs" />
+    <Compile Include="Lilim\ArcAOS.cs" />
     <Compile Include="ArcAST.cs" />
     <Compile Include="ArcAVC.cs" />
-    <Compile Include="ArcAZSys.cs" />
-    <Compile Include="ArcBGI.cs" />
-    <Compile Include="ArcBlackPackage.cs" />
-    <Compile Include="ArcCCT.cs" />
-    <Compile Include="ArcCherry.cs" />
-    <Compile Include="ArcCircus.cs" />
+    <Compile Include="AZSys\ArcAZSys.cs" />
+    <Compile Include="Ethornell\ArcBGI.cs" />
+    <Compile Include="Ffa\ArcBlackPackage.cs" />
+    <Compile Include="Macromedia\ArcCCT.cs" />
+    <Compile Include="Cherry\ArcCherry.cs" />
+    <Compile Include="Circus\ArcCircus.cs" />
     <Compile Include="ArcCommon.cs" />
-    <Compile Include="ArcDPK.cs" />
-    <Compile Include="ArcDRS.cs" />
-    <Compile Include="ArcEAGLS.cs" />
+    <Compile Include="Dac\ArcDPK.cs" />
+    <Compile Include="Ikura\ArcDRS.cs" />
+    <Compile Include="Eagls\ArcEAGLS.cs" />
     <Compile Include="ArcEGO.cs" />
-    <Compile Include="ArcFFA.cs" />
-    <Compile Include="ArcFPK.cs" />
+    <Compile Include="Ffa\ArcFFA.cs" />
+    <Compile Include="Interheart\ArcFPK.cs" />
     <Compile Include="ArcFVP.cs" />
-    <Compile Include="ArcGameDat.cs" />
-    <Compile Include="ArcGCEX.cs" />
-    <Compile Include="ArcGPK.cs" />
-    <Compile Include="ArcGSP.cs" />
-    <Compile Include="ArcGsPack.cs" />
-    <Compile Include="ArcHED.cs" />
-    <Compile Include="ArcIFL.cs" />
+    <Compile Include="Pajamas\ArcGameDat.cs" />
+    <Compile Include="G2\ArcGCEX.cs" />
+    <Compile Include="BlackCyc\ArcGPK.cs" />
+    <Compile Include="BlackRainbow\ArcGSP.cs" />
+    <Compile Include="GsPack\ArcGsPack.cs" />
+    <Compile Include="elf\ArcHED.cs" />
+    <Compile Include="Silky\ArcIFL.cs" />
     <Compile Include="ArcIKS.cs" />
     <Compile Include="ArcInnGrey.cs" />
-    <Compile Include="ArcINT.cs" />
+    <Compile Include="CatSystem\ArcINT.cs" />
     <Compile Include="ArcISA.cs" />
-    <Compile Include="ArcKAAS.cs" />
-    <Compile Include="ArcKaguya.cs" />
-    <Compile Include="ArcKCAP.cs" />
+    <Compile Include="Kaas\ArcKAAS.cs" />
+    <Compile Include="Kaguya\ArcKaguya.cs" />
+    <Compile Include="Selene\ArcKCAP.cs" />
     <Compile Include="ArcKogado.cs" />
-    <Compile Include="ArcLIB.cs" />
-    <Compile Include="ArcLPK.cs" />
+    <Compile Include="Malie\ArcLIB.cs" />
+    <Compile Include="Lucifen\ArcLPK.cs" />
     <Compile Include="ArcLST.cs" />
     <Compile Include="ArcMAI.cs" />
-    <Compile Include="ArcMajiro.cs" />
-    <Compile Include="ArcMBL.cs" />
-    <Compile Include="ArcMFG.cs" />
-    <Compile Include="ArcMGD.cs" />
+    <Compile Include="Majiro\ArcMajiro.cs" />
+    <Compile Include="Marble\ArcMBL.cs" />
+    <Compile Include="Silky\ArcMFG.cs" />
+    <Compile Include="Masys\ArcMGD.cs" />
     <Compile Include="ArcMGPK.cs" />
-    <Compile Include="ArcMnoViolet.cs" />
-    <Compile Include="ArcMRG.cs" />
+    <Compile Include="MnoViolet\ArcMnoViolet.cs" />
+    <Compile Include="FC01\ArcMRG.cs" />
     <Compile Include="ArcNEKO.cs" />
     <Compile Include="ArcNexas.cs" />
-    <Compile Include="ArcNitro.cs" />
-    <Compile Include="ArcNOA.cs" />
-    <Compile Include="ArcNPA.cs" />
-    <Compile Include="ArcNSA.cs" />
-    <Compile Include="ArcPAC.cs" />
-    <Compile Include="ArcPCK.cs" />
-    <Compile Include="ArcPD.cs" />
-    <Compile Include="ArcPK.cs" />
+    <Compile Include="NitroPlus\ArcNitro.cs" />
+    <Compile Include="Entis\ArcNOA.cs" />
+    <Compile Include="NitroPlus\ArcNPA.cs" />
+    <Compile Include="NScripter\ArcNSA.cs" />
+    <Compile Include="RiddleSoft\ArcPAC.cs" />
+    <Compile Include="Crowd\ArcPCK.cs" />
+    <Compile Include="FlyingShine\ArcPD.cs" />
+    <Compile Include="UMeSoft\ArcPK.cs" />
     <Compile Include="ArcQLIE.cs" />
-    <Compile Include="ArcRPA.cs" />
-    <Compile Include="ArcS25.cs" />
+    <Compile Include="RenPy\ArcRPA.cs" />
+    <Compile Include="ShiinaRio\ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
-    <Compile Include="ArcVPK.cs" />
-    <Compile Include="ArcWAG.cs" />
-    <Compile Include="ArcXuse.cs" />
-    <Compile Include="ArcYKC.cs" />
-    <Compile Include="AudioVAW.cs" />
-    <Compile Include="AudioWPN.cs" />
-    <Compile Include="AudioWWA.cs" />
-    <Compile Include="EriReader.cs" />
-    <Compile Include="ImageABM.cs" />
-    <Compile Include="ImageBGRA.cs" />
-    <Compile Include="ImageDWQ.cs" />
-    <Compile Include="ImageHIZ.cs" />
-    <Compile Include="ImageKG.cs" />
-    <Compile Include="ImageYKG.cs" />
-    <Compile Include="MioDecoder.cs" />
-    <Compile Include="WidgetRCT.xaml.cs">
+    <Compile Include="BlackCyc\ArcVPK.cs" />
+    <Compile Include="Xuse\ArcWAG.cs" />
+    <Compile Include="Xuse\ArcXuse.cs" />
+    <Compile Include="Yuka\ArcYKC.cs" />
+    <Compile Include="BlackCyc\AudioVAW.cs" />
+    <Compile Include="WildBug\AudioWPN.cs" />
+    <Compile Include="WildBug\AudioWWA.cs" />
+    <Compile Include="Entis\EriReader.cs" />
+    <Compile Include="Lilim\ImageABM.cs" />
+    <Compile Include="G2\ImageBGRA.cs" />
+    <Compile Include="BlackCyc\ImageDWQ.cs" />
+    <Compile Include="elf\ImageHIZ.cs" />
+    <Compile Include="Interheart\ImageKG.cs" />
+    <Compile Include="Yuka\ImageYKG.cs" />
+    <Compile Include="Entis\MioDecoder.cs" />
+    <Compile Include="Majiro\WidgetRCT.xaml.cs">
       <DependentUpon>WidgetRCT.xaml</DependentUpon>
     </Compile>
     <Compile Include="ZLibStream.cs" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
-    <Compile Include="ArcSteinsGate.cs" />
-    <Compile Include="ArcSUD.cs" />
-    <Compile Include="ArcTactics.cs" />
-    <Compile Include="ArcWARC.cs" />
-    <Compile Include="ArcWBP.cs" />
-    <Compile Include="ArcWILL.cs" />
-    <Compile Include="ArcXFL.cs" />
-    <Compile Include="ArcXP3.cs" />
-    <Compile Include="ArcYPF.cs" />
-    <Compile Include="AudioEDIM.cs" />
-    <Compile Include="AudioEOG.cs" />
-    <Compile Include="AudioMIO.cs" />
+    <Compile Include="NitroPlus\ArcSteinsGate.cs" />
+    <Compile Include="Triangle\ArcSUD.cs" />
+    <Compile Include="Tactics\ArcTactics.cs" />
+    <Compile Include="ShiinaRio\ArcWARC.cs" />
+    <Compile Include="WildBug\ArcWBP.cs" />
+    <Compile Include="Will\ArcWILL.cs" />
+    <Compile Include="Liar\ArcXFL.cs" />
+    <Compile Include="KiriKiri\ArcXP3.cs" />
+    <Compile Include="YuRis\ArcYPF.cs" />
+    <Compile Include="Macromedia\AudioEDIM.cs" />
+    <Compile Include="Crowd\AudioEOG.cs" />
+    <Compile Include="Entis\AudioMIO.cs" />
     <Compile Include="AudioMP3.cs" />
-    <Compile Include="AudioOGV.cs" />
-    <Compile Include="AudioPAD.cs" />
-    <Compile Include="AudioPCM.cs" />
-    <Compile Include="AudioPMW.cs" />
-    <Compile Include="AudioWA1.cs" />
-    <Compile Include="AudioWADY.cs" />
+    <Compile Include="ShiinaRio\AudioOGV.cs" />
+    <Compile Include="ShiinaRio\AudioPAD.cs" />
+    <Compile Include="Circus\AudioPCM.cs" />
+    <Compile Include="ScenePlayer\AudioPMW.cs" />
+    <Compile Include="Ffa\AudioWA1.cs" />
+    <Compile Include="Marble\AudioWADY.cs" />
     <Compile Include="Blowfish.cs" />
     <Compile Include="Camellia.cs" />
-    <Compile Include="CreateAMIWidget.xaml.cs">
+    <Compile Include="Amaterasu\CreateAMIWidget.xaml.cs">
       <DependentUpon>CreateAMIWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateINTWidget.xaml.cs">
+    <Compile Include="CatSystem\CreateINTWidget.xaml.cs">
       <DependentUpon>CreateINTWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateNPAWidget.xaml.cs">
+    <Compile Include="NitroPlus\CreateNPAWidget.xaml.cs">
       <DependentUpon>CreateNPAWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateONSWidget.xaml.cs">
+    <Compile Include="NScripter\CreateONSWidget.xaml.cs">
       <DependentUpon>CreateONSWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreatePDWidget.xaml.cs">
+    <Compile Include="FlyingShine\CreatePDWidget.xaml.cs">
       <DependentUpon>CreatePDWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateRPAWidget.xaml.cs">
+    <Compile Include="RenPy\CreateRPAWidget.xaml.cs">
       <DependentUpon>CreateRPAWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateSGWidget.xaml.cs">
+    <Compile Include="NitroPlus\CreateSGWidget.xaml.cs">
       <DependentUpon>CreateSGWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateARCWidget.xaml.cs">
+    <Compile Include="Will\CreateARCWidget.xaml.cs">
       <DependentUpon>CreateARCWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateXP3Widget.xaml.cs">
+    <Compile Include="KiriKiri\CreateXP3Widget.xaml.cs">
       <DependentUpon>CreateXP3Widget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CreateYPFWidget.xaml.cs">
+    <Compile Include="YuRis\CreateYPFWidget.xaml.cs">
       <DependentUpon>CreateYPFWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ImageACD.cs" />
-    <Compile Include="ImageAG.cs" />
+    <Compile Include="FC01\ImageACD.cs" />
+    <Compile Include="Masys\ImageAG.cs" />
     <Compile Include="ImageAinos.cs" />
-    <Compile Include="ImageAP.cs" />
-    <Compile Include="ImageBGI.cs" />
+    <Compile Include="Kaguya\ImageAP.cs" />
+    <Compile Include="Ethornell\ImageBGI.cs" />
     <Compile Include="ImageBIP.cs" />
-    <Compile Include="ImageBITD.cs" />
-    <Compile Include="ImageBMD.cs" />
-    <Compile Include="ImageBMZ.cs" />
-    <Compile Include="ImageCPB.cs" />
-    <Compile Include="ImageCRX.cs" />
-    <Compile Include="ImageCWL.cs" />
-    <Compile Include="ImageCWP.cs" />
+    <Compile Include="Macromedia\ImageBITD.cs" />
+    <Compile Include="BlackRainbow\ImageBMD.cs" />
+    <Compile Include="BlackRainbow\ImageBMZ.cs" />
+    <Compile Include="AZSys\ImageCPB.cs" />
+    <Compile Include="Circus\ImageCRX.cs" />
+    <Compile Include="Crowd\ImageCWL.cs" />
+    <Compile Include="Crowd\ImageCWP.cs" />
     <Compile Include="ImageDDS.cs" />
-    <Compile Include="ImageDGC.cs" />
-    <Compile Include="ImageDRG.cs" />
-    <Compile Include="ImageDZI.cs" />
-    <Compile Include="ImageEDT.cs" />
+    <Compile Include="Dac\ImageDGC.cs" />
+    <Compile Include="Ikura\ImageDRG.cs" />
+    <Compile Include="Malie\ImageDZI.cs" />
+    <Compile Include="ActiveSoft\ImageEDT.cs" />
     <Compile Include="ImageEGN.cs" />
-    <Compile Include="ImageELG.cs" />
-    <Compile Include="ImageEPA.cs" />
-    <Compile Include="ImageERI.cs" />
-    <Compile Include="ImageGCC.cs" />
-    <Compile Include="ImageGCP.cs" />
-    <Compile Include="ImageGGP.cs" />
-    <Compile Include="ImageGR.cs" />
-    <Compile Include="ImageGR2.cs" />
-    <Compile Include="ImageGRP.cs" />
-    <Compile Include="ImageGRX.cs" />
-    <Compile Include="ImageGS.cs" />
-    <Compile Include="ImageHG3.cs" />
-    <Compile Include="ImageIAF.cs" />
-    <Compile Include="ImageIGF.cs" />
+    <Compile Include="Lucifen\ImageELG.cs" />
+    <Compile Include="Pajamas\ImageEPA.cs" />
+    <Compile Include="Entis\ImageERI.cs" />
+    <Compile Include="elf\ImageGCC.cs" />
+    <Compile Include="RiddleSoft\ImageGCP.cs" />
+    <Compile Include="Ikura\ImageGGP.cs" />
+    <Compile Include="Eagls\ImageGR.cs" />
+    <Compile Include="AdvSys\ImageGR2.cs" />
+    <Compile Include="Cherry\ImageGRP.cs" />
+    <Compile Include="UMeSoft\ImageGRX.cs" />
+    <Compile Include="GsPack\ImageGS.cs" />
+    <Compile Include="CatSystem\ImageHG3.cs" />
+    <Compile Include="Triangle\ImageIAF.cs" />
+    <Compile Include="Silky\ImageIGF.cs" />
     <Compile Include="ImageISG.cs" />
-    <Compile Include="ImageKAAS.cs" />
+    <Compile Include="Kaas\ImageKAAS.cs" />
     <Compile Include="ImageMAI.cs" />
-    <Compile Include="ImageMCG.cs" />
-    <Compile Include="ImageMFG.cs" />
-    <Compile Include="ImageMGF.cs" />
-    <Compile Include="ImageMI4.cs" />
-    <Compile Include="ImageMNV.cs" />
-    <Compile Include="ImagePMP.cs" />
-    <Compile Include="ImagePRS.cs" />
-    <Compile Include="ImagePT1.cs" />
-    <Compile Include="ImageQNT.cs" />
-    <Compile Include="ImageRCT.cs" />
-    <Compile Include="ImageS25.cs" />
+    <Compile Include="FC01\ImageMCG.cs" />
+    <Compile Include="Silky\ImageMFG.cs" />
+    <Compile Include="Malie\ImageMGF.cs" />
+    <Compile Include="ShiinaRio\ImageMI4.cs" />
+    <Compile Include="MnoViolet\ImageGRA.cs" />
+    <Compile Include="ScenePlayer\ImagePMP.cs" />
+    <Compile Include="Marble\ImagePRS.cs" />
+    <Compile Include="Ffa\ImagePT1.cs" />
+    <Compile Include="AliceSoft\ImageQNT.cs" />
+    <Compile Include="Majiro\ImageRCT.cs" />
+    <Compile Include="ShiinaRio\ImageS25.cs" />
     <Compile Include="ImageSeraph.cs" />
-    <Compile Include="ImageTGF.cs" />
-    <Compile Include="ImageTLG.cs" />
-    <Compile Include="ImageWBM.cs" />
-    <Compile Include="ImageWCG.cs" />
-    <Compile Include="ImageWIP.cs" />
-    <Compile Include="ImageZBM.cs" />
-    <Compile Include="KiriKiriCx.cs" />
+    <Compile Include="Tactics\ImageTGF.cs" />
+    <Compile Include="KiriKiri\ImageTLG.cs" />
+    <Compile Include="WildBug\ImageWBM.cs" />
+    <Compile Include="Liar\ImageWCG.cs" />
+    <Compile Include="Will\ImageWIP.cs" />
+    <Compile Include="Crowd\ImageZBM.cs" />
+    <Compile Include="KiriKiri\KiriKiriCx.cs" />
     <Compile Include="KogadoCocotte.cs" />
     <Compile Include="AudioOGG.cs" />
     <Compile Include="LzssStream.cs" />
@@ -269,38 +270,38 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>arcStrings.resx</DependentUpon>
     </Compile>
-    <Compile Include="WidgetDPK.xaml.cs">
+    <Compile Include="Dac\WidgetDPK.xaml.cs">
       <DependentUpon>WidgetDPK.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetINT.xaml.cs">
+    <Compile Include="CatSystem\WidgetINT.xaml.cs">
       <DependentUpon>WidgetINT.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetISF.xaml.cs">
+    <Compile Include="Ikura\WidgetISF.xaml.cs">
       <DependentUpon>WidgetISF.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetKCAP.xaml.cs">
+    <Compile Include="Selene\WidgetKCAP.xaml.cs">
       <DependentUpon>WidgetKCAP.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetLPK.xaml.cs">
+    <Compile Include="Lucifen\WidgetLPK.xaml.cs">
       <SubType>Code</SubType>
       <DependentUpon>WidgetLPK.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetMBL.xaml.cs">
+    <Compile Include="Marble\WidgetMBL.xaml.cs">
       <DependentUpon>WidgetMBL.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetNOA.xaml.cs">
+    <Compile Include="Entis\WidgetNOA.xaml.cs">
       <DependentUpon>WidgetNOA.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetNPA.xaml.cs">
+    <Compile Include="NitroPlus\WidgetNPA.xaml.cs">
       <DependentUpon>WidgetNPA.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetWARC.xaml.cs">
+    <Compile Include="ShiinaRio\WidgetWARC.xaml.cs">
       <DependentUpon>WidgetWARC.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetXP3.xaml.cs">
+    <Compile Include="KiriKiri\WidgetXP3.xaml.cs">
       <DependentUpon>WidgetXP3.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WidgetYPF.xaml.cs">
+    <Compile Include="YuRis\WidgetYPF.xaml.cs">
       <DependentUpon>WidgetYPF.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
@@ -328,91 +329,91 @@
     <EmbeddedResource Include="Resources\DecodeV249.bin" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="CreateAMIWidget.xaml">
+    <Page Include="Amaterasu\CreateAMIWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateINTWidget.xaml">
+    <Page Include="CatSystem\CreateINTWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateNPAWidget.xaml">
+    <Page Include="NitroPlus\CreateNPAWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateONSWidget.xaml">
+    <Page Include="NScripter\CreateONSWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreatePDWidget.xaml">
+    <Page Include="FlyingShine\CreatePDWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateRPAWidget.xaml">
+    <Page Include="RenPy\CreateRPAWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateSGWidget.xaml">
+    <Page Include="NitroPlus\CreateSGWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateARCWidget.xaml">
+    <Page Include="Will\CreateARCWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateXP3Widget.xaml">
+    <Page Include="KiriKiri\CreateXP3Widget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CreateYPFWidget.xaml">
+    <Page Include="YuRis\CreateYPFWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetDPK.xaml">
+    <Page Include="Dac\WidgetDPK.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetINT.xaml">
+    <Page Include="CatSystem\WidgetINT.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="WidgetISF.xaml">
+    <Page Include="Ikura\WidgetISF.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetKCAP.xaml">
+    <Page Include="Selene\WidgetKCAP.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetLPK.xaml">
+    <Page Include="Lucifen\WidgetLPK.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="WidgetMBL.xaml">
+    <Page Include="Marble\WidgetMBL.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetNOA.xaml">
+    <Page Include="Entis\WidgetNOA.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetNPA.xaml">
+    <Page Include="NitroPlus\WidgetNPA.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetRCT.xaml">
+    <Page Include="Majiro\WidgetRCT.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetWARC.xaml">
+    <Page Include="ShiinaRio\WidgetWARC.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="WidgetXP3.xaml">
+    <Page Include="KiriKiri\WidgetXP3.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WidgetYPF.xaml">
+    <Page Include="YuRis\WidgetYPF.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -424,6 +425,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)</PreBuildEvent>
