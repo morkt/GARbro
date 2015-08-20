@@ -29,6 +29,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using GameRes.Formats.Strings;
+using System;
 
 namespace GameRes.Formats.Riddle
 {
@@ -49,16 +50,30 @@ namespace GameRes.Formats.Riddle
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
-            long index_offset = 8;
-            uint base_offset = (uint)(count*0x20 + 8);
+            uint index_offset = 8;
+            long base_offset = count*0x20 + 8;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x10);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
                 uint size = file.View.ReadUInt32 (index_offset+0x10);
+                var entry = new PackedEntry { Name = name };
+                if (name.EndsWith (".scp", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    entry.Type = "script";
+                    entry.IsPacked = size > 12 && file.View.AsciiEqual (index_offset+0x14, "CMP1");
+                }
+                else
+                {
+                    entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                    entry.IsPacked = false;
+                }
+                if (entry.IsPacked)
+                    entry.UnpackedSize = file.View.ReadUInt32 (index_offset+0x18);
+                else
+                    entry.UnpackedSize = size;
                 entry.Offset = base_offset;
                 entry.Size   = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -68,6 +83,21 @@ namespace GameRes.Formats.Riddle
                 index_offset += 0x20;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var pentry = entry as PackedEntry;
+            if (null == pentry || !pentry.IsPacked
+                || !arc.File.View.AsciiEqual (entry.Offset, "CMP1"))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            int unpacked_size = arc.File.View.ReadInt32 (entry.Offset+4);
+            using (var input = arc.File.CreateStream (entry.Offset+12, entry.Size-12))
+            {
+                var reader = new CmpReader (input, (int)entry.Size, unpacked_size);
+                reader.Unpack();
+                return new MemoryStream (reader.Data);
+            }
         }
     }
 }
