@@ -48,6 +48,11 @@ namespace GameRes.Formats.Yuka
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return true; } }
 
+        public YkcOpener ()
+        {
+            Extensions = new string[] { "ykc", "dat" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (0x3130 != file.View.ReadUInt32 (4))
@@ -80,6 +85,23 @@ namespace GameRes.Formats.Yuka
                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry.Size < 0x24
+                || !entry.Name.EndsWith (".yks", StringComparison.InvariantCultureIgnoreCase)
+                || !arc.File.View.AsciiEqual (entry.Offset, "YKS001")
+                || 1 != arc.File.View.ReadUInt16 (entry.Offset+6))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            // decrypt script contents
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            uint text_offset = LittleEndian.ToUInt32 (data, 0x20);
+            for (uint i = text_offset; i < data.Length; ++i)
+                data[i] ^= 0xAA;
+            data[6] = 0;
+            return new MemoryStream (data);
         }
 
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
