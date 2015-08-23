@@ -63,8 +63,12 @@ namespace GameRes.Formats.Yuka
                 DataOffset = LittleEndian.ToUInt32 (header, 0x28),
                 DataSize   = LittleEndian.ToUInt32 (header, 0x2C)
             };
+            if (0 == ykg.DataOffset)
+                ykg.DataOffset = LittleEndian.ToUInt32 (header, 8);
             if (ykg.DataOffset < 0x30)
                 return null;
+            if (0 == ykg.DataSize)
+                ykg.DataSize = (uint)(stream.Length - ykg.DataOffset);
             ImageMetaData info = null;
             using (var img = new StreamRegion (stream, ykg.DataOffset, ykg.DataSize, true))
             {
@@ -88,10 +92,6 @@ namespace GameRes.Formats.Yuka
                     using (var png = new PrefixStream (PngPrefix, body))
                         info = Png.ReadMetaData (png);
                     ykg.Format = YkgImage.Gnp;
-                }
-                else
-                {
-                    return null;
                 }
             }
             if (null == info)
