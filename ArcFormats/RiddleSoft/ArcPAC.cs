@@ -24,11 +24,8 @@
 //
 
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using GameRes.Formats.Strings;
 using System;
 
 namespace GameRes.Formats.Riddle
