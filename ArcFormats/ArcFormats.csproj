@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Amaterasu\ImageGRP.cs" />
+    <Compile Include="BitStream.cs" />
     <Compile Include="Lilim\ArcABM.cs" />
     <Compile Include="ActiveSoft\ArcADPACK.cs" />
     <Compile Include="ArcAdvCls.cs" />
@@ -147,6 +148,7 @@
       <DependentUpon>WidgetRCT.xaml</DependentUpon>
     </Compile>
     <Compile Include="ZLibStream.cs" />
+    <Compile Include="Zyx\ArcBDF.cs" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="NitroPlus\ArcSteinsGate.cs" />
