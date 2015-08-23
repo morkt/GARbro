@@ -169,6 +169,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Set file type.
+        /// </summary>
+        public static string CtxMenuFileType {
+            get {
+                return ResourceManager.GetString("CtxMenuFileType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open.
         /// </summary>
         public static string CtxMenuOpen {
@@ -1034,6 +1043,15 @@ namespace GARbro.GUI.Strings {
         public static string Type_directory {
             get {
                 return ResourceManager.GetString("Type_directory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to none.
+        /// </summary>
+        public static string Type_NONE {
+            get {
+                return ResourceManager.GetString("Type_NONE", resourceCulture);
             }
         }
     }

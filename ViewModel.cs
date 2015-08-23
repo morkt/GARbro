@@ -213,7 +213,7 @@ namespace GARbro.GUI
         }
     }
 
-    public class EntryViewModel
+    public class EntryViewModel : INotifyPropertyChanged
     {
         public EntryViewModel (Entry entry, int priority)
         {
@@ -222,13 +222,34 @@ namespace GARbro.GUI
             Priority = priority;
         }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public Entry Source { get; private set; }
 
         public string Name { get; private set; }
-        public string Type { get { return Source.Type; } }
+        public string Type
+        {
+            get { return Source.Type; }
+            set
+            {
+                if (Source.Type != value)
+                {
+                    Source.Type = value;
+                    OnPropertyChanged ("Type");
+                }
+            }
+        }
         public uint?  Size { get { return IsDirectory ? null : (uint?)Source.Size; } }
         public int    Priority { get; private set; }
         public bool   IsDirectory { get { return Priority < 0; } }
+
+        private void OnPropertyChanged (string property = "")
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged (this, new PropertyChangedEventArgs (property));
+            }
+        }
     }
 
     public sealed class FileSystemComparer : IComparer

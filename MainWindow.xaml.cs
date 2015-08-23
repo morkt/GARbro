@@ -527,6 +527,21 @@ namespace GARbro.GUI
         }
 
         /// <summary>
+        /// Handle "Set file type" commands.
+        /// </summary>
+        private void SetFileTypeExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var selected = CurrentDirectory.SelectedItems.Cast<EntryViewModel>().Where (x => !x.IsDirectory);
+            if (!selected.Any())
+                return;
+            string type = e.Parameter as string;
+            foreach (var entry in selected)
+            {
+                entry.Type = type;
+            }
+        }
+
+        /// <summary>
         /// Event handler for keys pressed in the directory view pane
         /// </summary>
 
@@ -1314,5 +1329,6 @@ namespace GARbro.GUI
         public static readonly RoutedCommand HideToolBar = new RoutedCommand();
         public static readonly RoutedCommand AddSelection = new RoutedCommand();
         public static readonly RoutedCommand SelectAll = new RoutedCommand();
+        public static readonly RoutedCommand SetFileType = new RoutedCommand();
     }
 }

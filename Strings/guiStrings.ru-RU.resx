@@ -467,4 +467,10 @@
 {0}
 {1}</value>
   </data>
+  <data name="CtxMenuFileType" xml:space="preserve">
+    <value>Изменить тип файла</value>
+  </data>
+  <data name="Type_NONE" xml:space="preserve">
+    <value>без типа</value>
+  </data>
 </root>
