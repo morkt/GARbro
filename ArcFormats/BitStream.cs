@@ -45,6 +45,11 @@ namespace GameRes.Formats
         int m_bits = 0;
         int m_cached_bits = 0;
 
+        public void Reset ()
+        {
+            m_cached_bits = 0;
+        }
+
         public int GetNextBit ()
         {
             return GetBits (1);
