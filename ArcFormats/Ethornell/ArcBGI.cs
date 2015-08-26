@@ -2,7 +2,7 @@
 //! \date       Tue Sep 09 09:29:12 2014
 //! \brief      BGI/Ethornell engine archive implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -111,34 +111,74 @@ namespace GameRes.Formats.BGI
                 }
                 return new ArcView.ArcStream (input);
             }
-            catch
+            catch (Exception X)
             {
-                input.Dispose();
-                throw;
+                System.Diagnostics.Trace.WriteLine (X.Message, "BgiOpener");
+                return arc.File.CreateStream (entry.Offset, entry.Size);
             }
         }
     }
 
-    internal sealed class DscDecoder : IDisposable
+    internal class BgiDecoderBase : MsbBitStream
     {
-        private Stream  m_input;
-        private byte[]  m_output;
+        protected uint      m_key;
+        protected uint      m_magic;
 
-        private uint    m_key;
-        private uint    m_dst_size;
-        private uint    m_dec_count;
-        private uint    m_magic;
+        protected BgiDecoderBase (Stream input, bool leave_open = false) : base (input, leave_open)
+        {
+        }
+
+        protected byte UpdateKey ()
+        {
+            uint v0 = 20021 * (m_key & 0xffff);
+            uint v1 = m_magic | (m_key >> 16);
+            v1 = v1 * 20021 + m_key * 346;
+            v1 = (v1 + (v0 >> 16)) & 0xffff;
+            m_key = (v1 << 16) + (v0 & 0xffff) + 1;
+            return (byte)v1;
+        }
+    }
+
+    internal sealed class DscDecoder : BgiDecoderBase
+    {
+        byte[]    m_output;
+        uint      m_dst_size;
+        uint      m_dec_count;
 
         public byte[] Output { get { return m_output; } }
 
         public DscDecoder (ArcView.Frame input)
+            : base (new ArcView.ArcStream (input, input.Offset+0x20, input.Reserved-0x20))
         {
             m_magic = (uint)input.ReadUInt16 (input.Offset) << 16;
             m_key = input.ReadUInt32 (input.Offset+0x10);
             m_dst_size = input.ReadUInt32 (input.Offset+0x14);
             m_dec_count = input.ReadUInt32 (input.Offset+0x18);
-            m_input = new ArcView.ArcStream (input, input.Offset+0x20, input.Reserved-0x20);
             m_output = new byte[m_dst_size];
+        }
+
+        public void Unpack ()
+        {
+            HuffmanCode[] hcodes = new HuffmanCode[512];
+            HuffmanNode[] hnodes = new HuffmanNode[1023];
+
+            int leaf_node_count = 0;
+            for (ushort i = 0; i < 512; i++)
+            {
+                int src = Input.ReadByte();
+                if (-1 == src)
+                    throw new EndOfStreamException ("Incomplete compressed stream");
+                byte depth = (byte)(src - UpdateKey());
+                if (0 != depth)
+                {
+                    hcodes[leaf_node_count].Depth = depth;
+                    hcodes[leaf_node_count].Code = i;
+                    leaf_node_count++;
+                }
+            }
+            Array.Sort (hcodes, 0, leaf_node_count);
+            CreateHuffmanTree (hnodes, hcodes, leaf_node_count);
+            HuffmanDecompress (hnodes, m_dec_count);
         }
 
         struct HuffmanCode : IComparable<HuffmanCode>
@@ -163,31 +203,7 @@ namespace GameRes.Formats.BGI
             public uint RightChildIndex;
         }
 
-        public void Unpack ()
-        {
-            HuffmanCode[] hcodes = new HuffmanCode[512];
-            HuffmanNode[] hnodes = new HuffmanNode[1023];
-
-            int leaf_node_count = 0;
-            for (ushort i = 0; i < 512; i++)
-            {
-                int src = m_input.ReadByte();
-                if (-1 == src)
-                    throw new EndOfStreamException ("Incomplete compressed stream");
-                byte depth = (byte)(src - UpdateKey());
-                if (0 != depth)
-                {
-                    hcodes[leaf_node_count].Depth = depth;
-                    hcodes[leaf_node_count].Code = i;
-                    leaf_node_count++;
-                }
-            }
-            Array.Sort (hcodes, 0, leaf_node_count);
-            CreateHuffmanTree (hnodes, hcodes, leaf_node_count);
-            HuffmanDecompress (hnodes, m_dec_count);
-        }
-
-        void CreateHuffmanTree (HuffmanNode[] hnodes, HuffmanCode[] hcode, int node_count)
+        static void CreateHuffmanTree (HuffmanNode[] hnodes, HuffmanCode[] hcode, int node_count)
         {
             uint[,] nodes_index = new uint[2,512];
             uint next_node_index = 1;
@@ -221,34 +237,6 @@ namespace GameRes.Formats.BGI
             }
         }
 
-        int m_bits = 0;
-
-        bool GetNextBit ()
-        {
-            bool carry = 0 != (m_bits & 0x80);
-            m_bits <<= 1;
-            if (0 == (m_bits & 0xff))
-            {
-                m_bits = m_input.ReadByte();
-                if (-1 == m_bits)
-                    throw new EndOfStreamException ("Invalid compressed stream");
-                carry = 0 != (m_bits & 0x80);
-                m_bits = (m_bits << 1) | 1;
-            }
-            return carry;
-        }
-
-        bool GetBits (int count, out int bits)
-        {
-            bits = 0;
-            for (int i = 0; i < count; ++i)
-            {
-                bits <<= 1;
-                bits |= GetNextBit() ? 1 : 0;
-            }
-            return true;
-        }
-
         uint HuffmanDecompress (HuffmanNode[] hnodes, uint dec_count)
         {
             uint dst_ptr = 0;
@@ -258,7 +246,10 @@ namespace GameRes.Formats.BGI
                 uint node_index = 0;
                 do
                 {
-                    if (!GetNextBit())
+                    int bit = GetNextBit();
+                    if (-1 == bit)
+                        throw new EndOfStreamException();
+                    if (0 == bit)
                         node_index = hnodes[node_index].LeftChildIndex;
                     else
                         node_index = hnodes[node_index].RightChildIndex;
@@ -268,8 +259,8 @@ namespace GameRes.Formats.BGI
                 uint code = hnodes[node_index].Code;
                 if (code >= 256)
                 {
-                    int win_pos;
-                    if (!GetBits (12, out win_pos))
+                    int win_pos = GetBits (12);
+                    if (-1 == win_pos)
                         break;
             
                     uint copy_bytes = (code & 0xff) + 2;
@@ -284,27 +275,5 @@ namespace GameRes.Formats.BGI
             }
             return dst_ptr;
         }
-
-        byte UpdateKey ()
-        {
-            uint v0 = 20021 * (m_key & 0xffff);
-            uint v1 = m_magic | (m_key >> 16);
-            v1 = v1 * 20021 + m_key * 346;
-            v1 = (v1 + (v0 >> 16)) & 0xffff;
-            m_key = (v1 << 16) + (v0 & 0xffff) + 1;
-            return (byte)v1;
-        }
-
-        #region IDisposable Members
-        public void Dispose ()
-        {
-            if (null != m_input)
-            {
-                m_input.Dispose();
-                m_input = null;
-            }
-            GC.SuppressFinalize (this);
-        }
-        #endregion
     }
 }
