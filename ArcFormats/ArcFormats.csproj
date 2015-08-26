@@ -92,7 +92,7 @@
     <Compile Include="Pajamas\ArcGameDat.cs" />
     <Compile Include="G2\ArcGCEX.cs" />
     <Compile Include="BlackCyc\ArcGPK.cs" />
-    <Compile Include="BlackRainbow\ArcGSP.cs" />
+    <Compile Include="GSD\ArcGSP.cs" />
     <Compile Include="GsPack\ArcGsPack.cs" />
     <Compile Include="elf\ArcHED.cs" />
     <Compile Include="Silky\ArcIFL.cs" />
@@ -209,8 +209,8 @@
     <Compile Include="Ethornell\ImageBGI.cs" />
     <Compile Include="ImageBIP.cs" />
     <Compile Include="Macromedia\ImageBITD.cs" />
-    <Compile Include="BlackRainbow\ImageBMD.cs" />
-    <Compile Include="BlackRainbow\ImageBMZ.cs" />
+    <Compile Include="GSD\ImageBMD.cs" />
+    <Compile Include="GSD\ImageBMZ.cs" />
     <Compile Include="AZSys\ImageCPB.cs" />
     <Compile Include="Circus\ImageCRX.cs" />
     <Compile Include="Crowd\ImageCWL.cs" />
