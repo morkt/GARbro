@@ -169,7 +169,7 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Set file type.
+        ///   Looks up a localized string similar to Assign file type.
         /// </summary>
         public static string CtxMenuFileType {
             get {

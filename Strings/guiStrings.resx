@@ -447,7 +447,7 @@ Overwrite?</value>
 {1}</value>
   </data>
   <data name="CtxMenuFileType" xml:space="preserve">
-    <value>Set file type</value>
+    <value>Assign file type</value>
   </data>
   <data name="Type_NONE" xml:space="preserve">
     <value>none</value>
