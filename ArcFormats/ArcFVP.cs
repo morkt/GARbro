@@ -37,7 +37,7 @@ namespace GameRes.Formats.FVP
         public override string         Tag { get { return "FVP"; } }
         public override string Description { get { return "FVP engine resource archive"; } }
         public override uint     Signature { get { return 0x58504341; } } // "ACPX"
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         public BinOpener ()
@@ -133,13 +133,12 @@ namespace GameRes.Formats.FVP
                             throw new EndOfStreamException ("Invalid compressed stream");
                         bits = (bits << 1) | 1;
                     }
-                    bool carry = 0 != (bits & 0x100);
+                    int next_bit = (bits >> 8) & 1;
                     hi = 0 != (eax & 0x80000000);
-                    eax = (eax << 1) | (carry ? 1u : 0u);
+                    eax = (eax << 1) | (uint)next_bit;
                 }
                 if (0x100 == (eax & 0xff00) && 2 >= (eax & 0xff))
                 {
-                    uint ecx = L0;
                     if (2 == (eax & 0xff))
                     {
                         L0 = 0x800000;
@@ -148,10 +147,9 @@ namespace GameRes.Formats.FVP
                     }
                     if (0 == (eax & 0xff))
                         break;
-                    ecx >>= 1;
-                    if (0 != (ecx & 0xff00))
+                    L0 >>= 1;
+                    if (0 != (L0 & 0xff00))
                         throw new EndOfStreamException ("Invalid compressed stream");
-                    L0 = ecx;
                     continue;
                 }
                 ++edx;
