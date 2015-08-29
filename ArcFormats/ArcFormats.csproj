@@ -63,6 +63,8 @@
   <ItemGroup>
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="BitStream.cs" />
+    <Compile Include="Emic\ArcPACK.cs" />
+    <Compile Include="Emic\ImageMWP.cs" />
     <Compile Include="Ethornell\AudioBGI.cs" />
     <Compile Include="Lilim\ArcABM.cs" />
     <Compile Include="ActiveSoft\ArcADPACK.cs" />
