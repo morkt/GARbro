@@ -83,30 +83,7 @@ namespace GameRes.Formats.BGI
                     using (var decoder = new DscDecoder (input))
                     {
                         decoder.Unpack();
-                        byte[] data = decoder.Output;
-                        if (data.Length > 0x40)
-                        {
-                            uint data_offset = LittleEndian.ToUInt32 (data, 0);
-                            if (data_offset < data.Length-4 && 0x20207762 == LittleEndian.ToUInt32 (data, 4))
-                            {
-                                if (0x5367674f == LittleEndian.ToUInt32 (data, (int)data_offset)) // 'OggS'
-                                {
-                                    return new MemoryStream (data, (int)data_offset, data.Length-(int)data_offset, false);
-                                }
-                            }
-                        }
-                        return new MemoryStream (data, false);
-                    }
-                }
-                if (entry.Size > 0x40)
-                {
-                    uint data_offset = input.ReadUInt32 (entry_offset);
-                    if (data_offset < entry.Size-4 && 0x20207762 == input.ReadUInt32 (entry_offset+4))
-                    {
-                        if (0x5367674f == input.ReadUInt32 (entry_offset+data_offset)) // 'OggS'
-                        {
-                            return new ArcView.ArcStream (input, entry_offset+data_offset, entry.Size-data_offset);
-                        }
+                        return new MemoryStream (decoder.Output);
                     }
                 }
                 return new ArcView.ArcStream (input);
@@ -116,6 +93,43 @@ namespace GameRes.Formats.BGI
                 System.Diagnostics.Trace.WriteLine (X.Message, "BgiOpener");
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             }
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Arc2Opener : ArcOpener
+    {
+        public override string         Tag { get { return "BURIKO ARC"; } }
+        public override string Description { get { return "BGI/Ethornell engine resource archive v2"; } }
+        public override uint     Signature { get { return 0x49525542; } } // "BURI"
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (4, "KO ARC20"))
+                return null;
+            int count = file.View.ReadInt32 (12);
+            if (!IsSaneCount (count))
+                return null;
+            uint index_size = 0x80 * (uint)count;
+            if (index_size > file.View.Reserve (0x10, index_size))
+                return null;
+            var dir = new List<Entry> (count);
+            long index_offset = 0x10;
+            long base_offset = index_offset + index_size;
+            for (uint i = 0; i < count; ++i)
+            {
+                string name = file.View.ReadString (index_offset, 0x60);
+                var entry = FormatCatalog.Instance.CreateEntry (name);
+                entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x60);
+                entry.Size   = file.View.ReadUInt32 (index_offset+0x64);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 0x80;
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 
