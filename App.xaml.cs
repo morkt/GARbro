@@ -111,7 +111,7 @@ namespace GARbro.GUI
             }
             foreach (var file in info.EnumerateFiles())
             {
-                if (0 != (file.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
+                if (0 != (file.Attributes & (FileAttributes.System)))
                     continue;
                 var entry = FormatCatalog.Instance.CreateEntry (file.Name);
                 entry.Size = (uint)Math.Min (file.Length, uint.MaxValue);
