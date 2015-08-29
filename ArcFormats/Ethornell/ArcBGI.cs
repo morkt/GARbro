@@ -232,7 +232,7 @@ namespace GameRes.Formats.BGI
                 int child_index = switch_flag;
 
                 int depth_existed_nodes = 0;
-                while (hcode[n].Depth == depth)
+                while (n < hcode.Length && hcode[n].Depth == depth)
                 {
                     var node = new HuffmanNode { IsParent = false, Code = hcode[n++].Code };
                     hnodes[nodes_index[huffman_nodes_index, depth_existed_nodes]] = node;
