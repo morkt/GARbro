@@ -63,6 +63,7 @@ namespace GameRes.Formats.Majiro
 
         public static readonly Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
             { "Akatsuki no Goei",               "おぬぐり食べる？" },
+            { "Amber Quartz",                   "夕焼け。学校の屋上。そこに伸びる二つの影。" },
             { "Nagisa no",                      "青い空に向かって、溜息を一つこぼす。" },
             { "White ~blanche comme la lune~",  "たった３枚の紙" },
         };
