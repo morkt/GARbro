@@ -49,9 +49,10 @@ namespace GameRes.Formats.BGI
             if (!Binary.AsciiEqual (header, 4, "bw  "))
                 return null;
             uint offset = LittleEndian.ToUInt32 (header, 0);
-            file.Seek (offset, SeekOrigin.Begin);
+            if (offset >= file.Length)
+                return null;
 
-            var input = new StreamRegion (file, file.Position);
+            var input = new StreamRegion (file, offset);
             return new OggInput (input);
             // input is left undisposed in case of exception.
         }
