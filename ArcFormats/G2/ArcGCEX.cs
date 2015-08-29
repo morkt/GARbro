@@ -41,6 +41,11 @@ namespace GameRes.Formats.G2
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
+        public PakOpener ()
+        {
+            Extensions = new string[] { "pak" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (0 != file.View.ReadInt32 (4))
