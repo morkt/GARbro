@@ -160,6 +160,7 @@ namespace GameRes.Formats.BGI
         uint      m_dec_count;
 
         public byte[] Output { get { return m_output; } }
+        public uint   Length { get { return m_dst_size; } }
 
         public DscDecoder (ArcView.Frame input)
             : base (new ArcView.ArcStream (input, input.Offset+0x20, input.Reserved-0x20))
