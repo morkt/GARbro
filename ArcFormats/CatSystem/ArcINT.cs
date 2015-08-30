@@ -109,7 +109,7 @@ namespace GameRes.Formats.CatSystem
             for (uint i = 0; i < entry_count; ++i)
             {
                 string name = file.View.ReadString (current_offset, 0x40);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (current_offset+0x40);
                 entry.Size   = file.View.ReadUInt32 (current_offset+0x44);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -150,7 +150,7 @@ namespace GameRes.Formats.CatSystem
                 uint key = twister.Twist (main_key + i);
                 string name = DecipherName (name_info, key);
 
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = eax;
                 entry.Size   = edx;
                 if (!entry.CheckPlacement (file.MaxOffset))

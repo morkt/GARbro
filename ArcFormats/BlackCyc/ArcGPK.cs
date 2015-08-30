@@ -71,7 +71,7 @@ namespace GameRes.Formats.BlackCyc
                         return null;
                     string name = gtb.View.ReadString (name_offset, (uint)(gtb.MaxOffset-name_offset));
                     name += ".dwq";
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = next_offset;
                     if (i + 1 == count)
                         next_offset = (uint)file.MaxOffset;

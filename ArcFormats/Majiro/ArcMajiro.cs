@@ -93,7 +93,7 @@ namespace GameRes.Formats.Majiro
                 names_pos = zero+1;
                 uint offset = offset_next;
                 offset_next = file.View.ReadUInt32 (table_pos + entry_size + hash_size);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = offset;
                 if (1 == version)
                     entry.Size = offset_next >= offset ? offset_next - offset : 0;

@@ -64,7 +64,7 @@ namespace GameRes.Formats.AdPack
                 string ext  = file.View.ReadString (index_offset+8, 4).TrimEnd (null);
                 if (0 != ext.Length)
                     name += '.'+ext;
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 uint offset = file.View.ReadUInt32 (index_offset+12);
                 uint next_offset = file.View.ReadUInt32 (index_offset+0x10+12);
                 entry.Size = next_offset - offset;
@@ -107,7 +107,7 @@ namespace GameRes.Formats.AdPack
             for (uint i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x18);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 uint offset = file.View.ReadUInt32 (index_offset+0x1c);
                 uint next_offset = file.View.ReadUInt32 (index_offset+0x20+0x1c);
                 entry.Size = next_offset - offset;

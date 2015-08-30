@@ -55,7 +55,7 @@ namespace GameRes.Formats.Silky
                 string name = file.View.ReadString (index_offset, 0x10);
                 if (0 == name.Length)
                     return null;
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x10);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x14);
                 if (!entry.CheckPlacement (file.MaxOffset))

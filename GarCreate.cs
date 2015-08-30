@@ -231,7 +231,7 @@ namespace GARbro.GUI
                 if (file.Length >= uint.MaxValue)
                     continue;
                 string name = Path.Combine (path, file.Name);
-                var e = FormatCatalog.Instance.CreateEntry (name);
+                var e = FormatCatalog.Instance.Create<Entry> (name);
                 e.Size = (uint)file.Length;
                 list.Add (e);
             }

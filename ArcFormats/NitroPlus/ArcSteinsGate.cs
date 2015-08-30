@@ -85,7 +85,7 @@ namespace GameRes.Formats
                     Encoding enc = GuessEncoding (name_raw);
                     string filename = enc.GetString (name_raw);
 
-                    var entry = FormatCatalog.Instance.CreateEntry (filename);
+                    var entry = FormatCatalog.Instance.Create<Entry> (filename);
                     entry.Size = header.ReadUInt32();
                     entry.Offset = header.ReadInt64();
                     if (!entry.CheckPlacement (file.MaxOffset))

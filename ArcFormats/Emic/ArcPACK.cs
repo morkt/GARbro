@@ -119,7 +119,7 @@ namespace GameRes.Formats.Emic
                 index_offset += 4;
                 Read (index_offset, index_buf, 0, name_len+8);
                 string name = Binary.GetCString (index_buf, 0, name_len);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = LittleEndian.ToUInt32 (index_buf, name_len+4);
                 entry.Size   = LittleEndian.ToUInt32 (index_buf, name_len);
                 if (!entry.CheckPlacement (m_file.MaxOffset))

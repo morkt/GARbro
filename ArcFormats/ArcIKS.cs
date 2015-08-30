@@ -65,7 +65,7 @@ namespace GameRes.Formats.X
                     return null;
                 file.View.Read (index_offset+1, name_buffer, 0, name_length);
                 string name = Encodings.cp932.GetString (name_buffer, 0, name_length);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x20);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x1C);
                 if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))

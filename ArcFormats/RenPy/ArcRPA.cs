@@ -98,14 +98,10 @@ namespace GameRes.Formats.RenPy
                     Trace.WriteLine ("invalid index tuple", "RpaOpener.TryOpen");
                     return null;
                 }
-                var entry = new RpaEntry
-                {
-                    Name   = name,
-                    Type   = FormatCatalog.Instance.GetTypeFromName (name),
-                    Offset       = (uint)((int)tuple[0] ^ key),
-                    UnpackedSize = (uint)((int)tuple[1] ^ key),
-                };
-                entry.Size = entry.UnpackedSize;
+                var entry = FormatCatalog.Instance.Create<RpaEntry> (name);
+                entry.Offset       = (uint)((int)tuple[0] ^ key);
+                entry.UnpackedSize = (uint)((int)tuple[1] ^ key);
+                entry.Size         = entry.UnpackedSize;
                 if (tuple.Count > 2)
                 {
                     entry.Header = tuple[2] as byte[];

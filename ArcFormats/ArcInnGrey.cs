@@ -64,8 +64,7 @@ namespace GameRes.Formats.SystemEpsylon
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x20);
-                var entry = new PackDatEntry { Name = name };
-                entry.Type   = FormatCatalog.Instance.GetTypeFromName (name);
+                var entry = FormatCatalog.Instance.Create<PackDatEntry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x20);
                 entry.Flags  = file.View.ReadUInt32 (index_offset+0x24);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x28);

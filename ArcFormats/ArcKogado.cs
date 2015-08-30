@@ -96,8 +96,7 @@ namespace GameRes.Formats.Kogado
                     name = i.ToString ("D5");
                 if (0 != ext.Length)
                     name += '.'+ext;
-                var entry = new KogadoEntry { Name = name };
-                entry.Type          = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                var entry = FormatCatalog.Instance.Create<KogadoEntry> (name);
                 entry.Offset        = data_offset + file.View.ReadUInt32 (index_offset + 0x18);
                 if (version >= 0x200)
                 {

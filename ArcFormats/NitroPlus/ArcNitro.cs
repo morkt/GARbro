@@ -101,8 +101,7 @@ namespace GameRes.Formats.NitroPlus
                     if (name_length != header.Read (name_buf, 0, name_length))
                         return null;
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
-                    var entry = new PackedEntry { Name = name };
-                    entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                     entry.Offset = base_offset + header.ReadUInt32();
                     entry.UnpackedSize = header.ReadUInt32();
                     entry.Size = header.ReadUInt32();

@@ -96,7 +96,7 @@ namespace GameRes.Formats.Malie
                     if (offset < data_offset || offset + entry_size > base_offset + size)
                         return false;
 
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = offset;
                     entry.Size   = entry_size;
                     m_dir.Add (entry);
@@ -226,7 +226,7 @@ namespace GameRes.Formats.Malie
                         continue;
                     }
                     long entry_offset = m_base_offset + ((long)m_offset_table[offset] << 10);
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     if (entry.CheckPlacement (m_max_offset))
                     {
                         entry.Offset = entry_offset;

@@ -97,7 +97,7 @@ namespace GameRes.Formats.Xuse
                         name_buf[n] ^= 0x56;
 
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = cadr_view.ReadInt64 (cadr_offset);
                     if (entry.Offset >= file.MaxOffset)
                         return null;

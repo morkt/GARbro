@@ -84,7 +84,7 @@ namespace GameRes.Formats.Elf
                 if (0 == name.Length)
                     return null;
                 index_offset += scheme.NameLength;
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Size   = file.View.ReadUInt32 (index_offset)   ^ scheme.SizeKey;
                 entry.Offset = file.View.ReadUInt32 (index_offset+4) ^ scheme.OffsetKey;
                 if (entry.Offset < index_size+4 || !entry.CheckPlacement (file.MaxOffset))

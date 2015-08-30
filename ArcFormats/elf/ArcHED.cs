@@ -84,7 +84,7 @@ namespace GameRes.Formats.Elf
             var dir = new List<Entry> (file_map.Count);
             for (int i = 0; i < file_map.Count; ++i)
             {
-                var entry = FormatCatalog.Instance.CreateEntry (file_map[i]);
+                var entry = FormatCatalog.Instance.Create<Entry> (file_map[i]);
                 entry.Offset = pak.View.ReadUInt32 (index_offset);
                 entry.Size   = pak.View.ReadUInt32 (index_offset + 4);
                 if (!entry.CheckPlacement (bin.MaxOffset))
@@ -104,7 +104,7 @@ namespace GameRes.Formats.Elf
             var dir = new List<Entry> (file_map.Count);
             for (int i = 0; i < file_map.Count; ++i)
             {
-                var entry = FormatCatalog.Instance.CreateEntry (file_map[i]);
+                var entry = FormatCatalog.Instance.Create<Entry> (file_map[i]);
                 entry.Offset = pak.View.ReadUInt32 (index_offset);
                 entry.Size   = pak.View.ReadUInt32 (index_offset + 4);
                 if (!entry.CheckPlacement (bin.MaxOffset))

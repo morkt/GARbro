@@ -84,7 +84,7 @@ namespace GameRes.Formats.Nexton
                 string name = ReadName (lst, index_offset+8, 0x24, 0xcccccccc, cp932);
                 if (0 == name.Length)
                     return null;
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = lst.View.ReadUInt32 (index_offset) ^ 0xcccccccc;
                 entry.Size   = lst.View.ReadUInt32 (index_offset+4) ^ 0xcccccccc;
                 if (!entry.CheckPlacement (max_offset))

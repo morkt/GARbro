@@ -60,7 +60,7 @@ namespace GameRes.Formats.WildBug
                 string name = file.View.ReadString (index_offset+0x14, name_length);
                 if (0 == name.Length)
                     return null;
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
                 if (!entry.CheckPlacement (file.MaxOffset))

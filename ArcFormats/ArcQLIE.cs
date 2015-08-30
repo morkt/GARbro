@@ -87,8 +87,7 @@ namespace GameRes.Formats.Qlie
                     name_buffer[k] ^= (byte)(((k + 1) ^ key) + k + 1);
 
                 string name = Encodings.cp932.GetString (name_buffer, 0, name_length);
-                var entry = new QlieEntry { Name = name };
-                entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                var entry = FormatCatalog.Instance.Create<QlieEntry> (name);
 
                 index_offset += 2 + name_length;
                 entry.Offset = file.View.ReadInt64 (index_offset);

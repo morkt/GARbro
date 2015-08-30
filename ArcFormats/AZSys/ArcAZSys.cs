@@ -71,7 +71,7 @@ namespace GameRes.Formats.AZSys
                 var name = Binary.GetCString (index, index_offset + 0x10, 0x30);
                 if (name.Length > 0)
                 {
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = base_offset + LittleEndian.ToUInt32 (index, index_offset);
                     entry.Size = LittleEndian.ToUInt32 (index, index_offset + 4);
                     if (entry.CheckPlacement (file.MaxOffset))

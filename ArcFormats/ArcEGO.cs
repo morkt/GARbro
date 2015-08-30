@@ -60,7 +60,7 @@ namespace GameRes.Formats.Ego
                 if (entry_len <= 0x10 || entry_len > 0x100 || index_offset + entry_len > data_offset)
                     return null;
                 var name = file.View.ReadString (index_offset+0x10, entry_len-0x10);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+8);
                 entry.Size   = file.View.ReadUInt32 (index_offset+12);
                 if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))

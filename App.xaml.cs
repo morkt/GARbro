@@ -113,7 +113,7 @@ namespace GARbro.GUI
             {
                 if (0 != (file.Attributes & (FileAttributes.System)))
                     continue;
-                var entry = FormatCatalog.Instance.CreateEntry (file.Name);
+                var entry = FormatCatalog.Instance.Create<Entry> (file.Name);
                 entry.Size = (uint)Math.Min (file.Length, uint.MaxValue);
                 list.Add (entry);
             }

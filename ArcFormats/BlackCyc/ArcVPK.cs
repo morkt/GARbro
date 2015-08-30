@@ -61,7 +61,7 @@ namespace GameRes.Formats.BlackCyc
                 for (int i = 0; i < count; ++i)
                 {
                     string name = vtb.View.ReadString (index_offset, 8) + ".vaw";
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = next_offset;
                     index_offset += 0xC;
                     next_offset = vtb.View.ReadUInt32 (index_offset+8);

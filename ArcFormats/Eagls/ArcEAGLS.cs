@@ -70,7 +70,7 @@ namespace GameRes.Formats.Eagls
                     break;
                 var name = Binary.GetCString (index, index_offset, name_size);
                 index_offset += name_size;
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 if (name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
                     entry.Type = "script";
                 if (long_offsets)

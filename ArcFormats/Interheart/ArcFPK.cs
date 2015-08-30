@@ -68,7 +68,7 @@ namespace GameRes.Formats.CandySoft
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset+8, (uint)name_size);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
                 if (entry.Offset < index_size || !entry.CheckPlacement (file.MaxOffset))

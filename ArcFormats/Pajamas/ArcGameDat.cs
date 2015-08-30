@@ -70,7 +70,7 @@ namespace GameRes.Formats.Pajamas
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (name_offset, (uint)name_length);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = base_offset + file.View.ReadUInt32 (index_offset);
                 entry.Size = file.View.ReadUInt32 (index_offset+4);
                 if (!entry.CheckPlacement (file.MaxOffset))

@@ -78,7 +78,7 @@ namespace GameRes.Formats.Lilim
                     if (-1 == name_length)
                         name_length = name_buf.Length;
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = file.View.ReadUInt32 (current_offset+0x10);
                     entry.Size   = file.View.ReadUInt32 (current_offset+0x14);
                     current_offset += 0x20;

@@ -51,7 +51,7 @@ namespace GameRes.Formats.Mg
             {
                 uint name_length = file.View.ReadByte (cur_offset);
                 string name = file.View.ReadString (cur_offset+1, name_length, Encoding.UTF8);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (cur_offset+0x20);
                 entry.Size = file.View.ReadUInt32 (cur_offset+0x24);
                 if (!entry.CheckPlacement (file.MaxOffset))

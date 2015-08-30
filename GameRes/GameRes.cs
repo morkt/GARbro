@@ -91,9 +91,9 @@ namespace GameRes
         /// <summary>
         /// Create empty Entry that corresponds to implemented resource.
         /// </summary>
-        public virtual Entry CreateEntry ()
+        public EntryType Create<EntryType> () where EntryType : Entry, new()
         {
-            return new Entry { Type = this.Type };
+            return new EntryType { Type = this.Type };
         }
 
         protected IResource ()
@@ -363,19 +363,14 @@ namespace GameRes
         /// <exception cref="System.ArgumentException">May be thrown if filename contains invalid
         /// characters.</exception>
         /// </summary>
-        public Entry CreateEntry (string filename)
+        public EntryType Create<EntryType> (string filename) where EntryType : Entry, new()
         {
-            Entry entry = null;
-            string ext = Path.GetExtension (filename);
-            if (!string.IsNullOrEmpty (ext))
-            {
-                ext = ext.TrimStart ('.').ToUpperInvariant();
-                var range = m_extension_map.GetValues (ext, false);
-                if (null != range)
-                    entry = range.First().CreateEntry();
-            }
+            EntryType entry = null;
+            var formats = LookupFileName (filename);
+            if (formats.Any())
+                entry = formats.First().Create<EntryType>();
             if (null == entry)
-                entry = new Entry();
+                entry = new EntryType();
             entry.Name = filename;
             return entry;
         }

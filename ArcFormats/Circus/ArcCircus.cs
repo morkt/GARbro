@@ -70,7 +70,7 @@ namespace GameRes.Formats.Circus
                 if (0 == file.View.ReadByte (index_offset))
                     return null;
                 string name = file.View.ReadString (index_offset, (uint)name_length);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 index_offset += name_length;
                 uint offset = next_offset;
                 if (i+1 == count)

@@ -63,7 +63,7 @@ namespace GameRes.Formats.Liar
                 if (cur_offset+40 > base_offset)
                     return null;
                 string name = file.View.ReadString (cur_offset, 32);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = base_offset + file.View.ReadUInt32 (cur_offset+32);
                 entry.Size = file.View.ReadUInt32 (cur_offset+36);
                 if (!entry.CheckPlacement (max_offset))

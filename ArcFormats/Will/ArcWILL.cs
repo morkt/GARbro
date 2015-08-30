@@ -97,7 +97,7 @@ namespace GameRes.Formats.Will
                     if (string.IsNullOrEmpty (name))
                         return null;
                     name = name.ToLowerInvariant()+'.'+ext.Extension;
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Size = file.View.ReadUInt32 (dir_offset+name_size);
                     entry.Offset = file.View.ReadUInt32 (dir_offset+name_size+4);
                     if (!entry.CheckPlacement (file.MaxOffset))

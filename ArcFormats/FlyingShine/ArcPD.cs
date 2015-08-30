@@ -71,7 +71,7 @@ namespace GameRes.Formats.Fs
             for (uint i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (cur_offset, 0x80);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadInt64 (cur_offset+0x80);
                 entry.Size = file.View.ReadUInt32 (cur_offset+0x88);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -258,7 +258,7 @@ namespace GameRes.Formats.Fs
                 if (len <= 0 || len >= 0x24)
                     return null;
                 string name = enc.GetString (buf, 0, len);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 uint shift  = LittleEndian.ToUInt32 (buf, 0x24);
                 entry.Offset = LittleEndian.ToUInt32 (buf, 0x28) - shift;
                 entry.Size   = LittleEndian.ToUInt32 (buf, 0x2c) - shift;

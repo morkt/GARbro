@@ -87,7 +87,7 @@ namespace GameRes.Formats.ONScripter
                     return null;
 
                 string name = Encodings.cp932.GetString (name_buffer, 0, name_len);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset)) + (long)base_offset;
                 entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+4));
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -222,12 +222,9 @@ namespace GameRes.Formats.ONScripter
                 if (base_offset - cur_offset < 13)
                     return null;
 
-                var entry = new NsaEntry
-                {
-                    Name = Encodings.cp932.GetString (name_buffer, 0, name_len),
-                };
+                var name = Encodings.cp932.GetString (name_buffer, 0, name_len);
+                var entry = FormatCatalog.Instance.Create<NsaEntry> (name);
                 byte compression_type = file.View.ReadByte (cur_offset);
-                entry.Type   = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                 entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+1)) + (long)base_offset;
                 entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+5));
                 if (!entry.CheckPlacement (file.MaxOffset))

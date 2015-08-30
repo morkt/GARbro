@@ -103,7 +103,7 @@ namespace GameRes
 
         private Entry EntryFromFileInfo (FileInfo file)
         {
-            var entry = FormatCatalog.Instance.CreateEntry (file.FullName);
+            var entry = FormatCatalog.Instance.Create<Entry> (file.FullName);
             entry.Size = (uint)Math.Min (file.Length, uint.MaxValue);
             return entry;
         }

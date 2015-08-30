@@ -173,11 +173,6 @@ namespace GameRes
             return null;
         }
 
-        public override Entry CreateEntry ()
-        {
-            return new ImageEntry();
-        }
-
         public bool IsBuiltin
         {
             get { return this.GetType().Assembly == typeof(ImageFormat).Assembly; }

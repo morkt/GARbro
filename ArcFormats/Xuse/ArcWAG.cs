@@ -163,7 +163,7 @@ namespace GameRes.Formats.Xuse
                 if (!string.IsNullOrEmpty (filename))
                 {
                     filename = DriveRe.Replace (filename, "");
-                    entry = FormatCatalog.Instance.CreateEntry (filename);
+                    entry = FormatCatalog.Instance.Create<Entry> (filename);
                 }
                 else
                 {

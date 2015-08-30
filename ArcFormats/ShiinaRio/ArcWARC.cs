@@ -117,10 +117,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 while (name_buf.Length == header.Read (name_buf, 0, name_buf.Length))
                 {
                     var name = Binary.GetCString (name_buf, 0, name_buf.Length);
-                    var entry = new WarcEntry {
-                        Name = name,
-                        Type = FormatCatalog.Instance.GetTypeFromName (name)
-                    };
+                    var entry = FormatCatalog.Instance.Create<WarcEntry> (name);
                     entry.Offset       = header.ReadUInt32();
                     entry.Size         = header.ReadUInt32();
                     if (!entry.CheckPlacement (file.MaxOffset))

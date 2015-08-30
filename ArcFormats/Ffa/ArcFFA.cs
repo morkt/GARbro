@@ -70,7 +70,7 @@ namespace GameRes.Formats.Ffa
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x10);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x10);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x14);
                 if (!entry.CheckPlacement (file.MaxOffset))

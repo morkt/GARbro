@@ -54,7 +54,7 @@ namespace GameRes.Formats.BlackRainbow
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset+8, 0x38);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
                 if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
@@ -104,7 +104,7 @@ namespace GameRes.Formats.BlackRainbow
             {
                 long offset = index[i];
                 string name = file.View.ReadString (offset, 0x20);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = offset + 0x24;
                 entry.Size   = file.View.ReadUInt32 (offset+0x20);
                 dir.Add (entry);

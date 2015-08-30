@@ -60,7 +60,7 @@ namespace GameRes.Formats.AdvSys
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x18);
-                var entry = FormatCatalog.Instance.CreateEntry (name);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x18);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x1C);
                 if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))

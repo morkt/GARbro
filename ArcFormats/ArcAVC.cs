@@ -167,7 +167,7 @@ namespace GameRes.Formats.AVC
                         continue;
                     }
                     var name = Encodings.cp932.GetString (m_index, index_offset, name_length);
-                    var entry = FormatCatalog.Instance.CreateEntry (name);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
                     index_offset += 0x107;
                     entry.Offset = m_header_offset + LittleEndian.ToUInt32 (m_index, index_offset);
                     entry.Size   = LittleEndian.ToUInt32 (m_index, index_offset+4);
