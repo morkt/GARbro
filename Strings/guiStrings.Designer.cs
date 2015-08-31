@@ -730,15 +730,6 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to file could not be opened as resource archive.
-        /// </summary>
-        public static string MsgUnknownFormat {
-            get {
-                return ResourceManager.GetString("MsgUnknownFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Version {0}.
         /// </summary>
         public static string MsgVersion {

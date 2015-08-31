@@ -75,14 +75,13 @@ namespace GARbro.GUI
 
         class PreviewFile
         {
-            public string Path { get; set; }
+            public IEnumerable<string> Path { get; set; }
             public string Name { get; set; }
-            public Entry  Entry { get; set; }
-            public ArcFile Archive { get; set; }
+            public Entry Entry { get; set; }
 
-            public bool IsEqual (string path, string name)
+            public bool IsEqual (IEnumerable<string> path, string name)
             {
-                return path.Equals (Path) && name.Equals (Name);
+                return Path != null && path.SequenceEqual (Path) && name.Equals (Name);
             }
         }
 
@@ -167,8 +166,6 @@ namespace GARbro.GUI
                 ActiveViewer = ImageView;
                 return;
             }
-            if (vm.IsArchive)
-                m_current_preview.Archive = m_app.CurrentArchive;
             if ("image" != entry.Type)
                 LoadPreviewText (m_current_preview);
             else if (!m_preview_worker.IsBusy)
@@ -193,15 +190,7 @@ namespace GARbro.GUI
 
         Stream OpenPreviewStream (PreviewFile preview)
         {
-            if (null == preview.Archive)
-            {
-                string filename = Path.Combine (preview.Path, preview.Name);
-                return File.OpenRead (filename);
-            }
-            else
-            {
-                return preview.Archive.OpenSeekableEntry (preview.Entry);
-            }
+            return VFS.OpenSeekableStream (preview.Entry);
         }
 
         void LoadPreviewText (PreviewFile preview)

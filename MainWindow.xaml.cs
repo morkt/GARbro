@@ -223,16 +223,15 @@ namespace GARbro.GUI
                 StopWatchDirectoryChanges();
                 var cvs = this.Resources["ListViewSource"] as CollectionViewSource;
                 cvs.Source = value;
-                pathLine.Text = value.Path;
+                pathLine.Text = value.Path.Last();
 
-                if (value.IsArchive)
-                    PushRecentFile (value.Path);
+                if (value.IsArchive && !value.Path.Skip (2).Any())
+                    PushRecentFile (value.Path.First());
 
                 lv_Sort (SortMode, m_lvSortDirection);
-                if (!value.IsArchive && !string.IsNullOrEmpty (value.Path))
+                if (!value.IsArchive && !string.IsNullOrEmpty (value.Path.First()))
                 {
-                    Directory.SetCurrentDirectory (value.Path);
-                    WatchDirectoryChanges (value.Path);
+                    WatchDirectoryChanges (value.Path.First());
                 }
                 CurrentDirectory.UpdateLayout();
             }
@@ -240,16 +239,13 @@ namespace GARbro.GUI
 
         DirectoryViewModel GetNewViewModel (string path)
         {
-            path = Path.GetFullPath (path);
-            if (Directory.Exists (path))
-            {
-                return new DirectoryViewModel (path, m_app.GetDirectoryList (path));
-            }
-            else
-            {
+            if (!VFS.IsVirtual)
+                path = Path.GetFullPath (path);
+            var entry = VFS.FindFile (path);
+            if (!(entry is SubDirEntry))
                 SetBusyState();
-                return new ArchiveViewModel (path, m_app.GetArchive (path));
-            }
+            VFS.ChDir (entry);
+            return new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
         }
 
         private bool m_busy_state = false;
@@ -293,7 +289,7 @@ namespace GARbro.GUI
             catch (Exception X)
             {
                 PopupError (X.Message, guiStrings.MsgErrorOpening);
-                return new DirectoryViewModel ("", new Entry[0]);
+                return new DirectoryViewModel (new string[] { "" }, new Entry[0], false);
             }
         }
 
@@ -323,13 +319,14 @@ namespace GARbro.GUI
 
         public void ResumeWatchDirectoryChanges ()
         {
-            m_watcher.EnableRaisingEvents = true;
+            m_watcher.EnableRaisingEvents = !ViewModel.IsArchive;
         }
 
         private void InvokeRefreshView (object source, FileSystemEventArgs e)
         {
             var watcher = source as FileSystemWatcher;
-            if (watcher.Path == ViewModel.Path)
+            var vm = ViewModel;
+            if (!vm.IsArchive && vm.Path.First() == watcher.Path)
             {
                 watcher.EnableRaisingEvents = false;
                 Dispatcher.Invoke (RefreshView);
@@ -632,7 +629,7 @@ namespace GARbro.GUI
 
         #region Navigation history implementation
 
-        internal string CurrentPath { get { return ViewModel.Path; } }
+        internal string CurrentPath { get { return ViewModel.Path.First(); } }
 
         HistoryStack<DirectoryPosition> m_history = new HistoryStack<DirectoryPosition>();
 
@@ -644,12 +641,12 @@ namespace GARbro.GUI
 
         public bool SetCurrentPosition (DirectoryPosition pos)
         {
-            var vm = TryCreateViewModel (pos.Path);
-            if (null == vm)
-                return false;
             try
             {
-                vm.SetPosition (pos);
+                VFS.FullPath = pos.Path;
+                var vm = TryCreateViewModel (pos.Path.Last());
+                if (null == vm)
+                    return false;
                 ViewModel = vm;
                 if (null != pos.Item)
                     lv_SelectItem (pos.Item);
@@ -670,7 +667,7 @@ namespace GARbro.GUI
         public void ChangePosition (DirectoryPosition new_pos)
         {
             var current = GetCurrentPosition();
-            if (current.Path != new_pos.Path || current.ArchivePath != new_pos.ArchivePath)
+            if (!current.Path.SequenceEqual (new_pos.Path))
                 SaveCurrentPosition();
             SetCurrentPosition (new_pos);
         }
@@ -722,8 +719,8 @@ namespace GARbro.GUI
                 var vm = GetNewViewModel (filename);
                 SaveCurrentPosition();
                 ViewModel = vm;
-                if (null != m_app.CurrentArchive)
-                    SetStatusText (m_app.CurrentArchive.Description);
+                if (null != VFS.CurrentArchive)
+                    SetStatusText (VFS.CurrentArchive.Description);
                 lv_SelectItem (0);
             }
             catch (OperationCanceledException X)
@@ -766,48 +763,37 @@ namespace GARbro.GUI
                 PlayFile (entry.Source);
                 return;
             }
-            if (vm.IsArchive) // tried to open file inside archive
-            {
-                var arc_vm = vm as ArchiveViewModel;
-                if (!("" == arc_vm.SubDir && ".." == entry.Name))
-                {
-                    OpenArchiveEntry (arc_vm, entry);
-                    return;
-                }
-            }
             OpenDirectoryEntry (vm, entry);
         }
 
         private void OpenDirectoryEntry (DirectoryViewModel vm, EntryViewModel entry)
         {
-            string old_dir = vm.Path;
-            string new_dir = Path.Combine (old_dir, entry.Name);
+            string old_dir = vm.Path.Last();
+            string new_dir = entry.Source.Name;
+            if (!vm.IsArchive && ".." == new_dir)
+                new_dir = Path.Combine (old_dir, entry.Name);
             Trace.WriteLine (new_dir, "OpenDirectoryEntry");
+            int old_fs_count = VFS.Count;
             vm = TryCreateViewModel (new_dir);
             if (null == vm)
             {
-//                if (entry.Type != "archive")
-//                    SystemOpen (new_dir);
                 return;
             }
             SaveCurrentPosition();
             ViewModel = vm;
-            if (vm.IsArchive && null != m_app.CurrentArchive)
-                SetStatusText (string.Format ("{0}: {1}", m_app.CurrentArchive.Description,
-                    Localization.Format ("MsgFiles", m_app.CurrentArchive.Dir.Count())));
+            if (VFS.Count > old_fs_count && null != VFS.CurrentArchive)
+                SetStatusText (string.Format ("{0}: {1}", VFS.CurrentArchive.Description,
+                    Localization.Format ("MsgFiles", VFS.CurrentArchive.Dir.Count())));
             else
                 SetStatusText ("");
-            var old_parent = Directory.GetParent (old_dir);
-            if (null != old_parent && vm.Path == old_parent.FullName)
-            {
+
+            if (".." == entry.Name)
                 lv_SelectItem (Path.GetFileName (old_dir));
-            }
             else
-            {
                 lv_SelectItem (0);
-            }
         }
 
+        /*
         private void OpenArchiveEntry (ArchiveViewModel vm, EntryViewModel entry)
         {
             if (entry.IsDirectory)
@@ -829,14 +815,11 @@ namespace GARbro.GUI
                 }
             }
         }
+        */
 
         Stream OpenEntry (Entry entry)
         {
-            var vm = ViewModel;
-            if (vm.IsArchive)
-                return m_app.CurrentArchive.OpenEntry (entry);
-            else
-                return File.OpenRead (Path.Combine (vm.Path, entry.Name));
+            return VFS.OpenStream (entry);
         }
 
         WaveOutEvent    m_audio_device;
@@ -935,7 +918,7 @@ namespace GARbro.GUI
 
         public void RefreshView ()
         {
-            m_app.ResetCache();
+            VFS.Flush();
             var pos = GetCurrentPosition();
             SetCurrentPosition (pos);
         }
@@ -974,7 +957,7 @@ namespace GARbro.GUI
             this.IsEnabled = false;
             try
             {
-                m_app.ResetCache();
+                VFS.Flush();
                 ResetPreviewPane();
                 if (!items.Skip (1).Any()) // items.Count() == 1
                 {
