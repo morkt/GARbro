@@ -41,20 +41,22 @@ namespace GARbro.GUI
 {
     public class DirectoryViewModel : ObservableCollection<EntryViewModel>
     {
-        public string Path { get; private set; }
-        public ICollection<Entry> Source { get; private set; }
-        public virtual bool IsArchive { get { return false; } }
+        public IEnumerable<string>  Path { get; private set; }
+        public IEnumerable<Entry> Source { get; private set; }
+        public bool            IsArchive { get; private set; }
 
-        public DirectoryViewModel (string path, ICollection<Entry> filelist)
+        public DirectoryViewModel (IEnumerable<string> path, IEnumerable<Entry> filelist, bool is_archive)
         {
             Path = path;
             Source = filelist;
+            IsArchive = is_archive;
             ImportFromSource();
         }
 
-        protected virtual void ImportFromSource ()
+        protected void ImportFromSource ()
         {
-            if (!string.IsNullOrEmpty (Path) && null != Directory.GetParent (Path))
+            var last_dir = Path.Last();
+            if (IsArchive || !string.IsNullOrEmpty (last_dir) && null != Directory.GetParent (last_dir))
             {
                 Add (new EntryViewModel (new SubDirEntry (".."), -2));
             }
@@ -80,6 +82,7 @@ namespace GARbro.GUI
         }
     }
 
+    /*
     public class ArchiveViewModel : DirectoryViewModel
     {
         public override bool IsArchive { get { return true; } }
@@ -212,6 +215,7 @@ namespace GARbro.GUI
                 base.OnCollectionChanged(e);
         }
     }
+    */
 
     public class EntryViewModel : INotifyPropertyChanged
     {
@@ -332,24 +336,18 @@ namespace GARbro.GUI
     /// </summary>
     public class DirectoryPosition
     {
-        public string           Path { get; set; }
-        public string    ArchivePath { get; set; }
-        public string           Item { get; set; }
+        public IEnumerable<string> Path { get; set; }
+        public string              Item { get; set; }
 
         public DirectoryPosition (DirectoryViewModel vm, EntryViewModel item)
         {
             Path = vm.Path;
             Item = null != item ? item.Name : null;
-            if (vm.IsArchive)
-                ArchivePath = (vm as ArchiveViewModel).SubDir;
-            else
-                ArchivePath = "";
         }
 
         public DirectoryPosition (string filename)
         {
-            Path = System.IO.Path.GetDirectoryName (filename);
-            ArchivePath = "";
+            Path = new string[] { System.IO.Path.GetDirectoryName (filename) };
             Item = System.IO.Path.GetFileName (filename);
         }
     }

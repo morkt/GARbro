@@ -132,4 +132,7 @@
   <data name="MsgUnknownEncryption" xml:space="preserve">
     <value>Unknown encryption scheme</value>
   </data>
+  <data name="MsgUnknownFormat" xml:space="preserve">
+    <value>file could not be opened as resource archive</value>
+  </data>
 </root>

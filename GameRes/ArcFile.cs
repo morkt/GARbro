@@ -49,8 +49,6 @@ namespace GameRes
         /// <summary>Archive contents.</summary>
         public ICollection<Entry> Dir { get { return m_dir; } }
 
-        public event EventHandler<OverwriteEventArgs> OverwriteNotify;
-
         public ArcFile (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
         {
             m_arc = arc;
@@ -66,11 +64,11 @@ namespace GameRes
         /// </returns>
         public static ArcFile TryOpen (string filename)
         {
-            var info = new FileInfo (filename);
-            if (info.Length < 4)
+            var entry = VFS.FindFile (filename);
+            if (entry.Size < 4)
                 return null;
             var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant());
-            var file = new ArcView (filename);
+            var file = VFS.OpenView (entry);
             try
             {
                 uint signature = file.View.ReadUInt32 (0);
@@ -191,15 +189,6 @@ namespace GameRes
             }
         }
 
-        /// <summary>
-        /// Create file corresponding to <paramref name="entry"/> within current directory and open
-        /// it for writing.
-        /// </summary>
-        public Stream CreateFile (Entry entry)
-        {
-            return ArchiveFormat.CreateFile (entry.Name);
-        }
-
         public IFileSystem CreateFileSystem ()
         {
             if (m_interface.IsHierarchic)
@@ -228,99 +217,5 @@ namespace GameRes
             }
         }
         #endregion
-    }
-
-    public class OverwriteEventArgs : EventArgs
-    {
-        public string Filename { get; set; }
-        public bool  Overwrite { get; set; }
-    }
-
-    public class AppendStream : System.IO.Stream
-    {
-        private Stream      m_base;
-        private long        m_start_pos;
-
-        public override bool CanRead  { get { return true; } }
-        public override bool CanSeek  { get { return true; } }
-        public override bool CanWrite { get { return true; } }
-        public override long Length   { get { return m_base.Length - m_start_pos; } }
-        public override long Position
-        {
-            get { return m_base.Position - m_start_pos; }
-            set { m_base.Position = Math.Max (m_start_pos+value, m_start_pos); }
-        }
-
-        public AppendStream (System.IO.Stream file)
-        {
-            m_base = file;
-            m_start_pos = m_base.Seek (0, SeekOrigin.End);
-        }
-
-        public AppendStream (System.IO.Stream file, long offset)
-        {
-            m_base = file;
-            m_start_pos = m_base.Seek (offset, SeekOrigin.Begin);
-        }
-
-        public Stream BaseStream { get { return m_base; } }
-
-        public override void Flush()
-        {
-            m_base.Flush();
-        }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            if (SeekOrigin.Begin == origin)
-            {
-                offset = Math.Max (offset + m_start_pos, m_start_pos);
-            }
-            long position = m_base.Seek (offset, origin);
-            if (position < m_start_pos)
-            {
-                m_base.Seek (m_start_pos, SeekOrigin.Begin);
-                position = m_start_pos;
-            }
-            return position - m_start_pos;
-        }
-
-        public override void SetLength (long length)
-        {
-            if (length < 0)
-                length = 0;
-            m_base.SetLength (length + m_start_pos);
-        }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            return m_base.Read (buffer, offset, count);
-        }
-
-        public override int ReadByte ()
-        {
-            return m_base.ReadByte();
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            m_base.Write (buffer, offset, count);
-        }
-
-        public override void WriteByte (byte value)
-        {
-            m_base.WriteByte (value);
-        }
-
-        bool disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!disposed)
-            {
-                m_base = null;
-                disposed = true;
-                base.Dispose (disposing);
-            }
-        }
     }
 }

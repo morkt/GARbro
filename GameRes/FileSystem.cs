@@ -28,16 +28,28 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using GameRes.Strings;
 
 namespace GameRes
 {
     public interface IFileSystem : IDisposable
     {
         /// <summary>
-        /// Open file for reading.
+        /// Returns entry corresponding to the given filename within filesystem.
+        /// </summary>
+        /// <exception cref="FileNotFoundException">File is not found.</exception>
+        Entry FindFile (string filename);
+
+        /// <summary>
+        /// Open file for reading as stream.
         /// </summary>
         Stream OpenStream (Entry entry);
 
+        Stream OpenSeekableStream (Entry entry);
+
+        /// <summary>
+        /// Open file for reading as memory-mapped view.
+        /// </summary>
         ArcView OpenView (Entry entry);
 
         /// <summary>
@@ -47,7 +59,7 @@ namespace GameRes
 
         /// <summary>
         /// Recursively enumerates files in the current directory and its subdirectories.
-        /// Subdirectory entries are omitted.
+        /// Subdirectory entries are omitted from resulting set.
         /// </summary>
         IEnumerable<Entry> GetFilesRecursive ();
 
@@ -73,6 +85,15 @@ namespace GameRes
             set { Directory.SetCurrentDirectory (value); }
         }
 
+        public Entry FindFile (string filename)
+        {
+            var attr = File.GetAttributes (filename);
+            if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
+                return new SubDirEntry (filename);
+            else
+                return EntryFromFileInfo (new FileInfo (filename));
+        }
+
         public IEnumerable<Entry> GetFiles ()
         {
             var info = new DirectoryInfo (CurrentDirectory);
@@ -84,7 +105,7 @@ namespace GameRes
             }
             foreach (var file in info.EnumerateFiles())
             {
-                if (0 != (file.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
+                if (0 != (file.Attributes & FileAttributes.System))
                     continue;
                 yield return EntryFromFileInfo (file);
             }
@@ -113,6 +134,11 @@ namespace GameRes
             return File.OpenRead (entry.Name);
         }
 
+        public Stream OpenSeekableStream (Entry entry)
+        {
+            return OpenStream (entry);
+        }
+
         public ArcView OpenView (Entry entry)
         {
             return new ArcView (entry.Name);
@@ -126,7 +152,10 @@ namespace GameRes
 
     public class FlatArchiveFileSystem : IFileSystem
     {
-        protected ArcFile   m_arc;
+        protected readonly ArcFile                      m_arc;
+        protected readonly Dictionary<string, Entry>    m_dir;
+
+        public ArcFile Source { get { return m_arc; } }
 
         public virtual string CurrentDirectory
         {
@@ -146,6 +175,11 @@ namespace GameRes
         public FlatArchiveFileSystem (ArcFile arc)
         {
             m_arc = arc;
+            m_dir = new Dictionary<string, Entry> (arc.Dir.Count, StringComparer.InvariantCultureIgnoreCase);
+            foreach (var entry in arc.Dir)
+            {
+                m_dir.Add (entry.Name, entry);
+            }
         }
 
         public Stream OpenStream (Entry entry)
@@ -153,9 +187,22 @@ namespace GameRes
             return m_arc.OpenEntry (entry);
         }
 
+        public Stream OpenSeekableStream (Entry entry)
+        {
+            return m_arc.OpenSeekableEntry (entry);
+        }
+
         public ArcView OpenView (Entry entry)
         {
             return m_arc.OpenView (entry);
+        }
+
+        public virtual Entry FindFile (string filename)
+        {
+            Entry entry = null;
+            if (!m_dir.TryGetValue (filename, out entry))
+                throw new FileNotFoundException();
+            return entry;
         }
 
         public virtual IEnumerable<Entry> GetFiles ()
@@ -209,6 +256,16 @@ namespace GameRes
         {
             get { return m_cwd; }
             set { ChDir (value); }
+        }
+
+        public override Entry FindFile (string filename)
+        {
+            Entry entry = null;
+            if (m_dir.TryGetValue (filename, out entry))
+                return entry;
+            if (m_dir.Keys.Any (n => n.StartsWith (filename + PathDelimiter)))
+                return new SubDirEntry (filename);
+            throw new FileNotFoundException();
         }
 
         static readonly Regex path_re = new Regex (@"\G[/\\]?([^/\\]+)([/\\])");
@@ -299,5 +356,189 @@ namespace GameRes
             }
             m_cwd = new_path;
         }
+    }
+
+    public sealed class FileSystemStack : IDisposable
+    {
+        Stack<IFileSystem> m_fs_stack = new Stack<IFileSystem>();
+        Stack<string> m_arc_name_stack = new Stack<string>();
+
+        public IEnumerable<IFileSystem> All { get { return m_fs_stack; } }
+
+        public IFileSystem Top { get { return m_fs_stack.Peek(); } }
+        public int       Count { get { return m_fs_stack.Count; } }
+        public IEnumerable<string> ArcStack { get { return m_arc_name_stack; } }
+
+        public ArcFile      CurrentArchive { get; private set; }
+        private IFileSystem LastVisitedArc { get; set; }
+        private string     LastVisitedPath { get; set; }
+
+        public FileSystemStack ()
+        {
+            m_fs_stack.Push (new PhysicalFileSystem());
+        }
+
+        public void ChDir (Entry entry)
+        {
+            if (entry is SubDirEntry)
+            {
+                if (1 == m_fs_stack.Count)
+                {
+                    Top.CurrentDirectory = entry.Name;
+                    return;
+                }
+                if (".." == entry.Name && string.IsNullOrEmpty (Top.CurrentDirectory))
+                {
+                    Pop();
+                    return;
+                }
+            }
+            if (entry.Name == LastVisitedPath && null != LastVisitedArc)
+            {
+                Push (LastVisitedPath, LastVisitedArc);
+                return;
+            }
+            Flush();
+            var arc = ArcFile.TryOpen (entry.Name);
+            if (null == arc)
+                throw new UnknownFormatException();
+            try
+            {
+                Push (entry.Name, arc.CreateFileSystem());
+                CurrentArchive = arc;
+            }
+            catch
+            {
+                arc.Dispose();
+                throw;
+            }
+        }
+
+        private void Push (string path, IFileSystem fs)
+        {
+            m_fs_stack.Push (fs);
+            m_arc_name_stack.Push (path);
+        }
+
+        private void Pop ()
+        {
+            if (m_fs_stack.Count > 1)
+            {
+                Flush();
+                LastVisitedArc = m_fs_stack.Pop();
+                LastVisitedPath = m_arc_name_stack.Pop();
+                if (m_fs_stack.Count > 1 && m_fs_stack.Peek() is FlatArchiveFileSystem)
+                    CurrentArchive = (m_fs_stack.Peek() as FlatArchiveFileSystem).Source;
+                else
+                    CurrentArchive = null;
+            }
+        }
+
+        public void Flush ()
+        {
+            if (LastVisitedArc != null)
+            {
+                LastVisitedArc.Dispose();
+                LastVisitedArc = null;
+                LastVisitedPath = null;
+            }
+        }
+
+        private bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                Flush();
+                foreach (var fs in m_fs_stack.Reverse())
+                    fs.Dispose();
+                _disposed = true;
+            }
+            GC.SuppressFinalize (this);
+        }
+    }
+
+    public static class VFS
+    {
+        private static FileSystemStack m_vfs = new FileSystemStack();
+
+        public static IFileSystem Top { get { return m_vfs.Top; } }
+        public static bool  IsVirtual { get { return m_vfs.Count > 1; } }
+        public static  int      Count { get { return m_vfs.Count; } }
+
+        public static ArcFile CurrentArchive { get { return m_vfs.CurrentArchive; } }
+
+        private static string[] m_top_path = new string[1];
+
+        public static IEnumerable<string> FullPath
+        {
+            get
+            {
+                m_top_path[0] = Top.CurrentDirectory;
+                if (1 == Count)
+                    return m_top_path;
+                else
+                    return m_vfs.ArcStack.Concat (m_top_path);
+            }
+            set
+            {
+                if (!value.Any())
+                    return;
+                var new_vfs = new FileSystemStack();
+                var desired = value.ToArray();
+                for (int i = 0; i < desired.Length-1; ++i)
+                    new_vfs.ChDir (new_vfs.Top.FindFile (desired[i]));
+                new_vfs.Top.CurrentDirectory = desired.Last();
+                m_vfs.Dispose();
+                m_vfs = new_vfs;
+            }
+        }
+
+        public static Entry FindFile (string filename)
+        {
+            if (".." == filename)
+                return new SubDirEntry ("..");
+            return m_vfs.Top.FindFile (filename);
+        }
+
+        public static Stream OpenStream (Entry entry)
+        {
+            return m_vfs.Top.OpenStream (entry);
+        }
+
+        public static Stream OpenSeekableStream (Entry entry)
+        {
+            return m_vfs.Top.OpenSeekableStream (entry);
+        }
+
+        public static ArcView OpenView (Entry entry)
+        {
+            return m_vfs.Top.OpenView (entry);
+        }
+
+        public static void ChDir (Entry entry)
+        {
+            m_vfs.ChDir (entry);
+        }
+
+        public static void ChDir (string path)
+        {
+            m_vfs.ChDir (FindFile (path));
+        }
+
+        public static void Flush ()
+        {
+            m_vfs.Flush();
+        }
+        
+        public static IEnumerable<Entry> GetFiles ()
+        {
+            return m_vfs.Top.GetFiles();
+        }
+    }
+
+    public class UnknownFormatException : FileFormatException
+    {
+        public UnknownFormatException () : base (garStrings.MsgUnknownFormat) { }
     }
 }

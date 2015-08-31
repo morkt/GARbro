@@ -237,9 +237,6 @@
   <data name="MsgUnableInterpretImage" xml:space="preserve">
     <value>не удалось интерпретировать формат изображения</value>
   </data>
-  <data name="MsgUnknownFormat" xml:space="preserve">
-    <value>файл не может быть открыт как архив ресурсов</value>
-  </data>
   <data name="MsgVersion" xml:space="preserve">
     <value>Версия {0}</value>
   </data>

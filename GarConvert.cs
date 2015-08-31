@@ -68,7 +68,7 @@ namespace GARbro.GUI
             }
             try
             {
-                Directory.SetCurrentDirectory (ViewModel.Path);
+                Directory.SetCurrentDirectory (ViewModel.Path.First());
                 var converter = new GarConvertMedia (this);
                 converter.IgnoreErrors = convert_dialog.IgnoreErrors.IsChecked ?? false;
                 converter.Convert (source, format);

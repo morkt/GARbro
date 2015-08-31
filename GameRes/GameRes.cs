@@ -261,6 +261,12 @@ namespace GameRes
         public ResourceOptions Options { get; set; }
     }
 
+    public class OverwriteEventArgs : EventArgs
+    {
+        public string Filename { get; set; }
+        public bool  Overwrite { get; set; }
+    }
+
     public sealed class FormatCatalog
     {
         private static readonly FormatCatalog m_instance = new FormatCatalog();

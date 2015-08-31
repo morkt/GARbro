@@ -49,16 +49,6 @@ namespace GARbro.GUI
         /// </summary>
         public string InitPath { get; private set; }
 
-        /// <summary>
-        /// Path to the currently open archive, or empty string if none.
-        /// </summary>
-        public string CurrentPath { get; private set; }
-
-        /// <summary>
-        /// Archive file being browsed, or null.
-        /// </summary>
-        public ArcFile CurrentArchive { get; private set; }
-
         void ApplicationStartup (object sender, StartupEventArgs e)
         {
 #if DEBUG
@@ -90,106 +80,11 @@ namespace GARbro.GUI
 
             if (string.IsNullOrEmpty (InitPath))
                 InitPath = Directory.GetCurrentDirectory();
-
-            CurrentPath = "";
         }
 
         void ApplicationExit (object sender, ExitEventArgs e)
         {
             Settings.Default.Save();
         }
-
-        public ICollection<Entry> GetDirectoryList (string path)
-        {
-            var info = new DirectoryInfo (path);
-            var list = new List<Entry>();
-            foreach (var subdir in info.EnumerateDirectories())
-            {
-                if (0 != (subdir.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
-                    continue;
-                list.Add (new SubDirEntry (subdir.Name));
-            }
-            foreach (var file in info.EnumerateFiles())
-            {
-                if (0 != (file.Attributes & (FileAttributes.System)))
-                    continue;
-                var entry = FormatCatalog.Instance.Create<Entry> (file.Name);
-                entry.Size = (uint)Math.Min (file.Length, uint.MaxValue);
-                list.Add (entry);
-            }
-            return list;
-        }
-
-        public ArcFile GetArchive (string path)
-        {
-            if (path.Equals (CurrentPath, StringIgnoreCase))
-                return CurrentArchive;
-            FormatCatalog.Instance.LastError = null;
-            var arc = ArcFile.TryOpen (path);
-            if (null == arc)
-            {
-                if (null != FormatCatalog.Instance.LastError)
-                    throw FormatCatalog.Instance.LastError;
-                throw new UnknownFormatException();
-            }
-            if (null != CurrentArchive)
-                CurrentArchive.Dispose();
-            CurrentPath = path;
-            CurrentArchive = arc;
-            return CurrentArchive;
-        }
-
-        public void ResetCache ()
-        {
-            if (null != CurrentArchive)
-                CurrentArchive.Dispose();
-            CurrentArchive = null;
-            CurrentPath = "";
-        }
-
-        // Update UI on demand.
-
-        private static DispatcherOperationCallback exitFrameCallback =
-            new DispatcherOperationCallback(ExitFrame);
-
-        /// <summary>
-        /// Processes all UI messages currently in the message queue.
-        /// </summary>
-        public static void DoEvents()
-        {
-            // Create new nested message pump.
-            DispatcherFrame nestedFrame = new DispatcherFrame();
-
-            // Dispatch a callback to the current message queue, when getting called,
-            // this callback will end the nested message loop.
-            // note that the priority of this callback should be lower than the that of UI event messages.
-            DispatcherOperation exitOperation = Dispatcher.CurrentDispatcher.BeginInvoke(
-                    DispatcherPriority.Background, exitFrameCallback, nestedFrame);
-
-            // pump the nested message loop, the nested message loop will
-            // immediately process the messages left inside the message queue.
-            Dispatcher.PushFrame(nestedFrame);
-
-            // If the "exitFrame" callback doesn't get finished, Abort it.
-            if (exitOperation.Status != DispatcherOperationStatus.Completed)
-                exitOperation.Abort();
-        }
-
-        static Object ExitFrame(Object state)
-        {
-            DispatcherFrame frame = state as DispatcherFrame;
-
-            // Exit the nested message loop.
-            frame.Continue = false;
-            return null;
-        }
-    }
-
-    public class UnknownFormatException : Exception
-    {
-        public UnknownFormatException () : base (guiStrings.MsgUnknownFormat) { }
-        public UnknownFormatException (string path)
-            : base (string.Format ("{1}: {0}", guiStrings.MsgUnknownFormat, path))
-        { }
     }
 }

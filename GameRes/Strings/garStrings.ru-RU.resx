@@ -132,4 +132,7 @@
   <data name="MsgUnknownEncryption" xml:space="preserve">
     <value>Неизвестный метод шифрования</value>
   </data>
+  <data name="MsgUnknownFormat" xml:space="preserve">
+    <value>файл не может быть открыт как архив ресурсов</value>
+  </data>
 </root>

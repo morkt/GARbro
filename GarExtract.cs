@@ -34,6 +34,7 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Ookii.Dialogs.Wpf;
 using GameRes;
+using GameRes.Strings;
 using GARbro.GUI.Strings;
 using GARbro.GUI.Properties;
 
@@ -58,11 +59,12 @@ namespace GARbro.GUI
                 string destination = Settings.Default.appLastDestination;
                 if (!Directory.Exists (destination))
                     destination = "";
-                if (!ViewModel.IsArchive)
+                var vm = ViewModel;
+                if (!vm.IsArchive)
                 {
                     if (!entry.IsDirectory)
                     {
-                        var arc_dir = CurrentPath;
+                        var arc_dir = vm.Path.First();
                         var source = Path.Combine (arc_dir, entry.Name);
                         if (string.IsNullOrEmpty (destination))
                             destination = arc_dir;
@@ -73,13 +75,13 @@ namespace GARbro.GUI
                         extractor.ExtractAll (destination);
                     }
                 }
-                else if (null != m_app.CurrentArchive)
+                else if (vm.Path.Skip (1).Any())
                 {
-                    var vm = ViewModel as ArchiveViewModel;
                     if (string.IsNullOrEmpty (destination))
-                        destination = Path.GetDirectoryName (vm.Path);
-                    extractor = new GarExtract (this, vm.Path, m_app.CurrentArchive);
-                    if (null == entry || (entry.Name == ".." && vm.SubDir == "")) // root entry
+                        destination = Path.GetDirectoryName (vm.Path.First());
+                    var archive_name = vm.Path.Reverse().Skip (1).First();
+                    extractor = new GarExtract (this, archive_name, VFS.CurrentArchive);
+                    if (null == entry || (entry.Name == ".." && string.IsNullOrEmpty (vm.Path.Last()))) // root entry
                         extractor.ExtractAll (destination);
                     else
                         extractor.Extract (entry, destination);
@@ -132,7 +134,7 @@ namespace GARbro.GUI
                 if (FormatCatalog.Instance.LastError != null)
                     error_message = FormatCatalog.Instance.LastError.Message;
                 else
-                    error_message = guiStrings.MsgUnknownFormat;
+                    error_message = garStrings.MsgUnknownFormat;
                 throw new OperationCanceledException (string.Format ("{1}: {0}", error_message, m_arc_name));
             }
             m_should_dispose = true;
