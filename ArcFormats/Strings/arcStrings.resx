@@ -331,4 +331,7 @@ Choose encryption scheme or enter a passphrase.</value>
   <data name="RCTChoose" xml:space="preserve">
     <value>Choose title or enter a password</value>
   </data>
+  <data name="NSAChoose" xml:space="preserve">
+    <value>Choose title or enter a password</value>
+  </data>
 </root>

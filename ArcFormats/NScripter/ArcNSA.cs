@@ -1,8 +1,8 @@
 //! \file       ArcNSA.cs
 //! \date       Sun Jul 27 11:25:46 2014
-//! \brief      ONScripter NSA/SAR archives implementation.
+//! \brief      NScripter NSA archives implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,22 +27,33 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using GameRes.Formats.Strings;
-using GameRes.Utility;
-using GameRes.Formats.Properties;
 using System.Text;
-using System.Diagnostics;
+using GameRes.Formats.Strings;
+using GameRes.Formats.Properties;
+using GameRes.Utility;
 
-namespace GameRes.Formats.ONScripter
+namespace GameRes.Formats.NScripter
 {
     public class NsaEntry : PackedEntry
     {
         public Compression CompressionType { get; set; }
     }
 
+    internal class NsaEncryptedArchive : ArcFile
+    {
+        public readonly byte[] Key;
+
+        public NsaEncryptedArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, byte[] key)
+            : base (arc, impl, dir)
+        {
+            Key = key;
+        }
+    }
+
     public class NsaOptions : ResourceOptions
     {
         public Compression CompressionType { get; set; }
+        public string             Password { get; set; }
     }
 
     public enum Compression
@@ -55,136 +66,17 @@ namespace GameRes.Formats.ONScripter
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class SarOpener : ArchiveFormat
-    {
-        public override string Tag { get { return "SAR"; } }
-        public override string Description { get { return arcStrings.NSADescription; } }
-        public override uint Signature { get { return 0; } }
-        public override bool IsHierarchic { get { return true; } }
-        public override bool CanCreate { get { return true; } }
-
-        public override ArcFile TryOpen (ArcView file)
-        {
-            int num_of_files = Binary.BigEndian (file.View.ReadInt16 (0));
-            if (num_of_files <= 0)
-                return null;
-            uint base_offset = Binary.BigEndian (file.View.ReadUInt32 (2));
-            if (base_offset >= file.MaxOffset || base_offset < 10 * (uint)num_of_files)
-                return null;
-
-            uint cur_offset = 6;
-            var dir = new List<Entry>();
-            for (int i = 0; i < num_of_files; ++i)
-            {
-                if (base_offset - cur_offset < 10)
-                    return null;
-                int name_len;
-                byte[] name_buffer = ReadName (file, cur_offset, base_offset-cur_offset, out name_len);
-                if (0 == name_len || base_offset-cur_offset == name_len)
-                    return null;
-                cur_offset += (uint)(name_len + 1);
-                if (base_offset - cur_offset < 8)
-                    return null;
-
-                string name = Encodings.cp932.GetString (name_buffer, 0, name_len);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset)) + (long)base_offset;
-                entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+4));
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-
-                cur_offset += 8;
-                dir.Add (entry);
-            }
-            return new ArcFile (file, this, dir);
-        }
-
-        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
-                                     EntryCallback callback)
-        {
-            var encoding = Encodings.cp932.WithFatalFallback();
-            int callback_count = 0;
-
-            var real_entry_list = new List<Entry>();
-            var used_names = new HashSet<string>();
-            int index_size = 0;
-            foreach (var entry in list)
-            {
-                if (!used_names.Add (entry.Name)) // duplicate name
-                    continue;
-                try
-                {
-                    index_size += encoding.GetByteCount (entry.Name) + 1;
-                }
-                catch (EncoderFallbackException X)
-                {
-                    throw new InvalidFileName (entry.Name, arcStrings.MsgIllegalCharacters, X);
-                }
-                index_size += 8;
-                real_entry_list.Add (entry);
-            }
-
-            long start_offset = output.Position;
-            long base_offset = 6+index_size;
-            output.Seek (base_offset, SeekOrigin.Current);
-            foreach (var entry in real_entry_list)
-            {
-                using (var input = File.OpenRead (entry.Name))
-                {
-                    var file_size = input.Length;
-                    if (file_size > uint.MaxValue)
-                        throw new FileSizeException();
-                    long file_offset = output.Position - base_offset;
-                    if (file_offset+file_size > uint.MaxValue)
-                        throw new FileSizeException();
-                    entry.Offset = file_offset;
-                    entry.Size   = (uint)file_size;
-                    if (null != callback)
-                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
-
-                    input.CopyTo (output);
-                }
-            }
-
-            if (null != callback)
-                callback (callback_count++, null, arcStrings.MsgWritingIndex);
-            output.Position = start_offset;
-            using (var writer = new BinaryWriter (output, encoding, true))
-            {
-                writer.Write (Binary.BigEndian ((short)real_entry_list.Count));
-                writer.Write (Binary.BigEndian ((uint)base_offset));
-                foreach (var entry in real_entry_list)
-                {
-                    writer.Write (encoding.GetBytes (entry.Name));
-                    writer.Write ((byte)0);
-                    writer.Write (Binary.BigEndian ((uint)entry.Offset));
-                    writer.Write (Binary.BigEndian ((uint)entry.Size));
-                }
-            }
-        }
-
-        protected static byte[] ReadName (ArcView file, uint offset, uint limit, out int name_len)
-        {
-            byte[] name_buffer = new byte[40];
-            for (name_len = 0; name_len < limit; ++name_len)
-            {
-                byte b = file.View.ReadByte (offset+name_len);
-                if (0 == b)
-                    break;
-                if (name_buffer.Length == name_len)
-                {
-                    Array.Resize (ref name_buffer, checked(name_len/2*3));
-                }
-                name_buffer[name_len] = b;
-            }
-            return name_buffer;
-        }
-    }
-
-    [Export(typeof(ArchiveFormat))]
     public class NsaOpener : SarOpener
     {
         public override string Tag { get { return "NSA"; } }
+
+        public static readonly Dictionary<string, string> KnownKeys = new Dictionary<string, string>()
+        {
+            { "Kimi ga Aruji de Shitsuji ga Ore de",
+              "kopkl;fdsl;kl;mwekopj@pgfd[p;:kl:;,lwret;kl;kolsgfdio@pdsflkl:,rse;:l,;:lpksdfpo" },
+            { "Kiss yori Amakute Fukai Mono",
+              "dfklmdsgkmlkmljklgfnlsdfnklsdfjkl;sdfmkldfskfsdmklsdfjklfdsjklsdfsdfl;" },
+        };
 
         public NsaOpener ()
         {
@@ -193,83 +85,138 @@ namespace GameRes.Formats.ONScripter
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (0 != file.View.ReadInt16 (0))
-                return ReadIndex (file, 0);
-            else
-                return ReadIndex (file, 2);
+            List<Entry> dir = null;
+            bool zero_signature = 0 == file.View.ReadInt16 (0);
+            try
+            {
+                using (var input = new ViewStream (file, true))
+                {
+                    if (zero_signature)
+                        input.Seek (2, SeekOrigin.Begin);
+                    dir = ReadIndex (input);
+                    if (null != dir)
+                        return new ArcFile (file, this, dir);
+                }
+            }
+            catch { /* ignore parse errors */ }
+            if (zero_signature || !file.Name.EndsWith (".nsa", StringComparison.InvariantCultureIgnoreCase))
+                return null;
+
+            var password = QueryPassword();
+            if (string.IsNullOrEmpty (password))
+                return null;
+            var key = Encoding.ASCII.GetBytes (password);
+
+            using (var input = new EncryptedViewStream (file, key, true))
+            {
+                dir = ReadIndex (input);
+                if (null == dir)
+                    return null;
+                return new NsaEncryptedArchive (file, this, dir, key);
+            }
         }
 
-        private ArcFile ReadIndex (ArcView file, uint base_offset)
+        protected List<Entry> ReadIndex (Stream file)
         {
-            int num_of_files = Binary.BigEndian (file.View.ReadInt16 (base_offset));
-            if (num_of_files <= 0)
-                return null;
-            uint cur_offset = base_offset+6;
-            base_offset += Binary.BigEndian (file.View.ReadUInt32 (base_offset+2));
-            if (base_offset >= file.MaxOffset || base_offset < 15 * (uint)num_of_files)
-                return null;
-
-            var dir = new List<Entry>();
-            for (int i = 0; i < num_of_files; ++i)
+            long base_offset = file.Position;
+            using (var input = new ArcView.Reader (file))
             {
-                if (base_offset - cur_offset < 15)
+                int count = Binary.BigEndian (input.ReadInt16());
+                if (!IsSaneCount (count))
                     return null;
-                int name_len;
-                byte[] name_buffer = ReadName (file, cur_offset, base_offset-cur_offset, out name_len);
-                if (0 == name_len || base_offset-cur_offset == name_len)
-                    return null;
-                cur_offset += (uint)(name_len + 1);
-                if (base_offset - cur_offset < 13)
+                base_offset += Binary.BigEndian (input.ReadUInt32());
+                if (base_offset >= file.Length || base_offset < 15 * count)
                     return null;
 
-                var name = Encodings.cp932.GetString (name_buffer, 0, name_len);
-                var entry = FormatCatalog.Instance.Create<NsaEntry> (name);
-                byte compression_type = file.View.ReadByte (cur_offset);
-                entry.Offset = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+1)) + (long)base_offset;
-                entry.Size   = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+5));
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                entry.UnpackedSize = Binary.BigEndian (file.View.ReadUInt32 (cur_offset+9));
-                entry.IsPacked = compression_type != 0;
-                switch (compression_type)
+                var dir = new List<Entry>();
+                for (int i = 0; i < count; ++i)
                 {
-                case 0:  entry.CompressionType = Compression.None; break;
-                case 1:  entry.CompressionType = Compression.SPB; break;
-                case 2:  entry.CompressionType = Compression.LZSS; break;
-                case 4:  entry.CompressionType = Compression.NBZ; break;
-                default: entry.CompressionType = Compression.Unknown; break;
+                    if (base_offset - file.Position < 15)
+                        return null;
+                    var name = file.ReadCString();
+                    if (base_offset - file.Position < 13)
+                        return null;
+
+                    var entry = FormatCatalog.Instance.Create<NsaEntry> (name);
+                    byte compression_type = input.ReadByte();
+                    entry.Offset = Binary.BigEndian (input.ReadUInt32()) + base_offset;
+                    entry.Size   = Binary.BigEndian (input.ReadUInt32());
+                    if (!entry.CheckPlacement (file.Length))
+                        return null;
+                    entry.UnpackedSize = Binary.BigEndian (input.ReadUInt32());
+                    entry.IsPacked = compression_type != 0;
+                    switch (compression_type)
+                    {
+                    case 0:  entry.CompressionType = Compression.None; break;
+                    case 1:  entry.CompressionType = Compression.SPB; break;
+                    case 2:  entry.CompressionType = Compression.LZSS; break;
+                    case 4:  entry.CompressionType = Compression.NBZ; break;
+                    default: entry.CompressionType = Compression.Unknown; break;
+                    }
+                    dir.Add (entry);
                 }
-                cur_offset += 13;
-                dir.Add (entry);
+                return dir;
             }
-            return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var nsa_entry = entry as NsaEntry;
-            if (null != nsa_entry &&
-                (Compression.LZSS == nsa_entry.CompressionType ||
-                 Compression.SPB  == nsa_entry.CompressionType))
+            var nsa_arc = arc as NsaEncryptedArchive;
+            if (null == nsa_arc)
             {
-                using (var input = arc.File.CreateStream (nsa_entry.Offset, nsa_entry.Size))
-                {
-                    var decoder = new Unpacker (input, nsa_entry.UnpackedSize);
-                    switch (nsa_entry.CompressionType)
-                    {
-                    case Compression.LZSS:  return decoder.LzssDecodedStream();
-                    case Compression.SPB:   return decoder.SpbDecodedStream();
-                    }
-                }
+                var input = arc.File.CreateStream (entry.Offset, entry.Size);
+                return UnpackEntry (input, entry as NsaEntry);
             }
-            return arc.File.CreateStream (entry.Offset, entry.Size);
+            var data = new byte[entry.Size];
+            using (var input = new EncryptedViewStream (arc.File, nsa_arc.Key, true))
+            {
+                input.Position = entry.Offset;
+                input.Read (data, 0, data.Length);
+            }
+            return UnpackEntry (new MemoryStream (data), entry as NsaEntry);
+        }
+
+        protected Stream UnpackEntry (Stream input, NsaEntry nsa_entry)
+        {
+            if (null == nsa_entry
+                || !(Compression.LZSS == nsa_entry.CompressionType ||
+                     Compression.SPB  == nsa_entry.CompressionType))
+                return input;
+            using (input)
+            {
+                var decoder = new Unpacker (input, nsa_entry.UnpackedSize);
+                if (Compression.SPB == nsa_entry.CompressionType)
+                    return decoder.SpbDecodedStream();
+                else
+                    return decoder.LzssDecodedStream();
+            }
+        }
+
+        private string QueryPassword ()
+        {
+            var options = Query<NsaOptions> (arcStrings.ArcEncryptedNotice);
+            return options.Password;
         }
 
         public override ResourceOptions GetDefaultOptions ()
         {
             return new NsaOptions {
-                CompressionType     = Settings.Default.ONSCompression,
+                CompressionType = Settings.Default.ONSCompression,
+                Password        = Settings.Default.NSAPassword,
             };
+        }
+
+        public override ResourceOptions GetOptions (object widget)
+        {
+            var w = widget as GUI.WidgetNSA;
+            if (null != w)
+                Settings.Default.NSAPassword = w.Password.Text;
+            return GetDefaultOptions();
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetNSA();
         }
 
         public override object GetCreationWidget ()
@@ -384,42 +331,34 @@ namespace GameRes.Formats.ONScripter
         public const int F  = ((1 << EJ) + P);  /* lookahead buffer size */
     }
 
-    internal class Unpacker
+    internal class Unpacker : MsbBitStream
     {
-        private Stream          m_input;
         private byte[]          m_output;
         private byte[]          m_read_buf = new byte[4096];
 
-        public Unpacker (Stream input, uint unpacked_size)
+        public byte[] Output { get { return m_output; } }
+
+        public Unpacker (Stream input, uint unpacked_size) : base (input, true)
         {
-            m_input = input;
             m_output = new byte[unpacked_size];
         }
 
         public Stream LzssDecodedStream ()
         {
-            uint size = DecodeLZSS();
-            if (size != m_output.Length)
-                System.Diagnostics.Trace.WriteLine ("Invalid compressed data", "LzssDecoder");
-            return new MemoryStream (m_output, false);
+            DecodeLZSS();
+            return new MemoryStream (m_output);
         }
 
         public Stream SpbDecodedStream ()
         {
-            uint size = DecodeSPB();
-            return new MemoryStream (m_output, false);
+            DecodeSPB();
+            return new MemoryStream (m_output);
         }
-
-        private int m_getbit_mask;
-        private int m_getbit_len;
-        private int m_getbit_count;
 
         uint DecodeLZSS ()
         {
             uint count = 0;
 
-            m_getbit_mask = 0;
-            m_getbit_len = m_getbit_count = 0;
             byte[] decomp_buffer = new byte[LZSS.N*2];
             int r = LZSS.N - LZSS.F;
             int c;
@@ -456,13 +395,10 @@ namespace GameRes.Formats.ONScripter
 
         uint DecodeSPB ()
         {
-            m_getbit_mask = 0;
-            m_getbit_len = m_getbit_count = 0;
-
-            uint width   = (uint)(m_input.ReadByte() << 8);
-            width       |= (uint)m_input.ReadByte();
-            uint height  = (uint)(m_input.ReadByte() << 8);
-            height      |= (uint)m_input.ReadByte();
+            uint width   = (uint)Input.ReadByte() << 8;
+            width       |= (uint)Input.ReadByte();
+            uint height  = (uint)Input.ReadByte() << 8;
+            height      |= (uint)Input.ReadByte();
 
             uint width_pad  = (4 - width * 3 % 4) % 4;
             int stride = (int)(width * 3 + width_pad);
@@ -475,19 +411,13 @@ namespace GameRes.Formats.ONScripter
             /* Write header */
             m_output[0] = (byte)'B';
             m_output[1] = (byte)'M';
-            m_output[2] = (byte)(total_size & 0xff);
-            m_output[3] = (byte)((total_size >>  8) & 0xff);
-            m_output[4] = (byte)((total_size >> 16) & 0xff);
-            m_output[5] = (byte)((total_size >> 24) & 0xff);
+            LittleEndian.Pack (total_size, m_output, 2);
             m_output[10] = 54; // offset to the body
             m_output[14] = 40; // header size
-            m_output[18] = (byte)(width & 0xff);
-            m_output[19] = (byte)((width >> 8) & 0xff);
-            m_output[22] = (byte)(height & 0xff);
-            m_output[23] = (byte)((height >> 8) & 0xff);
+            LittleEndian.Pack (width,  m_output, 18);
+            LittleEndian.Pack (height, m_output, 22);
             m_output[26] = 1; // the number of the plane
             m_output[28] = 24; // bpp
-//            m_output[34] = (byte)(total_size - 54); // size of the body
 
             byte[] decomp_buffer = new byte[width*height*4];
             
@@ -553,33 +483,6 @@ namespace GameRes.Formats.ONScripter
                 }
             }
             return total_size;
-        }
-
-        private int m_getbit_buf = 0;
-
-        int GetBits (int n)
-        {
-            int x = 0;
-            for (int i = 0; i < n; i++)
-            {
-                if (0 == m_getbit_mask)
-                {
-                    if (m_getbit_len == m_getbit_count)
-                    {
-                        m_getbit_len = m_input.Read (m_read_buf, 0, m_read_buf.Length);
-                        if (0 == m_getbit_len)
-                            return -1;
-                        m_getbit_count = 0;
-                    }
-                    m_getbit_buf = m_read_buf[m_getbit_count++];
-                    m_getbit_mask = 128;
-                }
-                x <<= 1;
-                if (0 != (m_getbit_buf & m_getbit_mask))
-                    x |= 1;
-                m_getbit_mask >>= 1;
-            }
-            return x;
         }
     }
 

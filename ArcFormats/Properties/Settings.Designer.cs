@@ -133,9 +133,9 @@ namespace GameRes.Formats.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("None")]
-        public global::GameRes.Formats.ONScripter.Compression ONSCompression {
+        public global::GameRes.Formats.NScripter.Compression ONSCompression {
             get {
-                return ((global::GameRes.Formats.ONScripter.Compression)(this["ONSCompression"]));
+                return ((global::GameRes.Formats.NScripter.Compression)(this["ONSCompression"]));
             }
             set {
                 this["ONSCompression"] = value;
@@ -415,6 +415,30 @@ namespace GameRes.Formats.Properties {
             }
             set {
                 this["RCTTitle"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NSAPassword {
+            get {
+                return ((string)(this["NSAPassword"]));
+            }
+            set {
+                this["NSAPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NSATitle {
+            get {
+                return ((string)(this["NSATitle"]));
+            }
+            set {
+                this["NSATitle"] = value;
             }
         }
     }

@@ -471,6 +471,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose title or enter a password.
+        /// </summary>
+        public static string NSAChoose {
+            get {
+                return ResourceManager.GetString("NSAChoose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ONScripter game engine resource archive.
         /// </summary>
         public static string NSADescription {

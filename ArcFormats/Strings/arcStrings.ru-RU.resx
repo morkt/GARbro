@@ -233,6 +233,9 @@
     <value>Ключи шифрования
 (требуются даже если содержимое не шифруется)</value>
   </data>
+  <data name="NSAChoose" xml:space="preserve">
+    <value>Выберите наименование или введите пароль</value>
+  </data>
   <data name="ONSArchiveType" xml:space="preserve">
     <value>Тип архива</value>
   </data>

@@ -29,7 +29,7 @@
     <Setting Name="SGFileNameEncoding" Type="System.String" Scope="User">
       <Value Profile="(Default)">shift-jis</Value>
     </Setting>
-    <Setting Name="ONSCompression" Type="GameRes.Formats.ONScripter.Compression" Scope="User">
+    <Setting Name="ONSCompression" Type="GameRes.Formats.NScripter.Compression" Scope="User">
       <Value Profile="(Default)">None</Value>
     </Setting>
     <Setting Name="AMIBaseArchive" Type="System.String" Scope="User">
@@ -99,6 +99,12 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="RCTTitle" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="NSAPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="NSATitle" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
   </Settings>

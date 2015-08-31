@@ -92,6 +92,11 @@
     <Compile Include="Ffa\ArcFFA.cs" />
     <Compile Include="Interheart\ArcFPK.cs" />
     <Compile Include="ArcFVP.cs" />
+    <Compile Include="NScripter\EncryptedStream.cs" />
+    <Compile Include="NScripter\ArcSAR.cs" />
+    <Compile Include="NScripter\WidgetNSA.xaml.cs">
+      <DependentUpon>WidgetNSA.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Pajamas\ArcGameDat.cs" />
     <Compile Include="G2\ArcGCEX.cs" />
     <Compile Include="BlackCyc\ArcGPK.cs" />
@@ -351,6 +356,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FlyingShine\CreatePDWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NScripter\WidgetNSA.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

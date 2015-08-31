@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using GameRes.Formats.Strings;
@@ -18,16 +17,16 @@ namespace GameRes.Formats.GUI
         }
     }
 
-    [ValueConversion (typeof (ONScripter.Compression), typeof (string))]
+    [ValueConversion (typeof (NScripter.Compression), typeof (string))]
     class CompressionToStringConverter : IValueConverter
     {
         public object Convert (object value, Type targetType, object parameter, CultureInfo culture)
         {
-            switch ((ONScripter.Compression)value)
+            switch ((NScripter.Compression)value)
             {
-            case ONScripter.Compression.SPB:   return "SPB";
-            case ONScripter.Compression.LZSS:  return "LZSS";
-            case ONScripter.Compression.NBZ:   return "NBZ";
+            case NScripter.Compression.SPB:   return "SPB";
+            case NScripter.Compression.LZSS:  return "LZSS";
+            case NScripter.Compression.NBZ:   return "NBZ";
             default: return arcStrings.ONSCompressionNone;
             }
         }
@@ -38,13 +37,13 @@ namespace GameRes.Formats.GUI
             if (!string.IsNullOrEmpty (s))
             {
                 if ("SPB" == s)
-                    return ONScripter.Compression.SPB;
+                    return NScripter.Compression.SPB;
                 else if ("LZSS" == s)
-                    return ONScripter.Compression.LZSS;
+                    return NScripter.Compression.LZSS;
                 else if ("NBZ" == s)
-                    return ONScripter.Compression.NBZ;
+                    return NScripter.Compression.NBZ;
             }
-            return ONScripter.Compression.None;
+            return NScripter.Compression.None;
         }
     }
 }
