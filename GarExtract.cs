@@ -65,13 +65,15 @@ namespace GARbro.GUI
                     if (!entry.IsDirectory)
                     {
                         var arc_dir = vm.Path.First();
-                        var source = Path.Combine (arc_dir, entry.Name);
+                        var source = entry.Source.Name;
                         if (string.IsNullOrEmpty (destination))
                             destination = arc_dir;
+                        SetBusyState();
+                        VFS.ChDir (source);
                         // extract into directory named after archive
                         if (!string.IsNullOrEmpty (Path.GetExtension (entry.Name)))
                             destination = Path.GetFileNameWithoutExtension (source);
-                        extractor = new GarExtract (this, source);
+                        extractor = new GarExtract (this, source, VFS.CurrentArchive);
                         extractor.ExtractAll (destination);
                     }
                 }
