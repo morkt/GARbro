@@ -216,7 +216,12 @@ namespace GARbro.GUI
                 }
                 else if (entry.Size < uint.MaxValue)
                 {
-                    list.Add (entry.Source);
+                    var e = new Entry {
+                        Name = entry.Name,
+                        Type = entry.Source.Type,
+                        Size = entry.Source.Size,
+                    };
+                    list.Add (e);
                 }
             }
             return list;
