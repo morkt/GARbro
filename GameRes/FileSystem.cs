@@ -458,7 +458,7 @@ namespace GameRes
             m_arc_name_stack.Push (path);
         }
 
-        private void Pop ()
+        internal void Pop ()
         {
             if (m_fs_stack.Count > 1)
             {
@@ -500,10 +500,26 @@ namespace GameRes
     {
         private static FileSystemStack m_vfs = new FileSystemStack();
 
+        /// <summary>
+        /// Top, or "current" filesystem in VFS hierarchy.
+        /// </summary>
         public static IFileSystem Top { get { return m_vfs.Top; } }
+
+        /// <summary>
+        /// Whether top filesystem is virtual (i.e. represents an archive).
+        /// </summary>
         public static bool  IsVirtual { get { return m_vfs.Count > 1; } }
+
+        /// <summary>
+        /// Number of filesystems in hierarchy. ==1 when only physical file system is represented.
+        /// Always >= 1
+        /// </summary>
         public static  int      Count { get { return m_vfs.Count; } }
 
+        /// <summary>
+        /// Archive corresponding to the top filesystem, or null if file system doesn't have underlying
+        /// archive file.
+        /// </summary>
         public static ArcFile CurrentArchive { get { return m_vfs.CurrentArchive; } }
 
         private static string[] m_top_path = new string[1];
@@ -522,12 +538,31 @@ namespace GameRes
             {
                 if (!value.Any())
                     return;
-                var new_vfs = new FileSystemStack();
                 var desired = value.ToArray();
-                for (int i = 0; i < desired.Length-1; ++i)
-                    new_vfs.ChDir (new_vfs.Top.FindFile (desired[i]));
-                new_vfs.Top.CurrentDirectory = desired.Last();
-                m_vfs.Dispose();
+                if (desired.Length == Count)
+                {
+                    var cur_stack = m_vfs.ArcStack.Reverse();
+                    if (1 == Count || cur_stack.SequenceEqual (desired.Take (desired.Length-1)))
+                    {
+                        // desired path is identical to current, adjust final component only
+                        m_vfs.Top.CurrentDirectory = desired.Last();
+                        return;
+                    }
+                }
+                // desired path is different, rebuild filesystem hierarchy from scratch
+                var new_vfs = new FileSystemStack();
+                try
+                {
+                    for (int i = 0; i < desired.Length-1; ++i)
+                        new_vfs.ChDir (new_vfs.Top.FindFile (desired[i]));
+                    new_vfs.Top.CurrentDirectory = desired.Last();
+                    m_vfs.Dispose();
+                }
+                catch
+                {
+                    new_vfs.Dispose();
+                    throw;
+                }
                 m_vfs = new_vfs;
             }
         }
