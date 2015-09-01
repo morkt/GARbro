@@ -480,7 +480,7 @@ namespace GameRes
                 if (1 == Count)
                     return m_top_path;
                 else
-                    return m_vfs.ArcStack.Concat (m_top_path);
+                    return m_vfs.ArcStack.Reverse().Concat (m_top_path);
             }
             set
             {
