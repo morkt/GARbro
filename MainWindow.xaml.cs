@@ -223,9 +223,14 @@ namespace GARbro.GUI
                 StopWatchDirectoryChanges();
                 var cvs = this.Resources["ListViewSource"] as CollectionViewSource;
                 cvs.Source = value;
-                pathLine.Text = value.Path.Last();
 
-                if (value.IsArchive && !value.Path.Skip (2).Any())
+                // update path textbox
+                var path_component = value.Path.Last();
+                if (string.IsNullOrEmpty (path_component) && value.Path.Count > 1)
+                    path_component = value.Path[value.Path.Count-2];
+                pathLine.Text = path_component;
+
+                if (value.IsArchive && value.Path.Count <= 2)
                     PushRecentFile (value.Path.First());
 
                 lv_Sort (SortMode, m_lvSortDirection);
@@ -237,14 +242,26 @@ namespace GARbro.GUI
             }
         }
 
+        /// <summary>
+        /// Save current position and update view model.
+        /// </summary>
+        void PushViewModel (DirectoryViewModel vm)
+        {
+            SaveCurrentPosition();
+            ViewModel = vm;
+        }
+
         DirectoryViewModel GetNewViewModel (string path)
         {
-            if (!VFS.IsVirtual)
-                path = Path.GetFullPath (path);
-            var entry = VFS.FindFile (path);
-            if (!(entry is SubDirEntry))
-                SetBusyState();
-            VFS.ChDir (entry);
+            if (!string.IsNullOrEmpty (path))
+            {
+                if (!VFS.IsVirtual)
+                    path = Path.GetFullPath (path);
+                var entry = VFS.FindFile (path);
+                if (!(entry is SubDirEntry))
+                    SetBusyState();
+                VFS.ChDir (entry);
+            }
             return new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
         }
 
@@ -618,7 +635,7 @@ namespace GARbro.GUI
                 return;
             try
             {
-                ViewModel = GetNewViewModel (path);
+                PushViewModel (GetNewViewModel (path));
                 lv_Focus();
             }
             catch (Exception X)
@@ -716,9 +733,7 @@ namespace GARbro.GUI
                 return;
             try
             {
-                var vm = GetNewViewModel (filename);
-                SaveCurrentPosition();
-                ViewModel = vm;
+                PushViewModel (GetNewViewModel (filename));
                 if (null != VFS.CurrentArchive)
                     SetStatusText (VFS.CurrentArchive.Description);
                 lv_SelectItem (0);
@@ -754,33 +769,32 @@ namespace GARbro.GUI
                 entry = CurrentDirectory.SelectedItem as EntryViewModel;
             if (null == entry)
                 return;
-
-            var vm = ViewModel;
-            if (null == vm)
-                return;
             if ("audio" == entry.Type)
             {
                 PlayFile (entry.Source);
                 return;
             }
-            OpenDirectoryEntry (vm, entry);
+            OpenDirectoryEntry (ViewModel, entry);
         }
 
         private void OpenDirectoryEntry (DirectoryViewModel vm, EntryViewModel entry)
         {
-            string old_dir = vm.Path.Last();
+            string old_dir = null == vm ? "" : vm.Path.Last();
             string new_dir = entry.Source.Name;
-            if (!vm.IsArchive && ".." == new_dir)
-                new_dir = Path.Combine (old_dir, entry.Name);
+            if (".." == new_dir)
+            {
+                if (null != vm && !vm.IsArchive)
+                    new_dir = Path.Combine (old_dir, entry.Name);
+                if (vm.Path.Count > 1 && string.IsNullOrEmpty (old_dir))
+                    old_dir = vm.Path[vm.Path.Count-2];
+            }
             Trace.WriteLine (new_dir, "OpenDirectoryEntry");
             int old_fs_count = VFS.Count;
             vm = TryCreateViewModel (new_dir);
             if (null == vm)
-            {
                 return;
-            }
-            SaveCurrentPosition();
-            ViewModel = vm;
+
+            PushViewModel (vm);
             if (VFS.Count > old_fs_count && null != VFS.CurrentArchive)
                 SetStatusText (string.Format ("{0}: {1}", VFS.CurrentArchive.Description,
                     Localization.Format ("MsgFiles", VFS.CurrentArchive.Dir.Count())));
@@ -791,35 +805,6 @@ namespace GARbro.GUI
                 lv_SelectItem (Path.GetFileName (old_dir));
             else
                 lv_SelectItem (0);
-        }
-
-        /*
-        private void OpenArchiveEntry (ArchiveViewModel vm, EntryViewModel entry)
-        {
-            if (entry.IsDirectory)
-            {
-                SaveCurrentPosition();
-                var old_dir = vm.SubDir;
-                try
-                {
-                    vm.ChDir (entry.Name);
-                    if (".." == entry.Name)
-                        lv_SelectItem (Path.GetFileName (old_dir));
-                    else
-                        lv_SelectItem (0);
-                    SetStatusText ("");
-                }
-                catch (Exception X)
-                {
-                    SetStatusText (X.Message);
-                }
-            }
-        }
-        */
-
-        Stream OpenEntry (Entry entry)
-        {
-            return VFS.OpenStream (entry);
         }
 
         WaveOutEvent    m_audio_device;
@@ -852,7 +837,7 @@ namespace GARbro.GUI
             try
             {
                 SetBusyState();
-                using (var input = OpenEntry (entry))
+                using (var input = VFS.OpenStream (entry))
                 {
                     FormatCatalog.Instance.LastError = null;
                     sound = AudioFormat.Read (input);

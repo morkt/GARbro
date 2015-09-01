@@ -75,11 +75,11 @@ namespace GARbro.GUI
                         extractor.ExtractAll (destination);
                     }
                 }
-                else if (vm.Path.Skip (1).Any())
+                else if (vm.Path.Count > 1)
                 {
                     if (string.IsNullOrEmpty (destination))
                         destination = Path.GetDirectoryName (vm.Path.First());
-                    var archive_name = vm.Path.Reverse().Skip (1).First();
+                    var archive_name = vm.Path[vm.Path.Count-2];
                     extractor = new GarExtract (this, archive_name, VFS.CurrentArchive);
                     if (null == entry || (entry.Name == ".." && string.IsNullOrEmpty (vm.Path.Last()))) // root entry
                         extractor.ExtractAll (destination);

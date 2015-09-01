@@ -41,13 +41,13 @@ namespace GARbro.GUI
 {
     public class DirectoryViewModel : ObservableCollection<EntryViewModel>
     {
-        public IEnumerable<string>  Path { get; private set; }
-        public IEnumerable<Entry> Source { get; private set; }
-        public bool            IsArchive { get; private set; }
+        public IReadOnlyList<string> Path { get; private set; }
+        public IEnumerable<Entry>  Source { get; private set; }
+        public bool             IsArchive { get; private set; }
 
         public DirectoryViewModel (IEnumerable<string> path, IEnumerable<Entry> filelist, bool is_archive)
         {
-            Path = path;
+            Path = path.ToList();
             Source = filelist;
             IsArchive = is_archive;
             ImportFromSource();
@@ -81,141 +81,6 @@ namespace GARbro.GUI
         {
         }
     }
-
-    /*
-    public class ArchiveViewModel : DirectoryViewModel
-    {
-        public override bool IsArchive { get { return true; } }
-        public string SubDir { get; protected set; }
-
-        public ArchiveViewModel (string path, ArcFile arc)
-            : base (path, arc.Dir)
-        {
-        }
-
-        protected override void ImportFromSource ()
-        {
-            UpdateModel ("");
-        }
-
-        private string m_delimiter = "/";
-        private static readonly char[] m_path_delimiters = { '/', '\\' };
-
-        public void ChDir (string subdir)
-        {
-            string new_path;
-            if (".." == subdir)
-            {
-                if (0 == SubDir.Length)
-                    return;
-                var path = SubDir.Split (m_path_delimiters);
-                if (path.Length > 1)
-                    new_path = string.Join (m_delimiter, path, 0, path.Length-1);
-                else
-                    new_path = "";
-            }
-            else
-            {
-                var entry = this.FirstOrDefault (e => e.Name.Equals (subdir, StringComparison.OrdinalIgnoreCase));
-                if (null == entry)
-                    throw new DirectoryNotFoundException (string.Format ("{1}: {0}", guiStrings.MsgDirectoryNotFound, subdir));
-                if (SubDir.Length > 0)
-                    new_path = SubDir + m_delimiter + entry.Name;
-                else
-                    new_path = entry.Name;
-            }
-            UpdateModel (new_path);
-        }
-
-        static readonly Regex path_re = new Regex (@"\G[/\\]?([^/\\]+)([/\\])");
-
-        private void UpdateModel (string root_path)
-        {
-            IEnumerable<Entry> dir = Source;
-            if (!string.IsNullOrEmpty (root_path))
-            {
-                dir = from entry in dir
-                      where entry.Name.StartsWith (root_path+m_delimiter)
-                      select entry;
-                if (!dir.Any())
-                {
-                    throw new DirectoryNotFoundException (string.Format ("{1}: {0}", guiStrings.MsgDirectoryNotFound, root_path));
-                }
-            }
-            m_suppress_notification = true;
-            try
-            {
-                this.Clear();
-                SubDir = root_path;
-                Add (new EntryViewModel (new SubDirEntry (".."), -2));
-                var subdirs = new HashSet<string>();
-                foreach (var entry in dir)
-                {
-                    var match = path_re.Match (entry.Name, root_path.Length);
-                    if (match.Success)
-                    {
-                        string name = match.Groups[1].Value;
-                        if (subdirs.Add (name))
-                        {
-                            m_delimiter = match.Groups[2].Value;
-                            Add (new EntryViewModel (new SubDirEntry (name), -1));
-                        }
-                    }
-                    else
-                    {
-                        Add (new EntryViewModel (entry, 0));
-                    }
-                }
-            }
-            finally
-            {
-                m_suppress_notification = false;
-                OnCollectionChanged (new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-            }
-        }
-
-        public override void SetPosition (DirectoryPosition pos)
-        {
-            UpdateModel (pos.ArchivePath);
-        }
-
-        public override IEnumerable<Entry> GetFiles (IEnumerable<EntryViewModel> entries)
-        {
-            var list = new List<Entry>();
-            foreach (var entry in entries)
-            {
-                if (!entry.IsDirectory) // add ordinary file
-                    list.Add (entry.Source);
-                else if (".." == entry.Name) // skip reference to parent directory
-                    continue;
-                else // add all files contained within directory, recursive
-                {
-                    string path = GetPath (entry.Name);
-                    list.AddRange (from file in Source
-                                   where file.Name.StartsWith (path)
-                                   select file);
-                }
-            }
-            return list;
-        }
-
-        string GetPath (string dir)
-        {
-            if (SubDir.Length > 0)
-                return SubDir + m_delimiter + dir + m_delimiter;
-            else
-                return dir + m_delimiter;
-        }
-
-        private bool m_suppress_notification = false;
-
-        protected override void OnCollectionChanged (NotifyCollectionChangedEventArgs e)
-        {
-            if (!m_suppress_notification)
-                base.OnCollectionChanged(e);
-        }
-    }
-    */
 
     public class EntryViewModel : INotifyPropertyChanged
     {
