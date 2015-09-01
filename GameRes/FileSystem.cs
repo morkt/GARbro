@@ -41,6 +41,11 @@ namespace GameRes
         Entry FindFile (string filename);
 
         /// <summary>
+        /// System.IO.File.Exists() analog.
+        /// </summary>
+        bool FileExists (string filename);
+
+        /// <summary>
         /// Open file for reading as stream.
         /// </summary>
         Stream OpenStream (Entry entry);
@@ -102,6 +107,11 @@ namespace GameRes
                 return new SubDirEntry (filename);
             else
                 return EntryFromFileInfo (new FileInfo (filename));
+        }
+
+        public bool FileExists (string filename)
+        {
+            return File.Exists (filename);
         }
 
         public IEnumerable<Entry> GetFiles ()
@@ -190,6 +200,11 @@ namespace GameRes
             {
                 m_dir.Add (entry.Name, entry);
             }
+        }
+
+        public bool FileExists (string filename)
+        {
+            return m_dir.ContainsKey (filename);
         }
 
         public Stream OpenStream (Entry entry)
@@ -529,6 +544,11 @@ namespace GameRes
             return m_vfs.Top.FindFile (filename);
         }
 
+        public static bool FileExists (string filename)
+        {
+            return m_vfs.Top.FileExists (filename);
+        }
+
         public static Stream OpenStream (Entry entry)
         {
             return m_vfs.Top.OpenStream (entry);
@@ -542,6 +562,21 @@ namespace GameRes
         public static ArcView OpenView (Entry entry)
         {
             return m_vfs.Top.OpenView (entry);
+        }
+
+        public static Stream OpenStream (string filename)
+        {
+            return m_vfs.Top.OpenStream (m_vfs.Top.FindFile (filename));
+        }
+
+        public static Stream OpenSeekableStream (string filename)
+        {
+            return m_vfs.Top.OpenSeekableStream (m_vfs.Top.FindFile (filename));
+        }
+
+        public static ArcView OpenView (string filename)
+        {
+            return m_vfs.Top.OpenView (m_vfs.Top.FindFile (filename));
         }
 
         public static void ChDir (Entry entry)
