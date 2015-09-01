@@ -129,6 +129,8 @@ namespace GameRes.Formats.Tactics
                     }
                     catch { /* ignore V0 parse errors, try V1 */ }
 
+                    if (m_dir.IsValueCreated)
+                        m_dir.Value.Clear();
                     input.Position = 0;
                     if (ReadV1 (input))
                         return m_dir.Value;
