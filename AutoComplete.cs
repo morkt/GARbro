@@ -72,17 +72,20 @@ namespace GARbro.GUI
         {
             try
             {
-                var candidates = new List<string>();
-                string dirname = Path.GetDirectoryName (this.Text);
-                if (!string.IsNullOrEmpty (dirname) && Directory.Exists (dirname))
+                if (!GameRes.VFS.IsVirtual)
                 {
-                    foreach (var dir in Directory.GetDirectories (dirname))
+                    var candidates = new List<string>();
+                    string dirname = Path.GetDirectoryName (this.Text);
+                    if (!string.IsNullOrEmpty (dirname) && Directory.Exists (dirname))
                     {
-                        if (dir.StartsWith (dirname, StringComparison.CurrentCultureIgnoreCase))
-                            candidates.Add (dir);
+                        foreach (var dir in Directory.GetDirectories (dirname))
+                        {
+                            if (dir.StartsWith (dirname, StringComparison.CurrentCultureIgnoreCase))
+                                candidates.Add (dir);
+                        }
                     }
+                    this.ItemsSource = candidates;
                 }
-                this.ItemsSource = candidates;
             }
             catch
             {

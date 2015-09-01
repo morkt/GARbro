@@ -77,7 +77,7 @@ namespace GameRes
         }
     }
 
-    public class PhysicalFileSystem : IFileSystem
+    public sealed class PhysicalFileSystem : IFileSystem
     {
         public string CurrentDirectory
         {
@@ -396,6 +396,8 @@ namespace GameRes
             if (entry.Name == LastVisitedPath && null != LastVisitedArc)
             {
                 Push (LastVisitedPath, LastVisitedArc);
+                if (LastVisitedArc is FlatArchiveFileSystem)
+                    CurrentArchive = (LastVisitedArc as FlatArchiveFileSystem).Source;
                 return;
             }
             Flush();
