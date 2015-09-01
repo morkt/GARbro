@@ -319,15 +319,14 @@ namespace GameRes
         {
             if (string.IsNullOrEmpty (path))
                 return;
-            List<string> cur_dir;
+            var cur_dir = new List<string>();
             if (-1 != Array.IndexOf (m_path_delimiters, path[0]))
             {
                 path = path.TrimStart (m_path_delimiters);
-                cur_dir = new List<string>();
             }
-            else
+            else if (!string.IsNullOrEmpty (m_cwd))
             {
-                cur_dir = m_cwd.Split (m_path_delimiters).ToList();
+                cur_dir.AddRange (m_cwd.Split (m_path_delimiters));
             }
             var path_list = path.Split (m_path_delimiters);
             foreach (var dir in path_list)
@@ -392,6 +391,8 @@ namespace GameRes
                     Pop();
                     return;
                 }
+                Top.CurrentDirectory = entry.Name;
+                return;
             }
             if (entry.Name == LastVisitedPath && null != LastVisitedArc)
             {
