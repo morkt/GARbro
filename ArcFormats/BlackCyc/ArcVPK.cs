@@ -45,14 +45,14 @@ namespace GameRes.Formats.BlackCyc
             if (!file.Name.EndsWith (".vpk", StringComparison.InvariantCultureIgnoreCase))
                 return null;
             var vtb_name = Path.ChangeExtension (file.Name, "vtb");
-            var vtb_info = new FileInfo (vtb_name);
-            if (!vtb_info.Exists)
+            if (!VFS.FileExists (vtb_name))
                 return null;
-            int count = (int)(vtb_info.Length / 0x0C) - 1;
+            var vtb_entry = VFS.FindFile (vtb_name);
+            int count = (int)(vtb_entry.Size / 0x0C) - 1;
             if (!IsSaneCount (count))
                 return null;
 
-            using (var vtb = new ArcView (vtb_name))
+            using (var vtb = VFS.OpenView (vtb_entry))
             {
                 vtb.View.Reserve (0, (uint)vtb.MaxOffset);
                 uint index_offset = 0;

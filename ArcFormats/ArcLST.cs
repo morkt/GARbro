@@ -53,9 +53,9 @@ namespace GameRes.Formats.Nexton
         public override ArcFile TryOpen (ArcView file)
         {
             string lstname = file.Name + ".lst";
-            if (!File.Exists (lstname))
+            if (!VFS.FileExists (lstname))
                 return null;
-            using (var lst = new ArcView (lstname))
+            using (var lst = VFS.OpenView (lstname))
             {
                 List<Entry> dir = null;
                 try

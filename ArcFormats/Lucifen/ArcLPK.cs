@@ -320,8 +320,8 @@ namespace GameRes.Formats.Lucifen
 
         void ImportKeys (string source_name)
         {
-            var script_lpk = Path.Combine (Path.GetDirectoryName (source_name), "SCRIPT.LPK");
-            using (var script_file = new ArcView (script_lpk))
+            var script_lpk = VFS.CombinePath (Path.GetDirectoryName (source_name), "SCRIPT.LPK");
+            using (var script_file = VFS.OpenView (script_lpk))
             using (var script_arc  = Open (ScriptName, script_file, CurrentScheme, null))
             {
                 if (null == script_arc)

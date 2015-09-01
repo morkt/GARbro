@@ -28,7 +28,6 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -178,9 +177,9 @@ namespace GameRes.Formats.Majiro
                 string name = Encodings.cp932.GetString (name_bin, 0, name_bin.Length-1);
                 string dir_name = Path.GetDirectoryName (meta.FileName);
                 name = Path.Combine (dir_name, name);
-                if (File.Exists (name))
+                if (VFS.FileExists (name))
                 {
-                    using (var base_file = File.OpenRead (name))
+                    using (var base_file = VFS.OpenSeekableStream (name))
                     {
                         var base_info = ReadMetaData (base_file) as RctMetaData;
                         if (null != base_info && 0 == base_info.AddSize

@@ -45,10 +45,9 @@ namespace GameRes.Formats.BlackCyc
             if (!file.Name.EndsWith (".gpk", StringComparison.InvariantCultureIgnoreCase))
                 return null;
             var gtb_name = Path.ChangeExtension (file.Name, "gtb");
-            var gtb_info = new FileInfo (gtb_name);
-            if (!gtb_info.Exists)
+            if (!VFS.FileExists (gtb_name))
                 return null;
-            using (var gtb = new ArcView (gtb_name))
+            using (var gtb = VFS.OpenView (gtb_name))
             {
                 int count = gtb.View.ReadInt32 (0);
                 if (!IsSaneCount (count))

@@ -50,14 +50,14 @@ namespace GameRes.Formats.Elf
         public override ArcFile TryOpen (ArcView file)
         {
             string pak_name = Path.ChangeExtension (file.Name, "pak");
-            if (pak_name == file.Name || !File.Exists (pak_name))
+            if (pak_name == file.Name || !VFS.FileExists (pak_name))
                 return null;
             var file_map = GetFileMap (pak_name);
             if (null == file_map)
                 return null;
             string base_name = Path.GetFileNameWithoutExtension (pak_name);
 
-            using (var pak = new ArcView (pak_name))
+            using (var pak = VFS.OpenView (pak_name))
             {
                 if (0x00646568 != pak.View.ReadUInt32 (0))
                     return null;

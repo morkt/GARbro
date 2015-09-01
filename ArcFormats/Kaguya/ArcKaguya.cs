@@ -84,7 +84,7 @@ namespace GameRes.Formats.Kaguya
         {
             string ari_name = Path.ChangeExtension (file.Name, "ari");
             List<Entry> dir = null;
-            if (file.Name != ari_name && File.Exists (ari_name))
+            if (file.Name != ari_name && VFS.FileExists (ari_name))
                 dir = ReadAriIndex (file, ari_name);
             if (null == dir || 0 == dir.Count)
                 dir = BuildIndex (file);
@@ -94,7 +94,7 @@ namespace GameRes.Formats.Kaguya
         List<Entry> ReadAriIndex (ArcView file, string ari_name)
         {
             long arc_offset = 4;
-            using (var ari = new ArcView (ari_name))
+            using (var ari = VFS.OpenView (ari_name))
             {
                 long index_offset = 0;
                 while (index_offset+4 < ari.MaxOffset)

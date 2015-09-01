@@ -51,12 +51,14 @@ namespace GameRes.Formats.Eagls
         public override ArcFile TryOpen (ArcView file)
         {
             string idx_name = Path.ChangeExtension (file.Name, ".idx");
-            var idx_info = new FileInfo (idx_name);
-            if (!idx_info.Exists || idx_info.Length > 0xfffff || idx_info.Length < 10000)
+            if (!VFS.FileExists (idx_name))
+                return null;
+            var idx_entry = VFS.FindFile (idx_name);
+            if (idx_entry.Size > 0xfffff || idx_entry.Size < 10000)
                 return null;
 
             byte[] index;
-            using (var idx = new ArcView (idx_name))
+            using (var idx = VFS.OpenView (idx_entry))
                 index = DecryptIndex (idx);
             int index_offset = 0;
             int entry_size = index.Length / 10000;

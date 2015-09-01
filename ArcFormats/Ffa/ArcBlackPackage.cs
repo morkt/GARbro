@@ -49,15 +49,13 @@ namespace GameRes.Formats.Ffa
         public override ArcFile TryOpen (ArcView file)
         {
             string lst_name = Path.ChangeExtension (file.Name, ".lst");
-            if (lst_name == file.Name)
+            if (lst_name == file.Name || !VFS.FileExists (lst_name))
                 return null;
-            var lst_info = new FileInfo (lst_name);
-            if (!lst_info.Exists)
+            var lst_entry = VFS.FindFile (lst_name);
+            int count = (int)(lst_entry.Size/0x16);
+            if (count > 0xffff || count*0x16 != lst_entry.Size)
                 return null;
-            int count = (int)(lst_info.Length/0x16);
-            if (count > 0xffff || count*0x16 != lst_info.Length)
-                return null;
-            using (var lst = new ArcView (lst_name))
+            using (var lst = VFS.OpenView (lst_entry))
             {
                 var dir = new List<Entry> (count);
                 uint index_offset = 0;

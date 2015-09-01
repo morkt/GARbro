@@ -58,9 +58,7 @@ namespace GameRes.Formats.Malie
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
-            var tex = new DirectoryInfo ("tex");
-            if (!tex.Exists)
-                return null;
+            var tex = VFS.FindFile ("tex");
             using (var reader = new StreamReader (stream, Encoding.UTF8, false, 2048, true))
             {
                 reader.ReadLine(); // skip signature
@@ -101,7 +99,10 @@ namespace GameRes.Formats.Malie
                         foreach (var file in line.Split (','))
                         {
                             if (!string.IsNullOrEmpty (file))
-                                tiles.Add (new DziTile { X = x, Y = y, FileName = Path.Combine (tex.Name, file + ".png") });
+                            {
+                                var filename = VFS.CombinePath (tex.Name, file + ".png");
+                                tiles.Add (new DziTile { X = x, Y = y, FileName = filename });
+                            }
                             x += 256;
                         }
                         y += 256;
@@ -131,7 +132,7 @@ namespace GameRes.Formats.Malie
             int actual_height = 0;
             foreach (var tile in meta.Tiles.First())
             {
-                using (var file = File.OpenRead (tile.FileName))
+                using (var file = VFS.OpenStream (VFS.FindFile (tile.FileName)))
                 {
                     var decoder = new PngBitmapDecoder (file,
                         BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
