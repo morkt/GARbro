@@ -35,7 +35,7 @@ namespace GameRes
     public interface IFileSystem : IDisposable
     {
         /// <summary>
-        /// Returns entry corresponding to the given filename within filesystem.
+        /// Returns entry corresponding to the given file or directory within filesystem.
         /// </summary>
         /// <exception cref="FileNotFoundException">File is not found.</exception>
         Entry FindFile (string filename);
@@ -56,6 +56,11 @@ namespace GameRes
         /// Enumerates subdirectories and files in current directory.
         /// </summary>
         IEnumerable<Entry> GetFiles ();
+
+        /// <summary>
+        /// System.IO.Path.Combine() analog.
+        /// </summary>
+        string CombinePath (string path1, string path2);
 
         /// <summary>
         /// Recursively enumerates files in the current directory and its subdirectories.
@@ -83,6 +88,11 @@ namespace GameRes
         {
             get { return Directory.GetCurrentDirectory(); }
             set { Directory.SetCurrentDirectory (value); }
+        }
+
+        public string CombinePath (string path1, string path2)
+        {
+            return Path.Combine (path1, path2);
         }
 
         public Entry FindFile (string filename)
@@ -215,6 +225,11 @@ namespace GameRes
             return m_arc.Dir;
         }
 
+        public virtual string CombinePath (string path1, string path2)
+        {
+            return Path.Combine (path1, path2);
+        }
+
         #region IDisposable Members
         bool _arc_disposed = false;
 
@@ -256,6 +271,11 @@ namespace GameRes
         {
             get { return m_cwd; }
             set { ChDir (value); }
+        }
+
+        public override string CombinePath (string path1, string path2)
+        {
+            return string.Join (PathDelimiter, path1, path2);
         }
 
         public override Entry FindFile (string filename)
@@ -318,13 +338,16 @@ namespace GameRes
         private void ChDir (string path)
         {
             if (string.IsNullOrEmpty (path))
+            {
+                m_cwd = "";
                 return;
+            }
             var cur_dir = new List<string>();
             if (-1 != Array.IndexOf (m_path_delimiters, path[0]))
             {
                 path = path.TrimStart (m_path_delimiters);
             }
-            else if (!string.IsNullOrEmpty (m_cwd))
+            else if (".." == path && !string.IsNullOrEmpty (m_cwd))
             {
                 cur_dir.AddRange (m_cwd.Split (m_path_delimiters));
             }
@@ -381,17 +404,14 @@ namespace GameRes
         {
             if (entry is SubDirEntry)
             {
-                if (1 == m_fs_stack.Count)
-                {
-                    Top.CurrentDirectory = entry.Name;
-                    return;
-                }
-                if (".." == entry.Name && string.IsNullOrEmpty (Top.CurrentDirectory))
+                if (Count > 1 && ".." == entry.Name && string.IsNullOrEmpty (Top.CurrentDirectory))
                 {
                     Pop();
-                    return;
                 }
-                Top.CurrentDirectory = entry.Name;
+                else
+                {
+                    Top.CurrentDirectory = entry.Name;
+                }
                 return;
             }
             if (entry.Name == LastVisitedPath && null != LastVisitedArc)
@@ -495,6 +515,11 @@ namespace GameRes
                 m_vfs.Dispose();
                 m_vfs = new_vfs;
             }
+        }
+
+        public static string CombinePath (string path1, string path2)
+        {
+            return m_vfs.Top.CombinePath (path1, path2);
         }
 
         public static Entry FindFile (string filename)
