@@ -170,29 +170,16 @@ namespace GameRes
         }
     }
 
-    public class FlatArchiveFileSystem : IFileSystem
+    public abstract class ArchiveFileSystem : IFileSystem
     {
         protected readonly ArcFile                      m_arc;
         protected readonly Dictionary<string, Entry>    m_dir;
 
         public ArcFile Source { get { return m_arc; } }
 
-        public virtual string CurrentDirectory
-        {
-            get { return ""; }
-            set
-            {
-                if (string.IsNullOrEmpty (value))
-                    return;
-                if (".." == value || "." == value)
-                    return;
-                if ("\\" == value || "/" == value)
-                    return;
-                throw new DirectoryNotFoundException();
-            }
-        }
+        public abstract string CurrentDirectory { get; set; }
 
-        public FlatArchiveFileSystem (ArcFile arc)
+        public ArchiveFileSystem (ArcFile arc)
         {
             m_arc = arc;
             m_dir = new Dictionary<string, Entry> (arc.Dir.Count, StringComparer.InvariantCultureIgnoreCase);
@@ -222,28 +209,13 @@ namespace GameRes
             return m_arc.OpenView (entry);
         }
 
-        public virtual Entry FindFile (string filename)
-        {
-            Entry entry = null;
-            if (!m_dir.TryGetValue (filename, out entry))
-                throw new FileNotFoundException();
-            return entry;
-        }
+        public abstract Entry FindFile (string filename);
 
-        public virtual IEnumerable<Entry> GetFiles ()
-        {
-            return m_arc.Dir;
-        }
+        public abstract IEnumerable<Entry> GetFiles ();
 
-        public virtual IEnumerable<Entry> GetFilesRecursive ()
-        {
-            return m_arc.Dir;
-        }
+        public abstract IEnumerable<Entry> GetFilesRecursive ();
 
-        public virtual string CombinePath (string path1, string path2)
-        {
-            return Path.Combine (path1, path2);
-        }
+        public abstract string CombinePath (string path1, string path2);
 
         #region IDisposable Members
         bool _arc_disposed = false;
@@ -268,7 +240,52 @@ namespace GameRes
         #endregion
     }
 
-    public class ArchiveFileSystem : FlatArchiveFileSystem
+    public class FlatArchiveFileSystem : ArchiveFileSystem
+    {
+        public override string CurrentDirectory
+        {
+            get { return ""; }
+            set
+            {
+                if (string.IsNullOrEmpty (value))
+                    return;
+                if (".." == value || "." == value)
+                    return;
+                if ("\\" == value || "/" == value)
+                    return;
+                throw new DirectoryNotFoundException();
+            }
+        }
+
+        public FlatArchiveFileSystem (ArcFile arc) : base (arc)
+        {
+        }
+
+        public override Entry FindFile (string filename)
+        {
+            Entry entry = null;
+            if (!m_dir.TryGetValue (filename, out entry))
+                throw new FileNotFoundException();
+            return entry;
+        }
+
+        public override IEnumerable<Entry> GetFiles ()
+        {
+            return m_arc.Dir;
+        }
+
+        public override IEnumerable<Entry> GetFilesRecursive ()
+        {
+            return m_arc.Dir;
+        }
+
+        public override string CombinePath (string path1, string path2)
+        {
+            return Path.Combine (path1, path2);
+        }
+    }
+
+    public class TreeArchiveFileSystem : ArchiveFileSystem
     {
         private string  m_cwd;
 
@@ -276,7 +293,7 @@ namespace GameRes
 
         private static readonly char[] m_path_delimiters = { '/', '\\' };
 
-        public ArchiveFileSystem (ArcFile arc) : base (arc)
+        public TreeArchiveFileSystem (ArcFile arc) : base (arc)
         {
             m_cwd = "";
             PathDelimiter = "/";
@@ -436,8 +453,9 @@ namespace GameRes
             if (entry.Name == LastVisitedPath && null != LastVisitedArc)
             {
                 Push (LastVisitedPath, LastVisitedArc);
-                if (LastVisitedArc is FlatArchiveFileSystem)
-                    CurrentArchive = (LastVisitedArc as FlatArchiveFileSystem).Source;
+                var fs = LastVisitedArc as ArchiveFileSystem;
+                if (null != fs)
+                    CurrentArchive = fs.Source;
                 return;
             }
             Flush();
@@ -469,8 +487,8 @@ namespace GameRes
                 Flush();
                 LastVisitedArc = m_fs_stack.Pop();
                 LastVisitedPath = m_arc_name_stack.Pop();
-                if (m_fs_stack.Count > 1 && m_fs_stack.Peek() is FlatArchiveFileSystem)
-                    CurrentArchive = (m_fs_stack.Peek() as FlatArchiveFileSystem).Source;
+                if (m_fs_stack.Count > 1 && m_fs_stack.Peek() is ArchiveFileSystem)
+                    CurrentArchive = (m_fs_stack.Peek() as ArchiveFileSystem).Source;
                 else
                     CurrentArchive = null;
             }
