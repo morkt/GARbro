@@ -422,6 +422,10 @@ namespace GameRes
                 if (Count > 1 && ".." == entry.Name && string.IsNullOrEmpty (Top.CurrentDirectory))
                 {
                     Pop();
+                    if (!string.IsNullOrEmpty (LastVisitedPath))
+                    {
+                        Top.CurrentDirectory = Path.GetDirectoryName (LastVisitedPath);
+                    }
                 }
                 else
                 {
