@@ -64,10 +64,17 @@ namespace GameRes.Formats.NeXAS
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
+        public PacOpener ()
+        {
+            Signatures = new uint[] { 0x00434150, 0 };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
+            if (!file.View.AsciiEqual (0, "PAC") || 'K' == file.View.ReadByte (3))
+                return null;
             int count = file.View.ReadInt32 (4);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             int pack_type = file.View.ReadInt32 (8);
             uint index_size = file.View.ReadUInt32 (file.MaxOffset-4);
@@ -95,7 +102,7 @@ namespace GameRes.Formats.NeXAS
                 };
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                entry.IsPacked = pack_type != 0;
+                entry.IsPacked = pack_type != 0 && (pack_type != 4 || entry.Size != entry.UnpackedSize);
                 dir.Add (entry);
             }
             if (0 == pack_type)
