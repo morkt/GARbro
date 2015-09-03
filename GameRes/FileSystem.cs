@@ -185,7 +185,8 @@ namespace GameRes
             m_dir = new Dictionary<string, Entry> (arc.Dir.Count, StringComparer.InvariantCultureIgnoreCase);
             foreach (var entry in arc.Dir)
             {
-                m_dir.Add (entry.Name, entry);
+                if (!m_dir.ContainsKey (entry.Name))
+                    m_dir.Add (entry.Name, entry);
             }
         }
 
