@@ -79,11 +79,20 @@ namespace GameRes.Compression
 
         public ZLibStream (Stream stream, CompressionMode mode, CompressionLevel level, bool leave_open = false)
 		{
-            if (CompressionMode.Decompress == mode)
-                InitDecompress (stream);
-            else
-                InitCompress (stream, level);
-            m_should_dispose_base = !leave_open;
+            try
+            {
+                if (CompressionMode.Decompress == mode)
+                    InitDecompress (stream);
+                else
+                    InitCompress (stream, level);
+                m_should_dispose_base = !leave_open;
+            }
+            catch
+            {
+                if (!leave_open)
+                    stream.Dispose();
+                throw;
+            }
 		}
 
         private void InitDecompress (Stream stream)
