@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Amaterasu\ImageGRP.cs" />
+    <Compile Include="ArcMiris.cs" />
     <Compile Include="BitStream.cs" />
     <Compile Include="Emic\ArcPACK.cs" />
     <Compile Include="Emic\ImageMWP.cs" />
