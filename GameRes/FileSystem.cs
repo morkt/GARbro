@@ -308,6 +308,12 @@ namespace GameRes
 
         public override string CombinePath (string path1, string path2)
         {
+            if (0 == path1.Length)
+                return path2;
+            if (0 == path2.Length)
+                return path1;
+            if (path1.EndsWith (PathDelimiter))
+                return path1+path2;
             return string.Join (PathDelimiter, path1, path2);
         }
 
@@ -325,19 +331,11 @@ namespace GameRes
 
         public override IEnumerable<Entry> GetFiles ()
         {
-            var root_dir = "";
-            IEnumerable<Entry> dir = m_arc.Dir;
-            if (!string.IsNullOrEmpty (m_cwd))
-            {
-                root_dir = m_cwd+PathDelimiter;
-                dir = from entry in dir
-                      where entry.Name.StartsWith (root_dir)
-                      select entry;
-                if (!dir.Any())
-                {
-                    throw new DirectoryNotFoundException();
-                }
-            }
+            IEnumerable<Entry> dir = GetFilesRecursive();
+            var root_dir = m_cwd;
+            if (!string.IsNullOrEmpty (root_dir))
+                root_dir += PathDelimiter;
+
             var subdirs = new HashSet<string>();
             foreach (var entry in dir)
             {
@@ -366,6 +364,23 @@ namespace GameRes
                 return from file in m_arc.Dir
                        where file.Name.StartsWith (m_cwd + PathDelimiter)
                        select file;
+        }
+
+        public IEnumerable<Entry> GetFilesRecursive (IEnumerable<Entry> list)
+        {
+            var result = new List<Entry>();
+            foreach (var entry in list)
+            {
+                if (!(entry is SubDirEntry)) // add ordinary file
+                    result.Add (entry);
+                else if (".." == entry.Name) // skip reference to parent directory
+                    continue;
+                else // add all files contained within directory, recursive
+                    result.AddRange (from file in m_arc.Dir
+                                     where file.Name.StartsWith (entry.Name+PathDelimiter)
+                                     select file);
+            }
+            return result;
         }
 
         private void ChDir (string path)
