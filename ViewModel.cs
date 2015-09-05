@@ -67,18 +67,9 @@ namespace GARbro.GUI
             }
         }
 
-        public virtual IEnumerable<Entry> GetFiles (IEnumerable<EntryViewModel> entries)
-        {
-            return entries.Select (e => e.Source);
-        }
-
         public EntryViewModel Find (string name)
         {
-            return this.FirstOrDefault (e => e.Name.Equals (name, System.StringComparison.OrdinalIgnoreCase));
-        }
-
-        public virtual void SetPosition (DirectoryPosition pos)
-        {
+            return this.FirstOrDefault (e => e.Name.Equals (name, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 
