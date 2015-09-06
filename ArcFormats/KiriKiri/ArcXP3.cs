@@ -104,6 +104,7 @@ namespace GameRes.Formats.KiriKiri
             { "Ore no Saimin Fantasia", new SaiminCrypt() },
             { "Seirei Tenshou",     new SeitenCrypt() },
             { "Swan Song",          new SwanSongCrypt() },
+            { "Walpurgis",          new WalpurgisCrypt() },
             { "Zecchou Spiral!!",   new ZecchouCrypt() },
         };
 
