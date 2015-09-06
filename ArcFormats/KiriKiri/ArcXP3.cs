@@ -56,7 +56,7 @@ namespace GameRes.Formats.KiriKiri
 
         public bool IsEncrypted { get; set; }
         public ICrypt Cipher { get; set; }
-        public ICollection<Xp3Segment> Segments { get { return m_segments; } }
+        public List<Xp3Segment> Segments { get { return m_segments; } }
         public uint Hash { get; set; }
     }
 
@@ -97,12 +97,14 @@ namespace GameRes.Formats.KiriKiri
             { "Damegane",           new DameganeCrypt() },
             { "Fate/hollow ataraxia", new FateHACrypt() },
             { "Fate/stay night",    new FateCrypt() },
+            { "Haruiro ☆ Communication ♪", new HaruiroCrypt() },
             { "Hime to Majin to Koi Suru Tamashii", new HashCrypt() },
             { "Imouto Style",       new ImoutoStyleCrypt() },
             { "Okiba ga Nai!",      new OkibaCrypt() },
             { "Ore no Saimin Fantasia", new SaiminCrypt() },
             { "Seirei Tenshou",     new SeitenCrypt() },
             { "Swan Song",          new SwanSongCrypt() },
+            { "Zecchou Spiral!!",   new ZecchouCrypt() },
         };
 
         public override ArcFile TryOpen (ArcView file)
@@ -198,8 +200,12 @@ namespace GameRes.Formats.KiriKiri
                                     entry.Cipher = NoCryptAlgorithm;
                                 entry.IsEncrypted = entry.Cipher != NoCryptAlgorithm;
 
-                                char[] name = header.ReadChars (name_size);
-                                entry.Name = NormalizePath (new string (name));
+                                var name = new string (header.ReadChars (name_size));
+                                if (entry.Cipher is ZecchouCrypt && ObfuscatedPathRe.IsMatch (name))
+                                {
+                                    goto NextEntry;
+                                }
+                                entry.Name = name;
                                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                                 break;
                             }
@@ -242,6 +248,10 @@ namespace GameRes.Formats.KiriKiri
                     }
                     if (!string.IsNullOrEmpty (entry.Name) && entry.Segments.Any())
                     {
+                        if (entry.Cipher is ZecchouCrypt)
+                        {
+                            DeobfuscateEntry (entry);
+                        }
                         dir.Add (entry);
                     }
 NextEntry:
@@ -251,11 +261,15 @@ NextEntry:
             return new ArcFile (file, this, dir);
         }
 
-        static readonly Regex PathRe = new Regex (@"[^\\/]+[\\/]\.\.[\\/]");
+        static readonly Regex ObfuscatedPathRe = new Regex (@"[^\\/]+[\\/]\.\.[\\/]");
 
-        private static string NormalizePath (string filename)
+        private static void DeobfuscateEntry (Xp3Entry entry)
         {
-            return PathRe.Replace (filename, "");
+            if (entry.Segments.Count > 1)
+                entry.Segments.RemoveRange (1, entry.Segments.Count-1);
+            entry.IsPacked = entry.Segments[0].IsCompressed;
+            entry.Size = entry.Segments[0].PackedSize;
+            entry.UnpackedSize = entry.Segments[0].Size;
         }
 
         private long SkipExeHeader (ArcView file)
