@@ -189,7 +189,7 @@ namespace GameRes
             }
         }
 
-        public IFileSystem CreateFileSystem ()
+        public ArchiveFileSystem CreateFileSystem ()
         {
             if (m_interface.IsHierarchic)
                 return new TreeArchiveFileSystem (this);
