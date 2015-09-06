@@ -66,7 +66,6 @@ namespace GARbro.GUI
                     {
                         var source = entry.Source.Name;
                         SetBusyState();
-                        VFS.ChDir (source);
                         if (string.IsNullOrEmpty (destination))
                         {
                             // extract into directory named after archive
@@ -75,7 +74,7 @@ namespace GARbro.GUI
                             else
                                 destination = vm.Path.First();
                         }
-                        extractor = new GarExtract (this, source, VFS.CurrentArchive);
+                        extractor = new GarExtract (this, source);
                         extractor.ExtractAll (destination);
                     }
                 }
@@ -84,7 +83,7 @@ namespace GARbro.GUI
                     if (string.IsNullOrEmpty (destination))
                         destination = Path.GetDirectoryName (vm.Path.First());
                     var archive_name = vm.Path[vm.Path.Count-2];
-                    extractor = new GarExtract (this, archive_name, VFS.CurrentArchive);
+                    extractor = new GarExtract (this, archive_name, VFS.Top as ArchiveFileSystem);
                     if (null == entry || (entry.Name == ".." && string.IsNullOrEmpty (vm.Path.Last()))) // root entry
                         extractor.ExtractAll (destination);
                     else
@@ -99,14 +98,20 @@ namespace GARbro.GUI
             {
                 PopupError (X.Message, guiStrings.MsgErrorExtracting);
             }
+            finally
+            {
+                if (null != extractor && !extractor.IsActive)
+                    extractor.Dispose();
+            }
         }
     }
 
-    sealed internal class GarExtract
+    sealed internal class GarExtract : IDisposable
     {
         private MainWindow          m_main;
         private string              m_arc_name;
-        private ArcFile             m_arc;
+        private ArchiveFileSystem   m_fs;
+        private readonly bool       m_should_dispose;
         private bool                m_skip_images = false;
         private bool                m_skip_script = false;
         private bool                m_skip_audio  = false;
@@ -120,11 +125,33 @@ namespace GARbro.GUI
 
         public bool IsActive { get { return m_extract_in_progress; } }
 
-        public GarExtract (MainWindow parent, string source, ArcFile arc)
+        public GarExtract (MainWindow parent, string source)
         {
             m_main = parent;
             m_arc_name = Path.GetFileName (source);
-            m_arc = arc;
+            FormatCatalog.Instance.LastError = null;
+            var arc = ArcFile.TryOpen (source);
+            if (null == arc)
+            {
+                string error_message;
+                if (FormatCatalog.Instance.LastError != null)
+                    error_message = FormatCatalog.Instance.LastError.Message;
+                else
+                    error_message = garStrings.MsgUnknownFormat;
+                throw new OperationCanceledException (string.Format ("{1}: {0}", error_message, m_arc_name));
+            }
+            m_fs = arc.CreateFileSystem();
+            m_should_dispose = true;
+        }
+
+        public GarExtract (MainWindow parent, string source, ArchiveFileSystem fs)
+        {
+            if (null == fs)
+                throw new UnknownFormatException();
+            m_fs = fs;
+            m_main = parent;
+            m_arc_name = Path.GetFileName (source);
+            m_should_dispose = false;
         }
 
         private void PrepareDestination (string destination)
@@ -147,7 +174,8 @@ namespace GARbro.GUI
 
         public void ExtractAll (string destination)
         {
-            if (0 == m_arc.Dir.Count)
+            var file_list = m_fs.GetFilesRecursive();
+            if (!file_list.Any())
             {
                 m_main.SetStatusText (string.Format ("{1}: {0}", guiStrings.MsgEmptyArchive, m_arc_name));
                 return;
@@ -173,7 +201,7 @@ namespace GARbro.GUI
                 m_image_format = extractDialog.GetImageFormat (extractDialog.ImageConversionFormat);
 
             m_main.SetStatusText (string.Format(guiStrings.MsgExtractingTo, m_arc_name, destination));
-            ExtractFilesFromArchive (string.Format (guiStrings.MsgExtractingArchive, m_arc_name), m_arc.Dir);
+            ExtractFilesFromArchive (string.Format (guiStrings.MsgExtractingArchive, m_arc_name), file_list);
         }
 
         public void Extract (EntryViewModel entry, string destination)
@@ -184,8 +212,8 @@ namespace GARbro.GUI
                 selected = view_model;
 
             IEnumerable<Entry> file_list = selected.Select (e => e.Source);
-            if (VFS.Top is TreeArchiveFileSystem)
-                file_list = (VFS.Top as TreeArchiveFileSystem).GetFilesRecursive (file_list);
+            if (m_fs is TreeArchiveFileSystem)
+                file_list = (m_fs as TreeArchiveFileSystem).GetFilesRecursive (file_list);
 
             if (!file_list.Any())
             {
@@ -259,6 +287,7 @@ namespace GARbro.GUI
         {
             try
             {
+                var arc = m_fs.Source;
                 int total = file_list.Count();
                 foreach (var entry in file_list)
                 {
@@ -267,11 +296,11 @@ namespace GARbro.GUI
                     if (total > 1)
                         m_progress_dialog.ReportProgress (m_extract_count*100/total, null, entry.Name);
                     if (null != m_image_format && entry.Type == "image")
-                        ExtractImage (m_arc, entry, m_image_format);
+                        ExtractImage (arc, entry, m_image_format);
                     else if (m_convert_audio && entry.Type == "audio")
-                        ExtractAudio (m_arc, entry);
+                        ExtractAudio (arc, entry);
                     else
-                        m_arc.Extract (entry);
+                        arc.Extract (entry);
                     ++m_extract_count;
                 }
             }
@@ -404,6 +433,22 @@ namespace GARbro.GUI
                     m_main.PopupError (message, guiStrings.MsgErrorExtracting);
                 }
             }
+            this.Dispose();
         }
+        
+        #region IDisposable Members
+        bool disposed = false;
+
+        public void Dispose ()
+        {
+            if (!disposed)
+            {
+                if (m_should_dispose)
+                    m_fs.Dispose();
+                disposed = true;
+            }
+            GC.SuppressFinalize (this);
+        }
+        #endregion
     }
 }
