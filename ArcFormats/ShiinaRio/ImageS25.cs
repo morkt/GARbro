@@ -188,10 +188,6 @@ namespace GameRes.Formats.ShiinaRio
                 for (int y = 0; y < m_height; ++y)
                 {
                     uint row_pos = rows[y];
-//                    if (183 == y)
-//                        System.Diagnostics.Debugger.Break();
-//                    if (0x82 == y)
-//                        System.Diagnostics.Debugger.Break();
                     if (input_rows.ContainsKey (row_pos))
                     {
                         input_lines[y] = input_rows[row_pos];

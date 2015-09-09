@@ -150,6 +150,8 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
 
             if (0 != (wentry.Flags & 0x80000000u) && entry.Size > 8) // encrypted entry
                 warc.Decoder.Decrypt (enc_data, 8, entry.Size-8);
+            if (warc.Decoder.SchemeVersion >= 2490)
+                warc.Decoder.DecryptExtra (enc_data, 8, entry.Size-8, 0x202);
             if (0 != (wentry.Flags & 0x20000000u) && entry.Size > 8)
                 warc.Decoder.Decrypt2 (enc_data, 8, entry.Size-8);
 
@@ -172,11 +174,9 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 unpacked = new byte[unpacked_size];
                 unpack (enc_data, unpacked);
                 if (0 != (wentry.Flags & 0x40000000))
-                {
                     warc.Decoder.Decrypt2 (unpacked, 0, (uint)unpacked.Length);
-                    if (warc.Decoder.SchemeVersion >= 2490)
-                        warc.Decoder.Decrypt3 (unpacked, 0, (uint)unpacked.Length);
-                }
+                if (warc.Decoder.SchemeVersion >= 2490)
+                    warc.Decoder.DecryptExtra (unpacked, 0, (uint)unpacked.Length, 0x204);
             }
             return new MemoryStream (unpacked);
         }
@@ -610,6 +610,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public byte[] ShiinaImage;
         public byte[] Region;
         public byte[] DecodeBin;
+        public byte[] DecodeExtra;
 
         private static CachedResource Resource = new CachedResource();
 
@@ -641,6 +642,8 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                     LittleEndian.Pack (decode_patch.Value, scheme.DecodeBin, 0x1020);
                 }
             }
+            if (version >= 2490)
+                scheme.DecodeExtra = Resource.Load ("ShiinaRio5.png");
             return scheme;
         }
 
@@ -833,6 +836,36 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             }
             data[index+0x104] ^= (byte)key;
             data[index+0x105] ^= (byte)(key >> 8);
+        }
+
+        public void DecryptExtra (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x400 || null == m_scheme.DecodeExtra)
+                return;
+            uint key = 0xECB2F5B2;
+            uint k0 = key + 1;
+            uint k3 = k0 + 2;
+            uint k2 = k0 + 1;
+            uint k1 = k0 + 3;
+            if ((flags & 0x202) == 0x202)
+            {
+                for (int i = 0; i < 0xFF; ++i)
+                {
+                    uint j = k3 ^ (k3 << 11) ^ k0 ^ ((k3 ^ (k3 << 11) ^ (k0 >> 11)) >> 8);
+                    k3 = k2;
+                    k2 = k1;
+                    k1 = k0;
+                    k0 = j;
+                    data[index + i] ^= m_scheme.DecodeExtra[j % m_scheme.DecodeExtra.Length];
+                }
+            }
+            if ((flags & 0x204) == 0x204)
+            {
+                data[index + 0x200] ^= (byte)key;
+                data[index + 0x201] ^= (byte)(key >> 8);
+                data[index + 0x202] ^= (byte)(key >> 16);
+                data[index + 0x203] ^= (byte)(key >> 24);
+            }
         }
 
         double DecryptHelper1 (double a)
