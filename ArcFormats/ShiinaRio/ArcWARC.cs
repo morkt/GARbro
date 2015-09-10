@@ -198,9 +198,9 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                             encoded[i] ^= key;
                     }
                 }
-                var decoder = new HuffmanReader (input, 8, input.Length-8, output);
-                decoder.Unpack();
             }
+            var decoder = new HuffmanReader (input, 8, input.Length-8, output);
+            decoder.Unpack();
         }
 
         void UnpackYPK (byte[] input, byte[] output)
