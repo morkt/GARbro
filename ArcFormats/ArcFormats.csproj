@@ -158,6 +158,7 @@
     </Compile>
     <Compile Include="ZLibStream.cs" />
     <Compile Include="Zyx\ArcBDF.cs" />
+    <Compile Include="Zyx\ImageSPL.cs" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="NitroPlus\ArcSteinsGate.cs" />
