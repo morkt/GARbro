@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>WPFToolkit</id>
+    <version>3.5.50211.1</version>
+    <title>WPF Toolkit</title>
+    <authors>JenniLe, Shimmy</authors>
+    <owners>JenniLe, Shimmy</owners>
+    <licenseUrl>http://www.opensource.org/licenses/MS-PL</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>The WPF Toolkit is a collection of WPF features and components that are being made available outside of the normal .NET Framework ship cycle. The WPF Toolkit not only allows users to get new functionality more quickly, but allows an efficient means for giving feedback to the product team. Many of the features will be released with full source code as well. The Toolkit Roadmap outlines some of the upcoming features we have planned.</description>
+    <summary>This license governs use of the accompanying software. If you use the software, you
+accept this license. If you do not accept the license, do not use the software.</summary>
+    <releaseNotes>What's new in the WPF Toolkit February 2010 Release?
+AutoCompleteBox
+Accordion
+Rating
+Bug fixes
+Bug fixes for common issues, including:
+DataGrid - Templating, multiple selection, runtime sorting, etc.
+Calendar/DatePicker - Styling, default values, focus related issues, etc.
+VSM - Generated transitions
+UI Automation - Mostly DataGrid UI automation fixes and a few for Calendar/DatePicker
+
+Also new in the February release, we are introducing the concept of Quality Bands to rate the quality of the controls and features in the release.
+Components in the Stable Quality Band
+DataGrid
+DatePicker
+Calendar
+VisualStateManager
+Components in the Preview Quality Band
+Chart Controls
+AutoCompleteBox
+Accordion
+Rating</releaseNotes>
+    <tags>WPFToolkit WPF Toolkit</tags>
+  </metadata>
+</package>
