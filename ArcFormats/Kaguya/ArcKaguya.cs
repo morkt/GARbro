@@ -186,90 +186,52 @@ namespace GameRes.Formats.Kaguya
 
     internal class LzReader : IDataUnpacker
     {
-        Stream  m_input;
-        byte[]  m_output;
-        uint    m_size;
+        MsbBitStream    m_input;
+        byte[]          m_output;
 
         public byte[] Data { get { return m_output; } }
 
         public LzReader (Stream input, uint packed_size, uint unpacked_size)
         {
-            m_input = input;
+            m_input = new MsbBitStream (input, true);
             m_output = new byte[unpacked_size];
-            m_size = packed_size;
-            m_curbit = 8;
-            m_curbyte = 0;
         }
-
-        int m_curbit;
-        int m_curbyte;
 
         public void Unpack ()
         {
             int dst = 0;
             int frame_pos = 1;
             byte[] frame = new byte[4096];
+            int frame_mask = frame.Length - 1;
 
             while (dst < m_output.Length)
             {
-                int i;
-                if (0 != GetNextBit())
+                int bit = m_input.GetNextBit();
+                if (-1 == bit)
+                    break;
+                if (0 != bit)
                 {
-                    int data = 0;
-                    for (i = 0; i < 8; i++)
-                    {
-                        int bit = GetNextBit();
-                        if (-1 == bit)
-                            return;
-                        data = (data << 1) | bit;
-                    }
+                    int data = m_input.GetBits (8);
                     m_output[dst++] = (byte)data;
                     frame[frame_pos++] = (byte)data;
-                    frame_pos &= frame.Length - 1;
+                    frame_pos &= frame_mask;
                 }
                 else
                 {
-                    int count, win_offset = 0;
-                    for (i = 0; i < 12; i++)
-                    {
-                        int bit = GetNextBit();
-                        if (-1 == bit)
-                            return;
-                        win_offset = (win_offset << 1) | bit;
-                    }
-                    if (0 == win_offset)
+                    int win_offset = m_input.GetBits (12);
+                    if (-1 == win_offset || 0 == win_offset)
                         break;
 
-                    count = 0;
-                    for (i = 0; i < 4; i++)
+                    int count = m_input.GetBits(4) + 2;
+                    for (int i = 0; i < count; i++)
                     {
-                        int bit = GetNextBit();
-                        if (-1 == bit)
-                            return;
-                        count = (count << 1) | bit;
-                    }
-                    count += 2;
-                    for (i = 0; i < count; i++)
-                    {
-                        byte data = frame[(win_offset + i) & (frame.Length - 1)];
+                        byte data = frame[(win_offset + i) & frame_mask];
                         m_output[dst++] = data;
                         frame[frame_pos++] = data;
-                        frame_pos &= frame.Length - 1;
+                        frame_pos &= frame_mask;
                     }
                 }
             }
-        }
-
-        int GetNextBit ()
-        {
-            if (8 == m_curbit)
-            {
-                m_curbyte = m_input.ReadByte();
-                if (m_curbyte < 0)
-                    return -1;
-                m_curbit = 0;
-            }
-            return (m_curbyte >> (7 - m_curbit++)) & 1;
         }
     }
 }
