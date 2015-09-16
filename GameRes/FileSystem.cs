@@ -477,7 +477,12 @@ namespace GameRes
             Flush();
             var arc = ArcFile.TryOpen (entry.Name);
             if (null == arc)
-                throw new UnknownFormatException();
+            {
+                if (FormatCatalog.Instance.LastError is OperationCanceledException)
+                    throw FormatCatalog.Instance.LastError;
+                else
+                    throw new UnknownFormatException();
+            }
             try
             {
                 Push (entry.Name, arc.CreateFileSystem());
