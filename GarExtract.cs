@@ -111,7 +111,7 @@ namespace GARbro.GUI
         private MainWindow          m_main;
         private string              m_arc_name;
         private ArchiveFileSystem   m_fs;
-        private readonly bool       m_should_dispose;
+        private readonly bool       m_should_ascend;
         private bool                m_skip_images = false;
         private bool                m_skip_script = false;
         private bool                m_skip_audio  = false;
@@ -127,21 +127,18 @@ namespace GARbro.GUI
 
         public GarExtract (MainWindow parent, string source)
         {
-            m_main = parent;
             m_arc_name = Path.GetFileName (source);
-            FormatCatalog.Instance.LastError = null;
-            var arc = ArcFile.TryOpen (source);
-            if (null == arc)
+            try
             {
-                string error_message;
-                if (FormatCatalog.Instance.LastError != null)
-                    error_message = FormatCatalog.Instance.LastError.Message;
-                else
-                    error_message = garStrings.MsgUnknownFormat;
-                throw new OperationCanceledException (string.Format ("{1}: {0}", error_message, m_arc_name));
+                VFS.ChDir (source);
+                m_should_ascend = true;
             }
-            m_fs = arc.CreateFileSystem();
-            m_should_dispose = true;
+            catch (Exception X)
+            {
+                throw new OperationCanceledException (string.Format ("{1}: {0}", X.Message, m_arc_name));
+            }
+            m_fs = VFS.Top as ArchiveFileSystem;
+            m_main = parent;
         }
 
         public GarExtract (MainWindow parent, string source, ArchiveFileSystem fs)
@@ -151,7 +148,7 @@ namespace GARbro.GUI
             m_fs = fs;
             m_main = parent;
             m_arc_name = Path.GetFileName (source);
-            m_should_dispose = false;
+            m_should_ascend = false;
         }
 
         private void PrepareDestination (string destination)
@@ -443,8 +440,10 @@ namespace GARbro.GUI
         {
             if (!disposed)
             {
-                if (m_should_dispose)
-                    m_fs.Dispose();
+                if (m_should_ascend)
+                {
+                    VFS.ChDir ("..");
+                }
                 disposed = true;
             }
             GC.SuppressFinalize (this);
