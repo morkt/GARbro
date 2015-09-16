@@ -87,6 +87,9 @@ namespace GameRes.Formats.Entis
                     { "d03.dat", "gaivnwq7365e021gf" } } },
                 { "Konneko", new Dictionary<string, string> {
                     { "script.noa", "convini_cat" } } },
+                { "Santaful☆Summer", new Dictionary<string, string> {
+                    { "data02.noa", "20130611VER1" },
+                    { "data03.noa", "20130611VER2" } } },
                 { "Yatohime Zankikou", new Dictionary<string, string> {
                     { "data1.noa", "arcdatapass" },
                     { "data6.noa", "cfe7231hf9qccda" },
