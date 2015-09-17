@@ -4,7 +4,7 @@
       xmlns:entis="clr-namespace:GameRes.Formats.Entis"
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
       MaxWidth="300">
-    <ComboBox Name="Scheme" ItemsSource="{Binding Source={x:Static entis:NoaOpener.KnownKeys}, Path=Keys, Mode=OneWay}"
+    <ComboBox Name="Scheme" ItemsSource="{Binding}"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=NOAScheme, Mode=TwoWay}"
               Width="200"/>
 </Grid>

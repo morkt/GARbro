@@ -56,6 +56,12 @@ namespace GameRes.Formats.NScripter
         public string             Password { get; set; }
     }
 
+    [Serializable]
+    public class NsaScheme : ResourceScheme
+    {
+        public Dictionary<string, string> KnownKeys;
+    }
+
     public enum Compression
     {
         Unknown = 256,
@@ -70,17 +76,17 @@ namespace GameRes.Formats.NScripter
     {
         public override string Tag { get { return "NSA"; } }
 
-        public static readonly Dictionary<string, string> KnownKeys = new Dictionary<string, string>()
-        {
-            { "Kimi ga Aruji de Shitsuji ga Ore de",
-              "kopkl;fdsl;kl;mwekopj@pgfd[p;:kl:;,lwret;kl;kolsgfdio@pdsflkl:,rse;:l,;:lpksdfpo" },
-            { "Kiss yori Amakute Fukai Mono",
-              "dfklmdsgkmlkmljklgfnlsdfnklsdfjkl;sdfmkldfskfsdmklsdfjklfdsjklsdfsdfl;" },
-        };
-
         public NsaOpener ()
         {
             Extensions = new string[] { "nsa", "dat" };
+        }
+
+        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new NsaScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((NsaScheme)value).KnownKeys; }
         }
 
         public override ArcFile TryOpen (ArcView file)

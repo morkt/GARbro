@@ -30,6 +30,7 @@ using System.ComponentModel.Composition.Hosting;
 using System.IO;
 using System.Linq;
 using GameRes.Collections;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace GameRes
 {
@@ -58,6 +59,17 @@ namespace GameRes
         public IEnumerable<ImageFormat>   ImageFormats  { get { return m_image_formats; } }
         public IEnumerable<AudioFormat>   AudioFormats  { get { return m_audio_formats; } }
         public IEnumerable<ScriptFormat>  ScriptFormats { get { return m_script_formats; } }
+
+        public IEnumerable<IResource> Formats
+        {
+            get
+            {
+                return ((IEnumerable<IResource>)ArcFormats).Concat (ImageFormats).Concat (AudioFormats).Concat (ScriptFormats);
+            }
+        }
+
+        public int CurrentSchemeVersion { get; private set; }
+        public string          SchemeID { get { return "GARbroDB"; } }
 
         public Exception LastError { get; set; }
 
@@ -173,5 +185,46 @@ namespace GameRes
             signature |= (uint)file.ReadByte() << 24;
             return signature;
         }
+
+        public void DeserializeScheme (Stream input)
+        {
+            var bin = new BinaryFormatter();
+            var db = (SchemeDataBase)bin.Deserialize (input);
+            if (db.Version <= CurrentSchemeVersion)
+                return;
+
+            foreach (var format in Formats)
+            {
+                ResourceScheme scheme;
+                if (!db.SchemeMap.TryGetValue (format.Tag, out scheme))
+                    continue;
+                format.Scheme = scheme;
+            }
+            CurrentSchemeVersion = db.Version;
+        }
+
+        public void SerializeScheme (Stream output)
+        {
+            var db = new SchemeDataBase {
+                Version = CurrentSchemeVersion,
+                SchemeMap = new Dictionary<string, ResourceScheme>()
+            };
+            foreach (var format in Formats)
+            {
+                var scheme = format.Scheme;
+                if (null != scheme)
+                    db.SchemeMap[format.Tag] = scheme;
+            }
+            var bin = new BinaryFormatter();
+            bin.Serialize (output, db);
+        }
+    }
+
+    [Serializable]
+    public class SchemeDataBase
+    {
+        public int Version;
+
+        public Dictionary<string, ResourceScheme> SchemeMap;
     }
 }

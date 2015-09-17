@@ -4,6 +4,6 @@
       xmlns:fmt="clr-namespace:GameRes.Formats.KiriKiri"
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
       MaxWidth="250">
-    <ComboBox Name="Scheme" ItemsSource="{Binding Source={x:Static fmt:Xp3Opener.KnownSchemes}, Path=Keys, Mode=OneWay}"
+    <ComboBox Name="Scheme" ItemsSource="{Binding}"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=XP3Scheme, Mode=TwoWay}" Width="180"/>
 </Grid>

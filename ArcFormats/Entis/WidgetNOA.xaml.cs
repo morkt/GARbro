@@ -1,4 +1,7 @@
-﻿using System.Windows.Controls;
+﻿using GameRes.Formats.Entis;
+using GameRes.Formats.Strings;
+using System.Linq;
+using System.Windows.Controls;
 
 namespace GameRes.Formats.GUI
 {
@@ -10,6 +13,8 @@ namespace GameRes.Formats.GUI
         public WidgetNOA ()
         {
             InitializeComponent ();
+            var keys = new string[] { arcStrings.NOAIgnoreEncryption };
+            Scheme.ItemsSource = keys.Concat (NoaOpener.KnownKeys.Keys.OrderBy (x => x));
             // select first scheme as default
             if (-1 == Scheme.SelectedIndex)
                 Scheme.SelectedIndex = 0;

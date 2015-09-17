@@ -36,7 +36,7 @@ namespace GameRes.Formats.GUI
         void OnSchemeChanged (object sender, SelectionChangedEventArgs e)
         {
             var widget = sender as ComboBox;
-            IntOpener.KeyData keydata;
+            KeyData keydata;
             if (IntOpener.KnownSchemes.TryGetValue (widget.SelectedItem as string, out keydata))
             {
                 Passphrase.TextChanged -= OnPassphraseChanged;

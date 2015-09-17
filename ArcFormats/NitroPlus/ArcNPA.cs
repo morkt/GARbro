@@ -41,24 +41,46 @@ namespace GameRes.Formats.NitroPlus
     {
         public byte[] RawName;
         public int    FolderId;
+        public byte[] Order;
     }
 
     internal class NpaArchive : ArcFile
     {
-        public NpaTitleId   GameId   { get; private set; }
-        public int          Key      { get; private set; }
-        public byte[]       KeyTable { get { return m_key_table.Value; } }
+        public EncryptionScheme Scheme { get; private set; }
+        public int                 Key { get; private set; }
+        public byte[]         KeyTable { get { return m_key_table.Value; } }
 
         private Lazy<byte[]> m_key_table;
 
         public NpaArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir,
-                           NpaTitleId game_id, int key)
+                           EncryptionScheme scheme, int key)
             : base (arc, impl, dir)
         {
-            GameId   = game_id;
+            Scheme   = scheme;
             Key      = key;
-            m_key_table = new Lazy<byte[]> (() => NpaOpener.GenerateKeyTable (game_id));
+            m_key_table = new Lazy<byte[]> (() => NpaOpener.GenerateKeyTable (scheme));
         }
+    }
+
+    [Serializable]
+    public class EncryptionScheme
+    {
+        public NpaTitleId   TitleId;
+        public uint         NameKey;
+        public byte[]       Order;
+
+        public EncryptionScheme (NpaTitleId id, uint key, byte[] order)
+        {
+            TitleId = id;
+            NameKey = key;
+            Order = order;
+        }
+    }
+
+    [Serializable]
+    public class NpaScheme : ResourceScheme
+    {
+        public Dictionary<string, EncryptionScheme> KnownSchemes;
     }
 
     public enum NpaTitleId
@@ -71,7 +93,7 @@ namespace GameRes.Formats.NitroPlus
 
     public class NpaOptions : ResourceOptions
     {
-        public NpaTitleId    TitleId { get; set; }
+        public EncryptionScheme Scheme { get; set; }
         public bool CompressContents { get; set; }
         public int              Key1 { get; set; }
         public int              Key2 { get; set; }
@@ -86,19 +108,13 @@ namespace GameRes.Formats.NitroPlus
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return true; } }
 
-        /// <summary>
-        /// Known encryption schemes.
-        /// Order should match NpaTitleId enumeration.
-        /// </summary>
-        public static readonly string[] KnownSchemes = new string[] {
-            arcStrings.ArcNoEncryption,
-            "Chaos;Head", "Chaos;Head Trial 1", "Chaos;Head Trial 2", "Muramasa Trial", "Muramasa",
-            "Sumaga", "Zoku Satsuriku no Django", "Zoku Satsuriku no Django Trial", "Lamento",
-            "Sweet Pool", "Sumaga Special", "Demonbane", "MuramasaAD", "Axanael",
-            "Kikokugai", "Sonicomi Trial 2", "Sumaga 3% Trial", "Sonicomi Version 1.0",
-            "Guilty Crown Lost Xmas", "Guilty Crown Lost Xmas Trailer", "DRAMAtical Murder",
-            "Kimi to Kanojo to Kanojo no Koi", "Phenomeno", "Nekoda -Nyanda-",
-        };
+        public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new NpaScheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((NpaScheme)value).KnownSchemes; }
+        }
 
         public const int DefaultKey1 = 0x4147414e;
         public const int DefaultKey2 = 0x21214f54;
@@ -118,9 +134,13 @@ namespace GameRes.Formats.NitroPlus
             if (dir_size >= file.MaxOffset)
                 return null;
 
+            EncryptionScheme enc = null;
             var game_id = NpaTitleId.NotEncrypted;
             if (encrypted)
-                game_id = QueryGameEncryption();
+            {
+                enc = QueryGameEncryption();
+                game_id = enc.TitleId;
+            }
 
             int key = GetArchiveKey (game_id, key1, key2);
 
@@ -161,8 +181,8 @@ namespace GameRes.Formats.NitroPlus
                 }
                 cur_offset += 4 + name_size + 17;
             }
-            if (game_id != NpaTitleId.NotEncrypted)
-                return new NpaArchive (file, this, dir, game_id, key);
+            if (enc != null)
+                return new NpaArchive (file, this, dir, enc, key);
             else
                 return new ArcFile (file, this, dir);
         }
@@ -194,8 +214,8 @@ namespace GameRes.Formats.NitroPlus
                     entry.Offset = data_offset;
                     entry.UnpackedSize = (uint)size;
                     Stream destination = output;
-                    if (NpaTitleId.NotEncrypted != npa_options.TitleId)
-                        destination = new EncryptedStream (output, entry, npa_options.TitleId, index.Key);
+                    if (null != npa_options.Scheme)
+                        destination = new EncryptedStream (output, entry, npa_options.Scheme, index.Key);
                     try
                     {
                         if (entry.IsPacked)
@@ -234,7 +254,7 @@ namespace GameRes.Formats.NitroPlus
                 header.Write (npa_options.Key1);
                 header.Write (npa_options.Key2);
                 header.Write (npa_options.CompressContents);
-                header.Write (npa_options.TitleId != NpaTitleId.NotEncrypted);
+                header.Write (npa_options.Scheme != null);
                 header.Write (index.TotalCount);
                 header.Write (index.FolderCount);
                 header.Write (index.FileCount);
@@ -300,34 +320,16 @@ namespace GameRes.Formats.NitroPlus
                 return key1 * key2;
         }
 
-        internal static byte GetKeyFromEntry (NpaEntry entry, NpaTitleId game_id, int arc_key)
+        internal static byte GetKeyFromEntry (NpaEntry entry, EncryptionScheme scheme, int arc_key)
         {
-            int key;
-            switch (game_id)
-            {
-                case NpaTitleId.AXANAEL:
-                case NpaTitleId.KIKOKUGAI:
-                case NpaTitleId.SONICOMITR2:
-                case NpaTitleId.SONICOMI:
-                case NpaTitleId.LOSTX:
-                case NpaTitleId.DRAMATICALMURDER:
-                case NpaTitleId.PHENOMENO:
-                    key = 0x20101118;
-                    break;
-                case NpaTitleId.TOTONO:
-                    key = 0x12345678;
-                    break;
-                default:
-                    key = unchecked((int)0x87654321);
-                    break;
-            }
+            int key = (int)scheme.NameKey;
             var name = entry.RawName;
             for (int i = 0; i < name.Length; ++i)
                 key -= name[i];
 
             key *= name.Length;
 
-            if (game_id != NpaTitleId.LAMENTO) // if the game is not Lamento
+            if (scheme.TitleId != NpaTitleId.LAMENTO) // if the game is not Lamento
             {
                 key += arc_key;
                 key *= (int)entry.UnpackedSize;
@@ -335,13 +337,9 @@ namespace GameRes.Formats.NitroPlus
             return (byte)key;
         }
 
-        public static byte[] GenerateKeyTable (NpaTitleId title_id)
+        public static byte[] GenerateKeyTable (EncryptionScheme scheme)
         {
-            int index = (int)title_id;
-            if (index < 0 || index >= OrderTable.Length)
-                throw new ArgumentOutOfRangeException ("title_id", "Invalid title id specified");
-
-            byte[] order = OrderTable[index];
+            byte[] order = scheme.Order;
             if (null == order)
                 throw new ArgumentException ("Encryption key table not defined", "title_id");
 
@@ -363,7 +361,7 @@ namespace GameRes.Formats.NitroPlus
                 table[ecx] = table[edx];
                 table[edx] = tmp;
             }
-            if (NpaTitleId.TOTONO == title_id)
+            if (NpaTitleId.TOTONO == scheme.TitleId)
             {
                 var totono_table = new byte[256];
                 for (int i = 0; i < 256; ++i)
@@ -381,7 +379,7 @@ namespace GameRes.Formats.NitroPlus
         public override ResourceOptions GetDefaultOptions ()
         {
             return new NpaOptions {
-                TitleId          = GetTitleId (Settings.Default.NPAScheme),
+                Scheme           = GetScheme (Settings.Default.NPAScheme),
                 CompressContents = Settings.Default.NPACompressContents,
                 Key1             = (int)Settings.Default.NPAKey1,
                 Key2             = (int)Settings.Default.NPAKey2,
@@ -398,21 +396,25 @@ namespace GameRes.Formats.NitroPlus
             return new GUI.CreateNPAWidget();
         }
 
-        NpaTitleId QueryGameEncryption ()
+        EncryptionScheme QueryGameEncryption ()
         {
             var options = Query<NpaOptions> (arcStrings.ArcEncryptedNotice);
-            return options.TitleId;
+            return options.Scheme;
         }
 
         public static NpaTitleId GetTitleId (string title)
         {
-            Debug.Assert (KnownSchemes.Length == OrderTable.Length,
-                          "Number of known encryptions schemes does not match available order tables.");
-            var index = Array.IndexOf (KnownSchemes, title);
-            if (index != -1)
-                return (NpaTitleId)index;
+            var scheme = GetScheme (title);
+            return scheme != null ? scheme.TitleId : NpaTitleId.NotEncrypted;
+        }
+
+        public static EncryptionScheme GetScheme (string title)
+        {
+            EncryptionScheme scheme;
+            if (KnownSchemes.TryGetValue (title, out scheme))
+                return scheme;
             else
-                return NpaTitleId.NotEncrypted;
+                return null;
         }
 
         static readonly byte[] BaseTable = {
@@ -432,60 +434,6 @@ namespace GameRes.Formats.NitroPlus
             0xCF,0x81,0x4E,0x26,0x59,0x2B,0x5F,0x7B,0xE8,0x8D,0x52,0x7C,0xF8,0x82,0x0C,0xF9,
             0x8C,0xE9,0xB5,0xE6,0x31,0x93,0x46,0x5E,0x1D,0x1B,0x4B,0x71,0xD6,0x92,0x3A,0xA6,
             0x2D,0x00,0x9D,0xBB,0x6E,0xF0,0x99,0xCE,0x21,0x0A,0xD0,0xF6,0xFE,0xA2,0x8A,0x96,
-        };
-
-        static readonly byte[][] OrderTable = {
-            null, // NotEncrypted
-            // CHAOSHEAD
-            new byte[] { 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 },
-            // CHAOSHEADTR1
-            new byte[] { 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x1e,0x4e,0x66,0xb6 },
-            // CHAOSHEADTR2
-            new byte[] { 0x05,0x05,0x05,0x05,0x05,0x0b,0x0b,0x0b,0x0b,0x0b,0x00,0x00,0x00,0x00,0x00,0x00 },
-            // MURAMASATR
-            new byte[] { 0x3c,0xe0,0x2e,0x2f,0x20,0x2e,0x2f,0x20,0x8e,0x80,0x80,0xf2,0xf2,0xf2,0xfa,0xfc },
-            // MURAMASA
-            new byte[] { 0x35,0x70,0x2e,0x66,0x67,0x65,0x66,0x67,0x85,0x89,0x89,0x3b,0x3b,0x8b,0x81,0x85 },
-            // SUMAGA
-            new byte[] { 0x3c,0xe0,0x2e,0x2f,0x2f,0x2f,0x2f,0x20,0x8e,0x8f,0x8f,0xf2,0xf2,0xf2,0xfc,0xfc },
-            // DJANGO
-            new byte[] { 0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0x1e,0x4e,0x66,0xb6 },
-            // DJANGOTR
-            new byte[] { 0xed,0xee,0xee,0xef,0xed,0xee,0xee,0xee,0xfe,0xde,0xee,0xef,0xed,0xee,0xfe,0xdf,0x1e,0x4e,0x66,0xb6 },
-            // LAMENTO
-            new byte[] { 0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0xee,0x1e,0x4e,0x66,0xb6 },
-            // SWEETPOOL
-            new byte[] { 0x38,0x9c,0x2a,0x8b,0x8b,0x8b,0x8b,0x8c,0x8a,0x8b,0x8b,0xae,0xae,0xae,0xa8,0xa8 },
-            // SUMAGASP
-            new byte[] { 0xab,0x6f,0x9d,0x9e,0x9f,0x9d,0x9e,0xaf,0x8d,0xff,0xff,0x71,0x71,0x71,0x79,0x7b },
-            // DEMONBANE
-            new byte[] { 0x96,0xb9,0x47,0x48,0x99,0x97,0x9c,0xaa,0x88,0xca,0xea,0x73,0x73,0x7b,0xc9,0xc6 },
-            // MURAMASAAD
-            new byte[] { 0x00,0x04,0x04,0x68,0x68,0x68,0x68,0x68,0x6f,0x6f,0x9f,0x96,0x96,0x96,0x96,0x9b },
-            // AXANAEL
-            new byte[] { 0x08,0x0c,0x0c,0xc0,0xf0,0xf0,0xf0,0xf0,0xf7,0xf7,0xf7,0xfe,0xfe,0xfe,0xfe,0xf3 },
-            // KIKOKUGAI
-            new byte[] { 0x0f,0x07,0x07,0x90,0xf7,0xf7,0xf7,0xf7,0xf2,0x47,0x47,0x49,0xc9,0xc9,0xc9,0xc3 },
-            // SONICOMITR2
-            new byte[] { 0x08,0x0a,0x0a,0x40,0xfa,0xfa,0x50,0x50,0x55,0xf7,0xf7,0xf9,0x29,0x2c,0x7c,0x73 },
-            // SUMAGA3P
-            new byte[] { 0x0f,0xef,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff },
-            // SONICOMI
-            new byte[] { 0x0e,0x0b,0x0e,0x77,0x2e,0x2e,0x80,0x86,0xb9,0x2e,0x2e,0x29,0x89,0x82,0xad,0xaa },
-            // LOSTX
-            new byte[] { 0x38,0xba,0x4b,0x5b,0x55,0xae,0xee,0xe0,0x67,0x48,0x08,0x0a,0x6a,0x3d,0x32,0x8d },
-            // LOSTXTRAILER
-            new byte[] { 0x34,0x7a,0xbb,0xcb,0x11,0x65,0xea,0x5c,0x27,0x0f,0xcf,0xc6,0x66,0x39,0x39,0xfd },
-            // DRAMATICALMURDER
-            new byte[] { 0x05,0x0d,0x0d,0x13,0xb5,0x3d,0x8d,0x2d,0x20,0xc7,0xc7,0xcf,0x1f,0xef,0xef,0x48 },
-            // TOTONO
-            new byte[] { 0x6e,0x60,0x90,0xac,0xb3,0xe3,0x83,0xd6,0xde,0x7a,0x7a,0x7f,0xef,0xbf,0xb2,0xd6 },
-            // some installation npa
-            //new byte[] { 0xa9,0xd3,0x34,0x84,0xd6,0xea,0xaa,0xdc,0xa0,0x64,0x24,0x26,0xd6,0xae,0xae,0x76 },
-            // PHENOMENO
-            new byte[] { 0x30,0x96,0xdb,0x2b,0x3d,0x81,0x02,0x74,0x47,0x2b,0xeb,0xee,0x6e,0x35,0x35,0x5d },
-            // NEKODA
-            new byte[] { 0xdc,0xdc,0xec,0xcd,0xdb,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0xdc,0x1e,0x4e,0x66,0xb6 },
         };
     }
 
@@ -512,7 +460,8 @@ namespace GameRes.Formats.NitroPlus
         public Indexer (IEnumerable<Entry> source_list, NpaOptions options)
         {
             m_entries = new List<NpaEntry> (source_list.Count());
-            m_key = NpaOpener.GetArchiveKey (options.TitleId, options.Key1, options.Key2);
+            var title_id = null != options.Scheme ? options.Scheme.TitleId : NpaTitleId.NotEncrypted;
+            m_key = NpaOpener.GetArchiveKey (title_id, options.Key1, options.Key2);
 
             foreach (var entry in source_list)
             {
@@ -610,32 +559,32 @@ namespace GameRes.Formats.NitroPlus
         public EncryptedStream (NpaArchive arc, NpaEntry entry)
         {
             m_read_mode = true;
-            m_encrypted_length = GetEncryptedLength (entry, arc.GameId);
+            m_encrypted_length = GetEncryptedLength (entry, arc.Scheme.TitleId);
             if (m_encrypted_length > entry.Size)
                 m_encrypted_length = (int)entry.Size;
-            int key = NpaOpener.GetKeyFromEntry (entry, arc.GameId, arc.Key);
+            int key = NpaOpener.GetKeyFromEntry (entry, arc.Scheme, arc.Key);
 
             m_stream = arc.File.CreateStream (entry.Offset, entry.Size);
-            m_encrypted = new Lazy<byte[]> (() => InitEncrypted (key, arc.GameId, arc.KeyTable));
+            m_encrypted = new Lazy<byte[]> (() => InitEncrypted (key, arc.Scheme.TitleId, arc.KeyTable));
             m_base_pos = m_stream.Position;
         }
 
-        public EncryptedStream (Stream output, NpaEntry entry, NpaTitleId game_id, int arc_key)
+        public EncryptedStream (Stream output, NpaEntry entry, EncryptionScheme scheme, int arc_key)
         {
             m_read_mode = false;
-            m_encrypted_length = GetEncryptedLength (entry, game_id);
-            int key = NpaOpener.GetKeyFromEntry (entry, game_id, arc_key);
+            m_encrypted_length = GetEncryptedLength (entry, scheme.TitleId);
+            int key = NpaOpener.GetKeyFromEntry (entry, scheme, arc_key);
 
             m_stream = output;
             m_encrypted = new Lazy<byte[]> (() => new byte[m_encrypted_length]);
             m_base_pos = m_stream.Position;
 
-            byte[] decrypt_table = NpaOpener.GenerateKeyTable (game_id);
+            byte[] decrypt_table = NpaOpener.GenerateKeyTable (scheme);
             byte[] encrypt_table = new byte[256];
             for (int i = 0; i < 256; ++i)
                 encrypt_table[decrypt_table[i]] = (byte)i;
 
-            if (NpaTitleId.LAMENTO == game_id)
+            if (NpaTitleId.LAMENTO == scheme.TitleId)
             {
                 Encrypt = (i, x) => encrypt_table[(x + key) & 0xff];
             }

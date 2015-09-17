@@ -324,21 +324,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\ShiinaRio4.jpg" />
-    <EmbeddedResource Include="Resources\ShiinaRio1.png" />
-    <EmbeddedResource Include="Resources\ShiinaRio2.png" />
-    <EmbeddedResource Include="Resources\ShiinaRio3.jpg" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>PublicSettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <EmbeddedResource Include="Resources\DecodeV1.bin" />
-    <EmbeddedResource Include="Resources\DecodeV241.bin" />
-    <EmbeddedResource Include="Resources\DecodeV249.bin" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="Amaterasu\CreateAMIWidget.xaml">
@@ -440,9 +431,6 @@
       <LastGenOutput>arcStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\ShiinaRio5.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

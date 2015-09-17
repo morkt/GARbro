@@ -54,12 +54,20 @@ namespace GameRes.Formats.Lucifen
         }
     }
 
+    [Serializable]
     public class EncryptionScheme
     {
         public LpkOpener.Key BaseKey;
         public          byte ContentXor;
         public          uint RotatePattern;
         public          bool ImportGameInit;
+    }
+
+    [Serializable]
+    public class LpkScheme : ResourceScheme
+    {
+        public Dictionary<string, EncryptionScheme> KnownSchemes;
+        public Dictionary<string, Dictionary<string, LpkOpener.Key>> KnownKeys;
     }
 
     internal class LuciOptions : ResourceOptions
@@ -88,6 +96,7 @@ namespace GameRes.Formats.Lucifen
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
+        [Serializable]
         public class Key
         {
             public uint Key1, Key2;
@@ -102,62 +111,11 @@ namespace GameRes.Formats.Lucifen
             BaseKey = new Key (0xA5B9AC6B, 0x9A639DE5), ContentXor = 0x5d, RotatePattern = 0x31746285,
             ImportGameInit = true
         };
-        public static readonly Dictionary<string, EncryptionScheme> KnownSchemes =
-            new Dictionary<string, EncryptionScheme> {
-                { "Default", DefaultScheme },
-                { "Terios games", new EncryptionScheme {
-                    BaseKey = new Key (0x39A5B67D, 0xD63AB5E9), ContentXor = 0xa6, RotatePattern = 0x36147352,
-                    ImportGameInit = false } },
-            };
+        public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme>();
+        static Dictionary<string, Dictionary<string, Key>> KnownKeys = new Dictionary<string, Dictionary<string, Key>>();
 
-        EncryptionScheme CurrentScheme = KnownSchemes["Default"];
+        EncryptionScheme CurrentScheme = DefaultScheme;
         Dictionary<string, Key> CurrentFileMap = new Dictionary<string, Key>();
-
-        static Dictionary<string, Dictionary<string, Key>> KnownKeys =
-            new Dictionary<string, Dictionary<string, Key>> {
-                { "Ne~pon? x Raipon!", new Dictionary<string, Key> {
-                    { "SYS.LPK",    new Key (0x67DB35ED, 0xBE4D6A37) },
-                    { "CHR.LPK",    new Key (0x9E3BAD56, 0x95FE9DC3) },
-                    { "PIC.LPK",    new Key (0xD9B5E6C3, 0xBA53E5D5) },
-                    { "BGM.LPK",    new Key (0xEB6DE3B5, 0xCD571DE9) },
-                    { "SE.LPK",     new Key (0x9AB3AD5E, 0xAD3D4D96) },
-                    { "VOICE.LPK",  new Key (0x75CBD59D, 0x5ED59ACA) },
-                    { "DATA.LPK",   new Key (0xDE6AD53E, 0x9E3B5E3D) },
-                    { "DESKTOP.LPK",new Key (0xACD5B36D, 0xD56ADB5D) } } },
-                { "Doki Doki Rooming", new Dictionary<string, Key> {
-                    { "SYS.LPK",    new Key (0x8030AB96, 0xB9F6638E) },
-                    { "CHR.LPK",    new Key (0xA7B9178B, 0xF79C547C) },
-                    { "PIC.LPK",    new Key (0x34B73229, 0xB690E07D) },
-                    { "BGM.LPK",    new Key (0x41E7505F, 0x1E10C3C5) },
-                    { "SE.LPK",     new Key (0x34DF875E, 0x435603E8) },
-                    { "VOICE.LPK",  new Key (0x30701D73, 0xFB524CE5) },
-                    { "ANIME.LPK",  new Key (0x867ABB47, 0xA25F4248) },
-                    { "DATA.LPK",   new Key (0x5BCB1333, 0x99325DFA) } } },
-                { "Shinsetsu Ryouki no Ori Dai 2 Shou", new Dictionary<string, Key> {
-                    { "SYS.LPK",    new Key (0x3986AFC9, 0xFC8C32E7) },
-                    { "CHR.LPK",    new Key (0x1B478946, 0x489E83F9) },
-                    { "PIC.LPK",    new Key (0x3F9D8075, 0xA75CBDA3) },
-                    { "BGM.LPK",    new Key (0xEAB5949C, 0x48ABE813) },
-                    { "SE.LPK",     new Key (0x5A95B36B, 0x249F4BEB) },
-                    { "VOICE.LPK",  new Key (0x6B954634, 0xA1CF23CE) },
-                    { "DATA.LPK",   new Key (0x8395C7CB, 0xE4CF9E3B) } } },
-                { "Ore-tachi ni Tsubasa wa Nai", new Dictionary<string, Key> {
-                    { "SYS.LPK",    new Key (0x524657EA, 0x782B5A5C) },
-                    { "CHR.LPK",    new Key (0x8C982BCA, 0x46BC4CDD) },
-                    { "PIC.LPK",    new Key (0xB78C913C, 0x57ECB345) },
-                    { "BGM.LPK",    new Key (0x45E32E7D, 0x4F538CE3) },
-                    { "SE.LPK",     new Key (0x9A5AF6DE, 0xCB1866C7) },
-                    { "VOICE.LPK",  new Key (0x3EB61D34, 0xB451AB16) },
-                    { "DATA.LPK",   new Key (0x7CE5AC6A, 0x49A3A35B) } } },
-                { "Shuffle! Essence+", new Dictionary<string, Key> {
-                    { "SYS.LPK",    new Key (0xA3635FC4, 0xA14A4686) },
-                    { "CHR.LPK",    new Key (0x4E34463C, 0xB4D8BD6D) },
-                    { "PIC.LPK",    new Key (0xF592B54B, 0xACCD3A1C) },
-                    { "BGM.LPK",    new Key (0xC50D2FD6, 0xC89DE7A9) },
-                    { "SE.LPK",     new Key (0xE9CD4E1B, 0x98AD9D63) },
-                    { "VOICE.LPK",  new Key (0x865A8D4E, 0x742DA395) },
-                    { "DATA.LPK",   new Key (0xCEA56246, 0xDE46F9A6) } } },
-            };
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -410,6 +368,22 @@ namespace GameRes.Formats.Lucifen
                     CurrentFileMap = new Dictionary<string, Key> (file_map);
             }
             return KnownSchemes[title];
+        }
+
+        public override ResourceScheme Scheme
+        {
+            get { return new LpkScheme { KnownSchemes = KnownSchemes, KnownKeys = KnownKeys }; }
+            set
+            {
+                var scheme = (LpkScheme)value;
+                KnownSchemes = scheme.KnownSchemes;
+                KnownKeys = scheme.KnownKeys;
+                foreach (var key in KnownSchemes.Keys)
+                {
+                    if (null == KnownSchemes[key])
+                        KnownSchemes[key] = DefaultScheme;
+                }
+            }
         }
     }
 

@@ -44,6 +44,20 @@ namespace GameRes.Formats.AVC
         }
     }
 
+    [Serializable]
+    public class ArchiveScheme
+    {
+        public string   Password;
+        public int      KeyOffset;
+        public int      HeaderOffset;
+    };
+
+    [Serializable]
+    public class AvcScheme : ResourceScheme
+    {
+        public ArchiveScheme[] KnownSchemes;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
@@ -177,19 +191,13 @@ namespace GameRes.Formats.AVC
                 return dir;
             }
 
-            internal class Scheme
-            {
-                public string   Password;
-                public int      KeyOffset;
-                public int      HeaderOffset;
-            };
+            internal static ArchiveScheme[] KnownSchemes = new ArchiveScheme[0];
+        }
 
-            private static readonly Scheme[] KnownSchemes = new Scheme[] {
-                new Scheme { Password="SETSUEI-", KeyOffset=0x08, HeaderOffset=0x10 }, // Setsuei
-                new Scheme { Password="CHOKOPAI", KeyOffset=0x35, HeaderOffset=0x51 }, // Chokotto*Vampire!
-                new Scheme { Password="ClOVeRrE", KeyOffset=0x11, HeaderOffset=0x46 }, // Clover Point
-                new Scheme { Password="-AYASEKE", KeyOffset=0x0c, HeaderOffset=0x15 }, // Ayase Ke no Onna
-            };
+        public override ResourceScheme Scheme
+        {
+            get { return new AvcScheme { KnownSchemes = AdvReader.KnownSchemes }; }
+            set { AdvReader.KnownSchemes = ((AvcScheme)value).KnownSchemes; }
         }
     }
 }

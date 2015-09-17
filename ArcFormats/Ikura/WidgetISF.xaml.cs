@@ -1,4 +1,7 @@
-﻿using System.Windows.Controls;
+﻿using GameRes.Formats.Ikura;
+using GameRes.Formats.Strings;
+using System.Linq;
+using System.Windows.Controls;
 
 namespace GameRes.Formats.GUI
 {
@@ -10,6 +13,8 @@ namespace GameRes.Formats.GUI
         public WidgetISF ()
         {
             InitializeComponent ();
+            var keys = new string[] { arcStrings.ISFIgnoreEncryption};
+            Scheme.ItemsSource = keys.Concat (MpxOpener.KnownSecrets.Keys.OrderBy (x => x));
             if (-1 == Scheme.SelectedIndex)
                 Scheme.SelectedIndex = 0;
         }

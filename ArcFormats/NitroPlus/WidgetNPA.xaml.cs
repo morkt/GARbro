@@ -1,8 +1,8 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 using System.Linq;
 using GameRes.Formats.Properties;
 using GameRes.Formats.NitroPlus;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.GUI
 {
@@ -15,8 +15,8 @@ namespace GameRes.Formats.GUI
         {
             var selected = Settings.Default.NPAScheme;
             InitializeComponent();
-            var sorted = NpaOpener.KnownSchemes.Skip (1).OrderBy (x => x);
-            Scheme.ItemsSource = NpaOpener.KnownSchemes.Take(1).Concat (sorted);
+            var keys = new string[] { arcStrings.ArcNoEncryption };
+            Scheme.ItemsSource = keys.Concat (NpaOpener.KnownSchemes.Keys.OrderBy (x => x));
             if (NpaTitleId.NotEncrypted == NpaOpener.GetTitleId (selected))
                 Scheme.SelectedIndex = 0;
             else

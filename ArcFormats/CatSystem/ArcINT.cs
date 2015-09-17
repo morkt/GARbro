@@ -48,7 +48,20 @@ namespace GameRes.Formats.CatSystem
         }
     }
 
-    [Serializable()]
+    [Serializable]
+    public struct KeyData
+    {
+        public uint     Key;
+        public string   Passphrase;
+    }
+
+    [Serializable]
+    public class IntScheme : ResourceScheme
+    {
+        public Dictionary<string, KeyData> KnownKeys;
+    }
+
+    [Serializable]
     public class IntEncryptionInfo
     {
         public uint?    Key      { get; set; }
@@ -62,7 +75,7 @@ namespace GameRes.Formats.CatSystem
 
             if (!string.IsNullOrEmpty (Scheme))
             {
-                IntOpener.KeyData keydata;
+                KeyData keydata;
                 if (IntOpener.KnownSchemes.TryGetValue (Scheme, out keydata))
                     return keydata.Key;
             }
@@ -298,18 +311,13 @@ namespace GameRes.Formats.CatSystem
             return key;
         }
 
-        public struct KeyData
-        {
-            public uint     Key;
-            public string   Passphrase;
-        }
+        public static Dictionary<string, KeyData> KnownSchemes = new Dictionary<string, KeyData>();
 
-        public static readonly Dictionary<string, KeyData> KnownSchemes = new Dictionary<string, KeyData> {
-            { "Grisaia no Kajitsu",               new KeyData { Key=0x1DAD9120, Passphrase="FW-6JD55162" }},
-            { "Shukufuku no Campanella",          new KeyData { Key=0x4260E643, Passphrase="CAMPANELLA" }},
-            { "Makai Tenshi Djibril -Episode 4-", new KeyData { Key=0xA5A166AA, Passphrase="FW_MAKAI-TENSHI_DJIBRIL4" }},
-            { "Sengoku Tenshi Djibril (trial)",   new KeyData { Key=0xef870610, Passphrase="FW-8O9B6WDS" }},
-        };
+        public override ResourceScheme Scheme
+        {
+            get { return new IntScheme { KnownKeys = KnownSchemes }; }
+            set { KnownSchemes = ((IntScheme)value).KnownKeys; }
+        }
 
         public override ResourceOptions GetDefaultOptions ()
         {

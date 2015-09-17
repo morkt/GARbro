@@ -1,6 +1,6 @@
 ﻿// Game Resource Browser
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,15 +23,12 @@
 
 using System;
 using System.IO;
-using System.Configuration;
-using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
-using System.Windows.Threading;
-using System.Reflection;
 using System.Diagnostics;
-using GARbro.GUI.Strings;
 using GARbro.GUI.Properties;
 using GameRes;
+using GameRes.Compression;
 
 namespace GARbro.GUI
 {
@@ -51,9 +48,9 @@ namespace GARbro.GUI
 
         void ApplicationStartup (object sender, StartupEventArgs e)
         {
+            string exe_dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
 #if DEBUG
-            string trace_dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
-            Trace.Listeners.Add (new TextWriterTraceListener (Path.Combine (trace_dir, "trace.log")));
+            Trace.Listeners.Add (new TextWriterTraceListener (Path.Combine (exe_dir, "trace.log")));
             Trace.AutoFlush = true;
 #endif
             Trace.WriteLine ("ApplicationStartup --------------------------------", "GARbro.GUI.App");
@@ -80,11 +77,36 @@ namespace GARbro.GUI
 
             if (string.IsNullOrEmpty (InitPath))
                 InitPath = Directory.GetCurrentDirectory();
+
+            string scheme_file = Path.Combine (exe_dir, "Formats.dat");
+            try
+            {
+                using (var file = File.OpenRead (scheme_file))
+                    DeserializeScheme (file);
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine (X.Message, "scheme deserialization");
+            }
         }
 
         void ApplicationExit (object sender, ExitEventArgs e)
         {
             Settings.Default.Save();
+        }
+
+        void DeserializeScheme (Stream file)
+        {
+            using (var reader = new BinaryReader (file))
+            {
+                var scheme_id = FormatCatalog.Instance.SchemeID;
+                var header = reader.ReadChars (scheme_id.Length);
+                if (!header.SequenceEqual (scheme_id))
+                    throw new FormatException ("Invalid serialization file");
+                int version = reader.ReadInt32();
+                using (var zs = new ZLibStream (file, CompressionMode.Decompress))
+                    FormatCatalog.Instance.DeserializeScheme (zs);
+            }
         }
     }
 }

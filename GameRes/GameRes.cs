@@ -82,6 +82,9 @@ namespace GameRes
         /// <summary>Filename extensions peculiar to the resource.</summary>
         public IEnumerable<string> Extensions { get; protected set; }
 
+        /// <summary>Resource settings suitable for serialization.</summary>
+        public virtual ResourceScheme Scheme { get; set; }
+
         /// <summary>
         /// Create empty Entry that corresponds to implemented resource.
         /// </summary>
@@ -136,6 +139,11 @@ namespace GameRes
     }
 
     public class ResourceOptions
+    {
+    }
+
+    [Serializable]
+    public class ResourceScheme
     {
     }
 

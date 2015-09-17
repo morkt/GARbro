@@ -1,9 +1,9 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using GameRes.Formats.KiriKiri;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
-
 
 namespace GameRes.Formats.GUI
 {
@@ -15,8 +15,10 @@ namespace GameRes.Formats.GUI
         public WidgetXP3 ()
         {
             InitializeComponent();
-            if (null == Scheme.SelectedItem)
-                Scheme.SelectedItem = arcStrings.ArcNoEncryption;
+            var keys = new string[] { arcStrings.ArcNoEncryption };
+            Scheme.ItemsSource = keys.Concat (Xp3Opener.KnownSchemes.Keys.OrderBy (x => x));
+            if (-1 == Scheme.SelectedIndex)
+                Scheme.SelectedIndex = 0;
         }
 
         public ICrypt GetScheme ()

@@ -55,6 +55,12 @@ namespace GameRes.Formats.Selene
         public string PassPhrase { get; set; }
     }
 
+    [Serializable]
+    public class KcapScheme : ResourceScheme
+    {
+        public Dictionary<string,string> KnownSchemes;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class PackOpener : ArchiveFormat
     {
@@ -66,15 +72,17 @@ namespace GameRes.Formats.Selene
 
         static private string DefaultPassPhrase = "Selene.Default.Password";
 
-        public static readonly Dictionary<string,string> KnownSchemes = new Dictionary<string,string> {
-            { arcStrings.KCAPDefault,   "" },
-            { "Okaa-san ga Ippai!",     "hahadata256pasyamada2zikan" },
-            { "Itazura Mahjong",        "mjdata999pasyamada2zikan" },
-        };
+        public static Dictionary<string,string> KnownSchemes = new Dictionary<string,string>();
 
         public PackOpener ()
         {
             Extensions = new string[] { "pack" };
+        }
+
+        public override ResourceScheme Scheme
+        {
+            get { return new KcapScheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((KcapScheme)value).KnownSchemes; }
         }
 
         public override ArcFile TryOpen (ArcView file)

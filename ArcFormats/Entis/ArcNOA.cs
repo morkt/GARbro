@@ -59,6 +59,12 @@ namespace GameRes.Formats.Entis
         }
     }
 
+    [Serializable]
+    public class NoaScheme : ResourceScheme
+    {
+        public Dictionary<string, Dictionary<string, string>> KnownKeys;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class NoaOpener : ArchiveFormat
     {
@@ -73,30 +79,8 @@ namespace GameRes.Formats.Entis
             Extensions = new string[] { "noa", "dat" };
         }
 
-        public static readonly Dictionary<string, Dictionary<string, string>> KnownKeys =
-            new Dictionary<string, Dictionary<string, string>> {
-                { arcStrings.NOAIgnoreEncryption, new Dictionary<string, string>() },
-                { "Alea Akaki Tsuki o Haruka ni Nozomi", new Dictionary<string, string> {
-                    { "data2.noa", "pnnAiYVqktMdLlVq9pnrXs1795vhu8ZluLh3MxmXyBBrhrhLoP2rlGn5dxcBP6d1cAAz08TMRIXNUFatVdJFWAwVphtAh4hx5NHMmLs8LoBE2KHAA8GnKJB1PpKeyMHu" },
-                    { "data4.noa", "yEbgydEFtIq3YiGUNMpCarJwR9mZbufPrbXtsoqbrJwT4F278kOWIgYzLtm1nP1Hns81u3F4Stwc42gdtrWIbnp9XfX3LsKiZe1TFUyrlTqsbhX8R8dEAVxLk9SVvCE7" } } },
-                { "Do S Ane to Boku no Hounyou Kankei", new Dictionary<string, string> {
-                    { "d02.dat", "vwerc7s65r21bnfu" },
-                    { "d03.dat", "ctfvgbhnj67y8u" } } },
-                { "Innyuu Famiresu", new Dictionary<string, string> {
-                    { "d01.dat", "vdiu$43AfUCfh9aksf" },
-                    { "d03.dat", "gaivnwq7365e021gf" } } },
-                { "Konneko", new Dictionary<string, string> {
-                    { "script.noa", "convini_cat" } } },
-                { "Santaful☆Summer", new Dictionary<string, string> {
-                    { "data02.noa", "20130611VER1" },
-                    { "data03.noa", "20130611VER2" } } },
-                { "Yatohime Zankikou", new Dictionary<string, string> {
-                    { "data1.noa", "arcdatapass" },
-                    { "data6.noa", "cfe7231hf9qccda" },
-                    { "data7.noa", "ceiuvw86680efq0hHDUHF673j" } } },
-                { "You! Apron Chakuyou", new Dictionary<string, string> {
-                    { "containerb.noa", "7DQ1Xm7ZahIv1ZwlFgyMTMryKC6OP9V6cAgL64WD5JLyvmeEyqTSA5rUbRigOtebnnK4MuOptwsbOf4K8UBDH4kpAUOQgB71Qr1qxtHGxQl8KZKj6WIYWpPh0G3JOJat" } } },
-            };
+        public static Dictionary<string, Dictionary<string, string>> KnownKeys =
+            new Dictionary<string, Dictionary<string, string>>();
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -298,6 +282,12 @@ namespace GameRes.Formats.Entis
                 }
                 return true;
             }
+        }
+
+        public override ResourceScheme Scheme
+        {
+            get { return new NoaScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((NoaScheme)value).KnownKeys; }
         }
     }
 

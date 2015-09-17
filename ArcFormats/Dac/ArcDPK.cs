@@ -40,12 +40,19 @@ namespace GameRes.Formats.Dac
         public uint Key2;
     }
 
+    [Serializable]
     public class DpkScheme
     {
         public uint            Key1 { get; set; }
         public uint            Key2 { get; set; }
         public string          Name { get; set; }
         public string OriginalTitle { get; set; }
+    }
+
+    [Serializable]
+    public class ArchiveScheme : ResourceScheme
+    {
+        public DpkScheme[] KnownSchemes;
     }
 
     internal class DpkEntry : Entry
@@ -75,27 +82,7 @@ namespace GameRes.Formats.Dac
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
-        public static readonly DpkScheme[] KnownSchemes = new DpkScheme[]
-        {
-            new DpkScheme { Key1 = 0x0FF98,             Name = arcStrings.ArcDefault,
-                            Key2 = 0x43E78A5C },
-            new DpkScheme { Key1 = 0x0C3BD,             Name = "Inbou no Wakusei",
-                            Key2 = 0x577D4861, OriginalTitle = "淫暴の惑星～破壊と欲望の衝動～" },
-            new DpkScheme { Key1 = 0x04D49,             Name = "Ryoshuu",
-                            Key2 = 0x39712FED, OriginalTitle = "虜囚 -RYOSYU-" },
-            new DpkScheme { Key1 = 0x11EAF,             Name = "Ryobaku ~Haitoku no Atelier~",
-                            Key2 = 0xB9976112, OriginalTitle = "虜縛～背徳のアトリエ～" },
-            new DpkScheme { Key1 = 0x0527F,             Name = "Ryoshuu ~Jogakusei Choukyou~",
-                            Key2 = 0x339B266F, OriginalTitle = "虜讐～女学生調教～" },
-            new DpkScheme { Key1 = 0x0946E,             Name = "Shirogane no Cal to Soukuu no Joou",
-                            Key2 = 0xB1956783, OriginalTitle = "白銀のカルと蒼空の女王" },
-            new DpkScheme { Key1 = 0x0BB51,             Name = "Shiromiko",
-                            Key2 = 0x891F52A3, OriginalTitle = "白神子 ～しろみこ～" },
-            new DpkScheme { Key1 = 0x09F59,             Name = "Shoujotachi no Saezuri",
-                            Key2 = 0x5DDE9B8D, OriginalTitle = "少女達のさえずり" },
-            new DpkScheme { Key1 = 0x0583F,             Name = "Yumemiru Tsuki no Lunalutia",
-                            Key2 = 0xB81031D7, OriginalTitle = "夢みる月のルナルティア" },
-        };
+        public static DpkScheme[] KnownSchemes = new DpkScheme[0];
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -228,6 +215,23 @@ namespace GameRes.Formats.Dac
         public override object GetAccessWidget ()
         {
             return new GUI.WidgetDPK();
+        }
+
+        public override ResourceScheme Scheme
+        {
+            get
+            {
+                var known = KnownSchemes.Clone() as DpkScheme[];
+                // first entry should be a default scheme, replace localized "Name" field
+                known[0] = new DpkScheme { Name = known[0].Name, Key1 = known[0].Key1, Key2 = known[0].Key2 };
+                return new ArchiveScheme { KnownSchemes = known };
+            }
+            set
+            {
+                KnownSchemes = ((ArchiveScheme)value).KnownSchemes;
+                if (string.IsNullOrEmpty (KnownSchemes[0].Name))
+                    KnownSchemes[0].Name = arcStrings.ArcDefault;
+            }
         }
     }
 }

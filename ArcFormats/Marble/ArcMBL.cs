@@ -50,6 +50,12 @@ namespace GameRes.Formats.Marble
         }
     }
 
+    [Serializable]
+    public class MblScheme : ResourceScheme
+    {
+        public Dictionary<string, string> KnownKeys;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class MblOpener : ArchiveFormat
     {
@@ -150,13 +156,13 @@ namespace GameRes.Formats.Marble
             }
         }
 
-        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
-            { arcStrings.ArcDefault,    "" },
-            { "Chikatetsu Fuusa Jiken", "naze" }, // 地下鉄封鎖事件
-            { "Eien no Owari ni",       "eientamasoft" }, // 永遠の終わりに
-            { "Sakura Machizaka Stories", "sakura桜" }, // 桜待坂Stories vol.1/vol.2
-            { "Trouble Succubus",       "とらぶるサッキュバス-0928-2007" }, // とらぶるサッキュバス
-        };
+        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new MblScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((MblScheme)value).KnownKeys; }
+        }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {

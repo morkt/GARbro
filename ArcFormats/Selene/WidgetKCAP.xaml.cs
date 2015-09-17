@@ -1,7 +1,9 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Selene;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.GUI
 {
@@ -13,7 +15,9 @@ namespace GameRes.Formats.GUI
         public WidgetKCAP ()
         {
             InitializeComponent ();
-            if (null == EncScheme.SelectedItem)
+            var keys = new[] { arcStrings.ArcDefault };
+            EncScheme.ItemsSource = keys.Concat (PackOpener.KnownSchemes.Keys);
+            if (-1 == EncScheme.SelectedIndex)
                 EncScheme.SelectedIndex = 0;
             EncScheme.SelectionChanged += OnSchemeChanged;
         }

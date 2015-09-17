@@ -51,6 +51,12 @@ namespace GameRes.Formats.Majiro
         public string Password;
     }
 
+    [Serializable]
+    public class RctScheme : ResourceScheme
+    {
+        public Dictionary<string, string> KnownKeys;
+    }
+
     [Export(typeof(ImageFormat))]
     public class RctFormat : ImageFormat
     {
@@ -60,12 +66,13 @@ namespace GameRes.Formats.Majiro
 
         public bool OverlayFrames = true;
 
-        public static readonly Dictionary<string, string> KnownKeys = new Dictionary<string, string> {
-            { "Akatsuki no Goei",               "おぬぐり食べる？" },
-            { "Amber Quartz",                   "夕焼け。学校の屋上。そこに伸びる二つの影。" },
-            { "Nagisa no",                      "青い空に向かって、溜息を一つこぼす。" },
-            { "White ~blanche comme la lune~",  "たった３枚の紙" },
-        };
+        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new RctScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((RctScheme)value).KnownKeys; }
+        }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

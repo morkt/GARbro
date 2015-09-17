@@ -69,6 +69,12 @@ namespace GameRes.Formats.KiriKiri
         public bool          RetainDirs { get; set; }
     }
 
+    [Serializable]
+    public class Xp3Scheme : ResourceScheme
+    {
+        public Dictionary<string, ICrypt> KnownSchemes;
+    }
+
     // Archive version 1: encrypt file first, then calculate checksum
     //         version 2: calculate checksum, then encrypt
 
@@ -86,27 +92,17 @@ namespace GameRes.Formats.KiriKiri
             Signatures = new uint[] { 0x0d335058, 0 };
         }
 
+        public override ResourceScheme Scheme
+        {
+            get { return new Xp3Scheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((Xp3Scheme)value).KnownSchemes; }
+        }
+
         public bool ForceEncryptionQuery = true;
 
         private static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
 
-        public static readonly Dictionary<string, ICrypt> KnownSchemes = new Dictionary<string, ICrypt> {
-            { arcStrings.ArcNoEncryption, NoCryptAlgorithm },
-            { "Cafe Sourire",       new XorCrypt (0xcd) },
-            { "Coμ",                new ComyuCrypt() },
-            { "Damegane",           new DameganeCrypt() },
-            { "Fate/hollow ataraxia", new FateHACrypt() },
-            { "Fate/stay night",    new FateCrypt() },
-            { "Haruiro ☆ Communication ♪", new HaruiroCrypt() },
-            { "Hime to Majin to Koi Suru Tamashii", new HashCrypt() },
-            { "Imouto Style",       new ImoutoStyleCrypt() },
-            { "Okiba ga Nai!",      new OkibaCrypt() },
-            { "Ore no Saimin Fantasia", new SaiminCrypt() },
-            { "Seirei Tenshou",     new SeitenCrypt() },
-            { "Swan Song",          new SwanSongCrypt() },
-            { "Walpurgis",          new WalpurgisCrypt() },
-            { "Zecchou Spiral!!",   new ZecchouCrypt() },
-        };
+        public static Dictionary<string, ICrypt> KnownSchemes = new Dictionary<string, ICrypt>();
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -756,6 +752,7 @@ NextEntry:
         #endregion
     }
 
+    [Serializable]
     public abstract class ICrypt
     {
         /// <summary>
@@ -778,6 +775,7 @@ NextEntry:
         }
     }
 
+    [Serializable]
     public class NoCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
@@ -794,7 +792,8 @@ NextEntry:
         }
     }
 
-    internal class FateCrypt : ICrypt
+    [Serializable]
+    public class FateCrypt : ICrypt
     {
         public override bool HashAfterCrypt { get { return true; } }
 
@@ -830,7 +829,8 @@ NextEntry:
         }
     }
 
-    internal class HashCrypt : ICrypt
+    [Serializable]
+    public class HashCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
@@ -852,7 +852,8 @@ NextEntry:
         }
     }
 
-    internal class XorCrypt : ICrypt
+    [Serializable]
+    public class XorCrypt : ICrypt
     {
         private byte m_key;
 
@@ -886,7 +887,8 @@ NextEntry:
         }
     }
 
-    internal class SwanSongCrypt : ICrypt
+    [Serializable]
+    public class SwanSongCrypt : ICrypt
     {
         static private byte Adjust (uint hash, out int shift)
         {
@@ -930,7 +932,8 @@ NextEntry:
         }
     }
 
-    internal class SeitenCrypt : ICrypt
+    [Serializable]
+    public class SeitenCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
@@ -1001,7 +1004,8 @@ NextEntry:
         }
     }
 
-    internal class OkibaCrypt : ICrypt
+    [Serializable]
+    public class OkibaCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
@@ -1049,7 +1053,8 @@ NextEntry:
         }
     }
 
-    internal class SaiminCrypt : ICrypt
+    [Serializable]
+    public class SaiminCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
@@ -1098,7 +1103,8 @@ NextEntry:
         }
     }
 
-    internal class DameganeCrypt : ICrypt
+    [Serializable]
+    public class DameganeCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {

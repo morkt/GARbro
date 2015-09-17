@@ -60,6 +60,12 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         }
     }
 
+    [Serializable]
+    public class WarcScheme : ResourceScheme
+    {
+        public EncryptionScheme[] KnownSchemes;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class WarOpener : ArchiveFormat
     {
@@ -68,6 +74,12 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public override uint     Signature { get { return 0x43524157; } } // 'WARC'
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
+
+        public override ResourceScheme Scheme
+        {
+            get { return new WarcScheme { KnownSchemes = Decoder.KnownSchemes }; }
+            set { Decoder.KnownSchemes = ((WarcScheme)value).KnownSchemes; }
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -542,64 +554,8 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         }
     }
 
-    internal class CachedResource
-    {
-        Dictionary<string, byte[]> ResourceCache = new Dictionary<string, byte[]>();
-        Dictionary<string, byte[]> RegionCache   = new Dictionary<string, byte[]>();
-
-        public static Stream Open (string name)
-        {
-            var assembly = typeof(CachedResource).Assembly;
-            string qualified_name = "GameRes.Formats.Resources." + name;
-            Stream stream = assembly.GetManifestResourceStream (qualified_name);
-            if (null != stream)
-                return stream;
-            stream = assembly.GetManifestResourceStream (qualified_name + ".z");
-            if (null != stream)
-                using (stream)
-                    return ZLibCompressor.DeCompress (stream);
-            throw new FileNotFoundException ("Resource not found", name);
-        }
-
-        public byte[] Load (string name)
-        {
-            byte[] res;
-            if (!ResourceCache.TryGetValue (name, out res))
-            {
-                using (var stream = Open (name))
-                {
-                    res = new byte[stream.Length];
-                    stream.Read (res, 0, res.Length);
-                    ResourceCache[name] = res;
-                }
-            }
-            return res;
-        }
-
-        // FIXME: this approach disregards possible differences in regions width or height
-        public byte[] LoadRegion (string name, int width, int height)
-        {
-            byte[] region;
-            if (!RegionCache.TryGetValue (name, out region))
-            {
-                using (var png = Open (name))
-                {
-                    region = new byte[width*height*4];
-                    var decoder = new PngBitmapDecoder (png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                    var bitmap = decoder.Frames[0];
-                    width  = Math.Min (width, bitmap.PixelWidth);
-                    height = Math.Min (height, bitmap.PixelHeight);
-                    int stride = bitmap.PixelWidth * bitmap.Format.BitsPerPixel / 8;
-                    Int32Rect rect = new Int32Rect (0, 0, width, height);
-                    bitmap.CopyPixels (rect, region, stride, 0);
-                    RegionCache[name] = region;
-                }
-            }
-            return region;
-        }
-    }
-
-    internal class EncryptionScheme
+    [Serializable]
+    public class EncryptionScheme
     {
         public string Name          { get; set; }
         public string OriginalTitle { get; set; }
@@ -611,59 +567,6 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public byte[] Region;
         public byte[] DecodeBin;
         public byte[] DecodeExtra;
-
-        private static CachedResource Resource = new CachedResource();
-
-        public static readonly string DefaultCrypt = "Crypt Type 20011002 - Copyright(C) 2000 Y.Yamada/STUDIO よしくん";
-        public static readonly uint[] ZeroKey = new uint[] { 0, 0, 0, 0, 0 };
-
-        public static EncryptionScheme Create (string name, int version, int entry_name_size,
-                                               string key1, uint[] key2,
-                                               string image, string region_src, string decode_bin = null,
-                                               string original_title = "", uint? decode_patch = null)
-        {
-            var scheme = new EncryptionScheme
-            {
-                Name = name,
-                Version = version,
-                OriginalTitle = original_title,
-                EntryNameSize = entry_name_size,
-                CryptKey = Encodings.cp932.GetBytes (key1),
-                HelperKey = key2,
-                ShiinaImage = Resource.Load (image),
-                Region = Resource.LoadRegion (region_src, 48, 48),
-            };
-            if (null != decode_bin)
-            {
-                scheme.DecodeBin = Resource.Load (decode_bin);
-                if (null != decode_patch)
-                {
-                    scheme.DecodeBin = scheme.DecodeBin.Clone() as byte[];
-                    LittleEndian.Pack (decode_patch.Value, scheme.DecodeBin, 0x1020);
-                }
-            }
-            if (version >= 2490)
-                scheme.DecodeExtra = Resource.Load ("ShiinaRio5.png");
-            return scheme;
-        }
-
-        public static EncryptionScheme Create (int version, string name, string original_title, uint[] key2, uint? decode_patch = null)
-        {
-            string decode = version < 2410 ? "DecodeV1.bin"
-                          : version < 2490 ? "DecodeV241.bin"
-                          : "DecodeV249.bin";
-            string image = version < 2390 ? "ShiinaRio1.png"
-                         : version < 2490 ? "ShiinaRio3.jpg"
-                         : "ShiinaRio4.jpg";
-            int entry_name_size = version <= 2390 ? 0x10 : 0x20;
-            return Create (name, version, entry_name_size, DefaultCrypt, key2,
-                           image, "ShiinaRio2.png", decode, original_title, decode_patch);
-        }
-
-        public static EncryptionScheme Create (int version, string name)
-        {
-            return Create (version, name, "", ZeroKey);
-        }
     }
 
     internal class Decoder
@@ -1246,71 +1149,6 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             return (uint)((m_scheme.EntryNameSize + 0x18) * max_index_entries);
         }
 
-        public static EncryptionScheme[] KnownSchemes = new EncryptionScheme[]
-        {
-            EncryptionScheme.Create (2360, "ShiinaRio v2.36 and older"),
-            EncryptionScheme.Create (2370, "ShiinaRio v2.37", "椎名里緒 v2.37",
-                new uint[] { 0xF182C682, 0xE882AA82, 0x718E5896, 0x8183CC82, 0xDAC98283 }),
-
-            EncryptionScheme.Create (2480, "Bloody Rondo", "BLOODY†RONDO",
-                new uint[] { 0xFBFBF8F6, 0xFBE6EDF0, 0xFBF0FA, 0, 0 }),
-
-            EncryptionScheme.Create (2460, "Chikan Circle", "痴漢サークル",
-                new uint[] { 0x6B6B6E70, 0x6E724058, 0x587E736B, 0x00003653, 0 }),
-            EncryptionScheme.Create (2470, "Chikan Circle 2", "痴漢サークル2",
-                new uint[] { 0x6464617F, 0x617D4F57, 0x57717C64, 0x00003A5C, 0 }, 0x20080108),
-            EncryptionScheme.Create (2470, "Chikan Circle 3", "痴漢サークル3",
-                new uint[] { 0x6565607E, 0x607C4E56, 0x56707D65, 0x00003A4A, 0 }, 0x20090706),
-
-            EncryptionScheme.Create (2450, "Chuuchuu Nurse", "ちゅうちゅうナース",
-                new uint[] { 0xB0D1ECD1, 0xECD1F7D1, 0xF7D1B0D1, 0x08D23AD0, 0x13D20BD0 }),
-            EncryptionScheme.Create (2470, "Damatte Watashi no Muko ni Nare!", "黙って私のムコになれ！",
-                new uint[] { 0x44075C13, 0x010B4107, 0x05064907, 0x4C07D706, 0x6F074D07 }),
-            EncryptionScheme.Create (2470, "Hana to Otome ni Shukufuku wo Royal Bouquet", "花と乙女に祝福を ロイヤルブーケ",
-                new uint[] { 0xE3A7F1AC, 0xB2AA96AC, 0x4FAAECA7, 0xD5A7BAB0, 0x44A754A7 }),
-            EncryptionScheme.Create (2400, "Helter Skelter", "ヘルタースケルター",
-                new uint[] { 0x747C887C, 0xA47EA17C, 0xAF7CA77C, 0xA17C747C, 0x0000A47E }),
-            EncryptionScheme.Create (2390, "Hitozuma Onna Kyoushi Reika", "人妻女教師・麗香",
-                new uint[] { 0x3772936F, 0x4C746870, 0x12688b71, 0x0A687E72, 0x3A6B4076 }),
-            EncryptionScheme.Create (2470, "Mahou Shoujo no Taisetsu na Koto", "魔法少女の大切なこと。",
-                new uint[] { 0x51879387, 0x869EBC9E, 0xF480DD93, 0xD993C981, 0xD793A093 }),
-            EncryptionScheme.Create (2460, "Mikoko", "みここ",
-                new uint[] { 0x7DAC51AC, 0x51AC7DAC, 0x7DAC7DAC, 0x7DAC51AC, 0x51AC7DAC }),
-            EncryptionScheme.Create (2470, "Najimi no Oba-chan", "馴染みのオバちゃん",
-                new uint[] { 0x6161647A, 0x64784A52, 0x52747961, 0x00004C43, 0 }),
-            EncryptionScheme.Create (2390, "Nagagutsu wo Haita Deco", "長靴をはいたデコ",
-                new uint[] { 0x486D887E, 0x0F7DBC73, 0x5D7D327D, 0x997C427D, 0x877EAD7C }),
-            EncryptionScheme.Create (2470, "Nakadashi Trilogy", "なかだしトリロジー",
-                new uint[] { 0x928ADB9E, 0xB087BB87, 0x928ADB9E, 0xB087BB87, 0xB087BB87 }),
-            EncryptionScheme.Create (2470, "Onedari Onapet", "おねだりオナペット",
-                new uint[] { 0xD59CB69C, 0xF69CA09C, 0x779D579D, 0x7C9D679D, 0x0000799D }),
-            EncryptionScheme.Create (2480, "Onegan!", "おねガン！",
-                new uint[] { 0xC881AB81, 0x90804880, 0xAB814A82, 0x4880C881, 0x4A829080 }),
-            EncryptionScheme.Create (2470, "Oreimo Plus", "俺妹プラス",
-                new uint[] { 0x24371528, 0x2822D722, 0x1528F922, 0xD7222437, 0xF9222822 }),
-            EncryptionScheme.Create (2470, "Pure Love!", "ぴゅあらっ！",
-                new uint[] { 0x31500050, 0x35507250, 0x87821350, 0x9D9E9780, 0x00009784 }),
-            EncryptionScheme.Create (2470, "Ren'ai Saimin", "恋愛催眠",
-                new uint[] { 0x6E423C5D, 0x7A5C0947, 0x6E423C5D, 0x7A5C0947, 0x6E423C5D }),
- 
-            EncryptionScheme.Create (2470, "Ran→Sem", "RAN→SEM～白濁デルモ妻のミイラ捕り～",
-                new uint[] { 0x63636678, 0x667A4850, 0x50767B63, 0x00004E5D, 0 }, 0x20100427),
-            EncryptionScheme.Create (2470, "Rin x Sen", "RIN×SEN～白濁女教師と野郎ども～",
-                new uint[] { 0x6666637D, 0x637F4D55, 0x55737E66, 0x00004F58, 0 }),
-
-            EncryptionScheme.Create (2480, "Sensei! Shite Ageru", "先生っ！ シてあげる",
-                new uint[] { 0x70562056, 0x87470744, 0x02449045, 0x76446644, 0x8F472F44 }),
-            EncryptionScheme.Create (2480, "Tanetsuke Mura", "種憑け村",
-                new uint[] { 0x7C7C7967, 0x7965574F, 0x4F69647C, 0x00005144, 0 }),
-            EncryptionScheme.Create (2470, "You~Gaku", "よう∽ガク",
-                new uint[] { 0x4DE2AB4D, 0x98AB5D46, 0x66496349, 0x485D685D, 0x5F4D4C5D }),
-            EncryptionScheme.Create (2410, "Zansho Omimai Moushiagemasu", "残暑お見舞い申し上げます。",
-                new uint[] { 0x3A123012, 0x6C3A6C36, 0x3C36323C, 0x6C360F16, 0x369DD012 }),
-            EncryptionScheme.Create (2490, "Shojo Mama", "処女ママ",
-                new uint[] { 0x4B535453, 0xA15FA15F, 0, 0, 0 }),
-            EncryptionScheme.Create ("ShiinaRio v2.49", 2490, 0x20, EncryptionScheme.DefaultCrypt,
-                new uint[] { 0x4B535453, 0xA15FA15F, 0, 0, 0 },
-                "ShiinaRio4.jpg", "ShiinaRio2.png", "DecodeV249.bin"),
-        };
+        public static EncryptionScheme[] KnownSchemes = new EncryptionScheme[0];
     }
 }
