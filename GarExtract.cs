@@ -60,25 +60,7 @@ namespace GARbro.GUI
                 if (!Directory.Exists (destination))
                     destination = "";
                 var vm = ViewModel;
-                if (!vm.IsArchive)
-                {
-                    if (!entry.IsDirectory)
-                    {
-                        var source = entry.Source.Name;
-                        SetBusyState();
-                        if (string.IsNullOrEmpty (destination))
-                        {
-                            // extract into directory named after archive
-                            if (!string.IsNullOrEmpty (Path.GetExtension (entry.Name)))
-                                destination = Path.GetFileNameWithoutExtension (source);
-                            else
-                                destination = vm.Path.First();
-                        }
-                        extractor = new GarExtract (this, source);
-                        extractor.ExtractAll (destination);
-                    }
-                }
-                else if (vm.Path.Count > 1)
+                if (vm.IsArchive)
                 {
                     if (string.IsNullOrEmpty (destination))
                         destination = Path.GetDirectoryName (vm.Path.First());
@@ -88,6 +70,21 @@ namespace GARbro.GUI
                         extractor.ExtractAll (destination);
                     else
                         extractor.Extract (entry, destination);
+                }
+                else if (!entry.IsDirectory)
+                {
+                    var source = entry.Source.Name;
+                    SetBusyState();
+                    if (string.IsNullOrEmpty (destination))
+                    {
+                        // extract into directory named after archive
+                        if (!string.IsNullOrEmpty (Path.GetExtension (entry.Name)))
+                            destination = Path.GetFileNameWithoutExtension (source);
+                        else
+                            destination = vm.Path.First();
+                    }
+                    extractor = new GarExtract (this, source);
+                    extractor.ExtractAll (destination);
                 }
             }
             catch (OperationCanceledException X)
