@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace GameRes.Formats.KiriKiri
 {
@@ -63,6 +64,12 @@ namespace GameRes.Formats.KiriKiri
 
         [NonSerialized]
         CxProgram[] m_program_list = new CxProgram[0x80];
+
+        [OnDeserialized()]
+        void PostDeserialization (StreamingContext context)
+        {
+            m_program_list = new CxProgram[0x80];
+        }
 
         public CxEncryption (CxScheme scheme)
         {
