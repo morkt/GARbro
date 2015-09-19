@@ -64,6 +64,7 @@
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="ArcMiris.cs" />
     <Compile Include="BitStream.cs" />
+    <Compile Include="Debonosu\ArcPAK.cs" />
     <Compile Include="Emic\ArcPACK.cs" />
     <Compile Include="Emic\ImageMWP.cs" />
     <Compile Include="Ethornell\AudioBGI.cs" />
