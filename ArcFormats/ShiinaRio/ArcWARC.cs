@@ -29,8 +29,6 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Media.Imaging;
 using GameRes.Compression;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
