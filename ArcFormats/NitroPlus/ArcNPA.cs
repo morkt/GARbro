@@ -41,7 +41,6 @@ namespace GameRes.Formats.NitroPlus
     {
         public byte[] RawName;
         public int    FolderId;
-        public byte[] Order;
     }
 
     internal class NpaArchive : ArcFile
