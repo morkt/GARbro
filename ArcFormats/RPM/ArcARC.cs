@@ -81,10 +81,13 @@ namespace GameRes.Formats.Rpm
             set { KnownSchemes = ((ArcScheme)value).KnownSchemes; }
         }
 
+        /// <summary>Minimum entry length across all possible archive schemes.</summary>
+        const int MinEntryLength = 0x24;
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (!IsSaneCount (count))
+            if (!IsSaneCount (count) || 8 + count * MinEntryLength >= file.MaxOffset)
                 return null;
             uint is_compressed = file.View.ReadUInt32 (4);
             if (is_compressed > 1) // should be either 0 or 1
