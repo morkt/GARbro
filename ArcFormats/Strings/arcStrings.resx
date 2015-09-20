@@ -334,4 +334,9 @@ Choose encryption scheme or enter a passphrase.</value>
   <data name="NSAChoose" xml:space="preserve">
     <value>Choose title or enter a password</value>
   </data>
+  <data name="RPMEncryptedNotice" xml:space="preserve">
+    <value>File resembles RPM resource archive,
+but encryption key guess failed.
+Choose appropriate encryption scheme.</value>
+  </data>
 </root>

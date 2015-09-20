@@ -70,7 +70,6 @@
     <Compile Include="Ethornell\AudioBGI.cs" />
     <Compile Include="Lilim\ArcABM.cs" />
     <Compile Include="ActiveSoft\ArcADPACK.cs" />
-    <Compile Include="ArcAdvCls.cs" />
     <Compile Include="AdvSys\ArcAdvSysT.cs" />
     <Compile Include="ArcAFS.cs" />
     <Compile Include="elf\ArcAi5Win.cs" />
@@ -105,6 +104,10 @@
     <Compile Include="GSD\ArcGSP.cs" />
     <Compile Include="GsPack\ArcGsPack.cs" />
     <Compile Include="elf\ArcHED.cs" />
+    <Compile Include="RPM\ArcARC.cs" />
+    <Compile Include="RPM\WidgetARC.xaml.cs">
+      <DependentUpon>WidgetARC.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Silky\ArcIFL.cs" />
     <Compile Include="ArcIKS.cs" />
     <Compile Include="ArcInnGrey.cs" />
@@ -361,6 +364,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="NitroPlus\CreateSGWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="RPM\WidgetARC.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

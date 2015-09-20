@@ -441,5 +441,17 @@ namespace GameRes.Formats.Properties {
                 this["NSATitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string RPMScheme {
+            get {
+                return ((string)(this["RPMScheme"]));
+            }
+            set {
+                this["RPMScheme"] = value;
+            }
+        }
     }
 }

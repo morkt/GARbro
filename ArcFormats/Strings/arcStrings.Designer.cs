@@ -570,6 +570,17 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File resembles RPM resource archive,
+        ///but encryption key guess failed.
+        ///Choose appropriate encryption scheme..
+        /// </summary>
+        public static string RPMEncryptedNotice {
+            get {
+                return ResourceManager.GetString("RPMEncryptedNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Amaterasu Translations Muv-Luv script file.
         /// </summary>
         public static string SCRDescription {

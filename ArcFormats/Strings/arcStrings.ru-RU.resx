@@ -257,6 +257,11 @@
   <data name="RPALabelKey" xml:space="preserve">
     <value>32-битный ключ</value>
   </data>
+  <data name="RPMEncryptedNotice" xml:space="preserve">
+    <value>По-видимому, файл является RPM архивом,
+однако определить ключ шифрования не удалось.
+Выберите подходящий способ шифрования.</value>
+  </data>
   <data name="SGLabelEncoding" xml:space="preserve">
     <value>Кодировка имён файлов</value>
   </data>
