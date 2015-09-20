@@ -30,14 +30,12 @@ namespace GameRes.Formats.Entis
         uint            m_nHeightBlocks;
 
         int             m_dwBytesPerLine;
-        uint            m_dwClippedPixel;
 
         int             m_ptrDstBlock;
         int             m_nDstLineBytes;
         int             m_nDstPixelBytes;
         uint            m_nDstWidth;
         uint            m_nDstHeight;
-        uint            m_fdwDecFlags;
 
         // buffers for lossless encoding
         byte[]          m_ptrOperations;
@@ -229,7 +227,6 @@ namespace GameRes.Formats.Entis
             uint image_bytes = stride * m_info.Height;
             m_output = new byte[image_bytes];
             m_dwBytesPerLine = (int)stride;
-            m_dwClippedPixel = 0;
             if (!m_info.VerticalFlip)
             {
                 m_dst = ((int)m_info.Height - 1) * m_dwBytesPerLine;
