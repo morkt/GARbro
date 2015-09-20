@@ -90,7 +90,20 @@ namespace GARbro.GUI
 
         void WindowRendered ()
         {
-            ViewModel = CreateViewModel (m_app.InitPath);
+            DirectoryViewModel vm = null;
+            try
+            {
+                vm = GetNewViewModel (m_app.InitPath);
+            }
+            catch (Exception X)
+            {
+                PopupError (X.Message, guiStrings.MsgErrorOpening);
+            }
+            if (null == vm)
+            {
+                vm = CreateViewModel (Directory.GetCurrentDirectory(), true);
+            }
+            ViewModel = vm;
             lv_SelectItem (0);
             SetStatusText (guiStrings.MsgReady);
         }
@@ -297,7 +310,7 @@ namespace GARbro.GUI
         /// Create view model corresponding to <paramref name="path"> or empty view model if there was
         /// an error accessing path.
         /// </summary>
-        DirectoryViewModel CreateViewModel (string path)
+        DirectoryViewModel CreateViewModel (string path, bool suppress_warning = false)
         {
             try
             {
@@ -305,7 +318,8 @@ namespace GARbro.GUI
             }
             catch (Exception X)
             {
-                PopupError (X.Message, guiStrings.MsgErrorOpening);
+                if (!suppress_warning)
+                    PopupError (X.Message, guiStrings.MsgErrorOpening);
                 return new DirectoryViewModel (new string[] { "" }, new Entry[0], false);
             }
         }
