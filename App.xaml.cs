@@ -86,7 +86,7 @@ namespace GARbro.GUI
             }
             catch (Exception X)
             {
-                Trace.WriteLine (X.Message, "scheme deserialization");
+                Trace.WriteLine (X.Message, "scheme deserialization failed");
             }
         }
 
