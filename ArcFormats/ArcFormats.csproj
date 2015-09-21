@@ -68,6 +68,8 @@
     <Compile Include="Emic\ArcPACK.cs" />
     <Compile Include="Emic\ImageMWP.cs" />
     <Compile Include="Ethornell\AudioBGI.cs" />
+    <Compile Include="Eushully\ArcALF.cs" />
+    <Compile Include="Eushully\ImageAGF.cs" />
     <Compile Include="Lilim\ArcABM.cs" />
     <Compile Include="ActiveSoft\ArcADPACK.cs" />
     <Compile Include="AdvSys\ArcAdvSysT.cs" />
@@ -439,6 +441,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)</PreBuildEvent>
