@@ -41,16 +41,25 @@ namespace GameRes.Formats.Eushully
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
+        static string[] IndexNames = new string[] { "sys4ini.bin", "sys3ini.bin" };
+
         public override ArcFile TryOpen (ArcView file)
         {
-            string ini_path = VFS.CombinePath (Path.GetDirectoryName (file.Name), "sys4ini.bin");
-            if (!VFS.FileExists (ini_path))
-                return null;
-
-            var dir = ReadIndex (ini_path, Path.GetFileName (file.Name));
-            if (null == dir)
-                return null;
-            return new ArcFile (file, this, dir);
+            string dir_name = Path.GetDirectoryName (file.Name);
+            string file_name = Path.GetFileName (file.Name);
+            foreach (var ini_name in IndexNames)
+            {
+                string ini_path = VFS.CombinePath (dir_name, ini_name);
+                if (VFS.FileExists (ini_path))
+                {
+                    var dir = ReadIndex (ini_path, file_name);
+                    if (null != dir)
+                        return new ArcFile (file, this, dir);
+                    if (LastAccessedIndex != null)
+                        break;
+                }
+            }
+            return null;
         }
 
         Tuple<string, Dictionary<string, List<Entry>>> LastAccessedIndex;
