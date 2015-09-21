@@ -99,9 +99,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>packages\WPFToolkit.3.5.50211.1\lib\System.Windows.Controls.Input.Toolkit.dll</HintPath>
     </Reference>
-    <Reference Include="System.Windows.Controls.Layout.Toolkit">
-      <HintPath>packages\WPFToolkit.3.5.50211.1\lib\System.Windows.Controls.Layout.Toolkit.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -243,9 +240,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <None Include="Resources\Formats.dat">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="Resources\Formats.dat" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
@@ -295,6 +290,9 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "$(ProjectDir)\Resources\Formats.dat" "$(TargetDir)" /D</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
