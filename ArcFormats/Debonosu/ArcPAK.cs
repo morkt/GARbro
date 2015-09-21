@@ -41,6 +41,11 @@ namespace GameRes.Formats.Debonosu
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
+        public PakOpener ()
+        {
+            Extensions = new string[] { "pak" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             uint index_offset = file.View.ReadUInt16 (4);
