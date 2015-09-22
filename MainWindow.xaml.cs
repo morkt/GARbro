@@ -685,6 +685,9 @@ namespace GARbro.GUI
             }
             catch (Exception X)
             {
+                // if VFS.FullPath throws an exception, ViewModel becomes inconsistent at this point
+                // and should be rebuilt
+                ViewModel = CreateViewModel (VFS.Top.CurrentDirectory, true);
                 SetStatusText (X.Message);
                 return false;
             }

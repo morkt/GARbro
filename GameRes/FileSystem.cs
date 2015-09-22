@@ -582,31 +582,22 @@ namespace GameRes
                 if (!value.Any())
                     return;
                 var desired = value.ToArray();
-                if (desired.Length == Count)
+                int desired_vfs_count = desired.Length;
+                var arc_iterator = m_vfs.ArcStack.Reverse().GetEnumerator();
+                int i = 0;
+                while (i < desired_vfs_count - 1 && arc_iterator.MoveNext())
                 {
-                    var cur_stack = m_vfs.ArcStack.Reverse();
-                    if (1 == Count || cur_stack.SequenceEqual (desired.Take (desired.Length-1)))
-                    {
-                        // desired path is identical to current, adjust final component only
-                        m_vfs.Top.CurrentDirectory = desired.Last();
-                        return;
-                    }
+                    if (arc_iterator.Current != desired[i])
+                        break;
+                    ++i;
                 }
-                // desired path is different, rebuild filesystem hierarchy from scratch
-                var new_vfs = new FileSystemStack();
-                try
+                while (Count > i+1)
+                    m_vfs.Pop();
+                while (Count < desired_vfs_count)
                 {
-                    for (int i = 0; i < desired.Length-1; ++i)
-                        new_vfs.ChDir (new_vfs.Top.FindFile (desired[i]));
-                    new_vfs.Top.CurrentDirectory = desired.Last();
-                    m_vfs.Dispose();
+                    m_vfs.ChDir (m_vfs.Top.FindFile (desired[Count-1]));
                 }
-                catch
-                {
-                    new_vfs.Dispose();
-                    throw;
-                }
-                m_vfs = new_vfs;
+                m_vfs.Top.CurrentDirectory = desired.Last();
             }
         }
 
