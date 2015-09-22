@@ -292,7 +292,7 @@
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(ProjectDir)\Resources\Formats.dat" "$(TargetDir)" /D</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(ProjectDir)\Resources\Formats.dat" "$(TargetDir)" /D /Y</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
