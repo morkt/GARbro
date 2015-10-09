@@ -140,6 +140,8 @@
     <Compile Include="RiddleSoft\ArcPAC.cs" />
     <Compile Include="Crowd\ArcPCK.cs" />
     <Compile Include="FlyingShine\ArcPD.cs" />
+    <Compile Include="TopCat\ArcTCD3.cs" />
+    <Compile Include="TopCat\ImageSPD.cs" />
     <Compile Include="UMeSoft\ArcPK.cs" />
     <Compile Include="ArcQLIE.cs" />
     <Compile Include="RenPy\ArcRPA.cs" />
