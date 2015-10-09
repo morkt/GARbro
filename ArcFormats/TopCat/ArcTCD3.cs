@@ -206,6 +206,7 @@ namespace GameRes.Formats.TopCat
                 return DecryptOgg (arc, entry);
             var header = new byte[0x14];
             arc.File.View.Read (entry.Offset, header, 0, 0x14);
+            bool spdc_entry = false;
             if (null == tcda.Key)
             {
                 foreach (var key in KnownKeys.Values)
@@ -214,11 +215,16 @@ namespace GameRes.Formats.TopCat
                     if (0x43445053 == first) // 'SPDC'
                     {
                         tcda.Key = key;
+                        spdc_entry = true;
                         break;
                     }
                 }
             }
-            if (null != tcda.Key && 0 != tcda.Key.Value)
+            else if (0x43445053 == signature + tcda.Key.Value * (tcde.Index + 3))
+            {
+                spdc_entry = true;
+            }
+            if (spdc_entry && 0 != tcda.Key.Value)
             {
                 unsafe
                 {
