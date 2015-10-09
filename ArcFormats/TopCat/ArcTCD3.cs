@@ -206,25 +206,25 @@ namespace GameRes.Formats.TopCat
                 return DecryptOgg (arc, entry);
             var header = new byte[0x14];
             arc.File.View.Read (entry.Offset, header, 0, 0x14);
-            unsafe
+            if (null == tcda.Key)
             {
-                fixed (byte* raw = header)
+                foreach (var key in KnownKeys.Values)
                 {
-                    int* dw = (int*)raw;
-                    if (null == tcda.Key)
+                    int first = signature + key * (tcde.Index + 3);
+                    if (0x43445053 == first) // 'SPDC'
                     {
-                        foreach (var key in KnownKeys.Values)
-                        {
-                            int first = signature + key * (tcde.Index + 3);
-                            if (0x43445053 == first) // 'SPDC'
-                            {
-                                tcda.Key = key;
-                                break;
-                            }
-                        }
+                        tcda.Key = key;
+                        break;
                     }
-                    if (null != tcda.Key && 0 != tcda.Key.Value)
+                }
+            }
+            if (null != tcda.Key && 0 != tcda.Key.Value)
+            {
+                unsafe
+                {
+                    fixed (byte* raw = header)
                     {
+                        int* dw = (int*)raw;
                         for (int i = 0; i < 5; ++i)
                             dw[i] += tcda.Key.Value * (tcde.Index + 3 + i);
                     }
