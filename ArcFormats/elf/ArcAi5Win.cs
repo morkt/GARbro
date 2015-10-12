@@ -41,7 +41,7 @@ namespace GameRes.Formats.Elf
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class ArcOpener : ArchiveFormat
+    public class ArcAI5Opener : ArchiveFormat
     {
         public override string         Tag { get { return "ARC/AI5WIN"; } }
         public override string Description { get { return "AI5WIN engine resource archive"; } }
@@ -54,7 +54,7 @@ namespace GameRes.Formats.Elf
                 { NameLength = 0x1E, NameKey = 0x73, SizeKey = 0xAF5789BC, OffsetKey = 0x59FACB45 } },
         };
 
-        public ArcOpener ()
+        public ArcAI5Opener ()
         {
             Extensions = new string[] { "arc" };
         }
@@ -62,7 +62,7 @@ namespace GameRes.Formats.Elf
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             long index_offset = 4;
             var scheme = KnownSchemes.First().Value;
@@ -164,5 +164,48 @@ namespace GameRes.Formats.Elf
             }
         }
         */
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class ArcOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "ARC/SILKY'S"; } }
+        public override string Description { get { return "Silky's AI resource archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public ArcOpener ()
+        {
+            Extensions = new string[] { "arc" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int count = file.View.ReadInt32 (0);
+            if (!IsSaneCount (count))
+                return null;
+            long index_offset = 4;
+            const int name_length = 0x20;
+            uint index_size = (uint)(count * (name_length + 8));
+            if (index_size > file.View.Reserve (index_offset, index_size))
+                return null;
+            var dir = new List<Entry>();
+            for (int i = 0; i < count; ++i)
+            {
+                string name = file.View.ReadString (index_offset, (uint)name_length);
+                if (0 == name.Length)
+                    return null;
+                index_offset += name_length;
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                entry.Offset = file.View.ReadUInt32 (index_offset);
+                entry.Size   = file.View.ReadUInt32 (index_offset+4);
+                if (entry.Offset < index_size+4 || !entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 8;
+            }
+            return new ArcFile (file, this, dir);
+        }
     }
 }
