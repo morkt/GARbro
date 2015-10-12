@@ -46,6 +46,7 @@ namespace GameRes.Formats.Entis
         int[]           m_pArrangeTable = new int[4];
 
         HuffmanTree     m_pHuffmanTree;
+        ErisaProbModel  m_pProbERISA;
 
         PtrProcedure[]  m_pfnColorOperation;
 
@@ -95,7 +96,6 @@ namespace GameRes.Formats.Entis
             switch (m_info.Architecture)
             {
             case EriCode.Nemesis:
-                throw new NotSupportedException ("Not supported ERI compression");
             case EriCode.RunlengthHuffman:
             case EriCode.RunlengthGamma:
                 break;
@@ -143,15 +143,15 @@ namespace GameRes.Formats.Entis
                 {
                     m_pHuffmanTree = new HuffmanTree();
                 }
-                /*
                 else if (EriCode.Nemesis == m_info.Architecture)
                 {
-                    m_pProbERISA = new ERISA_PROB_MODEL ;
+                    m_pProbERISA = new ErisaProbModel();
                 }
-                */
             }
             if (EriCode.RunlengthHuffman == m_info.Architecture)
                 m_context = new HuffmanDecodeContext (0x10000);
+            else if (EriCode.Nemesis == m_info.Architecture)
+                m_context = new ProbDecodeContext (0x10000);
             else
                 m_context = new RLEDecodeContext (0x10000);
         }
@@ -283,18 +283,18 @@ namespace GameRes.Formats.Entis
             var pfnRestoreFunc = GetLLRestoreFunc (m_info.FormatType, m_info.BPP);
             if (null == pfnRestoreFunc)
                 throw new InvalidFormatException();
-            /*
+
             if (EriCode.Nemesis == m_info.Architecture)
             {
                 Debug.Assert (m_pProbERISA != null);
                 m_pProbERISA.Initialize();
             }
-            */
             int i;
             int ptrNextOperation = 0; // index within m_ptrOperations
             if ((0 != (fEncodeType & 0x01)) && (m_nChannelCount >= 3))
             {
-                Debug.Assert (m_info.Architecture != EriCode.Nemesis);
+                if (m_info.Architecture == EriCode.Nemesis)
+                    throw new InvalidFormatException();
                 int nAllBlockCount = (int)(m_nWidthBlocks * m_nHeightBlocks);
                 for (i = 0; i < nAllBlockCount; i++)
                 {
@@ -323,13 +323,11 @@ namespace GameRes.Formats.Entis
             {
                 (context as HuffmanDecodeContext).PrepareToDecodeERINACode();
             }
-            /*
             else
             {
                 Debug.Assert (EriCode.Nemesis == m_info.Architecture);
-                context.PrepareToDecodeERISACode();
+                (context as ProbDecodeContext).PrepareToDecodeERISACode();
             }
-            */
             int nWidthSamples = (int)(m_nChannelCount * m_nWidthBlocks * m_nBlockSize);
             for (i = 0; i < nWidthSamples; ++i)
                 m_ptrLineBuf[i] = 0;
@@ -367,12 +365,10 @@ namespace GameRes.Formats.Entis
                         {
                             dwOperationCode = (uint)(context as HuffmanDecodeContext).GetHuffmanCode (m_pHuffmanTree);
                         }
-                        /*
                         else if (m_info.Architecture == EriCode.Nemesis)
                         {
-                            dwOperationCode = context.DecodeERISACode (m_pProbERISA);
+                            dwOperationCode = (uint)(context as ProbDecodeContext).DecodeERISACode (m_pProbERISA);
                         }
-                        */
                         else
                         {
                             Debug.Assert (EriCode.RunlengthGamma == m_info.Architecture);
@@ -1367,6 +1363,256 @@ namespace GameRes.Formats.Entis
             tree.AddNewEntry (nCode);
 
             return nCode;
+        }
+    }
+
+    internal class ProbDecodeContext : RLEDecodeContext
+    {
+        uint        m_dwCodeRegister;
+        uint        m_dwAugendRegister;
+        int         m_nPostBitCount;
+        byte[]      m_bytLastSymbol = new byte[4];
+
+        ErisaProbModel          m_pPhraseLenProb = new ErisaProbModel();
+        ErisaProbModel          m_pPhraseIndexProb = new ErisaProbModel();
+        ErisaProbModel          m_pRunLenProb = new ErisaProbModel();
+        ErisaProbModel          m_pLastERISAProb;
+        ErisaProbModel[]        m_ppTableERISA;
+
+        public ProbDecodeContext (uint nBufferingSize) : base (nBufferingSize)
+        {
+        }
+
+        public void PrepareToDecodeERISACode ()
+        {
+            if (null == m_ppTableERISA)
+            {
+                m_ppTableERISA = new ErisaProbModel[0x101];
+                for (int i = 0; i < 0x101; ++i)
+                {
+                    m_ppTableERISA[i] = new ErisaProbModel();
+                    m_ppTableERISA[i].Initialize();
+                }
+            }
+            m_pLastERISAProb = m_ppTableERISA[0];
+            m_pPhraseLenProb.Initialize();
+            m_pPhraseIndexProb.Initialize();
+            m_pRunLenProb.Initialize();
+
+            InitializeERISACode();
+        }
+
+        public override uint DecodeBytes (Array ptrDst, uint nCount)
+        {
+            return DecodeERISACodeBytes (ptrDst as sbyte[], nCount);
+        }
+
+        uint DecodeERISACodeBytes (sbyte[] ptrDst, uint nCount)
+        {
+            var pProb = m_pLastERISAProb;
+            int nSymbol, iSym;
+            uint i = 0;
+            while (i < nCount)
+            {
+                if (m_nLength > 0)
+                {
+                    uint nCurrent = nCount - i;
+                    if (nCurrent > m_nLength)
+                        nCurrent = m_nLength;
+                    m_nLength -= nCurrent;
+                    for (uint j = 0; j < nCurrent; j++)
+                    {
+                        ptrDst[i++] = 0;
+                    }
+                    continue;
+                }
+                iSym = DecodeERISACodeIndex (pProb);
+                if (iSym < 0)
+                    break;
+                nSymbol = pProb.SymTable[iSym].Symbol;
+                pProb.IncreaseSymbol (iSym);
+                ptrDst[i++] = (sbyte)nSymbol;
+
+                if (0 == nSymbol)
+                {
+                    iSym = DecodeERISACodeIndex (m_pRunLenProb);
+                    if (iSym < 0)
+                        break;
+                    m_nLength = (uint)m_pRunLenProb.SymTable[iSym].Symbol;
+                    m_pRunLenProb.IncreaseSymbol (iSym);
+                }
+                pProb = m_ppTableERISA[nSymbol & 0xFF];
+            }
+            m_pLastERISAProb = pProb;
+            return i;
+        }
+
+        void InitializeERISACode ()
+        {
+            m_nLength = 0;
+            m_dwCodeRegister = GetNBits (32);
+            m_dwAugendRegister = 0xFFFF;
+            m_nPostBitCount = 0;
+        }
+
+        public int DecodeERISACode (ErisaProbModel pModel)
+        {
+            int iSym = DecodeERISACodeIndex (pModel);
+            int nSymbol = ErisaProbModel.EscCode;
+            if (iSym >= 0)
+            {
+                nSymbol = pModel.SymTable[iSym].Symbol;
+                pModel.IncreaseSymbol (iSym);
+            }
+            return nSymbol;
+        }
+
+        int DecodeERISACodeIndex (ErisaProbModel pModel)
+        {
+            uint dwAcc = m_dwCodeRegister * pModel.TotalCount / m_dwAugendRegister;
+            if (dwAcc >= ErisaProbModel.TotalLimit)
+            {
+                return -1;
+            }
+            int     iSym = 0;
+            ushort wAcc = (ushort)dwAcc;
+            ushort wFs = 0;
+            ushort wOccured;
+            for (;;)
+            {
+                wOccured = pModel.SymTable[iSym].Occured;
+                if (wAcc < wOccured)
+                    break;
+                wAcc -= wOccured;
+                wFs += wOccured;
+                if (++iSym >= pModel.SymbolSorts)
+                    return -1;
+            }
+            m_dwCodeRegister -= (m_dwAugendRegister * wFs + pModel.TotalCount - 1) / pModel.TotalCount;
+            m_dwAugendRegister = m_dwAugendRegister * wOccured / pModel.TotalCount;
+            Debug.Assert (m_dwAugendRegister != 0);
+
+            while (0 == (m_dwAugendRegister & 0x8000))
+            {
+                int nNextBit = GetABit();
+                if (1 == nNextBit)
+                {
+                    if ((++m_nPostBitCount) >= 256)
+                        return -1;
+                    nNextBit = 0 ;
+                }
+                m_dwCodeRegister = (m_dwCodeRegister << 1) | ((uint)nNextBit & 1);
+                m_dwAugendRegister <<= 1;
+            }
+            m_dwCodeRegister &= 0xFFFF;
+            return iSym;
+        }
+    }
+
+    internal class ErisaProbModel
+    {
+        public const int TotalLimit    = 0x2000;
+        public const int SymbolSortMax = 0x101;
+        public const int SubSortMax    = 0x80;
+        public const int ProbSlotMax   = 0x800;
+        public const short EscCode     = -1;
+
+        internal struct CodeSymbol
+        {
+            public ushort   Occured;
+            public short    Symbol;
+        }
+
+        public uint         TotalCount;
+        public int          SymbolSorts;
+        public CodeSymbol[] SymTable = new CodeSymbol[SymbolSortMax];
+        public CodeSymbol[] SubModel = new CodeSymbol[SubSortMax];
+
+        public void Initialize ()
+        {
+            TotalCount = SymbolSortMax;
+            SymbolSorts = SymbolSortMax;
+
+            for (short i = 0; i < 0x100; ++i)
+            {
+                SymTable[i].Occured = 1;
+                SymTable[i].Symbol = i;
+            }
+            SymTable[0x100].Occured = 1 ;
+            SymTable[0x100].Symbol = EscCode;
+
+            for (short i = 0; i < SubSortMax; ++i)
+            {
+                SubModel[i].Occured = 0;
+                SubModel[i].Symbol = -1;
+            }
+        }
+
+        public int AccumulateProb (short wSymbol)
+        {
+            int index = FindSymbol (wSymbol);
+            Debug.Assert (index >= 0);
+            int occured = SymTable[index].Occured;
+            int i = 0;
+            while (occured < TotalCount)
+            {
+                occured <<= 1;
+                i++;
+            }
+            return i;
+        }
+
+        public void HalfOccuredCount ()
+        {
+            TotalCount = 0;
+            for (int i = 0; i < SymbolSorts; ++i)
+            {
+                TotalCount += SymTable[i].Occured = (ushort)((SymTable[i].Occured + 1) >> 1);
+            }
+            for (int i = 0; i < SubSortMax; ++i)
+            {
+                SubModel[i].Occured >>= 1 ;
+            }
+        }
+
+        public int IncreaseSymbol (int index)
+        {
+            ushort occured = ++SymTable[index].Occured;
+            short symbol = SymTable[index].Symbol;
+
+            while (--index >= 0)
+            {
+                if (SymTable[index].Occured >= occured)
+                    break;
+                SymTable[index + 1] = SymTable[index];
+            }
+            SymTable[++index].Occured = occured;
+            SymTable[index].Symbol = symbol;
+
+            if (++TotalCount >= TotalLimit)
+            {
+                HalfOccuredCount();
+            }
+            return index;
+        }
+
+        public int FindSymbol (short symbol)
+        {
+            for (int index = 0; index < SymbolSorts; ++index)
+            {
+                if (SymTable[index].Symbol == symbol)
+                    return index;
+            }
+            return -1;
+        }
+
+        public int AddSymbol (short symbol)
+        {
+            int index = SymbolSorts++;
+            TotalCount++;
+            SymTable[index].Symbol = symbol;
+            SymTable[index].Occured = 1;
+            return index;
         }
     }
 }
