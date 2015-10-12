@@ -71,6 +71,7 @@
     <Compile Include="Ethornell\AudioBGI.cs" />
     <Compile Include="Eushully\ArcALF.cs" />
     <Compile Include="Eushully\ImageAGF.cs" />
+    <Compile Include="ImagePTI.cs" />
     <Compile Include="Lilim\ArcABM.cs" />
     <Compile Include="ActiveSoft\ArcADPACK.cs" />
     <Compile Include="AdvSys\ArcAdvSysT.cs" />
