@@ -99,6 +99,16 @@ namespace GameRes
         {
             return Create (info, format, palette, pixel_data, (int)info.Width*((format.BitsPerPixel+7)/8));
         }
+
+        public static ImageData CreateFlipped (ImageMetaData info, PixelFormat format, BitmapPalette palette,
+                                        byte[] pixel_data, int stride)
+        {
+            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, DefaultDpiX, DefaultDpiY,
+                                              format, palette, pixel_data, stride);
+            var flipped = new TransformedBitmap (bitmap, new ScaleTransform { ScaleY = -1 });
+            flipped.Freeze();
+            return new ImageData (flipped, info);
+        }
     }
 
     public abstract class ImageFormat : IResource
