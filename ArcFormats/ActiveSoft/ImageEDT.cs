@@ -141,11 +141,7 @@ namespace GameRes.Formats.AdPack
             using (var reader = new Reader (stream, meta))
             {
                 reader.Unpack();
-                byte[] pixels = reader.Data;
-                var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                    PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
-                bitmap.Freeze();
-                return new ImageData (bitmap, meta);
+                return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data, (int)meta.Width*3);
             }
         }
 
@@ -321,12 +317,8 @@ namespace GameRes.Formats.AdPack
             stream.Position = 0x1a;
             var reader = new Reader (stream, meta);
             reader.Unpack();
-            byte[] pixels = reader.Data;
             var palette = new BitmapPalette (reader.Palette);
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                PixelFormats.Indexed8, palette, pixels, (int)info.Width);
-            bitmap.Freeze();
-            return new ImageData (bitmap, info);
+            return ImageData.Create (info, PixelFormats.Indexed8, palette, reader.Data, (int)info.Width);
         }
 
         internal class Reader : BitReader

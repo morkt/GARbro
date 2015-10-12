@@ -108,19 +108,10 @@ namespace GameRes.Formats.CatSystem
                     decoder.Unpack();
                     var pixels = decoder.Data;
                     int stride = (int)info.Width * 4;
-                    var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                        PixelFormats.Bgra32, null, pixels, stride);
                     if (flipped)
-                    {
-                        var flipped_bitmap = new TransformedBitmap();
-                        flipped_bitmap.BeginInit();
-                        flipped_bitmap.Source = bitmap;
-                        flipped_bitmap.Transform = new ScaleTransform { ScaleY = -1 };
-                        flipped_bitmap.EndInit();
-                        bitmap = flipped_bitmap;
-                    }
-                    bitmap.Freeze();
-                    return new ImageData (bitmap, info);
+                        return ImageData.CreateFlipped (info, PixelFormats.Bgra32, null, pixels, stride);
+                    else
+                        return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, stride);
                 }
             }
         }

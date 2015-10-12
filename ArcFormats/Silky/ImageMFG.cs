@@ -107,10 +107,7 @@ namespace GameRes.Formats.Silky
                 format = PixelFormats.Bgr24;
             else
                 format = PixelFormats.Bgra32;
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                                              format, null, pixels, meta.Stride);
-            bitmap.Freeze();
-            return new ImageData (bitmap, info);
+            return ImageData.Create (info, format, null, pixels, meta.Stride);
         }
     }
 }

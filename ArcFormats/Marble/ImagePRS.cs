@@ -81,11 +81,7 @@ namespace GameRes.Formats.Marble
             using (var reader = new Reader (stream, meta))
             {
                 reader.Unpack();
-                byte[] pixels = reader.Data;
-                var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                    PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
-                bitmap.Freeze();
-                return new ImageData (bitmap, meta);
+                return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data, (int)meta.Width*3);
             }
         }
 

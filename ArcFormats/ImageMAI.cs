@@ -91,12 +91,7 @@ namespace GameRes.Formats.MAI
 
             var reader = new Reader (stream, meta);
             reader.Unpack();
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height,
-                ImageData.DefaultDpiX, ImageData.DefaultDpiY,
-                reader.Format, reader.Palette, reader.Data, reader.Stride);
-            var flipped = new TransformedBitmap (bitmap, new ScaleTransform { ScaleY = -1 });
-            flipped.Freeze();
-            return new ImageData (flipped, info);
+            return ImageData.CreateFlipped (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }
 
         internal class Reader

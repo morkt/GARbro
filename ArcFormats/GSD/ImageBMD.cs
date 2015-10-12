@@ -78,11 +78,7 @@ namespace GameRes.Formats.BlackRainbow
             {
                 PixelFormat format = meta.Flag != 0 ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
                 reader.Unpack();
-                byte[] pixels = reader.Data;
-                var bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                    format, null, pixels, (int)meta.Width*4);
-                bitmap.Freeze();
-                return new ImageData (bitmap, meta);
+                return ImageData.Create (meta, format, null, reader.Data, (int)meta.Width*4);
             }
         }
 

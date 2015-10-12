@@ -87,13 +87,9 @@ namespace GameRes.Formats.AliceSoft
             using (var reader = new Reader (stream, meta))
             {
                 reader.Unpack();
-                var pixels = reader.Data;
                 int stride = (int)info.Width * (reader.BPP / 8);
                 PixelFormat format = 24 == reader.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
-                var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                    format, null, pixels, stride);
-                bitmap.Freeze();
-                return new ImageData (bitmap, info);
+                return ImageData.Create (info, format, null, reader.Data, stride);
             }
         }
 

@@ -100,11 +100,7 @@ namespace GameRes.Formats.Silky
                 format = PixelFormats.Bgra32;
             else
                 format = PixelFormats.Gray8;
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height,
-                ImageData.DefaultDpiX, ImageData.DefaultDpiY, format, null, pixels, stride);
-            var flipped = new TransformedBitmap (bitmap, new ScaleTransform { ScaleY = -1 });
-            flipped.Freeze();
-            return new ImageData (flipped, info);
+            return ImageData.CreateFlipped (info, format, null, pixels, stride);
         }
 
         public override void Write (Stream file, ImageData image)

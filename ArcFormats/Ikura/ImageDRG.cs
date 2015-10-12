@@ -93,10 +93,7 @@ namespace GameRes.Formats.Ikura
             var pixel_data = DecodeStream (file, stride*(int)info.Height);
             if (null == pixel_data)
                 throw new InvalidFormatException();
-            var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                                              format, null, pixel_data, stride);
-            bitmap.Freeze();
-            return new ImageData (bitmap, info);
+            return ImageData.Create (info, format, null, pixel_data, stride);
         }
 
         byte[] DecodeStream (Stream input, int pixel_count)

@@ -87,17 +87,12 @@ namespace GameRes.Formats.MnoViolet
             {
                 reader.Unpack();
                 int stride = (int)info.Width*info.BPP/8;
-                var pixels = reader.Data;
                 PixelFormat format;
                 if (24 == info.BPP)
                     format = PixelFormats.Bgr24;
                 else
                     format = PixelFormats.Gray8;
-                var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                                                  format, null, pixels, stride);
-                var flipped = new TransformedBitmap (bitmap, new ScaleTransform { ScaleY = -1 });
-                flipped.Freeze();
-                return new ImageData (flipped, info);
+                return ImageData.CreateFlipped (info, format, null, reader.Data, stride);
             }
         }
     }

@@ -92,13 +92,8 @@ namespace GameRes.Formats.ISM
                     input.Unpack21();
                 else
                     input.Unpack10();
-                byte[] pixels = input.Data;
                 var palette = new BitmapPalette (input.Palette);
-                var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, 96, 96,
-                    PixelFormats.Indexed8, palette, pixels, (int)info.Width);
-                var flipped = new TransformedBitmap (bitmap, new ScaleTransform { ScaleY = -1 });
-                flipped.Freeze();
-                return new ImageData (flipped, info);
+                return ImageData.CreateFlipped (info, PixelFormats.Indexed8, palette, input.Data, (int)info.Width);
             }
         }
 

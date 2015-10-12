@@ -248,7 +248,7 @@ namespace GameRes.Formats.KiriKiri
                     {
                         int stride = width * 4;
                         PixelFormat format = 32 == info.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-                        var bitmap = BitmapSource.Create(width, height, 96, 96,
+                        var bitmap = BitmapSource.Create(width, height, ImageData.DefaultDpiX, ImageData.DefaultDpiY,
                             format, null, (IntPtr) data, height * stride, stride);
                         bitmap.Freeze();
                         return new ImageData(bitmap, info);
@@ -369,10 +369,7 @@ namespace GameRes.Formats.KiriKiri
                     }
                 }
                 PixelFormat format = 4 == colors ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-                var bitmap = BitmapSource.Create (width, height, 96, 96,
-                    format, null, image_bits, stride);
-                bitmap.Freeze();
-                return new ImageData (bitmap, info);
+                return ImageData.Create (info, format, null, image_bits, stride);
             }
         }
 

@@ -111,7 +111,6 @@ namespace GameRes.Formats.Will
             using (var reader = new Reader (file, meta))
             {
                 reader.Unpack();
-                BitmapSource bitmap;
                 if (24 == meta.BPP)
                 {
                     byte[] raw = reader.Data;
@@ -123,19 +122,16 @@ namespace GameRes.Formats.Will
                         pixels[i*3+1] = raw[i+size];
                         pixels[i*3+2] = raw[i+size*2];
                     }
-                    bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                        PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
+                    return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
                 }
                 else if (8 == meta.BPP)
                 {
                     byte[] pixels = reader.Data;
-                    bitmap = BitmapSource.Create ((int)meta.Width, (int)meta.Height, 96, 96,
-                        PixelFormats.Indexed8, new BitmapPalette (palette), pixels, (int)meta.Width);
+                    var bmp_palette = new BitmapPalette (palette);
+                    return ImageData.Create (meta, PixelFormats.Indexed8, bmp_palette, pixels, (int)meta.Width);
                 }
                 else
                     throw new InvalidFormatException();
-                bitmap.Freeze();
-                return new ImageData (bitmap, meta);
             }
         }
 
