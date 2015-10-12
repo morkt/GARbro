@@ -112,6 +112,7 @@
     <Compile Include="RPM\WidgetARC.xaml.cs">
       <DependentUpon>WidgetARC.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Silky\ArcARC.cs" />
     <Compile Include="Silky\ArcIFL.cs" />
     <Compile Include="ArcIKS.cs" />
     <Compile Include="ArcInnGrey.cs" />
