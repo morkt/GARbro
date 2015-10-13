@@ -66,6 +66,8 @@
     <Compile Include="ArcMiris.cs" />
     <Compile Include="BitStream.cs" />
     <Compile Include="Debonosu\ArcPAK.cs" />
+    <Compile Include="elf\ImageG24.cs" />
+    <Compile Include="elf\ImageGP8.cs" />
     <Compile Include="Emic\ArcPACK.cs" />
     <Compile Include="Emic\ImageMWP.cs" />
     <Compile Include="Ethornell\AudioBGI.cs" />
