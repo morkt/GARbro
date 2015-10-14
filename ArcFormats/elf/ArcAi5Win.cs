@@ -50,6 +50,8 @@ namespace GameRes.Formats.Elf
         public override bool     CanCreate { get { return false; } }
 
         public static readonly Dictionary<string, ArcIndexScheme> KnownSchemes = new Dictionary<string, ArcIndexScheme> {
+            { "Dorei Kaigo", new ArcIndexScheme
+                { NameLength = 0x14, NameKey = 0x06, SizeKey = 0x55303024, OffsetKey = 0x57683256 } },
             { "Jokei Kazoku ~Inbou~", new ArcIndexScheme
                 { NameLength = 0x1E, NameKey = 0x73, SizeKey = 0xAF5789BC, OffsetKey = 0x59FACB45 } },
         };
@@ -64,35 +66,66 @@ namespace GameRes.Formats.Elf
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
                 return null;
-            long index_offset = 4;
-            var scheme = KnownSchemes.First().Value;
-            uint index_size = (uint)(count * (scheme.NameLength + 8));
-            if (index_size > file.View.Reserve (index_offset, index_size))
-                return null;
-            var name_buf = new byte[scheme.NameLength];
-            var dir = new List<Entry>();
-            for (int i = 0; i < count; ++i)
+            var reader = new IndexReader (file, count);
+            foreach (var scheme in KnownSchemes.Values)
             {
-                file.View.Read (index_offset, name_buf, 0, (uint)scheme.NameLength);
-                for (int n = 0; n < name_buf.Length; ++n)
+                try
                 {
-                    name_buf[n] ^= scheme.NameKey;
-                    if (0 == name_buf[n])
-                        break;
+                    var dir = reader.Read (scheme);
+                    if (dir != null)
+                        return new ArcFile (file, this, dir);
                 }
-                string name = Binary.GetCString (name_buf, 0, name_buf.Length);
-                if (0 == name.Length)
-                    return null;
-                index_offset += scheme.NameLength;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Size   = file.View.ReadUInt32 (index_offset)   ^ scheme.SizeKey;
-                entry.Offset = file.View.ReadUInt32 (index_offset+4) ^ scheme.OffsetKey;
-                if (entry.Offset < index_size+4 || !entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-                index_offset += 8;
+                catch { /* ignore parse errors */ }
             }
-            return new ArcFile (file, this, dir);
+            return null;
+        }
+
+        internal class IndexReader
+        {
+            ArcView         m_file;
+            int             m_count;
+            List<Entry>     m_dir;
+            byte[]          m_name_buf = new byte[0x100];
+
+            public IndexReader (ArcView file, int count)
+            {
+                m_file = file;
+                m_count = count;
+                m_dir = new List<Entry> (m_count);
+            }
+
+            public List<Entry> Read (ArcIndexScheme scheme)
+            {
+                if (scheme.NameLength > m_name_buf.Length)
+                    m_name_buf = new byte[scheme.NameLength];
+                m_dir.Clear();
+                int  index_offset = 4;
+                uint index_size = (uint)(m_count * (scheme.NameLength + 8));
+                if (index_size > m_file.View.Reserve (index_offset, index_size))
+                    return null;
+                for (int i = 0; i < m_count; ++i)
+                {
+                    m_file.View.Read (index_offset, m_name_buf, 0, (uint)scheme.NameLength);
+                    for (int n = 0; n < m_name_buf.Length; ++n)
+                    {
+                        m_name_buf[n] ^= scheme.NameKey;
+                        if (0 == m_name_buf[n])
+                            break;
+                    }
+                    string name = Binary.GetCString (m_name_buf, 0, m_name_buf.Length);
+                    if (0 == name.Length)
+                        return null;
+                    index_offset += scheme.NameLength;
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Size   = m_file.View.ReadUInt32 (index_offset)   ^ scheme.SizeKey;
+                    entry.Offset = m_file.View.ReadUInt32 (index_offset+4) ^ scheme.OffsetKey;
+                    if (entry.Offset < index_size+4 || !entry.CheckPlacement (m_file.MaxOffset))
+                        return null;
+                    m_dir.Add (entry);
+                    index_offset += 8;
+                }
+                return m_dir;
+            }
         }
 
         /*
