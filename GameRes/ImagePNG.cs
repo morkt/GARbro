@@ -94,7 +94,7 @@ namespace GameRes
                     bin.Write (Binary.BigEndian ((uint)image.OffsetY));
                     bin.Write ((byte)0);
                     bin.Flush();
-                    uint crc = Crc32.Compute (membuf.GetBuffer(), 8, 9);
+                    uint crc = Crc32.Compute (membuf.GetBuffer(), 4, 13);
                     bin.Write (Binary.BigEndian (crc));
                 }
                 file.Write (membuf.GetBuffer(), 0, 9+12); // chunk + size+id+crc
