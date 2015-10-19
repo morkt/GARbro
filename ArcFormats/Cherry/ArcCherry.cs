@@ -36,7 +36,7 @@ namespace GameRes.Formats.Cherry
     public class PakOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PAK/CHERRY"; } }
-        public override string Description { get { return "Cherry Soft resource archive"; } }
+        public override string Description { get { return "Cherry Soft PACK resource archive"; } }
         public override uint     Signature { get { return 0x52454843; } } // 'CHER'
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
@@ -89,6 +89,24 @@ namespace GameRes.Formats.Cherry
                 index_offset += 0x18;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!arc.File.View.AsciiEqual (entry.Offset, "GsWIN SC File"))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var text_offset = 0x68 + arc.File.View.ReadUInt32 (entry.Offset+0x5C);
+            var text_size = arc.File.View.ReadUInt32 (entry.Offset+0x60);
+            if (0 == text_size || text_offset+text_size > entry.Size)
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            for (uint i = 0; i < text_size; ++i)
+            {
+                data[text_offset+i] ^= (byte)i;
+            }
+            return new MemoryStream (data);
         }
     }
 }
