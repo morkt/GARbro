@@ -1,8 +1,8 @@
 //! \file       ImageHG3.cs
 //! \date       Sat Jul 19 17:31:09 2014
-//! \brief      Frontwing HG3 image format implementation.
+//! \brief      CatSystem HG3 image format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -25,6 +25,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.ComponentModel.Composition;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
@@ -33,86 +34,59 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.CatSystem
 {
+    internal class Hg3MetaData : ImageMetaData
+    {
+        public uint CanvasWidth;
+        public uint CanvasHeight;
+        public uint HeaderSize;
+    }
+
     [Export(typeof(ImageFormat))]
     public class Hg3Format : ImageFormat
     {
-        public override string Tag { get { return "HG3"; } }
-        public override string Description { get { return "Frontwing proprietary image format"; } }
-        public override uint Signature { get { return 0x332d4748; } }
+        public override string         Tag { get { return "HG3"; } }
+        public override string Description { get { return "CatSystem engine image format"; } }
+        public override uint     Signature { get { return 0x332d4748; } } // 'HG-3'
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
             var header = new byte[0x4c];
             if (0x4c != stream.Read (header, 0, header.Length))
                 return null;
-            if (LittleEndian.ToUInt32 (header, 0) != Signature)
-                return null;
             if (LittleEndian.ToUInt32 (header, 4) != 0x0c)
                 return null;
             if (!Binary.AsciiEqual (header, 0x14, "stdinfo\0"))
                 return null;
-            if (0x38 != LittleEndian.ToUInt32 (header, 0x1c))
-                return null;
-            if (0x20 != LittleEndian.ToUInt32 (header, 0x2c))
-                return null;
-            uint width  = LittleEndian.ToUInt32 (header, 0x24); // @@L0
-            uint height = LittleEndian.ToUInt32 (header, 0x28);
-            int pos_x   = LittleEndian.ToInt32 (header, 0x30);
-            int pos_y   = LittleEndian.ToInt32 (header, 0x34);
-            pos_x      -= LittleEndian.ToInt32 (header, 0x44);
-            pos_y      -= LittleEndian.ToInt32 (header, 0x48);
-
-            return new ImageMetaData
+            return new Hg3MetaData
             {
-                Width = width,
-                Height = height,
-                OffsetX = pos_x,
-                OffsetY = pos_y,
-                BPP = 32,
+                HeaderSize = LittleEndian.ToUInt32 (header, 0x1C),
+                Width = LittleEndian.ToUInt32 (header, 0x24),
+                Height = LittleEndian.ToUInt32 (header, 0x28),
+                OffsetX = LittleEndian.ToInt32 (header, 0x30),
+                OffsetY = LittleEndian.ToInt32 (header, 0x34),
+                BPP = LittleEndian.ToInt32 (header, 0x2C),
+                CanvasWidth = LittleEndian.ToUInt32 (header, 0x44),
+                CanvasHeight = LittleEndian.ToUInt32 (header, 0x48),
             };
         }
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            stream.Position = 0x40;
-            bool flipped = 0 == (stream.ReadByte() & 1) || info.OffsetY < 0;
-            stream.Position = 0x4c;
-            var header = new byte[0x28];
-            if (0x28 != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, "img0000\0"))
-                return null;
-            uint data_size = LittleEndian.ToUInt32 (header, 0x0c);
-            if (data_size < 0x18)
-                return null;
-            if (info.Height != LittleEndian.ToUInt32 (header, 0x14))
-                return null;
-            uint packed2_size   = LittleEndian.ToUInt32 (header, 0x18);
-            uint unpacked2_size = LittleEndian.ToUInt32 (header, 0x1c);
-            uint packed1_size   = LittleEndian.ToUInt32 (header, 0x20);
-            uint unpacked1_size = LittleEndian.ToUInt32 (header, 0x24);
-            if (packed2_size + packed1_size < packed2_size)
-                return null;
-            if (unpacked2_size + unpacked1_size < unpacked2_size)
-                return null;
+            var meta = info as Hg3MetaData;
+            if (null == meta)
+                throw new ArgumentException ("Hg3Format.Read should be supplied with Hg3MetaData", "info");
+            if (0x20 != meta.BPP)
+                throw new NotSupportedException ("Not supported HG-3 color depth");
 
-            long data_pos = stream.Position;
-            using (var unpacked2 = ZLibCompressor.DeCompress (stream))
+            using (var input = new StreamRegion (stream, 0x14, true))
+            using (var reader = new Hg3Reader (input, meta))
             {
-                stream.Position = data_pos + packed2_size;
-                using (var unpacked1 = ZLibCompressor.DeCompress (stream))
-                {
-                    var decoder = new Decoder (unpacked1.GetBuffer(), unpacked1_size,
-                                               unpacked2.GetBuffer(), unpacked2_size,
-                                               info.Width, info.Height);
-                    decoder.Unpack();
-                    var pixels = decoder.Data;
-                    int stride = (int)info.Width * 4;
-                    if (flipped)
-                        return ImageData.CreateFlipped (info, PixelFormats.Bgra32, null, pixels, stride);
-                    else
-                        return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, stride);
-                }
+                var pixels = reader.Unpack();
+                int stride = (int)info.Width * info.BPP / 8;
+                if (reader.Flipped)
+                    return ImageData.CreateFlipped (info, PixelFormats.Bgra32, null, pixels, stride);
+                else
+                    return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, stride);
             }
         }
 
@@ -120,234 +94,223 @@ namespace GameRes.Formats.CatSystem
         {
             throw new NotImplementedException ("Hg3Format.Write not implemented");
         }
+    }
 
-        class Decoder
+    internal sealed class Hg3Reader : IDisposable
+    {
+        BinaryReader    m_input;
+        Hg3MetaData     m_info;
+        int             m_pixel_size;
+
+        public bool Flipped { get; private set; }
+
+        public Hg3Reader (Stream input, Hg3MetaData info)
         {
-            byte[] m_in1;
-            byte[] m_in2;
-            byte[] m_image;
-            uint m_in1_size;
-            uint m_in2_size;
-            uint m_dst_size;
-            uint m_width;
-            uint m_height;
+            m_input = new ArcView.Reader (input);
+            m_info = info;
+            m_pixel_size = m_info.BPP / 8;
+        }
 
-            public byte[] Data { get { return m_image; } }
+        public byte[] Unpack ()
+        {
+            m_input.BaseStream.Position = m_info.HeaderSize;
+            var img_type = m_input.ReadChars (8);
+            if (img_type.SequenceEqual ("img0000\0"))
+                return UnpackImg0000();
+            else if (img_type.SequenceEqual ("img_jpg\0"))
+                return UnpackJpeg();
+            else
+                throw new NotSupportedException ("Not supported HG-3 image");
+        }
 
-            public Decoder (byte[] in1, uint in1_size, byte[] in2, uint in2_size,
-                            uint width, uint height)
+        byte[] UnpackImg0000 ()
+        {
+            Flipped = true;
+            m_input.BaseStream.Position = m_info.HeaderSize+0x18;
+            uint packed_data_size = m_input.ReadUInt32();
+            int  data_size = m_input.ReadInt32();
+            uint packed_ctl_size = m_input.ReadUInt32();
+            int  ctl_size = m_input.ReadInt32();
+
+            uint data_offset = m_info.HeaderSize + 0x28;
+            uint ctl_offset = data_offset + packed_data_size;
+            var data = new byte[data_size];
+            using (var z = new StreamRegion (m_input.BaseStream, data_offset, packed_data_size, true))
+            using (var data_in = new ZLibStream (z, CompressionMode.Decompress))
+                if (data_size != data_in.Read (data, 0, data.Length))
+                    throw new EndOfStreamException();
+
+            using (var z = new StreamRegion (m_input.BaseStream, ctl_offset, packed_ctl_size, true))
+            using (var ctl_in = new ZLibStream (z, CompressionMode.Decompress))
+            using (var bits = new LsbBitStream (ctl_in))
             {
-                m_in1 = in1;
-                m_in1_size = in1_size;
-                m_in2 = in2;
-                m_in2_size = in2_size;
-                m_width = width;
-                m_height = height;
-                m_dst_size = width*height*4;
-                m_image = new byte[(int)m_dst_size];
-            }
-
-            uint esi;
-            uint edi;
-            uint eax;
-            uint ebx;
-            uint ecx;
-            uint edx;
-
-            uint L0, L1, L2, L3, L4;
-            uint m_plane;
-
-            public void Unpack ()
-            {
-                m_plane = 0;
-                edi = 0;
-                esi = 0;
-                ebx = 0;
-                eax = m_in1_size;
-                L0 = m_in2_size;
-                L1 = 0;
-                bool skip_first = GetNextBit();
-                Proc4();
-                ecx = m_dst_size;
-                if (eax > m_dst_size)
-                    throw new InvalidFormatException ("Underflow at Hg3Format.Decoder.Unpack()");
-                m_dst_size -= eax;
-                ecx >>= 2;
-                L2 = eax;
-                L3 = ecx;
-                L4 = ecx;
-                for (;;)
+                bool copy = bits.GetNextBit() != 0;
+                int output_size = GetBitCount (bits);
+                var output = new byte[output_size];
+                int src = 0;
+                int dst = 0;
+                while (dst < output_size)
                 {
-                    if (!skip_first)
+                    int count = GetBitCount (bits);
+                    if (copy)
                     {
-    // @@1:
-                        if (0 == L2)
-                            break;
-                        Proc4();
-                        ecx = eax;
-                        if (ecx > L2)
-                            throw new InvalidFormatException ("Overflow at Hg3Format.Decoder.Unpack()");
-                        L2 -= ecx;
-                        eax = 0;
-                        do
-                            Proc2();
-                        while (0 != --ecx);
+                        Buffer.BlockCopy (data, src, output, dst, count);
+                        src += count;
                     }
-    // @@1a:
-                    if (0 == L2)
-                        break;
-                    Proc4();
-                    ecx = eax;
-                    if (ecx > L2 || ecx > L0)
-                        throw new InvalidFormatException ("Overflow (2) at Hg3Format.Decoder.Unpack()");
-                    L2 -= ecx;
-                    L0 -= ecx;
-                    do
-                    {
-                        eax = m_in2[L1++];
-                        Proc2();
-                    }
-                    while (0 != --ecx);
-                    skip_first = false;
+                    dst += count;
+                    copy = !copy;
                 }
-    // @@7:
-                ecx = m_dst_size;
-                esi = 0;
-                if (0 != ecx)
-                {
-                    eax = 0;
-                    do
-                        Proc2();
-                    while (0 != --ecx);
-                }
-                Proc6 (m_width, m_height);
-    // @@9:
-                eax = 0;
-                edx = m_in1_size;
-            }
-
-            void Proc2 () // @@2
-            {
-                m_image[edi] = (byte)eax;
-                edi += 4;
-                if (0 == --L3)
-                {
-                    edi = ++m_plane;
-                    L3 = L4;
-                }
-            }
-
-            bool GetNextBit () // @@3
-            {
-                bool carry = 0 != (ebx & 1);
-                ebx >>= 1;
-                if (0 == ebx)
-                {
-                    if (0 == m_in1_size--)
-                        throw new InvalidFormatException ("Hg3Format.Decoder.Underflow at GetNextBit()");
-                    ebx = (uint)(m_in1[esi++] | 0x100);
-                    carry = 0 != (ebx & 1);
-                    ebx >>= 1;
-                }
-                return carry;
-            }
-
-            void Proc4 () // @@4
-            {
-                ecx = 0;
-                eax = 0;
-                do
-                {
-                    if (ecx >= 0x20)
-                        throw new InvalidFormatException ("Hg3Format.Decoder.Overflow at Proc4");
-                    ++ecx;
-                }
-                while (!GetNextBit());
-                ++eax;
-                while (0 != --ecx)
-                {
-                    eax += eax + (uint)(GetNextBit() ? 1 : 0);
-                }
-            }
-
-            void Proc6 (uint width, uint height)
-            {
-                uint[] table = new uint[0x100];
-                ecx = 0;
-                for (uint i = 0; i < 0x100; ++i)
-                {
-                    eax = 0xffffffff;
-                    edx = i;
-                    do
-                    {
-                        eax >>= 2;
-                        eax |= (edx & 3) << 30;
-                        eax >>= 6;
-                        edx >>= 2;
-                    }
-                    while (0 != (0x80 & eax));
-                    table[i] = eax;
-                }
-                ecx = width * height * 4;
-                for (uint i = 0; i < ecx; i += 4)
-                {
-                    eax = m_image[i];
-                    edx = table[eax];
-                    edx <<= 2;
-                    eax = m_image[i+1];
-                    edx += table[eax];
-                    edx <<= 2;
-                    eax = m_image[i+2];
-                    edx += table[eax];
-                    edx <<= 2;
-                    eax = m_image[i+3];
-                    edx += table[eax];
-                    m_image[i]   = (byte)(edx);
-                    m_image[i+1] = (byte)(edx >> 8);
-                    m_image[i+2] = (byte)(edx >> 16);
-                    m_image[i+3] = (byte)(edx >> 24);
-                }
-                edi = 0;
-                for (int i = 0; i < 4; ++i)
-                {
-                    eax = m_image[edi];
-                    edx = (uint)(0 == (eax & 1) ? 0 : 0xff);
-                    eax >>= 1;
-                    eax ^= edx;
-                    m_image[edi++] = (byte)eax;
-                }
-                ecx = width;
-                if (0 != --ecx)
-                {
-                    ecx <<= 2;
-                    do
-                    {
-                        eax = m_image[edi];
-                        edx = (uint)(0 == (eax & 1) ? 0 : 0xff);
-                        eax >>= 1;
-                        eax ^= edx;
-                        eax += m_image[edi-4];
-                        m_image[edi++] = (byte)eax;
-                    }
-                    while (0 != --ecx);
-                }
-                ecx = height;
-                if (0 != --ecx)
-                {
-                    uint stride = width*4;
-                    ecx *= stride;
-                    do
-                    {
-                        eax = m_image[edi];
-                        edx = (uint)(0 == (eax & 1) ? 0 : 0xff);
-                        eax >>= 1;
-                        eax ^= edx;
-                        eax += m_image[edi-stride];
-                        m_image[edi++] = (byte)eax;
-                    }
-                    while (0 != --ecx);
-                }
+                return ApplyDelta (output);
             }
         }
+
+        byte[] UnpackJpeg ()
+        {
+            Flipped = false;
+            m_input.ReadInt32();
+            var jpeg_size = m_input.ReadInt32();
+            long next_section = m_input.BaseStream.Position + jpeg_size;
+            var decoder = new JpegBitmapDecoder (m_input.BaseStream,
+                BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            var frame = decoder.Frames[0];
+            if (frame.Format.BitsPerPixel < 24)
+                throw new NotSupportedException ("Not supported HG-3 JPEG color depth");
+            int src_pixel_size = frame.Format.BitsPerPixel/8;
+            int stride = (int)m_info.Width * src_pixel_size;
+            var pixels = new byte[stride*(int)m_info.Height];
+            frame.CopyPixels (pixels, stride, 0);
+            var output = new byte[m_info.Width*m_info.Height*4];
+            uint total = m_info.Width * m_info.Height;
+            int src = 0;
+            int dst = 0;
+            for (uint i = 0; i < total; ++i)
+            {
+                output[dst++] = pixels[src];
+                output[dst++] = pixels[src+1];
+                output[dst++] = pixels[src+2];
+                output[dst++] = 0xFF;
+                src += src_pixel_size;
+            }
+
+            m_input.BaseStream.Position = next_section;
+            var section_header = m_input.ReadChars (8);
+            if (!section_header.SequenceEqual ("img_al\0\0"))
+                return output;
+            m_input.BaseStream.Seek (8, SeekOrigin.Current);
+            int alpha_size = m_input.ReadInt32();
+            using (var alpha_in = new StreamRegion (m_input.BaseStream, m_input.BaseStream.Position+4, alpha_size, true))
+            using (var alpha = new ZLibStream (alpha_in, CompressionMode.Decompress))
+            {
+                for (int i = 3; i < output.Length; i += 4)
+                {
+                    int b = alpha.ReadByte();
+                    if (-1 == b)
+                        throw new EndOfStreamException();
+                    output[i] = (byte)b;
+                }
+                return output;
+            }
+        }
+
+        static int GetBitCount (LsbBitStream bits)
+        {
+            int n = 0;
+            while (0 == bits.GetNextBit())
+            {
+                ++n;
+                if (n >= 0x20)
+                    throw new InvalidFormatException ("Overflow at Hg3Reader.GetBitCount");
+            }
+            int value = 1;
+            while (n --> 0)
+            {
+                value = (value << 1) | bits.GetNextBit();
+            }
+            return value;
+        }
+
+        byte[] ApplyDelta (byte[] pixels)
+        {
+            uint[] table1 = new uint[0x100];
+            uint[] table2 = new uint[0x100];
+            uint[] table3 = new uint[0x100];
+            uint[] table4 = new uint[0x100];
+
+            for (uint i = 0; i < 0x100; ++i)
+            {
+                uint val = i & 0xC0;
+
+                val <<= 6;
+                val |= i & 0x30;
+
+                val <<= 6;
+                val |= i & 0x0C;
+
+                val <<= 6;
+                val |= i & 0x03;
+
+                table4[i] = val;
+                table3[i] = val << 2;
+                table2[i] = val << 4;
+                table1[i] = val << 6;
+            }
+
+            int plane_size = pixels.Length / 4;
+            int plane1 = 0;
+            int plane2 = plane1 + plane_size;
+            int plane3 = plane2 + plane_size;
+            int plane4 = plane3 + plane_size;
+
+            byte[] output = new byte[pixels.Length];
+            int dst = 0;
+            while (dst < output.Length)
+            {
+                uint val = table1[pixels[plane1++]] | table2[pixels[plane2++]]
+                         | table3[pixels[plane3++]] | table4[pixels[plane4++]];
+
+                output[dst++] = ConvertValue ((byte)val);
+                output[dst++] = ConvertValue ((byte)(val >> 8));
+                output[dst++] = ConvertValue ((byte)(val >> 16));
+                output[dst++] = ConvertValue ((byte)(val >> 24));
+            }
+
+            int stride = (int)m_info.Width * m_pixel_size;
+
+            for (int x = m_pixel_size; x < stride; x++)
+            {
+                output[x] += output[x - m_pixel_size];
+            }
+
+            int line = stride;
+            for (uint y = 1; y < m_info.Height; y++)
+            {
+                int prev = line - stride;
+                for (int x = 0; x < stride; x++)
+                {
+                    output[line+x] += output[prev+x];
+                }
+                line += stride;
+            }
+            return output;
+        }
+
+        static byte ConvertValue (byte val)
+        {
+            bool carry = 0 != (val & 1);
+            val >>= 1;
+            return (byte)(carry ? val ^ 0xFF : val);
+        }
+
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_input.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
     }
 }
