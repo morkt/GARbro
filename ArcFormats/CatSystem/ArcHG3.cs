@@ -99,6 +99,8 @@ namespace GameRes.Formats.CatSystem
                 LittleEndian.Pack ((ushort)info.Width,  header, 0xc);
                 LittleEndian.Pack ((ushort)info.Height, header, 0xe);
                 header[0x10] = (byte)info.BPP;
+                if (!reader.Flipped)
+                    header[0x11] = 0x20;
                 return new PrefixStream (header, new MemoryStream (pixels));
             }
         }
