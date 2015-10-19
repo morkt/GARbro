@@ -29,46 +29,25 @@ using System.IO;
 
 namespace GameRes.Formats
 {
-    public class MsbBitStream : IDisposable
+    public class BitStream : IDisposable
     {
-        Stream      m_input;
-        bool        m_should_dispose;
+        protected Stream    m_input;
+        private   bool      m_should_dispose;
+
+        protected int       m_bits = 0;
+        protected int       m_cached_bits = 0;
 
         public Stream Input { get { return m_input; } }
 
-        public MsbBitStream (Stream file, bool leave_open = false)
+        protected BitStream (Stream file, bool leave_open)
         {
             m_input = file;
             m_should_dispose = !leave_open;
         }
 
-        int m_bits = 0;
-        int m_cached_bits = 0;
-
         public void Reset ()
         {
             m_cached_bits = 0;
-        }
-
-        public int GetNextBit ()
-        {
-            return GetBits (1);
-        }
-
-        public int GetBits (int count)
-        {
-            Debug.Assert (count <= 24, "MsbBitStream does not support sequences longer than 24 bits");
-            while (m_cached_bits < count)
-            {
-                int b = m_input.ReadByte();
-                if (-1 == b)
-                    return -1;
-                m_bits = (m_bits << 8) | b;
-                m_cached_bits += 8;
-            }
-            int mask = (1 << count) - 1;
-            m_cached_bits -= count;
-            return (m_bits >> m_cached_bits) & mask;
         }
 
         #region IDisposable Members
@@ -90,5 +69,65 @@ namespace GameRes.Formats
             }
         }
         #endregion
+    }
+
+    public class MsbBitStream : BitStream
+    {
+        public MsbBitStream (Stream file, bool leave_open = false)
+            : base (file, leave_open)
+        {
+        }
+
+        public int GetBits (int count)
+        {
+            Debug.Assert (count <= 24, "MsbBitStream does not support sequences longer than 24 bits");
+            while (m_cached_bits < count)
+            {
+                int b = m_input.ReadByte();
+                if (-1 == b)
+                    return -1;
+                m_bits = (m_bits << 8) | b;
+                m_cached_bits += 8;
+            }
+            int mask = (1 << count) - 1;
+            m_cached_bits -= count;
+            return (m_bits >> m_cached_bits) & mask;
+        }
+
+        public int GetNextBit ()
+        {
+            return GetBits (1);
+        }
+    }
+
+    public class LsbBitStream : BitStream
+    {
+        public LsbBitStream (Stream file, bool leave_open = false)
+            : base (file, leave_open)
+        {
+        }
+
+        public int GetBits (int count)
+        {
+            Debug.Assert (count <= 24, "LsbBitStream does not support sequences longer than 24 bits");
+            while (m_cached_bits < count)
+            {
+                int b = m_input.ReadByte();
+                if (-1 == b)
+                    return -1;
+                m_bits |= b << m_cached_bits;
+                m_cached_bits += 8;
+            }
+            int mask = (1 << count) - 1;
+            int value = m_bits & mask;
+            m_bits = (int)((uint)m_bits >> count);
+            m_cached_bits -= count;
+            return value;
+        }
+
+        public int GetNextBit ()
+        {
+            return GetBits (1);
+        }
     }
 }
