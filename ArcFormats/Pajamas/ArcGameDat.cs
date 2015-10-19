@@ -88,7 +88,9 @@ namespace GameRes.Formats.Pajamas
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var data = new byte[entry.Size];
             arc.File.View.Read (entry.Offset, data, 0, entry.Size);
-            if (!Binary.AsciiEqual (data, 0, "PJADV"))
+            // encrypted PJADV
+            if (0x95 == data[0] && 0x6B == data[1] && 0x3C == data[2]
+                && 0x9D == data[3] && 0x63 == data[4])
             {
                 byte key = 0xC5;
                 for (int i = 0; i < data.Length; ++i)
