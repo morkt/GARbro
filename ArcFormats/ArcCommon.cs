@@ -212,7 +212,8 @@ namespace GameRes.Formats
             m_should_dispose = !leave_open;
         }
 
-        public StreamRegion (Stream main, long offset) : this (main, offset, main.Length-offset)
+        public StreamRegion (Stream main, long offset, bool leave_open = false)
+            : this (main, offset, main.Length-offset, leave_open)
         {
         }
 
