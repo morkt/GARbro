@@ -152,6 +152,8 @@ namespace GameRes
 
         public static System.Tuple<ImageFormat, ImageMetaData> FindFormat (Stream file, string filename = null)
         {
+            if (file.Length < 4)
+                return null;
             uint signature = FormatCatalog.ReadSignature (file);
             Lazy<string> ext = null;
             if (!string.IsNullOrEmpty (filename))
