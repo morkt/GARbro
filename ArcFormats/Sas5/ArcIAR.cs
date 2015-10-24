@@ -29,6 +29,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Utility;
 using System.Text;
+using System.Diagnostics;
+using System.Windows;
 
 namespace GameRes.Formats.Sas5
 {
@@ -111,7 +113,10 @@ namespace GameRes.Formats.Sas5
 
         static Entry GetDefaultEntry (string base_name, int n)
         {
-            return new Entry { Name = string.Format ("{0}#{1:D5}", base_name, n) };
+            return new Entry {
+                Name = string.Format ("{0}#{1:D5}", base_name, n),
+                Type = "image",
+            };
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -119,15 +124,17 @@ namespace GameRes.Formats.Sas5
             var iarc = arc as IarArchive;
             if (null == iarc)
                 return base.OpenEntry (arc, entry);
-            int flags = arc.File.View.ReadUInt16 (entry.Offset);
-            if (0 != (flags & 0x1000))
-                return base.OpenEntry (arc, entry);
-
-            using (var image = new IarImage (iarc, entry))
+            try
             {
-                byte[] pixels = image.Data;
-                if (0 != (flags & 0x800))
-                    pixels = CombineImage (pixels, image.Info, iarc);
+                int flags = arc.File.View.ReadUInt16 (entry.Offset);
+
+                var image = new IarImage (iarc, entry);
+                if (0 != (flags & 0x1000))
+                    image = CombineLayers (image, iarc);
+                else if (0 != (flags & 0x800))
+                    image = CombineImage (image, iarc);
+                if (null == image)
+                    return base.OpenEntry (arc, entry);
 
                 // internal 'IAR SAS5' format
                 var header = new byte[0x28+image.Info.PaletteSize];
@@ -143,17 +150,22 @@ namespace GameRes.Formats.Sas5
                     writer.Write (image.Info.BPP);
                     writer.Write (image.Info.Stride);
                     writer.Write (image.Info.PaletteSize);
-                    writer.Write (pixels.Length);
+                    writer.Write (image.Data.Length);
                     if (null != image.Palette)
                         writer.Write (image.Palette, 0, image.Palette.Length);
-                    return new PrefixStream (header, new MemoryStream (pixels));
+                    return new PrefixStream (header, new MemoryStream (image.Data));
                 }
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine (X.Message, entry.Name);
+                return base.OpenEntry (arc, entry);
             }
         }
 
-        byte[] CombineImage (byte[] overlay, IarImageInfo info, IarArchive iarc)
+        IarImage CombineImage (IarImage overlay, IarArchive iarc)
         {
-            using (var mem = new MemoryStream (overlay))
+            using (var mem = new MemoryStream (overlay.Data))
             using (var input = new BinaryReader (mem))
             {
                 var dir = (List<Entry>)iarc.Dir;
@@ -162,47 +174,93 @@ namespace GameRes.Formats.Sas5
                     throw new InvalidFormatException ("Invalid base image index");
                 int diff_y      = input.ReadInt32();
                 int diff_count  = input.ReadInt32();
-                using (var base_image = new IarImage (iarc, dir[base_index]))
-                {
-                    int base_y = (int)base_image.Info.Height - (int)info.Height;
-                    byte[] output = base_image.Data;
-                    if (base_y != 0 || info.Stride != base_image.Info.Stride)
-                    {
-                        byte[] src = base_image.Data;
-                        int base_stride = Math.Min (info.Stride, base_image.Info.Stride);
-                        output = new byte[info.Height * info.Stride];
-                        for (int y = base_y; y < base_image.Info.Height; ++y)
-                        {
-                            Buffer.BlockCopy (src, y * base_image.Info.Stride,
-                                              output, (y - base_y) * info.Stride, base_stride);
-                        }
-                    }
-                    int pixel_size = info.BPP / 8;
-                    int dst = diff_y * info.Stride;
-                    for (int i = 0; i < diff_count; ++i)
-                    {
-                        int chunk_count = input.ReadUInt16();
-                        int x = 0;
-                        for (int j = 0; j < chunk_count; ++j)
-                        {
-                            int skip_count = pixel_size * input.ReadUInt16();
-                            int copy_count = pixel_size * input.ReadUInt16();
 
-                            x += skip_count;
-                            input.Read (output, dst+x, copy_count);
-                            x += copy_count;
-                        }
-                        dst += info.Stride;
+                var overlay_info = overlay.Info;
+                var base_image = new IarImage (iarc, dir[base_index]);
+                int base_y = (int)base_image.Info.Height - (int)overlay_info.Height;
+                byte[] output = base_image.Data;
+                if (base_y != 0 || overlay_info.Stride != base_image.Info.Stride)
+                {
+                    byte[] src = base_image.Data;
+                    int base_stride = Math.Min (overlay_info.Stride, base_image.Info.Stride);
+                    output = new byte[overlay_info.Height * overlay_info.Stride];
+                    for (int y = base_y; y < base_image.Info.Height; ++y)
+                    {
+                        Buffer.BlockCopy (src, y * base_image.Info.Stride,
+                                          output, (y - base_y) * overlay_info.Stride, base_stride);
                     }
-                    return output;
                 }
+                int pixel_size = overlay_info.BPP / 8;
+                int dst = diff_y * overlay_info.Stride;
+                for (int i = 0; i < diff_count; ++i)
+                {
+                    int chunk_count = input.ReadUInt16();
+                    int x = 0;
+                    for (int j = 0; j < chunk_count; ++j)
+                    {
+                        int skip_count = pixel_size * input.ReadUInt16();
+                        int copy_count = pixel_size * input.ReadUInt16();
+
+                        x += skip_count;
+                        input.Read (output, dst+x, copy_count);
+                        x += copy_count;
+                    }
+                    dst += overlay_info.Stride;
+                }
+                return new IarImage (overlay_info, output, overlay.Palette);
+            }
+        }
+
+        IarImage CombineLayers (IarImage layers, IarArchive iarc)
+        {
+            using (var mem = new MemoryStream (layers.Data))
+            using (var input = new BinaryReader (mem))
+            {
+                int offset_x = 0, offset_y = 0;
+                IarImage output = null;
+                var dir = (List<Entry>)iarc.Dir;
+                while (input.BaseStream.Position < input.BaseStream.Length)
+                {
+                    int cmd = input.ReadByte();
+                    switch (cmd)
+                    {
+                    case 0x21:
+                        offset_x += input.ReadInt16();
+                        offset_y += input.ReadInt16();
+                        break;
+
+                    case 0x00:
+                        {
+                            int index = input.ReadInt32();
+                            if (index >= dir.Count)
+                                throw new InvalidFormatException ("Invalid image layer index");
+                            var layer = new IarImage (iarc, dir[index]);
+                            layer.Info.OffsetX -= offset_x;
+                            layer.Info.OffsetY -= offset_y;
+                            if (null == output)
+                            {
+                                output = layer;
+                            }
+                            else
+                            {
+                                output.Blend (layer);
+                            }
+                        }
+                        break;
+
+                    case 0x20:
+                    default:
+                        Trace.WriteLine (string.Format ("Unknown layer type 0x%02X", cmd), "IAR");
+                        break;
+                    }
+                }
+                return output;
             }
         }
     }
 
-    internal sealed class IarImage : IDisposable
+    internal class IarImage
     {
-        BinaryReader    m_input;
         IarImageInfo    m_info;
         byte[]          m_palette;
         byte[]          m_output;
@@ -248,24 +306,99 @@ namespace GameRes.Formats.Sas5
                 offset += m_info.PaletteSize;
                 input_size -= m_info.PaletteSize;
             }
-            var input = iarc.File.CreateStream (offset, input_size);
-            m_input = new BinaryReader (input);
             m_output = new byte[m_info.UnpackedSize];
-            if (!m_info.Compressed)
-                m_input.Read (m_output, 0, m_output.Length);
-            else
-                Unpack();
+            using (var input = iarc.File.CreateStream (offset, input_size))
+            {
+                if (m_info.Compressed)
+                {
+                    using (var reader = new IarDecompressor (input))
+                        reader.Unpack (m_output);
+                }
+                else
+                    input.Read (m_output, 0, m_output.Length);
+            }
         }
 
-        void Unpack ()
+        public IarImage (IarImageInfo info, byte[] pixels, byte[] palette = null)
+        {
+            m_info = info;
+            m_output = pixels;
+            m_palette = palette;
+        }
+
+        public void Blend (IarImage overlay)
+        {
+            Rect self = new Rect (-Info.OffsetX, -Info.OffsetY, Info.Width, Info.Height);
+            Rect src = new Rect (-overlay.Info.OffsetX, -overlay.Info.OffsetY,
+                                 overlay.Info.Width, overlay.Info.Height);
+            var blend = Rect.Intersect (self, src);
+            if (blend.IsEmpty)
+                return;
+            src.X = blend.Left - src.Left;
+            src.Y = blend.Top - src.Top;
+            src.Width = blend.Width;
+            src.Height= blend.Height;
+            int x = (int)(blend.Left - self.Left);
+            int y = (int)(blend.Top - self.Top);
+            int w = (int)src.Width;
+            int h = (int)src.Height;
+            if (w <= 0 || h <= 0)
+                return;
+
+            int pixel_size = Info.Stride / (int)Info.Width;
+            int dst = y * Info.Stride + x * pixel_size;
+            int ov = (int)src.Top * overlay.Info.Stride + (int)src.Left * pixel_size;
+            for (int row = 0; row < h; ++row)
+            {
+                for (int col = 0; col < w; ++col)
+                {
+                    int src_pixel = ov + col*pixel_size;
+                    if (pixel_size > 3 && overlay.Data[src_pixel+3] > 0)
+                    {
+                        int src_alpha = overlay.Data[src_pixel+3];
+                        int dst_pixel = dst + col*pixel_size;
+                        if (0xFF == src_alpha || 0 == m_output[dst_pixel+3])
+                        {
+                            Buffer.BlockCopy (overlay.Data, src_pixel, m_output, dst_pixel, pixel_size);
+                        }
+                        else
+                        {
+                            m_output[dst_pixel+0] = (byte)((overlay.Data[src_pixel+0] * src_alpha
+                                                     + m_output[dst_pixel+0] * (0xFF - src_alpha)) / 0xFF);
+                            m_output[dst_pixel+1] = (byte)((overlay.Data[src_pixel+1] * src_alpha
+                                                     + m_output[dst_pixel+1] * (0xFF - src_alpha)) / 0xFF);
+                            m_output[dst_pixel+2] = (byte)((overlay.Data[src_pixel+2] * src_alpha
+                                                     + m_output[dst_pixel+2] * (0xFF - src_alpha)) / 0xFF);
+                            m_output[dst_pixel+3] = (byte)Math.Max (src_alpha, m_output[dst_pixel+3]);
+                        }
+                    }
+                }
+                dst += Info.Stride;
+                ov  += overlay.Info.Stride;
+            }
+        }
+    }
+
+    internal sealed class IarDecompressor : IDisposable
+    {
+        BinaryReader    m_input;
+
+        public IarDecompressor (Stream input)
+        {
+            m_input = new ArcView.Reader (input);
+        }
+
+        int m_bits = 1;
+
+        public void Unpack (byte[] output)
         {
             m_bits = 1;
             int dst = 0;
-            while (dst < m_output.Length)
+            while (dst < output.Length)
             {
                 if (1 == GetNextBit())
                 {
-                    m_output[dst++] = m_input.ReadByte();
+                    output[dst++] = m_input.ReadByte();
                     continue;
                 }
                 int offset, count;
@@ -331,12 +464,10 @@ namespace GameRes.Formats.Sas5
                             break;
                     }
                 }
-                Binary.CopyOverlapped (m_output, dst - offset, dst, count);
+                Binary.CopyOverlapped (output, dst - offset, dst, count);
                 dst += count;
             }
         }
-
-        int m_bits = 1;
 
         int GetNextBit ()
         {
