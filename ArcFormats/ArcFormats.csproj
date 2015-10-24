@@ -70,6 +70,10 @@
     <Compile Include="Debonosu\ArcPAK.cs" />
     <Compile Include="elf\ImageG24.cs" />
     <Compile Include="elf\ImageGP8.cs" />
+    <Compile Include="Sas5\ArcIAR.cs" />
+    <Compile Include="Sas5\ArcSec5.cs" />
+    <Compile Include="Sas5\ArcWAR.cs" />
+    <Compile Include="Sas5\ImageIAR.cs" />
     <Compile Include="Silky\ImageMSK.cs" />
     <Compile Include="Emic\ArcPACK.cs" />
     <Compile Include="Emic\ImageMWP.cs" />
