@@ -34,7 +34,6 @@ namespace GameRes.Formats.Bishop
 {
     internal class BsgMetaData : ImageMetaData
     {
-        public int  BaseOffset;
         public int  UnpackedSize;
         public int  ColorMode;
         public int  CompressionMode;
