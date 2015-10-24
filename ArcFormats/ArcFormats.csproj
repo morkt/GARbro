@@ -64,6 +64,9 @@
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
+    <Compile Include="Bishop\ArcBSA.cs" />
+    <Compile Include="Bishop\ArcBSC.cs" />
+    <Compile Include="Bishop\ImageBSG.cs" />
     <Compile Include="BitStream.cs" />
     <Compile Include="CatSystem\ArcHG3.cs" />
     <Compile Include="Cherry\ArcMyk.cs" />
