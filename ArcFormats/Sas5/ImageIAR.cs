@@ -76,8 +76,8 @@ namespace GameRes.Formats.Sas5
             {
                 Width   = LittleEndian.ToUInt32 (header, 0x08),
                 Height  = LittleEndian.ToUInt32 (header, 0x0C),
-                OffsetX = LittleEndian.ToInt32 (header, 0x10),
-                OffsetY = LittleEndian.ToInt32 (header, 0x14),
+                OffsetX = -LittleEndian.ToInt32 (header, 0x10),
+                OffsetY = -LittleEndian.ToInt32 (header, 0x14),
                 BPP     = LittleEndian.ToInt32 (header, 0x18),
                 Stride  = LittleEndian.ToInt32 (header, 0x1C),
                 PaletteSize = LittleEndian.ToInt32 (header, 0x20),
