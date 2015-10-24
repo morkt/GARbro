@@ -129,6 +129,11 @@ namespace GameRes.Formats.Sas5
                         using (var resr = sec5.CreateStream (offset, section_size))
                             return ReadResrSection (resr);
                     }
+                    if ("RES2" == id)
+                    {
+                        using (var res2 = sec5.CreateStream (offset, section_size))
+                            return ReadRes2Section (res2);
+                    }
                     offset += section_size;
                 }
             }
@@ -169,5 +174,141 @@ namespace GameRes.Formats.Sas5
                 return map.Count > 0 ? map : null;
             }
         }
+
+        static internal Dictionary<string, Dictionary<int, Entry>> ReadRes2Section (Stream input)
+        {
+            using (var resr = new Res2Reader (input))
+                return resr.Read();
+        }
+    }
+
+    internal sealed class Res2Reader : IDisposable
+    {
+        BinaryReader                m_resr;
+        byte[]                      m_strings;
+        Dictionary<int, string>     m_string_cache = new Dictionary<int, string>();
+
+        public Res2Reader (Stream input)
+        {
+            m_resr = new BinaryReader (input, Encodings.cp932, true);
+        }
+
+        public Dictionary<string, Dictionary<int, Entry>> Read ()
+        {
+            int section_size = m_resr.ReadInt32();
+            m_strings = m_resr.ReadBytes (section_size);
+            if (m_strings.Length != section_size)
+                return null;
+            var map = new Dictionary<string, Dictionary<int, Entry>> (StringComparer.InvariantCultureIgnoreCase);
+            int count = m_resr.ReadInt32();
+            for (int i = 0; i < count; ++i)
+            {
+                string name = ReadString();
+                string type = ReadString();
+                string arc_type = ReadString();
+                int param_count = ReadInteger();
+                string arc_name = null;
+                int? arc_index = null;
+                for (int j = 0; j < param_count; ++j)
+                {
+                    string param_name = ReadString();
+                    if ("path" == param_name)
+                        arc_name = ReadString();
+                    else if ("arc-index" == param_name)
+                        arc_index = ReadInteger();
+                    else
+                        SkipObject();
+                }
+                if (!string.IsNullOrEmpty (arc_name) && arc_index != null)
+                {
+                    arc_name = Path.GetFileName (arc_name);
+                    if (!map.ContainsKey (arc_name))
+                        map[arc_name] = new Dictionary<int, Entry>();
+                    var entry = new Entry
+                    {
+                        Name = name,
+                        Type = type,
+                    };
+                    map[arc_name][arc_index.Value] = entry;
+                }
+            }
+            return map.Count > 0 ? map : null;
+        }
+
+        string ReadString ()
+        {
+            int n = m_resr.ReadByte();
+            if (0x90 != (n & 0xF8))
+                throw new InvalidFormatException ("[ReadString] SEC5 deserialization error");
+
+            int offset = ReadNumber (n);
+            if (offset >= m_strings.Length)
+                throw new InvalidFormatException ("[ReadString] SEC5 deserialization error");
+            string s;
+            if (!m_string_cache.TryGetValue (offset, out s))
+            {
+                int str_length = LittleEndian.ToInt32 (m_strings, offset);
+                s = Encodings.cp932.GetString (m_strings, offset+4, str_length);
+                m_string_cache[offset] = s;
+            }
+            return s;
+        }
+
+        int ReadInteger ()
+        {
+            int n = m_resr.ReadByte();
+            if (0 != (n & 0xE0))
+            {
+                if (0x80 != (n & 0xF8))
+                    throw new InvalidFormatException ("[ReadInteger] SEC5 deserialization error");
+                n = ReadNumber (n);
+            }
+            else
+            {
+                n = (n & 0xF) - (n & 0x10);
+            }
+            return n;
+        }
+
+        void SkipObject ()
+        {
+            int n = m_resr.ReadByte();
+            if (0 != (n & 0xE0))
+                ReadNumber (n);
+        }
+
+        int ReadNumber (int length_code)
+        {
+            int count = (length_code & 7) + 1;
+            if (count > 4)
+                throw new InvalidFormatException ("[ReadNumber] SEC5 deserialization error");
+            int n = 0;
+            int rank = 0;
+            for (int i = 0; i < count; ++i)
+            {
+                int b = m_resr.ReadByte();
+                n |= b << rank;
+                rank += 8;
+            }
+            if (count <= 3)
+            {
+                int sign = n & (1 << (8 * count - 1));
+                if (sign != 0)
+                    n -= sign << 1;
+            }
+            return n;
+        }
+
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_resr.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
     }
 }
