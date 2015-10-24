@@ -83,6 +83,8 @@ namespace GameRes.Formats.Bishop
         {
             m_file.View.Reserve (index_offset, (uint)(m_file.MaxOffset - index_offset));
             m_dir.Capacity = count;
+            m_dir.Clear();
+            m_path.Clear();
             for (int i = 0; i < count; ++i)
             {
                 string name = m_file.View.ReadString (index_offset, 0x20);
@@ -117,6 +119,8 @@ namespace GameRes.Formats.Bishop
         {
             m_file.View.Reserve (index_offset, (uint)(m_file.MaxOffset - index_offset));
             m_dir.Capacity = count;
+            m_dir.Clear();
+            m_path.Clear();
             uint filenames_offset = index_offset + (uint)(count * 12);
             byte[] names_buf = new byte[m_file.MaxOffset - filenames_offset];
             m_file.View.Read (filenames_offset, names_buf, 0, (uint)names_buf.Length);
