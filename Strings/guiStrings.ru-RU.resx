@@ -436,7 +436,7 @@
     <value>Пропускать файлы, не поддавшиеся конверсии.</value>
   </data>
   <data name="MsgNoMediaFiles" xml:space="preserve">
-    <value>Среди выбранных файлов нет мультиемедиа.</value>
+    <value>Среди выбранных файлов нет мультимедиа.</value>
   </data>
   <data name="TextAudioConversion" xml:space="preserve">
     <value>Аудио-файлы будут преобразованы в WAV, MP3 или OGG.</value>
