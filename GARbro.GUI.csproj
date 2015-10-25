@@ -227,6 +227,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Strings\guiStrings.ko-KR.resx" />
     <EmbeddedResource Include="Strings\guiStrings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>guiStrings.Designer.cs</LastGenOutput>
