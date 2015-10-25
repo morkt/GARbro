@@ -30,7 +30,7 @@ using System.IO;
 using GameRes.Utility;
 using System.Text;
 using System.Diagnostics;
-using System.Windows;
+using System.Drawing;
 
 namespace GameRes.Formats.Sas5
 {
@@ -328,29 +328,27 @@ namespace GameRes.Formats.Sas5
 
         public void Blend (IarImage overlay)
         {
-            Rect self = new Rect (-Info.OffsetX, -Info.OffsetY, Info.Width, Info.Height);
-            Rect src = new Rect (-overlay.Info.OffsetX, -overlay.Info.OffsetY,
-                                 overlay.Info.Width, overlay.Info.Height);
-            var blend = Rect.Intersect (self, src);
+            var self = new Rectangle (-Info.OffsetX, -Info.OffsetY, (int)Info.Width, (int)Info.Height);
+            var src = new Rectangle (-overlay.Info.OffsetX, -overlay.Info.OffsetY,
+                                     (int)overlay.Info.Width, (int)overlay.Info.Height);
+            var blend = Rectangle.Intersect (self, src);
             if (blend.IsEmpty)
                 return;
             src.X = blend.Left - src.Left;
             src.Y = blend.Top - src.Top;
             src.Width = blend.Width;
             src.Height= blend.Height;
-            int x = (int)(blend.Left - self.Left);
-            int y = (int)(blend.Top - self.Top);
-            int w = (int)src.Width;
-            int h = (int)src.Height;
-            if (w <= 0 || h <= 0)
+            int x = blend.Left - self.Left;
+            int y = blend.Top - self.Top;
+            if (src.Width <= 0 || src.Height <= 0)
                 return;
 
             int pixel_size = Info.Stride / (int)Info.Width;
             int dst = y * Info.Stride + x * pixel_size;
-            int ov = (int)src.Top * overlay.Info.Stride + (int)src.Left * pixel_size;
-            for (int row = 0; row < h; ++row)
+            int ov = src.Top * overlay.Info.Stride + src.Left * pixel_size;
+            for (int row = 0; row < src.Height; ++row)
             {
-                for (int col = 0; col < w; ++col)
+                for (int col = 0; col < src.Width; ++col)
                 {
                     int src_pixel = ov + col*pixel_size;
                     if (pixel_size > 3 && overlay.Data[src_pixel+3] > 0)
