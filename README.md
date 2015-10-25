@@ -30,6 +30,9 @@ GUI Hotkeys
 <tr><td><kbd>Ctrl</kbd>+<kbd>Q</kbd></td><td>       Exit</td></tr>
 </table>
 
-Written by [morkt](https://github.com/morkt/GARbro)
+Author
+------
+
+Written by [morkt](https://github.com/morkt/GARbro) under [MIT License](https://github.com/morkt/GARbro/blob/master/LICENSE).
 
 Korean translation by [mireado](https://github.com/mireado)
