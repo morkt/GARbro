@@ -37,9 +37,7 @@ namespace GameRes.Formats.??????
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as xxxMetaData;
-            if (null == meta)
-                throw new ArgumentException ("xxxFormat.Read should be supplied with xxxMetaData", "info");
+            var meta = (xxxMetaData)info;
 
             return ImageData.Create (info, format, palette, pixels);
         }
