@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="ButtonExtract" xml:space="preserve">
+    <value>추출</value>
+  </data>
+  <data name="ButtonOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="CtxMenuClose" xml:space="preserve">
+    <value>_닫기</value>
+  </data>
+  <data name="CtxMenuCopy" xml:space="preserve">
+    <value>복사</value>
+  </data>
+  <data name="CtxMenuCreate" xml:space="preserve">
+    <value>아카이브 생성...</value>
+  </data>
+  <data name="CtxMenuCut" xml:space="preserve">
+    <value>잘라내기</value>
+  </data>
+  <data name="CtxMenuDelete" xml:space="preserve">
+    <value>_삭제</value>
+  </data>
+  <data name="CtxMenuExplorer" xml:space="preserve">
+    <value>탐색기에서 열기</value>
+  </data>
+  <data name="CtxMenuExtract" xml:space="preserve">
+    <value>추출</value>
+  </data>
+  <data name="CtxMenuOpen" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="CtxMenuPaste" xml:space="preserve">
+    <value>붙여넣기</value>
+  </data>
+  <data name="CtxMenuRefresh" xml:space="preserve">
+    <value>새로고침</value>
+  </data>
+  <data name="CtxMenuRename" xml:space="preserve">
+    <value>_이름 바꾸기</value>
+  </data>
+  <data name="CtxMenuSortBy" xml:space="preserve">
+    <value>분류</value>
+  </data>
+  <data name="CtxMenuSortByName" xml:space="preserve">
+    <value>이름</value>
+  </data>
+  <data name="CtxMenuSortBySize" xml:space="preserve">
+    <value>크기</value>
+  </data>
+  <data name="CtxMenuSortByType" xml:space="preserve">
+    <value>형식</value>
+  </data>
+  <data name="CtxMenuUnsorted" xml:space="preserve">
+    <value>분류되지 않음</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>이름</value>
+  </data>
+  <data name="HeaderSize" xml:space="preserve">
+    <value>크기</value>
+  </data>
+  <data name="HeaderType" xml:space="preserve">
+    <value>형식</value>
+  </data>
+  <data name="LabelArchiveFormat" xml:space="preserve">
+    <value>아카이브 포맷</value>
+  </data>
+  <data name="LabelArchiveName" xml:space="preserve">
+    <value>아카이브 이름</value>
+  </data>
+  <data name="LabelArchiveOptions" xml:space="preserve">
+    <value>아카이브 옵션</value>
+  </data>
+  <data name="LabelExtractAllTo" xml:space="preserve">
+    <value>{0}에서 다음으로 파일추출</value>
+  </data>
+  <data name="LabelExtractFileTo" xml:space="preserve">
+    <value>다음으로 {0}을 추출</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>게임 리소스 탐색기에 대해서</value>
+  </data>
+  <data name="MsgDeletedItem" xml:space="preserve">
+    <value>{0} 제거됨</value>
+  </data>
+  <data name="MsgDirectoryNotFound" xml:space="preserve">
+    <value>폴더를 찾을 수 없음</value>
+  </data>
+  <data name="MsgEmptyArchive" xml:space="preserve">
+    <value>아카이브가 비어있음</value>
+  </data>
+  <data name="MsgErrorExtracting" xml:space="preserve">
+    <value>파일 추출 오류</value>
+  </data>
+  <data name="MsgErrorOpening" xml:space="preserve">
+    <value>파일 열기 오류</value>
+  </data>
+  <data name="MsgExtractComplete" xml:space="preserve">
+    <value>{1}로 {0}을 추출함</value>
+  </data>
+  <data name="MsgExtractedFiles1" xml:space="preserve">
+    <value>{0} 파일 추출됨</value>
+  </data>
+  <data name="MsgExtractingArchive" xml:space="preserve">
+    <value>{0}에서 파일 추출하기</value>
+  </data>
+  <data name="MsgExtractingFile" xml:space="preserve">
+    <value>{0}에서 파일 추출하기</value>
+  </data>
+  <data name="MsgExtractingTo" xml:space="preserve">
+    <value>{0}에서 {1}로 파일 추출하기</value>
+  </data>
+  <data name="MsgImageSize" xml:space="preserve">
+    <value>이미지 {0} x {1} x {2}bpp</value>
+  </data>
+  <data name="MsgNoFiles" xml:space="preserve">
+    <value>추출할 파일이 없음</value>
+  </data>
+  <data name="MsgReady" xml:space="preserve">
+    <value>준비</value>
+  </data>
+  <data name="MsgUnableInterpretImage" xml:space="preserve">
+    <value>이미지 포맷을 해석할 수 없음</value>
+  </data>
+  <data name="MsgVersion" xml:space="preserve">
+    <value>버전 {0}</value>
+  </data>
+  <data name="TextAboutBuiltin" xml:space="preserve">
+    <value>[내장]</value>
+  </data>
+  <data name="TextAboutArchives" xml:space="preserve">
+    <value>아카이브</value>
+  </data>
+  <data name="TextAboutImages" xml:space="preserve">
+    <value>이미지</value>
+  </data>
+  <data name="TextAboutTitle" xml:space="preserve">
+    <value>게임 리소스 탐색기에 대해서</value>
+  </data>
+  <data name="TextAllFiles" xml:space="preserve">
+    <value>모든 파일</value>
+  </data>
+  <data name="TextAsIs" xml:space="preserve">
+    <value>원본으로</value>
+  </data>
+  <data name="TextChooseArchive" xml:space="preserve">
+    <value>아카이브 위치 선택</value>
+  </data>
+  <data name="TextChooseDestDir" xml:space="preserve">
+    <value>도착 폴더 선택</value>
+  </data>
+  <data name="TextCreateArchive" xml:space="preserve">
+    <value>아카이브 생성</value>
+  </data>
+  <data name="TextCreateArchiveError" xml:space="preserve">
+    <value>아카이브 생성 오류</value>
+  </data>
+  <data name="Type_directory" xml:space="preserve">
+    <value>&lt;폴더&gt;</value>
+  </data>
+  <data name="TextEncoding" xml:space="preserve">
+    <value>텍스트 인코딩</value>
+  </data>
+  <data name="TextExtractImages" xml:space="preserve">
+    <value>이미지 추출</value>
+  </data>
+  <data name="TextExtractText" xml:space="preserve">
+    <value>텍스트 추출</value>
+  </data>
+  <data name="TextExtractTitle" xml:space="preserve">
+    <value>아카이브에서 추출</value>
+  </data>
+  <data name="TextParametersTitle" xml:space="preserve">
+    <value>아카이브 파라미터</value>
+  </data>
+  <data name="TextSaveAs" xml:space="preserve">
+    <value>다른이름으로 저장</value>
+  </data>
+  <data name="TextSaveImagesAs" xml:space="preserve">
+    <value>이미지를 다른이름으로 저장</value>
+  </data>
+  <data name="TextTitle" xml:space="preserve">
+    <value>게임 리소스 탐색기</value>
+  </data>
+  <data name="TooltipBack" xml:space="preserve">
+    <value>뒤로</value>
+  </data>
+  <data name="TooltipForward" xml:space="preserve">
+    <value>앞으로</value>
+  </data>
+  <data name="MsgOverwrite" xml:space="preserve">
+    <value>파일 {0}이
+이미 존재합니다.
+덮어쓰시겠습니까?</value>
+  </data>
+  <data name="TextConfirmOverwrite" xml:space="preserve">
+    <value>덮어쓰기 확인</value>
+  </data>
+  <data name="MsgCreatingArchive" xml:space="preserve">
+    <value>아카이브 {0} 생성</value>
+  </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>열기...</value>
+  </data>
+  <data name="MenuRecent" xml:space="preserve">
+    <value>최근파일</value>
+  </data>
+  <data name="MsgChooseFiles" xml:space="preserve">
+    <value>추출할 파일 선택</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>_종료</value>
+  </data>
+  <data name="MenuFile" xml:space="preserve">
+    <value>_파일</value>
+  </data>
+  <data name="MenuHelp" xml:space="preserve">
+    <value>_도움말</value>
+  </data>
+  <data name="MsgExtractedFiles2" xml:space="preserve">
+    <value>{0} 파일 추출됨</value>
+  </data>
+  <data name="MsgFiles1" xml:space="preserve">
+    <value>{0} 파일</value>
+  </data>
+  <data name="MsgFiles2" xml:space="preserve">
+    <value>{0} 파일</value>
+  </data>
+  <data name="MsgConfirmDeleteFiles" xml:space="preserve">
+    <value>정말 이 파일(들)을 지우시겠습니까?</value>
+  </data>
+  <data name="TextDeleteFiles" xml:space="preserve">
+    <value>파일 제거</value>
+  </data>
+  <data name="MsgDeletedItems1" xml:space="preserve">
+    <value>{0} 파일 제거</value>
+  </data>
+  <data name="MsgDeletedItems2" xml:space="preserve">
+    <value>{0} 파일 제거</value>
+  </data>
+  <data name="MenuFitWindow" xml:space="preserve">
+    <value>이미지를 미리보기 창에 채우기</value>
+  </data>
+  <data name="MenuToggleMenuBar" xml:space="preserve">
+    <value>_메뉴모음 표시/감추기</value>
+  </data>
+  <data name="MenuToggleStatusBar" xml:space="preserve">
+    <value>_상태표시줄 표시/감추기</value>
+  </data>
+  <data name="MenuToggleToolBar" xml:space="preserve">
+    <value>_도구모음 표시/감추기</value>
+  </data>
+  <data name="MenuView" xml:space="preserve">
+    <value>_보기</value>
+  </data>
+  <data name="CtxMenuConvert" xml:space="preserve">
+    <value>멀티미디어 변환...</value>
+  </data>
+  <data name="ButtonConvert" xml:space="preserve">
+    <value>변환</value>
+  </data>
+  <data name="LabelDestinationFormat" xml:space="preserve">
+    <value>이미지 도착포맷 선택</value>
+  </data>
+  <data name="TextConvertMedia" xml:space="preserve">
+    <value>미디어 변환</value>
+  </data>
+  <data name="MsgConvertingFile" xml:space="preserve">
+    <value>파일 변환</value>
+  </data>
+  <data name="TextMediaConvertError" xml:space="preserve">
+    <value>멀티미디어 변환 오류</value>
+  </data>
+  <data name="LabelEncoding" xml:space="preserve">
+    <value>인코딩</value>
+  </data>
+  <data name="TextConvertAudio" xml:space="preserve">
+    <value>보편적 포맷으로 오디오 변환</value>
+  </data>
+  <data name="TextExtractAudio" xml:space="preserve">
+    <value>오디오 추출</value>
+  </data>
+  <data name="TooltipAudioFormats" xml:space="preserve">
+    <value>WAV, MP3, OGG</value>
+  </data>
+  <data name="TextAboutAudio" xml:space="preserve">
+    <value>오디오</value>
+  </data>
+  <data name="TextAboutLicense" xml:space="preserve">
+    <value>라이센스</value>
+  </data>
+  <data name="MsgUnableInterpretAudio" xml:space="preserve">
+    <value>오디오 포맷을 해석할 수 없음</value>
+  </data>
+  <data name="MsgNoMediaFiles" xml:space="preserve">
+    <value>선택된 미디어 파일 없음.</value>
+  </data>
+  <data name="TextAudioConversion" xml:space="preserve">
+    <value>오디오는 WAV, MP3, OGG로 변환됩니다.</value>
+  </data>
+  <data name="LabelSkipFailures" xml:space="preserve">
+    <value>변환할 수 없는 파일 넘어가기.</value>
+  </data>
+  <data name="MsgNoMatching" xml:space="preserve">
+    <value>"{0}"에 일치하는 항목이 없음</value>
+  </data>
+  <data name="MsgSelectedFiles1" xml:space="preserve">
+    <value>{0} 파일이 선택에 추가됨</value>
+  </data>
+  <data name="MsgSelectedFiles2" xml:space="preserve">
+    <value>{0} 파일이 선택에 추가됨</value>
+  </data>
+  <data name="LabelEnterMask" xml:space="preserve">
+    <value>임의문자 입력</value>
+  </data>
+  <data name="TextSelectFiles" xml:space="preserve">
+    <value>파일 선택</value>
+  </data>
+  <data name="TextErrorExtracting" xml:space="preserve">
+    <value>파일을 추출하는 중 오류 발생
+{0}
+{1}</value>
+  </data>
+  <data name="CtxMenuFileType" xml:space="preserve">
+    <value>파일 형식 부여</value>
+  </data>
+  <data name="Type_NONE" xml:space="preserve">
+    <value>없음</value>
+  </data>
+</root>
