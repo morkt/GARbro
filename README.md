@@ -3,6 +3,8 @@ GARbro
 
 Visual Novels resource browser.
 
+Requires .NET Framework v4.5 or newer (https://www.microsoft.com/net)
+
 [Supported formats](http://htmlpreview.github.io/?https://github.com/morkt/GARbro/blob/master/supported.html)
 
 [Download latest release](https://github.com/morkt/GARbro/releases)
@@ -11,7 +13,7 @@ GUI Hotkeys
 -----------
 
 <table>
-<tr><td><kbd>Enter</kbd></td><td>                   Try to open selected file as archive</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>                   Try to open selected file as archive -OR- playback audio file</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>       Open current folder in Windows Explorer</td></tr>
 <tr><td><kbd>Backspace</kbd></td><td>               Go back</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>&rarr;</kbd></td><td>   Go forward</td></tr>
