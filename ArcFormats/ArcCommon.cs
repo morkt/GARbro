@@ -405,6 +405,30 @@ namespace GameRes.Formats
         }
     }
 
+    public static class MMX
+    {
+        public static ulong PAddW (ulong x, ulong y)
+        {
+            ulong mask = 0xffff;
+            ulong r = ((x & mask) + (y & mask)) & mask;
+            mask <<= 16;
+            r |= ((x & mask) + (y & mask)) & mask;
+            mask <<= 16;
+            r |= ((x & mask) + (y & mask)) & mask;
+            mask <<= 16;
+            r |= ((x & mask) + (y & mask)) & mask;
+            return r;
+        }
+
+        public static ulong PAddD (ulong x, ulong y)
+        {
+            ulong mask = 0xffffffff;
+            ulong r = ((x & mask) + (y & mask)) & mask;
+            mask <<= 32;
+            return r | ((x & mask) + (y & mask)) & mask;
+        }
+    }
+
     public static class Dump
     {
         public static string DirectoryName = Environment.GetFolderPath (Environment.SpecialFolder.UserProfile);

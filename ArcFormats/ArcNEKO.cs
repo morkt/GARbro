@@ -201,25 +201,12 @@ namespace GameRes.Formats.Neko
                     while (first != last)
                     {
                         ulong v = *first ^ key;
-                        key = _m_paddw (key, v);
+                        key = MMX.PAddW (key, v);
                         *first++ = v;
                     }
                     return key;
                 }
             }
-        }
-
-        static ulong _m_paddw (ulong x, ulong y)
-        {
-            ulong mask = 0xffff;
-            ulong r = ((x & mask) + (y & mask)) & mask;
-            mask <<= 16;
-            r |= ((x & mask) + (y & mask)) & mask;
-            mask <<= 16;
-            r |= ((x & mask) + (y & mask)) & mask;
-            mask <<= 16;
-            r |= ((x & mask) + (y & mask)) & mask;
-            return r;
         }
 
         static byte[] ReadBlock (ArcView.Frame view, uint id, long offset, out int length)
