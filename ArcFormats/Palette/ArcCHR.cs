@@ -28,8 +28,11 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using GameRes.Utility;
 using System.Text;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Palette
 {
@@ -37,6 +40,11 @@ namespace GameRes.Formats.Palette
     {
         public int  OffsetX;
         public int  OffsetY;
+    }
+
+    internal class VirtualCharEntry : Entry
+    {
+        public CharEntry    Source;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -88,6 +96,12 @@ namespace GameRes.Formats.Palette
                         //Height = file.View.ReadUInt16 (index_offset+6),
                     };
                     dir.Add (entry);
+                    var virt_entry = new VirtualCharEntry {
+                        Name = string.Format ("{0}#blend#{1}.png", base_name, name),
+                        Type = "image",
+                        Source = entry,
+                    };
+                    dir.Add (virt_entry);
                 }
                 index_offset += size;
             }
@@ -96,6 +110,8 @@ namespace GameRes.Formats.Palette
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
+            if (entry is VirtualCharEntry)
+                return BlendEntry (arc, entry as VirtualCharEntry);
             int extra_length = PgaFormat.PngHeader.Length + PgaFormat.PngFooter.Length;
             var png = new MemoryStream ((int)entry.Size + extra_length + 17);
             var cent = entry as CharEntry;
@@ -130,6 +146,38 @@ namespace GameRes.Formats.Palette
             png.Write (PgaFormat.PngFooter, 0, PgaFormat.PngFooter.Length);
             png.Position = 0;
             return png;
+        }
+
+        Stream BlendEntry (ArcFile arc, VirtualCharEntry entry)
+        {
+            using (var base_png = OpenEntry (arc, arc.Dir.First()))
+            using (var overlay_png = OpenEntry (arc, entry.Source))
+            {
+                var decoder = new PngBitmapDecoder (base_png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                var base_frame = decoder.Frames[0];
+                var overlay_png = OpenEntry (arc, entry.Source);
+                decoder = new PngBitmapDecoder (overlay_png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                var overlay_frame = decoder.Frames[0];
+                int overlay_x = entry.Source.OffsetX;
+                int overlay_y = entry.Source.OffsetY;
+                var visual = new DrawingVisual();
+                using (var context = visual.RenderOpen())
+                {
+                    context.DrawImage (base_frame, new Rect (0, 0, base_frame.PixelWidth, base_frame.PixelHeight));
+                    context.DrawImage (overlay_frame, new Rect (overlay_x, overlay_y, overlay_frame.PixelWidth, overlay_frame.PixelHeight));
+                }
+                var bmp = new RenderTargetBitmap (base_frame.PixelWidth, base_frame.PixelHeight,
+                                                  base_frame.DpiX, base_frame.DpiY, PixelFormats.Pbgra32);
+                bmp.Render (visual);
+
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add (BitmapFrame.Create (bmp));
+
+                var mem = new MemoryStream();
+                encoder.Save (mem);
+                mem.Position = 0;
+                return mem;
+            }
         }
     }
 }
