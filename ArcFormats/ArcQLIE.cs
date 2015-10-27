@@ -62,16 +62,25 @@ namespace GameRes.Formats.Qlie
                 || !file.View.AsciiEqual (index_offset+0xC, ".0"))
                 return null;
             int pack_version = file.View.ReadByte (index_offset+0xB) - '0';
-            if (pack_version != 2)
+            if (pack_version < 1 || pack_version > 3)
                 throw new NotSupportedException ("Not supported QLIE archive version");
             int count = file.View.ReadInt32 (index_offset+0x10);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             index_offset = file.View.ReadInt64 (index_offset+0x14);
             if (index_offset < 0 || index_offset >= file.MaxOffset)
                 return null;
 
-            int pack_key = 0xC4;
+            uint pack_key;
+            if (3 == pack_version)
+            {
+                var key_data = new byte[0x100];
+                file.View.Read (file.MaxOffset-0x41C, key_data, 0, 0x100);
+                pack_key = GenerateKey (key_data) & 0x0FFFFFFFu;
+            }
+            else
+                pack_key = 0xC4;
+
             var name_buffer = new byte[0x100];
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
@@ -82,7 +91,7 @@ namespace GameRes.Formats.Qlie
                 if (name_length != file.View.Read (index_offset+2, name_buffer, 0, (uint)name_length))
                     return null;
 
-                int key = name_length + (pack_key ^ 0x3e);
+                int key = name_length + ((int)pack_key ^ 0x3e);
                 for (int k = 0; k < name_length; ++k)
                     name_buffer[k] ^= (byte)(((k + 1) ^ key) + k + 1);
 
@@ -99,7 +108,7 @@ namespace GameRes.Formats.Qlie
                 entry.IsEncrypted = 0 != file.View.ReadInt32 (index_offset+0x14);
                 entry.Hash = file.View.ReadUInt32 (index_offset+0x18);
                 if (3 == pack_version)
-                    entry.Key = (uint)pack_key;
+                    entry.Key = pack_key;
                 else
                     entry.Key = 0;
                 dir.Add (entry);
@@ -135,28 +144,19 @@ namespace GameRes.Formats.Qlie
             if (length > buffer.Length || offset > buffer.Length - length)
                 throw new ArgumentOutOfRangeException ("length");
 
-            var table = new uint[2,2];
-            var xor   = new uint[2];
-
-            for (int i = 0; i < 2; ++i)
-            {
-                table[0,i] = 0xA73C5F9Du;
-                table[1,i] = 0xCE24F523u;
-                xor[i] = ((uint)length + key) ^ 0xFEC9753Eu;
-            }
+            ulong hash = 0xA73C5F9DA73C5F9Dul;
+            ulong xor = ((uint)length + key) ^ 0xFEC9753Eu;
+            xor |= xor << 32;
             unsafe
             {
                 fixed (byte* raw = buffer)
                 {
-                    uint* encoded = (uint*)(raw + offset);
+                    ulong* encoded = (ulong*)(raw + offset);
                     for (int i = 0; i < length / 8; ++i)
                     {
-                        for (int k = 0; k < 2; ++k)
-                        {
-                            table[0,k] = (table[0,k] + table[1,k]) ^ xor[k];
-                            *encoded ^= table[0,k];
-                            xor[k] = *encoded++;
-                        }
+                        hash = MMX.PAddD (hash, 0xCE24F523CE24F523ul) ^ xor;
+                        xor = *encoded ^ hash;
+                        *encoded++ = xor;
                     }
                 }
             }
@@ -245,6 +245,25 @@ namespace GameRes.Formats.Qlie
                 return null;
 
             return output;
+        }
+
+        uint GenerateKey (byte[] key_data)
+        {
+            ulong hash = 0;
+            ulong key  = 0;
+            unsafe
+            {
+                fixed (byte* data = key_data)
+                {
+                    ulong* data64 = (ulong*)data;
+                    for (int i = key_data.Length / 8; i > 0; --i)
+                    {
+                        hash = MMX.PAddW (hash, 0x0307030703070307);
+                        key  = MMX.PAddW (key, *data64++ ^ hash);
+                    }
+                }
+            }
+            return (uint)(key ^ (key >> 32));
         }
     }
 }
