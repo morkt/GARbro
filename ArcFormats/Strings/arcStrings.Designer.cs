@@ -188,7 +188,7 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to FrontWing game resource archive.
+        ///   Looks up a localized string similar to CatSystem2 engine resource archive.
         /// </summary>
         public static string INTDescription {
             get {
@@ -480,7 +480,7 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ONScripter game engine resource archive.
+        ///   Looks up a localized string similar to NScripter game engine resource archive.
         /// </summary>
         public static string NSADescription {
             get {

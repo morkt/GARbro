@@ -152,7 +152,7 @@
     <value>암호화된 아카이브 생성이 구현되지 않았습니다.</value>
   </data>
   <data name="INTDescription" xml:space="preserve">
-    <value>FrontWing 게임 리소스 아카이브</value>
+    <value>CatSystem2 게임 리소스 아카이브</value>
   </data>
   <data name="INTKeyRequirement" xml:space="preserve">
     <value>숫자 값은 32-bit 16진법 정수여야합니다</value>
@@ -233,7 +233,7 @@
     <value>Nitro+ Steins;Gate 리소스 아카이브</value>
   </data>
   <data name="NSADescription" xml:space="preserve">
-    <value>ONScripter 게임 엔진 리소스 아카이브</value>
+    <value>NScripter 게임 엔진 리소스 아카이브</value>
   </data>
   <data name="ONSArchiveType" xml:space="preserve">
     <value>아카이브 형식</value>

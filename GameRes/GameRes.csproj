@@ -82,6 +82,7 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Strings\garStrings.ko-KR.resx" />
     <EmbeddedResource Include="Strings\garStrings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>garStrings.Designer.cs</LastGenOutput>

@@ -458,6 +458,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Strings\arcStrings.ko-KR.resx" />
     <EmbeddedResource Include="Strings\arcStrings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>arcStrings.Designer.cs</LastGenOutput>

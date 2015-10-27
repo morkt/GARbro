@@ -152,7 +152,7 @@ Choose appropriate encryption scheme.</value>
     <value>Encrypted archives creation is not implemented.</value>
   </data>
   <data name="INTDescription" xml:space="preserve">
-    <value>FrontWing game resource archive</value>
+    <value>CatSystem2 engine resource archive</value>
   </data>
   <data name="INTKeyRequirement" xml:space="preserve">
     <value>Numeric key should be a 32-bit hexadecimal integer</value>
@@ -233,7 +233,7 @@ predefined encryption scheme.</value>
     <value>Nitro+ Steins;Gate resource archive</value>
   </data>
   <data name="NSADescription" xml:space="preserve">
-    <value>ONScripter game engine resource archive</value>
+    <value>NScripter game engine resource archive</value>
   </data>
   <data name="ONSArchiveType" xml:space="preserve">
     <value>Archive type</value>
