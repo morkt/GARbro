@@ -155,7 +155,6 @@ namespace GameRes.Formats.Palette
             {
                 var decoder = new PngBitmapDecoder (base_png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 var base_frame = decoder.Frames[0];
-                var overlay_png = OpenEntry (arc, entry.Source);
                 decoder = new PngBitmapDecoder (overlay_png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 var overlay_frame = decoder.Frames[0];
                 int overlay_x = entry.Source.OffsetX;
