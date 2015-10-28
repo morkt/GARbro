@@ -130,9 +130,9 @@ namespace GameRes.Formats.Qlie
                 Decrypt (data, 0, data.Length, qent.Key);
             if (qent.IsPacked)
             {
-                data = Decompress (data);
-                if (null == data) // probably wrong decryption
-                    return arc.File.CreateStream (entry.Offset, entry.Size);
+                var unpacked = Decompress (data);
+                if (null != unpacked)
+                    data = unpacked;
             }
             return new MemoryStream (data);
         }
@@ -162,7 +162,7 @@ namespace GameRes.Formats.Qlie
             }
         }
 
-        private byte[] Decompress (byte[] input)
+        internal static byte[] Decompress (byte[] input)
         {
             if (LittleEndian.ToUInt32 (input, 0) != 0xFF435031)
                 return null;

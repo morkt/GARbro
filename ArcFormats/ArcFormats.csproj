@@ -79,6 +79,7 @@
     <Compile Include="Palette\ArcCHR.cs" />
     <Compile Include="Palette\ArcPAK.cs" />
     <Compile Include="Palette\ImagePGA.cs" />
+    <Compile Include="Qlie\ArcABMP.cs" />
     <Compile Include="Sas5\ArcIAR.cs" />
     <Compile Include="Sas5\ArcSec5.cs" />
     <Compile Include="Sas5\ArcWAR.cs" />
@@ -163,7 +164,7 @@
     <Compile Include="TopCat\ArcTCD3.cs" />
     <Compile Include="TopCat\ImageSPD.cs" />
     <Compile Include="UMeSoft\ArcPK.cs" />
-    <Compile Include="ArcQLIE.cs" />
+    <Compile Include="Qlie\ArcQLIE.cs" />
     <Compile Include="RenPy\ArcRPA.cs" />
     <Compile Include="ShiinaRio\ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
