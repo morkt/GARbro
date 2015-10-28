@@ -746,11 +746,13 @@ namespace GARbro.GUI
 
         private void OpenFile (string filename)
         {
-            if (filename == CurrentPath)
+            if (filename == CurrentPath || string.IsNullOrEmpty (filename))
                 return;
             try
             {
-                PushViewModel (GetNewViewModel (filename));
+                VFS.FullPath = new string[] { filename, "" };
+                var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
+                PushViewModel (vm);
                 if (null != VFS.CurrentArchive)
                     SetStatusText (VFS.CurrentArchive.Description);
                 lv_SelectItem (0);
