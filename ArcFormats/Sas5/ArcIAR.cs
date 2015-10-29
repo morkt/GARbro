@@ -213,11 +213,14 @@ namespace GameRes.Formats.Sas5
 
         IarImage CombineLayers (IarImage layers, IarArchive iarc)
         {
+            layers.Info.Stride = (int)layers.Info.Width * 4;
+            layers.Info.BPP = 32;
+            var pixels = new byte[layers.Info.Stride * (int)layers.Info.Height];
+            var output = new IarImage (layers.Info, pixels);
             using (var mem = new MemoryStream (layers.Data))
             using (var input = new BinaryReader (mem))
             {
                 int offset_x = 0, offset_y = 0;
-                IarImage output = null;
                 var dir = (List<Entry>)iarc.Dir;
                 while (input.BaseStream.Position < input.BaseStream.Length)
                 {
@@ -230,27 +233,23 @@ namespace GameRes.Formats.Sas5
                         break;
 
                     case 0x00:
+                    case 0x20:
                         {
                             int index = input.ReadInt32();
-                            if (index >= dir.Count)
+                            if (index < 0 || index >= dir.Count)
                                 throw new InvalidFormatException ("Invalid image layer index");
                             var layer = new IarImage (iarc, dir[index]);
                             layer.Info.OffsetX -= offset_x;
                             layer.Info.OffsetY -= offset_y;
-                            if (null == output)
-                            {
-                                output = layer;
-                            }
+                            if (0x20 == cmd)
+                                output.ApplyMask (layer);
                             else
-                            {
                                 output.Blend (layer);
-                            }
                         }
                         break;
 
-                    case 0x20:
                     default:
-                        Trace.WriteLine (string.Format ("Unknown layer type 0x%02X", cmd), "IAR");
+                        Trace.WriteLine (string.Format ("Unknown layer type 0x{0:X2}", cmd), "IAR");
                         break;
                     }
                 }
@@ -328,6 +327,9 @@ namespace GameRes.Formats.Sas5
 
         public void Blend (IarImage overlay)
         {
+            int pixel_size = Info.Stride / (int)Info.Width;
+            if (pixel_size < 4)
+                return;
             var self = new Rectangle (-Info.OffsetX, -Info.OffsetY, (int)Info.Width, (int)Info.Height);
             var src = new Rectangle (-overlay.Info.OffsetX, -overlay.Info.OffsetY,
                                      (int)overlay.Info.Width, (int)overlay.Info.Height);
@@ -338,12 +340,11 @@ namespace GameRes.Formats.Sas5
             src.Y = blend.Top - src.Top;
             src.Width = blend.Width;
             src.Height= blend.Height;
-            int x = blend.Left - self.Left;
-            int y = blend.Top - self.Top;
             if (src.Width <= 0 || src.Height <= 0)
                 return;
 
-            int pixel_size = Info.Stride / (int)Info.Width;
+            int x = blend.Left - self.Left;
+            int y = blend.Top - self.Top;
             int dst = y * Info.Stride + x * pixel_size;
             int ov = src.Top * overlay.Info.Stride + src.Left * pixel_size;
             for (int row = 0; row < src.Height; ++row)
@@ -351,9 +352,9 @@ namespace GameRes.Formats.Sas5
                 for (int col = 0; col < src.Width; ++col)
                 {
                     int src_pixel = ov + col*pixel_size;
-                    if (pixel_size > 3 && overlay.Data[src_pixel+3] > 0)
+                    int src_alpha = overlay.Data[src_pixel+3];
+                    if (src_alpha > 0)
                     {
-                        int src_alpha = overlay.Data[src_pixel+3];
                         int dst_pixel = dst + col*pixel_size;
                         if (0xFF == src_alpha || 0 == m_output[dst_pixel+3])
                         {
@@ -373,6 +374,41 @@ namespace GameRes.Formats.Sas5
                 }
                 dst += Info.Stride;
                 ov  += overlay.Info.Stride;
+            }
+        }
+
+        public void ApplyMask (IarImage mask)
+        {
+            int pixel_size = Info.Stride / (int)Info.Width;
+            if (pixel_size < 4 || mask.Info.BPP != 8)
+                return;
+            var self = new Rectangle (-Info.OffsetX, -Info.OffsetY, (int)Info.Width, (int)Info.Height);
+            var mask_region = new Rectangle (-mask.Info.OffsetX, -mask.Info.OffsetY,
+                                             (int)mask.Info.Width, (int)mask.Info.Height);
+            var masked = Rectangle.Intersect (self, mask_region);
+            if (masked.IsEmpty)
+                return;
+            mask_region.X = masked.Left - mask_region.Left;
+            mask_region.Y = masked.Top - mask_region.Top;
+            mask_region.Width = masked.Width;
+            mask_region.Height= masked.Height;
+            if (mask_region.Width <= 0 || mask_region.Height <= 0)
+                return;
+
+            int x = masked.Left - self.Left;
+            int y = masked.Top - self.Top;
+            int dst = y * Info.Stride + x * pixel_size;
+            int src = mask_region.Top * mask.Info.Stride + mask_region.Left;
+            for (int row = 0; row < mask_region.Height; ++row)
+            {
+                int dst_pixel = dst+3;
+                for (int col = 0; col < mask_region.Width; ++col)
+                {
+                    m_output[dst_pixel] = mask.Data[src+col];
+                    dst_pixel += pixel_size;
+                }
+                dst += Info.Stride;
+                src += mask.Info.Stride;
             }
         }
     }
