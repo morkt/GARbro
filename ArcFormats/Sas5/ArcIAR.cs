@@ -177,17 +177,22 @@ namespace GameRes.Formats.Sas5
 
                 var overlay_info = overlay.Info;
                 var base_image = new IarImage (iarc, dir[base_index]);
-                int base_y = (int)base_image.Info.Height - (int)overlay_info.Height;
                 byte[] output = base_image.Data;
-                if (base_y != 0 || overlay_info.Stride != base_image.Info.Stride)
+                if (overlay_info.Height != base_image.Info.Height || overlay_info.Stride != base_image.Info.Stride)
                 {
+                    int src_y = 0;
+                    int dst_pos = 0;
+                    if (base_image.Info.Height > overlay_info.Height)
+                        src_y = (int)(base_image.Info.Height - overlay_info.Height);
+                    else if (base_image.Info.Height < overlay_info.Height)
+                        dst_pos = (int)(overlay_info.Height - base_image.Info.Height) * overlay_info.Stride;
                     byte[] src = base_image.Data;
                     int base_stride = Math.Min (overlay_info.Stride, base_image.Info.Stride);
                     output = new byte[overlay_info.Height * overlay_info.Stride];
-                    for (int y = base_y; y < base_image.Info.Height; ++y)
+                    for (int y = src_y; y < base_image.Info.Height; ++y)
                     {
-                        Buffer.BlockCopy (src, y * base_image.Info.Stride,
-                                          output, (y - base_y) * overlay_info.Stride, base_stride);
+                        Buffer.BlockCopy (src, y * base_image.Info.Stride, output, dst_pos, base_stride);
+                        dst_pos += overlay_info.Stride;
                     }
                 }
                 int pixel_size = overlay_info.BPP / 8;
