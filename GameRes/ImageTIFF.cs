@@ -32,12 +32,7 @@ using GameRes.Utility;
 
 namespace GameRes
 {
-#if DEBUG
-    // FIXME
-    // .Net TIFF encoder messes up transparency,
-    // therefore this class is disabled in release build
     [Export(typeof(ImageFormat))]
-#endif
     public class TifFormat : ImageFormat
     {
         public override string Tag { get { return "TIFF"; } }
