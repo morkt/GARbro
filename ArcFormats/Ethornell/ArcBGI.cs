@@ -121,8 +121,8 @@ namespace GameRes.Formats.BGI
             for (uint i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x60);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x60);
+                var offset = base_offset + file.View.ReadUInt32 (index_offset+0x60);
+                var entry = AutoEntry.Create (file, offset, name);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x64);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
