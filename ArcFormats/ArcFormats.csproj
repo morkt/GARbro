@@ -74,8 +74,10 @@
     <Compile Include="Debonosu\ArcPAK.cs" />
     <Compile Include="elf\ImageG24.cs" />
     <Compile Include="elf\ImageGP8.cs" />
+    <Compile Include="ExHibit\ImageGYU.cs" />
     <Compile Include="Gpk2\ArcGPK2.cs" />
     <Compile Include="Gpk2\ImageGFB.cs" />
+    <Compile Include="MersenneTwister.cs" />
     <Compile Include="Palette\ArcCHR.cs" />
     <Compile Include="Palette\ArcPAK.cs" />
     <Compile Include="Palette\ImagePGA.cs" />
