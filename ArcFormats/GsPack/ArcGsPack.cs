@@ -62,7 +62,7 @@ namespace GameRes.Formats.Gs
                 return null;
             uint crypt_key = file.View.ReadUInt32 (0x38);
             long data_offset = file.View.ReadUInt32 (0x40);
-            uint index_offset = file.View.ReadUInt32 (0x44);
+            int index_offset = file.View.ReadInt32 (0x44);
             int entry_size = version_major < 5 ? 0x48 : 0x68;
             int unpacked_size = count * entry_size;
             byte[] packed_index = new byte[index_size];
@@ -80,15 +80,15 @@ namespace GameRes.Formats.Gs
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
                 {
-                    string name = Binary.GetCString (index, (int)index_offset, 0x40);
+                    string name = Binary.GetCString (index, index_offset, 0x40);
                     if (0 != name.Length)
                     {
-                        long offset = data_offset + LittleEndian.ToUInt32 (index, (int)index_offset+0x40);
+                        long offset = data_offset + LittleEndian.ToUInt32 (index, index_offset+0x40);
                         var entry = AutoEntry.Create (file, offset, name);
-                        entry.Size = LittleEndian.ToUInt32 (index, (int)index_offset+0x44);
+                        entry.Size = LittleEndian.ToUInt32 (index, index_offset+0x44);
                         dir.Add (entry);
                     }
-                    index_offset += (uint)entry_size;
+                    index_offset += entry_size;
                 }
                 return new ArcFile (file, this, dir);
             }
