@@ -202,11 +202,8 @@ namespace GameRes.Formats.ExHibit
                         offset = -1 << 8 | mem.ReadByte();
                     }
 
-                    for (int i = 0; i <= count; ++i)
-                    {
-                        m_output[dst] = m_output[dst+offset];
-                        ++dst;
-                    }      
+                    Binary.CopyOverlapped (m_output, dst+offset, dst, ++count);
+                    dst += count;
                 }
             }
         }
