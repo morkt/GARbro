@@ -82,7 +82,8 @@ namespace GameRes.Formats.Lilim
 
             uint width = file.View.ReadUInt32 (0x12);
             uint height = file.View.ReadUInt32 (0x16);
-            uint bitmap_data_size = width*height*3;
+            int pixel_size = 2 == type ? 4 : 3;
+            uint bitmap_data_size = width*height*(uint)pixel_size;
 
             var dir = new List<Entry> (count);
             long next_offset = file.View.ReadUInt32 (0x42);
@@ -111,7 +112,6 @@ namespace GameRes.Formats.Lilim
                 entry.UnpackedSize = 0x12 + bitmap_data_size;
                 dir.Add (entry);
             }
-            int pixel_size = file.View.ReadUInt16 (0x38);
             var image_info = new AbmImageData
             {
                 Width = (uint)width,
