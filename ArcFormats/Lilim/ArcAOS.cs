@@ -57,9 +57,9 @@ namespace GameRes.Formats.Lilim
             if (!name_buf.SequenceEqual (IndexLink) && !name_buf.SequenceEqual (IndexEnd))
                 return null;
 
-            uint current_offset = 0;
+            long current_offset = 0;
             var dir = new List<Entry> (0x3E);
-            for (;;)
+            while (current_offset < file.MaxOffset)
             {
                 if (0x10 != file.View.Read (current_offset, name_buf, 0, 0x10))
                     break;
@@ -67,8 +67,6 @@ namespace GameRes.Formats.Lilim
                 {
                     uint next_offset = file.View.ReadUInt32 (current_offset+0x10);
                     current_offset += 0x20 + next_offset;
-                    if (current_offset >= file.MaxOffset)
-                        break;
                 }
                 else
                 {
@@ -104,6 +102,53 @@ namespace GameRes.Formats.Lilim
             var decoder = new HuffmanDecoder (packed, unpacked);
             decoder.Unpack();
             return new MemoryStream (unpacked);
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Aos2Opener : AosOpener
+    {
+        public override string         Tag { get { return "AOSv2"; } }
+        public override string Description { get { return "LiLiM resource archive version 2"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public Aos2Opener ()
+        {
+            Extensions = new string[] { "aos" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (0 != file.View.ReadInt32 (0))
+                return null;
+
+            long base_offset = file.View.ReadUInt32 (4);
+            uint index_offset = 0x111;
+            int index_size = file.View.ReadInt32 (8);
+            if (base_offset >= file.MaxOffset || index_offset+index_size >= file.MaxOffset
+                || base_offset < index_offset+index_size)
+                return null;
+            int count = index_size / 0x28;
+            if (!IsSaneCount (count))
+                return null;
+
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                var name = file.View.ReadString (index_offset, 0x20);
+                if (0 == name.Length)
+                    return null;
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x20);
+                entry.Size   = file.View.ReadUInt32 (index_offset+0x24);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 0x28;
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 }
