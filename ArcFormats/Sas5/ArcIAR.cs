@@ -180,18 +180,14 @@ namespace GameRes.Formats.Sas5
                 byte[] output = base_image.Data;
                 if (overlay_info.Height != base_image.Info.Height || overlay_info.Stride != base_image.Info.Stride)
                 {
-                    int src_y = 0;
-                    int dst_pos = 0;
-                    if (base_image.Info.Height > overlay_info.Height)
-                        src_y = (int)(base_image.Info.Height - overlay_info.Height);
-                    else if (base_image.Info.Height < overlay_info.Height)
-                        dst_pos = (int)(overlay_info.Height - base_image.Info.Height) * overlay_info.Stride;
+                    int src_height = (int)Math.Min (overlay_info.Height, base_image.Info.Height);
+                    int src_stride = Math.Min (overlay_info.Stride, base_image.Info.Stride);
                     byte[] src = base_image.Data;
-                    int base_stride = Math.Min (overlay_info.Stride, base_image.Info.Stride);
                     output = new byte[overlay_info.Height * overlay_info.Stride];
-                    for (int y = src_y; y < base_image.Info.Height; ++y)
+                    int dst_pos = 0;
+                    for (int y = 0; y < src_height; ++y)
                     {
-                        Buffer.BlockCopy (src, y * base_image.Info.Stride, output, dst_pos, base_stride);
+                        Buffer.BlockCopy (src, y * base_image.Info.Stride, output, dst_pos, src_stride);
                         dst_pos += overlay_info.Stride;
                     }
                 }
