@@ -105,11 +105,15 @@ namespace GameRes
         public override string Description { get { return "Wave audio format"; } }
         public override uint     Signature { get { return 0x46464952; } } // 'RIFF'
 
+        static readonly HashSet<ushort> EmbeddedFormats = new HashSet<ushort> {
+            0x674f, 0x6751, 0x6771, // Vorbis
+            0x0055, // MpegLayer3
+        };
+
         public override SoundInput TryOpen (Stream file)
         {
             SoundInput sound = new WaveInput (file);
-            if (0x674f == sound.Format.FormatTag || 0x6771 == sound.Format.FormatTag // Vorbis
-                || 0x0055 == sound.Format.FormatTag) // MpegLayer3
+            if (EmbeddedFormats.Contains (sound.Format.FormatTag))
             {
                 try
                 {
