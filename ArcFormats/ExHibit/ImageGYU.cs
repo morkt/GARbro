@@ -161,7 +161,7 @@ namespace GameRes.Formats.ExHibit
 
         void UnpackGyu (byte[] packed)
         {
-            using (var mem = new MemoryStream (packed))
+            using (var mem = new MemoryStream (packed, 4, packed.Length-4))
             using (var bits = new MsbBitStream (mem))
             {
                 int dst = 0;
@@ -185,7 +185,7 @@ namespace GameRes.Formats.ExHibit
                         offset = -1 << 13 | count >> 3;
                         count &= 7;
 
-                        if (0 == count)
+                        if (0 != count)
                         {
                             ++count;
                         }
