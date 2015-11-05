@@ -77,7 +77,10 @@ namespace GameRes.Formats.Ffa
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (entry.Size <= 8 || !entry.Name.EndsWith (".so4", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Size <= 8)
+                return input;
+            if (!entry.Name.EndsWith (".so4", StringComparison.InvariantCultureIgnoreCase) &&
+                !entry.Name.EndsWith (".so5", StringComparison.InvariantCultureIgnoreCase))
                 return input;
             using (var header = new ArcView.Reader (input))
             {
@@ -92,6 +95,48 @@ namespace GameRes.Formats.Ffa
                     return new MemoryStream (reader.Data);
                 }
             }
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class JDatOpener : DatOpener
+    {
+        public override string         Tag { get { return "FFA/JDAT"; } }
+        public override string Description { get { return "FFA System resource archive v2"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public JDatOpener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            long index_offset = file.View.ReadUInt32 (0);
+            if (index_offset >= file.MaxOffset)
+                return null;
+            int index_size = (int)(file.MaxOffset - index_offset);
+            int entry_size = 0x34;
+            int rem;
+            int count = Math.DivRem (index_size, entry_size, out rem);
+            if (0 != rem || !IsSaneCount (count))
+                return null;
+
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                string name = file.View.ReadString (index_offset, 0x20);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                entry.Offset = 4 + file.View.ReadUInt32 (index_offset+0x20);
+                entry.Size   = file.View.ReadUInt32 (index_offset+0x24);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += entry_size;
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 }
