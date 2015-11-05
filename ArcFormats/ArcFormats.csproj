@@ -64,6 +64,8 @@
   <ItemGroup>
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="Amaterasu\ImageGRP.cs" />
+    <Compile Include="AnimeGameSystem\ArcDAT.cs" />
+    <Compile Include="AnimeGameSystem\AudioPCM.cs" />
     <Compile Include="ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
     <Compile Include="Bishop\ArcBSA.cs" />
@@ -87,6 +89,7 @@
     <Compile Include="Sas5\ArcSec5.cs" />
     <Compile Include="Sas5\ArcWAR.cs" />
     <Compile Include="Sas5\ImageIAR.cs" />
+    <Compile Include="Silky\ArcAWF.cs" />
     <Compile Include="Silky\ImageMSK.cs" />
     <Compile Include="Emic\ArcPACK.cs" />
     <Compile Include="Emic\ImageMWP.cs" />
@@ -246,7 +249,7 @@
     </Compile>
     <Compile Include="FC01\ImageACD.cs" />
     <Compile Include="Masys\ImageAG.cs" />
-    <Compile Include="ImageAinos.cs" />
+    <Compile Include="AnimeGameSystem\ImageAinos.cs" />
     <Compile Include="Kaguya\ImageAP.cs" />
     <Compile Include="Ethornell\ImageBGI.cs" />
     <Compile Include="ImageBIP.cs" />
