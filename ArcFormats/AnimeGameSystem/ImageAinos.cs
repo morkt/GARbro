@@ -241,20 +241,9 @@ namespace GameRes.Formats.Ainos
                         if (0 != shift)
                         {
                             int src = dst + ShiftTable[shift];
-                            while (0 != count)
-                            {
-                                m_output[dst] = m_output[src];
-                                m_output[dst + 1] = m_output[src+1];
-                                m_output[dst + 2] = m_output[src+2];
-                                src += 3;
-                                dst += 3;
-                                --count;
-                            }
+                            Binary.CopyOverlapped (m_output, src, dst, count * 3);
                         }
-                        else
-                        {
-                            dst += 3 * count;
-                        }
+                        dst += 3 * count;
                     }
                     left += m_width*3; //640*3;
                     right += m_width*3; //640*3;
@@ -301,20 +290,9 @@ namespace GameRes.Formats.Ainos
                         if (0 != shift)
                         {
                             int src = dst + ShiftTable[shift];
-                            while (0 != count)
-                            {
-                                m_output[dst] = m_output[src];
-                                m_output[dst + 1] = m_output[src + 1];
-                                m_output[dst + 2] = m_output[src + 2];
-                                src += 3;
-                                dst += 3;
-                                --count;
-                            }
+                            Binary.CopyOverlapped (m_output, src, dst, count * 3);
                         }
-                        else
-                        {
-                            dst += 3 * count;
-                        }
+                        dst += 3 * count;
                     }
                     right += m_width*3;
                     left += m_width*3;
