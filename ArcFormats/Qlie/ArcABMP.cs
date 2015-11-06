@@ -82,10 +82,9 @@ namespace GameRes.Formats.Qlie
                         uint name_length = file.View.ReadUInt16 (offset+0x10);
                         var name = file.View.ReadString (offset+0x12, name_length);
                         offset += 0x12 + name_length;
-                        if (Binary.AsciiEqual (type_buf, "abimgdat11\0")
-                            || Binary.AsciiEqual (type_buf, "absnddat11\0"))
+                        if (Binary.AsciiEqual (type_buf, "abimgdat"))
                             offset += 2u + file.View.ReadUInt16 (offset);
-                        else if (Binary.AsciiEqual (type_buf, "abimgdat13\0"))
+                        if (Binary.AsciiEqual (type_buf, "abimgdat13\0"))
                             offset += 0x0C;
                         else if (Binary.AsciiEqual (type_buf, "abimgdat14\0"))
                             offset += 0x4C;
@@ -214,7 +213,6 @@ namespace GameRes.Formats.Qlie
                 if (0 == size)
                     break;
                 offset += 4;
-                uint signature = file.View.ReadUInt32 (offset);
                 entry = new Entry {
                     Name = string.Format ("{0}#{1}", base_name, n++),
                     Type = "image",
