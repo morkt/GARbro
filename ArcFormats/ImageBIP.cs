@@ -86,6 +86,7 @@ namespace GameRes.Formats.PS2
                 if (0 == w || 0 == h)
                     return null;
                 var meta = new BipMetaData { Width = w, Height = h, BPP = 32 };
+                meta.Tiles.Capacity = tile_count;
                 for (int i = 0; i < tile_count; ++i)
                 {
                     input.ReadInt64();
@@ -112,50 +113,45 @@ namespace GameRes.Formats.PS2
             if (null == meta)
                 throw new ArgumentException ("BipFormat.Read should be supplied with BipMetaData", "info");
 
-            using (var input = new BinaryReader (stream, Encoding.ASCII, true))
+            var header = new byte[0x7c];
+            var bitmap = new WriteableBitmap ((int)meta.Width, (int)meta.Height,
+                    ImageData.DefaultDpiX, ImageData.DefaultDpiY, PixelFormats.Bgra32, null);
+            foreach (var tile in meta.Tiles)
             {
-                var header = new byte[0x7c];
-                var bitmap = new WriteableBitmap ((int)meta.Width, (int)meta.Height, 96, 96, PixelFormats.Bgra32, null);
-                foreach (var tile in meta.Tiles)
+                stream.Position = tile.Offset;
+                if (header.Length != stream.Read (header, 0, header.Length))
+                    throw new InvalidFormatException ("Invalid tile header");
+                if (!Binary.AsciiEqual (header, "PNGFILE2"))
+                    throw new InvalidFormatException ("Unknown tile format");
+                int data_size = LittleEndian.ToInt32 (header, 0x18) - header.Length;
+                int alpha = LittleEndian.ToInt32 (header, 0x68);
+                int x = LittleEndian.ToInt32 (header, 0x6c);
+                int y = LittleEndian.ToInt32 (header, 0x70);
+                using (var png = new StreamRegion (stream, stream.Position, data_size, true))
                 {
-                    input.BaseStream.Position = tile.Offset;
-                    if (header.Length != input.Read (header, 0, header.Length))
-                        throw new InvalidFormatException ("Invalid tile header");
-                    if (!Binary.AsciiEqual (header, "PNGFILE2"))
-                        throw new InvalidFormatException ("Unknown tile format");
-                    int data_size = LittleEndian.ToInt32 (header, 0x18) - header.Length;
-                    int alpha = LittleEndian.ToInt32 (header, 0x68);
-                    int x = LittleEndian.ToInt32 (header, 0x6c);
-                    int y = LittleEndian.ToInt32 (header, 0x70);
-                    var data = new byte[data_size];
-                    if (data_size != input.Read (data, 0, data_size))
-                        throw new InvalidFormatException ("Unexpected end of file");
-                    using (var png = new MemoryStream (data, false))
+                    var decoder = new PngBitmapDecoder (png,
+                        BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                    BitmapSource frame = decoder.Frames[0];
+                    PixelFormat format = 0 == alpha ? PixelFormats.Bgr32 : PixelFormats.Bgra32;
+                    var converted = new FormatConvertedBitmap (frame, format, null, 0);
+                    int stride = converted.PixelWidth * 4;
+                    var pixels = new byte[stride * converted.PixelHeight];
+                    converted.CopyPixels (pixels, stride, 0);
+                    for (int p = 0; p < pixels.Length; p += 4)
                     {
-                        var decoder = new PngBitmapDecoder (png,
-                            BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                        BitmapSource frame = decoder.Frames[0];
-                        PixelFormat format = 0 == alpha ? PixelFormats.Bgr32 : PixelFormats.Bgra32;
-                        var converted = new FormatConvertedBitmap (frame, format, null, 0);
-                        int stride = converted.PixelWidth * 4;
-                        var pixels = new byte[stride * converted.PixelHeight];
-                        converted.CopyPixels (pixels, stride, 0);
-                        for (int p = 0; p < pixels.Length; p += 4)
-                        {
-                            byte r = pixels[p];
-                            pixels[p] = pixels[p+2];
-                            pixels[p+2] = r;
-                            int a = 0 == alpha ? 0xff : pixels[p+3] * 0xff / 0x80;
-                            if (a > 0xff) a = 0xff;
-                            pixels[p+3] = (byte)a;
-                        }
-                        var rect = new Int32Rect (tile.Left+x, tile.Top+y, converted.PixelWidth, converted.PixelHeight);
-                        bitmap.WritePixels (rect, pixels, stride, 0);
+                        byte r = pixels[p];
+                        pixels[p] = pixels[p+2];
+                        pixels[p+2] = r;
+                        int a = 0 == alpha ? 0xff : pixels[p+3] * 0xff / 0x80;
+                        if (a > 0xff) a = 0xff;
+                        pixels[p+3] = (byte)a;
                     }
+                    var rect = new Int32Rect (tile.Left+x, tile.Top+y, converted.PixelWidth, converted.PixelHeight);
+                    bitmap.WritePixels (rect, pixels, stride, 0);
                 }
-                bitmap.Freeze();
-                return new ImageData (bitmap, meta);
             }
+            bitmap.Freeze();
+            return new ImageData (bitmap, meta);
         }
     }
 }
