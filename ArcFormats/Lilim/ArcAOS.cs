@@ -32,6 +32,11 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Lilim
 {
+    internal class AosEntry : Entry
+    {
+        public bool IsCompressed;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class AosOpener : ArchiveFormat
     {
@@ -76,13 +81,15 @@ namespace GameRes.Formats.Lilim
                     if (-1 == name_length)
                         name_length = name_buf.Length;
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    var entry = FormatCatalog.Instance.Create<AosEntry> (name);
                     entry.Offset = file.View.ReadUInt32 (current_offset+0x10);
                     entry.Size   = file.View.ReadUInt32 (current_offset+0x14);
                     current_offset += 0x20;
                     entry.Offset += current_offset;
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
+                    if (name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+                        entry.IsCompressed = true;
                     dir.Add (entry);
                 }
             }
@@ -91,8 +98,9 @@ namespace GameRes.Formats.Lilim
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var aent = entry as AosEntry;
+            if (null == aent || !aent.IsCompressed)
+                return base.OpenEntry (arc, entry);
 
             uint unpacked_size = arc.File.View.ReadUInt32 (entry.Offset);
             var packed = new byte[entry.Size-4];
@@ -140,11 +148,19 @@ namespace GameRes.Formats.Lilim
                 var name = file.View.ReadString (index_offset, 0x20);
                 if (0 == name.Length)
                     return null;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = FormatCatalog.Instance.Create<AosEntry> (name);
                 entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x20);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x24);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
+                if (name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+                    entry.IsCompressed = true;
+                else if (name.EndsWith (".cmp", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    entry.IsCompressed = true;
+                    entry.Name = Path.ChangeExtension (entry.Name, ".abm");
+                    entry.Type = "image";
+                }
                 dir.Add (entry);
                 index_offset += 0x28;
             }
