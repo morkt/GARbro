@@ -408,6 +408,16 @@ namespace GameRes.Formats
 
     public static class MMX
     {
+        public static ulong PAddB (ulong x, ulong y)
+        {
+            ulong r = 0;
+            for (ulong mask = 0xFF; mask != 0; mask <<= 8)
+            {
+                r |= ((x & mask) + (y & mask)) & mask;
+            }
+            return r;
+        }
+
         public static ulong PAddW (ulong x, ulong y)
         {
             ulong mask = 0xffff;
@@ -427,6 +437,13 @@ namespace GameRes.Formats
             ulong r = ((x & mask) + (y & mask)) & mask;
             mask <<= 32;
             return r | ((x & mask) + (y & mask)) & mask;
+        }
+
+        public static ulong PSllD (ulong x, int count)
+        {
+            ulong mask = 0xFFFFFFFFu << count;
+            mask |= mask << 32;
+            return (x << count) & mask;
         }
     }
 
