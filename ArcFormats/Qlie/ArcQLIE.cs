@@ -23,12 +23,15 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System;
+using System.Diagnostics;
+using System.Linq;
 using GameRes.Utility;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.Qlie
 {
@@ -36,7 +39,46 @@ namespace GameRes.Formats.Qlie
     {
         public bool IsEncrypted;
         public uint Hash;
-        public uint Key;
+        public byte[] RawName;
+
+        /// <summary>
+        /// Data from a separate key file "key.fkey" that comes with installed game.
+        /// null if not used.
+        /// </summary>
+        public byte[] KeyFile;
+    }
+
+    internal class QlieArchive : ArcFile
+    {
+        /// <summary>
+        /// Hash generated from the key data contained within archive index.
+        /// </summary>
+        public uint Hash;
+
+        /// <summary>
+        /// Internal game data used to decrypt encrypted entries.
+        /// null if not used.
+        /// </summary>
+        public byte[] GameKeyData;
+
+        public QlieArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir,
+                            uint hash, byte[] key_data)
+            : base (arc, impl, dir)
+        {
+            Hash = hash;
+            GameKeyData = key_data;
+        }
+    }
+
+    internal class QlieOptions : ResourceOptions
+    {
+        public byte[] GameKeyData;
+    }
+
+    [Serializable]
+    public class QlieScheme : ResourceScheme
+    {
+        public Dictionary<string, byte[]> KnownKeys;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -51,6 +93,19 @@ namespace GameRes.Formats.Qlie
         public PackOpener ()
         {
             Extensions = new string [] { "pack" };
+        }
+
+        /// <summary>
+        /// Possible locations of the 'key.fkey' file relative to an archive being accessed.
+        /// </summary>
+        static readonly string[] KeyLocations = { ".", "..", @"..\DLL", "DLL" };
+
+        public static Dictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new QlieScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((QlieScheme)value).KnownKeys; }
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -71,15 +126,20 @@ namespace GameRes.Formats.Qlie
             if (index_offset < 0 || index_offset >= file.MaxOffset)
                 return null;
 
-            uint pack_key;
+            byte[] arc_key = null;
+            byte[] key_file = null;
+            uint name_key = 0xC4; // default name encryption key for versions 1 and 2
             if (3 == pack_version)
             {
+                key_file = FindKeyFile (file);
+                // currently, user is prompted to choose encryption scheme only if there's 'key.fkey' file found.
+                if (key_file != null)
+                    arc_key = QueryEncryption();
+
                 var key_data = new byte[0x100];
                 file.View.Read (file.MaxOffset-0x41C, key_data, 0, 0x100);
-                pack_key = GenerateKey (key_data) & 0x0FFFFFFFu;
+                name_key = GenerateKey (key_data) & 0x0FFFFFFFu;
             }
-            else
-                pack_key = 0xC4;
 
             var name_buffer = new byte[0x100];
             var dir = new List<Entry> (count);
@@ -91,12 +151,14 @@ namespace GameRes.Formats.Qlie
                 if (name_length != file.View.Read (index_offset+2, name_buffer, 0, (uint)name_length))
                     return null;
 
-                int key = name_length + ((int)pack_key ^ 0x3e);
+                int key = name_length + ((int)name_key ^ 0x3e);
                 for (int k = 0; k < name_length; ++k)
                     name_buffer[k] ^= (byte)(((k + 1) ^ key) + k + 1);
 
                 string name = Encodings.cp932.GetString (name_buffer, 0, name_length);
                 var entry = FormatCatalog.Instance.Create<QlieEntry> (name);
+                if (key_file != null)
+                    entry.RawName = name_buffer.Take (name_length).ToArray();
 
                 index_offset += 2 + name_length;
                 entry.Offset = file.View.ReadInt64 (index_offset);
@@ -107,34 +169,48 @@ namespace GameRes.Formats.Qlie
                 entry.IsPacked = 0 != file.View.ReadInt32 (index_offset+0x10);
                 entry.IsEncrypted = 0 != file.View.ReadInt32 (index_offset+0x14);
                 entry.Hash = file.View.ReadUInt32 (index_offset+0x18);
-                if (3 == pack_version)
-                    entry.Key = pack_key;
-                else
-                    entry.Key = 0;
+                entry.KeyFile = key_file;
+                if (3 == pack_version && entry.Name.Contains ("pack_keyfile"))
+                {
+                    // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
+                    key_file = ReadEntryBytes (file, entry, name_key, arc_key);
+                }
                 dir.Add (entry);
                 index_offset += 0x1c;
             }
-            return new ArcFile (file, this, dir);
+            if (pack_version < 3)
+                name_key = 0;
+            return new QlieArchive (file, this, dir, name_key, arc_key);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var qent = entry as QlieEntry;
-            if (null == qent || (!qent.IsEncrypted && !qent.IsPacked))
+            var qarc = arc as QlieArchive;
+            if (null == qent || null == qarc || (!qent.IsEncrypted && !qent.IsPacked))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var data = new byte[entry.Size];
-            if (entry.Size != arc.File.View.Read (entry.Offset, data, 0, entry.Size))
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+            var data = ReadEntryBytes (arc.File, qent, qarc.Hash, qarc.GameKeyData);
+            return new MemoryStream (data);
+        }
 
-            if (qent.IsEncrypted)
-                Decrypt (data, 0, data.Length, qent.Key);
-            if (qent.IsPacked)
+        private byte[] ReadEntryBytes (ArcView file, QlieEntry entry, uint hash, byte[] game_key)
+        {
+            var data = new byte[entry.Size];
+            file.View.Read (entry.Offset, data, 0, entry.Size);
+            if (entry.IsEncrypted)
+            {
+                if (entry.KeyFile != null)
+                    DecryptV3 (data, 0, data.Length, entry.RawName, hash, entry.KeyFile, game_key);
+                else
+                    Decrypt (data, 0, data.Length, hash);
+            }
+            if (entry.IsPacked)
             {
                 var unpacked = Decompress (data);
                 if (null != unpacked)
                     data = unpacked;
             }
-            return new MemoryStream (data);
+            return data;
         }
 
         private void Decrypt (byte[] buffer, int offset, int length, uint key)
@@ -157,6 +233,74 @@ namespace GameRes.Formats.Qlie
                         hash = MMX.PAddD (hash, 0xCE24F523CE24F523ul) ^ xor;
                         xor = *encoded ^ hash;
                         *encoded++ = xor;
+                    }
+                }
+            }
+        }
+
+        private void DecryptV3 (byte[] data, int offset, int length, byte[] file_name,
+                                uint arc_hash, byte[] key_file, byte[] game_key)
+        {
+            // play it safe with 'unsafe' sections
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException ("offset");
+            if (length > data.Length || offset > data.Length - length)
+                throw new ArgumentOutOfRangeException ("length");
+
+            if (length < 8)
+                return;
+
+            uint hash = 0x85F532;
+            uint seed = 0x33F641;
+
+            for (uint i = 0; i < file_name.Length; i++)
+            {
+                hash += (i & 0xFF) * file_name[i];
+                seed ^= hash;
+            }
+
+            seed += arc_hash ^ (7 * ((uint)data.Length & 0xFFFFFF) + (uint)data.Length
+                                + hash + (hash ^ (uint)data.Length ^ 0x8F32DCu));
+            seed = 9 * (seed & 0xFFFFFF);
+
+            if (game_key != null)
+                seed ^= 0x453A;
+
+            var mt = new QlieMersenneTwister (seed);
+            if (key_file != null)
+                mt.XorState (key_file);
+            if (game_key != null)
+                mt.XorState (game_key);
+
+            // game code fills dword[41] table, but only the first 16 qwords are used
+            ulong[] table = new ulong[16];
+            for (int i = 0; i < table.Length; ++i)
+                table[i] = mt.Rand64();
+
+            // compensate for 9 discarded dwords
+            for (int i = 0; i < 9; ++i)
+                mt.Rand();
+
+            ulong hash64 = mt.Rand64();
+            uint t = mt.Rand() & 0xF;
+            unsafe
+            {
+                fixed (byte* raw_data = &data[offset])
+                {
+                    ulong* data64 = (ulong*)raw_data;
+                    int qword_length = length / 8;
+                    for (int i = 0; i < qword_length; ++i)
+                    {
+                        hash64 = MMX.PAddD (hash64 ^ table[t], table[t]);
+
+                        ulong d = data64[i] ^ hash64;
+                        data64[i] = d;
+
+                        hash64 = MMX.PAddB (hash64, d) ^ d;
+                        hash64 = MMX.PAddW (MMX.PSllD (hash64, 1), d);
+
+                        t++;
+                        t &= 0xF;
                     }
                 }
             }
@@ -264,6 +408,53 @@ namespace GameRes.Formats.Qlie
                 }
             }
             return (uint)(key ^ (key >> 32));
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new QlieOptions {
+                GameKeyData = GetKeyData (Settings.Default.QLIEScheme)
+            };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetQLIE();
+        }
+
+        byte[] QueryEncryption ()
+        {
+            var options = Query<QlieOptions> (arcStrings.ArcEncryptedNotice);
+            return options.GameKeyData;
+        }
+
+        static byte[] GetKeyData (string scheme)
+        {
+            byte[] key;
+            if (KnownKeys.TryGetValue (scheme, out key))
+                return key;
+            return null;
+        }
+
+        /// <summary>
+        /// Look for 'key.fkey' file within nearby directories specified by KeyLocations.
+        /// </summary>
+        static byte[] FindKeyFile (ArcView arc_file)
+        {
+            // QLIE archives with key could be opened at the physical file system level only
+            if (VFS.IsVirtual)
+                return null;
+            var dir_name = Path.GetDirectoryName (arc_file.Name);
+            foreach (var path in KeyLocations)
+            {
+                var name = Path.Combine (dir_name, path, "key.fkey");
+                if (File.Exists (name))
+                {
+                    Trace.WriteLine ("reading key from "+name, "[QLIE]");
+                    return File.ReadAllBytes (name);
+                }
+            }
+            return null;
         }
     }
 }

@@ -453,5 +453,17 @@ namespace GameRes.Formats.Properties {
                 this["RPMScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string QLIEScheme {
+            get {
+                return ((string)(this["QLIEScheme"]));
+            }
+            set {
+                this["QLIEScheme"] = value;
+            }
+        }
     }
 }

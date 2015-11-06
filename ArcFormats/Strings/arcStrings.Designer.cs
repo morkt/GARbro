@@ -534,6 +534,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use default encryption scheme.
+        /// </summary>
+        public static string QLIEDefaultScheme {
+            get {
+                return ResourceManager.GetString("QLIEDefaultScheme", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose title or enter a password.
         /// </summary>
         public static string RCTChoose {

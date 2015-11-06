@@ -339,4 +339,7 @@ Choose encryption scheme or enter a passphrase.</value>
 but encryption key guess failed.
 Choose appropriate encryption scheme.</value>
   </data>
+  <data name="QLIEDefaultScheme" xml:space="preserve">
+    <value>Use default encryption scheme</value>
+  </data>
 </root>

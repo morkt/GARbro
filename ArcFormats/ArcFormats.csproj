@@ -87,6 +87,9 @@
     <Compile Include="Qlie\ArcABMP.cs" />
     <Compile Include="Qlie\ImageDPNG.cs" />
     <Compile Include="Qlie\QlieMersenneTwister.cs" />
+    <Compile Include="Qlie\WidgetQLIE.xaml.cs">
+      <DependentUpon>WidgetQLIE.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Sas5\ArcIAR.cs" />
     <Compile Include="Sas5\ArcSec5.cs" />
     <Compile Include="Sas5\ArcWAR.cs" />
@@ -390,6 +393,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="NScripter\WidgetNSA.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Qlie\WidgetQLIE.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

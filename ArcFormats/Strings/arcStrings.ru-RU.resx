@@ -248,6 +248,9 @@
   <data name="PDScrambleContents" xml:space="preserve">
     <value>Шифровать содержимое</value>
   </data>
+  <data name="QLIEDefaultScheme" xml:space="preserve">
+    <value>"Старый" метод шифрования</value>
+  </data>
   <data name="RCTChoose" xml:space="preserve">
     <value>Выберите наименование или введите пароль</value>
   </data>
