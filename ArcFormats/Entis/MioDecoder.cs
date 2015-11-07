@@ -252,7 +252,7 @@ namespace GameRes.Formats.Entis
                 }
             }
             int ptrSrcBuf = 0; // (SWORD*) m_ptrBuffer4;
-            int nStep = m_mioih.ChannelCount;
+            int nStep = m_mioih.ChannelCount*sizeof(short);
             for (int i = 0; i < m_mioih.ChannelCount; i++)
             {
                 int ptrDstBuf = wave_pos + i*sizeof(short); // (SWORD*) ptrWaveBuf;
