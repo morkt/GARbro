@@ -219,18 +219,21 @@ namespace GameRes.Formats.Entis
             uint nSampleCount = datahdr.SampleCount;
             uint nChannelCount = (uint)m_mioih.ChannelCount;
             uint nAllSampleCount = nSampleCount * nChannelCount;
+            uint nBytes = nAllSampleCount * sizeof(short);
+
+            if (ptrWaveBuf.Length < wave_pos + (int)nBytes)
+                return false;
 
             if (nSampleCount > m_nBufLength)
             {
-                m_ptrBuffer3 = new sbyte[nAllSampleCount * sizeof(short)];
-                m_ptrBuffer4 = new byte[nAllSampleCount * sizeof(short)];
+                m_ptrBuffer3 = new sbyte[nBytes];
+                m_ptrBuffer4 = new byte[nBytes];
                 m_nBufLength = nSampleCount;
             }
             if (0 != (datahdr.Flags & MIO_LEAD_BLOCK))
             {
                 (context as HuffmanDecodeContext).PrepareToDecodeERINACode();
             }
-            uint nBytes = nAllSampleCount * sizeof(short);
             if (context.DecodeBytes (m_ptrBuffer3, nBytes) < nBytes)
             {
                 return false;
@@ -251,20 +254,27 @@ namespace GameRes.Formats.Entis
                     m_ptrBuffer4[pbytDstBuf + j * sizeof(short) + 1] = (byte)(bytHigh ^ (bytLow >> 7));
                 }
             }
-            int ptrSrcBuf = 0; // (SWORD*) m_ptrBuffer4;
-            int nStep = m_mioih.ChannelCount*sizeof(short);
-            for (int i = 0; i < m_mioih.ChannelCount; i++)
+            if (m_ptrBuffer4.Length < nBytes)
+                return false;
+            unsafe
             {
-                int ptrDstBuf = wave_pos + i*sizeof(short); // (SWORD*) ptrWaveBuf;
-                short wValue = 0;
-                short wDelta = 0;
-                for (uint j = 0; j < nSampleCount; j++)
+                fixed (byte* rawBuffer4 = m_ptrBuffer4, rawWaveBuf = &ptrWaveBuf[wave_pos])
                 {
-                    wDelta += LittleEndian.ToInt16 (m_ptrBuffer4, ptrSrcBuf);
-                    wValue += wDelta;
-                    LittleEndian.Pack (wValue, ptrWaveBuf, ptrDstBuf); // *ptrDstBuf = wValue;
-                    ptrSrcBuf += sizeof(short);
-                    ptrDstBuf += nStep;
+                    int nStep = m_mioih.ChannelCount;
+                    short* ptrSrcBuf = (short*)rawBuffer4;
+                    for (int i = 0; i < m_mioih.ChannelCount; i++)
+                    {
+                        short* ptrDstBuf = (short*)rawWaveBuf + i; // (SWORD*) ptrWaveBuf;
+                        short wValue = 0;
+                        short wDelta = 0;
+                        for (uint j = 0; j < nSampleCount; j++)
+                        {
+                            wDelta += *ptrSrcBuf++;
+                            wValue += wDelta;
+                            *ptrDstBuf = wValue;
+                            ptrDstBuf += nStep;
+                        }
+                    }
                 }
             }
             return true;
