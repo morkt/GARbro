@@ -79,15 +79,19 @@ namespace GameRes.Formats.Qlie
                     for (int i = 0; i < count && offset < file.MaxOffset; ++i)
                     {
                         file.View.Read (offset, type_buf, 0, 0x10);
+                        var tag = Binary.GetCString (type_buf, 0, 0x10, Encoding.ASCII);
                         uint name_length = file.View.ReadUInt16 (offset+0x10);
                         var name = file.View.ReadString (offset+0x12, name_length);
                         offset += 0x12 + name_length;
-                        if (Binary.AsciiEqual (type_buf, "abimgdat"))
+
+                        if (tag != "abimgdat10" && tag != "absnddat10")
+                        {
                             offset += 2u + file.View.ReadUInt16 (offset);
-                        if (Binary.AsciiEqual (type_buf, "abimgdat13\0"))
-                            offset += 0x0C;
-                        else if (Binary.AsciiEqual (type_buf, "abimgdat14\0"))
-                            offset += 0x4C;
+                            if ("abimgdat13" == tag)
+                                offset += 0x0C;
+                            else if ("abimgdat14" == tag)
+                                offset += 0x4C;
+                        }
                         ++offset;
                         var size = file.View.ReadUInt32 (offset);
                         offset += 4;
@@ -99,7 +103,7 @@ namespace GameRes.Formats.Qlie
                                 name = s_InvalidChars.Replace (name, "_");
                             var entry = new Entry {
                                 Name = name,
-                                Type = Binary.AsciiEqual (type_buf, "abimg") ? "image" : "audio",
+                                Type = tag.StartsWith ("abimg") ? "image" : tag.StartsWith ("absnd") ? "audio" : "",
                                 Offset = offset,
                                 Size = size,
                             };
