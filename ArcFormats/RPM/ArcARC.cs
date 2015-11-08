@@ -125,8 +125,11 @@ namespace GameRes.Formats.Rpm
                 entry.Size          = LittleEndian.ToUInt32 (index, index_offset+4);
                 entry.Offset        = LittleEndian.ToUInt32 (index, index_offset+8);
                 entry.IsPacked      = is_compressed != 0;
-                if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
-                    return null;
+                if (0 != entry.Size)
+                {
+                    if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                }
                 dir.Add (entry);
                 index_offset += 12;
             }
@@ -135,6 +138,8 @@ namespace GameRes.Formats.Rpm
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
+            if (0 == entry.Size)
+                return Stream.Null;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             var packed = entry as PackedEntry;
             if (null == packed || !packed.IsPacked)
@@ -144,7 +149,7 @@ namespace GameRes.Formats.Rpm
 
         EncryptionScheme GuessScheme (ArcView file, int count)
         {
-            int[] possible_sizes = { 32, 24 };
+            int[] possible_sizes = { 0x20, 0x18 };
             byte[] first_entry = new byte[possible_sizes[0] + 12];
             if (first_entry.Length != file.View.Read (8, first_entry, 0, (uint)first_entry.Length))
                 return null;
