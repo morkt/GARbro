@@ -198,9 +198,11 @@ namespace GameRes
         static readonly Lazy<ImageFormat> s_JpegFormat = new Lazy<ImageFormat> (() => FindByTag ("JPEG"));
         static readonly Lazy<ImageFormat> s_PngFormat  = new Lazy<ImageFormat> (() => FindByTag ("PNG"));
         static readonly Lazy<ImageFormat> s_BmpFormat  = new Lazy<ImageFormat> (() => FindByTag ("BMP"));
+        static readonly Lazy<ImageFormat> s_TgaFormat  = new Lazy<ImageFormat> (() => FindByTag ("TGA"));
 
         public static ImageFormat Jpeg { get { return s_JpegFormat.Value; } }
         public static ImageFormat  Png { get { return s_PngFormat.Value; } }
         public static ImageFormat  Bmp { get { return s_BmpFormat.Value; } }
+        public static ImageFormat  Tga { get { return s_TgaFormat.Value; } }
     }
 }
