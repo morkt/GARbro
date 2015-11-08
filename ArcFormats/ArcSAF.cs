@@ -54,6 +54,8 @@ namespace GameRes.Formats.Lune
                 DecryptIndex (index_buffer, count);
             var reader = new IndexReader (index_buffer, count);
             var dir = reader.Scan();
+            if (0 == dir.Count)
+                return null;
             return new ArcFile (file, this, dir);
         }
 
