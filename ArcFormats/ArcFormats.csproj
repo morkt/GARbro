@@ -81,6 +81,8 @@
     <Compile Include="Gpk2\ArcGPK2.cs" />
     <Compile Include="Gpk2\ImageGFB.cs" />
     <Compile Include="MersenneTwister.cs" />
+    <Compile Include="Nags\ArcNFS.cs" />
+    <Compile Include="Nags\ImageNGP.cs" />
     <Compile Include="Palette\ArcCHR.cs" />
     <Compile Include="Palette\ArcPAK.cs" />
     <Compile Include="Palette\ImagePGA.cs" />
@@ -481,7 +483,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Aoi\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)
