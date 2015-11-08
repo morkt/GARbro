@@ -96,6 +96,7 @@
     <Compile Include="Sas5\ArcSec5.cs" />
     <Compile Include="Sas5\ArcWAR.cs" />
     <Compile Include="Sas5\ImageIAR.cs" />
+    <Compile Include="SHSystem\ArcHXP.cs" />
     <Compile Include="Silky\ArcAWF.cs" />
     <Compile Include="Silky\ImageMSK.cs" />
     <Compile Include="Emic\ArcPACK.cs" />
