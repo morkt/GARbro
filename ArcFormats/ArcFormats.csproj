@@ -177,6 +177,7 @@
     <Compile Include="FlyingShine\ArcPD.cs" />
     <Compile Include="TopCat\ArcTCD3.cs" />
     <Compile Include="TopCat\ImageSPD.cs" />
+    <Compile Include="uGOS\ArcDET.cs" />
     <Compile Include="UMeSoft\ArcPK.cs" />
     <Compile Include="Qlie\ArcQLIE.cs" />
     <Compile Include="RenPy\ArcRPA.cs" />
