@@ -113,7 +113,7 @@ namespace GameRes.Formats.Ffa
             LittleEndian.Pack (m_output.Length-8, m_output, 4);
         }
 
-        static ushort[] word_456CA0 = new ushort[] {
+        internal static readonly ushort[] SampleTable = {
             0x39, 0x39, 0x39, 0x39, 0x4D, 0x66, 0x80, 0x99,
             0x39, 0x39, 0x39, 0x39, 0x4D, 0x66, 0x80, 0x99,
         };
@@ -275,7 +275,7 @@ namespace GameRes.Formats.Ffa
                         v74 = 0;
                     }
                 }
-                uint v88 = (uint)word_456CA0[v81] * v72;
+                uint v88 = (uint)SampleTable[v81] * v72;
                 v72 = (v88 >> 6) & 0xffff;
                 if (v72 < 0x7fu)
                     v72 = 0x7f;
@@ -336,7 +336,7 @@ namespace GameRes.Formats.Ffa
                         v14 = 0;
                     }
                 }
-                uint v21 = (uint)word_456CA0[v160] * v12;
+                uint v21 = (uint)SampleTable[v160] * v12;
                 v12 = (v21 >> 6) & 0xffff;
                 if (v12 < 0x7Fu)
                     v12 = 127;
@@ -399,7 +399,7 @@ namespace GameRes.Formats.Ffa
                             v98 = 0;
                         }
                     }
-                    uint v105 = (uint)word_456CA0[v150] * v96;
+                    uint v105 = (uint)SampleTable[v150] * v96;
                     v96 = (v105 >> 6) & 0xffff;
 
                     if (v96 < 0x7Fu)
