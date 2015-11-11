@@ -78,6 +78,7 @@
     <Compile Include="elf\ImageG24.cs" />
     <Compile Include="elf\ImageGP8.cs" />
     <Compile Include="ExHibit\ImageGYU.cs" />
+    <Compile Include="Ffa\AudioWA2.cs" />
     <Compile Include="Gpk2\ArcGPK2.cs" />
     <Compile Include="Gpk2\ImageGFB.cs" />
     <Compile Include="MersenneTwister.cs" />
