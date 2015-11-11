@@ -51,7 +51,7 @@ namespace GameRes.Formats.Ffa
 
         public Pt1Format ()
         {
-            Signatures = new uint[] { 2, 1, 0 };
+            Signatures = new uint[] { 3, 2, 1, 0 };
         }
 
         public override void Write (Stream file, ImageData image)
@@ -64,7 +64,7 @@ namespace GameRes.Formats.Ffa
             using (var input = new ArcView.Reader (stream))
             {
                 int type = input.ReadInt32();
-                if (type < 0 || type > 2)
+                if (type < 0 || type > 3)
                     return null;
                 if (-1 != input.ReadInt32())
                     return null;
@@ -81,7 +81,7 @@ namespace GameRes.Formats.Ffa
                     Height = height,
                     OffsetX = x,
                     OffsetY = y,
-                    BPP = 24,
+                    BPP = 3 == type ? 32 : 24,
                     Type = type,
                     PackedSize = comp_size,
                     UnpackedSize = uncomp_size
@@ -91,49 +91,82 @@ namespace GameRes.Formats.Ffa
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as Pt1MetaData;
-            if (null == meta)
-                throw new ArgumentException ("Pt1Format.Read should be supplied with Pt1MetaData", "info");
-
-            stream.Position = 0x20;
+            var meta = (Pt1MetaData)info;
             var reader = new Reader (stream, meta);
             reader.Unpack();
-            return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data);
+            return ImageData.Create (meta, reader.Format, null, reader.Data);
         }
 
         internal class Reader
         {
             byte[]  m_input;
             byte[]  m_output;
+            byte[]  m_alpha_packed;
             int     m_type;
             int     m_width;
             int     m_height;
             int     m_stride;
-            int     m_left = 0;
 
-            public byte[] Data { get { return m_output; } }
+            public PixelFormat Format { get; private set; }
+            public byte[]        Data { get { return m_output; } }
 
             public Reader (Stream input, Pt1MetaData info)
             {
                 m_type = info.Type;
                 m_input = new byte[info.PackedSize+8];
+                input.Position = 0x20;
                 if ((int)info.PackedSize != input.Read (m_input, 0, (int)info.PackedSize))
                     throw new InvalidFormatException ("Unexpected end of file");
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_output = new byte[info.UnpackedSize];
                 m_stride = m_width*3;
+                if (3 == m_type)
+                {
+                    Format = PixelFormats.Bgra32;
+                    using (var reader = new ArcView.Reader (input))
+                    {
+                        int packed_size = reader.ReadInt32();
+                        m_alpha_packed = new byte[packed_size];
+                        if (packed_size != input.Read (m_alpha_packed, 0, packed_size))
+                            throw new EndOfStreamException();
+                    }
+                }
+                else
+                {
+                    Format = PixelFormats.Bgr24;
+                }
             }
 
             public byte[] Unpack ()
             {
                 switch (m_type)
                 {
+                case 3: UnpackV3(); break;
                 case 2: UnpackV2(); break;
                 case 1: UnpackV1(); break;
-                case 0: UnpackV0(); break;
+                case 0: UnpackV0 (m_input, m_output); break;
                 }
                 return m_output;
+            }
+
+            void UnpackV3 ()
+            {
+                UnpackV2();
+                int total = m_width * m_height;
+                var alpha = new byte[total];
+                UnpackV0 (m_alpha_packed, alpha);
+                var pixels = new byte[total * 4];
+                int src = 0;
+                int dst = 0;
+                for (int i = 0; i < total; ++i)
+                {
+                    pixels[dst++] = m_output[src++];
+                    pixels[dst++] = m_output[src++];
+                    pixels[dst++] = m_output[src++];
+                    pixels[dst++] = alpha[i];
+                }
+                m_output = pixels;
             }
 
             uint edx;
@@ -213,7 +246,6 @@ namespace GameRes.Formats.Ffa
                 }
                 for (int i = 1; i < m_height; ++i)
                 {
-                    dst += m_left; // XXX  add edi, [ebp+arg_8]
                     ReadNext();
                     _CF = edx & 1;
                     edx >>= 1;
@@ -349,37 +381,20 @@ namespace GameRes.Formats.Ffa
                                         Buffer.BlockCopy (m_output, dst - m_stride, m_output, dst, 3);
                                         dst += 3;
                                     }
-                                    else if (4 == ebx)
-                                    {
-                                        ah = sub_4225EA();
-                                        al = (byte)(ah + m_output[dst - m_stride - 3]);
-                                        m_output[dst++] = al;
-
-                                        ReadNext();
-                                        ah = sub_4225EA();
-                                        al = (byte)(ah + m_output[dst - m_stride - 3]);
-                                        m_output[dst++] = al;
-
-                                        ReadNext();
-                                        ah = sub_4225EA();
-                                        al = (byte)(ah + m_output[dst - m_stride - 3]);
-                                        m_output[dst++] = al;
-                                    }
                                     else
                                     {
+                                        int off = dst - m_stride;
+                                        if (4 == ebx) off -= 3;
                                         ah = sub_4225EA();
-                                        al = (byte)(ah + m_output[dst - m_stride]);
-                                        m_output[dst++] = al;
+                                        m_output[dst++] = (byte)(ah + m_output[off++]);
 
                                         ReadNext();
                                         ah = sub_4225EA();
-                                        al = (byte)(ah + m_output[dst - m_stride]);
-                                        m_output[dst++] = al;
+                                        m_output[dst++] = (byte)(ah + m_output[off++]);
 
                                         ReadNext();
                                         ah = sub_4225EA();
-                                        al = (byte)(ah + m_output[dst - m_stride]);
-                                        m_output[dst++] = al;
+                                        m_output[dst++] = (byte)(ah + m_output[off++]);
                                     }
                                 }
                             }
@@ -571,29 +586,29 @@ namespace GameRes.Formats.Ffa
                 }
             }
 
-            void UnpackV0 ()
+            void UnpackV0 (byte[] input, byte[] output)
             {
                 int src = 0;
                 int dst = 0;
                 byte[] frame = new byte[0x1000]; // word_461A28
                 PopulateLzssFrame (frame);
                 int ebp = 0xfee;
-                while (src < m_input.Length)
+                while (src < input.Length)
                 {
-                    byte ah = m_input[src++];
+                    byte ah = input[src++];
                     for (int mask = 1; mask != 0x100; mask <<= 1)
                     {
                         if (0 != (ah & mask))
                         {
-                            byte al = m_input[src++];
+                            byte al = input[src++];
                             frame[ebp++] = al;
                             ebp &= 0xfff;
-                            m_output[dst++] = al;
+                            output[dst++] = al;
                         }
                         else
                         {
-                            int offset = m_input[src++];
-                            int count  = m_input[src++];
+                            int offset = input[src++];
+                            int count  = input[src++];
                             offset |= (count & 0xf0) << 4;
                             count   = (count & 0x0f) + 3;
                             for (int i = 0; i < count; ++i)
@@ -602,10 +617,10 @@ namespace GameRes.Formats.Ffa
                                 frame[ebp++] = al;
                                 offset &= 0xfff;
                                 ebp &= 0xfff;
-                                m_output[dst++] = al;
+                                output[dst++] = al;
                             }
                         }
-                        if (dst >= m_output.Length)
+                        if (dst >= output.Length)
                             return;
                     }
                 }
