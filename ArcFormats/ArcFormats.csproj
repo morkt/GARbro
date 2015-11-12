@@ -66,6 +66,7 @@
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="AnimeGameSystem\ArcDAT.cs" />
     <Compile Include="AnimeGameSystem\AudioPCM.cs" />
+    <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
     <Compile Include="Bishop\ArcBSA.cs" />
@@ -487,9 +488,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Aoi\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)
