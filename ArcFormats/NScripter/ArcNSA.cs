@@ -140,7 +140,7 @@ namespace GameRes.Formats.NScripter
                     if (base_offset - file.Position < 15)
                         return null;
                     var name = file.ReadCString();
-                    if (base_offset - file.Position < 13)
+                    if (base_offset - file.Position < 13 || 0 == name.Length)
                         return null;
 
                     var entry = FormatCatalog.Instance.Create<NsaEntry> (name);
