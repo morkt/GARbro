@@ -142,15 +142,18 @@ namespace GameRes
                 {
                 default: return null;
                 case 1:  // Uncompressed, color-mapped images.
-                case 2:  // Uncompressed, RGB images.
-                case 3:  // Uncompressed, black and white images.
                 case 9:  // Runlength encoded color-mapped images.
-                case 10: // Runlength encoded RGB images.
-                case 11: // Compressed, black and white images.
                 case 32: // Compressed color-mapped data, using Huffman, Delta, and
                         // runlength encoding.
                 case 33: // Compressed color-mapped data, using Huffman, Delta, and
                         // runlength encoding.  4-pass quadtree-type process.
+                    if (colormap_depth != 24 && colormap_depth != 32)
+                        return null;
+                    break;
+                case 2:  // Uncompressed, RGB images.
+                case 3:  // Uncompressed, black and white images.
+                case 10: // Runlength encoded RGB images.
+                case 11: // Compressed, black and white images.
                     break;
                 }
                 return new TgaMetaData {
