@@ -59,10 +59,6 @@ namespace GameRes.Formats.Silky
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x20);
-                // haven't figured out this field yet.
-//                int compression = file.View.ReadInt32 (index_offset+0x28);
-//                if (-1 == compression)
-//                    name = Path.ChangeExtension (name, "mp3");
                 if (is_mp3)
                     name = Path.ChangeExtension (name, "mp3");
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
@@ -74,6 +70,33 @@ namespace GameRes.Formats.Silky
                 index_offset += 0x34;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry.Name.EndsWith (".mp3", StringComparison.InvariantCultureIgnoreCase))
+                return base.OpenEntry (arc, entry);
+            // prepend WAV header
+            var header = new byte[0x2C];
+            using (var mem = new MemoryStream (header))
+            using (var wav = new BinaryWriter (mem))
+            {
+                wav.Write ("RIFF".ToCharArray());
+                wav.Write ((uint)(entry.Size + 0x24u));
+                wav.Write ("WAVE".ToCharArray());
+                wav.Write ("fmt ".ToCharArray());
+                wav.Write (0x10);
+                wav.Write ((ushort)1);
+                wav.Write ((ushort)2);
+                wav.Write (22050);
+                wav.Write (22050*4);
+                wav.Write ((ushort)4);
+                wav.Write ((ushort)16);
+                wav.Write ("data".ToCharArray());
+                wav.Write (entry.Size);
+            }
+            var pcm = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new PrefixStream (header, pcm);
         }
     }
 }
