@@ -43,7 +43,7 @@ namespace GameRes.Formats.Ags
 
         public override SoundInput TryOpen (Stream file)
         {
-            uint signature = FormatCatalog.ReadSignature (file) & 0xFFFFFF;
+            uint signature = FormatCatalog.ReadSignature (file) & 0xF0FFFFFF;
             if (0x564157 != signature) // 'WAV'
                 return null;
             return new PcmInput (file);
