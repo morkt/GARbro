@@ -56,6 +56,9 @@ namespace GameRes.Formats.Lilim
             }
             else if (32 == type || 24 == type)
             {
+                uint unpacked_size = LittleEndian.ToUInt32 (header, 2);
+                if (unpacked_size == stream.Length) // probably an ordinary bmp file
+                    return null;
                 frame_offset = LittleEndian.ToUInt32 (header, 0xA);
             }
             else
