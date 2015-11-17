@@ -68,6 +68,7 @@
     <Compile Include="AnimeGameSystem\AudioPCM.cs" />
     <Compile Include="Eushully\ArcGPC.cs" />
     <Compile Include="Eushully\ImageGP.cs" />
+    <Compile Include="ImagePSD.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
