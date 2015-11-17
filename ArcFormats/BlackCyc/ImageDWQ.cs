@@ -84,6 +84,7 @@ namespace GameRes.Formats.BlackCyc
                 0x20474E50, // PNG
                 0x4B434150, // PACKBMP
                 0x2B504D42, // BMP+MASK
+                0x50204649, // IF PACKTYPE==0  CUT THIS 64 BYTETHEN REMAKE BMP
             };
         }
 
@@ -92,6 +93,29 @@ namespace GameRes.Formats.BlackCyc
             var header = ResourceHeader.Read (stream);
             if (null == header)
                 return null;
+            if (Binary.AsciiEqual (header.Bytes, "IF PACKTYPE=="))
+            {
+                if (!Binary.AsciiEqual (header.Bytes, 0x0D, "0 ") ||
+                    !Binary.AsciiEqual (header.Bytes, 0x2C, "BMP ") ||
+                    header.PackType != 0)
+                    return null;
+                using (var bmp = new StreamRegion (stream, 0x40, true))
+                {
+                    var info = Bmp.ReadMetaData (bmp);
+                    if (null == info)
+                        return null;
+                    return new DwqMetaData
+                    {
+                        Width  = info.Width,
+                        Height = info.Height,
+                        BPP    = info.BPP,
+                        BaseType = "BMP",
+                        PackedSize = (int)(stream.Length-0x40),
+                        PackType = header.PackType,
+                        AType = header.AType,
+                    };
+                }
+            }
             int packed_size;
             switch (header.PackType)
             {
@@ -165,21 +189,24 @@ namespace GameRes.Formats.BlackCyc
             if (meta.AType)
             {
                 int mask_offset = 0x40+meta.PackedSize;
-                using (var mask = new StreamRegion (stream, mask_offset, stream.Length-mask_offset, true))
+                if (mask_offset != stream.Length)
                 {
-                    var reader = new DwqBmpReader (mask, meta);
-                    if (8 == reader.Format.BitsPerPixel) // mask should be represented as 8bpp bitmap
+                    using (var mask = new StreamRegion (stream, mask_offset, true))
                     {
-                        reader.Unpack();
-                        var alpha = reader.Data;
-                        var palette = reader.Palette.Colors;
-                        for (int i = 0; i < alpha.Length; ++i)
+                        var reader = new DwqBmpReader (mask, meta);
+                        if (8 == reader.Format.BitsPerPixel) // mask should be represented as 8bpp bitmap
                         {
-                            var color = palette[alpha[i]];
-                            int A = (color.R + color.G + color.B) / 3;
-                            alpha[i] = (byte)A;
+                            reader.Unpack();
+                            var alpha = reader.Data;
+                            var palette = reader.Palette.Colors;
+                            for (int i = 0; i < alpha.Length; ++i)
+                            {
+                                var color = palette[alpha[i]];
+                                int A = (color.R + color.G + color.B) / 3;
+                                alpha[i] = (byte)A;
+                            }
+                            bitmap = ApplyAlphaChannel (bitmap, alpha);
                         }
-                        bitmap = ApplyAlphaChannel (bitmap, alpha);
                     }
                 }
             }
@@ -281,7 +308,7 @@ namespace GameRes.Formats.BlackCyc
                 throw new InvalidFormatException();
             int w = LittleEndian.ToInt32 (header, 0x12);
             int h = LittleEndian.ToInt32 (header, 0x16);
-            if (w != m_width || h != m_height)
+            if (w != m_width || Math.Abs (h) != m_height)
                 throw new InvalidFormatException();
 
             int bpp = LittleEndian.ToUInt16 (header, 0x1C);
