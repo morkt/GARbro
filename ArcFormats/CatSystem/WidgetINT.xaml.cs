@@ -29,7 +29,7 @@ namespace GameRes.Formats.GUI
         void OnPassphraseChanged (object sender, TextChangedEventArgs e)
         {
             var widget = sender as TextBox;
-            uint key = IntOpener.EncodePassPhrase (widget.Text);
+            uint key = KeyData.EncodePassPhrase (widget.Text);
             Passkey.Text = key.ToString ("X8");
         }
 

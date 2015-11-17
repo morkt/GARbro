@@ -34,6 +34,7 @@ using Simias.Encryption;
 using System.Runtime.InteropServices;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
+using GameRes.Utility;
 
 namespace GameRes.Formats.CatSystem
 {
@@ -53,6 +54,32 @@ namespace GameRes.Formats.CatSystem
     {
         public uint     Key;
         public string   Passphrase;
+
+        public KeyData (string password)
+        {
+            Passphrase = password;
+            Key = EncodePassPhrase (password);
+        }
+
+        public static uint EncodePassPhrase (string password)
+        {
+            byte[] pass_bytes = Encodings.cp932.GetBytes (password);
+            uint key = 0xffffffff;
+            foreach (var c in pass_bytes)
+            {
+                uint val = (uint)c << 24;
+                key ^= val;
+                for (int i = 0; i < 8; ++i)
+                {
+                    bool carry = 0 != (key & 0x80000000);
+                    key <<= 1;
+                    if (carry)
+                        key ^= 0x4C11DB7;
+                }
+                key = ~key;
+            }
+            return key;
+        }
     }
 
     [Serializable]
@@ -81,7 +108,7 @@ namespace GameRes.Formats.CatSystem
             }
 
             if (!string.IsNullOrEmpty (Password))
-                return IntOpener.EncodePassPhrase (Password);
+                return KeyData.EncodePassPhrase (Password);
 
             return null;
         }
@@ -103,12 +130,9 @@ namespace GameRes.Formats.CatSystem
 
         public override ArcFile TryOpen (ArcView file)
         {
-            uint entry_count = file.View.ReadUInt32 (4);
-            if (0 == entry_count || 0 != ((entry_count - 1) >> 0x14))
-            {
-                Trace.WriteLine (string.Format ("Invalid entry count ({0})", entry_count));
+            int entry_count = file.View.ReadInt32 (4);
+            if (!IsSaneCount (entry_count))
                 return null;
-            }
             if (file.View.AsciiEqual (8, "__key__.dat\x00"))
             {
                 uint? key = QueryEncryptionInfo();
@@ -118,8 +142,8 @@ namespace GameRes.Formats.CatSystem
             }
 
             long current_offset = 8;
-            var dir = new List<Entry> ((int)entry_count);
-            for (uint i = 0; i < entry_count; ++i)
+            var dir = new List<Entry> (entry_count);
+            for (int i = 0; i < entry_count; ++i)
             {
                 string name = file.View.ReadString (current_offset, 0x40);
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
@@ -133,39 +157,35 @@ namespace GameRes.Formats.CatSystem
             return new ArcFile (file, this, dir);
         }
 
-        private ArcFile OpenEncrypted (ArcView file, uint entry_count, uint main_key)
+        private ArcFile OpenEncrypted (ArcView file, int entry_count, uint main_key)
         {
             if (1 == entry_count)
                 return null; // empty archive
             long current_offset = 8;
-            var twister = new Twister();
 
-            // [@@L1]   = 32-bit key
-            // [@@L1+4] = 0 if key is available, -1 otherwise
-            uint key_data = file.View.ReadUInt32 (current_offset+0x44);
-            uint twist_key = twister.Twist (key_data);
-            // [@@L0] = 32-bit twist key
-            byte[] blowfish_key = BitConverter.GetBytes (twist_key);
+            uint seed = file.View.ReadUInt32 (current_offset+0x44);
+            var twister = new MersenneTwister (seed);
+            byte[] blowfish_key = BitConverter.GetBytes (twister.Rand());
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse (blowfish_key);
 
             var blowfish = new Blowfish (blowfish_key);
-            var dir = new List<Entry> ((int)entry_count-1);
-            byte[] name_info = new byte[0x40];
-            for (uint i = 1; i < entry_count; ++i)
+            var dir = new List<Entry> (entry_count-1);
+            byte[] name_buffer = new byte[0x40];
+            for (int i = 1; i < entry_count; ++i)
             {
                 current_offset += 0x48;
-                file.View.Read (current_offset, name_info, 0, 0x40);
-                uint eax = file.View.ReadUInt32 (current_offset+0x40);
-                uint edx = file.View.ReadUInt32 (current_offset+0x44);
-                eax += i;
-                blowfish.Decipher (ref eax, ref edx);
-                uint key = twister.Twist (main_key + i);
-                string name = DecipherName (name_info, key);
+                file.View.Read (current_offset, name_buffer, 0, 0x40);
+                uint offset = file.View.ReadUInt32 (current_offset+0x40) + (uint)i;
+                uint size   = file.View.ReadUInt32 (current_offset+0x44);
+                blowfish.Decipher (ref offset, ref size);
+                twister.SRand (main_key + (uint)i);
+                uint name_key = twister.Rand();
+                string name = DecipherName (name_buffer, name_key);
 
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = eax;
-                entry.Size   = edx;
+                entry.Offset = offset;
+                entry.Size   = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
@@ -175,23 +195,10 @@ namespace GameRes.Formats.CatSystem
 
         private Stream OpenEncryptedEntry (FrontwingArchive arc, Entry entry)
         {
-            using (var view = arc.File.CreateViewAccessor (entry.Offset, entry.Size))
-            {
-                byte[] data = new byte[entry.Size];
-                // below is supposedly faster version of
-                //arc.File.View.Read (entry.Offset, data, 0, entry.Size);
-                unsafe
-                {
-                    byte* ptr = view.GetPointer (entry.Offset);
-                    try {
-                        Marshal.Copy (new IntPtr(ptr), data, 0, data.Length);
-                    } finally {
-                        view.SafeMemoryMappedViewHandle.ReleasePointer();
-                    }
-                }
-                arc.Encryption.Decipher (data, data.Length/8*8);
-                return new MemoryStream (data, false);
-            }
+            byte[] data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            arc.Encryption.Decipher (data, data.Length/8*8);
+            return new MemoryStream (data);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -204,111 +211,21 @@ namespace GameRes.Formats.CatSystem
 
         public string DecipherName (byte[] name, uint key)
         {
-            key += (key >> 8) + (key >> 16) + (key >> 24);
-            key &= 0xff;
-            key %= 0x34;
-            int count = 0;
-            for (int i = 0; i < name.Length; ++i)
+            string alphabet = "zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA";
+            int k = (byte)((key >> 24) + (key >> 16) + (key >> 8) + key);
+            int i;
+            for (i = 0; name[i] != 0; ++i)
             {
-                byte al = name[i];
-                if (0 == al)
-                    break;
-                byte bl = (byte)key;
-                ++count;
-                uint edx = al;
-                al |= 0x20;
-                al -= 0x61;
-                if (al < 0x1a)
+                int j = alphabet.IndexOf ((char)name[i]);
+                if (j != -1)
                 {
-                    if (0 != (edx & 0x20))
-                        al += 0x1a;
-                    al = (byte)~al;
-                    al += 0x34;
-                    if (al >= bl)
-                        al -= bl;
-                    else
-                        al = (byte)(al - bl + 0x34);
-                    if (al >= 0x1a)
-                        al += 6;
-                    al += 0x41;
-                    name[i] = al;
+                    j -= k % 0x34;
+                    if (j < 0) j += 0x34;
+                    name[i] = (byte)alphabet[0x33-j];
                 }
-                ++key;
-                if (0x34 == key)
-                    key = 0;
+                ++k;
             }
-            return Encodings.cp932.GetString (name, 0, count);
-        }
-
-        class Twister
-        {
-            const uint TwisterLength = 0x270;
-            uint[]  m_twister = new uint[TwisterLength];
-            uint    m_twister_pos = 0;
-
-            public uint Twist (uint key)
-            {
-                Init (key);
-                return Next();
-            }
-
-            public void Init (uint key)
-            {
-                uint edx = key;
-                for (int i = 0; i < TwisterLength; ++i)
-                {
-                    uint ecx = edx * 0x10dcd + 1;
-                    m_twister[i] = (edx & 0xffff0000) | (ecx >> 16);
-                    edx *= 0x1C587629;
-                    edx += 0x10dce;
-                }
-                m_twister_pos = 0;
-            }
-
-            public uint Next ()
-            {
-                uint ecx = m_twister[m_twister_pos];
-                uint edx = m_twister_pos + 1;
-                if (TwisterLength == edx)
-                    edx = 0;
-                uint edi = m_twister[edx];
-                edi = ((edi ^ ecx) & 0x7FFFFFFF) ^ ecx;
-                bool carry = 0 != (edi & 1);
-                edi >>= 1;
-                if (carry)
-                    edi ^= 0x9908B0DF;
-                ecx = m_twister_pos + 0x18d;
-                if (ecx >= TwisterLength)
-                    ecx -= TwisterLength;
-                edi ^= m_twister[ecx];
-                m_twister[m_twister_pos] = edi;
-                m_twister_pos = edx;
-                uint eax = edi ^ (edi >> 11);
-                eax = ((eax & 0xFF3A58AD) << 7)  ^ eax;
-                eax = ((eax & 0xFFFFDF8C) << 15) ^ eax;
-                eax = (eax >> 18) ^ eax;
-                return eax;
-            }
-        }
-
-        public static uint EncodePassPhrase (string password)
-        {
-            byte[] pass_bytes = Encodings.cp932.GetBytes (password);
-            uint key = 0xffffffff;
-            foreach (var c in pass_bytes)
-            {
-                uint val = (uint)c << 24;
-                key ^= val;
-                for (int i = 0; i < 8; ++i)
-                {
-                    bool carry = 0 != (key & 0x80000000);
-                    key <<= 1;
-                    if (carry)
-                        key ^= 0x4C11DB7;
-                }
-                key = ~key;
-            }
-            return key;
+            return Encodings.cp932.GetString (name, 0, i);
         }
 
         public static Dictionary<string, KeyData> KnownSchemes = new Dictionary<string, KeyData>();
