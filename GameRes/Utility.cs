@@ -108,6 +108,16 @@ namespace GameRes.Utility
 
     public static class BigEndian
     {
+        public static ushort ToUInt16 (byte[] value, int index)
+        {
+            return (ushort)(value[index] << 8 | value[index+1]);
+        }
+
+        public static short ToInt16 (byte[] value, int index)
+        {
+            return (short)(value[index] << 8 | value[index+1]);
+        }
+
         public static uint ToUInt32 (byte[] value, int index)
         {
             return (uint)(value[index] << 24 | value[index+1] << 16 | value[index+2] << 8 | value[index+3]);
