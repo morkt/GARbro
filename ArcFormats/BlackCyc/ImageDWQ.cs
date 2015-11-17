@@ -124,9 +124,7 @@ namespace GameRes.Formats.BlackCyc
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as DwqMetaData;
-            if (null == meta)
-                throw new ArgumentException ("DwqFormat.Read should be supplied with DwqMetaData", "info");
+            var meta = (DwqMetaData)info;
 
             BitmapSource bitmap = null;
             using (var input = new StreamRegion (stream, 0x40, meta.PackedSize, true))
@@ -298,6 +296,8 @@ namespace GameRes.Formats.BlackCyc
             if (8 == bpp)
             {
                 int colors = Math.Min (LittleEndian.ToInt32 (header, 0x2E), 0x100);
+                if (0 == colors)
+                    colors = 0x100;
                 Palette = ReadPalette (m_input, colors);
             }
             uint data_position = LittleEndian.ToUInt32 (header, 0xA);
