@@ -74,17 +74,8 @@ namespace GameRes.Formats.BlackCyc
             }
             else
                 return null;
-            var input = new StreamRegion (file, offset, file.Length-offset, true);
-            try
-            {
-                return format.TryOpen (input);
-                // FIXME file will be left undisposed
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
-            }
+            var input = new StreamRegion (file, offset, file.Length-offset);
+            return format.TryOpen (input);
         }
 
         public override void Write (SoundInput source, Stream output)
