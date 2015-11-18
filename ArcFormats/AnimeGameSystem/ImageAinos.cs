@@ -27,13 +27,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
-namespace GameRes.Formats.Ainos
+namespace GameRes.Formats.Ags
 {
     public class CgMetaData : ImageMetaData
     {
@@ -41,58 +42,159 @@ namespace GameRes.Formats.Ainos
         public int Right, Bottom;
     }
 
+    internal class AniEntry : Entry
+    {
+        public int  FrameIndex;
+        public int  FrameType;
+        public int  KeyFrame;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class AniOpener : ArchiveFormat
     {
         public override string         Tag { get { return "ANI"; } }
-        public override string Description { get { return "Ainos engine animation resource"; } }
+        public override string Description { get { return "Anime Game System animation resource"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            uint offset = file.View.ReadUInt32 (0);
-            if (file.MaxOffset > int.MaxValue || offset >= file.MaxOffset || 0 != (offset & 3))
+            uint first_offset = file.View.ReadUInt32 (0);
+            if (first_offset < 4 || file.MaxOffset > int.MaxValue || first_offset >= file.MaxOffset || 0 != (first_offset & 3))
                 return null;
-            int frame_count = (int)(offset / 4);
+            int frame_count = (int)(first_offset / 4);
+            if (frame_count > 10000)
+                return null;
             long index_offset = 4;
+
+            var frame_table = new uint[frame_count];
+            frame_table[0] = first_offset;
+            for (int i = 1; i < frame_count; ++i)
+            {
+                var offset = file.View.ReadUInt32 (index_offset);
+                index_offset += 4;
+                if (offset < first_offset || offset >= file.MaxOffset)
+                    return null;
+                frame_table[i] = offset;
+            }
+
+            var frame_map = new Dictionary<uint, byte>();
+            foreach (var offset in frame_table)
+            {
+                if (!frame_map.ContainsKey (offset))
+                {
+                    byte frame_type = file.View.ReadByte (offset);
+                    if (frame_type >= 0x20)
+                        return null;
+                    frame_map[offset] = frame_type;
+                }
+            }
+
+            int last_key_frame = 0;
             var dir = new List<Entry>();
             for (int i = 0; i < frame_count; ++i)
             {
-                uint next_offset;
-                if (i+1 != frame_count)
-                    next_offset = file.View.ReadUInt32 (index_offset);
-                else
-                    next_offset = (uint)file.MaxOffset;
-                if (next_offset <= offset || next_offset > file.MaxOffset)
-                    return null;
-                uint size = next_offset - offset;
-                if (size > 15)
+                var offset = frame_table[i];
+                int frame_type = frame_map[offset];
+                if (1 == frame_type)
+                    continue;
+                frame_type &= 0xF;
+                if (0 == frame_type || 0xA == frame_type)
+                    last_key_frame = dir.Count;
+                var entry = new AniEntry
                 {
-                    var entry = new Entry
-                    {
-                        Name = string.Format ("{0:D4}.cg", i),
-                        Type = "image",
-                        Offset = offset,
-                        Size = size
-                    };
-                    dir.Add (entry);
-                }
-                offset = next_offset;
-                index_offset += 4;
+                    Name = string.Format ("{0:D4}.tga", i),
+                    Type = "image",
+                    Offset = offset,
+                    FrameType = frame_type,
+                    KeyFrame = last_key_frame,
+                    FrameIndex = dir.Count,
+                };
+                dir.Add (entry);
             }
             if (0 == dir.Count)
                 return null;
+
+            var ordered = dir.OrderBy (e => e.Offset).ToList();
+            for (int i = 0; i < ordered.Count; ++i)
+            {
+                var entry = ordered[i] as AniEntry;
+                long next_offset = file.MaxOffset;
+                for (int j = i+1; j <= ordered.Count; ++j)
+                {
+                    next_offset = j == ordered.Count ? file.MaxOffset : ordered[j].Offset;
+                    if (next_offset != entry.Offset)
+                        break;
+                }
+                entry.Size = (uint)(next_offset - entry.Offset);
+            }
             return new ArcFile (file, this, dir);
         }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var ani = (AniEntry)entry;
+            byte[] key_frame = null;
+            if (ani.KeyFrame != ani.FrameIndex)
+            {
+                var dir = (List<Entry>)arc.Dir;
+                for (int i = ani.KeyFrame; i < ani.FrameIndex; ++i)
+                {
+                    var frame = dir[i];
+                    using (var s = arc.File.CreateStream (frame.Offset, frame.Size))
+                    {
+                        var frame_info = Cg.ReadMetaData (s) as CgMetaData;
+                        if (null == frame_info)
+                            break;
+                        using (var reader = new CgFormat.Reader (s, frame_info, key_frame))
+                        {
+                            reader.Unpack();
+                            key_frame = reader.Data;
+                        }
+                    }
+                }
+            }
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            CgMetaData info = null;
+            try
+            {
+                info = Cg.ReadMetaData (input) as CgMetaData;
+            }
+            catch
+            {
+                input.Dispose();
+                throw;
+            }
+            if (null == info)
+            {
+                input.Position = 0;
+                return input;
+            }
+            using (input)
+            using (var reader = new CgFormat.Reader (input, info, key_frame))
+            {
+                reader.Unpack();
+                var header = new byte[0x12];
+                header[2] = 2;
+                LittleEndian.Pack ((ushort)info.Width,  header, 0xc);
+                LittleEndian.Pack ((ushort)info.Height, header, 0xe);
+                header[0x10] = 24;
+                header[0x11] = 0x20;
+                return new PrefixStream (header, new MemoryStream (reader.Data));
+            }
+        }
+
+        static Lazy<ImageFormat> s_Cg = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("CG"));
+
+        ImageFormat Cg { get { return s_Cg.Value; } }
     }
 
     [Export(typeof(ImageFormat))]
     public class CgFormat : ImageFormat
     {
         public override string         Tag { get { return "CG"; } }
-        public override string Description { get { return "Ainos image format"; } }
+        public override string Description { get { return "Anime Game System image format"; } }
         public override uint     Signature { get { return 0; } }
 
         public override void Write (Stream file, ImageData image)
@@ -135,17 +237,10 @@ namespace GameRes.Formats.Ainos
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as CgMetaData;
-            if (0 != (meta.Type & 0xf))
-                stream.Position = 13;
-            else
-                stream.Position = 5;
+            var meta = (CgMetaData)info;
             using (var reader = new Reader (stream, meta))
             {
-                if (meta.Type >= 0x10)
-                    reader.UnpackRGB();
-                else
-                    reader.UnpackIndexed();
+                reader.Unpack();
                 return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, (int)info.Width*3);
             }
         }
@@ -154,6 +249,7 @@ namespace GameRes.Formats.Ainos
         {
             BinaryReader    m_input;
             byte[]          m_output;
+            int             m_type;
             int             m_width;
             int             m_height;
             int             m_left;
@@ -163,17 +259,23 @@ namespace GameRes.Formats.Ainos
 
             public byte[] Data { get { return m_output; } }
 
-            public Reader (Stream file, CgMetaData info)
+            public Reader (Stream file, CgMetaData info, byte[] base_image = null)
             {
+                m_type = info.Type;
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_left = info.OffsetX;
                 m_top = info.OffsetY;
                 m_right = info.Right == 0 ? m_width : info.Right;
                 m_bottom = info.Bottom == 0 ? m_height : info.Bottom;
-                m_output = new byte[3*m_width*m_height];
+                m_output = base_image ?? new byte[3*m_width*m_height];
                 m_input = new BinaryReader (file, Encoding.ASCII, true);
                 ShiftTable = InitShiftTable();
+
+                if (0 != (info.Type & 0xf))
+                    file.Position = 13;
+                else
+                    file.Position = 5;
             }
 
             static readonly short[] ShiftX = new short[] { // 409b6c
@@ -192,6 +294,14 @@ namespace GameRes.Formats.Ainos
                     table[i] = 3 * (ShiftX[i] + ShiftY[i] * m_width);
                 }
                 return table;
+            }
+
+            public void Unpack ()
+            {
+                if (0 != (m_type & 0x10))
+                    UnpackRGB();
+                else
+                    UnpackIndexed();
             }
 
             public void UnpackRGB ()
@@ -252,8 +362,7 @@ namespace GameRes.Formats.Ainos
 
             public void UnpackIndexed ()
             {
-                byte[] palette = new byte[0x180];
-                m_input.Read (palette, 0, 0x180);
+                byte[] palette = m_input.ReadBytes (0x180);
                 int right = 3 * (m_width * m_top + m_right);
                 int left = 3 * (m_width * m_top + m_left); // 3 * (Rect.left + 640 * Rect.top);
                 for (int i = m_top; i != m_bottom; ++i)
