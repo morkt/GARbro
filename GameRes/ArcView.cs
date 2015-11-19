@@ -365,6 +365,18 @@ namespace GameRes
                 return total;
             }
 
+            /// <summary>
+            /// Read <paramref name="count"/> bytes starting from <paramref name="offset"/> into byte array and return that array.
+            /// Returned array could be less than <paramref name="count"/> bytes length if end of the mapped file was reached.
+            /// </summary>
+            public byte[] ReadBytes (long offset, uint count)
+            {
+                count = Math.Min (count, Reserve (offset, count));
+                var data = new byte[count];
+                Read (offset, data, 0, count);
+                return data;
+            }
+
             public byte ReadByte (long offset)
             {
                 Reserve (offset, 1);
