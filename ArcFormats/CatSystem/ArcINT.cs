@@ -27,9 +27,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Simias.Encryption;
 using System.Runtime.InteropServices;
 using GameRes.Formats.Strings;
@@ -346,5 +346,82 @@ namespace GameRes.Formats.CatSystem
                 }
             }
         }
+
+        /// <summary>
+        /// Parse certain executable resources for encryption passphrase.
+        /// Returns null if no passphrase found.
+        /// </summary>
+        public static string GetPassFromExe (string filename)
+        {
+            var exe = NativeMethods.LoadLibraryEx (filename, IntPtr.Zero, 0x20); // LOAD_LIBRARY_AS_IMAGE_RESOURCE
+            if (IntPtr.Zero == exe)
+                throw new Win32Exception (Marshal.GetLastWin32Error());
+            try
+            {
+                var code = GetResource (exe, "DATA", "V_CODE2");
+                if (null == code || code.Length < 8)
+                    return null;
+                var key = GetResource (exe, "KEY", "KEY_CODE");
+                if (null != key)
+                {
+                    for (int i = 0; i < key.Length; ++i)
+                        key[i] ^= 0xCD;
+                }
+                else
+                {
+                    key = Encoding.ASCII.GetBytes ("windmill");
+                }
+                var blowfish = new Blowfish (key);
+                blowfish.Decipher (code, code.Length/8*8);
+                int length = Array.IndexOf<byte> (code, 0);
+                if (-1 == length)
+                    length = code.Length;
+                return Encodings.cp932.GetString (code, 0, length);
+            }
+            finally
+            {
+                NativeMethods.FreeLibrary (exe);
+            }
+        }
+
+        static byte[] GetResource (IntPtr exe, string name, string type)
+        {
+            var res = NativeMethods.FindResource (exe, name, type);
+            if (IntPtr.Zero == res)
+                return null;
+            var glob = NativeMethods.LoadResource (exe, res);
+            if (IntPtr.Zero == glob)
+                return null;
+            uint size = NativeMethods.SizeofResource (exe, res);
+            var src = NativeMethods.LockResource (glob);
+            if (IntPtr.Zero == src)
+                return null;
+
+            var dst = new byte[size];
+            Marshal.Copy (src, dst, 0, dst.Length);
+            return dst;
+        }
+    }
+
+    static internal class NativeMethods
+    {
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern IntPtr LoadLibraryEx (string lpFileName, IntPtr hReservedNull, uint dwFlags);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static internal extern bool FreeLibrary (IntPtr hModule);
+
+        [DllImport( "kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern IntPtr FindResource (IntPtr hModule, string lpName, string lpType);
+
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        static internal extern IntPtr LoadResource (IntPtr hModule, IntPtr hResource);
+
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        static internal extern uint SizeofResource (IntPtr hModule, IntPtr hResource);
+
+        [DllImport("kernel32.dll")]
+        static internal extern IntPtr LockResource (IntPtr hResData);
     }
 }

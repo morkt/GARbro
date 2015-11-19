@@ -161,9 +161,7 @@
     <value>숫자 값</value>
   </data>
   <data name="INTNotice" xml:space="preserve">
-    <value>아카이브 폴더가 암호화됨.
-아카이브 암호값을 입력하거나
-미리정의된 암호체계를 고르세요.</value>
+    <value>아카이브 폴더가 암호화됨.</value>
   </data>
   <data name="KogadoDescription" xml:space="preserve">
     <value>Kogado 게임 엔진 리소스 아카이브</value>
@@ -338,5 +336,29 @@
     <value>파일이 RPM 리소스 아카이브와 비슷하나,
 암호값 추측이 실패하였습니다.
 적절한 암호체계를 선택하세요.</value>
+  </data>
+  <data name="INTChooseExe" xml:space="preserve">
+    <value>Choose game executable file</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="INTExeButton" xml:space="preserve">
+    <value>Check EXE</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="INTExeFiles" xml:space="preserve">
+    <value>Executable Files</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="INTKeyNotFound" xml:space="preserve">
+    <value>Key not found within {0}.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="INTMessage1" xml:space="preserve">
+    <value>Press "Check EXE" button to look for key within game executable file.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="INTMessage2" xml:space="preserve">
+    <value>Alternatively, enter archive encryption key or choose one of the predefined encryption schemes.</value>
+    <comment>translation pending</comment>
   </data>
 </root>

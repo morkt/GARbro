@@ -179,6 +179,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose game executable file.
+        /// </summary>
+        public static string INTChooseExe {
+            get {
+                return ResourceManager.GetString("INTChooseExe", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encrypted archives creation is not implemented..
         /// </summary>
         public static string INTCreationNotice {
@@ -193,6 +202,33 @@ namespace GameRes.Formats.Strings {
         public static string INTDescription {
             get {
                 return ResourceManager.GetString("INTDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check EXE.
+        /// </summary>
+        public static string INTExeButton {
+            get {
+                return ResourceManager.GetString("INTExeButton", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Executable Files.
+        /// </summary>
+        public static string INTExeFiles {
+            get {
+                return ResourceManager.GetString("INTExeFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Key not found within {0}..
+        /// </summary>
+        public static string INTKeyNotFound {
+            get {
+                return ResourceManager.GetString("INTKeyNotFound", resourceCulture);
             }
         }
         
@@ -215,9 +251,25 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Archive directory is encrypted.
-        ///Enter archive encryption key or choose
-        ///predefined encryption scheme..
+        ///   Looks up a localized string similar to Press &quot;Check EXE&quot; button to look for key within game executable file..
+        /// </summary>
+        public static string INTMessage1 {
+            get {
+                return ResourceManager.GetString("INTMessage1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alternatively, enter archive encryption key or choose one of the predefined encryption schemes..
+        /// </summary>
+        public static string INTMessage2 {
+            get {
+                return ResourceManager.GetString("INTMessage2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive directory is encrypted..
         /// </summary>
         public static string INTNotice {
             get {

@@ -161,9 +161,7 @@ Choose appropriate encryption scheme.</value>
     <value>Numeric key</value>
   </data>
   <data name="INTNotice" xml:space="preserve">
-    <value>Archive directory is encrypted.
-Enter archive encryption key or choose
-predefined encryption scheme.</value>
+    <value>Archive directory is encrypted.</value>
   </data>
   <data name="KogadoDescription" xml:space="preserve">
     <value>Kogado game engine resource archive</value>
@@ -341,5 +339,23 @@ Choose appropriate encryption scheme.</value>
   </data>
   <data name="QLIEDefaultScheme" xml:space="preserve">
     <value>Use default encryption scheme</value>
+  </data>
+  <data name="INTChooseExe" xml:space="preserve">
+    <value>Choose game executable file</value>
+  </data>
+  <data name="INTExeButton" xml:space="preserve">
+    <value>Check EXE</value>
+  </data>
+  <data name="INTExeFiles" xml:space="preserve">
+    <value>Executable Files</value>
+  </data>
+  <data name="INTMessage1" xml:space="preserve">
+    <value>Press "Check EXE" button to look for key within game executable file.</value>
+  </data>
+  <data name="INTMessage2" xml:space="preserve">
+    <value>Alternatively, enter archive encryption key or choose one of the predefined encryption schemes.</value>
+  </data>
+  <data name="INTKeyNotFound" xml:space="preserve">
+    <value>Key not found within {0}.</value>
   </data>
 </root>

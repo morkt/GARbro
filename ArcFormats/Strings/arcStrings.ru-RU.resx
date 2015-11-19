@@ -148,8 +148,20 @@
   <data name="DPKKeys" xml:space="preserve">
     <value>Ключи шифрования</value>
   </data>
+  <data name="INTChooseExe" xml:space="preserve">
+    <value>Выберите исполняемый файл</value>
+  </data>
   <data name="INTCreationNotice" xml:space="preserve">
     <value>Создание зашифрованных архивов не реализовано.</value>
+  </data>
+  <data name="INTExeButton" xml:space="preserve">
+    <value>Искать EXE</value>
+  </data>
+  <data name="INTExeFiles" xml:space="preserve">
+    <value>Исполняемые файлы</value>
+  </data>
+  <data name="INTKeyNotFound" xml:space="preserve">
+    <value>В файле {0} ключа не обнаружено.</value>
   </data>
   <data name="INTKeyRequirement" xml:space="preserve">
     <value>Цифровой ключ должен быть 32-битным шестнадцатиричным числом</value>
@@ -157,10 +169,14 @@
   <data name="INTLabelNumericKey" xml:space="preserve">
     <value>Цифровой ключ</value>
   </data>
+  <data name="INTMessage1" xml:space="preserve">
+    <value>Нажмите кнопку "Искать EXE", чтобы попытаться найти ключ в исполняемом файле игры.</value>
+  </data>
+  <data name="INTMessage2" xml:space="preserve">
+    <value>Или же выберите один из известных методов шифрования, либо введите ключ вручную.</value>
+  </data>
   <data name="INTNotice" xml:space="preserve">
-    <value>Заголовок архива зашифрован.
-Введите ключ шифрования или выберите
-один из предопределённых вариантов.</value>
+    <value>Оглавление архива зашифровано.</value>
   </data>
   <data name="ISFIgnoreEncryption" xml:space="preserve">
     <value>Игнорировать шифрование</value>
