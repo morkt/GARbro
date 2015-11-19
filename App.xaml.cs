@@ -56,7 +56,7 @@ namespace GARbro.GUI
             Trace.WriteLine ("ApplicationStartup --------------------------------", "GARbro.GUI.App");
             this.DispatcherUnhandledException += (s, args) =>
             {
-                Trace.WriteLine (string.Format ("Unhandled exception caught: {1}", args.Exception.Message),
+                Trace.WriteLine (string.Format ("Unhandled exception caught: {0}", args.Exception.Message),
                                  "GARbro.GUI.App");
                 Trace.WriteLine (args.Exception.StackTrace, "Stack trace");
             };
