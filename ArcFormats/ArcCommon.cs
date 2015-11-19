@@ -61,7 +61,10 @@ namespace GameRes.Formats
             return new AutoEntry (base_name, () => {
                 uint signature = file.View.ReadUInt32 (offset);
                 if (0 == signature) return null;
-                return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+                var res = FormatCatalog.Instance.LookupSignature (signature);
+                if (!res.Any() || res.Skip (1).Any()) // Count == 0 || Count > 1
+                    return null;
+                return res.First();
             }) { Offset = offset };
         }
 
