@@ -193,16 +193,14 @@ namespace GameRes.Formats.Cherry
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             if (data.Length >= 0x18)
             {
-                uint encrypted_size;
                 unsafe
                 {
                     fixed (byte* raw = data)
                     {
                         uint* raw32 = (uint*)raw;
-                        raw32[0] ^= 0xA53CC35Au;
+                        raw32[0] ^= 0xA53CC35Au; // FIXME: Exile-specific?
                         raw32[1] ^= 0x35421005u;
                         raw32[4] ^= 0xCF42355Du;
-                        encrypted_size = raw32[5];
                     }
                 }
                 Decrypt (data, 0x18, (int)(data.Length - 0x18));
