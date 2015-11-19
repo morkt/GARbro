@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using GameRes.Utility;
+using GameRes.Compression;
 
 namespace GameRes.Formats.Cherry
 {
@@ -37,38 +38,41 @@ namespace GameRes.Formats.Cherry
     {
         public override string         Tag { get { return "PAK/CHERRY"; } }
         public override string Description { get { return "Cherry Soft PACK resource archive"; } }
-        public override uint     Signature { get { return 0x52454843; } } // 'CHER'
+        public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
         public PakOpener ()
         {
             Extensions = new string[] { "pak" };
-            Signatures = new uint[] { 0x52454843, 0 };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int index_offset = 0;
-            if (file.View.AsciiEqual (0, "CHERRY PACK 2.0"))
-                index_offset = 0x14;
-            int count = file.View.ReadInt32 (index_offset);
-            if (count <= 0 || count > 0xfffff)
+            int count = file.View.ReadInt32 (0);
+            if (!IsSaneCount (count))
                 return null;
-            long base_offset = file.View.ReadUInt32 (index_offset+4);
-            index_offset += 8;
+            long base_offset = file.View.ReadUInt32 (4);
+            if (base_offset >= file.MaxOffset || base_offset != (8 + count*0x18))
+                return null;
+            var dir = ReadIndex (file, 8, count, base_offset, file);
+            return dir != null ? new ArcFile (file, this, dir) : null;
+        }
+
+        protected List<Entry> ReadIndex (ArcView index, int index_offset, int count, long base_offset, ArcView file)
+        {
             uint index_size = (uint)count * 0x18u;
-            if (index_size > file.View.Reserve (index_offset, index_size))
+            if (index_size > index.View.Reserve (index_offset, index_size))
                 return null;
             string arc_name = Path.GetFileNameWithoutExtension (file.Name);
             bool is_grp = arc_name.EndsWith ("GRP", StringComparison.InvariantCultureIgnoreCase);
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                string name = file.View.ReadString (index_offset, 0x10);
+                string name = index.View.ReadString (index_offset, 0x10);
                 if (0 == name.Length)
                     return null;
-                var offset = base_offset + file.View.ReadUInt32 (index_offset+0x10);
+                var offset = base_offset + index.View.ReadUInt32 (index_offset+0x10);
                 Entry entry;
                 if (is_grp)
                 {
@@ -82,13 +86,13 @@ namespace GameRes.Formats.Cherry
                 {
                     entry = AutoEntry.Create (file, offset, name);
                 }
-                entry.Size = file.View.ReadUInt32 (index_offset+0x14);
+                entry.Size = index.View.ReadUInt32 (index_offset+0x14);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 0x18;
             }
-            return new ArcFile (file, this, dir);
+            return dir;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -105,6 +109,103 @@ namespace GameRes.Formats.Cherry
             for (uint i = 0; i < text_size; ++i)
             {
                 data[text_offset+i] ^= (byte)i;
+            }
+            return new MemoryStream (data);
+        }
+    }
+
+    internal class CherryPak : ArcFile
+    {
+        public CherryPak (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
+            : base (arc, impl, dir)
+        {
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Pak2Opener : PakOpener
+    {
+        public override string         Tag { get { return "PAK/CHERRY2"; } }
+        public override string Description { get { return "Cherry Soft PACK resource archive v2"; } }
+        public override uint     Signature { get { return 0x52454843; } } // 'CHER'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public Pak2Opener ()
+        {
+            Extensions = new string[] { "pak" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (0, "CHERRY PACK 2.0\0"))
+                return null;
+            bool is_compressed = file.View.ReadInt32 (0x10) != 0;
+            int count = file.View.ReadInt32 (0x14);
+            long base_offset = file.View.ReadUInt32 (0x18);
+            bool is_encrypted = false;
+            while (!IsSaneCount (count) || base_offset >= file.MaxOffset || (!is_compressed && base_offset != (0x1C + count*0x18)))
+            {
+                if (is_encrypted)
+                    return null;
+                // these keys seem to be constant across different games
+                count       ^= unchecked((int)0xBC138744);
+                base_offset ^= 0x64E0BA23; 
+                is_encrypted = true;
+            }
+            List<Entry> dir;
+            if (is_compressed)
+            {
+                var packed = file.View.ReadBytes (0x1C, (uint)base_offset-0x1C);
+                Decrypt (packed, 0, packed.Length);
+                using (var mem = new MemoryStream (packed))
+                using (var lzss = new LzssStream (mem))
+                using (var index = new ArcView (lzss, file.Name, (uint)count * 0x18))
+                    dir = ReadIndex (index, 0, count, base_offset, file);
+            }
+            else
+            {
+                dir = ReadIndex (file, 0x1C, count, base_offset, file);
+            }
+            if (null == dir)
+                return null;
+            if (is_encrypted && is_compressed)
+                return new CherryPak (file, this, dir);
+            else
+                return new ArcFile (file, this, dir);
+        }
+
+        void Decrypt (byte[] data, int index, int length) // Exile ~Blood Royal 2~
+        {
+            for (int i = 0; i+1 < length; i += 2)
+            {
+                byte lo = (byte)(data[index+i  ] ^ 0x33);
+                byte hi = (byte)(data[index+i+1] ^ 0xCC);
+                data[index+i  ] = hi;
+                data[index+i+1] = lo;
+            }
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!(arc is CherryPak) || entry.Size < 0x18)
+                return base.OpenEntry (arc, entry);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            if (data.Length >= 0x18)
+            {
+                uint encrypted_size;
+                unsafe
+                {
+                    fixed (byte* raw = data)
+                    {
+                        uint* raw32 = (uint*)raw;
+                        raw32[0] ^= 0xA53CC35Au;
+                        raw32[1] ^= 0x35421005u;
+                        raw32[4] ^= 0xCF42355Du;
+                        encrypted_size = raw32[5];
+                    }
+                }
+                Decrypt (data, 0x18, (int)(data.Length - 0x18));
             }
             return new MemoryStream (data);
         }
