@@ -44,7 +44,7 @@ namespace GameRes.Formats.Cherry
     public class GrpFormat : ImageFormat
     {
         public override string         Tag { get { return "GRP/CHERRY"; } }
-        public override string Description { get { return "Cherry Soft comprressed image format"; } }
+        public override string Description { get { return "Cherry Soft compressed image format"; } }
         public override uint     Signature { get { return 0; } }
 
         public GrpFormat ()
@@ -128,6 +128,8 @@ namespace GameRes.Formats.Cherry
             else if (8  == m_info.BPP && 0x418 == m_info.Offset ||
                      24 == m_info.BPP && 0x018 == m_info.Offset)
                 return ReadV1();
+            else if (true) // FIXME
+                return ReadV3();
             else
                 throw new InvalidFormatException();
         }
@@ -143,7 +145,7 @@ namespace GameRes.Formats.Cherry
             }
             var packed = new byte[m_info.PackedSize];
             if (packed.Length != m_input.Read (packed, 0, packed.Length))
-                    throw new InvalidFormatException ("Unexpected end of file");
+                throw new InvalidFormatException ("Unexpected end of file");
             for (int i = 0; i < packed.Length; ++i)
                 packed[i] ^= (byte)i;
 
@@ -201,6 +203,25 @@ namespace GameRes.Formats.Cherry
                     bitmap.Freeze();
                     return new ImageData (bitmap, m_info);
                 }
+            }
+        }
+
+        private ImageData ReadV3 () // Exile ~Blood Royal 2~
+        {
+            using (var lzs = new LzssStream (m_input, LzssMode.Decompress, true))
+            {
+                if (8 == m_info.BPP)
+                {
+                    var palette_data = new byte[0x400];
+                    if (palette_data.Length != lzs.Read (palette_data, 0, palette_data.Length))
+                        throw new InvalidFormatException ("Unexpected end of file");
+                    SetPalette (palette_data);
+                }
+                m_image_data = new byte[m_stride * (int)m_info.Height];
+                if (m_image_data.Length != lzs.Read (m_image_data, 0, m_image_data.Length))
+                    throw new InvalidFormatException();
+
+                return ImageData.CreateFlipped (m_info, Format, Palette, m_image_data, m_stride);
             }
         }
 
