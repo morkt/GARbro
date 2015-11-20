@@ -214,7 +214,7 @@ namespace GameRes.Formats.CatSystem
             string alphabet = "zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA";
             int k = (byte)((key >> 24) + (key >> 16) + (key >> 8) + key);
             int i;
-            for (i = 0; name[i] != 0; ++i)
+            for (i = 0; i < name.Length && name[i] != 0; ++i)
             {
                 int j = alphabet.IndexOf ((char)name[i]);
                 if (j != -1)
