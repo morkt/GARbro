@@ -69,6 +69,9 @@
     <Compile Include="Eushully\ArcGPC.cs" />
     <Compile Include="Eushully\ImageGP.cs" />
     <Compile Include="ImagePSD.cs" />
+    <Compile Include="Propeller\ArcMGR.cs" />
+    <Compile Include="Propeller\ArcMPK.cs" />
+    <Compile Include="Propeller\ImageMGR.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
