@@ -517,7 +517,7 @@ namespace GameRes
 
         public void Flush ()
         {
-            if (LastVisitedArc != null)
+            if (LastVisitedArc != null && (0 == Count || LastVisitedArc != Top))
             {
                 LastVisitedArc.Dispose();
                 LastVisitedArc = null;
