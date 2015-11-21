@@ -231,11 +231,7 @@ namespace GameRes.Formats.CatSystem
 
         byte[] ApplyDelta (byte[] pixels)
         {
-            uint[] table1 = new uint[0x100];
-            uint[] table2 = new uint[0x100];
-            uint[] table3 = new uint[0x100];
-            uint[] table4 = new uint[0x100];
-
+            var table = new uint[4, 0x100];
             for (uint i = 0; i < 0x100; ++i)
             {
                 uint val = i & 0xC0;
@@ -249,24 +245,24 @@ namespace GameRes.Formats.CatSystem
                 val <<= 6;
                 val |= i & 0x03;
 
-                table4[i] = val;
-                table3[i] = val << 2;
-                table2[i] = val << 4;
-                table1[i] = val << 6;
+                table[0,i] = val << 6;
+                table[1,i] = val << 4;
+                table[2,i] = val << 2;
+                table[3,i] = val;
             }
 
             int plane_size = pixels.Length / 4;
-            int plane1 = 0;
+            int plane0 = 0;
+            int plane1 = plane0 + plane_size;
             int plane2 = plane1 + plane_size;
             int plane3 = plane2 + plane_size;
-            int plane4 = plane3 + plane_size;
 
             byte[] output = new byte[pixels.Length];
             int dst = 0;
             while (dst < output.Length)
             {
-                uint val = table1[pixels[plane1++]] | table2[pixels[plane2++]]
-                         | table3[pixels[plane3++]] | table4[pixels[plane4++]];
+                uint val = table[0,pixels[plane0++]] | table[1,pixels[plane1++]]
+                         | table[2,pixels[plane2++]] | table[3,pixels[plane3++]];
 
                 output[dst++] = ConvertValue ((byte)val);
                 output[dst++] = ConvertValue ((byte)(val >> 8));
