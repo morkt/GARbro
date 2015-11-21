@@ -212,7 +212,6 @@ namespace GameRes
             {
                 if (disposing)
                     m_arc.Dispose();
-                m_arc = null;
                 disposed = true;
             }
         }
