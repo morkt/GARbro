@@ -111,11 +111,9 @@ namespace GameRes.Formats.Will
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase)
-                && !entry.Name.EndsWith (".wsc", StringComparison.InvariantCultureIgnoreCase))
+            if (!IsScriptFile (entry.Name))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             DecodeScript (data);
             return new MemoryStream (data);
         }
@@ -249,7 +247,7 @@ namespace GameRes.Formats.Will
 
         private uint WriteEntry (string filename, Stream output)
         {
-            if (!filename.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+            if (!IsScriptFile (filename))
             {
                 using (var input = File.OpenRead (filename))
                 {
@@ -267,6 +265,12 @@ namespace GameRes.Formats.Will
                 output.Write (input, 0, input.Length);
                 return (uint)input.Length;
             }
+        }
+
+        private static bool IsScriptFile (string filename)
+        {
+            return filename.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase)
+                || filename.EndsWith (".wsc", StringComparison.InvariantCultureIgnoreCase);
         }
     }
 }
