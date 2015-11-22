@@ -138,13 +138,17 @@ namespace GameRes.Formats.Cherry
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "CHERRY PACK 2.0\0"))
+            if (!file.View.AsciiEqual (0, "CHERRY PACK 2.0\0") &&
+                !file.View.AsciiEqual (0, "CHERRY PACK 3.0\0"))
                 return null;
+            int version = file.View.ReadByte (0xC) - '0';
             bool is_compressed = file.View.ReadInt32 (0x10) != 0;
             int count = file.View.ReadInt32 (0x14);
             long base_offset = file.View.ReadUInt32 (0x18);
             bool is_encrypted = false;
-            while (!IsSaneCount (count) || base_offset >= file.MaxOffset || (!is_compressed && base_offset != (0x1C + count*0x18)))
+            int min_offset = 0x1C + count * 0x18;
+            while (!IsSaneCount (count) || base_offset >= file.MaxOffset
+                   || (2 == version && !is_compressed && base_offset != min_offset))
             {
                 if (is_encrypted)
                     return null;
