@@ -35,9 +35,11 @@ namespace GameRes.Formats.Cherry
 {
     internal class GrpMetaData : ImageMetaData
     {
-        public int PackedSize;
-        public int UnpackedSize;
-        public int Offset;
+        public int  PackedSize;
+        public int  UnpackedSize;
+        public int  Offset;
+        public int  HeaderSize;
+        public bool AlphaChannel;
     }
 
     [Export(typeof(ImageFormat))]
@@ -74,14 +76,14 @@ namespace GameRes.Formats.Cherry
                 PackedSize = packed_size,
                 UnpackedSize = unpacked_size,
                 Offset = LittleEndian.ToInt32 (header, 0x14),
+                HeaderSize = 0x18,
+                AlphaChannel = false,
             };
         }
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as GrpMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GrpFormat.Read should be supplied with GrpMetaData", "info");
+            var meta = (GrpMetaData)info;
             var reader = new GrpReader (stream, meta);
             return reader.CreateImage();
         }
@@ -89,6 +91,43 @@ namespace GameRes.Formats.Cherry
         public override void Write (Stream file, ImageData image)
         {
             throw new NotImplementedException ("GrpFormat.Write not implemented");
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class Grp3Format : GrpFormat
+    {
+        public override string         Tag { get { return "GRP/CHERRY3"; } }
+        public override string Description { get { return "Cherry Soft compressed image format"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            var header = new byte[0x28];
+            if (header.Length != stream.Read (header, 0, header.Length))
+                return null;
+            if (0xFFFF != LittleEndian.ToInt32 (header, 8))
+                return null;
+            int packed_size = LittleEndian.ToInt32 (header, 0);
+            int unpacked_size = LittleEndian.ToInt32 (header, 4);
+            uint width  = LittleEndian.ToUInt32 (header, 0x10);
+            uint height = LittleEndian.ToUInt32 (header, 0x14);
+            int bpp = LittleEndian.ToInt32 (header, 0x18);
+            if (0 == width || 0 == height || width > 0x7fff || height > 0x7fff
+                || (bpp != 32 && bpp != 24 && bpp != 8)
+                || unpacked_size <= 0 || packed_size < 0)
+                return null;
+            return new GrpMetaData
+            {
+                Width = width,
+                Height = height,
+                BPP = bpp,
+                PackedSize = packed_size,
+                UnpackedSize = unpacked_size,
+                Offset = 0xFFFF,
+                HeaderSize = 0x28,
+                AlphaChannel = LittleEndian.ToInt32 (header, 0x24) != 0,
+            };
         }
     }
 
@@ -111,6 +150,8 @@ namespace GameRes.Formats.Cherry
                 Format = PixelFormats.Indexed8;
             else if (24 == info.BPP)
                 Format = PixelFormats.Bgr24;
+            else if (32 == info.BPP)
+                Format = m_info.AlphaChannel ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             else
                 throw new NotSupportedException ("Not supported GRP image depth");
             m_stride = (int)m_info.Width*((Format.BitsPerPixel+7)/8);
@@ -118,7 +159,7 @@ namespace GameRes.Formats.Cherry
 
         public ImageData CreateImage ()
         {
-            m_input.Position = 0x18;
+            m_input.Position = m_info.HeaderSize;
             int data_size = m_info.UnpackedSize;
             if (m_info.PackedSize != 0)
                 data_size = m_info.PackedSize;
@@ -129,7 +170,7 @@ namespace GameRes.Formats.Cherry
                      24 == m_info.BPP && 0x018 == m_info.Offset)
                 return ReadV1();
             else if (true) // FIXME
-                return ReadV3();
+                return ReadV3 (0xFFFF != m_info.Offset);
             else
                 throw new InvalidFormatException();
         }
@@ -206,7 +247,9 @@ namespace GameRes.Formats.Cherry
             }
         }
 
-        private ImageData ReadV3 () // Exile ~Blood Royal 2~
+        // Exile ~Blood Royal 2~      : flipped == true
+        // Gakuen ~Nerawareta Chitai~ : flipped == false
+        private ImageData ReadV3 (bool flipped)
         {
             using (var lzs = new LzssStream (m_input, LzssMode.Decompress, true))
             {
@@ -221,7 +264,10 @@ namespace GameRes.Formats.Cherry
                 if (m_image_data.Length != lzs.Read (m_image_data, 0, m_image_data.Length))
                     throw new InvalidFormatException();
 
-                return ImageData.CreateFlipped (m_info, Format, Palette, m_image_data, m_stride);
+                if (flipped)
+                    return ImageData.CreateFlipped (m_info, Format, Palette, m_image_data, m_stride);
+                else
+                    return ImageData.Create (m_info, Format, Palette, m_image_data, m_stride);
             }
         }
 
