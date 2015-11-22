@@ -36,7 +36,7 @@ namespace GameRes.Formats.Ego
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "EGO"; } }
+        public override string         Tag { get { return "DAT/EGO"; } }
         public override string Description { get { return "Studio e.go! engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }

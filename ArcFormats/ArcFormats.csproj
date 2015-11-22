@@ -72,6 +72,7 @@
     <Compile Include="Propeller\ArcMGR.cs" />
     <Compile Include="Propeller\ArcMPK.cs" />
     <Compile Include="Propeller\ImageMGR.cs" />
+    <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
@@ -134,7 +135,7 @@
     <Compile Include="Dac\ArcDPK.cs" />
     <Compile Include="Ikura\ArcDRS.cs" />
     <Compile Include="Eagls\ArcEAGLS.cs" />
-    <Compile Include="ArcEGO.cs" />
+    <Compile Include="StudioEgo\ArcEGO.cs" />
     <Compile Include="Ffa\ArcFFA.cs" />
     <Compile Include="Interheart\ArcFPK.cs" />
     <Compile Include="ArcFVP.cs" />
