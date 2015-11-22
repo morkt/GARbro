@@ -206,6 +206,7 @@ namespace GameRes.Formats.Cherry
             return ImageData.Create (m_info, Format, Palette, m_image_data);
         }
 
+        // DOUBLE
         private ImageData ReadV2 ()
         {
             if (0 != m_info.PackedSize)
