@@ -75,7 +75,7 @@ namespace GameRes.Formats.FC01
             var key = GuessKey (file, index);
             if (null == key)
                 throw new UnknownEncryptionScheme();
-            Decrypt (index, key.Value);
+            Decrypt (index, 0, index.Length, key.Value);
 
             int current_offset = 0;
             uint next_offset = LittleEndian.ToUInt32 (index, current_offset+0x1C);
@@ -132,14 +132,13 @@ namespace GameRes.Formats.FC01
             return input;
         }
 
-        static public void Decrypt (byte[] data, int key)
+        static public void Decrypt (byte[] data, int index, int length, int key)
         {
-            int remaining = data.Length;
-            for (int i = 0; i < data.Length; ++i)
+            while (length > 0)
             {
-                var v = data[i];
-                data[i] = (byte)((v << 1 | v >> 7) ^ key);
-                key += remaining--;
+                var v = data[index];
+                data[index++] = (byte)((v << 1 | v >> 7) ^ key);
+                key += length--;
             }
         }
 
