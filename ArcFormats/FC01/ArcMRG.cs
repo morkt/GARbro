@@ -75,16 +75,8 @@ namespace GameRes.Formats.FC01
             var key = GuessKey (file, index);
             if (null == key)
                 throw new UnknownEncryptionScheme();
-            byte index_key = key.Value;
+            Decrypt (index, key.Value);
 
-            int remaining = index.Length;
-            for (int i = 0; i < index.Length; ++i)
-            {
-                byte v = index[i];
-                v = (byte)(v << 1 | v >> 7);
-                index[i] = (byte)(v ^ index_key);
-                index_key += (byte)remaining--;
-            }
             int current_offset = 0;
             uint next_offset = LittleEndian.ToUInt32 (index, current_offset+0x1C);
             var dir = new List<Entry> (count);
@@ -138,6 +130,17 @@ namespace GameRes.Formats.FC01
                 }
             }
             return input;
+        }
+
+        static public void Decrypt (byte[] data, int key)
+        {
+            int remaining = data.Length;
+            for (int i = 0; i < data.Length; ++i)
+            {
+                var v = data[i];
+                data[i] = (byte)((v << 1 | v >> 7) ^ key);
+                key += remaining--;
+            }
         }
 
         private byte? GuessKey (ArcView file, byte[] index)
@@ -286,7 +289,7 @@ namespace GameRes.Formats.FC01
         public int Unpack () // sub_10026EB0
         {
             uint quant = InitTable();
-            if (0 == quant)
+            if (0 == quant || quant > 0x10000)
                 throw new InvalidFormatException();
             uint mask = GetMask (quant);
             uint scale = 0x10000 / quant;
