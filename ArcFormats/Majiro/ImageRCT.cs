@@ -241,7 +241,7 @@ namespace GameRes.Formats.Majiro
 
         private string QueryPassword ()
         {
-            var options = Query<RctOptions> (arcStrings.RCTNotice);
+            var options = Query<RctOptions> (arcStrings.ArcImageEncrypted);
             return options.Password;
         }
 

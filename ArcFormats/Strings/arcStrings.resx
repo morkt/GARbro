@@ -298,9 +298,6 @@ Choose appropriate encryption scheme.</value>
     <value>Archive directory is encrypted.
 Enter archive encryption key.</value>
   </data>
-  <data name="NOAIgnoreEncryption" xml:space="preserve">
-    <value>Ignore encryption</value>
-  </data>
   <data name="LabelEncScheme" xml:space="preserve">
     <value>Encryption scheme</value>
   </data>
@@ -319,12 +316,6 @@ Enter archive encryption key.</value>
   <data name="MBLNotice" xml:space="preserve">
     <value>Archive contains encrypted scripts.
 Choose encryption scheme or enter a passphrase.</value>
-  </data>
-  <data name="ISFIgnoreEncryption" xml:space="preserve">
-    <value>Ignore encryption</value>
-  </data>
-  <data name="RCTNotice" xml:space="preserve">
-    <value>Image is encrypted.</value>
   </data>
   <data name="RCTChoose" xml:space="preserve">
     <value>Choose title or enter a password</value>
@@ -357,5 +348,17 @@ Choose appropriate encryption scheme.</value>
   </data>
   <data name="INTKeyNotFound" xml:space="preserve">
     <value>Key not found within {0}.</value>
+  </data>
+  <data name="ArcIgnoreEncryption" xml:space="preserve">
+    <value>Ignore encryption</value>
+  </data>
+  <data name="ArcImageEncrypted" xml:space="preserve">
+    <value>Image is encrypted.</value>
+  </data>
+  <data name="MCGChoose" xml:space="preserve">
+    <value>Choose title or enter a key</value>
+  </data>
+  <data name="MCGLabelKey" xml:space="preserve">
+    <value>8-bit encryption key</value>
   </data>
 </root>

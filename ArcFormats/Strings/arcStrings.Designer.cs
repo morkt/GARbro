@@ -134,6 +134,24 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Ignore encryption.
+        /// </summary>
+        public static string ArcIgnoreEncryption {
+            get {
+                return ResourceManager.GetString("ArcIgnoreEncryption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Image is encrypted..
+        /// </summary>
+        public static string ArcImageEncrypted {
+            get {
+                return ResourceManager.GetString("ArcImageEncrypted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to no encryption.
         /// </summary>
         public static string ArcNoEncryption {
@@ -278,15 +296,6 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Ignore encryption.
-        /// </summary>
-        public static string ISFIgnoreEncryption {
-            get {
-                return ResourceManager.GetString("ISFIgnoreEncryption", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Default.
         /// </summary>
         public static string KCAPDefault {
@@ -347,6 +356,24 @@ namespace GameRes.Formats.Strings {
         public static string MBLNotice {
             get {
                 return ResourceManager.GetString("MBLNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose title or enter a key.
+        /// </summary>
+        public static string MCGChoose {
+            get {
+                return ResourceManager.GetString("MCGChoose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 8-bit encryption key.
+        /// </summary>
+        public static string MCGLabelKey {
+            get {
+                return ResourceManager.GetString("MCGLabelKey", resourceCulture);
             }
         }
         
@@ -477,15 +504,6 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Ignore encryption.
-        /// </summary>
-        public static string NOAIgnoreEncryption {
-            get {
-                return ResourceManager.GetString("NOAIgnoreEncryption", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Compress contents.
         /// </summary>
         public static string NPACompressContents {
@@ -600,15 +618,6 @@ namespace GameRes.Formats.Strings {
         public static string RCTChoose {
             get {
                 return ResourceManager.GetString("RCTChoose", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Image is encrypted..
-        /// </summary>
-        public static string RCTNotice {
-            get {
-                return ResourceManager.GetString("RCTNotice", resourceCulture);
             }
         }
         
