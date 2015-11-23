@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.FC01
@@ -37,6 +38,18 @@ namespace GameRes.Formats.FC01
     {
         public int DataOffset;
         public int PackedSize;
+        public int Version;
+    }
+
+    internal class McgOptions : ResourceOptions
+    {
+        public byte Key;
+    }
+
+    [Serializable]
+    public class McgScheme : ResourceScheme
+    {
+        public Dictionary<string, byte> KnownKeys;
     }
 
     [Export(typeof(ImageFormat))]
@@ -46,12 +59,23 @@ namespace GameRes.Formats.FC01
         public override string Description { get { return "F&C Co. image format"; } }
         public override uint     Signature { get { return 0x2047434D; } } // 'MCG'
 
+        public static Dictionary<string, byte> KnownKeys = new Dictionary<string, byte>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new McgScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((McgScheme)value).KnownKeys; }
+        }
+
         public override ImageMetaData ReadMetaData (Stream stream)
         {
             byte[] header = new byte[0x40];
             if (header.Length != stream.Read (header, 0, header.Length))
                 return null;
-            if (!Binary.AsciiEqual (header, 4, "2.00"))
+            if (header[5] != '.')
+                return null;
+            int version = header[4] * 100 + header[6] * 10 + header[7] - 0x14D0;
+            if (version != 200 && version != 101)
                 throw new NotSupportedException ("Not supported MCG format version");
             int header_size = LittleEndian.ToInt32 (header, 0x10);
             if (header_size < 0x40)
@@ -68,18 +92,32 @@ namespace GameRes.Formats.FC01
                 BPP = bpp,
                 DataOffset = header_size,
                 PackedSize = LittleEndian.ToInt32 (header, 0x38) - header_size,
+                Version = version,
             };
         }
 
+        // cache key value so that dialog does not pop up on every file accessed.
+        byte? LastKey = null;
+
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as McgMetaData;
-            if (null == meta)
-                throw new ArgumentException ("McgFormat.Read should be supplied with McgMetaData", "info");
-
-            var reader = new McgDecoder (stream, meta);
+            var meta = (McgMetaData)info;
+            byte key = Settings.Default.MCGLastKey;
+            if (101 == meta.Version)
+            {
+                if (null == LastKey)
+                {
+                    var options = Query<McgOptions> (arcStrings.ArcImageEncrypted);
+                    key = options.Key;
+                }
+                else
+                    key = LastKey.Value;
+            }
+            var reader = new McgDecoder (stream, meta, key);
             reader.Unpack();
-            return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data);
+            if (reader.Key != 0)
+                LastKey = reader.Key;
+            return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -87,10 +125,23 @@ namespace GameRes.Formats.FC01
             throw new System.NotImplementedException ("McgFormat.Write not implemented");
         }
 
-        public static readonly IReadOnlyDictionary<string, byte> KnownKeys = new Dictionary<string, byte>()
+        public override ResourceOptions GetDefaultOptions ()
         {
-            { "Konata yori Kanata made", 0xD5 },
-        };
+            return new McgOptions { Key = Settings.Default.MCGLastKey };
+        }
+
+        public override ResourceOptions GetOptions (object widget)
+        {
+            var w = widget as GUI.WidgetMCG;
+            if (null != w)
+                Settings.Default.MCGLastKey = w.GetKey();
+            return GetDefaultOptions();
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetMCG();
+        }
     }
 
     // mcg decompression // graphic.unt @ 100047B0
@@ -99,31 +150,65 @@ namespace GameRes.Formats.FC01
     {
         byte[]  m_input;
         byte[]  m_output;
-        uint    m_width;
-        uint    m_height;
-        uint    m_pixels;
+        int     m_width;
+        int     m_height;
+        int     m_pixels;
         byte    m_key;
+        int     m_version;
 
         public byte[] Data { get { return m_output; } }
+        public int  Stride { get; private set; }
+        public byte    Key { get { return m_key; } }
 
-        public McgDecoder (Stream input, McgMetaData info)
+        public McgDecoder (Stream input, McgMetaData info, byte key)
         {
             input.Position = info.DataOffset;
             m_input = new byte[info.PackedSize];
             if (m_input.Length != input.Read (m_input, 0, m_input.Length))
                 throw new InvalidFormatException ("Unexpected end of file");
-            m_width = info.Width;
-            m_height = info.Height;
+            m_width = (int)info.Width;
+            m_height = (int)info.Height;
             m_pixels = m_width*m_height;
-            m_output = new byte[m_pixels*3];
-            m_key = Settings.Default.MCGLastKey;
+            m_key = key;
+            m_version = info.Version;
+            Stride = 3 * m_width;
+            if (101 == m_version)
+                Stride = (Stride + 3) & -4;
         }
 
         static readonly byte[] ChannelOrder = { 1, 0, 2 };
 
         public void Unpack ()
         {
-            var reader = new MrgDecoder (m_input, 0, m_pixels);
+            if (200 == m_version)
+                UnpackV200();
+            else
+                UnpackV101();
+        }
+
+        void UnpackV101 ()
+        {
+            if (m_key != 0)
+            {
+                MrgOpener.Decrypt (m_input, 0, m_input.Length-1, m_key);
+            }
+            using (var input = new MemoryStream (m_input))
+            using (var lzss = new MrgLzssReader (input, m_input.Length, Stride * m_height))
+            {
+                lzss.Unpack();
+                // data remaining within input stream indicates invalid encryption key
+                if (input.Length - input.Position > 1)
+                {
+                    m_key = 0;
+                }
+                m_output = lzss.Data;
+            }
+        }
+
+        void UnpackV200 ()
+        {
+            m_output = new byte[m_pixels*3];
+            var reader = new MrgDecoder (m_input, 0, (uint)m_pixels);
             do
             {
                 reader.ResetKey (m_key);
@@ -156,27 +241,26 @@ namespace GameRes.Formats.FC01
 
         void Transform ()
         {
-            uint dst = 0;
-            uint stride = (m_width - 1) * 3;
-            for (uint y = m_height-1; y > 0; --y) // @@1a
+            int dst = 0;
+            for (int y = m_height-1; y > 0; --y) // @@1a
             {
-                for (uint x = stride; x > 0; --x) // @@1b
+                for (int x = Stride-3; x > 0; --x) // @@1b
                 {
                     int p0 = m_output[dst];
-                    int py = m_output[dst+stride+3] - p0;
+                    int py = m_output[dst+Stride] - p0;
                     int px = m_output[dst+3] - p0;
                     p0 = Math.Abs (px + py);
                     py = Math.Abs (py);
                     px = Math.Abs (px);
                     byte pv;
                     if (p0 >= px && py >= px)
-                        pv = m_output[dst+stride+3];
+                        pv = m_output[dst+Stride];
                     else if (p0 < py)
                         pv = m_output[dst];
                     else
                         pv = m_output[dst+3];
 
-                    m_output[dst+stride+6] += (byte)(pv + 0x80);
+                    m_output[dst+Stride+3] += (byte)(pv + 0x80);
                     ++dst;
                 }
                 dst += 3;

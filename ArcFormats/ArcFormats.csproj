@@ -68,6 +68,9 @@
     <Compile Include="AnimeGameSystem\AudioPCM.cs" />
     <Compile Include="Eushully\ArcGPC.cs" />
     <Compile Include="Eushully\ImageGP.cs" />
+    <Compile Include="FC01\WidgetMCG.xaml.cs">
+      <DependentUpon>WidgetMCG.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ImagePSD.cs" />
     <Compile Include="Propeller\ArcMGR.cs" />
     <Compile Include="Propeller\ArcMPK.cs" />
@@ -391,6 +394,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CatSystem\CreateINTWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FC01\WidgetMCG.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
