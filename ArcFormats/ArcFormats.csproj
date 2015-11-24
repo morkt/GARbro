@@ -72,6 +72,7 @@
       <DependentUpon>WidgetMCG.xaml</DependentUpon>
     </Compile>
     <Compile Include="ImagePSD.cs" />
+    <Compile Include="Kaguya\ImageAO.cs" />
     <Compile Include="Propeller\ArcMGR.cs" />
     <Compile Include="Propeller\ArcMPK.cs" />
     <Compile Include="Propeller\ImageMGR.cs" />

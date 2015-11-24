@@ -1,6 +1,6 @@
-//! \file       ImageAP.cs
-//! \date       Mon Jun 01 09:22:41 2015
-//! \brief      KaGuYa script engine bitmap format.
+//! \file       ImageAO.cs
+//! \date       Tue Nov 24 15:42:43 2015
+//! \brief      KaGuYa script engine image format.
 //
 // Copyright (C) 2015 by morkt
 //
@@ -33,22 +33,22 @@ using System.Windows.Media.Imaging;
 namespace GameRes.Formats.Kaguya
 {
     [Export(typeof(ImageFormat))]
-    public class ApFormat : ImageFormat
+    public class AoFormat : ApFormat
     {
-        public override string         Tag { get { return "AP"; } }
+        public override string         Tag { get { return "AO/KAGUYA"; } }
         public override string Description { get { return "KaGuYa script engine image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public ApFormat ()
+        public AoFormat ()
         {
-            Extensions = new string[] { "bg_", "cg_", "cgw", "sp_", "aps", "alp" };
+            Extensions = new string[] { "sp_" };
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
             int A = stream.ReadByte();
-            int P = stream.ReadByte();
-            if ('A' != A || 'P' != P)
+            int O = stream.ReadByte();
+            if ('A' != A || 'O' != O)
                 return null;
             using (var file = new ArcView.Reader (stream))
             {
@@ -56,6 +56,8 @@ namespace GameRes.Formats.Kaguya
                 info.Width = file.ReadUInt32();
                 info.Height = file.ReadUInt32();
                 info.BPP = file.ReadInt16();
+                info.OffsetX = file.ReadInt32();
+                info.OffsetY = file.ReadInt32();
                 if (info.Width > 0x8000 || info.Height > 0x8000 || !(32 == info.BPP || 24 == info.BPP))
                     return null;
                 return info;
@@ -64,21 +66,8 @@ namespace GameRes.Formats.Kaguya
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            stream.Position = 12;
+            stream.Position = 0x14;
             return ReadBitmapData (stream, info);
-        }
-
-        protected ImageData ReadBitmapData (Stream stream, ImageMetaData info)
-        {
-            int stride = (int)info.Width*4;
-            var pixels = new byte[stride*info.Height];
-            for (int row = (int)info.Height-1; row >= 0; --row)
-            {
-                if (stride != stream.Read (pixels, row*stride, stride))
-                    throw new InvalidFormatException();
-            }
-            PixelFormat format = PixelFormats.Bgra32;
-            return ImageData.Create (info, format, null, pixels);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -86,29 +75,13 @@ namespace GameRes.Formats.Kaguya
             using (var output = new BinaryWriter (file, Encoding.ASCII, true))
             {
                 output.Write ((byte)'A');
-                output.Write ((byte)'P');
+                output.Write ((byte)'O');
                 output.Write (image.Width);
                 output.Write (image.Height);
                 output.Write ((short)24);
+                output.Write (image.OffsetX);
+                output.Write (image.OffsetY);
                 WriteBitmapData (file, image);
-            }
-        }
-
-        protected void WriteBitmapData (Stream file, ImageData image)
-        {
-            var bitmap = image.Bitmap;
-            if (bitmap.Format != PixelFormats.Bgra32)
-            {
-                bitmap = new FormatConvertedBitmap (bitmap, PixelFormats.Bgra32, null, 0);
-            }
-            int stride = (int)image.Width * 4;
-            byte[] row_data = new byte[stride];
-            Int32Rect rect = new Int32Rect (0, (int)image.Height, (int)image.Width, 1);
-            for (uint row = 0; row < image.Height; ++row)
-            {
-                --rect.Y;
-                bitmap.CopyPixels (rect, row_data, stride, 0);
-                file.Write (row_data, 0, row_data.Length);
             }
         }
     }
