@@ -83,6 +83,7 @@ namespace GameRes.Formats.Propeller
             {
                 entry.UnpackedSize  = file.View.ReadUInt32 (entry.Offset);
                 entry.Size          = file.View.ReadUInt32 (entry.Offset+4);
+                entry.IsPacked      = true;
                 if (entry.UnpackedSize < 0x36 || entry.Size > file.MaxOffset-entry.Offset)
                     return null;
                 entry.Offset += 8;
