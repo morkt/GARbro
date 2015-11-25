@@ -51,7 +51,7 @@ namespace GameRes
         /// </summary>
         public bool CheckPlacement (long max_offset)
         {
-            return Offset < max_offset && Size < max_offset && Offset <= max_offset - Size;
+            return Offset < max_offset && Size <= max_offset && Offset <= max_offset - Size;
         }
     }
 
