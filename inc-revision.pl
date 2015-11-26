@@ -10,7 +10,7 @@ use File::Temp;
 
 sub get_git_exe {
     my $user_app_data = Win32::GetFolderPath (Win32::CSIDL_LOCAL_APPDATA);
-    my $git_glob = File::Spec->catfile ($user_app_data, 'GitHub', 'PortableGit_*', 'bin', 'git.exe');
+    my $git_glob = File::Spec->catfile ($user_app_data, 'GitHub', 'PortableGit_*', 'cmd', 'git.exe');
     my $git_path = glob ($git_glob);
     die "PortableGit not found\n" unless -x $git_path;
     return $git_path;
