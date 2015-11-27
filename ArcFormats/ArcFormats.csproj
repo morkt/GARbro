@@ -66,6 +66,7 @@
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="AnimeGameSystem\ArcDAT.cs" />
     <Compile Include="AnimeGameSystem\AudioPCM.cs" />
+    <Compile Include="ArcPBX.cs" />
     <Compile Include="Eushully\ArcGPC.cs" />
     <Compile Include="Eushully\ImageGP.cs" />
     <Compile Include="FC01\WidgetMCG.xaml.cs">
