@@ -69,16 +69,44 @@ namespace GameRes.Formats.Silky
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = (AkbMetaData)info;
-            int pixel_size = meta.BPP / 8;
-            int stride = (int)meta.Width * pixel_size;
+            var reader = new AkbReader (stream, (AkbMetaData)info);
+            var image = reader.Unpack();
+            return ImageData.Create (info, reader.Format, null, image, reader.Stride);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("AkbFormat.Write not implemented");
+        }
+    }
+
+    internal class AkbReader
+    {
+        Stream          m_input;
+        AkbMetaData     m_info;
+        int             m_pixel_size;
+
+        public PixelFormat Format { get; private set; }
+        public int         Stride { get; private set; }
+
+        public AkbReader (Stream input, AkbMetaData info)
+        {
+            m_input = input;
+            m_info = info;
+            m_pixel_size = m_info.BPP / 8;
+            Stride = (int)m_info.Width * m_pixel_size;
+            Format = 24 == m_info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+        }
+
+        public byte[] Unpack ()
+        {
             byte[] image;
-            if (meta.InnerWidth != 0 && meta.InnerHeight != 0)
+            if (m_info.InnerWidth != 0 && m_info.InnerHeight != 0)
             {
-                stream.Position = 0x20;
-                int inner_stride = meta.InnerWidth * pixel_size;
-                var pixels = new byte[meta.InnerHeight * inner_stride];
-                using (var lz = new LzssStream (stream, LzssMode.Decompress, true))
+                m_input.Position = 0x20;
+                int inner_stride = m_info.InnerWidth * m_pixel_size;
+                var pixels = new byte[m_info.InnerHeight * inner_stride];
+                using (var lz = new LzssStream (m_input, LzssMode.Decompress, true))
                 {
                     for (int dst = pixels.Length - inner_stride; dst >= 0; dst -= inner_stride)
                     {
@@ -86,21 +114,16 @@ namespace GameRes.Formats.Silky
                             throw new InvalidFormatException();
                     }
                 }
-                int src = 0;
-                for (int i = pixel_size; i < inner_stride; ++i)
-                    pixels[i] += pixels[src++];
-                src = 0;
-                for (int i = inner_stride; i < pixels.Length; ++i)
-                    pixels[i] += pixels[src++];
-                if (meta.InnerWidth != meta.Width || meta.InnerHeight != meta.Height)
+                RestoreDelta (pixels, inner_stride);
+                if (m_info.InnerWidth != m_info.Width || m_info.InnerHeight != m_info.Height)
                 {
-                    image = CreateBackground (meta);
-                    src = 0;
-                    int dst = meta.OffsetY * stride + meta.OffsetX * pixel_size;
-                    for (int y = 0; y < meta.InnerHeight; ++y)
+                    image = CreateBackground();
+                    int src = 0;
+                    int dst = m_info.OffsetY * Stride + m_info.OffsetX * m_pixel_size;
+                    for (int y = 0; y < m_info.InnerHeight; ++y)
                     {
                         Buffer.BlockCopy (pixels, src, image, dst, inner_stride);
-                        dst += stride;
+                        dst += Stride;
                         src += inner_stride;
                     }
                 }
@@ -111,29 +134,31 @@ namespace GameRes.Formats.Silky
             }
             else
             {
-                image = CreateBackground (meta);
+                image = CreateBackground();
             }
-            var format = 24 == meta.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
-            return ImageData.Create (info, format, null, image, stride);
+            return image;
         }
 
-        private byte[] CreateBackground (AkbMetaData info)
+        private void RestoreDelta (byte[] pixels, int stride)
         {
-            int pixel_size = info.BPP / 8;
-            int stride = (int)info.Width * pixel_size;
-            var pixels = new byte[stride * (int)info.Height];
-            if (0 != LittleEndian.ToInt32 (info.Background, 0))
+            int src = 0;
+            for (int i = m_pixel_size; i < stride; ++i)
+                pixels[i] += pixels[src++];
+            src = 0;
+            for (int i = stride; i < pixels.Length; ++i)
+                pixels[i] += pixels[src++];
+        }
+
+        private byte[] CreateBackground ()
+        {
+            var pixels = new byte[Stride * (int)m_info.Height];
+            if (0 != LittleEndian.ToInt32 (m_info.Background, 0))
             {
-                for (int i = 0; i < stride; i += pixel_size)
-                    Buffer.BlockCopy (info.Background, 0, pixels, i, pixel_size);
-                Binary.CopyOverlapped (pixels, 0, stride, pixels.Length-stride);
+                for (int i = 0; i < Stride; i += m_pixel_size)
+                    Buffer.BlockCopy (m_info.Background, 0, pixels, i, m_pixel_size);
+                Binary.CopyOverlapped (pixels, 0, Stride, pixels.Length-Stride);
             }
             return pixels;
-        }
-
-        public override void Write (Stream file, ImageData image)
-        {
-            throw new System.NotImplementedException ("AkbFormat.Write not implemented");
         }
     }
 }
