@@ -79,6 +79,8 @@
     <Compile Include="Propeller\ArcMGR.cs" />
     <Compile Include="Propeller\ArcMPK.cs" />
     <Compile Include="Propeller\ImageMGR.cs" />
+    <Compile Include="Silky\ArcAi6Win.cs" />
+    <Compile Include="Silky\ImageAKB.cs" />
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="ArcDX.cs" />
