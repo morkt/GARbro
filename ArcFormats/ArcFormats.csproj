@@ -69,6 +69,7 @@
     <Compile Include="ArcPBX.cs" />
     <Compile Include="Banana\ArcPK.cs" />
     <Compile Include="Banana\ImageMAG.cs" />
+    <Compile Include="CatSystem\ImageHG2.cs" />
     <Compile Include="Eushully\ArcGPC.cs" />
     <Compile Include="Eushully\ImageGP.cs" />
     <Compile Include="FC01\WidgetMCG.xaml.cs">
