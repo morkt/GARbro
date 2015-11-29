@@ -203,6 +203,7 @@
     <Compile Include="ShiinaRio\ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
+    <Compile Include="Will\ArcPulltop.cs" />
     <Compile Include="Xuse\ArcWAG.cs" />
     <Compile Include="Xuse\ArcXuse.cs" />
     <Compile Include="Yuka\ArcYKC.cs" />
