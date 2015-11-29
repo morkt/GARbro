@@ -175,13 +175,7 @@ namespace GameRes.Formats.Ags
             using (var reader = new CgFormat.Reader (input, info, key_frame))
             {
                 reader.Unpack();
-                var header = new byte[0x12];
-                header[2] = 2;
-                LittleEndian.Pack ((ushort)info.Width,  header, 0xc);
-                LittleEndian.Pack ((ushort)info.Height, header, 0xe);
-                header[0x10] = 24;
-                header[0x11] = 0x20;
-                return new PrefixStream (header, new MemoryStream (reader.Data));
+                return TgaStream.Create (info, reader.Data);
             }
         }
 

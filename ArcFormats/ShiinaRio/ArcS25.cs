@@ -96,16 +96,7 @@ namespace GameRes.Formats.ShiinaRio
             using (var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset))
             using (var reader = new S25Format.Reader (input, info))
             {
-                var pixels = reader.Unpack();
-                var header = new byte[0x12];
-                header[2] = 2;
-                LittleEndian.Pack ((short)info.OffsetX, header, 8);
-                LittleEndian.Pack ((short)info.OffsetY, header, 0xa);
-                LittleEndian.Pack ((ushort)info.Width,  header, 0xc);
-                LittleEndian.Pack ((ushort)info.Height, header, 0xe);
-                header[0x10] = 32;
-                header[0x11] = 0x20;
-                return new PrefixStream (header, new MemoryStream (pixels));
+                return TgaStream.Create (info, reader.Unpack());
             }
         }
     }
