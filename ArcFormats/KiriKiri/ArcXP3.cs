@@ -1171,4 +1171,27 @@ NextEntry:
             Decrypt (entry, offset, values, pos, count);
         }
     }
+
+    [Serializable]
+    public class NatsupochiCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ (entry.Hash >> 3));
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)(entry.Hash >> 3);
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
 }
