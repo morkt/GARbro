@@ -23,12 +23,11 @@
 // IN THE SOFTWARE.
 //
 
+using GameRes.Utility;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace GameRes.Formats
 {
@@ -406,6 +405,26 @@ namespace GameRes.Formats
         public void Dispose ()
         {
             System.GC.SuppressFinalize (this);
+        }
+    }
+
+    /// <summary>
+    /// Create stream in TGA format from the given image pixels.
+    /// </summary>
+    public static class TgaStream
+    {
+        public static Stream Create (ImageMetaData info, byte[] pixels, bool flipped = false)
+        {
+            var header = new byte[0x12];
+            header[2] = 2;
+            LittleEndian.Pack ((short)info.OffsetX, header, 8);
+            LittleEndian.Pack ((short)info.OffsetY, header, 0xa);
+            LittleEndian.Pack ((ushort)info.Width,  header, 0xc);
+            LittleEndian.Pack ((ushort)info.Height, header, 0xe);
+            header[0x10] = (byte)info.BPP;
+            if (!flipped)
+                header[0x11] = 0x20;
+            return new PrefixStream (header, new MemoryStream (pixels));
         }
     }
 
