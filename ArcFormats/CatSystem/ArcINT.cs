@@ -128,6 +128,8 @@ namespace GameRes.Formats.CatSystem
         public override bool IsHierarchic { get { return false; } }
         public override bool CanCreate { get { return true; } }
 
+        static readonly byte[] NameSizes = { 0x20, 0x40 };
+
         public override ArcFile TryOpen (ArcView file)
         {
             int entry_count = file.View.ReadInt32 (4);
@@ -141,20 +143,38 @@ namespace GameRes.Formats.CatSystem
                 return OpenEncrypted (file, entry_count, key.Value);
             }
 
-            long current_offset = 8;
             var dir = new List<Entry> (entry_count);
-            for (int i = 0; i < entry_count; ++i)
+            foreach (var name_length in NameSizes)
             {
-                string name = file.View.ReadString (current_offset, 0x40);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = file.View.ReadUInt32 (current_offset+0x40);
-                entry.Size   = file.View.ReadUInt32 (current_offset+0x44);
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-                current_offset += 0x48;
+                try
+                {
+                    long current_offset = 8;
+                    for (int i = 0; i < entry_count; ++i)
+                    {
+                        string name = file.View.ReadString (current_offset, name_length);
+                        if (0 == name.Length)
+                        {
+                            dir.Clear();
+                            break;
+                        }
+                        var entry = FormatCatalog.Instance.Create<Entry> (name);
+                        current_offset += name_length;
+                        entry.Offset = file.View.ReadUInt32 (current_offset);
+                        entry.Size   = file.View.ReadUInt32 (current_offset+4);
+                        if (entry.Offset <= current_offset || !entry.CheckPlacement (file.MaxOffset))
+                        {
+                            dir.Clear();
+                            break;
+                        }
+                        dir.Add (entry);
+                        current_offset += 8;
+                    }
+                    if (dir.Count > 0)
+                        return new ArcFile (file, this, dir);
+                }
+                catch { /* ignore parse errors */ }
             }
-            return new ArcFile (file, this, dir);
+            return null;
         }
 
         private ArcFile OpenEncrypted (ArcView file, int entry_count, uint main_key)
@@ -195,8 +215,7 @@ namespace GameRes.Formats.CatSystem
 
         private Stream OpenEncryptedEntry (FrontwingArchive arc, Entry entry)
         {
-            byte[] data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            byte[] data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             arc.Encryption.Decipher (data, data.Length/8*8);
             return new MemoryStream (data);
         }
