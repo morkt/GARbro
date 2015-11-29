@@ -100,41 +100,32 @@ namespace GameRes.Formats.Silky
 
         public byte[] Unpack ()
         {
-            byte[] image;
-            if (m_info.InnerWidth != 0 && m_info.InnerHeight != 0)
+            if (0 == m_info.InnerWidth || 0 == m_info.InnerHeight)
+                return CreateBackground();
+
+            m_input.Position = 0x20;
+            int inner_stride = m_info.InnerWidth * m_pixel_size;
+            var pixels = new byte[m_info.InnerHeight * inner_stride];
+            using (var lz = new LzssStream (m_input, LzssMode.Decompress, true))
             {
-                m_input.Position = 0x20;
-                int inner_stride = m_info.InnerWidth * m_pixel_size;
-                var pixels = new byte[m_info.InnerHeight * inner_stride];
-                using (var lz = new LzssStream (m_input, LzssMode.Decompress, true))
+                for (int pos = pixels.Length - inner_stride; pos >= 0; pos -= inner_stride)
                 {
-                    for (int dst = pixels.Length - inner_stride; dst >= 0; dst -= inner_stride)
-                    {
-                        if (inner_stride != lz.Read (pixels, dst, inner_stride))
-                            throw new InvalidFormatException();
-                    }
-                }
-                RestoreDelta (pixels, inner_stride);
-                if (m_info.InnerWidth != m_info.Width || m_info.InnerHeight != m_info.Height)
-                {
-                    image = CreateBackground();
-                    int src = 0;
-                    int dst = m_info.OffsetY * Stride + m_info.OffsetX * m_pixel_size;
-                    for (int y = 0; y < m_info.InnerHeight; ++y)
-                    {
-                        Buffer.BlockCopy (pixels, src, image, dst, inner_stride);
-                        dst += Stride;
-                        src += inner_stride;
-                    }
-                }
-                else
-                {
-                    image = pixels;
+                    if (inner_stride != lz.Read (pixels, pos, inner_stride))
+                        throw new InvalidFormatException();
                 }
             }
-            else
+            RestoreDelta (pixels, inner_stride);
+            if (m_info.InnerWidth == m_info.Width && m_info.InnerHeight == m_info.Height)
+                return pixels;
+
+            var image = CreateBackground();
+            int src = 0;
+            int dst = m_info.OffsetY * Stride + m_info.OffsetX * m_pixel_size;
+            for (int y = 0; y < m_info.InnerHeight; ++y)
             {
-                image = CreateBackground();
+                Buffer.BlockCopy (pixels, src, image, dst, inner_stride);
+                dst += Stride;
+                src += inner_stride;
             }
             return image;
         }
