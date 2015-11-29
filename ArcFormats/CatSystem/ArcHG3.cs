@@ -23,13 +23,10 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Windows;
 using GameRes.Utility;
-using GameRes.Compression;
 
 namespace GameRes.Formats.CatSystem
 {
@@ -77,7 +74,7 @@ namespace GameRes.Formats.CatSystem
         {
             // emulate TGA image
             var offset = entry.Offset+8;
-            var info = new Hg3MetaData
+            var info = new HgMetaData
             {
                 HeaderSize = arc.File.View.ReadUInt32 (offset),
                 Width   = arc.File.View.ReadUInt32 (offset+8),
