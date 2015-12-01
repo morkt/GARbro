@@ -105,7 +105,8 @@ namespace GARbro.GUI
             }
             ViewModel = vm;
             lv_SelectItem (0);
-            SetStatusText (guiStrings.MsgReady);
+            if (!vm.IsArchive)
+                SetStatusText (guiStrings.MsgReady);
         }
 
         void WindowKeyDown (object sender, KeyEventArgs e)
@@ -640,6 +641,8 @@ namespace GARbro.GUI
                 m_current_input.Mismatch = true;
         }
 
+        static readonly Regex FullpathRe = new Regex (@"^(?:[a-z]:|[\\/])", RegexOptions.IgnoreCase);
+
         private void acb_OnKeyDown (object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Return)
@@ -647,6 +650,11 @@ namespace GARbro.GUI
             string path = (sender as AutoCompleteBox).Text;
             if (string.IsNullOrEmpty (path))
                 return;
+            if (FullpathRe.IsMatch (path))
+            {
+                OpenFile (path);
+                return;
+            }
             try
             {
                 PushViewModel (GetNewViewModel (path));
@@ -750,7 +758,10 @@ namespace GARbro.GUI
                 return;
             try
             {
-                VFS.FullPath = new string[] { filename, "" };
+                if (File.Exists (filename))
+                    VFS.FullPath = new string[] { filename, "" };
+                else
+                    VFS.FullPath = new string[] { filename };
                 var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
                 PushViewModel (vm);
                 if (null != VFS.CurrentArchive)

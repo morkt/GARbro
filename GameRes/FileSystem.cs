@@ -595,7 +595,10 @@ namespace GameRes
                     m_vfs.Pop();
                 while (Count < desired_vfs_count)
                 {
-                    m_vfs.ChDir (m_vfs.Top.FindFile (desired[Count-1]));
+                    var entry = m_vfs.Top.FindFile (desired[Count-1]);
+                    if (entry is SubDirEntry)
+                        throw new FileNotFoundException();
+                    m_vfs.ChDir (entry);
                 }
                 m_vfs.Top.CurrentDirectory = desired.Last();
             }
