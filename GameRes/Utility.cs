@@ -104,6 +104,18 @@ namespace GameRes.Utility
         {
             return GetCString (data, index, length_limit, Encodings.cp932);
         }
+
+        public static uint RotR (uint v, int count)
+        {
+            count &= 0x1F;
+            return v >> count | v << (32-count);
+        }
+
+        public static uint RotL (uint v, int count)
+        {
+            count &= 0x1F;
+            return v << count | v >> (32-count);
+        }
     }
 
     public static class BigEndian
