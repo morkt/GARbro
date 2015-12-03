@@ -463,6 +463,7 @@ namespace GameRes.Formats
 
         public static ulong PSllD (ulong x, int count)
         {
+            count &= 0x1F;
             ulong mask = 0xFFFFFFFFu << count;
             mask |= mask << 32;
             return (x << count) & mask;
