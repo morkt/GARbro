@@ -32,12 +32,19 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Elf
 {
+    [Serializable]
     public class ArcIndexScheme
     {
         public int  NameLength;
         public byte NameKey;
         public uint SizeKey;
         public uint OffsetKey;
+    }
+
+    [Serializable]
+    public class Ai5Scheme : ResourceScheme
+    {
+        public Dictionary<string, ArcIndexScheme> KnownSchemes;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -49,20 +56,23 @@ namespace GameRes.Formats.Elf
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
-        public static readonly Dictionary<string, ArcIndexScheme> KnownSchemes = new Dictionary<string, ArcIndexScheme> {
-            { "Dorei Kaigo", new ArcIndexScheme
-                { NameLength = 0x14, NameKey = 0x06, SizeKey = 0x55303024, OffsetKey = 0x57683256 } },
-            { "Jokei Kazoku ~Inbou~", new ArcIndexScheme
-                { NameLength = 0x1E, NameKey = 0x73, SizeKey = 0xAF5789BC, OffsetKey = 0x59FACB45 } },
-        };
+        public static Dictionary<string, ArcIndexScheme> KnownSchemes = new Dictionary<string, ArcIndexScheme>();
 
         public ArcAI5Opener ()
         {
             Extensions = new string[] { "arc" };
         }
 
+        public override ResourceScheme Scheme
+        {
+            get { return new Ai5Scheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((Ai5Scheme)value).KnownSchemes; }
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
+            if (0 == KnownSchemes.Count)
+                return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
                 return null;
@@ -106,15 +116,18 @@ namespace GameRes.Formats.Elf
                 for (int i = 0; i < m_count; ++i)
                 {
                     m_file.View.Read (index_offset, m_name_buf, 0, (uint)scheme.NameLength);
-                    for (int n = 0; n < m_name_buf.Length; ++n)
+                    int n;
+                    for (n = 0; n < m_name_buf.Length; ++n)
                     {
                         m_name_buf[n] ^= scheme.NameKey;
                         if (0 == m_name_buf[n])
                             break;
+                        if (m_name_buf[n] < 0x20)
+                            return null;
                     }
-                    string name = Binary.GetCString (m_name_buf, 0, m_name_buf.Length);
-                    if (0 == name.Length)
+                    if (0 == n)
                         return null;
+                    string name = Encodings.cp932.GetString (m_name_buf, 0, n);
                     index_offset += scheme.NameLength;
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Size   = m_file.View.ReadUInt32 (index_offset)   ^ scheme.SizeKey;
