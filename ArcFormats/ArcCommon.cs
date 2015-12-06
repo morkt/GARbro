@@ -426,6 +426,25 @@ namespace GameRes.Formats
                 header[0x11] = 0x20;
             return new PrefixStream (header, new MemoryStream (pixels));
         }
+
+        public static Stream Create (ImageMetaData info, int stride, byte[] pixels, bool flipped = false)
+        {
+            int tga_stride = (int)info.Width * info.BPP / 8;
+            if (stride != tga_stride)
+            {
+                var adjusted = new byte[tga_stride * (int)info.Height];
+                int src = 0;
+                int dst = 0;
+                for (uint y = 0; y < info.Height; ++y)
+                {
+                    Buffer.BlockCopy (pixels, src, adjusted, dst, tga_stride);
+                    src += stride;
+                    dst += tga_stride;
+                }
+                pixels = adjusted;
+            }
+            return Create (info, pixels, flipped);
+        }
     }
 
     public static class MMX
