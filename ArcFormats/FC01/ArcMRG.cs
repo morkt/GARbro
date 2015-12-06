@@ -137,7 +137,7 @@ namespace GameRes.Formats.FC01
             while (length > 0)
             {
                 var v = data[index];
-                data[index++] = (byte)((v << 1 | v >> 7) ^ key);
+                data[index++] = (byte)(Binary.RotByteL (v, 1) ^ key);
                 key += length--;
             }
         }
@@ -339,7 +339,7 @@ namespace GameRes.Formats.FC01
                 byte c = m_input[m_src++];
                 if (0 != Key)
                 {
-                    c = (byte)(((c << 1) | (c >> 7)) ^ key);
+                    c = (byte)(Binary.RotByteL (c, 1) ^ key);
                     key -= (byte)i;
                 }
                 word_10036650[i*2] = d;
