@@ -365,4 +365,7 @@
   <data name="MCGLabelKey" xml:space="preserve">
     <value>8-bit 암호값</value>
   </data>
+  <data name="MCAEncryptedNotice" xml:space="preserve">
+    <value>아카이브 내용이 암호화됨.</value>
+  </data>
 </root>

@@ -361,4 +361,7 @@ Choose appropriate encryption scheme.</value>
   <data name="MCGLabelKey" xml:space="preserve">
     <value>8-bit encryption key</value>
   </data>
+  <data name="MCAEncryptedNotice" xml:space="preserve">
+    <value>Archive content is encrypted.</value>
+  </data>
 </root>

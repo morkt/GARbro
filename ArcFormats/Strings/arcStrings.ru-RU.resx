@@ -200,6 +200,9 @@
     <value>Архив содержит зашифрованные скрипты.
 Выберите способ шифрования или введите текстовый пароль.</value>
   </data>
+  <data name="MCAEncryptedNotice" xml:space="preserve">
+    <value>Содержимое архива зашифровано.</value>
+  </data>
   <data name="MCGChoose" xml:space="preserve">
     <value>Выберите наименование или введите ключ</value>
   </data>

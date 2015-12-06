@@ -77,6 +77,8 @@
     <Compile Include="elf\ArcVSD.cs" />
     <Compile Include="Eushully\ArcGPC.cs" />
     <Compile Include="Eushully\ImageGP.cs" />
+    <Compile Include="FC01\ArcMCA.cs" />
+    <Compile Include="FC01\ImageCLM.cs" />
     <Compile Include="FC01\WidgetMCG.xaml.cs">
       <DependentUpon>WidgetMCG.xaml</DependentUpon>
     </Compile>

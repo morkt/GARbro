@@ -360,6 +360,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Archive content is encrypted..
+        /// </summary>
+        public static string MCAEncryptedNotice {
+            get {
+                return ResourceManager.GetString("MCAEncryptedNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose title or enter a key.
         /// </summary>
         public static string MCGChoose {
