@@ -1,4 +1,4 @@
-MSNETDIR = D:/WINDOWS/Microsoft.NET/Framework/v4.0.30319
+MSNETDIR = C:/WINDOWS/Microsoft.NET/Framework/v4.0.30319
 MSCS = $(MSNETDIR)/csc //nologo
 MSBUILD = $(MSNETDIR)/MSBuild.exe //nologo
 
