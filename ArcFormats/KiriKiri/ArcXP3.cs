@@ -673,7 +673,8 @@ NextEntry:
             if (null != m_stream)
                 m_stream.Dispose();
             var segment = m_segment.Current;
-            m_stream = m_file.CreateStream (segment.Offset, segment.Size);
+            var segment_size = segment.IsCompressed ? segment.PackedSize : segment.Size;
+            m_stream = m_file.CreateStream (segment.Offset, segment_size);
             if (segment.IsCompressed)
                 m_stream = new ZLibStream (m_stream, CompressionMode.Decompress);
         }
@@ -684,11 +685,14 @@ NextEntry:
             while (!m_eof && count > 0)
             {
                 int read = m_stream.Read (buffer, offset, count);
-                m_entry.Cipher.Decrypt (m_entry, m_offset, buffer, offset, read);
-                m_offset += read;
-                total += read;
-                offset += read;
-                count -= read;
+                if (0 != read)
+                {
+                    m_entry.Cipher.Decrypt (m_entry, m_offset, buffer, offset, read);
+                    m_offset += read;
+                    total += read;
+                    offset += read;
+                    count -= read;
+                }
                 if (0 != count)
                     NextSegment();
             }
