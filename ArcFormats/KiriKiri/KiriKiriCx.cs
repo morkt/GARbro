@@ -520,6 +520,8 @@ namespace GameRes.Formats.KiriKiri
         public ZecchouCrypt (CxScheme scheme) : base (scheme)
         {
         }
+
+        public override bool ObfuscatedIndex { get { return true; } }
     }
 
     /* CxEncryption base branch order

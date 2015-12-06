@@ -198,7 +198,7 @@ namespace GameRes.Formats.KiriKiri
                                 entry.IsEncrypted = entry.Cipher != NoCryptAlgorithm;
 
                                 var name = new string (header.ReadChars (name_size));
-                                if (entry.Cipher is ZecchouCrypt && ObfuscatedPathRe.IsMatch (name))
+                                if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
                                 {
                                     goto NextEntry;
                                 }
@@ -245,7 +245,7 @@ namespace GameRes.Formats.KiriKiri
                     }
                     if (!string.IsNullOrEmpty (entry.Name) && entry.Segments.Any())
                     {
-                        if (entry.Cipher is ZecchouCrypt)
+                        if (entry.Cipher.ObfuscatedIndex)
                         {
                             DeobfuscateEntry (entry);
                         }
@@ -763,6 +763,13 @@ NextEntry:
         /// whether Adler32 checksum should be calculated after contents have been encrypted.
         /// </summary>
         public virtual bool HashAfterCrypt { get { return false; } }
+
+        /// <summary>
+        /// whether XP3 index is obfuscated:
+        ///  - duplicate entries
+        ///  - entries have additional dummy segments
+        /// </summary>
+        public virtual bool ObfuscatedIndex { get { return false; } }
 
         public virtual byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
