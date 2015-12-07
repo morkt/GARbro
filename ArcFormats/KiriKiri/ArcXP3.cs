@@ -91,6 +91,8 @@ namespace GameRes.Formats.KiriKiri
         {
             Signatures = new uint[] { 0x0d335058, 0 };
         }
+        
+        static readonly string SignatureBytes = "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01";
 
         public override ResourceScheme Scheme
         {
@@ -109,7 +111,7 @@ namespace GameRes.Formats.KiriKiri
             long base_offset = 0;
             if (0x5a4d == file.View.ReadUInt16 (0)) // 'MZ'
                 base_offset = SkipExeHeader (file);
-            if (!file.View.AsciiEqual (base_offset, "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"))
+            if (!file.View.AsciiEqual (base_offset, SignatureBytes))
                 return null;
             long dir_offset = base_offset + file.View.ReadInt64 (base_offset+0x0b);
             if (dir_offset < 0x13 || dir_offset >= file.MaxOffset)
@@ -285,17 +287,46 @@ NextEntry:
                     {
                         uint size = file.View.ReadUInt32 (section_table+0x10);
                         uint addr = file.View.ReadUInt32 (section_table+0x14);
+                        if (file.View.AsciiEqual (section_table, ".rsrc\0"))
+                        {
+                            // look within EXE resource section
+                            offset = addr;
+                            break;
+                        }
                         section_table += 0x28;
                         if (0 != size)
                             offset = Math.Max ((long)addr + size, offset);
                     }
                 }
             }
-            offset = (offset + 0xf) & ~(long)0xf;
-            for (; offset < file.MaxOffset; offset += 0x10)
+            unsafe
             {
-                if (file.View.AsciiEqual (offset, "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01"))
-                    return offset;
+                while (offset < file.MaxOffset)
+                {
+                    uint page_size = (uint)Math.Min (0x10000L, file.MaxOffset - offset);
+                    if (page_size < 0x20)
+                        break;
+                    using (var view = file.CreateViewAccessor (offset, page_size))
+                    {
+                        byte* page_begin = view.GetPointer (offset);
+                        byte* page_end   = page_begin + page_size - 0x10;
+                        try {
+                            for (byte* ptr = page_begin; ptr != page_end; ++ptr)
+                            {
+                                int i = 0;
+                                while (ptr[i] == SignatureBytes[i])
+                                {
+                                    if (++i == SignatureBytes.Length)
+                                        return offset + (ptr - page_begin);
+                                }
+                            }
+                        }
+                        finally {
+                            view.SafeMemoryMappedViewHandle.ReleasePointer();
+                        }
+                    }
+                    offset += page_size - 0x10;
+                }
             }
             return 0;
         }
