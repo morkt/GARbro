@@ -104,6 +104,22 @@ namespace GameRes.Formats
             // done!
             return cnt;
         }
+
+        #region IDisposable Members
+        bool _ogg_disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!_ogg_disposed)
+            {
+                if (disposing)
+                {
+                    m_reader.Dispose();
+                }
+                _ogg_disposed = true;
+                base.Dispose (disposing);
+            }
+        }
+        #endregion
     }
 
     [Export(typeof(AudioFormat))]
