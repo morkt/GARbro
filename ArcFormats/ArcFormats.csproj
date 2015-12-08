@@ -176,7 +176,7 @@
     <Compile Include="Silky\ArcARC.cs" />
     <Compile Include="Silky\ArcIFL.cs" />
     <Compile Include="ArcIKS.cs" />
-    <Compile Include="ArcInnGrey.cs" />
+    <Compile Include="ArcPACKDAT.cs" />
     <Compile Include="CatSystem\ArcINT.cs" />
     <Compile Include="ArcISA.cs" />
     <Compile Include="Kaas\ArcKAAS.cs" />
