@@ -70,15 +70,16 @@ namespace GameRes.Formats
         }
 
         #region IDisposable Members
+        bool _mp3_disposed;
         protected override void Dispose (bool disposing)
         {
-            if (null != m_reader)
+            if (!_mp3_disposed)
             {
                 if (disposing)
                 {
                     m_reader.Dispose();
                 }
-                m_reader = null;
+                _mp3_disposed = true;
                 base.Dispose (disposing);
             }
         }
