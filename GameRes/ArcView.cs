@@ -429,6 +429,27 @@ namespace GameRes
             {
                 size = Math.Min (size, Reserve (offset, size));
                 return m_view.ReadString (offset-m_offset, size, enc);
+                /* unsafe implementation requires .Net v4.6                
+                if (0 == size)
+                    return string.Empty;
+                unsafe
+                {
+                    byte* s = m_view.GetPointer (m_offset) + (offset - m_offset);
+                    try
+                    {
+                        uint string_length = 0;
+                        while (string_length < size && 0 != s[string_length])
+                        {
+                            ++string_length;
+                        }
+                        return enc.GetString (s, (int)string_length); // .Net v4.6+ only
+                    }
+                    finally
+                    {
+                        m_view.SafeMemoryMappedViewHandle.ReleasePointer();
+                    }
+                }
+                */
             }
 
             public string ReadString (long offset, uint size)
