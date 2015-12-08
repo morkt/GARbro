@@ -82,6 +82,8 @@
     <Compile Include="FC01\WidgetMCG.xaml.cs">
       <DependentUpon>WidgetMCG.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Glib2\ArcG2.cs" />
+    <Compile Include="Glib2\ImagePGX.cs" />
     <Compile Include="ImagePSD.cs" />
     <Compile Include="Kaguya\ImageAO.cs" />
     <Compile Include="Propeller\ArcMGR.cs" />
