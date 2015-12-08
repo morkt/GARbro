@@ -157,7 +157,7 @@
     <Compile Include="StudioEgo\ArcEGO.cs" />
     <Compile Include="Ffa\ArcFFA.cs" />
     <Compile Include="Interheart\ArcFPK.cs" />
-    <Compile Include="ArcFVP.cs" />
+    <Compile Include="Favorite\ArcFVP.cs" />
     <Compile Include="NScripter\EncryptedStream.cs" />
     <Compile Include="NScripter\ArcSAR.cs" />
     <Compile Include="NScripter\WidgetNSA.xaml.cs">
