@@ -34,8 +34,8 @@ namespace GameRes.Formats.FVP
     [Export(typeof(ArchiveFormat))]
     public class BinOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "FVP"; } }
-        public override string Description { get { return "FVP engine resource archive"; } }
+        public override string         Tag { get { return "BIN/ACPXPK"; } }
+        public override string Description { get { return "Favorite View Point resource archive"; } }
         public override uint     Signature { get { return 0x58504341; } } // "ACPX"
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
