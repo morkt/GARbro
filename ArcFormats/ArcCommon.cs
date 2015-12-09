@@ -416,7 +416,7 @@ namespace GameRes.Formats
         public static Stream Create (ImageMetaData info, byte[] pixels, bool flipped = false)
         {
             var header = new byte[0x12];
-            header[2] = 2;
+            header[2] = (byte)(info.BPP > 8 ? 2 : 3);
             LittleEndian.Pack ((short)info.OffsetX, header, 8);
             LittleEndian.Pack ((short)info.OffsetY, header, 0xa);
             LittleEndian.Pack ((ushort)info.Width,  header, 0xc);
