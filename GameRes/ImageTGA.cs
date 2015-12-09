@@ -195,7 +195,12 @@ namespace GameRes
                 switch (meta.BPP)
                 {
                 default: throw new InvalidFormatException();
-                case 8:  Format = PixelFormats.Indexed8; break;
+                case 8:
+                    if (1 == meta.ColormapType)
+                        Format = PixelFormats.Indexed8;
+                    else
+                        Format = PixelFormats.Gray8;
+                    break;
                 case 15: Format = PixelFormats.Bgr555; break;
                 case 16: Format = PixelFormats.Bgr555; break;
                 case 32: Format = PixelFormats.Bgra32; break;
@@ -244,9 +249,7 @@ namespace GameRes
             {
                 switch (m_meta.ImageType)
                 {
-                case 3:  // Uncompressed, black and white images.
                 case 9:  // Runlength encoded color-mapped images.
-                case 11: // Compressed, black and white images.
                 case 32: // Compressed color-mapped data, using Huffman, Delta, and
                         // runlength encoding.
                 case 33: // Compressed color-mapped data, using Huffman, Delta, and
@@ -256,9 +259,11 @@ namespace GameRes
                     throw new InvalidFormatException();
                 case 1:  // Uncompressed, color-mapped images.
                 case 2:  // Uncompressed, RGB images.
+                case 3:  // Uncompressed, black and white images.
                     ReadRaw();
                     break;
                 case 10: // Runlength encoded RGB images.
+                case 11: // Compressed, black and white images.
                     ReadRLE ((m_meta.BPP+7)/8);
                     break;
                 }
