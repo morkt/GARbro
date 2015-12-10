@@ -132,9 +132,17 @@ namespace GARbro.GUI
         /// </summary>
         protected override void OnClosing (CancelEventArgs e)
         {
-            AudioDevice = null;
-            CurrentAudio = null;
-            SaveSettings();
+            try
+            {
+                SaveSettings();
+                AudioDevice = null;
+                CurrentAudio = null;
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine (X.Message, "[OnClosing]");
+                Trace.WriteLine (X.StackTrace, "Stack trace");
+            }
             base.OnClosing (e);
         }
 
@@ -843,9 +851,10 @@ namespace GARbro.GUI
             get { return m_audio_device; }
             set
             {
-                if (m_audio_device != null)
-                    m_audio_device.Dispose();
+                var old_value = m_audio_device;
                 m_audio_device = value;
+                if (old_value != null)
+                    old_value.Dispose();
             }
         }
 
@@ -855,9 +864,10 @@ namespace GARbro.GUI
             get { return m_audio_input; }
             set
             {
-                if (m_audio_input != null)
-                    m_audio_input.Dispose();
+                var old_value = m_audio_input;
                 m_audio_input = value;
+                if (old_value != null)
+                    old_value.Dispose();
             }
         }
 
@@ -904,8 +914,15 @@ namespace GARbro.GUI
 
         private void OnPlaybackStopped (object sender, StoppedEventArgs e)
         {
-            SetResourceText ("");
-            CurrentAudio = null;
+            try
+            {
+                SetResourceText ("");
+                CurrentAudio = null;
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine (X.Message, "[OnPlaybackStopped]");
+            }
         }
 
         /// <summary>
