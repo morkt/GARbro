@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using GameRes.Utility;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -99,8 +100,7 @@ namespace GameRes.Formats.Will
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i < data.Length; ++i)
             {
-                byte b = data[i];
-                data[i] = (byte)(b >> 2 | b << 6);
+                data[i] = Binary.RotByteR (data[i], 2);
             }
             return new MemoryStream (data);
         }
