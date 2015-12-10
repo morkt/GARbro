@@ -94,6 +94,10 @@ namespace GameRes.Formats.KiriKiri
         
         static readonly string SignatureBytes = "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01";
 
+        static readonly byte[] s_xp3_header = {
+            (byte)'X', (byte)'P', (byte)'3', 0x0d, 0x0a, 0x20, 0x0a, 0x1a, 0x8b, 0x67, 0x01
+        };
+
         public override ResourceScheme Scheme
         {
             get { return new Xp3Scheme { KnownSchemes = KnownSchemes }; }
@@ -314,9 +318,9 @@ NextEntry:
                             for (byte* ptr = page_begin; ptr != page_end; ++ptr)
                             {
                                 int i = 0;
-                                while (ptr[i] == SignatureBytes[i])
+                                while (ptr[i] == s_xp3_header[i])
                                 {
-                                    if (++i == SignatureBytes.Length)
+                                    if (++i == s_xp3_header.Length)
                                         return offset + (ptr - page_begin);
                                 }
                             }
@@ -401,10 +405,6 @@ NextEntry:
             }
             return sum.Value;
         }
-
-        static readonly byte[] s_xp3_header = {
-            (byte)'X', (byte)'P', (byte)'3', 0x0d, 0x0a, 0x20, 0x0a, 0x1a, 0x8b, 0x67, 0x01
-        };
 
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
                                      EntryCallback callback)
