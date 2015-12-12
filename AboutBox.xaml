@@ -34,8 +34,14 @@ IN THE SOFTWARE.
     <Window.Resources>
         <local:BooleanToVisibiltyConverter x:Key="guiBoolToVisibilityConverter" />
         <local:CanCreateConverter x:Key="guiCanCreateConverter"/>
-        <CollectionViewSource x:Key="FormatsSource" Source="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}">
+        <CollectionViewSource x:Key="ArcFormatsSource" Source="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}">
             <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="Tag" Direction="Ascending"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+        <CollectionViewSource x:Key="ImageFormatsSource" Source="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ImageFormats, Mode=OneWay}">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="IsBuiltin" Direction="Descending"/>
                 <scm:SortDescription PropertyName="Tag" Direction="Ascending"/>
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
@@ -64,7 +70,7 @@ IN THE SOFTWARE.
             <TabControl>
                 <TabItem Header="{x:Static s:guiStrings.TextAboutArchives}">
                     <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
-                        <ListView Name="ArchiveFormats" ItemsSource="{Binding Source={StaticResource FormatsSource}}"
+                        <ListView Name="ArchiveFormats" ItemsSource="{Binding Source={StaticResource ArcFormatsSource}}"
                                   ItemContainerStyle="{StaticResource DisableSelectionStyle}" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.CanContentScroll="False">
                             <ListView.View>
                                 <GridView ColumnHeaderContainerStyle="{StaticResource HiddenHeaderStyle}">
@@ -97,7 +103,7 @@ IN THE SOFTWARE.
                 <TabItem Header="{x:Static s:guiStrings.TextAboutImages}">
                     <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
                         <ScrollViewer VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
-                            <ItemsControl Name="ImageFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ImageFormats, Mode=OneWay}">
+                            <ItemsControl Name="ImageFormats" ItemsSource="{Binding Source={StaticResource ImageFormatsSource}}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
