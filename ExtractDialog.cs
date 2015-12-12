@@ -50,7 +50,6 @@ namespace GARbro.GUI
 
             var selected = models.FirstOrDefault (f => f.Tag.Equals (default_format));
             image_format.ItemsSource = models;
-            Trace.WriteLine (selected != null ? selected.Tag : "null", "image_format");
             if (null != selected)
                 image_format.SelectedItem = selected;
             else if (models.Any())
