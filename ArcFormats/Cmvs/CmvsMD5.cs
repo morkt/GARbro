@@ -27,6 +27,8 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Cmvs
 {
+    public enum Md5Variant { A, B }
+
     public abstract class MD5
     {
         protected uint[]  m_state;
@@ -51,6 +53,14 @@ namespace GameRes.Formats.Cmvs
         {
             m_state = InitState();
             m_buffer = new uint[16];
+        }
+
+        static public MD5 Create (Md5Variant variant)
+        {
+            if (Md5Variant.A == variant)
+                return new Md5VariantA();
+            else
+                return new Md5VariantB();
         }
 
         protected abstract uint[] InitState ();

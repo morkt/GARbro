@@ -34,9 +34,13 @@ using System.Security.Cryptography;
 namespace GameRes.Formats.Purple
 {
     [Serializable]
-    public class CpzScheme : ResourceScheme
+    public class CmvsScheme
     {
-        public uint[]   Cpz5Secret;
+        public uint[]           Cpz5Secret;
+        public Cmvs.Md5Variant  Md5Variant;
+        public uint             DecoderFactor;
+        public uint             EntryInitKey;
+        public byte             EntryTailKey;
     }
 
     internal class CpzEntry : Entry
@@ -70,6 +74,12 @@ namespace GameRes.Formats.Purple
         }
     }
 
+    [Serializable]
+    public class CpzScheme : ResourceScheme
+    {
+        public Dictionary<string, CmvsScheme> KnownSchemes;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class CpzOpener : ArchiveFormat
     {
@@ -79,17 +89,17 @@ namespace GameRes.Formats.Purple
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
-        public static CpzScheme CmvsScheme = new CpzScheme();
+        public static Dictionary<string, CmvsScheme> KnownSchemes = new Dictionary<string, CmvsScheme>();
 
         public override ResourceScheme Scheme
         {
-            get { return CmvsScheme; }
-            set { CmvsScheme = (CpzScheme)value; }
+            get { return new CpzScheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((CpzScheme)value).KnownSchemes; }
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (null == CmvsScheme.Cpz5Secret)
+            if (null == KnownSchemes)
                 throw new OperationCanceledException ("Outdated encryption schemes database");
             var header = file.View.ReadBytes (0, 0x3C);
             var checksum = file.View.ReadUInt32 (0x3C);
@@ -104,14 +114,12 @@ namespace GameRes.Formats.Purple
                 IsEncrypted     = 0 != (0xFB73A955 ^ LittleEndian.ToUInt32 (header, 0x34)),
                 IsCompressed    = 0 != (0x37ACF831 ^ LittleEndian.ToUInt32 (header, 0x38)),
             };
-            cpz.CmvsMd5[0] = 0x43DE7C19 ^ LittleEndian.ToUInt32 (header, 0x20);
-            cpz.CmvsMd5[1] = 0xCC65F415 ^ LittleEndian.ToUInt32 (header, 0x24);
-            cpz.CmvsMd5[2] = 0xD016A93C ^ LittleEndian.ToUInt32 (header, 0x28);
-            cpz.CmvsMd5[3] = 0x97A3BA9A ^ LittleEndian.ToUInt32 (header, 0x2C);
-
-            var cmvs_md5 = new Cmvs.Md5VariantB();
-            cmvs_md5.Compute (cpz.CmvsMd5);
-
+            var cmvs_md5 = new uint[] {
+                0x43DE7C19 ^ LittleEndian.ToUInt32 (header, 0x20),
+                0xCC65F415 ^ LittleEndian.ToUInt32 (header, 0x24),
+                0xD016A93C ^ LittleEndian.ToUInt32 (header, 0x28),
+                0x97A3BA9A ^ LittleEndian.ToUInt32 (header, 0x2C),
+            };
             int index_size = cpz.DirEntriesSize + cpz.FileEntriesSize;
             var index = file.View.ReadBytes (0x40, (uint)index_size);
             if (index.Length != index_size)
@@ -122,10 +130,26 @@ namespace GameRes.Formats.Purple
             if (!header.Skip (0x10).Take (0x10).SequenceEqual (hash))
                 return null;
 
-            DecryptIndexStage1 (index, cpz.MasterKey ^ 0x3795B39A);
+            foreach (var scheme in KnownSchemes.Values)
+            {
+                // both CmvsMd5 and index will be altered by ReadIndex in decryption attempt
+                Array.Copy (cmvs_md5, cpz.CmvsMd5, 4);
+                var arc = ReadIndex (file, scheme, cpz, index);
+                if (null != arc)
+                    return arc;
+                file.View.Read (0x40, index, 0, (uint)index_size);
+            }
+            throw new UnknownEncryptionScheme();
+        }
 
-            // variantA: 0x1A743125, variantB: 0x1A740235
-            var decoder = new Cpz5Decoder (cpz.MasterKey, cpz.CmvsMd5[1], 0x1A740235);
+        ArcFile ReadIndex (ArcView file, CmvsScheme scheme, CpzHeader cpz, byte[] index)
+        {
+            var cmvs_md5 = Cmvs.MD5.Create (scheme.Md5Variant);
+            cmvs_md5.Compute (cpz.CmvsMd5);
+
+            DecryptIndexStage1 (index, cpz.MasterKey ^ 0x3795B39A, scheme.Cpz5Secret);
+
+            var decoder = new Cpz5Decoder (scheme, cpz.MasterKey, cpz.CmvsMd5[1]);
             decoder.Decode (index, 0, cpz.DirEntriesSize, 0x3A);
 
             var key = new uint[4];
@@ -136,8 +160,8 @@ namespace GameRes.Formats.Purple
 
             DecryptIndexDirectory (index, cpz.DirEntriesSize, key);
 
-            decoder.Init (cpz.MasterKey, cpz.CmvsMd5[2], 0x1A740235);
-            int base_offset = 0x40 + index_size;
+            decoder.Init (cpz.MasterKey, cpz.CmvsMd5[2]);
+            int base_offset = 0x40 + index.Length;
             int dir_offset = 0;
             var dir = new List<Entry>();
             for (int i = 0; i < cpz.DirCount; ++i)
@@ -146,6 +170,8 @@ namespace GameRes.Formats.Purple
                 if (dir_size <= 0x10 || dir_size > index.Length)
                     return null;
                 int  file_count     = LittleEndian.ToInt32 (index, dir_offset+4);
+                if (file_count >= 0x10000)
+                    return null;
                 int  entries_offset = LittleEndian.ToInt32 (index, dir_offset+8);
                 uint dir_key        = LittleEndian.ToUInt32 (index, dir_offset+0xC);
                 var  dir_name       = Binary.GetCString (index, dir_offset+0x10, dir_size-0x10);
@@ -157,6 +183,8 @@ namespace GameRes.Formats.Purple
                     next_entries_offset = LittleEndian.ToInt32 (index, dir_offset + dir_size + 8);
 
                 int cur_entries_size = next_entries_offset - entries_offset;
+                if (cur_entries_size <= 0)
+                    return null;
 
                 int cur_offset = cpz.DirEntriesSize + entries_offset;
                 int cur_entries_end = cur_offset + cur_entries_size;
@@ -175,7 +203,7 @@ namespace GameRes.Formats.Purple
                 {
                     int entry_size = LittleEndian.ToInt32 (index, cur_offset);
                     if (entry_size > index.Length || entry_size <= 0x18)
-                        throw new UnknownEncryptionScheme();
+                        return null;
                     var name = Binary.GetCString (index, cur_offset+0x18, cur_entries_end-(cur_offset+0x18));
                     if (!is_root_dir)
                         name = Path.Combine (dir_name, name);
@@ -193,7 +221,7 @@ namespace GameRes.Formats.Purple
                 dir_offset += dir_size;
             }
             if (cpz.IsEncrypted)
-                decoder.Init (cpz.CmvsMd5[3], cpz.MasterKey, 0x1A740235);
+                decoder.Init (cpz.CmvsMd5[3], cpz.MasterKey);
             return new CpzArchive (file, this, dir, cpz, decoder);
         }
 
@@ -217,12 +245,12 @@ namespace GameRes.Formats.Purple
             return new MemoryStream (data);
         }
 
-        void DecryptIndexStage1 (byte[] data, uint key)
+        void DecryptIndexStage1 (byte[] data, uint key, uint[] secret)
         {
             var sectet_key = new uint[24];
-            int secret_length = Math.Min (24, CmvsScheme.Cpz5Secret.Length);
+            int secret_length = Math.Min (24, secret.Length);
             for (int i = 0; i < secret_length; ++i)
-                sectet_key[i] = CmvsScheme.Cpz5Secret[i] - key;
+                sectet_key[i] = secret[i] - key;
 
             uint shift = key;
             shift = (shift >> 8) ^ key;
@@ -404,14 +432,16 @@ namespace GameRes.Formats.Purple
 
     internal class Cpz5Decoder
     {
-        protected byte[] m_decode_table = new byte[0x100];
+        protected byte[]        m_decode_table = new byte[0x100];
+        protected CmvsScheme    m_scheme;
 
-        public Cpz5Decoder (uint key, uint summand, uint factor)
+        public Cpz5Decoder (CmvsScheme scheme, uint key, uint summand)
         {
-            Init (key, summand, factor);
+            m_scheme = scheme;
+            Init (key, summand);
         }
 
-        public void Init (uint key, uint summand, uint factor)
+        public void Init (uint key, uint summand)
         {
             for (int i = 0; i < 0x100; ++i)
                 m_decode_table[i] = (byte)i;
@@ -430,7 +460,7 @@ namespace GameRes.Formats.Purple
                 m_decode_table[i0] = m_decode_table[i1];
                 m_decode_table[i1] = tmp;
 
-                key = summand + factor * Binary.RotR (key, 2);
+                key = summand + m_scheme.DecoderFactor * Binary.RotR (key, 2);
             }
         }
 
@@ -447,12 +477,12 @@ namespace GameRes.Formats.Purple
             if (null == cmvs_md5 || cmvs_md5.Length < 4)
                 throw new ArgumentException ("cmvs_md5");
 
-            int secret_length = Math.Min (CpzOpener.CmvsScheme.Cpz5Secret.Length, 0x10) * 4;
+            int secret_length = Math.Min (m_scheme.Cpz5Secret.Length, 0x10) * sizeof(uint);
             byte[] key_bytes  = new byte[secret_length];
             uint[] secret_key = new uint[0x10];
 
             uint key = cmvs_md5[1] >> 2;
-            Buffer.BlockCopy (CpzOpener.CmvsScheme.Cpz5Secret, 0, key_bytes, 0, secret_length);
+            Buffer.BlockCopy (m_scheme.Cpz5Secret, 0, key_bytes, 0, secret_length);
             for (int i = 0; i < secret_length; ++i)
                 key_bytes[i] = (byte)(key ^ m_decode_table[key_bytes[i]]);
 
@@ -465,7 +495,7 @@ namespace GameRes.Formats.Purple
                 fixed (byte* raw = data)
                 {
                     uint* data32 = (uint*)raw;
-                    key = 0x2547B39E;
+                    key = m_scheme.EntryInitKey;
                     int k = 9;
                     for (int i = data.Length / 4; i > 0; --i)
                     {	
@@ -476,7 +506,7 @@ namespace GameRes.Formats.Purple
                     byte* data8 = (byte*)data32;
                     for (int i = data.Length & 3; i > 0; --i)
                     {
-                        *data8 = m_decode_table[*data8 ^ 0xCB];
+                        *data8 = m_decode_table[*data8 ^ m_scheme.EntryTailKey];
                         ++data8;
                     }
                 }
