@@ -113,11 +113,15 @@ namespace GameRes.Formats.Purple
         {
             switch (m_info.Type)
             {
+            default: throw new InvalidEncryptionScheme();
             case 1: UnpackV1(); break;
             case 5: UnpackV5(); break;
             case 8:
             case 6: UnpackV6(); break;
-            default: throw new NotSupportedException(string.Format ("PB3 v{0} images not supported", m_info.Type));
+            case 2:
+            case 3:
+            case 4:
+            case 7: throw new NotSupportedException(string.Format ("PB3 v{0} images not supported", m_info.Type));
             // V3 is pain in the ass to implement, machine code is full of unrolled loops resulting in a
             // thousands lines of spaghetti code.
             }
