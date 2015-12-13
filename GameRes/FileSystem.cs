@@ -481,7 +481,7 @@ namespace GameRes
                 if (FormatCatalog.Instance.LastError is OperationCanceledException)
                     throw FormatCatalog.Instance.LastError;
                 else
-                    throw new UnknownFormatException();
+                    throw new UnknownFormatException (FormatCatalog.Instance.LastError);
             }
             try
             {
@@ -675,5 +675,6 @@ namespace GameRes
     public class UnknownFormatException : FileFormatException
     {
         public UnknownFormatException () : base (garStrings.MsgUnknownFormat) { }
+        public UnknownFormatException (Exception inner) : base (garStrings.MsgUnknownFormat, inner) { }
     }
 }
