@@ -37,7 +37,7 @@ namespace GameRes.Formats.uGOS
         public override string         Tag { get { return "DET"; } }
         public override string Description { get { return "μ-GameOperationSystem resource archive"; } }
         public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
@@ -51,12 +51,11 @@ namespace GameRes.Formats.uGOS
             using (var nme = VFS.OpenView (name_file))
             using (var idx = VFS.OpenView (index_file))
             {
-                var name_table = new byte[nme.MaxOffset];
-                nme.View.Read (0, name_table, 0, (uint)name_table.Length);
-                uint idx_offset = 0;
                 int count = (int)(idx.MaxOffset / 0x14);
                 if (!IsSaneCount (count))
                     return null;
+                uint idx_offset = 0;
+                var name_table = nme.View.ReadBytes (0, (uint)nme.MaxOffset);
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
                 {
