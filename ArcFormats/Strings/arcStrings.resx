@@ -296,7 +296,7 @@ Choose appropriate encryption scheme.</value>
   </data>
   <data name="YPFNotice" xml:space="preserve">
     <value>Archive directory is encrypted.
-Enter archive encryption key.</value>
+Choose appropriate encryption scheme.</value>
   </data>
   <data name="LabelEncScheme" xml:space="preserve">
     <value>Encryption scheme</value>
@@ -363,5 +363,8 @@ Choose appropriate encryption scheme.</value>
   </data>
   <data name="MCAEncryptedNotice" xml:space="preserve">
     <value>Archive content is encrypted.</value>
+  </data>
+  <data name="YPFTryGuess" xml:space="preserve">
+    <value>Try to guess</value>
   </data>
 </root>

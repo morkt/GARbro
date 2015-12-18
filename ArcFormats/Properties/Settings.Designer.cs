@@ -465,5 +465,17 @@ namespace GameRes.Formats.Properties {
                 this["QLIEScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string YPFScheme {
+            get {
+                return ((string)(this["YPFScheme"]));
+            }
+            set {
+                this["YPFScheme"] = value;
+            }
+        }
     }
 }

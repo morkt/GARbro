@@ -2,7 +2,7 @@
 //! \date       Mon Jul 14 14:40:06 2014
 //! \brief      YPF resource format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2015 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,8 +28,6 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using GameRes.Compression;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
@@ -39,20 +37,67 @@ namespace GameRes.Formats.YuRis
 {
     public class YpfOptions : ResourceOptions
     {
-        public uint     Key { get; set; }
-        public uint Version { get; set; }
+        public uint      Key { get; set; }
+        public uint  Version { get; set; }
+        public string Scheme { get; set; }
+    }
+
+    internal class YpfEntry : PackedEntry
+    {
+        public byte[]   IndexName;
+        public uint     NameHash;
+        public byte     FileType;
+        public uint     CheckSum;
+    }
+
+    [Serializable]
+    public class YpfScheme
+    {
+        public byte[]   SwapTable;
+        public byte     Key;
+        public bool     GuessKey;
+        public uint     ExtraHeaderSize;
+
+        public YpfScheme () { }
+
+        public YpfScheme (byte[] swap_table, byte key, uint extra_size = 0)
+        {
+            SwapTable = swap_table;
+            Key = key;
+            GuessKey = false;
+            ExtraHeaderSize = extra_size;
+        }
+
+        public YpfScheme (byte[] swap_table)
+        {
+            SwapTable = swap_table;
+            GuessKey = true;
+            ExtraHeaderSize = 0;
+        }
+    }
+
+    [Serializable]
+    public class YuRisScheme : ResourceScheme
+    {
+        public Dictionary<string, YpfScheme>    KnownSchemes;
     }
 
     [Export(typeof(ArchiveFormat))]
     public class YpfOpener : ArchiveFormat
     {
-        public override string Tag { get { return "YPF"; } }
+        public override string         Tag { get { return "YPF"; } }
         public override string Description { get { return arcStrings.YPFDescription; } }
-        public override uint Signature { get { return 0x00465059; } }
-        public override bool IsHierarchic { get { return true; } }
-        public override bool CanCreate { get { return true; } }
+        public override uint     Signature { get { return 0x00465059; } }
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool     CanCreate { get { return true; } }
 
-        private const uint DefaultKey = 0xffffffff;
+        static public Dictionary<string, YpfScheme> KnownSchemes = new Dictionary<string, YpfScheme>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new YuRisScheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((YuRisScheme)value).KnownSchemes; }
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -65,9 +110,9 @@ namespace GameRes.Formats.YuRis
                 return null;
             var parser = new Parser (file, version, count, dir_size);
 
-            uint key = QueryEncryptionKey();
-            var dir = parser.ScanDir (key);
-            if (0 == dir.Count)
+            var scheme = QueryEncryptionScheme (version);
+            var dir = parser.ScanDir (scheme);
+            if (null == dir || 0 == dir.Count)
                 return null;
 
             return new ArcFile (file, this, dir);
@@ -89,6 +134,7 @@ namespace GameRes.Formats.YuRis
             {
                 Key     = Settings.Default.YPFKey,
                 Version = Settings.Default.YPFVersion,
+                Scheme  = Settings.Default.YPFScheme,
             };
         }
 
@@ -102,18 +148,17 @@ namespace GameRes.Formats.YuRis
             return new GUI.CreateYPFWidget();
         }
 
-        uint QueryEncryptionKey ()
+        YpfScheme QueryEncryptionScheme (uint version)
         {
             var options = Query<YpfOptions> (arcStrings.YPFNotice);
-            return options.Key;
-        }
-
-        internal class YpfEntry : PackedEntry
-        {
-            public byte[]   IndexName;
-            public uint     NameHash;
-            public byte     FileType;
-            public uint     CheckSum;
+            YpfScheme scheme;
+            if (!KnownSchemes.TryGetValue (options.Scheme, out scheme) || null == scheme)
+                scheme = new YpfScheme {
+                    SwapTable   = GuessSwapTable (version),
+                    GuessKey    = true,
+                    ExtraHeaderSize = 0x1F4 == version ? 4u : 0u,
+                };
+            return scheme;
         }
 
         delegate uint ChecksumFunc (byte[] data);
@@ -128,7 +173,10 @@ namespace GameRes.Formats.YuRis
                 throw new InvalidEncryptionScheme (arcStrings.MsgCreationKeyRequired);
             if (0 == ypf_options.Version)
                 throw new InvalidFormatException (arcStrings.MsgInvalidVersion);
-
+            var scheme = new YpfScheme {
+                SwapTable   = GuessSwapTable (ypf_options.Version),
+                Key         = (byte)ypf_options.Key
+            };
             int callback_count = 0;
             var encoding = Encodings.cp932.WithFatalFallback();
 
@@ -218,7 +266,7 @@ namespace GameRes.Formats.YuRis
                 foreach (var entry in file_table)
                 {
                     writer.Write (entry.NameHash);
-                    byte name_len = (byte)~Parser.Decrypt (ypf_options.Version, (byte)entry.IndexName.Length);
+                    byte name_len = (byte)~Parser.DecryptLength (scheme.SwapTable, (byte)entry.IndexName.Length);
                     writer.Write (name_len);
                     writer.Write (entry.IndexName);
                     writer.Write (entry.FileType);
@@ -235,6 +283,7 @@ namespace GameRes.Formats.YuRis
         {
             // 0x0F7: 0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-avi, 6-wav, 7-ogg, 8-psd
             // 0x122, 0x12C, 0x196: 0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-wav, 6-ogg, 7-psd
+            // 0x1F4:               0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-wav, 6-ogg, 7-psd, 8-ycg 9-psb
             string ext = Path.GetExtension (name).TrimStart ('.').ToLower();
             if ("ybn" == ext) return 0;
             if ("bmp" == ext) return 1;
@@ -242,6 +291,8 @@ namespace GameRes.Formats.YuRis
             if ("jpg" == ext || "jpeg" == ext) return 3;
             if ("gif" == ext) return 4;
             if ("avi" == ext && 0xf7 == version) return 5;
+            if ("ycg" == ext) return 8;
+            if ("psb" == ext) return 9;
             byte type = 0;
             if ("wav" == ext) type = 5;
             else if ("ogg" == ext) type = 6;
@@ -249,6 +300,22 @@ namespace GameRes.Formats.YuRis
             if (0xf7 == version && 0 != type)
                 ++type;
             return type;
+        }
+
+        byte[] GuessSwapTable (uint version)
+        {
+            if (0x1F4 == version)
+            {
+                YpfScheme scheme;
+                if (KnownSchemes.TryGetValue ("Unionism Quartet", out scheme))
+                    return scheme.SwapTable;
+            }
+            if (version < 0x100)
+                return SwapTable04;
+            else if (version >= 0x12c && version < 0x196)
+                return SwapTable10;
+            else
+                return SwapTable00;
         }
 
         private class Parser
@@ -265,103 +332,105 @@ namespace GameRes.Formats.YuRis
                 m_dir_size = dir_size;
                 m_version = version;
             }
-            // 4-name_checksum, 1-name_count, *-name, 1-file_type
-	        // 1-pack_flag, 4-size, 4-packed_size, 4-offset, 4-packed_adler32
+            // int32-name_checksum, byte-name_count, *-name, byte-file_type
+	        // byte-pack_flag, int32-size, int32-packed_size, int32-offset, int32-file_checksum
 
-            public List<Entry> ScanDir (uint key)
+            public List<Entry> ScanDir (YpfScheme scheme)
             {
                 uint dir_offset = 0x20;
                 uint dir_remaining = m_dir_size;
                 var dir = new List<Entry> ((int)m_count);
+                byte key = scheme.Key;
+                bool guess_key = scheme.GuessKey;
+                uint extra_size = 0x12 + scheme.ExtraHeaderSize;
                 for (uint num = 0; num < m_count; ++num)
                 {
-                    if (dir_remaining < 0x17)
-                        break;
-                    dir_remaining -= 0x17;
+                    if (dir_remaining < 5+extra_size)
+                        return null;
+                    dir_remaining -= 5+extra_size;
 
-                    uint name_size = Decrypt (m_version, (byte)(m_file.View.ReadByte (dir_offset+4) ^ 0xff));
+                    uint name_size = DecryptLength (scheme.SwapTable, (byte)(m_file.View.ReadByte (dir_offset+4) ^ 0xff));
                     if (name_size > dir_remaining)
-                        break;
+                        return null;
                     dir_remaining -= name_size;
                     dir_offset += 5;
                     if (0 == name_size)
-                        break;
-                    if (0xffffffff == key)
+                        return null;
+                    byte[] raw_name = m_file.View.ReadBytes (dir_offset, name_size);
+                    dir_offset += name_size;
+                    if (guess_key)
                     {
                         if (name_size < 4)
-                            break;
+                            return null;
                         // assume filename contains '.' and 3-characters extension.
-                        key = (uint)(m_file.View.ReadByte (dir_offset+name_size-4) ^ 0x2e);
+                        key = (byte)(raw_name[name_size-4] ^ '.');
+                        guess_key = false;
                     }
-                    byte[] raw_name = new byte[name_size];
-                    for (int i = 0; i < name_size; ++i)
+                    for (uint i = 0; i < name_size; ++i)
                     {
-                        raw_name[i] = (byte)(m_file.View.ReadByte (dir_offset) ^ key);
-                        ++dir_offset;
+                        raw_name[i] ^= key;
                     }
                     string name = Encodings.cp932.GetString (raw_name);
-                    // 0x0F7: 0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-avi, 6-wav, 7-ogg, 8-psd
+                    // 0x0F7:               0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-avi, 6-wav, 7-ogg, 8-psd
                     // 0x122, 0x12C, 0x196: 0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-wav, 6-ogg, 7-psd
+                    // 0x1F4:               0-ybn, 1-bmp, 2-png, 3-jpg, 4-gif, 5-wav, 6-ogg, 7-psd, 8-ycg 9-psb
                     int type_id = m_file.View.ReadByte (dir_offset);
-                    string type = "";
-                    switch (type_id)
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                    if (string.IsNullOrEmpty (entry.Type))
                     {
-                    case 0:
-                        type = "script";
-                        break;
-                    case 1: case 2: case 3: case 4:
-                        type = "image";
-                        break;
-                    case 5:
-                        type = 0xf7 == m_version ? "video" : "audio";
-                        break;
-                    case 6:
-                    case 7:
-                        type = "audio";
-                        break;
+                        switch (type_id)
+                        {
+                        case 0:
+                            entry.Type = "script";
+                            break;
+                        case 1: case 2: case 3: case 4: case 8:
+                            entry.Type = "image";
+                            break;
+                        case 5:
+                            entry.Type = 0xf7 == m_version ? "video" : "audio";
+                            break;
+                        case 6:
+                            entry.Type = "audio";
+                            break;
+                        case 7:
+                            entry.Type = 0xf7 == m_version ? "audio" : "image";
+                            break;
+                        }
                     }
-                    var entry = new PackedEntry { Name = name, Type = type };
-                    entry.IsPacked      = 1 == m_file.View.ReadByte (dir_offset+1);
+                    entry.IsPacked      = 0 != m_file.View.ReadByte (dir_offset+1);
                     entry.UnpackedSize  = m_file.View.ReadUInt32 (dir_offset+2);
                     entry.Size          = m_file.View.ReadUInt32 (dir_offset+6);
                     entry.Offset        = m_file.View.ReadUInt32 (dir_offset+10);
                     if (entry.CheckPlacement (m_file.MaxOffset))
                         dir.Add (entry);
-                    dir_offset += 0x12;
+                    dir_offset += extra_size;
                 }
                 return dir;
             }
 
-            static readonly byte[] s_crypt_table = {
-                0x03,0x48,0x06,0x35,		// 0x122, 0x196
-                0x0C,0x10,0x11,0x19,0x1C,0x1E,	// 0x0F7
-                0x09,0x0B,0x0D,0x13,0x15,0x1B,	// 0x12C
-                0x20,0x23,0x26,0x29,
-                0x2C,0x2F,0x2E,0x32,
-            };
-            // 0xFF 0x0F7 "Four-Leaf" adler32
-            // 0x34 0x122 "Neko Koi!" crc32
-            // 0x28 0x12C "Suzukaze no Melt" (no recovery - 00 00 00 00)
-            // 0xFF 0x196 "Mamono Musume-tachi to no Rakuen ~Slime & Scylla~"
-
-            static public byte Decrypt (uint version, byte value)
+            static public byte DecryptLength (byte[] swap_table, byte value)
             {
-                int pos = 4;
-                if (version >= 0x100)
-                {
-                    if (version >= 0x12c && version < 0x196)
-                        pos = 10;
-                    else
-                        pos = 0;
-                }
-                pos = Array.IndexOf (s_crypt_table, value, pos);
+                int pos = Array.IndexOf (swap_table, value);
                 if (-1 == pos)
                     return value;
                 if (0 != (pos & 1))
-                    return s_crypt_table[pos-1];
+                    return swap_table[pos-1];
                 else
-                    return s_crypt_table[pos+1];
+                    return swap_table[pos+1];
             }
         }
+
+        static public byte[] SwapTable00 = {
+            0x03, 0x48, 0x06, 0x35,
+            0x0C, 0x10, 0x11, 0x19, 0x1C, 0x1E, 0x09, 0x0B, 0x0D, 0x13, 0x15, 0x1B,
+            0x20, 0x23, 0x26, 0x29, 0x2C, 0x2F, 0x2E, 0x32,
+        };
+        static public byte[] SwapTable04 = {
+            0x0C, 0x10, 0x11, 0x19, 0x1C, 0x1E, 0x09, 0x0B, 0x0D, 0x13, 0x15, 0x1B,
+            0x20, 0x23, 0x26, 0x29, 0x2C, 0x2F, 0x2E, 0x32,
+        };
+        static public byte[] SwapTable10 = {
+            0x20, 0x23, 0x26, 0x29, 0x2C, 0x2F, 0x2E, 0x32,
+        };
     }
 }

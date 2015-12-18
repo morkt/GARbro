@@ -234,6 +234,7 @@
     <Compile Include="Majiro\WidgetRCT.xaml.cs">
       <DependentUpon>WidgetRCT.xaml</DependentUpon>
     </Compile>
+    <Compile Include="YuRis\ImageYCG.cs" />
     <Compile Include="Zyx\ArcBDF.cs" />
     <Compile Include="Zyx\ImageSPL.cs" />
     <None Include="ArcSeraph.cs" />

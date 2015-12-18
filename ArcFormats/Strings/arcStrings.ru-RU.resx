@@ -317,6 +317,9 @@
   </data>
   <data name="YPFNotice" xml:space="preserve">
     <value>Заголовок архива зашифрован.
-Введите ключ шифрования.</value>
+Выберите способ дешифровки.</value>
+  </data>
+  <data name="YPFTryGuess" xml:space="preserve">
+    <value>Попытаться подобрать</value>
   </data>
 </root>

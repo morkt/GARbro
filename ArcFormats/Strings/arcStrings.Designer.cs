@@ -779,11 +779,20 @@ namespace GameRes.Formats.Strings {
         
         /// <summary>
         ///   Looks up a localized string similar to Archive directory is encrypted.
-        ///Enter archive encryption key..
+        ///Choose appropriate encryption scheme..
         /// </summary>
         public static string YPFNotice {
             get {
                 return ResourceManager.GetString("YPFNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Try to guess.
+        /// </summary>
+        public static string YPFTryGuess {
+            get {
+                return ResourceManager.GetString("YPFTryGuess", resourceCulture);
             }
         }
     }
