@@ -830,14 +830,20 @@ namespace GARbro.GUI
             int old_fs_count = VFS.Count;
             vm = TryCreateViewModel (new_dir);
             if (null == vm)
-                return;
-
-            PushViewModel (vm);
-            if (VFS.Count > old_fs_count && null != VFS.CurrentArchive)
-                SetStatusText (string.Format ("{0}: {1}", VFS.CurrentArchive.Description,
-                    Localization.Format ("MsgFiles", VFS.CurrentArchive.Dir.Count())));
+            {
+                if (VFS.Count == old_fs_count)
+                    return;
+                vm = new DirectoryViewModel (VFS.FullPath, new Entry[0], VFS.IsVirtual);
+            }
             else
-                SetStatusText ("");
+            {
+                if (VFS.Count > old_fs_count && null != VFS.CurrentArchive)
+                    SetStatusText (string.Format ("{0}: {1}", VFS.CurrentArchive.Description,
+                        Localization.Format ("MsgFiles", VFS.CurrentArchive.Dir.Count())));
+                else
+                    SetStatusText ("");
+            }
+            PushViewModel (vm);
 
             if (".." == entry.Name)
                 lv_SelectItem (Path.GetFileName (old_dir));
