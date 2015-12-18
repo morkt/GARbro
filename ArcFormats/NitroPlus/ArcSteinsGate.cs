@@ -68,7 +68,7 @@ namespace GameRes.Formats
             using (var header = new BinaryReader (stream))
             {
                 int entry_count = header.ReadInt32();
-                if (entry_count <= 0)
+                if (!IsSaneCount (entry_count))
                     return null;
                 index_size -= 4;
                 int average_entry_size = index_size / entry_count;
