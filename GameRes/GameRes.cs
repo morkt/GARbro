@@ -237,7 +237,7 @@ namespace GameRes
             throw new NotImplementedException ("ArchiveFormat.Create is not implemented");
         }
 
-        protected static bool IsSaneCount (int count)
+        public static bool IsSaneCount (int count)
         {
             return count > 0 && count < 0x20000;
         }
