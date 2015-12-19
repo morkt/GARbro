@@ -834,17 +834,17 @@ namespace GARbro.GUI
                 if (VFS.Count == old_fs_count)
                     return;
                 vm = new DirectoryViewModel (VFS.FullPath, new Entry[0], VFS.IsVirtual);
+                PushViewModel (vm);
             }
             else
             {
+                PushViewModel (vm);
                 if (VFS.Count > old_fs_count && null != VFS.CurrentArchive)
                     SetStatusText (string.Format ("{0}: {1}", VFS.CurrentArchive.Description,
                         Localization.Format ("MsgFiles", VFS.CurrentArchive.Dir.Count())));
                 else
                     SetStatusText ("");
             }
-            PushViewModel (vm);
-
             if (".." == entry.Name)
                 lv_SelectItem (Path.GetFileName (old_dir));
             else
