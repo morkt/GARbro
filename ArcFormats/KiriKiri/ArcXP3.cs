@@ -1174,6 +1174,34 @@ NextEntry:
     }
 
     [Serializable]
+    public class GakuenButouCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            if (0 != (offset & 1))
+                return (byte)(value ^ offset);
+            else
+                return (byte)(value ^ entry.Hash);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            for (int i = 0; i < count; ++i, ++offset)
+            {
+                if (0 != (offset & 1))
+                    values[pos+i] ^= (byte)offset;
+                else
+                    values[pos+i] ^= (byte)entry.Hash;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
+
+    [Serializable]
     public class AlteredPinkCrypt : ICrypt
     {
         static readonly byte[] KeyTable = {
