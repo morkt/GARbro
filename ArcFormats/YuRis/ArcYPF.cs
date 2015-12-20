@@ -57,6 +57,7 @@ namespace GameRes.Formats.YuRis
         public byte     Key;
         public bool     GuessKey;
         public uint     ExtraHeaderSize;
+        public uint     ScriptKey;
 
         public YpfScheme () { }
 
@@ -73,6 +74,17 @@ namespace GameRes.Formats.YuRis
             SwapTable = swap_table;
             GuessKey = true;
             ExtraHeaderSize = 0;
+        }
+    }
+
+    public class YpfArchive : ArcFile
+    {
+        public uint     ScriptKey;
+
+        public YpfArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, uint script_key)
+            : base (arc, impl, dir)
+        {
+            ScriptKey = script_key;
         }
     }
 
@@ -115,17 +127,31 @@ namespace GameRes.Formats.YuRis
             if (null == dir || 0 == dir.Count)
                 return null;
 
-            return new ArcFile (file, this, dir);
+            if (scheme.ScriptKey != 0)
+                return new YpfArchive (file, this, dir, scheme.ScriptKey);
+            else
+                return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
             var packed_entry = entry as PackedEntry;
-            if (null == packed_entry || !packed_entry.IsPacked)
+            var ypf = arc as YpfArchive;
+            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (null != packed_entry && packed_entry.IsPacked)
+                input = new ZLibStream (input, CompressionMode.Decompress);
+            uint unpacked_size = null == packed_entry ? entry.Size : packed_entry.UnpackedSize;
+            if (null == ypf || 0 == ypf.ScriptKey || unpacked_size <= 0x20
+                || !entry.Name.EndsWith (".ybn", StringComparison.InvariantCultureIgnoreCase))
                 return input;
-            else
-                return new ZLibStream (input, CompressionMode.Decompress);
+            using (input)
+            {
+                var data = new byte[unpacked_size];
+                input.Read (data, 0, data.Length);
+                if (Binary.AsciiEqual (data, 0, "YSTB"))
+                    DecryptYstb (data, ypf.ScriptKey);
+                return new MemoryStream (data);
+            }
         }
 
         public override ResourceOptions GetDefaultOptions ()
@@ -316,6 +342,57 @@ namespace GameRes.Formats.YuRis
                 return SwapTable10;
             else
                 return SwapTable00;
+        }
+
+        unsafe void DecryptYstb (byte[] data, uint key)
+        {
+            if (data.Length <= 0x20)
+                return;
+            fixed (byte* raw = data)
+            {
+                uint* header = (uint*)raw;
+                uint version = header[1];
+                int first_item, last_item;
+                if (version >= 0x22A)
+                {
+                    first_item = 3;
+                    last_item = 7;
+                }
+                else
+                {
+                    first_item = 2;
+                    last_item = 4;
+                }
+                uint total = 0x20;
+                // check sizes
+                for (int i = first_item; i < last_item; ++i)
+                {
+                    if (header[i] >= data.Length)
+                        return;
+                    total += header[i];
+                    if (total > data.Length)
+                        return;
+                }
+                if (total != data.Length)
+                    return;
+                byte* data8 = raw+0x20;
+                for (int i = first_item; i < last_item; ++i)
+                {
+                    uint size = header[i];
+                    if (0 == size)
+                        continue;
+                    uint* data32 = (uint*)data8;
+                    for (uint j = size / 4; j != 0; --j)
+                        *data32++ ^= key;
+                    data8 = (byte*)data32;
+                    uint k = key;
+                    for (uint j = size & 3; j != 0; --j)
+                    {
+                        *data8++ ^= (byte)k;
+                        k >>= 8;
+                    }
+                }
+            }
         }
 
         private class Parser
