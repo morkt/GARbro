@@ -50,7 +50,7 @@ namespace GameRes.Formats.FVP
             if (!file.View.AsciiEqual (4, "PK01"))
                 return null;
             int count = file.View.ReadInt32 (8);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             long index_offset = 0x0c;
             uint index_size = (uint)(0x28 * count);
@@ -73,117 +73,88 @@ namespace GameRes.Formats.FVP
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var entry_offset = entry.Offset;
-            var input = new ArcView.Frame (arc.File, entry_offset, entry.Size);
-            try
+            if (!(entry.Size > 8 && arc.File.View.AsciiEqual (entry.Offset, "acp\0")))
+                return base.OpenEntry (arc, entry);
+            int unpacked_size = Binary.BigEndian (arc.File.View.ReadInt32 (entry.Offset+4));
+            using (var input = arc.File.CreateStream (entry.Offset+8, entry.Size-8))
+            using (var decoder = new LzwDecoder (input, unpacked_size))
             {
-                if (entry.Size > 8 && input.AsciiEqual (entry_offset, "acp\0"))
-                {
-                    using (var decoder = new LzwDecoder (input))
-                    {
-                        decoder.Unpack();
-                        return new MemoryStream (decoder.Output, false);
-                    }
-                }
-                return new ArcView.ArcStream (input, entry_offset, entry.Size);
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
+                decoder.Unpack();
+                return new MemoryStream (decoder.Output);
             }
         }
     }
 
     internal sealed class LzwDecoder : IDisposable
     {
-        private Stream  m_input;
-        private byte[]  m_output;
+        private MsbBitStream    m_input;
+        private byte[]          m_output;
 
         public byte[] Output { get { return m_output; } }
-        
-        uint m_dst_size;
 
-        public LzwDecoder (ArcView.Frame input)
+        public LzwDecoder (Stream input, int unpacked_size)
         {
-            m_dst_size = Binary.BigEndian (input.ReadUInt32 (input.Offset+4));
-            m_input = new ArcView.ArcStream (input, input.Offset+8, input.Reserved-8);
-            m_output = new byte[m_dst_size];
+            m_input = new MsbBitStream (input, true);
+            m_output = new byte[unpacked_size];
         }
 
         public void Unpack ()
         {
             int dst = 0;
-            int bits = 0;
-            var buf = new int[0x8c00];
-            uint dst_left = m_dst_size;
-            uint L0 = 0x800000;
-            uint edx = 0x102;
-            for (;;)
+            var lzw_dict = new int[0x8900];
+            int token_width = 9;
+            int dict_pos = 0;
+            while (dst < m_output.Length)
             {
-                uint eax = L0;
-                bool hi = false;
-                while (!hi)
-                {
-                    bits <<= 1;
-                    if (0 == (bits&0xff))
-                    {
-                        bits = m_input.ReadByte();
-                        if (-1 == bits)
-                            throw new EndOfStreamException ("Invalid compressed stream");
-                        bits = (bits << 1) | 1;
-                    }
-                    int next_bit = (bits >> 8) & 1;
-                    hi = 0 != (eax & 0x80000000);
-                    eax = (eax << 1) | (uint)next_bit;
-                }
-                if (0x100 == (eax & 0xff00) && 2 >= (eax & 0xff))
-                {
-                    if (2 == (eax & 0xff))
-                    {
-                        L0 = 0x800000;
-                        edx = 0x102;
-                        continue;
-                    }
-                    if (0 == (eax & 0xff))
-                        break;
-                    L0 >>= 1;
-                    if (0 != (L0 & 0xff00))
-                        throw new EndOfStreamException ("Invalid compressed stream");
-                    continue;
-                }
-                ++edx;
-                if (edx >= 0x8c00)
+                int token = m_input.GetBits (token_width);
+                if (-1 == token)
                     throw new EndOfStreamException ("Invalid compressed stream");
-                buf[edx] = dst;
-                if (0 == (eax & 0xff00))
+                else if (0x100 == token) // end of input
+                    break;
+                else if (0x101 == token) // increase token width
                 {
-                    if (0 == dst_left--)
-                        throw new EndOfStreamException ("Invalid compressed stream");
-                    m_output[dst++] = (byte)(eax & 0xff);
+                    ++token_width;
+                    if (token_width > 24)
+                        throw new InvalidFormatException ("Invalid comressed stream");
+                }
+                else if (0x102 == token) // reset dictionary
+                {
+                    token_width = 9;
+                    dict_pos = 0;
                 }
                 else
                 {
-                    if (eax >= edx)
-                        throw new EndOfStreamException ("Invalid compressed stream");
-                    int src   = buf[eax];
-                    int count = buf[eax+1] - src + 1;
-                    if (dst_left < count)
-                        throw new EndOfStreamException ("Invalid compressed stream");
-                    dst_left -= (uint)count;
-                    Binary.CopyOverlapped (m_output, src, dst, count);
-                    dst += count;
+                    if (dict_pos >= lzw_dict.Length)
+                        throw new InvalidFormatException ("Invalid comressed stream");
+                    lzw_dict[dict_pos++] = dst;
+                    if (token < 0x100)
+                    {
+                        m_output[dst++] = (byte)token;
+                    }
+                    else
+                    {
+                        token -= 0x103;
+                        if (token >= dict_pos)
+                            throw new InvalidFormatException ("Invalid comressed stream");
+                        int src = lzw_dict[token];
+                        int count = Math.Min (m_output.Length-dst, lzw_dict[token+1] - src + 1);
+                        if (count < 0)
+                            throw new InvalidFormatException ("Invalid comressed stream");
+                        Binary.CopyOverlapped (m_output, src, dst, count);
+                        dst += count;
+                    }
                 }
             }
         }
 
         #region IDisposable Members
+        bool _disposed = false;
         public void Dispose ()
         {
-            if (null != m_input)
+            if (!_disposed)
             {
                 m_input.Dispose();
-                m_input = null;
+                _disposed = true;
             }
             GC.SuppressFinalize (this);
         }
