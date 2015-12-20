@@ -59,7 +59,7 @@ namespace GameRes.Formats.AST
         {
             int version = file.View.ReadByte (3) - 0x30;
             int count = file.View.ReadInt32 (4);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             var name_buf = new byte[32];
             var dir = new List<Entry> (count);
@@ -111,10 +111,9 @@ namespace GameRes.Formats.AST
             {
                 arc.File.View.Reserve (entry.Offset, entry.Size);
                 var sig = arc.File.View.ReadUInt32 (entry.Offset);
-                if (0xb8b1af76 == sig)
+                if (0xB8B1AF76 == sig) // PNG signature ^ FF
                 {
-                    var data = new byte[entry.Size];
-                    arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+                    var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                     for (int i = 0; i < data.Length; ++i)
                         data[i] ^= 0xff;
                     return new MemoryStream (data);
