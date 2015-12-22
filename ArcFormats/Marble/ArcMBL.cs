@@ -81,7 +81,7 @@ namespace GameRes.Formats.Marble
             return arc;
         }
 
-        static readonly Lazy<ImageFormat> PrsFormat = new Lazy<ImageFormat> (() => FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "PRS"));
+        static readonly Lazy<ImageFormat> PrsFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PRS"));
 
         private ArcFile ReadIndex (ArcView file, int count, uint filename_len, uint index_offset)
         {
