@@ -588,11 +588,25 @@ namespace GARbro.GUI
             e.Handled = true;
         }
 
+        private void lv_KeyDown (object sender, KeyEventArgs e)
+        {
+            if (e.IsDown && Key.Space == e.Key && LookupActive)
+            {
+                LookupItem (" ", e.Timestamp);
+                e.Handled = true;
+            }
+        }
+
         class InputData
         {
             public int              LastTime = 0;
             public StringBuilder    Phrase = new StringBuilder();
             public bool             Mismatch = false;
+
+            public bool LookupActive
+            {
+                get { return Phrase.Length > 0 && Environment.TickCount - LastTime < TextLookupTimeout; }
+            }
 
             public void Reset ()
             {
@@ -604,6 +618,8 @@ namespace GARbro.GUI
         const int TextLookupTimeout = 1000; // milliseconds
 
         InputData m_current_input = new InputData();
+
+        public bool LookupActive { get { return m_current_input.LookupActive; } }
 
         /// <summary>
         /// Lookup item in listview pane by first letters of name.
@@ -1147,6 +1163,20 @@ namespace GARbro.GUI
             CurrentDirectory.SelectAll();
         }
 
+        void NextItemExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            if (LookupActive)
+                return;
+
+            var index = CurrentDirectory.SelectedIndex;
+            if (-1 == index)
+                index = 0;
+            else
+                ++index;
+            if (index < CurrentDirectory.Items.Count)
+                CurrentDirectory.SelectedIndex = index;
+        }
+
         /// <summary>
         /// Handle "Exit" command.
         /// </summary>
@@ -1351,5 +1381,6 @@ namespace GARbro.GUI
         public static readonly RoutedCommand AddSelection = new RoutedCommand();
         public static readonly RoutedCommand SelectAll = new RoutedCommand();
         public static readonly RoutedCommand SetFileType = new RoutedCommand();
+        public static readonly RoutedCommand NextItem = new RoutedCommand();
     }
 }

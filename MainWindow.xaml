@@ -265,6 +265,7 @@
                     SelectionMode="Extended" Foreground="Black" AlternationCount="2"
                     ContextMenu="{StaticResource lvDirContextMenu}"
                     PreviewTextInput="lv_TextInput" IsSynchronizedWithCurrentItem="True"
+                    PreviewKeyDown="lv_KeyDown"
                     SelectionChanged="lv_SelectionChanged"
                     GridViewColumnHeader.Click="lv_ColumnHeaderClicked">
                 <ListView.Resources>
@@ -274,6 +275,7 @@
                     <KeyBinding Key="Enter" Command="{x:Static local:Commands.OpenItem}"/>
                     <KeyBinding Gesture="Ctrl+E" Command="{x:Static local:Commands.ExploreItem}"/>
                     <KeyBinding Gesture="F2" Command="{x:Static local:Commands.RenameItem}"/>
+                    <KeyBinding Gesture="Space" Command="{x:Static local:Commands.NextItem}"/>
                     <MouseBinding Gesture="LeftDoubleClick" Command="{x:Static local:Commands.OpenItem}" />
                 </ListView.InputBindings>
                 <ListView.ItemContainerStyle>
@@ -368,6 +370,7 @@
         <KeyBinding Gesture="F6" Command="{x:Static local:Commands.ConvertMedia}"/>
         <KeyBinding Gesture="Delete" Command="{x:Static local:Commands.DeleteItem}"/>
         <KeyBinding Gesture="Add" Command="{x:Static local:Commands.AddSelection}"/>
+        <KeyBinding Gesture="Space" Command="{x:Static local:Commands.NextItem}"/>
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:Commands.OpenItem}"   Executed="OpenItemExec"   CanExecute="CanExecuteOnSelected"/>
@@ -375,6 +378,7 @@
         <CommandBinding Command="{x:Static local:Commands.OpenRecent}" Executed="OpenRecentExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.AddSelection}" Executed="AddSelectionExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.SelectAll}"  Executed="SelectAllExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.NextItem}"  Executed="NextItemExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.ExtractItem}" Executed="ExtractItemExec"   CanExecute="CanExecuteExtract"/>
         <CommandBinding Command="{x:Static local:Commands.CreateArchive}" Executed="CreateArchiveExec" CanExecute="CanExecuteCreateArchive"/>
         <CommandBinding Command="{x:Static local:Commands.DeleteItem}" Executed="DeleteItemExec" CanExecute="CanExecuteOnPhysicalFile" />

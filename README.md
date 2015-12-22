@@ -19,6 +19,7 @@ GUI Hotkeys
 <tr><td><kbd>Alt</kbd>+<kbd>&rarr;</kbd></td><td>   Go forward</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>       Open file as archive</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>       Select all files</td></tr>
+<tr><td><kbd>Space</kbd></td><td>                   Select next file</td></tr>
 <tr><td><kbd>Numpad +</kbd></td><td>                Select files matching specified mask</td></tr>
 <tr><td><kbd>F3</kbd></td><td>                      Create archive</td></tr>
 <tr><td><kbd>F4</kbd></td><td>                      Extract selected files</td></tr>
