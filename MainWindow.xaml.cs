@@ -1168,11 +1168,7 @@ namespace GARbro.GUI
             if (LookupActive)
                 return;
 
-            var index = CurrentDirectory.SelectedIndex;
-            if (-1 == index)
-                index = 0;
-            else
-                ++index;
+            var index = CurrentDirectory.SelectedIndex + 1;
             if (index < CurrentDirectory.Items.Count)
                 CurrentDirectory.SelectedIndex = index;
         }
