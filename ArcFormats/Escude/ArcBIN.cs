@@ -103,14 +103,21 @@ namespace GameRes.Formats.Escude
             var index = m_file.View.ReadBytes (0x14, index_size);
             if (index.Length != index_size)
                 return null;
+            uint filenames_base = 0x14 + index_size;
+            var names = m_file.View.ReadBytes (filenames_base, names_size);
+            if (names.Length != names_size)
+                return null;
             Decrypt (index);
             int index_offset = 0;
-            uint filenames_base = 0x14 + index_size;
             var dir = new List<Entry> ((int)m_count);
             for (uint i = 0; i < m_count; ++i)
             {
-                uint filename_offset = LittleEndian.ToUInt32 (index, index_offset);
-                var name = m_file.View.ReadString (filenames_base+filename_offset, names_size-filename_offset);
+                int filename_offset = LittleEndian.ToInt32 (index, index_offset);
+                if (filename_offset < 0 || filename_offset >= names.Length)
+                    return null;
+                var name = Binary.GetCString (names, filename_offset, names.Length-filename_offset);
+                if (0 == name.Length)
+                    return null;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = LittleEndian.ToUInt32 (index, index_offset+4);
                 entry.Size   = LittleEndian.ToUInt32 (index, index_offset+8);
