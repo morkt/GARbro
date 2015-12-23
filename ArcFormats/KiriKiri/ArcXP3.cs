@@ -201,7 +201,7 @@ namespace GameRes.Formats.KiriKiri
                                     entry.Cipher = crypt_algorithm.Value;
                                 else
                                     entry.Cipher = NoCryptAlgorithm;
-                                entry.IsEncrypted = entry.Cipher != NoCryptAlgorithm;
+                                entry.IsEncrypted = !(entry.Cipher is NoCrypt);
 
                                 var name = new string (header.ReadChars (name_size));
                                 if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
