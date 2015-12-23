@@ -129,6 +129,8 @@ namespace GameRes.Formats.Marble
                         --remaining;
                         bit = 0x80;
                     }
+                    if (remaining <= 0)
+                        break;
                     if (0 == (ctl & bit))
                     {
                         m_output[dst++] = m_input.ReadByte();
@@ -184,7 +186,7 @@ namespace GameRes.Formats.Marble
                     Binary.CopyOverlapped (m_output, dst-shift, dst, length);
                     dst += length;
                 }
-                if (m_flag != 0)
+                if ((m_flag & 0x80) != 0)
                 {
                     for (int i = 3; i < m_output.Length; ++i)
                         m_output[i] += m_output[i-3];
