@@ -102,11 +102,11 @@ namespace GameRes.Formats.MAI
                 var entry = new AutoEntry (Path.Combine (current_folder, name), () => {
                     uint signature = file.View.ReadUInt32 (offset);
                     if (is_mask_arc)
-                        return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "MSK/MAI");
+                        return ImageFormat.FindByTag ("MSK/MAI");
                     else if (0x4d43 == (signature & 0xffff)) // 'CM'
-                        return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "CMP/MAI");
+                        return ImageFormat.FindByTag ("CMP/MAI");
                     else if (0x4d41 == (signature & 0xffff)) // 'AM'
-                        return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == "AM/MAI");
+                        return ImageFormat.FindByTag ("AM/MAI");
                     else if (0x4d42 == (signature & 0xffff)) // 'BM'
                         return ImageFormat.Bmp;
                     else if (signature != 0)
