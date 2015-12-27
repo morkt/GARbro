@@ -213,7 +213,7 @@ namespace GameRes.Formats.BGI
             return data;
         }
 
-        static protected int ReadInteger (Stream input)
+        static internal int ReadInteger (Stream input)
         {
             int v = 0;
             int code;
@@ -330,7 +330,7 @@ namespace GameRes.Formats.BGI
             }
         }
 
-        class HuffmanNode
+        internal class HuffmanNode
         {
             public bool Valid;
             public bool IsParent;
@@ -404,7 +404,7 @@ namespace GameRes.Formats.BGI
             return node_list.ToArray();
         }
 
-        int DecodeToken (MsbBitStream input, HuffmanNode[] tree)
+        internal static int DecodeToken (MsbBitStream input, HuffmanNode[] tree)
         {
             int node_index = tree.Length-1;
             do
@@ -421,6 +421,74 @@ namespace GameRes.Formats.BGI
             return node_index;
         }
 
+        void UnpackV2 ()
+        {
+            if (m_info.EncLength < 0x80)
+                throw new InvalidFormatException();
+            var decoder = new ParallelCbgDecoder (m_info, ReadEncoded());
+            var base_offset = Input.Position;
+            decoder.Tree1 = CreateHuffmanTree (ReadWeightTable (Input, 0x10), true);
+            decoder.Tree2 = CreateHuffmanTree (ReadWeightTable (Input, 0xB0), true);
+
+            int y_blocks = decoder.Height / 8;
+            var offsets = new int[y_blocks+1];
+            int input_base = (int)(Input.Position + offsets.Length*4 - base_offset);
+            using (var reader = new ArcView.Reader (Input))
+            {
+                for (int i = 0; i < offsets.Length; ++i)
+                    offsets[i] = reader.ReadInt32() - input_base;
+                decoder.Input = reader.ReadBytes ((int)(Input.Length - Input.Position));
+            }
+            int pad_skip = ((decoder.Width >> 3) + 7) >> 3;
+            var tasks = new List<Task> (y_blocks+1);
+            decoder.Output = new byte[decoder.Width * decoder.Height * 4];
+            int dst = 0;
+            for (int i = 0; i < y_blocks; ++i)
+            {
+                int block_offset = offsets[i] + pad_skip;
+                int next_offset = i+1 == y_blocks ? decoder.Input.Length : offsets[i+1];
+                int closure_dst = dst;
+                var task = Task.Run (() => decoder.UnpackBlock (block_offset, next_offset-block_offset, closure_dst));
+                tasks.Add (task);
+                dst += decoder.Width * 32;
+            }
+            if (32 == m_info.BPP)
+            {
+                var task = Task.Run (() => decoder.UnpackAlpha (offsets[y_blocks]));
+                tasks.Add (task);
+            }
+            var complete = Task.WhenAll (tasks);
+            complete.Wait();
+            Format = decoder.HasAlpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+            Stride = decoder.Width * 4;
+            m_output = decoder.Output;
+        }
+    }
+
+    internal class ParallelCbgDecoder
+    {
+        public byte[]           Input;
+        public byte[]           Output;
+        public int              BPP;
+        public int              Width;
+        public int              Height;
+        public CbgReader.HuffmanNode[] Tree1;
+        public CbgReader.HuffmanNode[] Tree2;
+        public bool             HasAlpha = false;
+        float[,]                DCT = new float[2, 64];
+
+        public ParallelCbgDecoder (CbgMetaData info, byte[] dct_data)
+        {
+            BPP = info.BPP;
+            Width  = ((int)info.Width  + 7) & -8;
+            Height = ((int)info.Height + 7) & -8;
+
+            for (int i = 0; i < 0x80; ++i)
+            {
+                DCT[i >> 6, i & 0x3F] = dct_data[i] * DCT_Table[i & 0x3F];
+            }
+        }
+
         static readonly float[] DCT_Table = {
             1.00000000f, 1.38703990f, 1.30656302f, 1.17587554f, 1.00000000f, 0.78569496f, 0.54119611f, 0.27589938f,
             1.38703990f, 1.92387950f, 1.81225491f, 1.63098633f, 1.38703990f, 1.08979023f, 0.75066054f, 0.38268343f,
@@ -432,81 +500,19 @@ namespace GameRes.Formats.BGI
             0.27589938f, 0.38268343f, 0.36047992f, 0.32442334f, 0.27589938f, 0.21677275f, 0.14931567f, 0.07612047f,
         };
 
-        void UnpackV2 ()
+        public void UnpackBlock (int offset, int length, int dst)
         {
-            if (m_info.EncLength < 0x80)
-                throw new InvalidFormatException();
-            var info = new DecodeInfo { BPP = m_info.BPP };
-            var dct_data = ReadEncoded();
-            for (int i = 0; i < 0x80; ++i)
-            {
-                info.DCT[i >> 6, i & 0x3F] = dct_data[i] * DCT_Table[i & 0x3F];
-            }
-            var base_offset = Input.Position;
-            info.Tree1 = CreateHuffmanTree (ReadWeightTable (Input, 0x10), true);
-            info.Tree2 = CreateHuffmanTree (ReadWeightTable (Input, 0xB0), true);
-            info.Width  = ((int)m_info.Width  + 7) & -8;
-            info.Height = ((int)m_info.Height + 7) & -8;
-
-            m_output = new byte[info.Width * info.Height * 4];
-            Stride = info.Width * 4;
-
-            int y_blocks = info.Height / 8;
-            var offsets = new int[y_blocks+1];
-            int input_base = (int)(Input.Position + offsets.Length*4 - base_offset);
-            using (var reader = new ArcView.Reader (Input))
-            {
-                for (int i = 0; i < offsets.Length; ++i)
-                    offsets[i] = reader.ReadInt32() - input_base;
-                info.Input = reader.ReadBytes ((int)(Input.Length - Input.Position));
-            }
-            int pad_skip = ((info.Width >> 3) + 7) >> 3;
-            var tasks = new List<Task> (y_blocks+1);
-            int dst = 0;
-            for (int i = 0; i < y_blocks; ++i)
-            {
-                int block_offset = offsets[i] + pad_skip;
-                int next_offset = i+1 == y_blocks ? info.Input.Length : offsets[i+1];
-                int closure_dst = dst;
-                var task = Task.Run (() => UnpackBlock (info, block_offset, next_offset-block_offset, closure_dst));
-                tasks.Add (task);
-                dst += info.Width * 32;
-            }
-            if (32 == m_info.BPP)
-            {
-                var task = Task.Run (() => UnpackAlpha (info, offsets[y_blocks]));
-                tasks.Add (task);
-            }
-            var complete = Task.WhenAll (tasks);
-            complete.Wait();
-            Format = info.HasAlpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-        }
-
-        class DecodeInfo
-        {
-            public byte[]          Input;
-            public int             BPP;
-            public int             Width;
-            public int             Height;
-            public HuffmanNode[]   Tree1;
-            public HuffmanNode[]   Tree2;
-            public float[,]        DCT = new float[2, 64];
-            public bool            HasAlpha = false;
-        }
-
-        void UnpackBlock (DecodeInfo info, int offset, int length, int dst)
-        {
-            using (var input = new MemoryStream (info.Input, offset, length))
+            using (var input = new MemoryStream (this.Input, offset, length))
             using (var reader = new MsbBitStream (input))
             {
-                int block_size = ReadInteger (input);
+                int block_size = CbgReader.ReadInteger (input);
                 if (-1 == block_size)
                     return;
                 var color_data = new short[block_size];
                 int acc = 0;
                 for (int i = 0; i < block_size && input.Position < input.Length; i += 64)
                 {
-                    int count = DecodeToken (reader, info.Tree1);
+                    int count = CbgReader.DecodeToken (reader, Tree1);
                     if (count != 0)
                     {
                         int v = reader.GetBits (count);
@@ -525,7 +531,7 @@ namespace GameRes.Formats.BGI
                     int index = 1;
                     while (index < 64 && input.Position < input.Length)
                     {
-                        int code = DecodeToken (reader, info.Tree2);
+                        int code = CbgReader.DecodeToken (reader, Tree2);
                         if (0 == code)
                             break;
                         if (0xF == code)
@@ -544,10 +550,10 @@ namespace GameRes.Formats.BGI
                         ++index;
                     }
                 }
-                if (8 == info.BPP)
-                    DecodeGrayscale (color_data, info.DCT, info.Width, dst);
+                if (8 == BPP)
+                    DecodeGrayscale (color_data, dst);
                 else
-                    DecodeRGB (color_data, info.DCT, info.Width, dst);
+                    DecodeRGB (color_data, dst);
             }
         }
 
@@ -563,16 +569,16 @@ namespace GameRes.Formats.BGI
 
         short[,] YCbCr_block { get { return s_YCbCr_block.Value; } }
 
-        void DecodeRGB (short[] data, float[,] dct, int width, int dst)
+        void DecodeRGB (short[] data, int dst)
         {
-            int block_count = width / 8;
+            int block_count = Width / 8;
             for (int i = 0; i < block_count; ++i)
             {
                 int src = i * 64;
                 for (int channel = 0; channel < 3; ++channel)
                 {
-                    DecodeDCT (channel, data, src, dct);
-                    src += width * 8;
+                    DecodeDCT (channel, data, src);
+                    src += Width * 8;
                 }
                 for (int j = 0; j < 64; ++j)
                 {
@@ -591,46 +597,46 @@ namespace GameRes.Formats.BGI
 
                     int y = j >> 3;
                     int x = j & 7;
-                    int p = (y * width + x) * 4;
-                    m_output[dst+p]   = FloatToByte (b);
-                    m_output[dst+p+1] = FloatToByte (g);
-                    m_output[dst+p+2] = FloatToByte (r);
+                    int p = (y * Width + x) * 4;
+                    Output[dst+p]   = FloatToByte (b);
+                    Output[dst+p+1] = FloatToByte (g);
+                    Output[dst+p+2] = FloatToByte (r);
                 }
                 dst += 32;
             }
         }
 
-        void DecodeGrayscale (short[] data, float[,] dct, int width, int dst)
+        void DecodeGrayscale (short[] data, int dst)
         {
             int src = 0;
-            int block_count = width / 8;
+            int block_count = Width / 8;
             for (int i = 0; i < block_count; ++i)
             {
-                DecodeDCT (0, data, src, dct);
+                DecodeDCT (0, data, src);
                 src += 64;
                 for (int j = 0; j < 64; ++j)
                 {
                     int y = j >> 3;
                     int x = j & 7;
-                    int p = (y * width + x) * 4;
-                    m_output[dst+p]   = (byte)YCbCr_block[j,0];
-                    m_output[dst+p+1] = (byte)YCbCr_block[j,0];
-                    m_output[dst+p+2] = (byte)YCbCr_block[j,0];
+                    int p = (y * Width + x) * 4;
+                    Output[dst+p]   = (byte)YCbCr_block[j,0];
+                    Output[dst+p+1] = (byte)YCbCr_block[j,0];
+                    Output[dst+p+2] = (byte)YCbCr_block[j,0];
                 }
                 dst += 32;
             }
         }
 
-        void UnpackAlpha (DecodeInfo info, int offset)
+        public void UnpackAlpha (int offset)
         {
-            using (var data = new MemoryStream (info.Input, offset, info.Input.Length-offset))
+            using (var data = new MemoryStream (this.Input, offset, Input.Length-offset))
             using (var input = new BinaryReader (data))
             {
                 if (1 != input.ReadInt32())
                     return;
                 int dst = 3;
                 int ctl = 1 << 1;
-                while (dst < m_output.Length)
+                while (dst < Output.Length)
                 {
                     ctl >>= 1;
                     if (1 == ctl)
@@ -647,30 +653,30 @@ namespace GameRes.Formats.BGI
                             y |= -8;
                         int count = ((v >> 9) & 0x7F) + 3;
 
-                        int src = dst + (x + y * info.Width) * 4;
-                        if (src < 0 || src >= m_output.Length)
+                        int src = dst + (x + y * Width) * 4;
+                        if (src < 0 || src >= Output.Length)
                             return;
 
                         for (int i = 0; i < count; ++i)
                         {
-                            m_output[dst] = m_output[src];
+                            Output[dst] = Output[src];
                             src += 4;
                             dst += 4;
                         }
                     }
                     else
                     {
-                        m_output[dst] = input.ReadByte();
+                        Output[dst] = input.ReadByte();
                         dst += 4;
                     }
                 }
-                info.HasAlpha = true;
+                HasAlpha = true;
             }
         }
 
         ThreadLocal<float[,]> s_tmp = new ThreadLocal<float[,]> (() => new float[8,8]);
 
-        void DecodeDCT (int channel, short[] data, int src, float[,] dct_table)
+        void DecodeDCT (int channel, short[] data, int src)
         {
             float v1, v2, v3, v4, v5, v6, v7, v8;
             float v9, v10, v11, v12, v13, v14, v15, v16, v17;
@@ -683,7 +689,7 @@ namespace GameRes.Formats.BGI
                     && 0 == data[src + 32 + i] && 0 == data[src + 40 + i] && 0 == data[src + 48 + i]
                     && 0 == data[src + 56 + i])
                 {
-                    var t = data[src + i] * dct_table[d, i];
+                    var t = data[src + i] * DCT[d, i];
                     tmp[0,i] = t;
                     tmp[1,i] = t;
                     tmp[2,i] = t;
@@ -695,14 +701,14 @@ namespace GameRes.Formats.BGI
                     continue;
                 }
 
-                v1 = data[src + i] * dct_table[d,i];
-                v2 = data[src + 8 + i]  * dct_table[d, 8 + i];
-                v3 = data[src + 16 + i] * dct_table[d, 16 + i];
-                v4 = data[src + 24 + i] * dct_table[d, 24 + i];
-                v5 = data[src + 32 + i] * dct_table[d, 32 + i];
-                v6 = data[src + 40 + i] * dct_table[d, 40 + i];
-                v7 = data[src + 48 + i] * dct_table[d, 48 + i];
-                v8 = data[src + 56 + i] * dct_table[d, 56 + i];
+                v1 = data[src + i] * DCT[d,i];
+                v2 = data[src + 8 + i]  * DCT[d, 8 + i];
+                v3 = data[src + 16 + i] * DCT[d, 16 + i];
+                v4 = data[src + 24 + i] * DCT[d, 24 + i];
+                v5 = data[src + 32 + i] * DCT[d, 32 + i];
+                v6 = data[src + 40 + i] * DCT[d, 40 + i];
+                v7 = data[src + 48 + i] * DCT[d, 48 + i];
+                v8 = data[src + 56 + i] * DCT[d, 56 + i];
 
                 v10 = v1 + v5;
                 v11 = v1 - v5;
