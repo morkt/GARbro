@@ -37,7 +37,8 @@ namespace GameRes.Formats
         protected int       m_bits = 0;
         protected int       m_cached_bits = 0;
 
-        public Stream Input { get { return m_input; } }
+        public Stream  Input { get { return m_input; } }
+        public int CacheSize { get { return m_cached_bits; } }
 
         protected BitStream (Stream file, bool leave_open)
         {
