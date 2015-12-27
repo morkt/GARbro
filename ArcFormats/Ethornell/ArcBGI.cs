@@ -213,24 +213,23 @@ namespace GameRes.Formats.BGI
         class HuffmanNode
         {
             public bool IsParent;
-            public uint Code;
-            public uint LeftChildIndex;
-            public uint RightChildIndex;
+            public int  Code;
+            public int  LeftChildIndex;
+            public int  RightChildIndex;
         }
 
         static void CreateHuffmanTree (HuffmanNode[] hnodes, HuffmanCode[] hcode, int node_count)
         {
-            uint[,] nodes_index = new uint[2,512];
-            uint next_node_index = 1;
+            var nodes_index = new int[2,512];
+            int next_node_index = 1;
             int depth_nodes = 1;
-            uint depth = 0;
-            int switch_flag = 0;
+            int depth = 0;
+            int child_index = 0;
             nodes_index[0,0] = 0;
             for (int n = 0; n < node_count; )
             {
-                int huffman_nodes_index = switch_flag;
-                switch_flag ^= 1;
-                int child_index = switch_flag;
+                int huffman_nodes_index = child_index;
+                child_index ^= 1;
 
                 int depth_existed_nodes = 0;
                 while (n < hcode.Length && hcode[n].Depth == depth)
@@ -252,13 +251,13 @@ namespace GameRes.Formats.BGI
             }
         }
 
-        uint HuffmanDecompress (HuffmanNode[] hnodes, uint dec_count)
+        int HuffmanDecompress (HuffmanNode[] hnodes, uint dec_count)
         {
-            uint dst_ptr = 0;
+            int dst_ptr = 0;
 
             for (uint k = 0; k < dec_count; k++)
             {
-                uint node_index = 0;
+                int node_index = 0;
                 do
                 {
                     int bit = GetNextBit();
@@ -271,20 +270,16 @@ namespace GameRes.Formats.BGI
                 }
                 while (hnodes[node_index].IsParent);
 
-                uint code = hnodes[node_index].Code;
+                int code = hnodes[node_index].Code;
                 if (code >= 256)
                 {
-                    int win_pos = GetBits (12);
-                    if (-1 == win_pos)
+                    int offset = GetBits (12);
+                    if (-1 == offset)
                         break;
-            
-                    uint copy_bytes = (code & 0xff) + 2;
-                    win_pos += 2;			
-                    for (uint i = 0; i < copy_bytes; i++)
-                    {
-                        m_output[dst_ptr] = m_output[dst_ptr - win_pos];
-                        dst_ptr++;
-                    }
+                    int count = (code & 0xff) + 2;
+                    offset += 2;			
+                    Binary.CopyOverlapped (m_output, dst_ptr - offset, dst_ptr, count);
+                    dst_ptr += count;
                 } else
                     m_output[dst_ptr++] = (byte)code;
             }
