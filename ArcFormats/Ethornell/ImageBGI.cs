@@ -248,7 +248,7 @@ namespace GameRes.Formats.BGI
             uint[] leaf_nodes_weight;
             using (var enc = new MemoryStream (ReadEncoded()))
                 leaf_nodes_weight = ReadWeightTable (enc, 0x100);
-            var tree = CreateHuffmanTree (leaf_nodes_weight);
+            var tree = new HuffmanTree (leaf_nodes_weight);
             byte[] packed = new byte[m_info.IntermediateLength];
 
             HuffmanDecompress (tree, packed);
@@ -257,11 +257,11 @@ namespace GameRes.Formats.BGI
             ReverseAverageSampling();
         }
 
-        void HuffmanDecompress (HuffmanNode[] tree, byte[] output)
+        void HuffmanDecompress (HuffmanTree tree, byte[] output)
         {
             for (int dst = 0; dst < output.Length; dst++)
             {
-                output[dst] = (byte)DecodeToken (this, tree);
+                output[dst] = (byte)tree.DecodeToken (this);
             }
         }
 
@@ -330,7 +330,55 @@ namespace GameRes.Formats.BGI
             }
         }
 
-        internal class HuffmanNode
+        void UnpackV2 ()
+        {
+            if (m_info.EncLength < 0x80)
+                throw new InvalidFormatException();
+            var decoder = new ParallelCbgDecoder (m_info, ReadEncoded());
+            var base_offset = Input.Position;
+            decoder.Tree1 = new HuffmanTree (ReadWeightTable (Input, 0x10), true);
+            decoder.Tree2 = new HuffmanTree (ReadWeightTable (Input, 0xB0), true);
+
+            int y_blocks = decoder.Height / 8;
+            var offsets = new int[y_blocks+1];
+            int input_base = (int)(Input.Position + offsets.Length*4 - base_offset);
+            using (var reader = new ArcView.Reader (Input))
+            {
+                for (int i = 0; i < offsets.Length; ++i)
+                    offsets[i] = reader.ReadInt32() - input_base;
+                decoder.Input = reader.ReadBytes ((int)(Input.Length - Input.Position));
+            }
+            int pad_skip = ((decoder.Width >> 3) + 7) >> 3;
+            var tasks = new List<Task> (y_blocks+1);
+            decoder.Output = new byte[decoder.Width * decoder.Height * 4];
+            int dst = 0;
+            for (int i = 0; i < y_blocks; ++i)
+            {
+                int block_offset = offsets[i] + pad_skip;
+                int next_offset = i+1 == y_blocks ? decoder.Input.Length : offsets[i+1];
+                int closure_dst = dst;
+                var task = Task.Run (() => decoder.UnpackBlock (block_offset, next_offset-block_offset, closure_dst));
+                tasks.Add (task);
+                dst += decoder.Width * 32;
+            }
+            if (32 == m_info.BPP)
+            {
+                var task = Task.Run (() => decoder.UnpackAlpha (offsets[y_blocks]));
+                tasks.Add (task);
+            }
+            var complete = Task.WhenAll (tasks);
+            complete.Wait();
+            Format = decoder.HasAlpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+            Stride = decoder.Width * 4;
+            m_output = decoder.Output;
+        }
+    }
+
+    internal class HuffmanTree
+    {
+        HuffmanNode[]       m_nodes;
+
+        class HuffmanNode
         {
             public bool Valid;
             public bool IsParent;
@@ -339,7 +387,7 @@ namespace GameRes.Formats.BGI
             public int  RightChildIndex;
         }
 
-        static HuffmanNode[] CreateHuffmanTree (uint[] leaf_nodes_weight, bool v2 = false)
+        public HuffmanTree (uint[] leaf_nodes_weight, bool v2 = false)
         {
             var node_list = new List<HuffmanNode> (leaf_nodes_weight.Length * 2);
             uint root_node_weight = 0;
@@ -401,67 +449,24 @@ namespace GameRes.Formats.BGI
                 if (weight >= root_node_weight)
                     break;
             }
-            return node_list.ToArray();
+            m_nodes = node_list.ToArray();
         }
 
-        internal static int DecodeToken (MsbBitStream input, HuffmanNode[] tree)
+        public int DecodeToken (IBitStream input)
         {
-            int node_index = tree.Length-1;
+            int node_index = m_nodes.Length-1;
             do
             {
                 int bit = input.GetNextBit();
                 if (-1 == bit)
                     throw new EndOfStreamException();
                 if (0 == bit)
-                    node_index = tree[node_index].LeftChildIndex;
+                    node_index = m_nodes[node_index].LeftChildIndex;
                 else
-                    node_index = tree[node_index].RightChildIndex;
+                    node_index = m_nodes[node_index].RightChildIndex;
             }
-            while (tree[node_index].IsParent);
+            while (m_nodes[node_index].IsParent);
             return node_index;
-        }
-
-        void UnpackV2 ()
-        {
-            if (m_info.EncLength < 0x80)
-                throw new InvalidFormatException();
-            var decoder = new ParallelCbgDecoder (m_info, ReadEncoded());
-            var base_offset = Input.Position;
-            decoder.Tree1 = CreateHuffmanTree (ReadWeightTable (Input, 0x10), true);
-            decoder.Tree2 = CreateHuffmanTree (ReadWeightTable (Input, 0xB0), true);
-
-            int y_blocks = decoder.Height / 8;
-            var offsets = new int[y_blocks+1];
-            int input_base = (int)(Input.Position + offsets.Length*4 - base_offset);
-            using (var reader = new ArcView.Reader (Input))
-            {
-                for (int i = 0; i < offsets.Length; ++i)
-                    offsets[i] = reader.ReadInt32() - input_base;
-                decoder.Input = reader.ReadBytes ((int)(Input.Length - Input.Position));
-            }
-            int pad_skip = ((decoder.Width >> 3) + 7) >> 3;
-            var tasks = new List<Task> (y_blocks+1);
-            decoder.Output = new byte[decoder.Width * decoder.Height * 4];
-            int dst = 0;
-            for (int i = 0; i < y_blocks; ++i)
-            {
-                int block_offset = offsets[i] + pad_skip;
-                int next_offset = i+1 == y_blocks ? decoder.Input.Length : offsets[i+1];
-                int closure_dst = dst;
-                var task = Task.Run (() => decoder.UnpackBlock (block_offset, next_offset-block_offset, closure_dst));
-                tasks.Add (task);
-                dst += decoder.Width * 32;
-            }
-            if (32 == m_info.BPP)
-            {
-                var task = Task.Run (() => decoder.UnpackAlpha (offsets[y_blocks]));
-                tasks.Add (task);
-            }
-            var complete = Task.WhenAll (tasks);
-            complete.Wait();
-            Format = decoder.HasAlpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-            Stride = decoder.Width * 4;
-            m_output = decoder.Output;
         }
     }
 
@@ -472,8 +477,8 @@ namespace GameRes.Formats.BGI
         public int              BPP;
         public int              Width;
         public int              Height;
-        public CbgReader.HuffmanNode[] Tree1;
-        public CbgReader.HuffmanNode[] Tree2;
+        public HuffmanTree      Tree1;
+        public HuffmanTree      Tree2;
         public bool             HasAlpha = false;
         float[,]                DCT = new float[2, 64];
 
@@ -512,7 +517,7 @@ namespace GameRes.Formats.BGI
                 int acc = 0;
                 for (int i = 0; i < block_size && input.Position < input.Length; i += 64)
                 {
-                    int count = CbgReader.DecodeToken (reader, Tree1);
+                    int count = Tree1.DecodeToken (reader);
                     if (count != 0)
                     {
                         int v = reader.GetBits (count);
@@ -531,7 +536,7 @@ namespace GameRes.Formats.BGI
                     int index = 1;
                     while (index < 64 && input.Position < input.Length)
                     {
-                        int code = CbgReader.DecodeToken (reader, Tree2);
+                        int code = Tree2.DecodeToken (reader);
                         if (0 == code)
                             break;
                         if (0xF == code)
@@ -654,7 +659,7 @@ namespace GameRes.Formats.BGI
                         int count = ((v >> 9) & 0x7F) + 3;
 
                         int src = dst + (x + y * Width) * 4;
-                        if (src < 0 || src >= Output.Length)
+                        if (src < 0 || src >= dst)
                             return;
 
                         for (int i = 0; i < count; ++i)
