@@ -72,7 +72,14 @@ namespace GameRes.Formats
         #endregion
     }
 
-    public class MsbBitStream : BitStream
+    public interface IBitStream
+    {
+        int GetBits (int count);
+        int GetNextBit ();
+        void Reset ();
+    }
+
+    public class MsbBitStream : BitStream, IBitStream
     {
         public MsbBitStream (Stream file, bool leave_open = false)
             : base (file, leave_open)
@@ -101,7 +108,7 @@ namespace GameRes.Formats
         }
     }
 
-    public class LsbBitStream : BitStream
+    public class LsbBitStream : BitStream, IBitStream
     {
         public LsbBitStream (Stream file, bool leave_open = false)
             : base (file, leave_open)
