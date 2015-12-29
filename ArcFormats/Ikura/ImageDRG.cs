@@ -89,7 +89,7 @@ namespace GameRes.Formats.Ikura
             else
                 format = PixelFormats.Bgr565;
 
-            int stride = (int)info.Width*((info.BPP+7)/8);
+            int stride = ((int)info.Width * info.BPP / 8 + 3) & ~3;
             var pixel_data = DecodeStream (file, stride*(int)info.Height);
             if (null == pixel_data)
                 throw new InvalidFormatException();
@@ -99,81 +99,64 @@ namespace GameRes.Formats.Ikura
         byte[] DecodeStream (Stream input, int pixel_count)
         {
             byte[] output = new byte[pixel_count];
-            for (int out_pos = 0; pixel_count > 0; )
+            for (int out_pos = 0; out_pos < output.Length; )
             {
-                int opcode = input.ReadByte ();
+                int opcode = input.ReadByte();
                 if (-1 == opcode)
                     break;
                 int count, src_offset;
+                int remaining = output.Length - out_pos;
                 switch (opcode)
                 {
                 case 0:
-                    count = input.ReadByte ();
+                    count = Math.Min (3 * input.ReadByte(), remaining);
                     src_offset = out_pos - 3;
-                    if (count < 0 || count * 3 > pixel_count || src_offset < 0)
-                        return null;
-                    for (int i = 0; i < count; ++i)
-                    {
-                        Buffer.BlockCopy (output, src_offset, output, out_pos, 3);
-                        out_pos += 3;
-                    }
-                    pixel_count -= count * 3;
-                    break;
-                case 1:
-                    count = 3 * input.ReadByte ();
-                    src_offset = out_pos - 3 * input.ReadByte ();
-                    if (count < 0 || count > pixel_count || src_offset < 0 || src_offset == out_pos)
+                    if (count < 0 || src_offset < 0)
                         return null;
                     Binary.CopyOverlapped (output, src_offset, out_pos, count);
-                    out_pos += count;
-                    pixel_count -= count;
+                    break;
+                case 1:
+                    count = Math.Min (3 * input.ReadByte(), remaining);
+                    src_offset = out_pos - 3 * input.ReadByte();
+                    if (count < 0 || src_offset < 0 || src_offset == out_pos)
+                        return null;
+                    Binary.CopyOverlapped (output, src_offset, out_pos, count);
                     break;
                 case 2:
                     {
-                        count = 3 * input.ReadByte ();
-                        int off_lo = input.ReadByte ();
-                        int off_hi = input.ReadByte ();
+                        count = Math.Min (3 * input.ReadByte(), remaining);
+                        int off_lo = input.ReadByte();
+                        int off_hi = input.ReadByte();
                         src_offset = out_pos - 3 * (off_hi << 8 | off_lo);
-                        if (count < 0 || count > pixel_count || src_offset < 0 || src_offset == out_pos)
+                        if (count < 0 || src_offset < 0 || src_offset == out_pos)
                             return null;
                         Binary.CopyOverlapped (output, src_offset, out_pos, count);
-                        out_pos += count;
-                        pixel_count -= count;
                         break;
                     }
                 case 3:
-                    count = 3;
-                    src_offset = out_pos - 3 * input.ReadByte ();
-                    if (count > pixel_count || src_offset < 0 || src_offset == out_pos)
+                    count = Math.Min (3, remaining);
+                    src_offset = out_pos - 3 * input.ReadByte();
+                    if (src_offset < 0 || src_offset == out_pos)
                         return null;
                     Buffer.BlockCopy (output, src_offset, output, out_pos, count);
-                    out_pos += count;
-                    pixel_count -= count;
                     break;
                 case 4:
                     {
-                        count = 3;
-                        int off_lo = input.ReadByte ();
-                        int off_hi = input.ReadByte ();
+                        count = Math.Min (3, remaining);
+                        int off_lo = input.ReadByte();
+                        int off_hi = input.ReadByte();
                         src_offset = out_pos - 3 * (off_hi << 8 | off_lo);
-                        if (count > pixel_count || src_offset < 0 || src_offset == out_pos)
+                        if (src_offset < 0 || src_offset == out_pos)
                             return null;
                         Buffer.BlockCopy (output, src_offset, output, out_pos, count);
-                        out_pos += count;
-                        pixel_count -= count;
                         break;
                     }
                 default:
-                    count = 3*(opcode - 4);
-                    if (count > pixel_count)
-                        return null;
-                    for (int i = 0; i < count; ++i)
-                    {
-                        output[out_pos++] = (byte)input.ReadByte ();
-                    }
-                    pixel_count -= count;
+                    count = Math.Min (3*(opcode - 4), remaining);
+                    input.Read (output, out_pos, count);
                     break;
                 }
+                out_pos += count;
             }
             return output;
         }
