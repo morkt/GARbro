@@ -114,8 +114,8 @@ namespace GARbro.GUI
                     // for each item in the range [start, end]
                     foreach (var item in Items.Cast<object>().Skip (start).Take (end-start+1))
                     {
-                        var lvi = (ListViewItem)ItemContainerGenerator.ContainerFromItem (item);
-                        if (!lvi.IsSelected)
+                        var lvi = ItemContainerGenerator.ContainerFromItem (item) as ListViewItem;
+                        if (null != lvi && !lvi.IsSelected)
                             lvi.IsSelected = true;
                     }
                 }
