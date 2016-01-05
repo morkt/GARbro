@@ -43,7 +43,7 @@ namespace GameRes.Formats.BlackRainbow
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (count <= 0 || count > 0x1ffff)
+            if (!IsSaneCount (count))
                 return null;
             uint index_size = 0x40u * (uint)count;
             if (index_size > file.View.Reserve (4, index_size))
@@ -54,6 +54,8 @@ namespace GameRes.Formats.BlackRainbow
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset+8, 0x38);
+                if (0 == name.Length)
+                    return null;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
@@ -84,11 +86,13 @@ namespace GameRes.Formats.BlackRainbow
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (8);
-            if (count <= 0 || count > 0x1ffff)
+            if (!IsSaneCount (count))
                 return null;
             uint base_offset = file.View.ReadUInt32 (0x0c);
             uint index_offset = 0x10;
             uint index_size = 4u * (uint)count;
+            if (base_offset >= file.MaxOffset || base_offset < (index_offset+index_size))
+                return null;
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
             var index = new List<uint> (count);
