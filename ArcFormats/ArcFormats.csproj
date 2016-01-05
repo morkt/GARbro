@@ -96,6 +96,7 @@
     <Compile Include="Silky\ArcAi6Win.cs" />
     <Compile Include="Silky\ImageAKB.cs" />
     <Compile Include="StudioEgo\ArcPAK0.cs" />
+    <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
@@ -221,6 +222,7 @@
     <Compile Include="ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
+    <Compile Include="Xuse\ArcBIN.cs" />
     <Compile Include="Xuse\ArcWAG.cs" />
     <Compile Include="Xuse\ArcXuse.cs" />
     <Compile Include="Yuka\ArcYKC.cs" />
