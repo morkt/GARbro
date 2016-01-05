@@ -54,7 +54,7 @@ namespace GameRes.Formats.Ffa
             if (packed < 0)
                 return null;
             byte[] input;
-            if (packed > 9)
+            if (packed > 12)
             {
                 if ((packed + 8) != file.Length)
                     return null;
@@ -103,8 +103,6 @@ namespace GameRes.Formats.Ffa
         {
             m_input = input;
             m_type = LittleEndian.ToInt32 (m_input, 0);
-            if (0 != m_type && 4 != m_type && 8 != m_type)
-                throw new InvalidFormatException();
             if (!Binary.AsciiEqual (m_input, 4, "RIFF") || !Binary.AsciiEqual (m_input, 0x28, "data"))
                 throw new InvalidFormatException();
             m_data_size = LittleEndian.ToInt32 (m_input, 0x2c);
@@ -125,6 +123,8 @@ namespace GameRes.Formats.Ffa
             case 0: UnpackV0(); break;
             case 4: UnpackV4(); break;
             case 8: UnpackV8(); break;
+            case 12: UnpackV12(); break;
+            default: throw new InvalidFormatException();
             }
             return m_output;
         }
@@ -139,9 +139,8 @@ namespace GameRes.Formats.Ffa
             int a5 = 0;
             for (int v71 = m_data_size >> 1; v71 != 0; --v71)
             {
-                int v170 = v73;
                 int v75 = a5;
-                int v76 = (ushort)a5;
+                int v76 = a5 & 0xFFFF;
                 int v77 = v75 >> 16;
                 int v81;
                 int v78;
@@ -242,11 +241,9 @@ namespace GameRes.Formats.Ffa
                     v81 = 8;
                 }
                 int v82 = (v77 << 16) | v80;
-                v73 = v170;
-                int v171 = v82;
-                v82 = v81;
+                a5 = v82;
                 int v83 = v81;
-                v82 = (2 * (v81 & 7) + 1) & 0xff;
+                v82 = ((v81 & 7) << 1) + 1;
 
                 uint v84 = (v72 * (uint)(ushort)v82) >> 3;
                 uint v85 = v84 & 0xffff;
@@ -283,7 +280,6 @@ namespace GameRes.Formats.Ffa
                     v72 = 0x6000;
                 LittleEndian.Pack ((ushort)v73, m_output, dst);
                 dst += 2;
-                a5 = v171;
             }
         }
 
@@ -410,6 +406,161 @@ namespace GameRes.Formats.Ffa
                     dst += 4;
                 }
                 dst = v172 + 2;
+            }
+        }
+
+        void UnpackV12 ()
+        {
+            int src = 0x30;
+            int dst = 0x2c;
+            int v124 = m_data_size >> 2;
+            int v125 = 0;
+            for (int i = 0; i < 2; ++i)
+            {
+                uint v126 = 127;
+                int v127 = 0;
+                int v128 = 0;
+                int output_begin = dst;
+                for (int j = 0; j < v124; ++j)
+                {
+                    int v130 = v125 & 0xFFFF;
+                    int v131 = v125 >> 16;
+                    int v132;
+                    int v133;
+                    int v134;
+                    int v135;
+                    if ((byte)v131 < 8)
+                    {
+                        v132 = m_input[src++];
+                        v133 = v132 << v131;
+                        v131 = (v131 + 8) & 0xFF;
+                        v130 |= v133;
+                    }
+                    if (2 == (v130 & 3))
+                    {
+                        v134 = v130 >> 2;
+                        v131 = (v131 - 2) & 0xFF;
+                        v135 = 0;
+                    }
+                    else if (0 == (v130 & 3))
+                    {
+                        v134 = v130 >> 2;
+                        v131 = (v131 - 2) & 0xFF;
+                        v135 = 8;
+                    }
+                    else if (5 == (v130 & 7))
+                    {
+                        v134 = v130 >> 3;
+                        v131 = (v131 - 3) & 0xFF;
+                        v135 = 1;
+                    }
+                    else if (1 == (v130 & 7))
+                    {
+                        v134 = v130 >> 3;
+                        v131 = (v131 - 3) & 0xFF;
+                        v135 = 9;
+                    }
+                    else if (11 == (v130 & 0xF))
+                    {
+                        v134 = v130 >> 4;
+                        v131 = (v131 - 4) & 0xFF;
+                        v135 = 2;
+                    }
+                    else if (3 == (v130 & 0xF))
+                    {
+                        v134 = v130 >> 4;
+                        v131 = (v131 - 4) & 0xFF;
+                        v135 = 10;
+                    }
+                    else if (23 == (v130 & 0x1F))
+                    {
+                        v134 = v130 >> 5;
+                        v131 = (v131 - 5) & 0xFF;
+                        v135 = 3;
+                    }
+                    else if (7 == (v130 & 0x1F))
+                    {
+                        v134 = v130 >> 5;
+                        v131 = (v131 - 5) & 0xFF;
+                        v135 = 11;
+                    }
+                    else if (47 == (v130 & 0x3F))
+                    {
+                        v134 = v130 >> 6;
+                        v131 = (v131 - 6) & 0xFF;
+                        v135 = 4;
+                    }
+                    else if (15 == (v130 & 0x3F))
+                    {
+                        v134 = v130 >> 6;
+                        v131 = (v131 - 6) & 0xFF;
+                        v135 = 12;
+                    }
+                    else if (95 == (v130 & 0x7F))
+                    {
+                        v134 = v130 >> 7;
+                        v131 = (v131 - 7) & 0xFF;
+                        v135 = 5;
+                    }
+                    else if (31 == (v130 & 0x7F))
+                    {
+                        v134 = v130 >> 7;
+                        v131 = (v131 - 7) & 0xFF;
+                        v135 = 13;
+                    }
+                    else
+                    {
+                        switch (v130 & 0xFF)
+                        {
+                        case 0x7F:  v135 = 6;  break;
+                        case 0xFF:  v135 = 14; break;
+                        case 0xBF:  v135 = 7;  break;
+                        default:    v135 = 15; break;
+                        }
+                        v134 = v130 >> 8;
+                        v131 = (v131 - 8) & 0xFF;
+                    }
+                    v125 = (v131 << 16) | v134;
+                    int v136 = ((v135 & 7) << 1) + 1;
+
+                    int v138 = (int)((v126 * (uint)(ushort)v136) >> 3);
+                    int v139 = v138 & 0xFFFF;
+
+                    if (0 != (v135 & 8))
+                    {
+                        int dword = v128 << 16 | (v127 & 0xffff);
+                        dword -= v139;
+                        v127 = dword & 0xffff;
+                        v128 = dword >> 16;
+                        if ( v128 < 0 && v127 < 0x8000u )
+                        {
+                            v127 = -32768;
+                            v128 = -1;
+                        }
+                    }
+                    else
+                    {
+                        int dword = v128 << 16 | (v127 & 0xffff);
+                        dword += v139;
+                        v127 = dword & 0xffff;
+                        v128 = dword >> 16;
+                        if ( v128 >= 0 && v127 >= 0x8000u )
+                        {
+                            v127 = 32767;
+                            v128 = 0;
+                        }
+                    }
+                    uint v142 = (uint)SampleTable[v135] * v126;
+                    v126 = (v142 >> 6) & 0xffff;
+
+                    if (v126 < 0x7F)
+                        v126 = 0x7F;
+                    else if (v126 > 0x6000)
+                        v126 = 0x6000;
+                    LittleEndian.Pack ((ushort)v127, m_output, dst);
+                    dst += 4;
+                }
+                dst = output_begin + 2;
             }
         }
     }
