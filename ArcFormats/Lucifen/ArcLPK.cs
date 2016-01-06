@@ -93,7 +93,7 @@ namespace GameRes.Formats.Lucifen
         public override string         Tag { get { return "LPK"; } }
         public override string Description { get { return "Lucifen system resource archive"; } }
         public override uint     Signature { get { return 0x314b504c; } } // 'LPK1'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         [Serializable]
@@ -111,7 +111,7 @@ namespace GameRes.Formats.Lucifen
             BaseKey = new Key (0xA5B9AC6B, 0x9A639DE5), ContentXor = 0x5d, RotatePattern = 0x31746285,
             ImportGameInit = true
         };
-        public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme>();
+        public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme> { { "Default", DefaultScheme } };
         static Dictionary<string, Dictionary<string, Key>> KnownKeys = new Dictionary<string, Dictionary<string, Key>>();
 
         EncryptionScheme CurrentScheme = DefaultScheme;
@@ -141,9 +141,9 @@ namespace GameRes.Formats.Lucifen
             {
                 if (0 == CurrentFileMap.Count)
                     ImportKeys (file.Name);
-                if (!CurrentFileMap.TryGetValue (name, out file_key))
-                    return null;
             }
+            if (CurrentFileMap.Count > 0 && !CurrentFileMap.TryGetValue (name, out file_key))
+                return null;
             return Open (basename, file, CurrentScheme, file_key);
         }
 
@@ -195,7 +195,7 @@ namespace GameRes.Formats.Lucifen
             for (int i = 0; i < data.Length; ++i)
             {
                 int v = data[i] ^ key;
-                data[i] = (byte)(v >> 4 | v << 4);
+                data[i] = Binary.RotByteR ((byte)v, 4);
             }
         }
 
@@ -208,9 +208,8 @@ namespace GameRes.Formats.Lucifen
                 for (int i = 0; i < length; ++i)
                 {
                     encoded[i] ^= key;
-                    pattern = (pattern >> 4) | (pattern << 28);
-                    int cl = (int)(pattern & 0x1f);
-                    key = (key << cl) | (key >> (32-cl));
+                    pattern = Binary.RotR (pattern, 4);
+                    key = Binary.RotL (key, (int)pattern);
                 }
             }
         }
@@ -224,9 +223,8 @@ namespace GameRes.Formats.Lucifen
                 for (int i = 0; i < length; ++i)
                 {
                     encoded[i] ^= key;
-                    pattern = (pattern << 4) | (pattern >> 28);
-                    int cl = (int)(pattern & 0x1f);
-                    key = (key >> cl) | (key << (32-cl));
+                    pattern = Binary.RotL (pattern, 4);
+                    key = Binary.RotR (key, (int)pattern);
                 }
             }
         }
@@ -239,8 +237,8 @@ namespace GameRes.Formats.Lucifen
             {
                 key1 ^= basename[e];
                 key2 ^= basename[b];
-                key1 = (key1 << 25) | (key1 >>  7);
-                key2 = (key2 <<  7) | (key2 >> 25);
+                key1 = Binary.RotR (key1, 7);
+                key2 = Binary.RotL (key2, 7);
             }
             if (null != key)
             {
@@ -271,6 +269,8 @@ namespace GameRes.Formats.Lucifen
             var dir = reader.Read (index);
             if (null == dir)
                 return null;
+            if (lpk_info.WholeCrypt && Path.GetFileName (file.Name).Equals ("PATCH.LPK", StringComparison.InvariantCultureIgnoreCase))
+                lpk_info.WholeCrypt = false;
             return new LuciArchive (file, this, dir, scheme, reader.Info);
         }
 
@@ -359,7 +359,7 @@ namespace GameRes.Formats.Lucifen
             CurrentFileMap.Clear();
             var options = Query<LuciOptions> (arcStrings.ArcEncryptedNotice);
             if (null == options)
-                return KnownSchemes["Default"];
+                return DefaultScheme;
             string title = options.Scheme;
             if (null == options.Key)
             {
@@ -378,10 +378,9 @@ namespace GameRes.Formats.Lucifen
                 var scheme = (LpkScheme)value;
                 KnownSchemes = scheme.KnownSchemes;
                 KnownKeys = scheme.KnownKeys;
-                foreach (var key in KnownSchemes.Keys)
+                foreach (var key in KnownSchemes.Keys.Where (x => null == KnownSchemes[x]).ToArray())
                 {
-                    if (null == KnownSchemes[key])
-                        KnownSchemes[key] = DefaultScheme;
+                    KnownSchemes[key] = DefaultScheme;
                 }
             }
         }
