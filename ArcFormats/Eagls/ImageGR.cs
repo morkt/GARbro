@@ -57,6 +57,8 @@ namespace GameRes.Formats.Eagls
                 int height = LittleEndian.ToInt32 (bmp, 0x16);
                 int bpp = LittleEndian.ToInt16 (bmp, 0x1c);
                 int image_size = LittleEndian.ToInt32 (bmp, 0x22);
+                if (0 == image_size)
+                    image_size = width * height * (bpp / 8);
                 return new GrMetaData
                 {
                     Width = (uint)width,
@@ -69,10 +71,7 @@ namespace GameRes.Formats.Eagls
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as GrMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GrFormat.Read should be supplied with GrMetaData", "info");
-
+            var meta = (GrMetaData)info;
             using (var reader = new LzssReader (stream, (int)stream.Length, meta.UnpackedSize+2))
             {
                 reader.Unpack();
