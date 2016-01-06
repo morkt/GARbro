@@ -35,6 +35,7 @@ namespace GameRes.Formats.Lucifen
 {
     internal class ElgMetaData : ImageMetaData
     {
+        public int Type;
         public int HeaderSize;
     }
 
@@ -47,7 +48,7 @@ namespace GameRes.Formats.Lucifen
 
         public ElgFormat ()
         {
-            Signatures = new uint[] { 0x01474c45u, 0x08474c45u, 0x18474c45u, 0x20474c45u };
+            Signatures = new uint[] { 0x01474c45u, 0x08474c45u, 0x18474c45u, 0x20474c45u, 0x02474c45u };
         }
 
         public override void Write (Stream file, ImageData image)
@@ -63,18 +64,31 @@ namespace GameRes.Formats.Lucifen
                 int bpp = input.ReadByte();
                 int x = 0;
                 int y = 0;
+                int type = bpp;
                 int header_size = 8;
-                if (1 == bpp)
+                if (2 == type)
+                {
+                    bpp = input.ReadByte();
+                    header_size = 13;
+                }
+                else if (1 == type)
                 {
                     bpp = input.ReadByte();
                     x = input.ReadInt16();
                     y = input.ReadInt16();
                     header_size = 13;
                 }
+                else
+                    type = 0;
                 if (8 != bpp && 24 != bpp && 32 != bpp)
                     return null;
                 uint w = input.ReadUInt16();
                 uint h = input.ReadUInt16();
+                if (2 == type)
+                {
+                    x = input.ReadInt16();
+                    y = input.ReadInt16();
+                }
                 return new ElgMetaData
                 {
                     Width = w,
@@ -82,6 +96,7 @@ namespace GameRes.Formats.Lucifen
                     OffsetX = x,
                     OffsetY = y,
                     BPP = bpp,
+                    Type = type,
                     HeaderSize = header_size,
                 };
             }
@@ -89,9 +104,7 @@ namespace GameRes.Formats.Lucifen
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            var meta = info as ElgMetaData;
-            if (null == meta)
-                throw new ArgumentException ("ElgFormat.Read should be supplied with ElgMetaData", "info");
+            var meta = (ElgMetaData)info;
             file.Position = meta.HeaderSize;
             using (var reader = new Reader (file, meta))
             {
@@ -105,6 +118,7 @@ namespace GameRes.Formats.Lucifen
             int             m_width;
             int             m_height;
             int             m_bpp;
+            int             m_type;
             BinaryReader    m_input;
             byte[]          m_output;
 
@@ -117,12 +131,23 @@ namespace GameRes.Formats.Lucifen
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_bpp = info.BPP;
+                m_type = info.Type;
                 m_output = new byte[m_width*m_height*m_bpp/8];
                 m_input = new ArcView.Reader (stream);
             }
 
             public void Unpack ()
             {
+                if (2 == m_type)
+                {
+                    while (0 != m_input.ReadByte())
+                    {
+                        int size = m_input.ReadInt32();
+                        if (size < 4)
+                            throw new InvalidFormatException();
+                        m_input.BaseStream.Seek (size-4, SeekOrigin.Current);
+                    }
+                }
                 if (8 == m_bpp)
                 {
                     Format = PixelFormats.Indexed8;
