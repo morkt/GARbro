@@ -1,9 +1,0 @@
-﻿<Application x:Class="GARbro.GUI.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml" Startup="ApplicationStartup"
-             ShutdownMode="OnMainWindowClose" Exit="ApplicationExit">
-    <Application.Resources>
-        <BitmapImage x:Key="IconSearch" UriSource="pack://application:,,,/Images/search4files.ico" />
-    </Application.Resources>
-</Application>

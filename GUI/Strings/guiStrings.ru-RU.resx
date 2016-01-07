@@ -1,0 +1,473 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="ButtonExtract" xml:space="preserve">
+    <value>Извлечь</value>
+  </data>
+  <data name="CtxMenuClose" xml:space="preserve">
+    <value>_Закрыть</value>
+  </data>
+  <data name="CtxMenuCopy" xml:space="preserve">
+    <value>Копировать</value>
+  </data>
+  <data name="CtxMenuCreate" xml:space="preserve">
+    <value>Создать архив...</value>
+  </data>
+  <data name="CtxMenuCut" xml:space="preserve">
+    <value>Вырезать</value>
+  </data>
+  <data name="CtxMenuDelete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="CtxMenuExplorer" xml:space="preserve">
+    <value>Просмотр в Explorer</value>
+  </data>
+  <data name="CtxMenuExtract" xml:space="preserve">
+    <value>Извлечь</value>
+  </data>
+  <data name="CtxMenuOpen" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="CtxMenuPaste" xml:space="preserve">
+    <value>Вставить</value>
+  </data>
+  <data name="CtxMenuRefresh" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="CtxMenuRename" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="CtxMenuSortBy" xml:space="preserve">
+    <value>Сортировка</value>
+  </data>
+  <data name="CtxMenuSortByName" xml:space="preserve">
+    <value>по имени</value>
+  </data>
+  <data name="CtxMenuSortBySize" xml:space="preserve">
+    <value>по размеру</value>
+  </data>
+  <data name="CtxMenuSortByType" xml:space="preserve">
+    <value>по типу</value>
+  </data>
+  <data name="CtxMenuUnsorted" xml:space="preserve">
+    <value>не сортировать</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="HeaderSize" xml:space="preserve">
+    <value>Размер</value>
+  </data>
+  <data name="HeaderType" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="LabelArchiveFormat" xml:space="preserve">
+    <value>Формат архива</value>
+  </data>
+  <data name="LabelArchiveName" xml:space="preserve">
+    <value>Имя архива</value>
+  </data>
+  <data name="LabelArchiveOptions" xml:space="preserve">
+    <value>Настройки архивирования</value>
+  </data>
+  <data name="LabelExtractAllTo" xml:space="preserve">
+    <value>Извлечь файлы из {0} в</value>
+  </data>
+  <data name="LabelExtractFileTo" xml:space="preserve">
+    <value>Извлечь {0} в</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>О программе</value>
+  </data>
+  <data name="MsgDeletedItem" xml:space="preserve">
+    <value>Удалён файл {0}</value>
+  </data>
+  <data name="MsgDirectoryNotFound" xml:space="preserve">
+    <value>каталог не найден</value>
+  </data>
+  <data name="MsgEmptyArchive" xml:space="preserve">
+    <value>архив пуст</value>
+  </data>
+  <data name="MsgErrorExtracting" xml:space="preserve">
+    <value>Ошибка извлечения файла</value>
+  </data>
+  <data name="MsgErrorOpening" xml:space="preserve">
+    <value>Ошибка открытия файла</value>
+  </data>
+  <data name="MsgExtractComplete" xml:space="preserve">
+    <value>{0} извлечён в {1}</value>
+  </data>
+  <data name="MsgExtractingArchive" xml:space="preserve">
+    <value>Извлекаются файлы из {0}</value>
+  </data>
+  <data name="MsgExtractingFile" xml:space="preserve">
+    <value>Файл извлекается из {0}</value>
+  </data>
+  <data name="MsgExtractingTo" xml:space="preserve">
+    <value>Извлекаются файлы из {0} в {1}</value>
+  </data>
+  <data name="MsgImageSize" xml:space="preserve">
+    <value>Изображение {0} x {1} x {2}bpp</value>
+  </data>
+  <data name="MsgNoFiles" xml:space="preserve">
+    <value>отсутствуют файлы, удовлетворяющие выбранным критериям</value>
+  </data>
+  <data name="MsgReady" xml:space="preserve">
+    <value>Готов</value>
+  </data>
+  <data name="MsgUnableInterpretImage" xml:space="preserve">
+    <value>не удалось интерпретировать формат изображения</value>
+  </data>
+  <data name="MsgVersion" xml:space="preserve">
+    <value>Версия {0}</value>
+  </data>
+  <data name="TextAboutBuiltin" xml:space="preserve">
+    <value>[встроен]</value>
+  </data>
+  <data name="TextAboutArchives" xml:space="preserve">
+    <value>Архивы</value>
+  </data>
+  <data name="TextAboutImages" xml:space="preserve">
+    <value>Изображения</value>
+  </data>
+  <data name="TextAboutTitle" xml:space="preserve">
+    <value>Об обозревателе игровых ресурсов</value>
+  </data>
+  <data name="TextAllFiles" xml:space="preserve">
+    <value>Все файлы</value>
+  </data>
+  <data name="TextAsIs" xml:space="preserve">
+    <value>исходном</value>
+  </data>
+  <data name="TextChooseArchive" xml:space="preserve">
+    <value>Выберите месторасположение архива</value>
+  </data>
+  <data name="TextChooseDestDir" xml:space="preserve">
+    <value>Выберите место извлечения</value>
+  </data>
+  <data name="TextCreateArchive" xml:space="preserve">
+    <value>Создать архив</value>
+  </data>
+  <data name="TextCreateArchiveError" xml:space="preserve">
+    <value>Ошибка при создании архива</value>
+  </data>
+  <data name="TextEncoding" xml:space="preserve">
+    <value>Кодировка текста</value>
+  </data>
+  <data name="TextExtractImages" xml:space="preserve">
+    <value>Извлекать изображения</value>
+  </data>
+  <data name="TextExtractText" xml:space="preserve">
+    <value>Извлекать текст</value>
+  </data>
+  <data name="TextExtractTitle" xml:space="preserve">
+    <value>Извлечь из архива</value>
+  </data>
+  <data name="TextOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="TextParametersTitle" xml:space="preserve">
+    <value>Параметры архива</value>
+  </data>
+  <data name="TextSaveAs" xml:space="preserve">
+    <value>Сохранить в формате</value>
+  </data>
+  <data name="TextSaveImagesAs" xml:space="preserve">
+    <value>Сохранить в формате</value>
+  </data>
+  <data name="TextTitle" xml:space="preserve">
+    <value>Обозреватель игровых ресурсов</value>
+  </data>
+  <data name="TooltipBack" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="TooltipForward" xml:space="preserve">
+    <value>Вперёд</value>
+  </data>
+  <data name="MsgOverwrite" xml:space="preserve">
+    <value>Файл под именем '{0}'
+уже существует.
+
+Перезаписать?</value>
+  </data>
+  <data name="TextConfirmOverwrite" xml:space="preserve">
+    <value>Подтвердите перезапись</value>
+  </data>
+  <data name="MsgCreatingArchive" xml:space="preserve">
+    <value>Создание архива {0}</value>
+  </data>
+  <data name="Type_archive" xml:space="preserve">
+    <value>архив</value>
+  </data>
+  <data name="Type_image" xml:space="preserve">
+    <value>изображение</value>
+  </data>
+  <data name="Type_script" xml:space="preserve">
+    <value>сценарий</value>
+  </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>Открыть...</value>
+  </data>
+  <data name="MenuRecent" xml:space="preserve">
+    <value>Недавние файлы</value>
+  </data>
+  <data name="MsgChooseFiles" xml:space="preserve">
+    <value>Выберите файлы для извлечения</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Выход</value>
+  </data>
+  <data name="MenuFile" xml:space="preserve">
+    <value>_Файл</value>
+  </data>
+  <data name="MenuHelp" xml:space="preserve">
+    <value>_Справка</value>
+  </data>
+  <data name="MsgExtractedFiles1" xml:space="preserve">
+    <value>Извлечён {0} файл</value>
+  </data>
+  <data name="MsgExtractedFiles2" xml:space="preserve">
+    <value>Извлечено {0} файла</value>
+  </data>
+  <data name="MsgExtractedFiles3" xml:space="preserve">
+    <value>Извлечено {0} файлов</value>
+  </data>
+  <data name="MsgFiles1" xml:space="preserve">
+    <value>{0} файл</value>
+  </data>
+  <data name="MsgFiles2" xml:space="preserve">
+    <value>{0} файла</value>
+  </data>
+  <data name="MsgFiles3" xml:space="preserve">
+    <value>{0} файлов</value>
+  </data>
+  <data name="MsgConfirmDeleteFiles" xml:space="preserve">
+    <value>Вы действительно хотите удалить эти файлы?</value>
+  </data>
+  <data name="TextDeleteFiles" xml:space="preserve">
+    <value>Удалить файлы</value>
+  </data>
+  <data name="MsgDeletedItems1" xml:space="preserve">
+    <value>Удалён {0} файл</value>
+  </data>
+  <data name="MsgDeletedItems2" xml:space="preserve">
+    <value>Удалено {0} файла</value>
+  </data>
+  <data name="MsgDeletedItems3" xml:space="preserve">
+    <value>Удалено {0} файлов</value>
+  </data>
+  <data name="MenuFitWindow" xml:space="preserve">
+    <value>Подогнать размер окна под изображение</value>
+  </data>
+  <data name="MenuToggleMenuBar" xml:space="preserve">
+    <value>Вкл/выкл главное меню</value>
+  </data>
+  <data name="MenuToggleStatusBar" xml:space="preserve">
+    <value>Вкл/выкл полосу статуса</value>
+  </data>
+  <data name="MenuToggleToolBar" xml:space="preserve">
+    <value>Вкл/выкл панель инструментов</value>
+  </data>
+  <data name="MenuView" xml:space="preserve">
+    <value>Просмотр</value>
+  </data>
+  <data name="CtxMenuConvert" xml:space="preserve">
+    <value>Конверсия мультимедиа...</value>
+  </data>
+  <data name="ButtonConvert" xml:space="preserve">
+    <value>Преобразовать</value>
+  </data>
+  <data name="LabelDestinationFormat" xml:space="preserve">
+    <value>Формат преобразования изображений</value>
+  </data>
+  <data name="TextConvertMedia" xml:space="preserve">
+    <value>Преобразование мультимедиа</value>
+  </data>
+  <data name="MsgConvertingFile" xml:space="preserve">
+    <value>Преобразование файла {0}</value>
+  </data>
+  <data name="TextMediaConvertError" xml:space="preserve">
+    <value>Ошибка конверсии мультимедиа</value>
+  </data>
+  <data name="LabelEncoding" xml:space="preserve">
+    <value>Кодировка</value>
+  </data>
+  <data name="TextConvertAudio" xml:space="preserve">
+    <value>Преобразовывать аудио в стандартный формат</value>
+  </data>
+  <data name="TextExtractAudio" xml:space="preserve">
+    <value>Извлекать аудио</value>
+  </data>
+  <data name="TooltipAudioFormats" xml:space="preserve">
+    <value>WAV, MP3, либо OGG</value>
+  </data>
+  <data name="TextAboutAudio" xml:space="preserve">
+    <value>Аудио</value>
+  </data>
+  <data name="TextAboutLicense" xml:space="preserve">
+    <value>Лицензия</value>
+  </data>
+  <data name="Type_audio" xml:space="preserve">
+    <value>звук</value>
+  </data>
+  <data name="MsgUnableInterpretAudio" xml:space="preserve">
+    <value>не удалось интерпретировать формат аудио</value>
+  </data>
+  <data name="LabelSkipFailures" xml:space="preserve">
+    <value>Пропускать файлы, не поддавшиеся конверсии.</value>
+  </data>
+  <data name="MsgNoMediaFiles" xml:space="preserve">
+    <value>Среди выбранных файлов нет мультимедиа.</value>
+  </data>
+  <data name="TextAudioConversion" xml:space="preserve">
+    <value>Аудио-файлы будут преобразованы в WAV, MP3 или OGG.</value>
+  </data>
+  <data name="MsgNoMatching" xml:space="preserve">
+    <value>Нет файлов, подходящих под маску "{0}"</value>
+  </data>
+  <data name="MsgSelectedFiles1" xml:space="preserve">
+    <value>{0} файл добавлен к выбранным</value>
+  </data>
+  <data name="MsgSelectedFiles2" xml:space="preserve">
+    <value>{0} файла добавлено к выбранным</value>
+  </data>
+  <data name="MsgSelectedFiles3" xml:space="preserve">
+    <value>{0} файлов добавлено к выбранным</value>
+  </data>
+  <data name="LabelEnterMask" xml:space="preserve">
+    <value>Маска для имён файлов</value>
+  </data>
+  <data name="TextSelectFiles" xml:space="preserve">
+    <value>Выбрать файлы</value>
+  </data>
+  <data name="TextErrorExtracting" xml:space="preserve">
+    <value>Произошёл сбой во время извлечения файла
+{0}
+{1}</value>
+  </data>
+  <data name="CtxMenuFileType" xml:space="preserve">
+    <value>Задать тип файла</value>
+  </data>
+  <data name="Type_NONE" xml:space="preserve">
+    <value>без типа</value>
+  </data>
+</root>

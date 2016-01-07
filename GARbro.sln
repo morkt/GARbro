@@ -16,7 +16,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArcFormats", "ArcFormats\Ar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameRes", "GameRes\GameRes.csproj", "{453C087F-E416-4AE9-8C03-D8760DA0574B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GARbro.GUI", "GARbro.GUI.csproj", "{2935BE57-C4E0-43E7-86DE-C1848C820B19}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GARbro.GUI", "GUI\GARbro.GUI.csproj", "{2935BE57-C4E0-43E7-86DE-C1848C820B19}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image.Convert", "Image.Convert\Image.Convert.csproj", "{757EB8B1-F62C-4690-AC3D-DAE4A5576B3E}"
 	ProjectSection(ProjectDependencies) = postProject
