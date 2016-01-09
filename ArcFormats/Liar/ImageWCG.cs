@@ -2,7 +2,7 @@
 //! \date       Sat Jul 19 23:07:32 2014
 //! \brief      Liar-soft WCG image format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -105,6 +105,7 @@ namespace GameRes.Formats.Liar
         {
             private byte[]          m_data;
             private BinaryReader    m_input;
+            private MsbBitStream    m_bits;
             private uint            m_input_size;
             private ushort[]        m_index;
 
@@ -112,11 +113,10 @@ namespace GameRes.Formats.Liar
             private uint m_next_size;
             private uint m_src;
             private uint m_src_size;
-            private uint m_dst_size;
-            private uint edi;
+            private int  m_dst_size;
+            private int  edi;
 
-            private uint m_index_length_limit;
-            private uint m_bits;
+            private int m_index_length_limit;
 
             public byte[] Data { get { return m_data; } }
 
@@ -125,6 +125,7 @@ namespace GameRes.Formats.Liar
                 m_data = new byte[pixel_size*4];
                 m_input_size = (uint)file.Length;
                 m_input = new BinaryReader (file, Encoding.ASCII, true);
+                m_bits = new MsbBitStream (file, true);
             }
 
             public void Unpack ()
@@ -137,16 +138,16 @@ namespace GameRes.Formats.Liar
                     m_data[i] = (byte)~m_data[i];
             }
 
-            private bool Unpack (uint offset)
+            private bool Unpack (int offset)
             {
                 m_src = m_next_ptr;
                 m_src_size = m_next_size;
-                m_dst_size = (uint)(m_data.Length / 4);
+                m_dst_size = (int)(m_data.Length / 4);
                 if (m_src_size < 12)
                     throw new InvalidFormatException ("Invalid file size");
                 m_src_size -= 12;
                 m_input.BaseStream.Position = m_next_ptr;
-                uint unpacked_size = m_input.ReadUInt32();
+                int unpacked_size = m_input.ReadInt32();
                 uint data_size = m_input.ReadUInt32();
                 uint index_size = m_input.ReadUInt16(); // 8
 
@@ -180,81 +181,52 @@ namespace GameRes.Formats.Liar
             {
                 ReadIndex (index_size);
                 m_input.BaseStream.Position = data_pos;
+                m_bits.Reset();
 
                 bool small_index = index_size < 0x1002;
-                m_index_length_limit = small_index ? 0x06u : 0x0eu;
-                uint index_bit_length = small_index ? 3u : 4u;
-                m_bits = 0;
+                m_index_length_limit = small_index ? 6 : 14;
+                int index_bit_length = small_index ? 3 : 4;
                 while (m_dst_size > 0)
                 {
-                    uint dst_count = 1;
-                    uint index_length = GetBits (index_bit_length, 0);
+                    int dst_count = 1;
+                    int index_length = m_bits.GetBits (index_bit_length);
                     if (0 == index_length)
                     {
-                        dst_count = GetBits (4, 0) + 2;
-                        index_length = GetBits (index_bit_length, 0);
+                        dst_count = m_bits.GetBits (4) + 2;
+                        index_length = m_bits.GetBits (index_bit_length);
                     }
                     if (0 == index_length)
-                        return false; // std::cerr << "zero index length\n";
+                        return false;
 
-                    uint index = GetIndex (index_length);
+                    int index = GetIndex (index_length);
                     if (index >= index_size)
-                        return false; // std::cerr << "invalid index\n";
+                        return false;
 
                     if (dst_count > m_dst_size)
                         return false;
                     m_dst_size -= dst_count;
                     ushort word = m_index[index];
                     do {
-                        PutWord (word); // *(uint16_t*)edi = word;
+                        LittleEndian.Pack (word, m_data, edi);
                         edi += 4;
                     } while (0 != --dst_count);
                 }
                 return true;
             }
 
-            void PutWord (ushort word)
-            {
-                m_data[edi  ] = (byte)(word & 0xff);
-                m_data[edi+1] = (byte)(word >> 8);
-            }
-
-            uint GetNextBit ()
-            {
-                m_bits <<= 1;
-                if (0 == (m_bits & 0xff))
-                {
-                    if (0 == m_src_size--)
-                        throw new InvalidFormatException ("Unexpected end of file");
-                    m_bits = (uint)m_input.ReadByte() << 1;
-                    m_bits |= 1;
-                }
-                return (m_bits >> 8) & 1;
-            }
-
-            uint GetIndex (uint count)
+            int GetIndex (int count)
             {
                 if (0 == --count)
-                    return GetNextBit();
+                    return m_bits.GetNextBit();
                 if (count < m_index_length_limit)
-                    return GetBits (count, 1);
-                while (0 != GetNextBit())
+                    return 1 << count | m_bits.GetBits (count);
+                while (0 != m_bits.GetNextBit())
                 {
                     if (count >= 0x10)
                         throw new InvalidFormatException ("Invalid index count");
                     ++count;
                 }
-                return GetBits (count, 1);
-            }
-
-            uint GetBits (uint count, uint word)
-            {
-                do
-                {
-                    word = (word << 1) | GetNextBit();
-                }
-                while (0 != --count);
-                return word;
+                return 1 << count | m_bits.GetBits (count);
             }
 
             #region IDisposable Members
@@ -271,8 +243,10 @@ namespace GameRes.Formats.Liar
                 if (!disposed)
                 {
                     if (disposing)
+                    {
                         m_input.Dispose();
-                    m_input = null;
+                        m_bits.Dispose();
+                    }
                     m_data = null;
                     m_index = null;
                     disposed = true;
