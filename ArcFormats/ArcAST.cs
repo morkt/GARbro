@@ -2,7 +2,7 @@
 //! \date       Tue Apr 21 02:24:20 2015
 //! \brief      AST script engine resource archives.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -73,27 +73,35 @@ namespace GameRes.Formats.AST
                 if (name_length > name_buf.Length)
                     name_buf = new byte[name_length];
                 file.View.Read (index_offset+9, name_buf, 0, (uint)name_length);
-                if (2 == version)
-                    for (int j = 0; j < name_length; ++j)
-                        name_buf[j] ^= 0xff;
                 if (i+1 == count)
                     next_offset = (uint)file.MaxOffset;
                 else
                     next_offset = file.View.ReadUInt32 (index_offset+9+name_length);
-                if (next_offset < offset)
-                    return null;
-                string name = Encodings.cp932.GetString (name_buf, 0, name_length);
-                var entry = new PackedEntry
+                if (0 != offset && offset != file.MaxOffset)
                 {
-                    Name = name,
-                    Type = FormatCatalog.Instance.GetTypeFromName (name),
-                    Offset = offset,
-                    Size = next_offset - offset,
-                    UnpackedSize = size,
-                };
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
+                    if (2 == version)
+                        for (int j = 0; j < name_length; ++j)
+                            name_buf[j] ^= 0xff;
+                    uint packed_size;
+                    if (0 == next_offset)
+                        packed_size = size;
+                    else if (next_offset >= offset)
+                        packed_size = next_offset - offset;
+                    else
+                        return null;
+                    string name = Encodings.cp932.GetString (name_buf, 0, name_length);
+                    var entry = new PackedEntry
+                    {
+                        Name = name,
+                        Type = FormatCatalog.Instance.GetTypeFromName (name),
+                        Offset = offset,
+                        Size = packed_size,
+                        UnpackedSize = size,
+                    };
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                }
                 index_offset += 9 + name_length;
             }
             if (2 == version)
