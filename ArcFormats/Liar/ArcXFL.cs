@@ -2,7 +2,7 @@
 //! \date       Mon Jun 30 21:18:29 2014
 //! \brief      XFL resource format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -25,7 +25,6 @@
 
 using System;
 using System.IO;
-using System.IO.MemoryMappedFiles;
 using System.Text;
 using System.Linq;
 using System.Collections.Generic;
@@ -170,7 +169,7 @@ namespace GameRes.Formats.Liar
             uint height = file.View.ReadUInt32 (4);
             uint width  = file.View.ReadUInt32 (8);
             int count   = file.View.ReadInt32 (12);
-            if (count <= 0)
+            if (!IsSaneCount (count))
                 return null;
             uint dir_size = file.View.ReadUInt32 (20);
             uint cur_offset = 24;
@@ -189,7 +188,7 @@ namespace GameRes.Formats.Liar
                 entry.Size = file.View.ReadUInt32 (cur_offset+13);
 
                 uint name_length = file.View.ReadByte (cur_offset+17);
-                string name = file.View.ReadString (cur_offset+18, name_length, Encoding.ASCII);
+                string name = file.View.ReadString (cur_offset+18, name_length);
                 entry.Name = name + ".wcg";
                 cur_offset += 18+name_length;
                 if (cur_offset > dir_size+24)
