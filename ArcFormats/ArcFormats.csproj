@@ -66,6 +66,8 @@
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="AnimeGameSystem\ArcDAT.cs" />
     <Compile Include="AnimeGameSystem\AudioPCM.cs" />
+    <Compile Include="BlueGale\ArcSNN.cs" />
+    <Compile Include="BlueGale\ImageZBM.cs" />
     <Compile Include="Cmvs\ArcCPZ.cs" />
     <Compile Include="ArcPBX.cs" />
     <Compile Include="Banana\ArcPK.cs" />
