@@ -2,7 +2,7 @@
 //! \date       Mon Feb 16 17:21:47 2015
 //! \brief      Lucifen Easy Game System archive implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -269,7 +269,8 @@ namespace GameRes.Formats.Lucifen
             var dir = reader.Read (index);
             if (null == dir)
                 return null;
-            if (lpk_info.WholeCrypt && Path.GetFileName (file.Name).Equals ("PATCH.LPK", StringComparison.InvariantCultureIgnoreCase))
+            // this condition is fishy, probably patch files have additional bitflag set
+            if (lpk_info.WholeCrypt && Binary.AsciiEqual (basename, "PATCH"))
                 lpk_info.WholeCrypt = false;
             return new LuciArchive (file, this, dir, scheme, reader.Info);
         }
@@ -284,7 +285,7 @@ namespace GameRes.Formats.Lucifen
             {
                 if (null == script_arc)
                     throw new UnknownEncryptionScheme();
-                var entry = script_arc.Dir.Where (e => e.Name.Equals ("gameinit.sob", StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                var entry = script_arc.Dir.FirstOrDefault (e => e.Name.Equals ("gameinit.sob", StringComparison.InvariantCultureIgnoreCase));
                 if (null == entry)
                     throw new FileNotFoundException ("Missing 'gameinit.sob' entry in SCRIPT.LPK");
                 using (var gameinit = script_arc.OpenEntry (entry))
