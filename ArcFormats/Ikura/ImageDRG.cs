@@ -2,7 +2,7 @@
 //! \date       Fri Aug 22 05:58:40 2014
 //! \brief      Digital Romance System image format implementation.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -436,9 +436,7 @@ namespace GameRes.Formats.Ikura
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            var meta = info as GgdMetaData;
-            if (null == meta)
-                throw new ArgumentException ("DrgIndexedFormat.Read should be supplied with GgdMetaData", "info");
+            var meta = (GgdMetaData)info;
             file.Position = meta.HeaderSize + 4;
             var palette_data = new byte[0x400];
             if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
@@ -454,7 +452,8 @@ namespace GameRes.Formats.Ikura
             {
                 reader.Unpack();
                 var palette = new BitmapPalette (colors);
-                return ImageData.Create (info, PixelFormats.Indexed8, palette, reader.Data);
+                int stride = ((int)meta.Width + 3) & ~3;
+                return ImageData.Create (info, PixelFormats.Indexed8, palette, reader.Data, stride);
             }
         }
 
