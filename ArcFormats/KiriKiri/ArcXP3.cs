@@ -1264,4 +1264,27 @@ NextEntry:
             Decrypt (entry, offset, values, pos, count);
         }
     }
+
+    [Serializable]
+    public class IncubusCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)~(value ^ (entry.Hash + 1));
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)~(entry.Hash + 1);
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
 }
