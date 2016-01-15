@@ -106,6 +106,8 @@ namespace GameRes.Formats
             get { return m_position; }
             set
             {
+                if (!m_stream.CanSeek)
+                    throw new NotSupportedException ("Underlying stream does not support Stream.Position property");
                 m_position = Math.Max (value, 0);
                 if (m_position > m_header.Length)
                 {
@@ -146,7 +148,7 @@ namespace GameRes.Formats
             }
             if (count > 0)
             {
-                if (m_header.Length == m_position)
+                if (m_header.Length == m_position && m_stream.CanSeek)
                     m_stream.Position = 0;
                 int stream_read = m_stream.Read (buffer, offset, count);
                 m_position += stream_read;
@@ -159,7 +161,7 @@ namespace GameRes.Formats
         {
             if (m_position < m_header.Length)
                 return m_header[m_position++];
-            if (m_position == m_header.Length)
+            if (m_position == m_header.Length && m_stream.CanSeek)
                 m_stream.Position = 0;
             int b = m_stream.ReadByte();
             if (-1 != b)
