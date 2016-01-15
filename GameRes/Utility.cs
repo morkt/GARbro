@@ -114,6 +114,18 @@ namespace GameRes.Utility
             return v << count | v >> (32-count);
         }
 
+        public static ulong RotR (ulong v, int count)
+        {
+            count &= 0x3F;
+            return v >> count | v << (64-count);
+        }
+
+        public static ulong RotL (ulong v, int count)
+        {
+            count &= 0x3F;
+            return v << count | v >> (64-count);
+        }
+
         public static byte RotByteR (byte v, int count)
         {
             count &= 7;
@@ -254,7 +266,7 @@ namespace GameRes.Utility
            should be initialized to all 1's, and the transmitted value
            is the 1's complement of the final running CRC (see the
            crc() routine below)). */
-        static uint UpdateCrc (uint crc, byte[] buf, int pos, int len)
+        public static uint UpdateCrc (uint crc, byte[] buf, int pos, int len)
         {
             uint c = crc;
             for (int n = 0; n < len; n++)
