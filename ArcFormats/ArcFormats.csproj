@@ -66,6 +66,9 @@
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="AnimeGameSystem\ArcDAT.cs" />
     <Compile Include="AnimeGameSystem\AudioPCM.cs" />
+    <Compile Include="AZSys\ArcEncrypted.cs" />
+    <Compile Include="AZSys\FastMersenneTwister.cs" />
+    <Compile Include="AZSys\ImageTYP1.cs" />
     <Compile Include="BlueGale\ArcSNN.cs" />
     <Compile Include="BlueGale\ImageZBM.cs" />
     <Compile Include="Cmvs\ArcCPZ.cs" />
@@ -98,6 +101,8 @@
     <Compile Include="Propeller\ImageMGR.cs" />
     <Compile Include="Silky\ArcAi6Win.cs" />
     <Compile Include="Silky\ImageAKB.cs" />
+    <Compile Include="Softpal\ArcVAFS.cs" />
+    <Compile Include="Softpal\ImageBPIC.cs" />
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
