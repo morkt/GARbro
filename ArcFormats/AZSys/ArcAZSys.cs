@@ -55,8 +55,8 @@ namespace GameRes.Formats.AZSys
             if (ext_count < 1 || ext_count > 8 || count <= 0 || count > 0xfffff
                 || index_length <= 0x14 || index_length >= file.MaxOffset)
                 return null;
-            var packed_index = new byte[index_length];
-            if ((int)index_length != file.View.Read (0x30, packed_index, 0, index_length))
+            var packed_index = file.View.ReadBytes (0x30, index_length);
+            if (packed_index.Length != index_length)
                 return null;
             uint base_offset = 0x30 + index_length;
             uint crc = LittleEndian.ToUInt32 (packed_index, 0);
@@ -104,8 +104,7 @@ namespace GameRes.Formats.AZSys
             first = (first - key) & 0xffff;
             if (first != 0xda78) // doesn't look like zlib stream
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            byte[] input = new byte[packed];
-            arc.File.View.Read (entry.Offset+12, input, 0, packed);
+            var input = arc.File.View.ReadBytes (entry.Offset+12, packed);
             unsafe
             {
                 fixed (byte* raw = input)
