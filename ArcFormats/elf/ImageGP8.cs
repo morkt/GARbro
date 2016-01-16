@@ -112,7 +112,7 @@ namespace GameRes.Formats.Elf
                 int w = input.ReadInt16();
                 int h = input.ReadInt16();
                 if (w <= 0 || w > 0x1000 || h <= 0 || h > 0x1000
-                    || x < 0 || x > 0x800 || h < 0 || h > 0x800)
+                    || x < 0 || x > 0x800 || y < 0 || y > 0x800)
                     return null;
                 return new ImageMetaData {
                     Width = (uint)w,
