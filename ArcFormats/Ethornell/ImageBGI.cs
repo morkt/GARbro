@@ -190,7 +190,12 @@ namespace GameRes.Formats.BGI
             if (m_info.Version < 2)
                 UnpackV1();
             else if (2 == m_info.Version)
-                UnpackV2();
+            {
+                if (m_info.EncLength < 0x80)
+                    throw new InvalidFormatException();
+                using (var decoder = new ParallelCbgDecoder (m_info, ReadEncoded()))
+                    UnpackV2 (decoder);
+            }
             else
                 throw new NotSupportedException ("Not supported CompressedBG version");
         }
@@ -330,11 +335,8 @@ namespace GameRes.Formats.BGI
             }
         }
 
-        void UnpackV2 ()
+        void UnpackV2 (ParallelCbgDecoder decoder)
         {
-            if (m_info.EncLength < 0x80)
-                throw new InvalidFormatException();
-            var decoder = new ParallelCbgDecoder (m_info, ReadEncoded());
             var base_offset = Input.Position;
             decoder.Tree1 = new HuffmanTree (ReadWeightTable (Input, 0x10), true);
             decoder.Tree2 = new HuffmanTree (ReadWeightTable (Input, 0xB0), true);
@@ -470,7 +472,7 @@ namespace GameRes.Formats.BGI
         }
     }
 
-    internal class ParallelCbgDecoder
+    internal sealed class ParallelCbgDecoder : IDisposable
     {
         public byte[]           Input;
         public byte[]           Output;
@@ -802,5 +804,18 @@ namespace GameRes.Formats.BGI
                 return 0;
             return (byte)f;
         }
+
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                s_YCbCr_block.Dispose();
+                s_tmp.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
     }
 }
