@@ -83,18 +83,18 @@ namespace GameRes.Formats.Xuse
             for (int i = 0; i < name_key.Length; ++i)
             {
                 index_offset ^= name_key[i];
-                index_offset = index_offset << 31 | index_offset >> 1;
+                index_offset = Binary.RotR (index_offset, 1);
             }
             for (int i = 0; i < name_key.Length; ++i)
             {
                 index_offset ^= name_key[i];
-                index_offset = index_offset << 31 | index_offset >> 1;
+                index_offset = Binary.RotR (index_offset, 1);
             }
             index_offset %= 0x401;
 
             index_offset += 0x4A;
-            byte[] index = new byte[4*count];
-            if (index.Length != file.View.Read (index_offset, index, 0, (uint)index.Length))
+            byte[] index = file.View.ReadBytes (index_offset, (uint)(4*count));
+            if (index.Length != 4*count)
                 return null;
 
             byte[] index_key = new byte[index.Length];
@@ -116,6 +116,8 @@ namespace GameRes.Formats.Xuse
             {
                 current_offset += 4;
                 uint entry_offset = next_offset;
+                if (entry_offset >= file.MaxOffset)
+                    return null;
                 if (i + 1 == count)
                     next_offset = (uint)file.MaxOffset;
                 else
