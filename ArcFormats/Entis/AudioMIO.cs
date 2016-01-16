@@ -377,6 +377,7 @@ namespace GameRes.Formats.Entis
                         m_decoded_stream.Dispose();
                     m_decode_complete.Dispose();
                     m_available_chunk.Dispose();
+                    m_worker.Dispose();
                 }
                 _mio_disposed = true;
                 base.Dispose (disposing);
