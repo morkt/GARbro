@@ -67,8 +67,8 @@ namespace GameRes.Formats.Kaguya
             if (0 == packed_entry.UnpackedSize)
                 packed_entry.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset-4);
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
+            using (var reader = new LzReader (input, entry.Size, packed_entry.UnpackedSize))
             {
-                var reader = new LzReader (input, entry.Size, packed_entry.UnpackedSize);
                 reader.Unpack();
                 return new MemoryStream (reader.Data);
             }
@@ -184,7 +184,7 @@ namespace GameRes.Formats.Kaguya
         }
     }
 
-    internal class LzReader : IDataUnpacker
+    internal sealed class LzReader : IDisposable, IDataUnpacker
     {
         MsbBitStream    m_input;
         byte[]          m_output;
@@ -233,5 +233,17 @@ namespace GameRes.Formats.Kaguya
                 }
             }
         }
+
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_input.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
     }
 }
