@@ -2,7 +2,7 @@
 //! \date       Tue Aug 11 08:28:28 2015
 //! \brief      Xuse/Eternal resource archive.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -201,14 +201,14 @@ namespace GameRes.Formats.Xuse
 
         private byte[] GenerateKey (byte[] keyword, int index, int length)
         {
-            uint hash = 0;
-            for (uint i = 0; i < length; ++i)
-                hash = ((keyword[i+index] + i) ^ hash) + (uint)length;
+            int hash = 0;
+            for (int i = 0; i < length; ++i)
+                hash = (((sbyte)keyword[i+index] + i) ^ hash) + length;
 
-            uint key_length = (hash & 0xFF) + 0x40;
+            int key_length = (hash & 0xFF) + 0x40;
 
             for (int i = 0; i < length; ++i)
-                hash += keyword[i+index];
+                hash += (sbyte)keyword[i+index];
 
             byte[] key = new byte[key_length--];
             key[1] = (byte)(hash >> 8);
@@ -217,9 +217,9 @@ namespace GameRes.Formats.Xuse
             key[2] = 0x46;
             key[3] = 0x88;
 
-            for (uint i = 4; i < key_length; ++i)
+            for (int i = 4; i < key_length; ++i)
             {
-                hash += ((keyword[i % length] ^ hash) + i) & 0xFF;
+                hash += (((sbyte)keyword[i % length] ^ hash) + i) & 0xFF;
                 key[i] = (byte)hash;
             }
             return key;
