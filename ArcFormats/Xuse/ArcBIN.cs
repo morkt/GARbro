@@ -46,22 +46,24 @@ namespace GameRes.Formats.Xuse
 
         public override ArcFile TryOpen (ArcView file)
         {
-            long first_offset = file.View.ReadInt64 (8);
+            var first_offset = file.View.ReadUInt32 (8);
             if (first_offset <= 0x14 || first_offset >= file.MaxOffset || first_offset > int.MaxValue)
                 return null;
-            var count = (int)(first_offset - 4) / 0x10;
-            if (count != 0x100)
+            int index_size = (int)(first_offset - 4);
+            var count = index_size / 0x10;
+            if (count * 0x10 != index_size)
                 return null;
 
             string base_name = Path.GetFileNameWithoutExtension (file.Name);
             uint index_offset = 4;
+            uint last_offset = 0;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                var offset = file.View.ReadInt64 (index_offset+4);
+                var offset = file.View.ReadUInt32 (index_offset+4);
                 if (0 == offset)
                     break;
-                if (offset < first_offset)
+                if (offset <= last_offset)
                     return null;
                 string name = string.Format ("{0}#{1:D4}", base_name, i);
                 var entry = new AutoEntry (name, () => {
@@ -74,6 +76,7 @@ namespace GameRes.Formats.Xuse
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
+                last_offset = offset;
                 index_offset += 0x10;
             }
             if (0 == dir.Count)
