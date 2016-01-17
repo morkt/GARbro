@@ -34,7 +34,7 @@ namespace GameRes.Formats.Aoi
     public class BoxOpener : ArchiveFormat
     {
         public override string         Tag { get { return "BOX"; } }
-        public override string Description { get { return "Aoi engine resource archive"; } }
+        public override string Description { get { return "Aoi engine script archive"; } }
         public override uint     Signature { get { return 0x42494F41; } } // 'AOIB'
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
