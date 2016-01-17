@@ -2,7 +2,7 @@
 //! \date       Sun Nov 08 12:09:06 2015
 //! \brief      TechnoBrain's "Inteligent Picture Format" (original spelling)
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,7 +27,6 @@ using GameRes.Utility;
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
 using System.Windows.Media;
 
 namespace GameRes.Formats.TechnoBrain
@@ -54,7 +53,10 @@ namespace GameRes.Formats.TechnoBrain
                     return null;
                 if (0x38 != reader.ReadInt32())
                     return null;
-                if (!reader.ReadChars (8).SequenceEqual ("IPH fmt "))
+                var signature = reader.ReadInt32();
+                if (signature != 0x20485049 && signature != 0x00485049) // 'IPH'
+                    return null;
+                if (0x20746D66 != reader.ReadInt32()) // 'fmt '
                     return null;
                 reader.BaseStream.Position = 0x38;
                 if (0x20706D62 != reader.ReadInt32()) // 'bmp '
