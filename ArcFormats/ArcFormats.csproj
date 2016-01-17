@@ -66,6 +66,7 @@
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="AnimeGameSystem\ArcDAT.cs" />
     <Compile Include="AnimeGameSystem\AudioPCM.cs" />
+    <Compile Include="Aoi\ArcBOX.cs" />
     <Compile Include="Aoi\ArcVFS.cs" />
     <Compile Include="Aoi\AudioAOG.cs" />
     <Compile Include="AZSys\ArcEncrypted.cs" />
