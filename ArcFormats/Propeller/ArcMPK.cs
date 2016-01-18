@@ -44,7 +44,7 @@ namespace GameRes.Formats.Propeller
         {
             uint index_offset = file.View.ReadUInt32 (0);
             int count = file.View.ReadInt32 (4);
-            if (index_offset >= file.MaxOffset || !IsSaneCount (count))
+            if (index_offset < 8 || index_offset >= file.MaxOffset || !IsSaneCount (count))
                 return null;
             uint index_size = (uint)count * 0x28u;
             if (index_size > file.MaxOffset - index_offset)

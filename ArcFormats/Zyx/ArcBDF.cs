@@ -208,7 +208,8 @@ namespace GameRes.Formats.Zyx
                     Width = file.View.ReadInt32 (index_offset+0x14),
                     Height = file.View.ReadInt32 (index_offset+0x18),
                 };
-                if (!entry.CheckPlacement (file.MaxOffset))
+                if (entry.Size < 4 || entry.Width <= 0 || entry.Height <= 0
+                    || !entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 0x1C;

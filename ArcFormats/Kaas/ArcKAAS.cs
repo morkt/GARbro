@@ -107,6 +107,8 @@ namespace GameRes.Formats.KAAS
 
         public override ArcFile TryOpen (ArcView file)
         {
+            if (!file.Name.EndsWith (".pb", StringComparison.InvariantCultureIgnoreCase))
+                return null;
             int count = file.View.ReadInt32 (0);
             if (count <= 0 || count > 0xfff)
                 return null;
