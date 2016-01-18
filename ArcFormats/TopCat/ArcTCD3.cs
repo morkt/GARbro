@@ -60,7 +60,7 @@ namespace GameRes.Formats.TopCat
             Offset = offset;
         }
 
-        private static IResource DetectFileType (ArcView file, long offset)
+        new private static IResource DetectFileType (ArcView file, long offset)
         {
             uint signature = file.View.ReadUInt32 (offset);
             return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();

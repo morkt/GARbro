@@ -57,14 +57,26 @@ namespace GameRes.Formats
 
         public static AutoEntry Create (ArcView file, long offset, string base_name)
         {
-            return new AutoEntry (base_name, () => {
-                uint signature = file.View.ReadUInt32 (offset);
-                if (0 == signature) return null;
-                var res = FormatCatalog.Instance.LookupSignature (signature);
-                if (!res.Any() || res.Skip (1).Any()) // Count == 0 || Count > 1
-                    return null;
-                return res.First();
-            }) { Offset = offset };
+            return new AutoEntry (base_name, () => DetectFileType (file, offset)) { Offset = offset };
+        }
+
+        public static IResource DetectFileType (ArcView file, long offset)
+        {
+            uint signature = file.View.ReadUInt32 (offset);
+            if (0 == signature) return null;
+            // resolve some special cases first
+            if (s_OggFormat.Value.Signature == signature)
+                return s_OggFormat.Value;
+            if (AudioFormat.Wav.Signature == signature)
+                return AudioFormat.Wav;
+            if (0x4D42 == (signature & 0xFFFF)) // 'BM'
+                return ImageFormat.Bmp;
+            var res = FormatCatalog.Instance.LookupSignature (signature);
+            if (!res.Any())
+                return null;
+            if (res.Skip (1).Any()) // type is ambiguous
+                return null;
+            return res.First();
         }
 
         private string GetName (string name)
@@ -81,6 +93,8 @@ namespace GameRes.Formats
         {
             return null == m_res.Value ? "" : m_res.Value.Type;
         }
+
+        static readonly Lazy<AudioFormat> s_OggFormat = new Lazy<AudioFormat> (() => FormatCatalog.Instance.AudioFormats.FirstOrDefault (x => x.Tag == "OGG"));
     }
 
     public class PrefixStream : Stream
