@@ -234,6 +234,7 @@
     <Compile Include="BlackCyc\ArcVPK.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
     <Compile Include="Xuse\ArcBIN.cs" />
+    <Compile Include="Xuse\ArcGD.cs" />
     <Compile Include="Xuse\ArcWAG.cs" />
     <Compile Include="Xuse\ArcXuse.cs" />
     <Compile Include="Yuka\ArcYKC.cs" />
