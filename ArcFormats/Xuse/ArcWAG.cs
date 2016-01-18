@@ -108,7 +108,7 @@ namespace GameRes.Formats.Xuse
             var dir = new List<Entry> (count);
             int current_offset = 0;
             uint next_offset = LittleEndian.ToUInt32 (index, current_offset);
-            byte[] data_key = GenerateKey (title, 0, title_length);
+            byte[] data_key = GenerateKey (title, title_length);
             string base_filename = Path.GetFileNameWithoutExtension (arc_filename);
             byte[] chunk_buf = new byte[8];
             byte[] filename_buf = new byte[0x40];
@@ -196,19 +196,19 @@ namespace GameRes.Formats.Xuse
 
         private byte[] GenerateKey (byte[] keyword)
         {
-            return GenerateKey (keyword, 0, keyword.Length);
+            return GenerateKey (keyword, keyword.Length);
         }
 
-        private byte[] GenerateKey (byte[] keyword, int index, int length)
+        private byte[] GenerateKey (byte[] keyword, int length)
         {
             int hash = 0;
             for (int i = 0; i < length; ++i)
-                hash = (((sbyte)keyword[i+index] + i) ^ hash) + length;
+                hash = (((sbyte)keyword[i] + i) ^ hash) + length;
 
             int key_length = (hash & 0xFF) + 0x40;
 
             for (int i = 0; i < length; ++i)
-                hash += (sbyte)keyword[i+index];
+                hash += (sbyte)keyword[i];
 
             byte[] key = new byte[key_length--];
             key[1] = (byte)(hash >> 8);
