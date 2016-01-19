@@ -68,7 +68,7 @@ namespace GameRes.Formats.Xuse
                     uint offset = idx.View.ReadUInt32 (index_offset);
                     if (offset <= last_offset)
                         return null;
-                    var name = string.Format ("{0}#{1:D4}", base_name, i++);
+                    var name = string.Format ("{0}#{1:D5}", base_name, i++);
                     var entry = AutoEntry.Create (file, offset, name);
                     entry.Size = idx.View.ReadUInt32(index_offset+4);
                     if (!entry.CheckPlacement (file.MaxOffset))
