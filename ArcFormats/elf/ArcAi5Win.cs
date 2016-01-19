@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Elf
@@ -88,6 +89,15 @@ namespace GameRes.Formats.Elf
                 catch { /* ignore parse errors */ }
             }
             return null;
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (entry.Name.EndsWith (".mes", StringComparison.InvariantCultureIgnoreCase)
+                || entry.Name.EndsWith (".lib", StringComparison.InvariantCultureIgnoreCase))
+                return new LzssStream (input);
+            return input;
         }
 
         internal class IndexReader
