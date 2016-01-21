@@ -82,6 +82,7 @@
     <Compile Include="CatSystem\ImageHG2.cs" />
     <Compile Include="Cmvs\CmvsMD5.cs" />
     <Compile Include="Cmvs\ImagePB3.cs" />
+    <Compile Include="DenSDK\ArcDAF.cs" />
     <Compile Include="elf\ArcVSD.cs" />
     <Compile Include="Escude\ArcBIN.cs" />
     <Compile Include="Eushully\ArcGPC.cs" />
