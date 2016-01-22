@@ -52,7 +52,8 @@ namespace GameRes.Formats.MnoViolet
                 return null;
             uint name_size = 100;
             uint index_size = (uint)((name_size+8) * count);
-            if (index_size > file.View.Reserve (4, index_size))
+            uint first_offset = file.View.ReadUInt32 (4+name_size+4);
+            if (first_offset != (4 + index_size) || index_size > file.View.Reserve (4, index_size))
                 return null;
             var dir = new List<Entry> (count);
             long index_offset = 4;
