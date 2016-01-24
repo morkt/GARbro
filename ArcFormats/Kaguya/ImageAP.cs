@@ -112,4 +112,48 @@ namespace GameRes.Formats.Kaguya
             }
         }
     }
+
+    [Export(typeof(ImageFormat))]
+    public class Ap2Format : ImageFormat
+    {
+        public override string         Tag { get { return "AP-2"; } }
+        public override string Description { get { return "KaGuYa script engine image format"; } }
+        public override uint     Signature { get { return 0x322D5041; } } // 'AP-2'
+
+        public Ap2Format ()
+        {
+            Extensions = new string[] { "alp" };
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            stream.Position = 4;
+            using (var file = new ArcView.Reader (stream))
+            {
+                var info = new ImageMetaData();
+                info.OffsetX = file.ReadInt32();
+                info.OffsetY = file.ReadInt32();
+                info.Width = file.ReadUInt32();
+                info.Height = file.ReadUInt32();
+                info.BPP = 32;
+                if (info.Width > 0x8000 || info.Height > 0x8000)
+                    return null;
+                return info;
+            }
+        }
+
+        public override ImageData Read (Stream stream, ImageMetaData info)
+        {
+            stream.Position = 0x18;
+            var pixels = new byte[4*info.Width*info.Height];
+            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+                throw new EndOfStreamException();
+            return ImageData.CreateFlipped (info, PixelFormats.Bgra32, null, pixels, 4*(int)info.Width);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("Ap2Format.Write not implemented");
+        }
+    }
 }
