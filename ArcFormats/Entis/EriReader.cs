@@ -1368,16 +1368,16 @@ namespace GameRes.Formats.Entis
 
     internal class ProbDecodeContext : RLEDecodeContext
     {
-        uint        m_dwCodeRegister;
-        uint        m_dwAugendRegister;
-        int         m_nPostBitCount;
-        byte[]      m_bytLastSymbol = new byte[4];
+        protected uint      m_dwCodeRegister;
+        protected uint      m_dwAugendRegister;
+        protected int       m_nPostBitCount;
+        protected byte[]    m_bytLastSymbol = new byte[4];
 
-        ErisaProbModel          m_pPhraseLenProb = new ErisaProbModel();
-        ErisaProbModel          m_pPhraseIndexProb = new ErisaProbModel();
-        ErisaProbModel          m_pRunLenProb = new ErisaProbModel();
-        ErisaProbModel          m_pLastERISAProb;
-        ErisaProbModel[]        m_ppTableERISA;
+        protected ErisaProbModel m_pPhraseLenProb = new ErisaProbModel();
+        protected ErisaProbModel m_pPhraseIndexProb = new ErisaProbModel();
+        protected ErisaProbModel m_pRunLenProb = new ErisaProbModel();
+        protected ErisaProbModel m_pLastERISAProb;
+        protected ErisaProbModel[] m_ppTableERISA;
 
         public ProbDecodeContext (uint nBufferingSize) : base (nBufferingSize)
         {
@@ -1467,7 +1467,7 @@ namespace GameRes.Formats.Entis
             return nSymbol;
         }
 
-        int DecodeERISACodeIndex (ErisaProbModel pModel)
+        protected int DecodeERISACodeIndex (ErisaProbModel pModel)
         {
             uint dwAcc = m_dwCodeRegister * pModel.TotalCount / m_dwAugendRegister;
             if (dwAcc >= ErisaProbModel.TotalLimit)
@@ -1499,7 +1499,7 @@ namespace GameRes.Formats.Entis
                 {
                     if ((++m_nPostBitCount) >= 256)
                         return -1;
-                    nNextBit = 0 ;
+                    nNextBit = 0;
                 }
                 m_dwCodeRegister = (m_dwCodeRegister << 1) | ((uint)nNextBit & 1);
                 m_dwAugendRegister <<= 1;

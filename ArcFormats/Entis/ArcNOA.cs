@@ -123,56 +123,61 @@ namespace GameRes.Formats.Entis
             ulong size = arc.File.View.ReadUInt64 (entry.Offset+8);
             if (size > int.MaxValue)
                 throw new FileSizeException();
-            if (0 == size)
+            if (size <= 4)
                 return Stream.Null;
 
+            if (EncType.ERISACode == nent.Encryption)
+            {
+                using (var enc = arc.File.CreateStream (entry.Offset+0x10, (uint)size-4))
+                    return DecodeNemesis (enc);
+            }
+
+            var narc = arc as NoaArchive;
             var input = arc.File.CreateStream (entry.Offset+0x10, (uint)size);
-            try
-            {
-                var narc = arc as NoaArchive;
-                if (0 == nent.Encryption || size < 4 || null == narc || null == narc.Password)
-                    return input;
-                if (0x40000000 != nent.Encryption)
-                {
-                    Trace.WriteLine (string.Format ("{0}: unknown encryption scheme 0x{1:x8}",
-                                                    nent.Name, nent.Encryption));
-                    return input;
-                }
-                uint nTotalBytes = (uint)(size - 4);
-                var pBSHF = new BSHFDecodeContext (0x10000);
-                pBSHF.AttachInputFile (input);
-                pBSHF.PrepareToDecodeBSHFCode (narc.Password);
+            if (EncType.Raw == nent.Encryption || null == narc || null == narc.Password)
+                return input;
 
-                byte[] buf = new byte[nTotalBytes];
-                uint decoded = pBSHF.DecodeBSHFCodeBytes (buf, nTotalBytes);
-                if (decoded < nTotalBytes)
-                    throw new EndOfStreamException ("Unexpected end of encrypted stream");
-
-                /* Something wrong with preceding length calculation, resulting CRC doesn't match
-                byte[] bufCRC = new byte[4];
-                int iCRC = 0;
-                for (int i = 0; i < buf.Length; ++i)
-                {
-                    bufCRC[iCRC] ^= buf[i];
-                    iCRC = (iCRC + 1) & 0x03;
-                }
-                uint orgCRC = arc.File.View.ReadUInt32 (entry.Offset+0x10+nTotalBytes);
-                uint crc = LittleEndian.ToUInt32 (bufCRC, 0);
-                if (orgCRC != crc)
-                {
-                    Trace.WriteLine (string.Format ("{0}: CRC mismatch", nent.Name));
-                    input.Position = 0;
-                    return input;
-                }
-                */
-                input.Dispose();
-                return new MemoryStream (buf);
-            }
-            catch
+            if (EncType.BSHFCrypt == nent.Encryption)
             {
-                input.Dispose();
-                throw;
+                using (input)
+                    return DecodeBSHF (input, narc.Password);
             }
+            Trace.WriteLine (string.Format ("{0}: encryption scheme 0x{1:x8} not implemented",
+                                            nent.Name, nent.Encryption));
+            return input;
+        }
+
+        Stream DecodeNemesis (Stream input)
+        {
+            var decoder = new NemesisDecodeContext();
+            decoder.AttachInputFile (input);
+            decoder.PrepareToDecodeERISANCode();
+            var file = new MemoryStream ((int)input.Length);
+            var buffer = new byte[0x10000];
+            for (;;)
+            {
+                int read = (int)decoder.DecodeNemesisCodeBytes (buffer, 0x10000);
+                if (0 == read)
+                    break;
+                file.Write (buffer, 0, read);
+            }
+            file.Position = 0;
+            return file;
+        }
+
+        Stream DecodeBSHF (Stream input, string password)
+        {
+            uint nTotalBytes = (uint)input.Length - 4;
+            var pBSHF = new BSHFDecodeContext (0x10000);
+            pBSHF.AttachInputFile (input);
+            pBSHF.PrepareToDecodeBSHFCode (password);
+
+            byte[] buf = new byte[nTotalBytes];
+            uint decoded = pBSHF.DecodeBSHFCodeBytes (buf, nTotalBytes);
+            if (decoded < nTotalBytes)
+                throw new EndOfStreamException ("Unexpected end of encrypted stream");
+
+            return new MemoryStream (buf);
         }
 
         public override ResourceOptions GetDefaultOptions ()
@@ -186,6 +191,16 @@ namespace GameRes.Formats.Entis
         public override object GetAccessWidget ()
         {
             return new GUI.WidgetNOA();
+        }
+
+        internal static class EncType
+        {
+            public const uint Raw           = 0x00000000;
+            public const uint ERISACode     = 0x80000010;
+            public const uint BSHFCrypt     = 0x40000000;
+            public const uint SimpleCrypt32 = 0x20000000;
+            public const uint ERISACrypt    = 0xC0000010;
+            public const uint ERISACrypt32  = 0xA0000010;
         }
 
         internal class IndexReader
@@ -235,8 +250,7 @@ namespace GameRes.Formats.Entis
                     dir_offset += 4;
 
                     entry.Encryption = m_file.View.ReadUInt32 (dir_offset);
-                    if (0 != entry.Encryption)
-                        m_found_encrypted = true;
+                    m_found_encrypted = m_found_encrypted || (EncType.Raw != entry.Encryption && EncType.ERISACode != entry.Encryption);
                     dir_offset += 4;
 
                     entry.Offset = base_offset + m_file.View.ReadInt64 (dir_offset);
