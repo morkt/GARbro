@@ -49,7 +49,7 @@ namespace GameRes.Formats.Entis
                 return null;
             if (0x03000100 != LittleEndian.ToUInt32 (header, 8))
                 return null;
-            if (!Binary.AsciiEqual (header, 0x10, "Music Interleaved and Orthogonal transformed"))
+            if (!Binary.AsciiEqual (header, 0x10, "Music Interleaved"))
                 return null;
 
             return new MioInput (file);
