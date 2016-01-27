@@ -24,8 +24,11 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Media;
 using GameRes.Utility;
 
@@ -47,6 +50,8 @@ namespace GameRes.Formats.Entis
         public int      LappedBlock;
         public int      FrameTransform;
         public int      FrameDegree;
+        public EriFileHeader Header;
+        public string   Description;
     }
 
     public enum CvType
@@ -55,6 +60,15 @@ namespace GameRes.Formats.Entis
         DCT_ERI      =  0x00000001,
         LOT_ERI      =  0x00000005,
         LOT_ERI_MSS  =  0x00000105,
+    }
+
+    internal class EriFileHeader
+    {
+        public int      Version;
+        public int      ContainedFlag;
+        public int      KeyFrameCount;
+        public int      FrameCount;
+        public int      AllFrameTime;
     }
 
     public enum EriCode
@@ -84,7 +98,7 @@ namespace GameRes.Formats.Entis
             public long         Length;
         }
 
-        public EriFile (Stream stream) : base (stream, System.Text.Encoding.ASCII, true)
+        public EriFile (Stream stream) : base (stream, Encoding.Unicode, true)
         {
         }
 
@@ -138,14 +152,27 @@ namespace GameRes.Formats.Entis
                     return null;
                 int header_size = (int)section.Length;
                 int stream_pos = 0x50 + header_size;
+                EriFileHeader file_header = null;
                 EriMetaData info = null;
+                string desc = null;
                 while (header_size > 8)
                 {
                     section = reader.ReadSection();
                     header_size -= 8;
                     if (section.Length <= 0 || section.Length > header_size)
                         break;
-                    if ("ImageInf" == section.Id)
+                    if ("FileHdr " == section.Id)
+                    {
+                        file_header = new EriFileHeader();
+                        file_header.Version          = reader.ReadInt32();
+                        if (file_header.Version > 0x00020100)
+                            throw new InvalidFormatException ("Invalid ERI file version");
+                        file_header.ContainedFlag    = reader.ReadInt32();
+                        file_header.KeyFrameCount    = reader.ReadInt32();
+                        file_header.FrameCount       = reader.ReadInt32();
+                        file_header.AllFrameTime     = reader.ReadInt32();
+                    }
+                    else if ("ImageInf" == section.Id)
                     {
                         int version = reader.ReadInt32();
                         if (version != 0x00020100 && version != 0x00020200)
@@ -168,10 +195,33 @@ namespace GameRes.Formats.Entis
                         info.LappedBlock = reader.ReadInt32();
                         info.FrameTransform = reader.ReadInt32();
                         info.FrameDegree = reader.ReadInt32();
-                        break;
+                    }
+                    else if ("descript" == section.Id)
+                    {
+                        if (0xFEFF == reader.PeekChar())
+                        {
+                            reader.Read();
+                            var desc_chars = reader.ReadChars ((int)section.Length/2 - 1);
+                            desc = new string (desc_chars);
+                        }
+                        else
+                        {
+                            var desc_chars = reader.ReadBytes ((int)section.Length);
+                            desc = Encoding.UTF8.GetString (desc_chars);
+                        }
+                    }
+                    else
+                    {
+                        reader.BaseStream.Seek (section.Length, SeekOrigin.Current);
                     }
                     header_size -= (int)section.Length;
-                    reader.BaseStream.Seek (section.Length, SeekOrigin.Current);
+                }
+                if (info != null)
+                {
+                    if (file_header != null)
+                        info.Header = file_header;
+                    if (desc != null)
+                        info.Description = desc;
                 }
                 return info;
             }
@@ -179,31 +229,8 @@ namespace GameRes.Formats.Entis
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as EriMetaData;
-            if (null == meta)
-                throw new ArgumentException ("EriFormat.Read should be supplied with EriMetaData", "info");
-            stream.Position = meta.StreamPos;
-            using (var input = new EriFile (stream))
-            {
-                Color[] palette = null;
-                for (;;) // ReadSection throws an exception in case of EOF
-                {
-                    var section = input.ReadSection();
-                    if ("Stream  " == section.Id)
-                        continue;
-                    if ("ImageFrm" == section.Id)
-                        break;
-                    if ("Palette " == section.Id && info.BPP <= 8 && section.Length <= 0x400)
-                    {
-                        palette = ReadPalette (stream, (int)section.Length);
-                        continue;
-                    }
-                    input.BaseStream.Seek (section.Length, SeekOrigin.Current);
-                }
-                var reader = new EriReader (stream, meta, palette);
-                reader.DecodeImage();
-                return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
-            }
+            var reader = ReadImageData (stream, (EriMetaData)info);
+            return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }
 
         private Color[] ReadPalette (Stream input, int palette_length)
@@ -219,6 +246,122 @@ namespace GameRes.Formats.Entis
                 colors[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
             }
             return colors;
+        }
+
+        private EriReader ReadImageData (Stream stream, EriMetaData meta)
+        {
+            stream.Position = meta.StreamPos;
+            using (var input = new EriFile (stream))
+            {
+                Color[] palette = null;
+                for (;;) // ReadSection throws an exception in case of EOF
+                {
+                    var section = input.ReadSection();
+                    if ("Stream  " == section.Id)
+                        continue;
+                    if ("ImageFrm" == section.Id)
+                        break;
+                    if ("Palette " == section.Id && meta.BPP <= 8 && section.Length <= 0x400)
+                    {
+                        palette = ReadPalette (stream, (int)section.Length);
+                        continue;
+                    }
+                    input.BaseStream.Seek (section.Length, SeekOrigin.Current);
+                }
+                var reader = new EriReader (stream, meta, palette);
+                reader.DecodeImage();
+
+                if (!string.IsNullOrEmpty (meta.Description))
+                {
+                    var tags = ParseTagInfo (meta.Description);
+                    string ref_file;
+                    if (tags.TryGetValue ("reference-file", out ref_file))
+                    {
+                        ref_file = ref_file.TrimEnd (null);
+                        if (!string.IsNullOrEmpty (ref_file))
+                        {
+                            if ((meta.BPP + 7) / 8 < 3)
+                                throw new InvalidFormatException();
+
+                            ref_file = VFS.CombinePath (Path.GetDirectoryName (meta.FileName), ref_file);
+                            using (var ref_src = VFS.OpenSeekableStream (ref_file))
+                            {
+                                var ref_info = ReadMetaData (ref_src) as EriMetaData;
+                                if (null == ref_info)
+                                    throw new FileNotFoundException ("Referenced image not found");
+                                ref_info.FileName = ref_file;
+                                var ref_reader = ReadImageData (ref_src, ref_info);
+                                AddImageBuffer (meta, reader.Data, ref_info, ref_reader.Data);
+                            }
+                        }
+                    }
+                }
+                return reader;
+            }
+        }
+
+        void AddImageBuffer (EriMetaData dst_info, byte[] dst_img, EriMetaData src_info, byte[] src_img)
+        {
+            int src_bpp = (src_info.BPP + 7) / 8;
+            int dst_bpp = (dst_info.BPP + 7) / 8;
+            bool has_alpha = src_bpp == 4 && src_bpp == dst_bpp;
+            int dst = 0;
+            int src = 0;
+            while (dst < dst_img.Length)
+            {
+                dst_img[dst  ] += src_img[src  ];
+                dst_img[dst+1] += src_img[src+1];
+                dst_img[dst+2] += src_img[src+2];
+                if (has_alpha)
+                    dst_img[dst+3] += src_img[src+3];
+                dst += dst_bpp;
+                src += src_bpp;
+            }
+        }
+
+        static readonly Regex s_TagRe = new Regex (@"^\s*#\s*(\S+)");
+
+        Dictionary<string, string> ParseTagInfo (string desc)
+        {
+            var dict = new Dictionary<string, string>();
+            if (string.IsNullOrEmpty (desc))
+            {
+                return dict;
+            }
+            if ('#' != desc[0])
+            {
+                dict["comment"] = desc;
+                return dict;
+            }
+            var tag_value = new StringBuilder();
+            using (var reader = new StringReader (desc))
+            {
+                string line = reader.ReadLine();
+                while (null != line)
+                {
+                    var match = s_TagRe.Match (line);
+                    if (!match.Success)
+                        break;
+                    string tag = match.Groups[1].Value;
+
+                    tag_value.Clear();
+                    for (;;)
+                    {
+                        line = reader.ReadLine();
+                        if (null == line)
+                            break;
+                        if (line.StartsWith ("#"))
+                        {
+                            if (line.Length < 2 || '#' != line[1])
+                                break;
+                            line = line.Substring (1);
+                        }
+                        tag_value.AppendLine (line);
+                    }
+                    dict[tag] = tag_value.ToString();
+                }
+            }
+            return dict;
         }
 
         public override void Write (Stream file, ImageData image)
