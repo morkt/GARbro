@@ -19,6 +19,7 @@ namespace GameRes.Formats.Entis
 
         ErisaProbBase           m_pProbERISA;
         NemesisPhraseLookup[]   m_pNemesisLookup;
+        byte[]                  m_bytLastSymbol = new byte[4];
 
         public NemesisDecodeContext (uint buffer_size = 0x10000) : base (buffer_size)
         {

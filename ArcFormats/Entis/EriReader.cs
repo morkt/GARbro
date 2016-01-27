@@ -1371,7 +1371,6 @@ namespace GameRes.Formats.Entis
         protected uint      m_dwCodeRegister;
         protected uint      m_dwAugendRegister;
         protected int       m_nPostBitCount;
-        protected byte[]    m_bytLastSymbol = new byte[4];
 
         protected ErisaProbModel m_pPhraseLenProb = new ErisaProbModel();
         protected ErisaProbModel m_pPhraseIndexProb = new ErisaProbModel();
