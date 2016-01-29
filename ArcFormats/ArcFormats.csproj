@@ -82,6 +82,7 @@
     <Compile Include="CatSystem\ImageHG2.cs" />
     <Compile Include="Cmvs\CmvsMD5.cs" />
     <Compile Include="Cmvs\ImagePB3.cs" />
+    <Compile Include="CsWare\ArcPCS.cs" />
     <Compile Include="DenSDK\ArcDAF.cs" />
     <Compile Include="elf\ArcVSD.cs" />
     <Compile Include="Entis\ErisaNemesis.cs" />
@@ -545,9 +546,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="CsWare\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)
