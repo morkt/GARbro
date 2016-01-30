@@ -111,6 +111,7 @@
     <Compile Include="Silky\ImageAKB.cs" />
     <Compile Include="Softpal\ArcVAFS.cs" />
     <Compile Include="Softpal\ImageBPIC.cs" />
+    <Compile Include="Softpal\ImagePIC.cs" />
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />

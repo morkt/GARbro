@@ -41,7 +41,7 @@ namespace GameRes.Formats.Softpal
 
         public VafsOpener ()
         {
-            Extensions = new string[] { "052" };
+            Extensions = new string[] { "052", "055" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -59,14 +59,26 @@ namespace GameRes.Formats.Softpal
             uint next_offset = data_offset;
             var base_name = Path.GetFileNameWithoutExtension (file.Name).ToUpperInvariant();
             bool is_audio = "BGM" == base_name;
+            bool is_pic   = "PIC" == base_name;
             var dir = new List<Entry> (count);
             for (int i = 0; next_offset != 0 && next_offset != file.MaxOffset && i < count; ++i)
             {
                 index_offset += 4;
                 var name = string.Format("{0}#{1:D5}", base_name, i);
-                var entry = AutoEntry.Create (file, next_offset, name);
+                var offset = next_offset;
                 next_offset = index_offset == data_offset ? 0 : file.View.ReadUInt32 (index_offset);
-                entry.Size = (uint)((0 != next_offset ? (long)next_offset : file.MaxOffset) - entry.Offset);
+                uint size = (uint)((0 != next_offset ? (long)next_offset : file.MaxOffset) - offset);
+                Entry entry;
+                if (size <= 4)
+                    entry = new Entry { Name = name, Offset = offset };
+                else if (is_pic)
+                    entry = new Entry { Name = name, Type = "image", Offset = offset };
+                else if (is_audio)
+                    entry = new Entry { Name = name + ".wav", Type = "audio", Offset = offset };
+                else
+                    entry = AutoEntry.Create (file, offset, name);
+
+                entry.Size = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);

@@ -43,7 +43,7 @@ namespace GameRes.Formats.Softpal
             if (header.Length != stream.Read (header, 0, header.Length))
                 return null;
             int pixel_size = LittleEndian.ToInt32 (header, 12);
-            if (pixel_size != 3 && pixel_size != 4)
+            if (pixel_size != 4 && pixel_size != 3 && pixel_size != 1)
                 return null;
             return new ImageMetaData
             {
@@ -60,13 +60,17 @@ namespace GameRes.Formats.Softpal
             var pixels = new byte[(int)info.Width * (int)info.Height * pixel_size];
             if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                 throw new EndOfStreamException();
-            for (int i = 2; i < pixels.Length; i += pixel_size)
+            if (pixel_size > 1)
             {
-                byte t = pixels[i];
-                pixels[i] = pixels[i-2];
-                pixels[i-2] = t;
+                for (int i = 2; i < pixels.Length; i += pixel_size)
+                {
+                    byte t = pixels[i];
+                    pixels[i] = pixels[i-2];
+                    pixels[i-2] = t;
+                }
             }
-            PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgr32;
+            PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24 :
+                                  8 == info.BPP ? PixelFormats.Gray8 : PixelFormats.Bgra32;
             return ImageData.Create (info, format, null, pixels);
         }
 
