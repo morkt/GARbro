@@ -44,6 +44,8 @@ namespace GameRes.Formats.Softpal
             Extensions = new string[] { "052", "055" };
         }
 
+        static readonly Lazy<ImageFormat> s_PicFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PIC/SOFTPAL"));
+
         public override ArcFile TryOpen (ArcView file)
         {
             if ('H' != file.View.ReadByte (4))
@@ -61,22 +63,34 @@ namespace GameRes.Formats.Softpal
             bool is_audio = "BGM" == base_name;
             bool is_pic   = "PIC" == base_name;
             var dir = new List<Entry> (count);
-            for (int i = 0; next_offset != 0 && next_offset != file.MaxOffset && i < count; ++i)
+            for (int i = 0; next_offset != file.MaxOffset && i < count; ++i)
             {
                 index_offset += 4;
                 var name = string.Format("{0}#{1:D5}", base_name, i);
                 var offset = next_offset;
                 next_offset = index_offset == data_offset ? 0 : file.View.ReadUInt32 (index_offset);
-                uint size = (uint)((0 != next_offset ? (long)next_offset : file.MaxOffset) - offset);
+                if (uint.MaxValue == next_offset)
+                    break;
+                else if (0 == next_offset)
+                    next_offset = (uint)file.MaxOffset;
+                else if (next_offset < offset)
+                    break;
+                uint size = next_offset - offset;
+                if (size < 4)
+                    continue;
                 Entry entry;
-                if (size <= 4)
-                    entry = new Entry { Name = name, Offset = offset };
-                else if (is_pic)
+                if (is_pic)
                     entry = new Entry { Name = name, Type = "image", Offset = offset };
                 else if (is_audio)
                     entry = new Entry { Name = name + ".wav", Type = "audio", Offset = offset };
                 else
-                    entry = AutoEntry.Create (file, offset, name);
+                    entry = new AutoEntry (name, () => {
+                        uint signature = file.View.ReadUInt32 (offset);
+                        uint s16 = signature & 0xFFFF;
+                        if (1 == s16 || 3 == s16 || 4 == s16)
+                            return s_PicFormat.Value;
+                        return AutoEntry.DetectFileType (signature);
+                    }) { Offset = offset };
 
                 entry.Size = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
