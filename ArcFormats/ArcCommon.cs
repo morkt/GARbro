@@ -57,12 +57,11 @@ namespace GameRes.Formats
 
         public static AutoEntry Create (ArcView file, long offset, string base_name)
         {
-            return new AutoEntry (base_name, () => DetectFileType (file, offset)) { Offset = offset };
+            return new AutoEntry (base_name, () => DetectFileType (file.View.ReadUInt32 (offset))) { Offset = offset };
         }
 
-        public static IResource DetectFileType (ArcView file, long offset)
+        public static IResource DetectFileType (uint signature)
         {
-            uint signature = file.View.ReadUInt32 (offset);
             if (0 == signature) return null;
             // resolve some special cases first
             if (s_OggFormat.Value.Signature == signature)
