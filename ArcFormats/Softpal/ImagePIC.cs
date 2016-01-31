@@ -46,7 +46,7 @@ namespace GameRes.Formats.Softpal
 
         public PicFormat ()
         {
-            Extensions = new string[] { "pic", "" };
+            Extensions = new string[] { "" };
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
@@ -266,15 +266,9 @@ namespace GameRes.Formats.Softpal
                     int src = 0;
                     for (int i = 0; i < 8; ++i)
                     {
-                        m_output[dst]   = block[src++];
-                        m_output[dst+1] = block[src++];
-                        m_output[dst+2] = block[src++];
-                        m_output[dst+3] = block[src++];
-                        m_output[dst+4] = block[src++];
-                        m_output[dst+5] = block[src++];
-                        m_output[dst+6] = block[src++];
-                        m_output[dst+7] = block[src++];
+                        Buffer.BlockCopy (block, src, m_output, dst, 8);
                         dst += m_src_stride;
+                        src += 8;
                     }
                 }
             }
@@ -322,87 +316,76 @@ namespace GameRes.Formats.Softpal
                 break;
             }
             int v32 = pixel + block[27];
-            int v33 = v32   + block[26];
-            block[27] = (byte)v32;
-            block[26] = (byte)v33;
-            block[25] += (byte)v33;
+            block[27]  = (byte)v32;
+            block[26] += (byte)v32;
+            block[25] += block[26];
             block[24] += block[25];
-            block[19] += (byte)v32;
             int v34 = v32 + block[18];
-            int v35 = v34 + block[17];
-            block[18] = (byte)v34;
-            block[17] = (byte)v35;
-            block[16] += (byte)v35;
+            block[19] += (byte)v32;
+            block[18]  = (byte)v34;
+            block[17] += (byte)v34;
+            block[16] += block[17];
+            int v36 = v34 + block[9];
             block[11] += block[19];
             block[10] += (byte)v34;
-            int v36 = v34 + block[9];
-            int v37 = v36 + block[8];
-            block[9] = (byte)v36;
-            block[8] = (byte)v37;
+            block[9]  = (byte)v36;
+            block[8] += (byte)v36;
             block[3] += block[11];
             block[2] += block[10];
             block[1] += (byte)v36;
             block[0] += (byte)v36;
             int v39 = pixel + block[28];
-            int v40 = v39   + block[29];
-            block[28] = (byte)v39;
-            block[29] = (byte)v40;
-            block[30] += (byte)v40;
+            block[28]  = (byte)v39;
+            block[29] += (byte)v39;
+            block[30] += block[29];
             block[31] += block[30];
-            block[20] += (byte)v39;
             int v41 = v39 + block[21];
-            int v42 = v41 + block[22];
-            block[21] = (byte)v41;
-            block[22] = (byte)v42;
-            block[23] += (byte)v42;
+            block[20] += (byte)v39;
+            block[21]  = (byte)v41;
+            block[22] += (byte)v41;
+            block[23] += block[22];
+            int v43 = v41 + block[14];
             block[12] += block[20];
             block[13] += (byte)v41;
-            int v43 = v41 + block[14];
-            int v44 = v43 + block[15];
-            block[14] = (byte)v43;
-            block[15] = (byte)v44;
+            block[14]  = (byte)v43;
+            block[15] += (byte)v43;
             block[4] += block[12];
             block[5] += block[13];
             block[6] += (byte)v43;
             block[7] += (byte)v43;
             int v46 = pixel + block[35];
-            int v47 = v46   + block[34];
-            block[35] = (byte)v46;
-            block[34] = (byte)v47;
-            block[33] += (byte)v47;
+            block[35]  = (byte)v46;
+            block[34] += (byte)v46;
+            block[33] += block[34];
             block[32] += block[33];
-            block[43] += (byte)v46;
             int v48 = v46 + block[42];
-            int v49 = v48 + block[41];
-            block[42] = (byte)v48;
-            block[41] = (byte)v49;
-            block[40] += (byte)v49;
+            block[43] += (byte)v46;
+            block[42]  = (byte)v48;
+            block[41] += (byte)v48;
+            block[40] += block[41];
+            int v50 = v48 + block[49];
             block[51] += block[43];
             block[50] += (byte)v48;
-            int v50 = v48 + block[49];
-            int v51 = v50 + block[48];
-            block[49] = (byte)v50;
-            block[48] = (byte)v51;
+            block[49]  = (byte)v50;
+            block[48] += (byte)v50;
             block[59] += block[51];
             block[58] += block[50];
             block[57] += (byte)v50;
             block[56] += (byte)v50;
             int v53 = pixel + block[36];
-            int v54 = v53   + block[37];
-            block[36] = (byte)v53;
-            block[37] = (byte)v54;
-            block[38] += (byte)v54;
+            block[36]  = (byte)v53;
+            block[37] += (byte)v53;
+            block[38] += block[37];
             block[39] += block[38];
             int v56 = v53 + block[45];
-            int v57 = v56 + block[46];
-            block[47] += (byte)v57;
-            block[46] = (byte)v57;
-            block[45] = (byte)v56;
             block[44] += (byte)v53;
-            block[53] += (byte)v56;
-            block[52] += block[44];
+            block[45]  = (byte)v56;
+            block[46] += (byte)v56;
+            block[47] += block[46];
             int v58 = v56 + block[54];
-            block[54] = (byte)v58;
+            block[52] += block[44];
+            block[53] += (byte)v56;
+            block[54]  = (byte)v58;
             block[55] += (byte)v58;
             block[60] += block[52];
             block[61] += block[53];
