@@ -418,6 +418,8 @@
     <Compile Include="YuRis\WidgetYPF.xaml.cs">
       <DependentUpon>WidgetYPF.xaml</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="Softpal\WaveTable1" />
+    <EmbeddedResource Include="Softpal\WaveTable2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameRes\GameRes.csproj">
