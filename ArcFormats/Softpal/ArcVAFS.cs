@@ -175,8 +175,8 @@ namespace GameRes.Formats.Softpal
                         int addend = buffer[src++] << 8;
                         int pcm = LittleEndian.ToInt16 (buffer, src);
                         src += 2;
-                        wav.Write ((short)pcm);
                         wav.BaseStream.Position = data_offset + channel * 2;
+                        wav.Write ((short)pcm);
                         for (int i = 0; i < 255; ++i)
                         {
                             byte v = buffer[src++];
@@ -186,15 +186,14 @@ namespace GameRes.Formats.Softpal
                                 pcm = 32767;
                             else if (pcm < -32767)
                                 pcm = -32767;
-                            wav.Write ((short)pcm);
                             wav.BaseStream.Seek (2, SeekOrigin.Current);
+                            wav.Write ((short)pcm);
                             addend += WaveTable2.Value[v];
                             if (addend < 0)
                                 addend = 0;
                             else if (addend >= 16384)
                                 addend = 16128;
                         }
-                        wav.BaseStream.Seek (0, SeekOrigin.End);
                     }
                 }
             }
