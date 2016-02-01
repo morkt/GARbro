@@ -146,7 +146,8 @@ namespace GameRes.Formats.Softpal
         {
             if (arc is TpArchive)
                 return OpenVoiceEntry (arc, entry);
-            else if ("audio" == entry.Type)
+            else if ("audio" == entry.Type
+                     && AudioFormat.Wav.Signature != arc.File.View.ReadUInt32 (entry.Offset))
                 return OpenAudioEntry (arc, entry);
             else
                 return base.OpenEntry (arc, entry);
