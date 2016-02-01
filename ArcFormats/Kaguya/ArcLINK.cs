@@ -61,7 +61,7 @@ namespace GameRes.Formats.Kaguya
                 var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                 entry.Offset = current_offset;
                 entry.Size   = size - (0x10 + name_length);
-                entry.IsPacked = is_compressed;
+                entry.IsPacked = is_compressed && file.View.AsciiEqual (current_offset, "BMR");
                 dir.Add (entry);
                 current_offset += entry.Size;
             }
@@ -71,7 +71,7 @@ namespace GameRes.Formats.Kaguya
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var pent = entry as PackedEntry;
-            if (null == pent || !pent.IsPacked || !arc.File.View.AsciiEqual (entry.Offset, "BMR"))
+            if (null == pent || !pent.IsPacked)
                 return base.OpenEntry (arc, entry);
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
             using (var bmr = new BmrDecoder (input))
