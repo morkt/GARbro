@@ -56,7 +56,12 @@ namespace GameRes.Formats.Softpal
             uint data_offset = file.View.ReadUInt32 (index_offset);
             var base_name = Path.GetFileNameWithoutExtension (file.Name).ToUpperInvariant();
             if (0 == data_offset && "TP" == base_name)
-                return OpenTpArc (file);
+            {
+                if (file.Name.EndsWith (".055"))
+                    return OpenTp055Arc (file);
+                else
+                    return OpenTpArc (file);
+            }
             if (data_offset < index_offset || data_offset >= file.MaxOffset)
                 return null;
             int count = (int)(data_offset - index_offset) / 4;
@@ -142,9 +147,52 @@ namespace GameRes.Formats.Softpal
             return new TpArchive (file, this, dir);
         }
 
+        ArcFile OpenTp055Arc (ArcView file)
+        {
+            uint index_offset = 0x20;
+            uint data_offset;
+            for (;;)
+            {
+                data_offset = file.View.ReadUInt32 (index_offset);
+                if (0 != data_offset)
+                    break;
+                index_offset += 0x10;
+                if (0xA010 == index_offset)
+                    return null;
+            }
+            if (data_offset >= file.MaxOffset)
+                return null;
+            var dir = new List<Entry>();
+            while (index_offset < data_offset)
+            {
+                var offset = file.View.ReadUInt32 (index_offset);
+                if (0 != offset)
+                {
+                    if (offset >= file.MaxOffset)
+                        return null;
+                    var name = string.Format("TP#{0:D6}.wav", index_offset/0x10 - 1);
+                    var entry = new Tp055Entry {
+                        Name = name,
+                        Offset = offset,
+                        ChunkCount = file.View.ReadInt32 (index_offset+4),
+                    };
+                    dir.Add (entry);
+                }
+                index_offset += 0x10;
+            }
+            for (int i = 0; i < dir.Count-1; ++i)
+            {
+                dir[i].Size = (uint)(dir[i+1].Offset - dir[i].Offset);
+            }
+            dir[dir.Count-1].Size = (uint)(file.MaxOffset - dir[dir.Count-1].Offset);
+            return new TpArchive (file, this, dir);
+        }
+
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (arc is TpArchive)
+            if (entry is Tp055Entry)
+                return OpenVoice055Entry (arc, entry as Tp055Entry);
+            else if (arc is TpArchive)
                 return OpenVoiceEntry (arc, entry);
             else if ("audio" == entry.Type
                      && AudioFormat.Wav.Signature != arc.File.View.ReadUInt32 (entry.Offset))
@@ -243,6 +291,59 @@ namespace GameRes.Formats.Softpal
             return output;
         }
 
+        Stream OpenVoice055Entry (ArcFile arc, Tp055Entry entry)
+        {
+            int pcm_size = entry.ChunkCount * 0x800;
+            var offset = entry.Offset;
+            var wav_mem = new MemoryStream (0x24 + pcm_size);
+            using (var wav = new BinaryWriter (wav_mem, Encoding.ASCII, true))
+            {
+                WriteWavHeader (wav, 1, 22050, pcm_size);
+                var buffer = new byte[0x402];
+                var output = new int[0x400];
+                for (int i = 0; i < entry.ChunkCount; ++i)
+                {
+                    int ctl = arc.File.View.ReadByte (offset++) & 0x3F;
+                    for (int j = 0; j < output.Length; ++j)
+                        output[j] = 0;
+                    for (; ctl != 0; ctl >>= 1)
+                    {
+                        if (0 == (ctl & 1))
+                            continue;
+                        arc.File.View.Read (offset, buffer, 0, 0x402);
+                        offset += 0x402;
+                        int pcm = LittleEndian.ToInt16 (buffer, 1);
+                        int dst = 0;
+                        int addend = buffer[0] << 8;
+                        output[dst++] += pcm;
+                        for (int src = 3; src < buffer.Length; ++src)
+                        {
+                            byte v = buffer[src];
+                            int diff = v + addend;
+                            pcm += WaveTable1.Value[diff];
+                            output[dst++] += (short)pcm;
+                            addend += WaveTable2.Value[v];
+                            if (addend < 0)
+                                addend = 0;
+                            else if (addend >= 16384)
+                                addend = 16128;
+                        }
+                    }
+                    for (int j = 0; j < output.Length; ++j)
+                    {
+                        int pcm = output[j];
+                        if (pcm > 32767)
+                            pcm = 32767;
+                        else if (pcm < -32767)
+                            pcm = -32767;
+                        wav.Write ((short)pcm);
+                    }
+                }
+            }
+            wav_mem.Position = 0;
+            return wav_mem;
+        }
+
         void WriteWavHeader (BinaryWriter wav, short channels, int freq, int pcm_size)
         {
             wav.Write ("RIFF".ToCharArray());
@@ -286,5 +387,12 @@ namespace GameRes.Formats.Softpal
             : base (arc, impl, dir)
         {
         }
+    }
+
+    internal class Tp055Entry : Entry
+    {
+        public int  ChunkCount;
+
+        public override string Type { get { return "audio"; } }
     }
 }
