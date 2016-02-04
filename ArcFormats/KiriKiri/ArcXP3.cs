@@ -402,6 +402,7 @@ NextEntry:
                     }
                 }
                 output.Position = 0;
+                input.Dispose();
                 return output;
             }
         }
