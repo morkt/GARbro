@@ -2,7 +2,7 @@
 //! \date       Wed Feb 25 20:28:14 2015
 //! \brief      Nitro+ PAK archives implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -125,8 +125,7 @@ namespace GameRes.Formats.NitroPlus
             uint size_xor = file.View.ReadUInt32 (0x104);
             if (0x64 != size_xor)
                 return null;
-            byte[] name_buf = new byte[0x100];
-            file.View.Read (4, name_buf, 0, 0x100);
+            byte[] name_buf = file.View.ReadBytes (4, 0x100);
             int name_len = 0;
             for (int i = 0; i < name_buf.Length; ++i)
             {
@@ -223,13 +222,12 @@ namespace GameRes.Formats.NitroPlus
             uint enc_size = Math.Min (entry.Size, 0x10u);
             if (0 == enc_size)
                 return Stream.Null;
-            var buf = new byte[enc_size];
-            arc.File.View.Read (entry.Offset, buf, 0, enc_size);
+            var buf = arc.File.View.ReadBytes (entry.Offset, enc_size);
             uint key = entry.Key;
             for (int i = 0; i < buf.Length; ++i)
             {
                 buf[i] ^= (byte)key;
-                key = key >> 8 | key << 24;
+                key = Binary.RotR (key, 8);
             }
             if (enc_size == entry.Size)
                 return new MemoryStream (buf, false);

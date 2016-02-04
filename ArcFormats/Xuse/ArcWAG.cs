@@ -67,8 +67,8 @@ namespace GameRes.Formats.Xuse
             if (!IsSaneCount (count))
                 return null;
 
-            byte[] title = new byte[0x40];
-            if (0x40 != file.View.Read (6, title, 0, 0x40))
+            byte[] title = file.View.ReadBytes (6, 0x40);
+            if (0x40 != title.Length)
                 return null;
             int title_length = Array.IndexOf<byte> (title, 0);
             if (-1 == title_length)
