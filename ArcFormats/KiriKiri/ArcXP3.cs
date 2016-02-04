@@ -32,8 +32,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Runtime.InteropServices;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Diagnostics;
 using GameRes.Compression;
 using GameRes.Utility;
@@ -340,20 +338,72 @@ NextEntry:
             var xp3_entry = entry as Xp3Entry;
             if (null == xp3_entry)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-//            Trace.WriteLine (string.Format ("{0,-16} {3:X8} {1,11} {2,12}", xp3_entry.Name,
-//                                            xp3_entry.IsEncrypted ? "[encrypted]" : "",
-//                                            xp3_entry.Segments.First().IsCompressed ? "[compressed]" : "",
-//                                            xp3_entry.Hash));
+
+            Stream input;
             if (1 == xp3_entry.Segments.Count && !xp3_entry.IsEncrypted)
             {
                 var segment = xp3_entry.Segments.First();
                 if (segment.IsCompressed)
-                    return new ZLibStream (arc.File.CreateStream (segment.Offset, segment.PackedSize),
+                    input = new ZLibStream (arc.File.CreateStream (segment.Offset, segment.PackedSize),
                                            CompressionMode.Decompress);
                 else
-                    return arc.File.CreateStream (segment.Offset, segment.Size);
+                    input = arc.File.CreateStream (segment.Offset, segment.Size);
             }
-            return new Xp3Stream (arc.File, xp3_entry);
+            else
+                input = new Xp3Stream (arc.File, xp3_entry);
+
+            if (entry.Size <= 5 || "image" == entry.Type || "audio" == entry.Type)
+                return input;
+
+            var header = new byte[5];
+            input.Read (header, 0, 5);
+            if (0xFE == header[0] && 0xFE == header[1] && header[2] < 3 && 0xFF == header[3] && 0xFE == header[4])
+                return DecryptScript (header[2], input, xp3_entry.UnpackedSize);
+
+            if (!input.CanSeek)
+                return new PrefixStream (header, input);
+            input.Position = 0;
+            return input;
+        }
+
+        Stream DecryptScript (int enc_type, Stream input, uint unpacked_size)
+        {
+            using (var reader = new BinaryReader (input, Encoding.Unicode, true))
+            {
+                if (2 == enc_type)
+                {
+                    reader.ReadInt64(); // packed_size
+                    reader.ReadInt64(); // unpacked_size
+                    return new ZLibStream (input, CompressionMode.Decompress);
+                }
+                var output = new MemoryStream ((int)unpacked_size+2);
+                using (var writer = new BinaryWriter (output, Encoding.Unicode, true))
+                {
+                    writer.Write ('\xFEFF'); // BOM
+                    int c;
+                    if (1 == enc_type)
+                    {
+                        while ((c = reader.Read()) != -1)
+                        {
+                            c = (c & 0xAAAA) >> 1 | (c & 0x5555) << 1;
+                            writer.Write ((char)c);
+                        }
+                    }
+                    else
+                    {
+                        while ((c = reader.Read()) != -1)
+                        {
+                            if (c >= 0x20)
+                            {
+                                c = c ^ (((c & 0xFE) << 8) ^ 1);
+                                writer.Write ((char)c);
+                            }
+                        }
+                    }
+                }
+                output.Position = 0;
+                return output;
+            }
         }
 
         public override ResourceOptions GetDefaultOptions ()
