@@ -62,7 +62,7 @@ namespace GameRes.Formats.Eushully
             int bpp = stream.ReadByte();
             if (alpha_channel < 0 || alpha_channel > 1 || method < 0 || method > 2
                 || align1 < 0 || align1 > 4 || align2 < 0 || align2 > 4
-                || bpp < 0 || !(bpp <= 16 || 24 == bpp || 32 == bpp))
+                || bpp <= 0 || !(bpp <= 16 || 24 == bpp || 32 == bpp))
                 return null;
             using (var reader = new ArcView.Reader (stream))
             {
