@@ -76,46 +76,20 @@ namespace GameRes.Formats.Triangle
             if (Math.Abs (x) > 4096 || Math.Abs (y) > 4096)
                 return null;
             int pack_type = (unpacked_size >> 30) & 3;
+            if (3 == pack_type)
+                return null;
             unpacked_size &= (int)~0xC0000000;
             stream.Position = data_offset;
-            byte[] bmp;
-            if (0 == pack_type)
-            {
-                using (var reader = new LzssReader (stream, (int)stream.Length-12, 0x26))
-                {
-                    reader.Unpack();
-                    bmp = reader.Data;
-                }
-            }
-            else if (2 == pack_type)
-            {
-                using (var reader = new RleReader (stream, (int)stream.Length-12, 0x26))
-                {
-                    reader.Unpack();
-                    bmp = reader.Data;
-                }
-            }
-            else if (1 == pack_type)
-            {
-                bmp = new byte[0x26];
-                stream.Read (bmp, 0, bmp.Length);
-            }
-            else
-            {
-                return null;
-            }
+            byte[] bmp = UnpackBitmap (stream, pack_type, packed_size, 0x26);
             if (bmp[0] != 'B' && bmp[0] != 'C' || bmp[1] != 'M')
                 return null;
-            int width = LittleEndian.ToInt32 (bmp, 0x12);
-            int height = LittleEndian.ToInt32 (bmp, 0x16);
-            int bpp = LittleEndian.ToInt16 (bmp, 0x1c);
             return new IafMetaData
             {
-                Width = (uint)width,
-                Height = (uint)height,
+                Width = LittleEndian.ToUInt32 (bmp, 0x12),
+                Height = LittleEndian.ToUInt32 (bmp, 0x16),
                 OffsetX = x,
                 OffsetY = y,
-                BPP = bpp,
+                BPP = LittleEndian.ToInt16 (bmp, 0x1c),
                 DataOffset = data_offset,
                 PackedSize = packed_size,
                 UnpackedSize = unpacked_size,
@@ -125,41 +99,16 @@ namespace GameRes.Formats.Triangle
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as IafMetaData;
-            if (null == meta)
-                throw new ArgumentException ("IafFormat.Read should be supplied with IafMetaData", "info");
-
+            var meta = (IafMetaData)info;
             stream.Position = meta.DataOffset;
-            byte[] bitmap;
-            if (2 == meta.PackType)
-            {
-                using (var reader = new RleReader (stream, meta.PackedSize, meta.UnpackedSize))
-                {
-                    reader.Unpack();
-                    bitmap = reader.Data;
-                }
-            }
-            else if (0 == meta.PackType)
-            {
-                using (var reader = new LzssReader (stream, meta.PackedSize, meta.UnpackedSize))
-                {
-                    reader.Unpack();
-                    bitmap = reader.Data;
-                }
-            }
-            else
-            {
-                bitmap = new byte[meta.UnpackedSize];
-                if (bitmap.Length != stream.Read (bitmap, 0, bitmap.Length))
-                    throw new InvalidFormatException ("Unexpected end of file");
-            }
+            var bitmap = UnpackBitmap (stream, meta.PackType, meta.PackedSize, meta.UnpackedSize);
             if ('C' == bitmap[0])
             {
                 bitmap[0] = (byte)'B';
                 if (info.BPP > 8)
                     bitmap = ConvertCM (bitmap, (int)info.Width, (int)info.Height, info.BPP);
             }
-            if (meta.BPP >= 24) // currently alpha channel could be applied to 24+bpp bitmaps only
+            if (info.BPP >= 24) // currently alpha channel could be applied to 24+bpp bitmaps only
             {
                 try
                 {
@@ -172,7 +121,7 @@ namespace GameRes.Formats.Triangle
                             uint alpha_width = LittleEndian.ToUInt32 (bitmap, bmp_size+0x12);
                             uint alpha_height = LittleEndian.ToUInt32 (bitmap, bmp_size+0x16);
                             if (info.Width == alpha_width && info.Height == alpha_height)
-                                return BitmapWithAlphaChannel (meta, bitmap, bmp_size);
+                                return BitmapWithAlphaChannel (info, bitmap, bmp_size);
                         }
                     }
                 }
@@ -184,6 +133,35 @@ namespace GameRes.Formats.Triangle
             }
             using (var bmp = new MemoryStream (bitmap))
                 return base.Read (bmp, info);
+        }
+
+        internal static byte[] UnpackBitmap (Stream stream, int pack_type, int packed_size, int unpacked_size)
+        {
+            if (2 == pack_type)
+            {
+                using (var reader = new RleReader (stream, packed_size, unpacked_size))
+                {
+                    reader.Unpack();
+                    return reader.Data;
+                }
+            }
+            else if (0 == pack_type)
+            {
+                using (var reader = new LzssReader (stream, packed_size, unpacked_size))
+                {
+                    reader.Unpack();
+                    return reader.Data;
+                }
+            }
+            else if (1 == pack_type)
+            {
+                var bitmap = new byte[unpacked_size];
+                if (bitmap.Length != stream.Read (bitmap, 0, bitmap.Length))
+                    throw new InvalidFormatException ("Unexpected end of file");
+                return bitmap;
+            }
+            else
+                throw new InvalidFormatException();
         }
 
         public override void Write (Stream file, ImageData image)

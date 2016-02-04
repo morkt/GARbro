@@ -230,6 +230,8 @@
     <Compile Include="Tmr-Hiro\ImageGRD.cs" />
     <Compile Include="TopCat\ArcTCD3.cs" />
     <Compile Include="TopCat\ImageSPD.cs" />
+    <Compile Include="Triangle\ArcCGF.cs" />
+    <Compile Include="Triangle\ArcIAF.cs" />
     <Compile Include="uGOS\ArcDET.cs" />
     <Compile Include="uGOS\ImageBMP.cs" />
     <Compile Include="UMeSoft\ArcPK.cs" />
