@@ -74,6 +74,7 @@
     <Compile Include="AZSys\ImageTYP1.cs" />
     <Compile Include="BlueGale\ArcSNN.cs" />
     <Compile Include="BlueGale\ImageZBM.cs" />
+    <Compile Include="Circus\ArcPCK.cs" />
     <Compile Include="Cmvs\ArcCPZ.cs" />
     <Compile Include="ArcPBX.cs" />
     <Compile Include="Banana\ArcPK.cs" />
