@@ -2,7 +2,7 @@
 //! \date       Mon Jun 15 15:14:59 2015
 //! \brief      Circus image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -29,6 +29,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Circus
@@ -67,15 +68,10 @@ namespace GameRes.Formats.Circus
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as CrxMetaData;
-            if (null == meta)
-                throw new ArgumentException ("CrxFormat.Read should be supplied with CrxMetaData", "info");
-
-            stream.Position = 0x14;
-            using (var reader = new Reader (stream, meta))
+            using (var reader = new Reader (stream, (CrxMetaData)info))
             {
                 reader.Unpack();
-                return ImageData.Create (info, reader.Format, reader.Palette, reader.Data);
+                return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
             }
         }
 
@@ -86,7 +82,7 @@ namespace GameRes.Formats.Circus
 
         internal sealed class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            Stream          m_input;
             byte[]          m_output;
             int             m_width;
             int             m_height;
@@ -97,6 +93,7 @@ namespace GameRes.Formats.Circus
             public byte[]           Data { get { return m_output; } }
             public PixelFormat    Format { get; private set; }
             public BitmapPalette Palette { get; private set; }
+            public int            Stride { get { return m_stride; } }
 
             public Reader (Stream input, CrxMetaData info)
             {
@@ -113,7 +110,8 @@ namespace GameRes.Formats.Circus
                 }
                 m_stride = (m_width * m_bpp / 8 + 3) & ~3;
                 m_output = new byte[m_height*m_stride];
-                m_input = new ArcView.Reader (input);
+                m_input = input;
+                m_input.Position = 0x14;
                 if (8 == m_bpp)
                     ReadPalette (info.Colors);
             }
@@ -234,58 +232,61 @@ namespace GameRes.Formats.Circus
 
             private void UnpackV1 ()
             {
-                byte[] window = new byte[0x10000];
-                int flag = 0;
-                int win_pos = 0;
-                int dst = 0;
-                while (dst < m_output.Length)
+                using (var src = new ArcView.Reader (m_input))
                 {
-                    flag >>= 1;
-                    if (0 == (flag & 0x100))
-                        flag = m_input.ReadByte() | 0xff00;
-
-                    if (0 != (flag & 1))
+                    byte[] window = new byte[0x10000];
+                    int flag = 0;
+                    int win_pos = 0;
+                    int dst = 0;
+                    while (dst < m_output.Length)
                     {
-                        byte dat = m_input.ReadByte();
-                        window[win_pos++] = dat;
-                        win_pos &= 0xffff;
-                        m_output[dst++] = dat;
-                    }
-                    else
-                    {
-                        byte control = m_input.ReadByte();
-                        int count, offset;
+                        flag >>= 1;
+                        if (0 == (flag & 0x100))
+                            flag = src.ReadByte() | 0xff00;
 
-                        if (control >= 0xc0)
+                        if (0 != (flag & 1))
                         {
-                            offset = ((control & 3) << 8) | m_input.ReadByte();
-                            count = 4 + ((control >> 2) & 0xf);
-                        }
-                        else if (0 != (control & 0x80))
-                        {
-                            offset = control & 0x1f;
-                            count = 2 + ((control >> 5) & 3);
-                            if (0 == offset)
-                                offset = m_input.ReadByte();
-                        }
-                        else if (0x7f == control)
-                        {
-                            count = 2 + m_input.ReadUInt16();
-                            offset = m_input.ReadUInt16();
-                        }
-                        else
-                        {
-                            offset = m_input.ReadUInt16();
-                            count = control + 4;
-                        }
-                        offset = win_pos - offset;
-                        for (int k = 0; k < count && dst < m_output.Length; k++)
-                        {
-                            offset &= 0xffff;
-                            byte dat = window[offset++];
+                            byte dat = src.ReadByte();
                             window[win_pos++] = dat;
                             win_pos &= 0xffff;
                             m_output[dst++] = dat;
+                        }
+                        else
+                        {
+                            byte control = src.ReadByte();
+                            int count, offset;
+
+                            if (control >= 0xc0)
+                            {
+                                offset = ((control & 3) << 8) | src.ReadByte();
+                                count = 4 + ((control >> 2) & 0xf);
+                            }
+                            else if (0 != (control & 0x80))
+                            {
+                                offset = control & 0x1f;
+                                count = 2 + ((control >> 5) & 3);
+                                if (0 == offset)
+                                    offset = src.ReadByte();
+                            }
+                            else if (0x7f == control)
+                            {
+                                count = 2 + src.ReadUInt16();
+                                offset = src.ReadUInt16();
+                            }
+                            else
+                            {
+                                offset = src.ReadUInt16();
+                                count = control + 4;
+                            }
+                            offset = win_pos - offset;
+                            for (int k = 0; k < count && dst < m_output.Length; k++)
+                            {
+                                offset &= 0xffff;
+                                byte dat = window[offset++];
+                                window[win_pos++] = dat;
+                                win_pos &= 0xffff;
+                                m_output[dst++] = dat;
+                            }
                         }
                     }
                 }
@@ -293,7 +294,84 @@ namespace GameRes.Formats.Circus
 
             private void UnpackV2 ()
             {
-                throw new NotImplementedException ("CRX v2 not implemented");
+                int pixel_size = m_bpp / 8;
+                int src_stride = m_width * pixel_size;
+                using (var zlib = new ZLibStream (m_input, CompressionMode.Decompress, true))
+                using (var src = new BinaryReader (zlib))
+                {
+                    if (m_bpp >= 24)
+                    {
+                        for (int y = 0; y < m_height; ++y)
+                        {
+                            byte ctl = src.ReadByte();
+                            int dst = y * m_stride;
+                            int prev_row = dst - m_stride;
+                            switch (ctl)
+                            {
+                            case 0:
+                                src.Read (m_output, dst, pixel_size);
+                                for (int x = pixel_size; x < src_stride; ++x)
+                                    m_output[dst+x] = (byte)(src.ReadByte() + m_output[dst+x - pixel_size]);
+                                break;
+                            case 1:
+                                for (int x = 0; x < src_stride; ++x)
+                                    m_output[dst+x] = (byte)(src.ReadByte() + m_output[prev_row+x]);
+                                break;
+                            case 2:
+                                src.Read (m_output, dst, pixel_size);
+                                for (int x = pixel_size; x < src_stride; ++x)
+                                    m_output[dst+x] = (byte)(src.ReadByte() + m_output[prev_row+x - pixel_size]);
+                                break;
+                            case 3:
+                                for (int x = src_stride - pixel_size; x > 0; --x)
+                                    m_output[dst++] = (byte)(src.ReadByte() + m_output[prev_row++ + pixel_size]);
+                                src.Read (m_output, dst, pixel_size);
+                                break;
+                            case 4:
+                                for (int i = 0; i < pixel_size; ++i)
+                                {
+                                    int w = m_width;
+                                    byte val = src.ReadByte();
+                                    while (w > 0)
+                                    {
+                                        m_output[dst] = val;
+                                        dst += pixel_size;
+                                        if (0 == --w)
+                                            break;
+                                        byte next = src.ReadByte();
+                                        if (val == next)
+                                        {
+                                            int count = src.ReadByte();
+                                            for (int j = 0; j < count; ++j)
+                                            {
+                                                m_output[dst] = val;
+                                                dst += pixel_size;
+                                            }
+                                            w -= count;
+                                            if (w > 0)
+                                                val = src.ReadByte();
+                                        }
+                                        else
+                                            val = next;
+                                    }
+                                    dst -= src_stride - 1;
+                                }
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int dst = 0;
+                        for (int y = 0; y < m_height; ++y)
+                        {
+                            src.Read (m_output, dst, src_stride);
+                            dst += m_stride;
+                        }
+                    }
+                }
             }
 
             #region IDisposable Members
@@ -303,7 +381,6 @@ namespace GameRes.Formats.Circus
             {
                 if (!m_disposed)
                 {
-                    m_input.Dispose();
                     m_disposed = true;
                 }
                 GC.SuppressFinalize (this);
