@@ -105,6 +105,7 @@
     <Compile Include="Kaguya\ImageAO.cs" />
     <Compile Include="KiriKiri\CryptAlgorithms.cs" />
     <Compile Include="Liar\ArcLWG.cs" />
+    <Compile Include="MokoPro\CompressedFile.cs" />
     <Compile Include="Propeller\ArcMGR.cs" />
     <Compile Include="Propeller\ArcMPK.cs" />
     <Compile Include="Propeller\ImageMGR.cs" />
