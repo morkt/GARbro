@@ -36,8 +36,9 @@ namespace GameRes.Formats.Circus
 {
     internal class CrxMetaData : ImageMetaData
     {
-        public int Mode;
+        public int Compression;
         public int Colors;
+        public int Mode;
     }
 
     [Export(typeof(ImageFormat))]
@@ -52,16 +53,19 @@ namespace GameRes.Formats.Circus
             var header = new byte[0x14];
             if (header.Length != stream.Read (header, 0, header.Length))
                 return null;
-            int type = LittleEndian.ToInt32 (header, 0x10);
+            int depth = LittleEndian.ToInt16 (header, 0x10);
             var info = new CrxMetaData
             {
                 Width = LittleEndian.ToUInt16 (header, 8),
                 Height = LittleEndian.ToUInt16 (header, 10),
-                BPP = 0 == type ? 24 : 1 == type ? 32 : 8,
-                Mode = LittleEndian.ToUInt16 (header, 12),
-                Colors = type,
+                OffsetX = LittleEndian.ToInt16 (header, 4),
+                OffsetY = LittleEndian.ToInt16 (header, 6),
+                BPP = 0 == depth ? 24 : 1 == depth ? 32 : 8,
+                Compression = LittleEndian.ToUInt16 (header, 0xC),
+                Colors = depth,
+                Mode = LittleEndian.ToUInt16 (header, 0x12),
             };
-            if (info.Mode != 1 && info.Mode != 2)
+            if (info.Compression != 1 && info.Compression != 2)
                 return null;
             return info;
         }
@@ -88,6 +92,7 @@ namespace GameRes.Formats.Circus
             int             m_height;
             int             m_stride;
             int             m_bpp;
+            int             m_compression;
             int             m_mode;
 
             public byte[]           Data { get { return m_output; } }
@@ -100,6 +105,7 @@ namespace GameRes.Formats.Circus
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_bpp = info.BPP;
+                m_compression = info.Compression;
                 m_mode = info.Mode;
                 switch (m_bpp)
                 {
@@ -137,13 +143,14 @@ namespace GameRes.Formats.Circus
 
             public void Unpack ()
             {
-                if (1 == m_mode)
+                if (1 == m_compression)
                     UnpackV1();
                 else
                     UnpackV2();
 
-                if (32 == m_bpp)
+                if (32 == m_bpp && m_mode != 1)
                 {
+                    int alpha_flip = 2 == m_mode ? 0 : 0xFF;
                     int line = 0;
                     for (int h = 0; h < m_height; h++)
                     {
@@ -180,7 +187,7 @@ namespace GameRes.Formats.Circus
                             m_output[pixel]   = (byte)b;
                             m_output[pixel+1] = (byte)g;
                             m_output[pixel+2] = (byte)r;
-                            m_output[pixel+3] = alpha;
+                            m_output[pixel+3] = (byte)(alpha ^ alpha_flip);
                             shift = -shift;
                         }
                         line += m_stride;
