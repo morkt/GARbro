@@ -2,7 +2,7 @@
 //! \date       Mon Jun 15 16:11:56 2015
 //! \brief      Circus archive format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -52,6 +52,8 @@ namespace GameRes.Formats.Circus
                 return null;
             var dir = ReadIndex (file, count, 0x30);
             if (null == dir)
+                dir = ReadIndex (file, count, 0x3C);
+            if (null == dir)
                 return null;
             return new ArcFile (file, this, dir);
         }
@@ -64,12 +66,14 @@ namespace GameRes.Formats.Circus
                 return null;
             --count;
             uint next_offset = file.View.ReadUInt32 (index_offset+name_length);
+            if (next_offset < 4+index_size)
+                return null;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                if (0 == file.View.ReadByte (index_offset))
-                    return null;
                 string name = file.View.ReadString (index_offset, (uint)name_length);
+                if (0 == name.Length)
+                    return null;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 index_offset += name_length;
                 uint offset = next_offset;
