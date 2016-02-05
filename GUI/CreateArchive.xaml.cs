@@ -89,7 +89,7 @@ namespace GARbro.GUI
             var filters = new StringBuilder();
 
             var format = this.ArchiveFormat.SelectedItem as ArchiveFormat;
-            if (null != format)
+            if (null != format && format.Extensions.Any())
             {
                 var patterns = format.Extensions.Select (ext => "*."+ext);
                 filters.Append (format.Description);

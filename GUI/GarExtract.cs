@@ -312,7 +312,7 @@ namespace GARbro.GUI
                 if (null == src_format)
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretImage, entry.Name));
                 file.Position = 0;
-                string target_ext = target_format.Extensions.First();
+                string target_ext = target_format.Extensions.FirstOrDefault() ?? "";
                 string outname = FindUniqueFileName (entry.Name, target_ext);
                 if (src_format.Item1 == target_format)
                 {

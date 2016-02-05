@@ -194,7 +194,7 @@ namespace GARbro.GUI
             string source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
             if (m_image_format.Extensions.Any (ext => ext == source_ext))
                 return;
-            string target_ext = m_image_format.Extensions.First();
+            string target_ext = m_image_format.Extensions.FirstOrDefault();
             string target_name = Path.ChangeExtension (filename, target_ext);
             using (var file = File.OpenRead (filename))
             {
