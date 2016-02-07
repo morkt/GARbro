@@ -73,6 +73,7 @@ namespace GameRes.Formats.Entis
 
     public enum EriCode
     {
+        ArithmeticCode      = 32,
         RunlengthGamma      = -1,
         RunlengthHuffman    = -4,
         Nemesis             = -16,
@@ -81,9 +82,13 @@ namespace GameRes.Formats.Entis
     public enum EriImage
     {
         RGB         = 0x00000001,
-        RGBA        = 0x04000001,
         Gray        = 0x00000002,
-        TypeMask    = 0x00FFFFFF,
+        BGR         = 0x00000003,
+        YUV         = 0x00000004,
+        HSB         = 0x00000006,
+        RGBA        = 0x04000001,
+        BGRA        = 0x04000003,
+        TypeMask    = 0x0000FFFF,
         WithPalette = 0x01000000,
         UseClipping = 0x02000000,
         WithAlpha   = 0x04000000,
@@ -155,16 +160,15 @@ namespace GameRes.Formats.Entis
                 EriFileHeader file_header = null;
                 EriMetaData info = null;
                 string desc = null;
-                while (header_size > 8)
+                while (header_size > 0x10)
                 {
                     section = reader.ReadSection();
-                    header_size -= 8;
+                    header_size -= 0x10;
                     if (section.Length <= 0 || section.Length > header_size)
                         break;
                     if ("FileHdr " == section.Id)
                     {
-                        file_header = new EriFileHeader();
-                        file_header.Version          = reader.ReadInt32();
+                        file_header = new EriFileHeader { Version = reader.ReadInt32() };
                         if (file_header.Version > 0x00020100)
                             throw new InvalidFormatException ("Invalid ERI file version");
                         file_header.ContainedFlag    = reader.ReadInt32();
@@ -233,7 +237,7 @@ namespace GameRes.Formats.Entis
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }
 
-        private Color[] ReadPalette (Stream input, int palette_length)
+        internal Color[] ReadPalette (Stream input, int palette_length)
         {
             var palette_data = new byte[0x400];
             if (palette_length > palette_data.Length)
@@ -248,12 +252,12 @@ namespace GameRes.Formats.Entis
             return colors;
         }
 
-        private EriReader ReadImageData (Stream stream, EriMetaData meta)
+        internal EriReader ReadImageData (Stream stream, EriMetaData meta)
         {
             stream.Position = meta.StreamPos;
+            Color[] palette = null;
             using (var input = new EriFile (stream))
             {
-                Color[] palette = null;
                 for (;;) // ReadSection throws an exception in case of EOF
                 {
                     var section = input.ReadSection();
@@ -268,36 +272,36 @@ namespace GameRes.Formats.Entis
                     }
                     input.BaseStream.Seek (section.Length, SeekOrigin.Current);
                 }
-                var reader = new EriReader (stream, meta, palette);
-                reader.DecodeImage();
+            }
+            var reader = new EriReader (stream, meta, palette);
+            reader.DecodeImage();
 
-                if (!string.IsNullOrEmpty (meta.Description))
+            if (!string.IsNullOrEmpty (meta.Description))
+            {
+                var tags = ParseTagInfo (meta.Description);
+                string ref_file;
+                if (tags.TryGetValue ("reference-file", out ref_file))
                 {
-                    var tags = ParseTagInfo (meta.Description);
-                    string ref_file;
-                    if (tags.TryGetValue ("reference-file", out ref_file))
+                    ref_file = ref_file.TrimEnd (null);
+                    if (!string.IsNullOrEmpty (ref_file))
                     {
-                        ref_file = ref_file.TrimEnd (null);
-                        if (!string.IsNullOrEmpty (ref_file))
-                        {
-                            if ((meta.BPP + 7) / 8 < 3)
-                                throw new InvalidFormatException();
+                        if ((meta.BPP + 7) / 8 < 3)
+                            throw new InvalidFormatException();
 
-                            ref_file = VFS.CombinePath (Path.GetDirectoryName (meta.FileName), ref_file);
-                            using (var ref_src = VFS.OpenSeekableStream (ref_file))
-                            {
-                                var ref_info = ReadMetaData (ref_src) as EriMetaData;
-                                if (null == ref_info)
-                                    throw new FileNotFoundException ("Referenced image not found");
-                                ref_info.FileName = ref_file;
-                                var ref_reader = ReadImageData (ref_src, ref_info);
-                                AddImageBuffer (meta, reader.Data, ref_info, ref_reader.Data);
-                            }
+                        ref_file = VFS.CombinePath (Path.GetDirectoryName (meta.FileName), ref_file);
+                        using (var ref_src = VFS.OpenSeekableStream (ref_file))
+                        {
+                            var ref_info = ReadMetaData (ref_src) as EriMetaData;
+                            if (null == ref_info)
+                                throw new FileNotFoundException ("Referenced image not found");
+                            ref_info.FileName = ref_file;
+                            var ref_reader = ReadImageData (ref_src, ref_info);
+                            AddImageBuffer (meta, reader.Data, ref_info, ref_reader.Data);
                         }
                     }
                 }
-                return reader;
             }
+            return reader;
         }
 
         void AddImageBuffer (EriMetaData dst_info, byte[] dst_img, EriMetaData src_info, byte[] src_img)
