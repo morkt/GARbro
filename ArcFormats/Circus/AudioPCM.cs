@@ -2,7 +2,7 @@
 //! \date       Mon Jun 15 16:30:24 2015
 //! \brief      Circus PCM audio format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -102,16 +102,10 @@ namespace GameRes.Formats.Circus
                 {
                     this.Source = new StreamRegion (file, file.Position, src_size);
                 }
-                else if (1 == mode)
+                else if (1 == mode || 3 == mode)
                 {
-                    var decoder = new PcmDecoder (input, src_size, extra);
+                    var decoder = new PcmDecoder (input, src_size, extra, (XpcmCompression)mode);
                     this.Source = new MemoryStream (decoder.Unpack(), 0, src_size);
-                    file.Dispose();
-                }
-                else if (3 == mode)
-                {
-                    uint packed_size = input.ReadUInt32();
-                    this.Source = ZLibCompressor.DeCompress (file);
                     file.Dispose();
                 }
                 else
@@ -120,32 +114,48 @@ namespace GameRes.Formats.Circus
         }
     }
 
+    public enum XpcmCompression
+    {
+        None = 0,
+        Lzss = 1,
+        Zlib = 3,
+    }
+
     internal class PcmDecoder
     {
         byte[]      m_pcm_data;
         byte[]      m_encoded;
         int         m_pcm_size;
-        int         m_packed_size;
         int         m_extra;
 
         public byte[] Data { get { return m_pcm_data; } }
 
-        public PcmDecoder (BinaryReader input, int pcm_size, int extra)
+        public PcmDecoder (BinaryReader input, int pcm_size, int extra, XpcmCompression mode)
         {
             if (extra < 0 || extra > 3)
                 throw new InvalidFormatException();
-            m_packed_size = input.ReadInt32();
+            int packed_size = input.ReadInt32();
             m_extra = extra;
             m_pcm_size = pcm_size;
             m_pcm_data = new byte[pcm_size + 8192];
             m_encoded = new byte[(pcm_size / 0xFE0 << 12) + 16386];
-            if (m_packed_size != input.Read (m_pcm_data, 0, m_packed_size))
-                throw new InvalidFormatException ("Unexpected end of file");
+            if (XpcmCompression.Lzss == mode)
+            {
+                if (packed_size != input.Read (m_pcm_data, 0, packed_size))
+                    throw new InvalidFormatException ("Unexpected end of file");
+                UnpackV1 (m_pcm_data, packed_size, m_encoded);
+            }
+            else if (XpcmCompression.Zlib == mode)
+            {
+                using (var z = new ZLibStream (input.BaseStream, CompressionMode.Decompress, true))
+                    z.Read (m_encoded, 0, m_encoded.Length);
+            }
+            else
+                throw new InvalidFormatException ("Unknown PCM compression mode");
         }
 
         public byte[] Unpack ()
         {
-            UnpackV1 (m_pcm_data, m_packed_size, m_encoded);
             Buffer.BlockCopy (unk_43A254, m_extra*0x40, dword_43A214, 0, 0x40);
             DecodeV1 (m_pcm_data, m_encoded, m_pcm_size);
             return m_pcm_data;
