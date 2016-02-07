@@ -159,12 +159,12 @@ namespace GameRes.Formats.Circus
                         for (int w = 0;	w < m_width; w++)
                         {
                             int pixel = line + w * 4;
-                            byte alpha = m_output[pixel];
+                            int alpha = m_output[pixel];
                             int b = m_output[pixel+1];
                             int g = m_output[pixel+2];
                             int r = m_output[pixel+3];
 
-                            if (alpha != 0xff)
+                            if (alpha != alpha_flip)
                             {
                                 b += (w & 1) + shift;
                                 if (b < 0)
