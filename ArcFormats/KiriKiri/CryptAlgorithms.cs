@@ -341,11 +341,11 @@ namespace GameRes.Formats.KiriKiri
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
             byte key = (byte)entry.Hash;
-            if (offset < 0x7B)
+            if (offset < 123)
                 value ^= (byte)(21 * key);
-            else if (offset < 0xF6)
+            else if (offset < 246)
                 value += (byte)(-32 * key);
-            else if (offset < 0x171)
+            else if (offset < 369)
                 value ^= (byte)(43 * key);
             else if (offset <= 0xffffffffL)
                 value += (byte)(-54 * key);
@@ -357,14 +357,14 @@ namespace GameRes.Formats.KiriKiri
             byte key = (byte)entry.Hash;
             for (int i = 0; i < count && offset <= 0xffffffffL; ++i, ++offset)
             {
-                if (offset < 0x7B)
+                if (offset < 123)
                     values[pos+i] ^= (byte)(21 * key);
-                else if (offset < 0xF6)
+                else if (offset < 246)
                     values[pos+i] += (byte)(-32 * key);
-                else if (offset >= 0x171)
-                    values[pos+i] += (byte)(-54 * key);
-                else
+                else if (offset < 369)
                     values[pos+i] ^= (byte)(43 * key);
+                else
+                    values[pos+i] += (byte)(-54 * key);
             }
         }
 
@@ -373,14 +373,14 @@ namespace GameRes.Formats.KiriKiri
             byte key = (byte)entry.Hash;
             for (int i = 0; i < count && offset <= 0xffffffffL; ++i, ++offset)
             {
-                if (offset < 0x7B)
+                if (offset < 123)
                     values[pos+i] ^= (byte)(21 * key);
-                else if (offset < 0xF6)
+                else if (offset < 246)
                     values[pos+i] -= (byte)(-32 * key);
-                else if (offset >= 0x171)
-                    values[pos+i] -= (byte)(-54 * key);
-                else
+                else if (offset < 369)
                     values[pos+i] ^= (byte)(43 * key);
+                else
+                    values[pos+i] -= (byte)(-54 * key);
             }
         }
     }
