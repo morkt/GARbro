@@ -20,22 +20,22 @@ sub match_version {
     return $_[0] =~ /^(\d+)\.(\d+)(?:\.(\d+)\.(\d+))?/;
 }
 
-unless (1 == $#ARGV) {
-    print "usage: inc-revision.pl PROJECT-FILE CONFIG\n";
+if ($#ARGV < 1) {
+    print "usage: inc-revision.pl PROJECT-FILE CONFIG [ROOT-DIR]\n";
     exit 0;
 }
 
-my ($project_path, $config) = @ARGV;
+my ($project_path, $config, $root_dir) = @ARGV;
 my $project_dir = dirname ($project_path);
-my $project_file = basename ($project_path);
+$root_dir //= $project_dir;
 my $is_release = 'release' eq lc $config;
-chdir $project_dir or die "$project_dir: $!\n";
+chdir $root_dir or die "$root_dir: $!\n";
 
 my $git_exe = get_git_exe;
-my $prop_dir = File::Spec->catfile ('.', 'Properties');
-my $assembly_info = File::Spec->catfile ($prop_dir, 'AssemblyInfo.cs');
 my $revision = `$git_exe rev-list HEAD --count .`;
 die "git.exe failed\n" if $? != 0;
+my $prop_dir = File::Spec->catfile ($project_dir, 'Properties');
+my $assembly_info = File::Spec->catfile ($prop_dir, 'AssemblyInfo.cs');
 chomp $revision;
 
 my $version_changed = 0;
