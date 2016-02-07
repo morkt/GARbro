@@ -33,21 +33,23 @@ namespace GameRes.Formats.NScripter
 {
     public class ViewStream : Stream
     {
-        protected ArcView   m_file;
+        protected ArcView.Frame m_view;
         protected long      m_position = 0;
+        protected long      m_max_offset;
         bool                m_should_dispose;
 
         public ViewStream (ArcView mmap, bool leave_open = false)
         {
-            m_file = mmap;
+            m_view = mmap.CreateFrame();
+            m_max_offset = mmap.MaxOffset;
             m_should_dispose = !leave_open;
         }
 
         public override int Read (byte[] buf, int index, int count)
         {
-            if (m_position >= m_file.MaxOffset)
+            if (m_position >= m_max_offset)
                 return 0;
-            int read = m_file.View.Read (m_position, buf, index, (uint)count);
+            int read = m_view.Read (m_position, buf, index, (uint)count);
             m_position += read;
             return read;
         }
@@ -57,7 +59,7 @@ namespace GameRes.Formats.NScripter
         public override bool CanWrite { get { return false; } }
         public override bool  CanSeek { get { return true; } }
 
-        public override long Length { get { return m_file.MaxOffset; } }
+        public override long Length { get { return m_max_offset; } }
         public override long Position
         {
             get { return m_position; }
@@ -69,7 +71,7 @@ namespace GameRes.Formats.NScripter
             if (SeekOrigin.Current == whence)
                 m_position += pos;
             else if (SeekOrigin.End == whence)
-                m_position = m_file.MaxOffset + pos;
+                m_position = m_max_offset + pos;
             else
                 m_position = pos;
             return m_position;
@@ -96,8 +98,8 @@ namespace GameRes.Formats.NScripter
         {
             if (!m_disposed)
             {
-                if (disposing && m_should_dispose)
-                    m_file.Dispose();
+                if (disposing)
+                    m_view.Dispose();
                 m_disposed = true;
                 base.Dispose();
             }
@@ -127,13 +129,13 @@ namespace GameRes.Formats.NScripter
         {
             int total_read = 0;
             bool refill_buffer = !(m_position >= m_current_block_position && m_position < m_current_block_position + m_current_block_length);
-            while (count > 0 && m_position < m_file.MaxOffset)
+            while (count > 0 && m_position < m_max_offset)
             {
                 if (refill_buffer)
                 {
                     int block_num = (int)(m_position / BlockLength);
                     m_current_block_position = m_position & ~((long)BlockLength-1);
-                    m_current_block_length = m_file.View.Read (m_current_block_position, m_current_block, 0, (uint)BlockLength);
+                    m_current_block_length = m_view.Read (m_current_block_position, m_current_block, 0, (uint)BlockLength);
                     DecryptBlock (block_num);
                 }
                 int src_offset = (int)m_position & (BlockLength-1);
