@@ -80,7 +80,7 @@ namespace GameRes.Formats.BlackRainbow
         public DatOpener ()
         {
             Extensions = new string[] { "dat", "pak" };
-            Signatures = new uint[] { 2u, 4u, 5u };
+            Signatures = new uint[] { 2u, 4u, 5u, 6u };
         }
 
         public override ArcFile TryOpen (ArcView file)
