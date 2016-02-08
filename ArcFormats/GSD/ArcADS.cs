@@ -62,7 +62,7 @@ namespace GameRes.Formats.BlackRainbow
                 return null;
             foreach (var key in KnownKeys.Values)
             {
-                using (var arc = new EncryptedViewStream (file, key, true))
+                using (var arc = new EncryptedViewStream (file, key))
                 {
                     uint signature = FormatCatalog.ReadSignature (arc);
                     if (2 == signature || 4 == signature || 5 == signature)
@@ -122,7 +122,7 @@ namespace GameRes.Formats.BlackRainbow
             var ads_arc = arc as AdsArchive;
             if (null == ads_arc)
                 return base.OpenEntry (arc, entry);
-            var input = new EncryptedViewStream (ads_arc.File, ads_arc.Key, true);
+            var input = new EncryptedViewStream (ads_arc.File, ads_arc.Key);
             return new StreamRegion (input, entry.Offset, entry.Size);
         }
     }

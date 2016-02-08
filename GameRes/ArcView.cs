@@ -486,7 +486,7 @@ namespace GameRes
         {
             private Frame       m_view;
             private long        m_start;
-            private uint        m_size;
+            private long        m_size;
             private long        m_position;
 
             public override bool CanRead  { get { return !disposed; } }
@@ -503,7 +503,7 @@ namespace GameRes
             {
                 m_view = file.CreateFrame();
                 m_start = 0;
-                m_size = (uint)Math.Min (file.MaxOffset, uint.MaxValue);
+                m_size = file.MaxOffset;
                 m_position = 0;
             }
 
