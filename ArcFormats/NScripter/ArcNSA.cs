@@ -95,7 +95,7 @@ namespace GameRes.Formats.NScripter
             bool zero_signature = 0 == file.View.ReadInt16 (0);
             try
             {
-                using (var input = new ViewStream (file, true))
+                using (var input = file.CreateStream())
                 {
                     if (zero_signature)
                         input.Seek (2, SeekOrigin.Begin);
@@ -113,7 +113,7 @@ namespace GameRes.Formats.NScripter
                 return null;
             var key = Encoding.ASCII.GetBytes (password);
 
-            using (var input = new EncryptedViewStream (file, key, true))
+            using (var input = new EncryptedViewStream (file, key))
             {
                 dir = ReadIndex (input);
                 if (null == dir)
@@ -174,7 +174,7 @@ namespace GameRes.Formats.NScripter
                 return UnpackEntry (input, entry as NsaEntry);
             }
             var data = new byte[entry.Size];
-            using (var input = new EncryptedViewStream (arc.File, nsa_arc.Key, true))
+            using (var input = new EncryptedViewStream (arc.File, nsa_arc.Key))
             {
                 input.Position = entry.Offset;
                 input.Read (data, 0, data.Length);

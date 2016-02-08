@@ -31,85 +31,12 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.NScripter
 {
-    public class ViewStream : Stream
+    internal class EncryptedViewStream : Stream
     {
-        protected ArcView.Frame m_view;
-        protected long      m_position = 0;
-        protected long      m_max_offset;
-        bool                m_should_dispose;
-
-        public ViewStream (ArcView mmap, bool leave_open = false)
-        {
-            m_view = mmap.CreateFrame();
-            m_max_offset = mmap.MaxOffset;
-            m_should_dispose = !leave_open;
-        }
-
-        public override int Read (byte[] buf, int index, int count)
-        {
-            if (m_position >= m_max_offset)
-                return 0;
-            int read = m_view.Read (m_position, buf, index, (uint)count);
-            m_position += read;
-            return read;
-        }
-
-        #region IO.Stream methods
-        public override bool  CanRead { get { return true; } }
-        public override bool CanWrite { get { return false; } }
-        public override bool  CanSeek { get { return true; } }
-
-        public override long Length { get { return m_max_offset; } }
-        public override long Position
-        {
-            get { return m_position; }
-            set { m_position = value; }
-        }
-
-        public override long Seek (long pos, SeekOrigin whence)
-        {
-            if (SeekOrigin.Current == whence)
-                m_position += pos;
-            else if (SeekOrigin.End == whence)
-                m_position = m_max_offset + pos;
-            else
-                m_position = pos;
-            return m_position;
-        }
-
-        public override void Write (byte[] buf, int index, int count)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void Flush ()
-        {
-        }
-        #endregion
-
-        #region IDisposable methods
-        bool m_disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!m_disposed)
-            {
-                if (disposing)
-                    m_view.Dispose();
-                m_disposed = true;
-                base.Dispose();
-            }
-        }
-        #endregion
-    }
-
-    internal class EncryptedViewStream : ViewStream
-    {
+        ArcView.Frame   m_view;
         byte[]          m_key;
+        long            m_max_offset;
+        long            m_position = 0;
         byte[]          m_current_block = new byte[BlockLength];
         int             m_current_block_length = 0;
         long            m_current_block_position = 0;
@@ -119,10 +46,11 @@ namespace GameRes.Formats.NScripter
 
         public const int BlockLength = 1024;
 
-        public EncryptedViewStream (ArcView mmap, byte[] key, bool leave_open = false)
-            : base (mmap, leave_open)
+        public EncryptedViewStream (ArcView mmap, byte[] key)
         {
+            m_view = mmap.CreateFrame();
             m_key = key;
+            m_max_offset = mmap.MaxOffset;
         }
 
         public override int Read (byte[] buf, int index, int count)
@@ -198,5 +126,57 @@ namespace GameRes.Formats.NScripter
                 m_current_block[i] ^= (byte)map[(map[i0] + tmp) & 0xFF];
             }
         }
+
+        #region IO.Stream methods
+        public override bool  CanRead { get { return !m_disposed; } }
+        public override bool CanWrite { get { return false; } }
+        public override bool  CanSeek { get { return !m_disposed; } }
+
+        public override long Length { get { return m_max_offset; } }
+        public override long Position
+        {
+            get { return m_position; }
+            set { m_position = value; }
+        }
+
+        public override long Seek (long pos, SeekOrigin whence)
+        {
+            if (SeekOrigin.Current == whence)
+                m_position += pos;
+            else if (SeekOrigin.End == whence)
+                m_position = m_max_offset + pos;
+            else
+                m_position = pos;
+            return m_position;
+        }
+
+        public override void Write (byte[] buf, int index, int count)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void SetLength (long length)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void Flush ()
+        {
+        }
+        #endregion
+
+        #region IDisposable methods
+        bool m_disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!m_disposed)
+            {
+                if (disposing)
+                    m_view.Dispose();
+                m_disposed = true;
+                base.Dispose();
+            }
+        }
+        #endregion
     }
 }
