@@ -173,13 +173,9 @@ namespace GameRes.Formats.NScripter
                 var input = arc.File.CreateStream (entry.Offset, entry.Size);
                 return UnpackEntry (input, entry as NsaEntry);
             }
-            var data = new byte[entry.Size];
-            using (var input = new EncryptedViewStream (arc.File, nsa_arc.Key))
-            {
-                input.Position = entry.Offset;
-                input.Read (data, 0, data.Length);
-            }
-            return UnpackEntry (new MemoryStream (data), entry as NsaEntry);
+            var encrypted = new EncryptedViewStream (arc.File, nsa_arc.Key);
+            var stream = new StreamRegion (encrypted, entry.Offset, entry.Size);
+            return UnpackEntry (stream, entry as NsaEntry);
         }
 
         protected Stream UnpackEntry (Stream input, NsaEntry nsa_entry)
