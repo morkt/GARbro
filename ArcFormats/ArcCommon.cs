@@ -495,6 +495,37 @@ namespace GameRes.Formats
             return r | ((x & mask) + (y & mask)) & mask;
         }
 
+        public static ulong PSubB (ulong x, ulong y)
+        {
+            ulong r = 0;
+            for (ulong mask = 0xFF; mask != 0; mask <<= 8)
+            {
+                r |= ((x & mask) - (y & mask)) & mask;
+            }
+            return r;
+        }
+
+        public static ulong PSubW (ulong x, ulong y)
+        {
+            ulong mask = 0xffff;
+            ulong r = ((x & mask) - (y & mask)) & mask;
+            mask <<= 16;
+            r |= ((x & mask) - (y & mask)) & mask;
+            mask <<= 16;
+            r |= ((x & mask) - (y & mask)) & mask;
+            mask <<= 16;
+            r |= ((x & mask) - (y & mask)) & mask;
+            return r;
+        }
+
+        public static ulong PSubD (ulong x, ulong y)
+        {
+            ulong mask = 0xffffffff;
+            ulong r = ((x & mask) - (y & mask)) & mask;
+            mask <<= 32;
+            return r | ((x & mask) - (y & mask)) & mask;
+        }
+
         public static ulong PSllD (ulong x, int count)
         {
             count &= 0x1F;
