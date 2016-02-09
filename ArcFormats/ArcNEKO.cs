@@ -26,33 +26,39 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Neko
 {
-    public class NekoArchive : ArcFile
+    internal interface INekoEncryption
     {
-        public uint Key { get; private set; }
+        void Decrypt (uint key, byte[] input, int offset, int length);
+    }
 
-        public NekoArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, uint key)
+    internal class NekoArchive : ArcFile
+    {
+        public readonly INekoEncryption Decoder;
+
+        public NekoArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, INekoEncryption decoder)
             : base (arc, impl, dir)
         {
-            Key = key;
+            Decoder = decoder;
         }
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class PakOpener : ArchiveFormat
+    public class Pak1Opener : ArchiveFormat
     {
-        public override string         Tag { get { return "NEKO"; } }
+        public override string         Tag { get { return "NEKOPACK/1"; } }
         public override string Description { get { return "NekoPack resource archive"; } }
         public override uint     Signature { get { return 0x4f4b454e; } } // "NEKO"
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
-        public PakOpener ()
+        public Pak1Opener ()
         {
             Extensions = new string[] { "dat" };
         }
@@ -61,10 +67,12 @@ namespace GameRes.Formats.Neko
         {
             if (!file.View.AsciiEqual (4, "PACK"))
                 return null;
+            int length = file.View.ReadInt32 (0x14);
+            if (length <= 0 || length >= file.MaxOffset)
+                return null;
             uint id = file.View.ReadUInt32 (8);
-            int length;
-            byte[] index = ReadBlock (file.View, id, 0x10, out length);
-            int total = 0;
+            var dec = new NekoEncryption32bit (id);
+            byte[] index = ReadBlock (file.View, dec, 0x10, out length);
             long offset = 0x18 + length;
             var dir = new List<Entry>();
             int index_pos = 0;
@@ -74,8 +82,7 @@ namespace GameRes.Formats.Neko
                 if (count <= 0 || count > remaining/8-1)
                     return null;
                 uint hash = LittleEndian.ToUInt32 (index, index_pos);
-                total += count;
-                dir.Capacity = total;
+                dir.Capacity = dir.Count + count;
                 index_pos += 8;
                 for (int j = 0; j < count; ++j)
                 {
@@ -97,16 +104,15 @@ namespace GameRes.Formats.Neko
                 uint hash = LittleEndian.ToUInt32 (buffer, 0);
                 if (0 != hash)
                 {
-                    ulong key = KeyFromHash (hash);
-                    Decrypt (key, buffer, 8, 8);
+                    dec.Decrypt (hash, buffer, 8, 8);
                 }
                 uint signature = LittleEndian.ToUInt32 (buffer, 8);
-                var res = FormatCatalog.Instance.LookupSignature (signature);
+                var res = AutoEntry.DetectFileType (signature);
                 string ext = "";
-                if (res.Any())
+                if (null != res)
                 {
-                    ext = res.First().Extensions.First();
-                    entry.Type = res.First().Type;
+                    ext = res.Extensions.FirstOrDefault();
+                    entry.Type = res.Type;
                 }
                 else if (0x474e4d8a == signature)
                     ext = "mng";
@@ -116,7 +122,7 @@ namespace GameRes.Formats.Neko
                     entry.Name = i.ToString ("D4");
                 ++i;
             }
-            return new NekoArchive (file, this, dir, id);
+            return new NekoArchive (file, this, dir, dec);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -125,16 +131,8 @@ namespace GameRes.Formats.Neko
             if (null == pak)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             int length;
-            var data = ReadBlock (arc.File.View, pak.Key, entry.Offset, out length);
+            var data = ReadBlock (arc.File.View, pak.Decoder, entry.Offset, out length);
             return new MemoryStream (data, 0, length, false);
-        }
-
-        static ulong KeyFromHash (uint hash)
-        {
-            uint v2 = hash ^ (hash + 1566083941u);
-            uint v3 = v2 ^ (hash - 899497514u);
-            ulong result = v3 ^ (v2 - 1894007588u);
-            return result | (result ^ (v3 + 1812433253u)) << 32;
         }
 
         static uint HashFromString (uint seed, byte[] str, int offset, int length)
@@ -190,31 +188,12 @@ namespace GameRes.Formats.Neko
             return v1 << v2 | v1 >> (32-v2);
         }
 
-        static ulong Decrypt (ulong key, byte[] buf, int offset, int length)
-        {
-            unsafe
-            {
-                fixed (byte* data = buf)
-                {
-                    ulong* first = (ulong*)(data + offset);
-                    ulong* last = first + length/8;
-                    while (first != last)
-                    {
-                        ulong v = *first ^ key;
-                        key = MMX.PAddW (key, v);
-                        *first++ = v;
-                    }
-                    return key;
-                }
-            }
-        }
-
-        static byte[] ReadBlock (ArcView.Frame view, uint id, long offset, out int length)
+        static byte[] ReadBlock (ArcView.Frame view, INekoEncryption enc, long offset, out int length)
         {
             uint hash = view.ReadUInt32 (offset);
             length = view.ReadInt32 (offset+4);
             // parity check
-//            if (CalcParity (id, (uint)length) != hash)
+//            if (CalcParity (((NekoEncryption32bit)enc).Parity, (uint)length) != hash)
 //                throw new InvalidFormatException();
 
             int aligned_size = (length+7) & ~7;
@@ -222,10 +201,351 @@ namespace GameRes.Formats.Neko
             length = view.Read (offset+8, buffer, 0, (uint)length);
             if (0 != hash)
             {
-                ulong key = KeyFromHash (hash);
-                Decrypt (key, buffer, 0, aligned_size);
+                enc.Decrypt (hash, buffer, 0, aligned_size);
             }
             return buffer;
+        }
+    }
+
+    internal class NekoEncryption32bit : INekoEncryption
+    {
+        public uint Parity { get; set; }
+
+        public NekoEncryption32bit (uint parity)
+        {
+            Parity = parity;
+        }
+
+        public void Decrypt (uint hash, byte[] buf, int offset, int length)
+        {
+            if (offset < 0 || offset > buf.Length)
+                throw new ArgumentException ("offset");
+            int count = Math.Min (length, buf.Length-offset) / 8;
+            if (0 == count)
+                return;
+            ulong key = KeyFromHash (hash);
+            unsafe
+            {
+                fixed (byte* data = buf)
+                {
+                    ulong* first = (ulong*)(data + offset);
+                    ulong* last = first + count;
+                    while (first != last)
+                    {
+                        ulong v = *first ^ key;
+                        key = MMX.PAddW (key, v);
+                        *first++ = v;
+                    }
+                }
+            }
+        }
+
+        public static ulong KeyFromHash (uint hash)
+        {
+            uint v2 = hash ^ (hash + 1566083941u);
+            uint v3 = v2 ^ (hash - 899497514u);
+            ulong result = v3 ^ (v2 - 1894007588u);
+            return result | (result ^ (v3 + 1812433253u)) << 32;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Pak2Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "NEKOPACK/2"; } }
+        public override string Description { get { return "NekoPack resource archive"; } }
+        public override uint     Signature { get { return 0x4F4B454E; } } // "NEKO"
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public Pak2Opener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (4, "PACK"))
+                return null;
+
+            uint init_key = file.View.ReadUInt32 (0xC);
+            var xdec = new NekoXCode (init_key);
+            uint key = file.View.ReadUInt32 (0x10);
+            var buffer = file.View.ReadBytes (0x14, 8);
+            xdec.Decrypt (key, buffer, 0, 8);
+
+            uint index_size = LittleEndian.ToUInt32 (buffer, 0);
+            if (index_size != LittleEndian.ToUInt32 (buffer, 4))
+                return null;
+            var index = new byte[(index_size + 7u) & ~7u];
+            if (file.View.Read (0x1C, index, 0, index_size) < index_size)
+                return null;
+            xdec.Decrypt (key, index, 0, index.Length);
+
+            var names_map = GetKnownNamesMap (init_key);
+
+            int index_pos = 0;
+            var dir = new List<Entry>();
+            long current_offset = 0x1C + index.Length;
+            while (index_pos < (int)index_size)
+            {
+                uint dir_hash = LittleEndian.ToUInt32 (index, index_pos);
+                int count = LittleEndian.ToInt32 (index, index_pos+4);
+                if (count != LittleEndian.ToInt32 (index, index_pos+8))
+                    break;
+                index_pos += 12;
+                string dir_name;
+                if (!names_map.TryGetValue (dir_hash, out dir_name))
+                    dir_name = dir_hash.ToString ("X8");
+                dir.Capacity = dir.Count + count;
+                for (int i = 0; i < count; ++i)
+                {
+                    uint name_hash = LittleEndian.ToUInt32 (index, index_pos);
+                    uint size = LittleEndian.ToUInt32 (index, index_pos+4);
+                    var entry = new Entry
+                    {
+                        Name = string.Format ("{0}/{1:X8}", dir_name, name_hash),
+                        Offset = current_offset,
+                        Size = size,
+                    };
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                    index_pos += 8;
+                    current_offset += entry.Size;
+                }
+            }
+            if (0 == dir.Count)
+                return null;
+            DetectTypes (file, dir, xdec);
+            return new NekoArchive (file, this, dir, xdec);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var narc = arc as NekoArchive;
+            if (null == narc || entry.Size <= 12)
+                return base.OpenEntry (arc, entry);
+            uint key = arc.File.View.ReadUInt32 (entry.Offset);
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset+4, data, 0, 8);
+            narc.Decoder.Decrypt (key, data, 0, 8);
+            int size = LittleEndian.ToInt32 (data, 0);
+            if (size != LittleEndian.ToInt32 (data, 4))
+            {
+                Trace.WriteLine ("entry decryption failed", "[NEKOPACK]");
+                return base.OpenEntry (arc, entry);
+            }
+            int aligned_size = (size + 7) & ~7;
+            if (aligned_size > data.Length)
+                data = new byte[aligned_size];
+            arc.File.View.Read (entry.Offset+12, data, 0, (uint)size);
+            narc.Decoder.Decrypt (key, data, 0, aligned_size);
+            return new MemoryStream (data, 0, size);
+        }
+
+        void DetectTypes (ArcView file, List<Entry> dir, NekoXCode dec)
+        {
+            byte[] buffer = new byte[8];
+            foreach (var entry in dir)
+            {
+                uint key = file.View.ReadUInt32 (entry.Offset);
+                file.View.Read (entry.Offset+12, buffer, 0, 8);
+                dec.Decrypt (key, buffer, 0, 8);
+                uint signature = LittleEndian.ToUInt32 (buffer, 0);
+                var res = AutoEntry.DetectFileType (signature);
+                string ext = "";
+                if (res != null)
+                {
+                    ext = res.Extensions.FirstOrDefault();
+                    entry.Type = res.Type;
+                }
+                else if (0x474e4d8a == signature)
+                    ext = "mng";
+                else if (entry.Name.StartsWith ("script/"))
+                    entry.Type = "script";
+
+                if (!string.IsNullOrEmpty (ext))
+                    entry.Name = Path.ChangeExtension (entry.Name, ext);
+            }
+        }
+
+        static uint ComputeHash (string name, uint hash)
+        {
+            foreach (var c in name)
+            {
+                hash = 0x100002A * (ShiftMap[c & 0xFF] ^ hash);
+            }
+            return hash;
+        }
+
+        static string[] KnownDirNames = {
+            "image/actor", "image/back", "image/mask", "image/visual",
+            "sound/bgm", "sound/env", "sound/se", "voice", "script", "system", "count",
+        };
+
+        Dictionary<uint, string> GetKnownNamesMap (uint key)
+        {
+            var map = new Dictionary<uint, string> (KnownDirNames.Length);
+            foreach (var name in KnownDirNames)
+            {
+                map[ComputeHash (name, key)] = name;
+            }
+            return map;
+        }
+
+        static readonly byte[] ShiftMap = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xc9, 0xca, 0x00, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0x00, 0xd2, 0xd3, 0x27, 0x25, 0xc8,
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x00, 0xd4, 0x00, 0xd5, 0x00, 0x00,
+            0xd6, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
+            0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0xd7, 0xc8, 0xd8, 0xd9, 0x26,
+            0xda, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
+            0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0xdb, 0x00, 0xdc, 0xdd, 0x00,
+            0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
+            0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+            0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58,
+            0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68,
+            0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
+            0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88,
+            0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98,
+            0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8,
+        };
+    }
+
+    internal class NekoXCode : INekoEncryption
+    {
+        uint[]          m_random;
+        SimdProgram     m_program;
+
+        public NekoXCode (uint init_key)
+        {
+            m_random = InitTable (init_key);
+            m_program = new SimdProgram (init_key);
+        }
+
+        public void Decrypt (uint key, byte[] input, int offset, int length)
+        {
+            for (int i = 1; i < 7; ++i)
+            {
+                uint src = key % 0x28 * 2;
+                m_program.mm[i] = m_random[src] | (ulong)m_random[src+1] << 32;
+                key /= 0x28;
+            }
+            m_program.Execute (input, offset, length);
+        }
+
+        class SimdProgram
+        {
+            public ulong[] mm = new ulong[7];
+
+            Action[]    m_transform = new Action[4];
+            Action[]    m_shuffle = new Action[6];
+
+            Action<int>[]   TransformList;
+            Action[]        ShuffleList;
+
+            public SimdProgram (uint key)
+            {
+                TransformList = new Action<int>[] {
+                    pxor, paddb, paddw, paddd, psubb, psubw, psubd,
+                    pxor, psubb, psubw, psubd, paddb, paddw, paddd,
+                };
+                ShuffleList = new Action[] {
+                    paddq_1_2, paddq_2_3, paddq_3_4, paddq_4_5, paddq_5_6, paddq_6_1,
+                };
+
+                GenerateProgram (key);
+            }
+
+            void pxor (int i) { mm[0] ^= mm[i]; }
+            void paddb (int i) { mm[0] = MMX.PAddB (mm[0], mm[i]); }
+            void paddw (int i) { mm[0] = MMX.PAddW (mm[0], mm[i]); }
+            void paddd (int i) { mm[0] = MMX.PAddD (mm[0], mm[i]); }
+            void psubb (int i) { mm[0] = MMX.PSubB (mm[0], mm[i]); }
+            void psubw (int i) { mm[0] = MMX.PSubW (mm[0], mm[i]); }
+            void psubd (int i) { mm[0] = MMX.PSubD (mm[0], mm[i]); }
+
+            void paddq_1_2 () { mm[1] += mm[2]; }
+            void paddq_2_3 () { mm[2] += mm[3]; }
+            void paddq_3_4 () { mm[3] += mm[4]; }
+            void paddq_4_5 () { mm[4] += mm[5]; }
+            void paddq_5_6 () { mm[5] += mm[6]; }
+            void paddq_6_1 () { mm[6] += mm[1]; }
+
+            void GenerateProgram (uint key)
+            {
+                int t1 = 7 + (int)(key >> 28);
+                int cmd_base = (int)key & 0xffff;
+                int arg_base = (int)(key >> 16) & 0xfff;
+                for (int i = 3; i >= 0; --i)
+                {
+                    int cmd = ((cmd_base >> (4 * i)) + t1) % TransformList.Length;
+                    int arg = (arg_base >> (3 * i)) % 6 + 1;
+                    m_transform[3-i] = () => TransformList[cmd] (arg);
+                }
+                for (uint i = 0; i < 6; ++i)
+                {
+                    m_shuffle[i] = ShuffleList[(i + key) % (uint)ShuffleList.Length];
+                }
+            }
+
+            public unsafe void Execute (byte[] input, int offset, int length)
+            {
+                if (offset < 0 || offset > input.Length)
+                    throw new ArgumentException ("offset");
+                int count = Math.Min (length, input.Length-offset) / 8;
+                if (0 == count)
+                    return;
+                fixed (byte* data = &input[offset])
+                {
+                    ulong* data64 = (ulong*)data;
+                    for (;;)
+                    {
+                        mm[0] = *data64;
+                        foreach (var cmd in m_transform)
+                            cmd();
+                        *data64++ = mm[0];
+                        if (1 == count--)
+                            break;
+                        foreach (var cmd in m_shuffle)
+                            cmd();
+                    }
+                }
+            }
+        }
+
+        static uint[] InitTable (uint key)
+        {
+            uint a = 0;
+            uint b = 0;
+            do
+            {
+                a <<= 1;
+                b ^= 1;
+                a = ((a | b) << (int)(key & 1)) | b;
+                key >>= 1;
+            }
+            while (0 == (a & 0x80000000));
+            key = a << 1;
+            a = key + Binary.BigEndian (key);
+            byte count = (byte)key;
+            do
+            {
+                b = key ^ a;
+                a = (b << 4) ^ (b >> 4) ^ (b << 3) ^ (b >> 3) ^ b;
+            }
+            while (--count != 0);
+
+            var table = new uint[154];
+            for (int i = 0; i < table.Length; ++i)
+            {
+                b = key ^ a;
+                a = (b << 4) ^ (b >> 4) ^ (b << 3) ^ (b >> 3) ^ b;
+                table[i] = a;
+            }
+            return table;
         }
     }
 }
