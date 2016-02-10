@@ -58,15 +58,15 @@ namespace GameRes.Formats.Gs
             int version_major = file.View.ReadUInt16 (0x32);
             uint index_size = file.View.ReadUInt32 (0x34);
             int count = file.View.ReadInt32 (0x3c);
-            if (count <= 0 || count > 0xfffff || index_size > 0xffffff)
+            if (!IsSaneCount (count) || index_size > 0xffffff)
                 return null;
             uint crypt_key = file.View.ReadUInt32 (0x38);
             long data_offset = file.View.ReadUInt32 (0x40);
             int index_offset = file.View.ReadInt32 (0x44);
             int entry_size = version_major < 5 ? 0x48 : 0x68;
             int unpacked_size = count * entry_size;
-            byte[] packed_index = new byte[index_size];
-            if (index_size != file.View.Read (index_offset, packed_index, 0, index_size))
+            byte[] packed_index = file.View.ReadBytes (index_offset, index_size);
+            if (index_size != packed_index.Length)
                 return null;
             if (0 != crypt_key)
                 for (int i = 0; i != packed_index.Length; ++i)
