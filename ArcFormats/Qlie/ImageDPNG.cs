@@ -78,9 +78,11 @@ namespace GameRes.Formats.Qlie
                     int y = dpng.ReadInt32();
                     int width = dpng.ReadInt32();
                     int height = dpng.ReadInt32();
-                    int size = dpng.ReadInt32();
+                    uint size = dpng.ReadUInt32();
                     stream.Seek (8, SeekOrigin.Current);
                     next_tile = stream.Position + size;
+                    if (0 == size)
+                        continue;
                     using (var png = new StreamRegion (stream, stream.Position, size, true))
                     {
                         var decoder = new PngBitmapDecoder (png,
