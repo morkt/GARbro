@@ -86,7 +86,7 @@ namespace GameRes.Formats.BGI
                         return new MemoryStream (decoder.Output);
                     }
                 }
-                return new ArcView.ArcStream (input);
+                return new ArcView.ArcStream (input, entry_offset, entry.Size);
             }
             catch (Exception X)
             {
