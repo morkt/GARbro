@@ -2,7 +2,7 @@
 //! \date       Thu Apr 16 16:03:19 2015
 //! \brief      GsPack image format implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -69,16 +69,19 @@ namespace GameRes.Formats.Gs
                 info.Width = input.ReadUInt32();
                 info.Height = input.ReadUInt32();
                 info.BPP = input.ReadInt32();
+                if (info.HeaderSize >= 0x2C)
+                {
+                    input.ReadInt32();
+                    info.OffsetX = input.ReadInt32();
+                    info.OffsetY = input.ReadInt32();
+                }
                 return info;
             }
         }
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as PicMetaData;
-            if (null == meta)
-                throw new ArgumentException ("PicFormat.Read should be supplied with PicMetaData", "info");
-
+            var meta = (PicMetaData)info;
             stream.Position = meta.HeaderSize;
             using (var input = new LzssStream (stream, LzssMode.Decompress, true))
             {
