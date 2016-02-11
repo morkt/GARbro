@@ -49,15 +49,17 @@ namespace GameRes.Formats.Entis
         ErisaProbModel  m_pProbERISA;
 
         PtrProcedure[]  m_pfnColorOperation;
+        byte[]          m_src_frame;
 
         public byte[]           Data { get { return m_output; } }
         public PixelFormat    Format { get; private set; }
         public int            Stride { get { return Math.Abs (m_dwBytesPerLine); } }
         public BitmapPalette Palette { get; private set; }
 
-        public EriReader (Stream stream, EriMetaData info, Color[] palette)
+        public EriReader (Stream stream, EriMetaData info, Color[] palette, byte[] key_frame = null)
         {
             m_info = info;
+            m_src_frame = key_frame;
             if (CvType.Lossless_ERI == m_info.Transformation)
                 InitializeLossless();
             else if (CvType.LOT_ERI == m_info.Transformation
@@ -98,12 +100,14 @@ namespace GameRes.Formats.Entis
             case EriCode.Nemesis:
             case EriCode.RunlengthHuffman:
             case EriCode.RunlengthGamma:
+                if (0 == m_info.BlockingDegree)
+                    throw new InvalidFormatException();
+                break;
+            case EriCode.ArithmeticCode:
                 break;
             default:
                 throw new InvalidFormatException();
             }
-            if (0 == m_info.BlockingDegree)
-                throw new InvalidFormatException();
 
             switch (m_info.FormatType & (int)EriImage.TypeMask)
             {
@@ -124,19 +128,22 @@ namespace GameRes.Formats.Entis
                 throw new InvalidFormatException();
             }
 
-            m_nBlockSize = (uint) (1 << m_info.BlockingDegree);
-            m_nBlockArea = (uint) (1 << (m_info.BlockingDegree * 2));
-            m_nBlockSamples = m_nBlockArea * m_nChannelCount;
-            m_nWidthBlocks  = (uint)((m_info.Width  + m_nBlockSize - 1) >> m_info.BlockingDegree);
-            m_nHeightBlocks = (uint)((m_info.Height + m_nBlockSize - 1) >> m_info.BlockingDegree);
+            if (0 != m_info.BlockingDegree)
+            {
+                m_nBlockSize = (uint) (1 << m_info.BlockingDegree);
+                m_nBlockArea = (uint) (1 << (m_info.BlockingDegree * 2));
+                m_nBlockSamples = m_nBlockArea * m_nChannelCount;
+                m_nWidthBlocks  = (uint)((m_info.Width  + m_nBlockSize - 1) >> m_info.BlockingDegree);
+                m_nHeightBlocks = (uint)((m_info.Height + m_nBlockSize - 1) >> m_info.BlockingDegree);
 
-            m_ptrOperations = new byte[m_nWidthBlocks * m_nHeightBlocks];
-            m_ptrColumnBuf  = new sbyte[m_nBlockSize * m_nChannelCount];
-            m_ptrLineBuf    = new sbyte[m_nChannelCount * (m_nWidthBlocks << m_info.BlockingDegree)];
-            m_ptrDecodeBuf  = new sbyte[m_nBlockSamples];
-            m_ptrArrangeBuf = new sbyte[m_nBlockSamples];
+                m_ptrOperations = new byte[m_nWidthBlocks * m_nHeightBlocks];
+                m_ptrColumnBuf  = new sbyte[m_nBlockSize * m_nChannelCount];
+                m_ptrLineBuf    = new sbyte[m_nChannelCount * (m_nWidthBlocks << m_info.BlockingDegree)];
+                m_ptrDecodeBuf  = new sbyte[m_nBlockSamples];
+                m_ptrArrangeBuf = new sbyte[m_nBlockSamples];
 
-            InitializeArrangeTable();
+                InitializeArrangeTable();
+            }
             if (0x00020200 == m_info.Version)
             {
                 if (EriCode.RunlengthHuffman == m_info.Architecture)
@@ -223,10 +230,8 @@ namespace GameRes.Formats.Entis
 
         private void CreateImageBuffer ()
         {
-            uint stride = ((m_info.Width * (uint)m_info.BPP / 8u) + 0x03u) & ~0x03u;
-            uint image_bytes = stride * m_info.Height;
-            m_output = new byte[image_bytes];
-            m_dwBytesPerLine = (int)stride;
+            m_dwBytesPerLine = (((int)m_info.Width * m_info.BPP / 8) + 3) & ~3;
+            m_output = new byte[m_dwBytesPerLine * (int)m_info.Height];
             if (!m_info.VerticalFlip)
             {
                 m_dst = ((int)m_info.Height - 1) * m_dwBytesPerLine;
@@ -267,6 +272,11 @@ namespace GameRes.Formats.Entis
                 if (nBitCount != 0)
                     throw new InvalidFormatException();
                 break;
+            case 2:
+                if (nBitCount != 0 || fEncodeType != 0)
+                    throw new InvalidFormatException();
+                DecodeType2Image (context);
+                return;
             case 8:
                 if (nBitCount != 8)
                     throw new InvalidFormatException();
@@ -407,6 +417,30 @@ namespace GameRes.Formats.Entis
             }
         }
 
+        private void DecodeType2Image (RLEDecodeContext context)
+        {
+            if (m_info.BPP != 8)
+                throw new InvalidFormatException();
+
+            if (EriCode.ArithmeticCode == m_info.Architecture)
+            {
+//                (context as ArithmeticContext).InitArithmeticContext (8);
+                m_ptrLineBuf = new sbyte[m_info.Width*4];
+            }
+            else
+                throw new NotImplementedException();
+
+            int dst = m_dst;
+            for (int nPosY = 0; nPosY < (int)m_info.Height; ++nPosY)
+            {
+                if (context.DecodeBytes (m_ptrLineBuf, m_info.Width) < m_info.Width)
+                    throw new InvalidFormatException();
+                for (int x = 0; x < (int)m_info.Width; ++x)
+                    m_output[dst+x] = (byte)m_ptrLineBuf[4 * x];
+                dst += m_dwBytesPerLine;
+            }
+        }
+
         private void DecodeLossyImage (HuffmanDecodeContext context)
         {
             throw new NotImplementedException ("Lossy ERI compression not implemented");
@@ -489,13 +523,22 @@ namespace GameRes.Formats.Entis
                 if ((int)EriImage.RGBA == fdwFormatType)
                 {
                     Format = PixelFormats.Bgra32;
-                    return RestoreRGBA32;
+                    if (null == m_src_frame)
+                        return RestoreRGBA32;
+                    else
+                        return RestoreDeltaRGBA32;
                 }
                 Format = PixelFormats.Bgr32;
-                return RestoreRGB24;
+                if (null == m_src_frame)
+                    return RestoreRGB24;
+                else
+                    return RestoreDeltaRGB24;
             case 24:
                 Format = PixelFormats.Bgr24;
-                return RestoreRGB24;
+                if (null == m_src_frame)
+                    return RestoreRGB24;
+                else
+                    return RestoreDeltaRGB24;
             case 16:
                 Format = PixelFormats.Bgr555;
                 return RestoreRGB16;
@@ -551,6 +594,57 @@ namespace GameRes.Formats.Entis
                     m_output[ptrDstNext]   = (byte)m_ptrDecodeBuf[ptrSrcNext];
                     m_output[ptrDstNext+1] = (byte)m_ptrDecodeBuf[ptrSrcNext + nBlockSamples];
                     m_output[ptrDstNext+2] = (byte)m_ptrDecodeBuf[ptrSrcNext + nBlockSamples * 2];
+                    ptrSrcNext ++;
+                    ptrDstNext += nBytesPerPixel;
+                }
+                ptrSrcLine += (int)m_nBlockSize;
+                ptrDstLine += m_nDstLineBytes;
+            }
+        }
+
+        void RestoreDeltaRGBA32 ()
+        {
+            int ptrDstLine = m_ptrDstBlock;
+            int ptrSrcLine = 0; //m_ptrDecodeBuf;
+            int nBlockSamples = (int)m_nBlockArea;
+            int nBlockSamplesX3 = nBlockSamples * 3;
+
+            for (uint y = 0; y < m_nDstHeight; y++)
+            {
+                int ptrDstNext = ptrDstLine;
+                int ptrSrcNext = ptrSrcLine;
+
+                for (uint x = 0; x < m_nDstWidth; x++)
+                {
+                    m_output[ptrDstNext]   = (byte)(m_src_frame[ptrDstNext]   + m_ptrDecodeBuf[ptrSrcNext]);
+                    m_output[ptrDstNext+1] = (byte)(m_src_frame[ptrDstNext+1] + m_ptrDecodeBuf[ptrSrcNext + nBlockSamples]);
+                    m_output[ptrDstNext+2] = (byte)(m_src_frame[ptrDstNext+2] + m_ptrDecodeBuf[ptrSrcNext + nBlockSamples * 2]);
+                    m_output[ptrDstNext+3] = (byte)(m_src_frame[ptrDstNext+3] + m_ptrDecodeBuf[ptrSrcNext + nBlockSamplesX3]);
+                    ptrSrcNext ++;
+                    ptrDstNext += 4;
+                }
+                ptrSrcLine += (int)m_nBlockSize;
+                ptrDstLine += m_nDstLineBytes;
+            }
+        }
+
+        void RestoreDeltaRGB24()
+        {
+            int ptrDstLine = m_ptrDstBlock;
+            int ptrSrcLine = 0; //m_ptrDecodeBuf;
+            int nBytesPerPixel = m_nDstPixelBytes;
+            int nBlockSamples = (int)m_nBlockArea;
+
+            for (uint y = 0; y < m_nDstHeight; y++)
+            {
+                int ptrDstNext = ptrDstLine;
+                int ptrSrcNext = ptrSrcLine;
+
+                for (uint x = 0; x < m_nDstWidth; x++)
+                {
+                    m_output[ptrDstNext]   = (byte)(m_src_frame[ptrDstNext] + m_ptrDecodeBuf[ptrSrcNext]);
+                    m_output[ptrDstNext+1] = (byte)(m_src_frame[ptrDstNext+1] + m_ptrDecodeBuf[ptrSrcNext + nBlockSamples]);
+                    m_output[ptrDstNext+2] = (byte)(m_src_frame[ptrDstNext+2] + m_ptrDecodeBuf[ptrSrcNext + nBlockSamples * 2]);
                     ptrSrcNext ++;
                     ptrDstNext += nBytesPerPixel;
                 }

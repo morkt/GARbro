@@ -237,7 +237,7 @@ namespace GameRes.Formats.Entis
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }
 
-        internal Color[] ReadPalette (Stream input, int palette_length)
+        internal static Color[] ReadPalette (Stream input, int palette_length)
         {
             var palette_data = new byte[0x400];
             if (palette_length > palette_data.Length)

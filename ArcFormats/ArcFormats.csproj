@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actgs\ArcDAT.cs" />
+    <Compile Include="Entis\ArcERI.cs" />
     <Compile Include="GSD\ArcADS.cs" />
     <Compile Include="Amaterasu\ImageGRP.cs" />
     <Compile Include="AnimeGameSystem\ArcDAT.cs" />
