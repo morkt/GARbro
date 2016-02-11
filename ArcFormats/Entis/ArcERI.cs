@@ -51,7 +51,8 @@ namespace GameRes.Formats.Entis
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0x10, "Entis Rasterized Image"))
+            if (!file.View.AsciiEqual (0x10, "Entis Rasterized Image")
+                && !file.View.AsciiEqual (0x10, "Moving Entis Image"))
                 return null;
             EriMetaData info;
             using (var eris = file.CreateStream())
@@ -114,6 +115,11 @@ namespace GameRes.Formats.Entis
             var earc = (EriMultiImage)arc;
             var eent = (EriEntry)entry;
             var pixels = earc.GetFrame (eent.FrameIndex);
+            if (32 == earc.Info.BPP && 0 == (earc.Info.FormatType & (int)EriImage.WithAlpha))
+            {
+                for (int p = 3; p < pixels.Length; p += 4)
+                    pixels[p] = 0xFF;
+            }
             return TgaStream.Create (earc.Info, pixels);
         }
     }
