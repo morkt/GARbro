@@ -148,7 +148,8 @@ namespace GameRes.Formats.Entis
                 return null;
             if (0x03000100 != LittleEndian.ToUInt32 (header, 8))
                 return null;
-            if (!Binary.AsciiEqual (header, 0x10, "Entis Rasterized Image"))
+            if (!Binary.AsciiEqual (header, 0x10, "Entis Rasterized Image")
+                && !Binary.AsciiEqual (header, 0x10, "Moving Entis Image"))
                 return null;
             using (var reader = new EriFile (stream))
             {
