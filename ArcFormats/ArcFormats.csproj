@@ -106,6 +106,7 @@
     <Compile Include="Kaguya\ArcANM.cs" />
     <Compile Include="Kaguya\ArcLINK.cs" />
     <Compile Include="Kaguya\ImageAO.cs" />
+    <Compile Include="Kaguya\ImageAPS.cs" />
     <Compile Include="KiriKiri\CryptAlgorithms.cs" />
     <Compile Include="Liar\ArcLWG.cs" />
     <Compile Include="MokoPro\CompressedFile.cs" />

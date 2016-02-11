@@ -1,0 +1,136 @@
+//! \file       ImageAPS.cs
+//! \date       Sun Dec 06 15:11:38 2015
+//! \brief      Kaguya tiled image format.
+//
+// Copyright (C) 2015-2016 by morkt
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+//
+
+using System.ComponentModel.Composition;
+using System.Drawing;
+using System.IO;
+
+namespace GameRes.Formats.Kaguya
+{
+    internal class ApsMetaData : ImageMetaData
+    {
+        public bool IsPacked;
+        public uint PackedSize;
+        public uint UnpackedSize;
+        public uint DataOffset;
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class Aps3Format : ApFormat
+    {
+        public override string         Tag { get { return "APS3"; } }
+        public override string Description { get { return "KaGuYa tiled image format"; } }
+        public override uint     Signature { get { return 0x53504104; } } // '\x04APS'
+
+        public Aps3Format ()
+        {
+            Extensions = new string[] { "aps", "parts" };
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            stream.Position = 4;
+            if (stream.ReadByte() != '3')
+                return null;
+            var rect = new Rectangle (0, 0, 0, 0);
+            using (var reader = new ArcView.Reader (stream))
+            {
+                int count = reader.ReadInt32();
+                for (int i = 0; i < count; ++i)
+                {
+                    reader.ReadInt32();
+                    int name_length = reader.ReadByte();
+                    reader.BaseStream.Seek (name_length, SeekOrigin.Current);
+                    int x = reader.ReadInt32();
+                    int y = reader.ReadInt32();
+                    int w = reader.ReadInt32() - x;
+                    int h = reader.ReadInt32() - y;
+                    if (name_length > 0)
+                    {
+                        var part_rect = new Rectangle (x, y, w, h);
+                        rect = Rectangle.Union (rect, part_rect);
+                    }
+                    reader.BaseStream.Seek (12, SeekOrigin.Current);
+                }
+                uint data_size = reader.ReadUInt32();
+                if (data_size > stream.Length-stream.Position)
+                    return null;
+                int compression = reader.ReadInt16();
+                var info = new ApsMetaData
+                {
+                    Width = (uint)rect.Width,
+                    Height = (uint)rect.Height,
+                    BPP = 32,
+                    IsPacked = 0 != compression,
+                };
+                if (0 == compression)
+                {
+                    info.UnpackedSize = reader.ReadUInt32();
+                }
+                else if (1 == compression)
+                {
+                    info.PackedSize = reader.ReadUInt32();
+                    info.UnpackedSize = reader.ReadUInt32();
+                }
+                else
+                    return null;
+                info.DataOffset = (uint)stream.Position;
+                return info;
+            }
+        }
+
+        public override ImageData Read (Stream stream, ImageMetaData info)
+        {
+            var meta = (ApsMetaData)info;
+            stream.Position = meta.DataOffset;
+            byte[] image_data;
+            if (meta.IsPacked)
+            {
+                using (var reader = new LzReader (stream, meta.PackedSize, meta.UnpackedSize))
+                {
+                    reader.Unpack();
+                    image_data = reader.Data;
+                }
+            }
+            else
+            {
+                using (var reader = new ArcView.Reader (stream))
+                    image_data = reader.ReadBytes ((int)meta.UnpackedSize);
+            }
+            using (var unpacked = new MemoryStream (image_data))
+            {
+                var ap_info = base.ReadMetaData (unpacked);
+                if (null == ap_info)
+                    throw new InvalidFormatException();
+                return base.Read (unpacked, ap_info);
+            }
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("Aps3Format.Write not implemented");
+        }
+    }
+}
