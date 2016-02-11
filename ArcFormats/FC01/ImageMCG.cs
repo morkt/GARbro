@@ -192,6 +192,27 @@ namespace GameRes.Formats.FC01
             {
                 MrgOpener.Decrypt (m_input, 0, m_input.Length-1, m_key);
             }
+#if DEBUG
+            else // bruteforce key *in debug build only*
+            {
+                for (int key = 1; key < 256; ++key)
+                {
+                    var copy = m_input.Clone() as byte[];
+                    MrgOpener.Decrypt (copy, 0, copy.Length-1, (byte)key);
+                    using (var input = new MemoryStream (copy))
+                    using (var lzss = new MrgLzssReader (input, m_input.Length, Stride * m_height))
+                    {
+                        lzss.Unpack();
+                        if (input.Length - input.Position <= 1)
+                        {
+                            m_output = lzss.Data;
+                            m_key = (byte)key;
+                            return;
+                        }
+                    }
+                }
+            }
+#endif
             using (var input = new MemoryStream (m_input))
             using (var lzss = new MrgLzssReader (input, m_input.Length, Stride * m_height))
             {
