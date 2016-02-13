@@ -63,6 +63,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actgs\ArcDAT.cs" />
+    <Compile Include="Softpal\ArcPAC.cs" />
+    <Compile Include="Softpal\AudioBGM.cs" />
+    <Compile Include="Softpal\ImagePGD.cs" />
     <Compile Include="Entis\ArcERI.cs" />
     <Compile Include="GSD\ArcADS.cs" />
     <Compile Include="Amaterasu\ImageGRP.cs" />
