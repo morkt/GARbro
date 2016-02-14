@@ -1170,7 +1170,10 @@ namespace GARbro.GUI
 
             var index = CurrentDirectory.SelectedIndex + 1;
             if (index < CurrentDirectory.Items.Count)
+            {
                 CurrentDirectory.SelectedIndex = index;
+                CurrentDirectory.ScrollIntoView (CurrentDirectory.SelectedItem);
+            }
         }
 
         /// <summary>
