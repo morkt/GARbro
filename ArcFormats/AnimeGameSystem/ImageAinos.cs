@@ -214,7 +214,7 @@ namespace GameRes.Formats.Ags
                     BPP = 24,
                     Type = sig,
                 };
-                if (0 != (sig & 0xf))
+                if (0 != (sig & 7))
                 {
                     meta.OffsetX = input.ReadInt16();
                     meta.OffsetY = input.ReadInt16();
@@ -266,7 +266,7 @@ namespace GameRes.Formats.Ags
                 m_input = new BinaryReader (file, Encoding.ASCII, true);
                 ShiftTable = InitShiftTable();
 
-                if (0 != (info.Type & 0xf))
+                if (0 != (info.Type & 7))
                     file.Position = 13;
                 else
                     file.Position = 5;
