@@ -827,9 +827,11 @@ NextEntry:
         {
             if (!disposed)
             {
-                if (disposing && null != m_stream)
+                if (disposing)
                 {
-                    m_stream.Dispose();
+                    if (null != m_stream)
+                        m_stream.Dispose();
+                    m_segment.Dispose();
                 }
                 disposed = true;
                 base.Dispose (disposing);
