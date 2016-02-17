@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 
@@ -43,6 +44,7 @@ namespace GameRes.Formats.NitroPlus
         public uint AlignedSize;
         public uint Size;
         public uint UnpackedSize;
+        public bool IsCompressed;
     }
 
     internal class NpkArchive : ArcFile
@@ -143,6 +145,7 @@ namespace GameRes.Formats.NitroPlus
                     return null;
                 entry.Segments.Capacity = segment_count;
                 uint packed_size = 0;
+                bool is_packed = false;
                 for (int j = 0; j < segment_count; ++j)
                 {
                     var segment = new NpkSegment();
@@ -150,11 +153,14 @@ namespace GameRes.Formats.NitroPlus
                     segment.AlignedSize = index.ReadUInt32();
                     segment.Size = index.ReadUInt32();
                     segment.UnpackedSize = index.ReadUInt32();
+                    segment.IsCompressed = segment.Size < segment.UnpackedSize;
                     entry.Segments.Add (segment);
                     packed_size += segment.AlignedSize;
+                    is_packed = is_packed || segment.IsCompressed;
                 }
                 entry.Offset = entry.Segments[0].Offset;
                 entry.Size   = packed_size;
+                entry.IsPacked = is_packed;
                 if (!entry.CheckPlacement (max_offset))
                     return null;
                 dir.Add (entry);
@@ -169,22 +175,13 @@ namespace GameRes.Formats.NitroPlus
             if (null == narc || null == nent)
                 return base.OpenEntry (arc, entry);
 
-            if (1 == nent.Segments.Count)
+            if (1 == nent.Segments.Count && !nent.IsPacked)
             {
                 var input = narc.File.CreateStream (nent.Segments[0].Offset, nent.Segments[0].AlignedSize);
                 var decryptor = narc.Encryption.CreateDecryptor();
                 return new CryptoStream (input, decryptor, CryptoStreamMode.Read);
             }
-            var output = new MemoryStream ((int)nent.Size);
-            foreach (var segment in nent.Segments)
-            {
-                using (var decryptor = narc.Encryption.CreateDecryptor())
-                using (var input = narc.File.CreateStream (segment.Offset, segment.AlignedSize))
-                using (var dec = new CryptoStream (input, decryptor, CryptoStreamMode.Read))
-                    dec.CopyTo (output);
-            }
-            output.Position = 0;
-            return output;
+            return new NpkStream (narc, nent);
         }
 
         byte[] QueryEncryption ()
@@ -193,6 +190,129 @@ namespace GameRes.Formats.NitroPlus
                 return null;
             return KnownKeys.Values.First();
         }
+    }
+
+    internal class NpkStream : Stream
+    {
+        ArcView     m_file;
+        Aes         m_encryption;
+        IEnumerator<NpkSegment> m_segment;
+        Stream      m_stream;
+        bool        m_eof = false;
+
+        public override bool CanRead  { get { return m_stream != null && m_stream.CanRead; } }
+        public override bool CanSeek  { get { return false; } }
+        public override bool CanWrite { get { return false; } }
+
+        public NpkStream (NpkArchive arc, NpkEntry entry)
+        {
+            m_file = arc.File;
+            m_encryption = arc.Encryption;
+            m_segment = entry.Segments.GetEnumerator();
+            NextSegment();
+        }
+
+        private void NextSegment ()
+        {
+            if (!m_segment.MoveNext())
+            {
+                m_eof = true;
+                return;
+            }
+            if (null != m_stream)
+                m_stream.Dispose();
+            var segment = m_segment.Current;
+            m_stream = m_file.CreateStream (segment.Offset, segment.AlignedSize);
+            var decryptor = m_encryption.CreateDecryptor();
+            m_stream = new CryptoStream (m_stream, decryptor, CryptoStreamMode.Read);
+            if (segment.IsCompressed)
+                m_stream = new DeflateStream (m_stream, CompressionMode.Decompress);
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            int total = 0;
+            while (!m_eof && count > 0)
+            {
+                int read = m_stream.Read (buffer, offset, count);
+                if (0 != read)
+                {
+                    total += read;
+                    offset += read;
+                    count -= read;
+                }
+                if (0 != count)
+                    NextSegment();
+            }
+            return total;
+        }
+
+        public override int ReadByte ()
+        {
+            int b = -1;
+            while (!m_eof)
+            {
+                b = m_stream.ReadByte();
+                if (-1 != b)
+                    break;
+                NextSegment();
+            }
+            return b;
+        }
+
+        #region IO.Stream members
+        public override long Length
+        {
+            get { throw new NotSupportedException ("NpkStream.Length not supported"); }
+        }
+        public override long Position
+        {
+            get { throw new NotSupportedException ("NpkStream.Position not supported."); }
+            set { throw new NotSupportedException ("NpkStream.Position not supported."); }
+        }
+
+        public override void Flush ()
+        {
+        }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException ("NpkStream.Seek method is not supported");
+        }
+
+        public override void SetLength (long length)
+        {
+            throw new NotSupportedException ("NpkStream.SetLength method is not supported");
+        }
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException ("NpkStream.Write method is not supported");
+        }
+
+        public override void WriteByte (byte value)
+        {
+            throw new NotSupportedException("NpkStream.WriteByte method is not supported");
+        }
+        #endregion
+
+        #region IDisposable Members
+        bool _disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    if (null != m_stream)
+                        m_stream.Dispose();
+                    m_segment.Dispose();
+                }
+                _disposed = true;
+                base.Dispose (disposing);
+            }
+        }
+        #endregion
     }
 
     [Serializable]
