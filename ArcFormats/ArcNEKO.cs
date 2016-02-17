@@ -282,7 +282,8 @@ namespace GameRes.Formats.Neko
                 return null;
             xdec.Decrypt (key, index, 0, index.Length);
 
-            var names_map = GetKnownNamesMap (init_key);
+            var names_map = GetNamesMap (init_key, KnownDirNames);
+            var files_map = GetNamesMap (init_key, KnownFileNames.Value);
 
             int index_pos = 0;
             var dir = new List<Entry>();
@@ -302,9 +303,16 @@ namespace GameRes.Formats.Neko
                 {
                     uint name_hash = LittleEndian.ToUInt32 (index, index_pos);
                     uint size = LittleEndian.ToUInt32 (index, index_pos+4);
+                    string file_name;
+                    string type = "";
+                    if (!files_map.TryGetValue(name_hash, out file_name))
+                        file_name = name_hash.ToString("X8");
+                    else
+                        type = FormatCatalog.Instance.GetTypeFromName (file_name);
                     var entry = new Entry
                     {
-                        Name = string.Format ("{0}/{1:X8}", dir_name, name_hash),
+                        Name = string.Format ("{0}/{1}", dir_name, file_name),
+                        Type = type,
                         Offset = current_offset,
                         Size = size,
                     };
@@ -347,8 +355,13 @@ namespace GameRes.Formats.Neko
         void DetectTypes (ArcView file, List<Entry> dir, NekoXCode dec)
         {
             byte[] buffer = new byte[8];
-            foreach (var entry in dir)
+            foreach (var entry in dir.Where (e => string.IsNullOrEmpty (e.Type)))
             {
+                if (entry.Name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    entry.Type = "script";
+                    continue;
+                }
                 uint key = file.View.ReadUInt32 (entry.Offset);
                 file.View.Read (entry.Offset+12, buffer, 0, 8);
                 dec.Decrypt (key, buffer, 0, 8);
@@ -384,14 +397,43 @@ namespace GameRes.Formats.Neko
             "sound/bgm", "sound/env", "sound/se", "voice", "script", "system", "count",
         };
 
-        Dictionary<uint, string> GetKnownNamesMap (uint key)
+        static Lazy<string[]> KnownFileNames = new Lazy<string[]> (ReadNekoPackLst);
+
+        Dictionary<uint, string> GetNamesMap (uint key, string[] known_names)
         {
-            var map = new Dictionary<uint, string> (KnownDirNames.Length);
-            foreach (var name in KnownDirNames)
+            var map = new Dictionary<uint, string> (known_names.Length);
+            foreach (var name in known_names)
             {
                 map[ComputeHash (name, key)] = name;
             }
             return map;
+        }
+
+        static string[] ReadNekoPackLst ()
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
+                var lst_file = Path.Combine (dir, "nekopack.lst");
+                if (!File.Exists (lst_file))
+                    return new string[0];
+                using (var input = new StreamReader (lst_file))
+                {
+                    var names = new List<string>();
+                    string line;
+                    while ((line = input.ReadLine()) != null)
+                    {
+                        if (line.Length > 0)
+                            names.Add (line);
+                    }
+                    return names.ToArray();
+                }
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine (X.Message, "[NEKOPACK]");
+                return new string[0];
+            }
         }
 
         static readonly byte[] ShiftMap = {
