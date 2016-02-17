@@ -89,8 +89,9 @@ namespace GameRes.Formats.NScripter
             for (int i = 0; i < 16; i++)
                 hmac_key[i] = (byte)(md5_hash[i] ^ sha1_hash[i]);
 
-            var HMAC = new HMACSHA512 (hmac_key);
-            var hmac_hash = HMAC.ComputeHash (m_key);
+            byte[] hmac_hash;
+            using (var HMAC = new HMACSHA512 (hmac_key))
+                hmac_hash = HMAC.ComputeHash (m_key);
 
             int[] map = Enumerable.Range (0, 256).ToArray();
 

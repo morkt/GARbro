@@ -125,11 +125,12 @@ namespace GameRes.Formats.Purple
             if (index.Length != index_size)
                 return null;
 
-            var md5 = MD5.Create();
-            var hash = md5.ComputeHash (index);
-            if (!header.Skip (0x10).Take (0x10).SequenceEqual (hash))
-                return null;
-
+            using (var md5 = MD5.Create())
+            {
+                var hash = md5.ComputeHash (index);
+                if (!header.Skip (0x10).Take (0x10).SequenceEqual (hash))
+                    return null;
+            }
             foreach (var scheme in KnownSchemes.Values)
             {
                 // both CmvsMd5 and index will be altered by ReadIndex in decryption attempt
