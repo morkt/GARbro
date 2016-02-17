@@ -76,7 +76,7 @@ namespace GameRes.Formats.Entis
 
         public NoaOpener ()
         {
-            Extensions = new string[] { "noa", "dat" };
+            Extensions = new string[] { "noa", "dat", "rsa" };
         }
 
         public static Dictionary<string, Dictionary<string, string>> KnownKeys =
@@ -118,7 +118,7 @@ namespace GameRes.Formats.Entis
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var nent = entry as NoaEntry;
-            if (null == nent || !arc.File.View.AsciiEqual (entry.Offset, "filedata"))
+            if (null == nent)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             ulong size = arc.File.View.ReadUInt64 (entry.Offset+8);
             if (size > int.MaxValue)
@@ -264,8 +264,8 @@ namespace GameRes.Formats.Entis
                     dir_offset += 4;
                     if (extra_length > 0 && 0 == (entry.Attr & 0x70))
                     {
-                        entry.Extra = new byte[extra_length];
-                        if (entry.Extra.Length != m_file.View.Read (dir_offset, entry.Extra, 0, extra_length))
+                        entry.Extra = m_file.View.ReadBytes (dir_offset, extra_length);
+                        if (entry.Extra.Length != extra_length)
                             return false;
                     }
                     dir_offset += extra_length;
