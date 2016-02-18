@@ -35,7 +35,7 @@ namespace GameRes.Formats.Crowd
     public class ZbmFormat : BmpFormat
     {
         public override string         Tag { get { return "ZBM"; } }
-        public override string Description { get { return "LZ-compressed bitmap"; } }
+        public override string Description { get { return "Crowd LZ-compressed bitmap"; } }
         public override uint     Signature { get { return 0x44445A53u; } } // 'SZDD'
 
         public override ImageMetaData ReadMetaData (Stream stream)
