@@ -183,7 +183,7 @@ namespace GameRes.Formats.Lucifen
                 for (;;)
                 {
                     byte flags = m_input.ReadByte();
-                    if (0xff == flags || dst >= m_output.Length)
+                    if (0xff == flags || dst >= output.Length)
                         break;
                     int count, pos;
 
@@ -194,8 +194,8 @@ namespace GameRes.Formats.Lucifen
                         else
                             count = (flags & 0x1f) + 1;
 
-                        for (int i = 0; i < count; ++i)
-                            output[dst++] = m_input.ReadByte();
+                        m_input.Read (output, dst, count);
+                        dst += count;
                     }
                     else if ((flags & 0xc0) == 0x40)
                     {
