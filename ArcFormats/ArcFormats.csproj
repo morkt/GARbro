@@ -222,7 +222,7 @@
     <Compile Include="Malie\ArcLIB.cs" />
     <Compile Include="Lucifen\ArcLPK.cs" />
     <Compile Include="ArcLST.cs" />
-    <Compile Include="ArcMAI.cs" />
+    <Compile Include="MAI\ArcMAI.cs" />
     <Compile Include="Majiro\ArcMajiro.cs" />
     <Compile Include="Marble\ArcMBL.cs" />
     <Compile Include="Silky\ArcMFG.cs" />
@@ -367,7 +367,7 @@
     <Compile Include="Silky\ImageIGF.cs" />
     <Compile Include="ImageISG.cs" />
     <Compile Include="Kaas\ImageKAAS.cs" />
-    <Compile Include="ImageMAI.cs" />
+    <Compile Include="MAI\ImageMAI.cs" />
     <Compile Include="FC01\ImageMCG.cs" />
     <Compile Include="Silky\ImageMFG.cs" />
     <Compile Include="Malie\ImageMGF.cs" />
