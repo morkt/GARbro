@@ -147,8 +147,7 @@ namespace GameRes.Formats.Nexton
             var nxent = entry as NextonEntry;
             if (null == nxent || 0 == nxent.Key)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i != data.Length; ++i)
                 data[i] ^= nxent.Key;
             return new MemoryStream (data);
