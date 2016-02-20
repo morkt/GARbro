@@ -62,8 +62,11 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Abel\ArcARC.cs" />
+    <Compile Include="Abel\ImageGPS.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="ImageLZ.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
     <Compile Include="Softpal\ArcPAC.cs" />
     <Compile Include="Softpal\AudioBGM.cs" />
@@ -251,6 +254,7 @@
     <Compile Include="ShiinaRio\ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
+    <Compile Include="Will\ArcPNA.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
     <Compile Include="Xuse\ArcBIN.cs" />
     <Compile Include="Xuse\ArcGD.cs" />
