@@ -441,7 +441,7 @@ namespace GameRes.Formats.Kogado
         public uint help;      /* bytes_to_follow resp. intermediate value */
         public byte buffer;    /* buffer for input/output */
         /* the following is used only when encoding */
-        public uint bytecount; /* counter for outputed bytes  */
+//        public uint bytecount; /* counter for outputed bytes  */
     }
 
     // とりあえずこれで可逆性を概ね確認 (数タイトルの song.txt で確認)

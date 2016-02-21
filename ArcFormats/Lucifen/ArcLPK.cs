@@ -73,7 +73,6 @@ namespace GameRes.Formats.Lucifen
     internal class LuciOptions : ResourceOptions
     {
         public string Scheme;
-        public LpkOpener.Key Key;
     }
 
     internal class LpkInfo
