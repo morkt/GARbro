@@ -44,7 +44,7 @@ namespace GameRes.Formats.NitroPlus
         public uint AlignedSize;
         public uint Size;
         public uint UnpackedSize;
-        public bool IsCompressed;
+        public bool IsCompressed { get { return Size < UnpackedSize; } }
     }
 
     internal class NpkArchive : ArcFile
@@ -153,7 +153,6 @@ namespace GameRes.Formats.NitroPlus
                     segment.AlignedSize = index.ReadUInt32();
                     segment.Size = index.ReadUInt32();
                     segment.UnpackedSize = index.ReadUInt32();
-                    segment.IsCompressed = segment.Size < segment.UnpackedSize;
                     entry.Segments.Add (segment);
                     packed_size += segment.AlignedSize;
                     is_packed = is_packed || segment.IsCompressed;
