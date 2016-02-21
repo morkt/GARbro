@@ -104,7 +104,7 @@ namespace GameRes.Formats.MAI
                     if (is_mask_arc)
                         return ImageFormat.FindByTag ("MSK/MAI");
                     else if (0x4d43 == (signature & 0xffff)) // 'CM'
-                        return ImageFormat.FindByTag ("CMP/MAI");
+                        return ImageFormat.FindByTag ("CM/MAI");
                     else if (0x4d41 == (signature & 0xffff)) // 'AM'
                         return ImageFormat.FindByTag ("AM/MAI");
                     else if (0x4d42 == (signature & 0xffff)) // 'BM'
