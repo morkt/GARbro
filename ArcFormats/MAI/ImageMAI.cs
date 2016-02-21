@@ -140,7 +140,7 @@ namespace GameRes.Formats.MAI
         }
     }
 
-    internal class AmiMetaData : CmMetaData
+    internal class AmMetaData : CmMetaData
     {
         public uint MaskWidth;
         public uint MaskHeight;
@@ -150,20 +150,20 @@ namespace GameRes.Formats.MAI
     }
 
     [Export(typeof(ImageFormat))]
-    public class AmiFormat : ImageFormat
+    public class AmFormat : ImageFormat
     {
         public override string         Tag { get { return "AM/MAI"; } }
         public override string Description { get { return "MAI image with alpha-channel"; } }
         public override uint     Signature { get { return 0; } }
 
-        public AmiFormat ()
+        public AmFormat ()
         {
             Extensions = new string[] { "am", "ami" };
         }
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new NotImplementedException ("AmiFormat.Write not implemented");
+            throw new NotImplementedException ("AmFormat.Write not implemented");
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
@@ -179,7 +179,7 @@ namespace GameRes.Formats.MAI
             int am_type = header[0x16];
             if (am_type != 2 && am_type != 1 || header[0x18] != 1)
                 return null;
-            var info = new AmiMetaData();
+            var info = new AmMetaData();
             info.Width = LittleEndian.ToUInt16 (header, 6);
             info.Height = LittleEndian.ToUInt16 (header, 8);
             info.MaskWidth = LittleEndian.ToUInt16 (header, 0x0a);
@@ -199,7 +199,7 @@ namespace GameRes.Formats.MAI
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var reader = new Reader (stream, (AmiMetaData)info);
+            var reader = new Reader (stream, (AmMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data);
         }
@@ -207,7 +207,7 @@ namespace GameRes.Formats.MAI
         internal class Reader
         {
             private Stream  m_input;
-            private AmiMetaData m_info;
+            private AmMetaData m_info;
             private int     m_width;
             private int     m_height;
             private int     m_pixel_size;
@@ -219,7 +219,7 @@ namespace GameRes.Formats.MAI
             public BitmapPalette Palette { get; private set; }
             public byte[]           Data { get { return m_pixels; } }
 
-            public Reader (Stream stream, AmiMetaData info)
+            public Reader (Stream stream, AmMetaData info)
             {
                 m_input = stream;
                 m_info = info;
