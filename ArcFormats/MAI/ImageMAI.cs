@@ -2,7 +2,7 @@
 //! \date       Sun May 03 10:26:35 2015
 //! \brief      MAI image formats implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -33,7 +33,7 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.MAI
 {
-    internal class CmpMetaData : ImageMetaData
+    internal class CmMetaData : ImageMetaData
     {
         public  int Colors;
         public bool IsCompressed;
@@ -42,20 +42,20 @@ namespace GameRes.Formats.MAI
     }
 
     [Export(typeof(ImageFormat))]
-    public class CmpFormat : ImageFormat
+    public class CmFormat : ImageFormat
     {
-        public override string         Tag { get { return "CMP/MAI"; } }
+        public override string         Tag { get { return "CM/MAI"; } }
         public override string Description { get { return "MAI image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public CmpFormat ()
+        public CmFormat ()
         {
-            Extensions = new string[] { "cmp" };
+            Extensions = new string[] { "cm" };
         }
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new NotImplementedException ("CmpFormat.Write not implemented");
+            throw new NotImplementedException ("CmFormat.Write not implemented");
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
@@ -70,7 +70,7 @@ namespace GameRes.Formats.MAI
             uint size = LittleEndian.ToUInt32 (header, 0);
             if (size != stream.Length)
                 return null;
-            var info = new CmpMetaData();
+            var info = new CmMetaData();
             info.Width = LittleEndian.ToUInt16 (header, 4);
             info.Height = LittleEndian.ToUInt16 (header, 6);
             info.Colors = LittleEndian.ToUInt16 (header, 8);
@@ -85,11 +85,7 @@ namespace GameRes.Formats.MAI
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as CmpMetaData;
-            if (null == meta)
-                throw new ArgumentException ("CmpFormat.Read should be supplied with CmpMetaData", "info");
-
-            var reader = new Reader (stream, meta);
+            var reader = new Reader (stream, (CmMetaData)info);
             reader.Unpack();
             return ImageData.CreateFlipped (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }
@@ -109,7 +105,7 @@ namespace GameRes.Formats.MAI
             public byte[]           Data { get { return m_pixels; } }
             public int            Stride { get { return m_width * m_pixel_size; } }
 
-            public Reader (Stream stream, CmpMetaData info)
+            public Reader (Stream stream, CmMetaData info)
             {
                 m_input = stream;
                 m_width = (int)info.Width;
@@ -124,9 +120,12 @@ namespace GameRes.Formats.MAI
                 case 4: Format = PixelFormats.Bgr32; break;
                 default: throw new InvalidFormatException ("Invalid color depth");
                 }
-                m_input.Position = info.DataOffset;
                 if (info.Colors > 0)
+                {
+                    m_input.Position = 0x20;
                     Palette = RleDecoder.ReadPalette (m_input, info.Colors, 3);
+                }
+                m_input.Position = info.DataOffset;
                 int size = info.IsCompressed ? m_width*m_height*m_pixel_size : (int)info.DataLength;
                 m_pixels = new byte[size];
             }
@@ -141,7 +140,7 @@ namespace GameRes.Formats.MAI
         }
     }
 
-    internal class AmiMetaData : CmpMetaData
+    internal class AmiMetaData : CmMetaData
     {
         public uint MaskWidth;
         public uint MaskHeight;
@@ -200,11 +199,7 @@ namespace GameRes.Formats.MAI
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as AmiMetaData;
-            if (null == meta)
-                throw new ArgumentException ("AmiFormat.Read should be supplied with AmiMetaData", "info");
-
-            var reader = new Reader (stream, meta);
+            var reader = new Reader (stream, (AmiMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data);
         }
@@ -231,7 +226,7 @@ namespace GameRes.Formats.MAI
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_pixel_size = info.BPP/8;
-                if (m_pixel_size != 3 && m_pixel_size != 4)
+                if (m_pixel_size != 3 && m_pixel_size != 4 && m_pixel_size != 1)
                     throw new InvalidFormatException ("Invalid color depth");
                 Format = PixelFormats.Bgra32;
                 int size = info.IsCompressed ? m_width*m_height*m_pixel_size : (int)info.DataLength;
@@ -256,17 +251,32 @@ namespace GameRes.Formats.MAI
                 else
                     m_input.Read (m_alpha, 0, m_alpha.Length);
 
-                int stride = m_width * m_pixel_size;
+                Action<int, int, byte> copy_pixel;
+                if (m_pixel_size > 1)
+                    copy_pixel = (src, dst, alpha) => {
+                        m_pixels[dst]   = m_output[src];
+                        m_pixels[dst+1] = m_output[src+1];
+                        m_pixels[dst+2] = m_output[src+2];
+                        m_pixels[dst+3] = alpha;
+                    };
+                else
+                    copy_pixel = (src, dst, alpha) => {
+                        var color = Palette.Colors[m_output[src]];
+                        m_pixels[dst]   = color.B;
+                        m_pixels[dst+1] = color.G;
+                        m_pixels[dst+2] = color.R;
+                        m_pixels[dst+3] = alpha;
+                    };
+                int src_stride = m_width * m_pixel_size;
                 for (int y = 0; y < m_height; ++y)
                 {
-                    int dst_line = y*m_width;
-                    int src_line = (m_height-1-y)*m_width;
+                    int dst_line = y*m_width*4;
+                    int src_line = (m_height-1-y)*src_stride;;
                     for (int x = 0; x < m_width; ++x)
                     {
-                        m_pixels[(dst_line+x)*4] = m_output[(src_line+x)*m_pixel_size];
-                        m_pixels[(dst_line+x)*4+1] = m_output[(src_line+x)*m_pixel_size+1];
-                        m_pixels[(dst_line+x)*4+2] = m_output[(src_line+x)*m_pixel_size+2];
-                        m_pixels[(dst_line+x)*4+3] = m_alpha[dst_line+x];
+                        copy_pixel (src_line, dst_line, m_alpha[y*m_width+x]);
+                        src_line += m_pixel_size;
+                        dst_line += 4;
                     }
                 }
             }
@@ -287,7 +297,7 @@ namespace GameRes.Formats.MAI
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new NotImplementedException ("AmiFormat.Write not implemented");
+            throw new NotImplementedException ("MaskFormat.Write not implemented");
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
@@ -299,23 +309,33 @@ namespace GameRes.Formats.MAI
                     return null;
                 uint width = input.ReadUInt32();
                 uint height = input.ReadUInt32();
-                if ((width*height + 0x410) != size)
+                int compressed = input.ReadInt32();
+                if (compressed > 1 || 0 == compressed && (width*height + 0x410) != size)
                     return null;
-                return new ImageMetaData {
+                return new CmMetaData {
                     Width = width,
                     Height = height,
-                    BPP = 8
+                    BPP = 8,
+                    IsCompressed = 1 == compressed,
+                    DataOffset = 0x10,
+                    DataLength = size,
                 };
             }
         }
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            stream.Position = 0x10;
+            var meta = (CmMetaData)info;
+            stream.Position = meta.DataOffset;
             var palette = RleDecoder.ReadPalette (stream, 0x100, 4);
 
-            byte[] pixels = new byte[info.Width*info.Height];
-            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+            var pixels = new byte[info.Width*info.Height];
+            if (meta.IsCompressed)
+            {
+                int packed_size = (int)(stream.Length - meta.DataOffset);
+                RleDecoder.Unpack (stream, packed_size, pixels, 1);
+            }
+            else if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                 throw new InvalidFormatException();
 
             return ImageData.Create (info, PixelFormats.Indexed8, palette, pixels);
