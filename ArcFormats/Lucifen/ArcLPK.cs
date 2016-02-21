@@ -361,12 +361,9 @@ namespace GameRes.Formats.Lucifen
             if (null == options)
                 return DefaultScheme;
             string title = options.Scheme;
-            if (null == options.Key)
-            {
-                Dictionary<string, Key> file_map = null;
-                if (KnownKeys.TryGetValue (title, out file_map))
-                    CurrentFileMap = new Dictionary<string, Key> (file_map);
-            }
+            Dictionary<string, Key> file_map;
+            if (KnownKeys.TryGetValue (title, out file_map))
+                CurrentFileMap = new Dictionary<string, Key> (file_map);
             return KnownSchemes[title];
         }
 
