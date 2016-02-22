@@ -62,14 +62,9 @@ namespace GameRes.Formats.Eushully
             int type = LittleEndian.ToInt32 (header, 4);
             if (type != 1 && type != 2)
                 return null;
-            uint unpacked_size = LittleEndian.ToUInt32 (header, 0x10);
-            uint packed_size = LittleEndian.ToUInt32 (header, 0x14);
-            Stream unpacked;
-            if (unpacked_size != packed_size)
-                unpacked = new LzssStream (stream, LzssMode.Decompress, true);
-            else
-                unpacked = new StreamRegion (stream, stream.Position, packed_size, true);
-            using (unpacked)
+            int unpacked_size = LittleEndian.ToInt32 (header, 0x10);
+            int packed_size = LittleEndian.ToInt32 (header, 0x14);
+            using (var unpacked = AgfReader.OpenSection (stream, unpacked_size, packed_size))
             using (var reader = new BinaryReader (unpacked))
             {
                 if (0x20 != reader.Read (header, 0, 0x20))
@@ -80,7 +75,7 @@ namespace GameRes.Formats.Eushully
                     Height      = LittleEndian.ToUInt32 (header, 0x18),
                     BPP         = 1 == type ? 24 : 32,
                     SourceBPP   = LittleEndian.ToInt16 (header, 0x1E),
-                    DataOffset  = 0x18 + packed_size,
+                    DataOffset  = 0x18 + (uint)packed_size,
                 };
                 if (0 == info.SourceBPP)
                     return null;
@@ -108,11 +103,7 @@ namespace GameRes.Formats.Eushully
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as AgfMetaData;
-            if (null == meta)
-                throw new ArgumentException ("AgfFormat.Read should be supplied with AgfMetaData", "info");
-
-            using (var reader = new AgfReader (stream, meta))
+            using (var reader = new AgfReader (stream, (AgfMetaData)info))
             {
                 reader.Unpack();
                 return ImageData.Create (info, reader.Format, null, reader.Data);
@@ -151,6 +142,14 @@ namespace GameRes.Formats.Eushully
             m_palette = info.Palette;
         }
 
+        public static Stream OpenSection (Stream stream, int unpacked_size, int packed_size)
+        {
+            if (unpacked_size != packed_size)
+                return new LzssStream (stream, LzssMode.Decompress, true);
+            else
+                return new StreamRegion (stream, stream.Position, packed_size, true);
+        }
+
         public void Unpack ()
         {
             m_input.ReadInt32();
@@ -158,11 +157,9 @@ namespace GameRes.Formats.Eushully
             int packed_size = m_input.ReadInt32();
             var data_pos = m_input.BaseStream.Position;
             var bmp_data = new byte[data_size];
-            using (var unpacked = new LzssStream (m_input.BaseStream, LzssMode.Decompress, true))
-            {
+            using (var unpacked = OpenSection (m_input.BaseStream, data_size, packed_size))
                 if (data_size != unpacked.Read (bmp_data, 0, data_size))
                     throw new EndOfStreamException();
-            }
             byte[] alpha = null;
             if (32 == m_bpp)
             {
@@ -230,10 +227,11 @@ namespace GameRes.Formats.Eushully
             if (!Binary.AsciiEqual (header, 0, "ACIF"))
                 return null;
             int unpacked_size = LittleEndian.ToInt32 (header, 0x1C);
+            int packed_size = LittleEndian.ToInt32 (header, 0x20);
             if (m_width*m_height != unpacked_size)
                 return null;
             var alpha = new byte[unpacked_size];
-            using (var unpacked = new LzssStream (m_input.BaseStream, LzssMode.Decompress, true))
+            using (var unpacked = OpenSection (m_input.BaseStream, unpacked_size, packed_size))
                 if (unpacked_size != unpacked.Read (alpha, 0, unpacked_size))
                     return null;
             return alpha;
