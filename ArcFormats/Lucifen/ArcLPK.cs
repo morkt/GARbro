@@ -339,7 +339,7 @@ namespace GameRes.Formats.Lucifen
                         } else
                             ++p;
                     }
-                    return true;
+                    return CurrentFileMap.Count > 0;
                 }
             }
         }
