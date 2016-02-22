@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
@@ -61,12 +62,9 @@ namespace GameRes.Formats.Softpal
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            stream.Position = 0x20;
-            using (var reader = new ArcView.Reader (stream))
+            using (var reader = new PgdReader (stream, 0x20))
             {
-                int unpacked_size = reader.ReadInt32();
-                reader.ReadInt32(); // packed_size
-                var planes = Unpack (reader, unpacked_size);
+                var planes = reader.Unpack11();
                 var pixels = new byte[planes.Length];
                 int plane_size = (int)info.Width*(int)info.Height;
                 int b_src = 0;
@@ -85,40 +83,177 @@ namespace GameRes.Formats.Softpal
             }
         }
 
-        byte[] Unpack (BinaryReader input, int unpacked_size)
+        public override void Write (Stream file, ImageData image)
         {
-            var output = new byte[unpacked_size];
-            int dst = 0;
-            int ctl = 2;
-            while (dst < output.Length)
+            throw new NotImplementedException ("Pgd11Format.Write not implemented");
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class Pgd00Format : ImageFormat
+    {
+        public override string         Tag { get { return "PGD/00_C"; } }
+        public override string Description { get { return "Image format used by Softpal subsidiaries"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public Pgd00Format ()
+        {
+            Extensions = new string[] { "pgd" };
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            var header = new byte[0x24];
+            if (header.Length != stream.Read (header, 0, header.Length))
+                return null;
+            if (!Binary.AsciiEqual (header, 0x18, "00_C"))
+                return null;
+            return new ImageMetaData
             {
-                ctl >>= 1;
-                if (1 == ctl)
+                Width   = LittleEndian.ToUInt32 (header, 8),
+                Height  = LittleEndian.ToUInt32 (header, 12),
+                OffsetX = LittleEndian.ToInt32 (header, 0),
+                OffsetY = LittleEndian.ToInt32 (header, 4),
+                BPP     = 32,
+            };
+        }
+
+        public override ImageData Read (Stream stream, ImageMetaData info)
+        {
+            using (var reader = new PgdReader (stream, 0x1C))
+            {
+                var data = reader.Unpack00();
+                using (var tga = new MemoryStream (data))
                 {
-                    ctl = input.ReadByte() | 0x100;
+                    var tga_info = Tga.ReadMetaData (tga);
+                    if (null == tga_info)
+                        throw new InvalidFormatException();
+                    tga.Position = 0;
+                    return Tga.Read (tga, tga_info);
                 }
-                int count;
-                if (0 != (ctl & 1))
-                {
-                    int src = input.ReadUInt16();
-                    count = input.ReadByte();
-                    if (dst >= 0xFFC)
-                        src += dst - 0xFFC;
-                    Binary.CopyOverlapped (output, src, dst, count);
-                }
-                else
-                {
-                    count = input.ReadByte();
-                    input.Read (output, dst, count);
-                }
-                dst += count;
             }
-            return output;
         }
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new System.NotImplementedException ("Pgd11Format.Write not implemented");
+            throw new NotImplementedException ("Pgd00Format.Write not implemented");
         }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class PgdTgaFormat : TgaFormat
+    {
+        public override string         Tag { get { return "PGD/TGA"; } }
+        public override string Description { get { return "Image format used by Softpal subsidiaries"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public PgdTgaFormat ()
+        {
+            Extensions = new string[] { "pgd" };
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            var header = new byte[0x2A];
+            if (header.Length != stream.Read (header, 0, header.Length))
+                return null;
+            int x = LittleEndian.ToInt32 (header, 0);
+            int y = LittleEndian.ToInt32 (header, 4);
+            if (Math.Abs (x) > 0x2000 || Math.Abs (y) > 0x2000)
+                return null;
+            uint width  = LittleEndian.ToUInt32 (header, 8);
+            uint height = LittleEndian.ToUInt32 (header, 12);
+            if (0 == width || 0 == height
+                || width != LittleEndian.ToUInt16 (header, 0x24)
+                || height != LittleEndian.ToUInt16 (header, 0x26))
+                return null;
+            stream.Position = 0x18;
+            var tga_info = base.ReadMetaData (stream);
+            if (null == tga_info)
+                return null;
+            tga_info.OffsetX = x;
+            tga_info.OffsetY = y;
+            return tga_info;
+        }
+
+        public override ImageData Read (Stream stream, ImageMetaData info)
+        {
+            using (var tga = new StreamRegion (stream, 0x18))
+                return base.Read (tga, info);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new NotImplementedException ("PgdTgaFormat.Write not implemented");
+        }
+    }
+
+    internal sealed class PgdReader : IDisposable
+    {
+        BinaryReader        m_input;
+        byte[]              m_output;
+
+        public byte[] Data { get { return m_output; } }
+
+        public PgdReader (Stream input, int position)
+        {
+            input.Position = position;
+            m_input = new ArcView.Reader (input);
+            int unpacked_size = m_input.ReadInt32();
+            m_input.ReadInt32(); // packed_size
+            m_output = new byte[unpacked_size];
+        }
+
+        public byte[] Unpack00 ()
+        {
+            return Unpack (3000);
+        }
+
+        public byte[] Unpack11 ()
+        {
+            return Unpack (0xFFC);
+        }
+
+        byte[] Unpack (int look_behind)
+        {
+            int dst = 0;
+            int ctl = 2;
+            while (dst < m_output.Length)
+            {
+                ctl >>= 1;
+                if (1 == ctl)
+                {
+                    ctl = m_input.ReadByte() | 0x100;
+                }
+                int count;
+                if (0 != (ctl & 1))
+                {
+                    int src = m_input.ReadUInt16();
+                    count = m_input.ReadByte();
+                    if (dst > look_behind)
+                        src += dst - look_behind;
+                    Binary.CopyOverlapped (m_output, src, dst, count);
+                }
+                else
+                {
+                    count = m_input.ReadByte();
+                    m_input.Read (m_output, dst, count);
+                }
+                dst += count;
+            }
+            return m_output;
+        }
+
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_input.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
     }
 }
