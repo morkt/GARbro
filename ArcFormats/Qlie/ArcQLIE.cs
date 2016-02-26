@@ -135,6 +135,8 @@ namespace GameRes.Formats.Qlie
                 // currently, user is prompted to choose encryption scheme only if there's 'key.fkey' file found.
                 if (key_file != null)
                     arc_key = QueryEncryption();
+                if (null == arc_key)
+                    key_file = null;
 
                 var key_data = new byte[0x100];
                 file.View.Read (file.MaxOffset-0x41C, key_data, 0, 0x100);
@@ -170,7 +172,7 @@ namespace GameRes.Formats.Qlie
                 entry.IsEncrypted = 0 != file.View.ReadInt32 (index_offset+0x14);
                 entry.Hash = file.View.ReadUInt32 (index_offset+0x18);
                 entry.KeyFile = key_file;
-                if (3 == pack_version && entry.Name.Contains ("pack_keyfile"))
+                if (3 == pack_version && null != arc_key && entry.Name.Contains ("pack_keyfile"))
                 {
                     // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
                     key_file = ReadEntryBytes (file, entry, name_key, arc_key);
