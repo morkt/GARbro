@@ -45,6 +45,12 @@ namespace GameRes.Encryption
             m_key = key;
         }
 
+        public uint[] Key
+        {
+            get { return m_key; }
+            set { m_key = value; }
+        }
+
         [ThreadStatic]
         static uint[] dst_block;
 
