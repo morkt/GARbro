@@ -140,12 +140,13 @@ namespace GameRes.Formats.Malie
 
         public override ArcFile TryOpen (ArcView file)
         {
+            if (file.MaxOffset <= 0x10)
+                return null;
             var header = new byte[0x10];
             foreach (var key in KnownKeys.Values)
             {
                 var encryption = new Camellia (key);
-                if (0x10 != ReadEncrypted (file.View, encryption, 0, header, 0, 0x10))
-                    continue;
+                ReadEncrypted (file.View, encryption, 0, header, 0, 0x10);
                 LibIndexReader reader;
                 if (Binary.AsciiEqual (header, 0, "LIBP"))
                     reader = new LibPReader (file, encryption, header);
