@@ -306,8 +306,8 @@ namespace GameRes.Formats.Malie
                     m_input.BaseStream.Position = index_pos;
                     var name = ReadName();
                     uint entry_size = m_input.ReadUInt32();
-                    long entry_offset = base_offset + m_input.ReadUInt32();
-                    index_pos = m_input.BaseStream.Position + 4;
+                    long entry_offset = base_offset + m_input.ReadInt64();
+                    index_pos = m_input.BaseStream.Position;
                     bool has_extension = -1 != name.IndexOf ('.');
                     name = Path.Combine (root, name);
                     if (!has_extension && ReadDir (name, entry_offset))
