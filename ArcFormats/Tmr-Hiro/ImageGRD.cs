@@ -114,10 +114,12 @@ namespace GameRes.Formats.TmrHiro
         {
             m_input = input;
             m_info  = info;
-            if (32 == m_info.BPP)
+            if (24 == m_info.BPP)
+                Format = PixelFormats.Bgr24;
+            else if (m_info.AlphaSize > 0)
                 Format = PixelFormats.Bgra32;
             else
-                Format = PixelFormats.Bgr24;
+                Format = PixelFormats.Bgr32;
             int channel_size = (int)(m_info.Width * m_info.Height);
             m_pack_type = m_info.Format >> 8;
             m_pixel_size = m_info.BPP / 8;
@@ -128,7 +130,7 @@ namespace GameRes.Formats.TmrHiro
         public void Unpack ()
         {
             int next_pos = 0x20;
-            if (32 == m_info.BPP)
+            if (32 == m_info.BPP && m_info.AlphaSize > 0)
             {
                 UnpackChannel (3, next_pos, m_info.AlphaSize);
                 next_pos += m_info.AlphaSize;
