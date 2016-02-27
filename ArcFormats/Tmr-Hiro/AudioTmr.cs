@@ -37,7 +37,7 @@ namespace GameRes.Formats.TmrHiro
     {
         public override string         Tag { get { return "WAV/TMR-HIRO"; } }
         public override string Description { get { return "Tmr-Hiro wave audio"; } }
-        public override uint     Signature { get { return 0x44; } }
+        public override uint     Signature { get { return 0; } }
 
         public TmrHiroAudio ()
         {
@@ -46,6 +46,8 @@ namespace GameRes.Formats.TmrHiro
 
         public override SoundInput TryOpen (Stream file)
         {
+            if (file.ReadByte() != 0x44)
+                return null;
             file.Position = 4;
             if (file.ReadByte() != 0)
                 return null;

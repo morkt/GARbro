@@ -101,7 +101,7 @@ namespace GameRes.Formats.TmrHiro
                     entry.Name = Path.ChangeExtension (entry.Name, "grd");
                     entry.Type = "image";
                 }
-                else if (0x44 == signature && entry.Size-9 == file.View.ReadUInt32 (entry.Offset+5))
+                else if (0x44 == (signature & 0xFF) && entry.Size-9 == file.View.ReadUInt32 (entry.Offset+5))
                 {
                     entry.Type = "audio";
                 }
