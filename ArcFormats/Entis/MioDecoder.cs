@@ -71,14 +71,6 @@ namespace GameRes.Formats.Entis
         EriSinCos[]         m_pRevolveParam;
         readonly int[]      m_nFrequencyPoint = new int[7];
 
-        const int MIN_DCT_DEGREE = 2;
-        const int MAX_DCT_DEGREE = 12;
-
-        static MioDecoder ()
-        {
-            eriInitializeMatrix();
-        }
-
         public MioDecoder (MioInfoHeader info)
         {
             m_nBufLength = 0;
@@ -119,7 +111,7 @@ namespace GameRes.Formats.Entis
                 {
                     return false;
                 }
-                if ((m_mioih.SubbandDegree < 8) || (m_mioih.SubbandDegree > MAX_DCT_DEGREE))
+                if ((m_mioih.SubbandDegree < 8) || (m_mioih.SubbandDegree > Erisa.MAX_DCT_DEGREE))
                 {
                     return false;
                 }
@@ -284,7 +276,7 @@ namespace GameRes.Formats.Entis
 
         void InitializeWithDegree (int nSubbandDegree)
         {
-            m_pRevolveParam = eriCreateRevolveParameter (nSubbandDegree);
+            m_pRevolveParam = Erisa.CreateRevolveParameter (nSubbandDegree);
             for (int i = 0, j = 0; i < 7; i ++)
             {
                 int nFrequencyWidth = 1 << (nSubbandDegree + FreqWidth[i]);
@@ -525,17 +517,17 @@ namespace GameRes.Formats.Entis
             IQuantumize (m_ptrMatrixBuf, 0, m_ptrBuffer2, m_ptrNextSource, m_nDegreeNum, nWeightCode, nCoefficient);
             m_ptrNextSource += (int)m_nDegreeNum;
 
-            eriOddGivensInverseMatrix (m_ptrMatrixBuf, 0, m_pRevolveParam, m_nSubbandDegree);
-            eriFastIPLOT (m_ptrMatrixBuf, 0, m_nSubbandDegree);
-            eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, 0, m_nSubbandDegree);
+            Erisa.OddGivensInverseMatrix (m_ptrMatrixBuf, 0, m_pRevolveParam, m_nSubbandDegree);
+            Erisa.FastIPLOT (m_ptrMatrixBuf, 0, m_nSubbandDegree);
+            Erisa.FastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, 0, m_nSubbandDegree);
 
             Array.Copy (m_ptrMatrixBuf, 0, m_ptrLastDCT,   m_ptrLastDCTBuf, m_nDegreeNum);
             Array.Copy (m_ptrWorkBuf,   0, m_ptrMatrixBuf, 0,               m_nDegreeNum);
 
-            eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 0, 1, m_ptrWorkBuf, m_nSubbandDegree);
+            Erisa.FastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 0, 1, m_ptrWorkBuf, m_nSubbandDegree);
             if (nSamples != 0)
             {
-                eriRoundR32ToWordArray (ptrDst, iDst, m_mioih.ChannelCount, m_ptrInternalBuf, (int)nSamples);
+                Erisa.RoundR32ToWordArray (ptrDst, iDst, m_mioih.ChannelCount, m_ptrInternalBuf, (int)nSamples);
             }
         }
 
@@ -551,12 +543,12 @@ namespace GameRes.Formats.Entis
                 m_ptrBuffer1[i * 2 + 1] = m_ptrBuffer2[m_ptrNextSource++];
             }
             IQuantumize (m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrBuffer1, 0, m_nDegreeNum, nWeightCode, nCoefficient);
-            eriOddGivensInverseMatrix (m_ptrLastDCT, m_ptrLastDCTBuf, m_pRevolveParam, m_nSubbandDegree);
+            Erisa.OddGivensInverseMatrix (m_ptrLastDCT, m_ptrLastDCTBuf, m_pRevolveParam, m_nSubbandDegree);
             for (i = 0; i < m_nDegreeNum; i += 2)
             {
                 m_ptrLastDCT[m_ptrLastDCTBuf + i] = m_ptrLastDCT[m_ptrLastDCTBuf + i + 1];
             }
-            eriFastIPLOT (m_ptrLastDCT, m_ptrLastDCTBuf, m_nSubbandDegree);
+            Erisa.FastIPLOT (m_ptrLastDCT, m_ptrLastDCTBuf, m_nSubbandDegree);
         }
 
         void DecodePostBlock (byte[] ptrDst, int iDst, uint nSamples)
@@ -571,22 +563,22 @@ namespace GameRes.Formats.Entis
                 m_ptrBuffer1[i * 2 + 1] = m_ptrBuffer2[m_ptrNextSource++];
             }
             IQuantumize (m_ptrMatrixBuf, 0, m_ptrBuffer1, 0, m_nDegreeNum, nWeightCode, nCoefficient);
-            eriOddGivensInverseMatrix (m_ptrMatrixBuf, 0, m_pRevolveParam, m_nSubbandDegree);
+            Erisa.OddGivensInverseMatrix (m_ptrMatrixBuf, 0, m_pRevolveParam, m_nSubbandDegree);
 
             for (i = 0; i < m_nDegreeNum; i += 2)
             {
                 m_ptrMatrixBuf[i] = - m_ptrMatrixBuf[i + 1];
             }
 
-            eriFastIPLOT (m_ptrMatrixBuf, 0, m_nSubbandDegree);
-            eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, 0, m_nSubbandDegree);
+            Erisa.FastIPLOT (m_ptrMatrixBuf, 0, m_nSubbandDegree);
+            Erisa.FastILOT (m_ptrWorkBuf, m_ptrLastDCT, m_ptrLastDCTBuf, m_ptrMatrixBuf, 0, m_nSubbandDegree);
 
             Array.Copy (m_ptrWorkBuf, 0, m_ptrMatrixBuf, 0, m_nDegreeNum);
 
-            eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 0, 1, m_ptrWorkBuf, m_nSubbandDegree);
+            Erisa.FastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, 0, 1, m_ptrWorkBuf, m_nSubbandDegree);
             if (nSamples != 0)
             {
-                eriRoundR32ToWordArray (ptrDst, iDst, m_mioih.ChannelCount, m_ptrInternalBuf, (int)nSamples);
+                Erisa.RoundR32ToWordArray (ptrDst, iDst, m_mioih.ChannelCount, m_ptrInternalBuf, (int)nSamples);
             }
         }
 
@@ -807,18 +799,18 @@ namespace GameRes.Formats.Entis
 
             float rSin = (float)Math.Sin (nRevCode * Math.PI / 8);
             float rCos = (float)Math.Cos (nRevCode * Math.PI / 8);
-            eriRevolve2x2 (m_ptrLastDCT, ptrLapBuf1, m_ptrLastDCT, ptrLapBuf2, rSin, rCos, 1, m_nDegreeNum);
+            Erisa.Revolve2x2 (m_ptrLastDCT, ptrLapBuf1, m_ptrLastDCT, ptrLapBuf2, rSin, rCos, 1, m_nDegreeNum);
 
             ptrLapBuf = 0; //m_ptrLastDCT;
             for (i = 0; i < 2; i++)
             {
-                eriOddGivensInverseMatrix (m_ptrLastDCT, ptrLapBuf, m_pRevolveParam, m_nSubbandDegree);
+                Erisa.OddGivensInverseMatrix (m_ptrLastDCT, ptrLapBuf, m_pRevolveParam, m_nSubbandDegree);
 
                 for (j = 0; j < m_nDegreeNum; j += 2)
                 {
                     m_ptrLastDCT[ptrLapBuf + j] = m_ptrLastDCT[ptrLapBuf + j + 1];
                 }
-                eriFastIPLOT (m_ptrLastDCT, ptrLapBuf, m_nSubbandDegree);
+                Erisa.FastIPLOT (m_ptrLastDCT, ptrLapBuf, m_nSubbandDegree);
                 ptrLapBuf += (int)m_nDegreeNum;
             }
         }
@@ -846,27 +838,27 @@ namespace GameRes.Formats.Entis
 
             float rSin = (float) Math.Sin (nRevCode1 * Math.PI / 8);
             float rCos = (float) Math.Cos (nRevCode1 * Math.PI / 8);
-            eriRevolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1, m_ptrMatrixBuf, ptrSrcBuf2, rSin, rCos, 2, m_nDegreeNum / 2);
+            Erisa.Revolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1, m_ptrMatrixBuf, ptrSrcBuf2, rSin, rCos, 2, m_nDegreeNum / 2);
 
             rSin = (float) Math.Sin (nRevCode2 * Math.PI / 8);
             rCos = (float) Math.Cos (nRevCode2 * Math.PI / 8);
-            eriRevolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1 + 1, m_ptrMatrixBuf, ptrSrcBuf2 + 1, rSin, rCos, 2, m_nDegreeNum / 2);
+            Erisa.Revolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1 + 1, m_ptrMatrixBuf, ptrSrcBuf2 + 1, rSin, rCos, 2, m_nDegreeNum / 2);
 
             ptrSrcBuf = 0; // m_ptrMatrixBuf;
 
             for (int i = 0; i < 2; i++)
             {
-                eriOddGivensInverseMatrix (m_ptrMatrixBuf, ptrSrcBuf, m_pRevolveParam, m_nSubbandDegree);
-                eriFastIPLOT (m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
-                eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, ptrLapBuf, m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+                Erisa.OddGivensInverseMatrix (m_ptrMatrixBuf, ptrSrcBuf, m_pRevolveParam, m_nSubbandDegree);
+                Erisa.FastIPLOT (m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+                Erisa.FastILOT (m_ptrWorkBuf, m_ptrLastDCT, ptrLapBuf, m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
 
                 Array.Copy (m_ptrMatrixBuf, ptrSrcBuf, m_ptrLastDCT,   ptrLapBuf, m_nDegreeNum);
                 Array.Copy (m_ptrWorkBuf,   0,         m_ptrMatrixBuf, ptrSrcBuf, m_nDegreeNum);
 
-                eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, ptrSrcBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
+                Erisa.FastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, ptrSrcBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
                 if (nSamples != 0)
                 {
-                    eriRoundR32ToWordArray (ptrDst, iDst + (int)i*2, 2, m_ptrInternalBuf, (int)nSamples);
+                    Erisa.RoundR32ToWordArray (ptrDst, iDst + (int)i*2, 2, m_ptrInternalBuf, (int)nSamples);
                 }
                 ptrSrcBuf += m_nDegreeNum;
                 ptrLapBuf += m_nDegreeNum;
@@ -901,27 +893,27 @@ namespace GameRes.Formats.Entis
 
             rSin = (float) Math.Sin (nRevCode * Math.PI / 8);
             rCos = (float) Math.Cos (nRevCode * Math.PI / 8);
-            eriRevolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1, m_ptrMatrixBuf, ptrSrcBuf2, rSin, rCos, 1, m_nDegreeNum);
+            Erisa.Revolve2x2 (m_ptrMatrixBuf, ptrSrcBuf1, m_ptrMatrixBuf, ptrSrcBuf2, rSin, rCos, 1, m_nDegreeNum);
 
             ptrSrcBuf = 0; // m_ptrMatrixBuf;
 
             for (i = 0; i < 2; i ++)
             {
-                eriOddGivensInverseMatrix (m_ptrMatrixBuf, ptrSrcBuf, m_pRevolveParam, m_nSubbandDegree);
+                Erisa.OddGivensInverseMatrix (m_ptrMatrixBuf, ptrSrcBuf, m_pRevolveParam, m_nSubbandDegree);
 
                 for (j = 0; j < m_nDegreeNum; j += 2)
                 {
                     m_ptrMatrixBuf[ptrSrcBuf + j] = -m_ptrMatrixBuf[ptrSrcBuf + j + 1];
                 }
-                eriFastIPLOT (m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
-                eriFastILOT (m_ptrWorkBuf, m_ptrLastDCT, ptrLapBuf, m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+                Erisa.FastIPLOT (m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
+                Erisa.FastILOT (m_ptrWorkBuf, m_ptrLastDCT, ptrLapBuf, m_ptrMatrixBuf, ptrSrcBuf, m_nSubbandDegree);
 
                 Array.Copy (m_ptrWorkBuf, 0, m_ptrMatrixBuf, ptrSrcBuf, m_nDegreeNum);
 
-                eriFastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, ptrSrcBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
+                Erisa.FastIDCT (m_ptrInternalBuf, m_ptrMatrixBuf, ptrSrcBuf, 1, m_ptrWorkBuf, m_nSubbandDegree);
                 if (nSamples != 0)
                 {
-                    eriRoundR32ToWordArray (ptrDst, iDst + (int)i*2, 2, m_ptrInternalBuf, (int)nSamples);
+                    Erisa.RoundR32ToWordArray (ptrDst, iDst + (int)i*2, 2, m_ptrInternalBuf, (int)nSamples);
                 }
                 ptrLapBuf += m_nDegreeNum;
                 ptrSrcBuf += m_nDegreeNum;
@@ -970,347 +962,6 @@ namespace GameRes.Formats.Entis
             for (i = 0; i < nDegreeNum; i ++)
             {
                 ptrDestination[dst + i] = (float) (rCoefficient * m_ptrWeightTable[i] * ptrQuantumized[qsrc+i]);
-            }
-        }
-
-        static readonly float ERI_rCosPI4  = (float)Math.Cos (Math.PI / 4);
-        static readonly float ERI_r2CosPI4 = 2 * ERI_rCosPI4;
-        static readonly float[] ERI_DCTofK2 = new float[2];     // = cos( (2*i+1) / 8 )
-        static readonly float[] ERI_DCTofK4 = new float[4];     // = cos( (2*i+1) / 16 )
-        static readonly float[] ERI_DCTofK8 = new float[8];     // = cos( (2*i+1) / 32 )
-        static readonly float[] ERI_DCTofK16 = new float[16];   // = cos( (2*i+1) / 64 )
-        static readonly float[] ERI_DCTofK32 = new float[32];   // = cos( (2*i+1) / 128 )
-        static readonly float[] ERI_DCTofK64 = new float[64];   // = cos( (2*i+1) / 256 )
-        static readonly float[] ERI_DCTofK128 = new float[128]; // = cos( (2*i+1) / 512 )
-        static readonly float[] ERI_DCTofK256 = new float[256]; // = cos( (2*i+1) / 1024 )
-        static readonly float[] ERI_DCTofK512 = new float[512]; // = cos( (2*i+1) / 2048 )
-        static readonly float[] ERI_DCTofK1024 = new float[1024]; // = cos( (2*i+1) / 4096 )
-        static readonly float[] ERI_DCTofK2048 = new float[2048]; // = cos( (2*i+1) / 8192 )
-
-        static readonly float[][] ERI_pMatrixDCTofK = new float[MAX_DCT_DEGREE][]
-        {
-            null,
-            ERI_DCTofK2,
-            ERI_DCTofK4,
-            ERI_DCTofK8,
-            ERI_DCTofK16,
-            ERI_DCTofK32,
-            ERI_DCTofK64,
-            ERI_DCTofK128,
-            ERI_DCTofK256,
-            ERI_DCTofK512,
-            ERI_DCTofK1024,
-            ERI_DCTofK2048
-        };
-
-        static void eriInitializeMatrix ()
-        {
-            for (int i = 1; i < MAX_DCT_DEGREE; i++)
-            {
-                int     n = (1 << i);
-                float[] pDCTofK = ERI_pMatrixDCTofK[i];
-                double  nr = Math.PI / (4.0 * n);
-                double  dr = nr + nr;
-                double  ir = nr;
-                for (int j = 0; j < n; j++)
-                {
-                    pDCTofK[j] = (float)Math.Cos (ir);
-                    ir += dr;
-                }
-            }
-        }
-
-        static void eriRoundR32ToWordArray (byte[] ptrDst, int dst, int nStep, float[] ptrSrc, int nCount)
-        {
-            nStep *= 2;
-            for (int i = 0; i < nCount; i++)
-            {
-                int nValue = eriRoundR32ToInt (ptrSrc[i]);
-                if (nValue <= -0x8000)
-                {
-                    LittleEndian.Pack ((short)-0x8000, ptrDst, dst);
-                }
-                else if (nValue >= 0x7FFF)
-                {
-                    LittleEndian.Pack ((short)0x7FFF, ptrDst, dst);
-                }
-                else
-                {
-                    LittleEndian.Pack ((short)nValue, ptrDst, dst);
-                }
-                dst += nStep;
-            }
-        }
-
-        static int eriRoundR32ToInt (float r)
-        {
-            if (r >= 0.0)
-                return (int)Math.Floor (r + 0.5);
-            else
-                return (int)Math.Ceiling (r - 0.5);
-        }
-
-        static EriSinCos[] eriCreateRevolveParameter (int nDegreeDCT)
-        {
-            int nDegreeNum = 1 << nDegreeDCT;
-            int lc = 1;
-            for (int n = nDegreeNum / 2; n >= 8; n /= 8)
-            {
-                ++lc;
-            }
-            EriSinCos[] ptrRevolve = new EriSinCos[lc*8];
-
-            double k = Math.PI / (nDegreeNum * 2);
-            int ptrNextRev = 0;
-            int nStep = 2;
-            do
-            {
-                for (int i = 0; i < 7; i++)
-                {
-                    double ws = 1.0;
-                    double a = 0.0;
-                    for (int j = 0; j < i; j++)
-                    {
-                        a += nStep;
-                        ws = ws * ptrRevolve[ptrNextRev+j].rSin + ptrRevolve[ptrNextRev+j].rCos * Math.Cos (a * k);
-                    }
-                    double r = Math.Atan2 (ws, Math.Cos ((a + nStep) * k));
-                    ptrRevolve[ptrNextRev+i].rSin = (float)Math.Sin (r);
-                    ptrRevolve[ptrNextRev+i].rCos = (float)Math.Cos (r);
-                }
-                ptrNextRev += 7;
-                nStep *= 8;
-            }
-            while (nStep < nDegreeNum);
-            return ptrRevolve;
-        }
-
-        static void eriOddGivensInverseMatrix (float[] ptrSrc, int src, EriSinCos[] ptrRevolve, int nDegreeDCT)
-        {
-            int nDegreeNum = 1 << nDegreeDCT;
-            int index = 1;
-            int nStep = 2;
-            int lc = (nDegreeNum / 2) / 8;
-            int resolve_idx = 0;
-            for (;;)
-            {
-                resolve_idx += 7;
-                index += nStep * 7;
-                nStep *= 8;
-                if (lc <= 8)
-                    break;
-                lc /= 8;
-            }
-            int k = index + nStep * (lc - 2);
-            int j;
-            float r1, r2;
-            for (j = lc - 2; j >= 0; j--)
-            {
-                r1 = ptrSrc[src + k];
-                r2 = ptrSrc[src + k + nStep];
-                ptrSrc[src + k] = r1 * ptrRevolve[resolve_idx+j].rCos + r2 * ptrRevolve[resolve_idx+j].rSin;
-                ptrSrc[src + k + nStep] = r2 * ptrRevolve[resolve_idx+j].rCos - r1 * ptrRevolve[resolve_idx+j].rSin;
-                k -= nStep;
-            }
-            for (; lc <= (nDegreeNum / 2) / 8; lc *= 8)
-            {
-                resolve_idx -= 7;
-                nStep /= 8;
-                index -= nStep * 7;
-                for (int i = 0; i < lc; i++)
-                {
-                    k = i * (nStep * 8) + index + nStep * 6;
-                    for ( j = 6; j >= 0; j -- )
-                    {
-                        r1 = ptrSrc[src + k];
-                        r2 = ptrSrc[src + k + nStep];
-                        ptrSrc[src + k]         =
-                            r1 * ptrRevolve[resolve_idx+j].rCos + r2 * ptrRevolve[resolve_idx+j].rSin;
-                        ptrSrc[src + k + nStep] =
-                            r2 * ptrRevolve[resolve_idx+j].rCos - r1 * ptrRevolve[resolve_idx+j].rSin;
-                        k -= nStep;
-                    }
-                }
-            }
-        }
-
-        static void eriFastIPLOT (float[] ptrSrc, int src, int nDegreeDCT)
-        {
-            int nDegreeNum = 1 << nDegreeDCT;
-            for (int i = 0; i < nDegreeNum; i += 2)
-            {
-                float r1 = ptrSrc[src + i];
-                float r2 = ptrSrc[src + i + 1];
-                ptrSrc[src + i]     = 0.5f * (r1 + r2);
-                ptrSrc[src + i + 1] = 0.5f * (r1 - r2);
-            }
-        }
-
-        static void eriFastILOT (float[] ptrDst, float[] ptrSrc1, int src1, float[] ptrSrc2, int src2, int nDegreeDCT)
-        {
-            int nDegreeNum = 1 << nDegreeDCT;
-            for (int i = 0; i < nDegreeNum; i += 2)
-            {
-                float r1 = ptrSrc1[src1 + i];
-                float r2 = ptrSrc2[src2 + i + 1];
-                ptrDst[i]     = r1 + r2;
-                ptrDst[i + 1] = r1 - r2;
-            }
-        }
-
-        static void eriFastDCT (float[] ptrDst, int dst, int nDstInterval, float[] ptrSrc, int src, float[] ptrWorkBuf, int work, int nDegreeDCT)
-        {
-            Debug.Assert ((nDegreeDCT >= MIN_DCT_DEGREE) && (nDegreeDCT <= MAX_DCT_DEGREE));
-
-            if (nDegreeDCT == MIN_DCT_DEGREE)
-            {
-                float[] r32Buf = new float[4];
-                r32Buf[0] = ptrSrc[src] + ptrSrc[src+3];
-                r32Buf[2] = ptrSrc[src] - ptrSrc[src+3];
-                r32Buf[1] = ptrSrc[src+1] + ptrSrc[src+2];
-                r32Buf[3] = ptrSrc[src+1] - ptrSrc[src+2];
-
-                ptrDst[dst]                = 0.5f * (r32Buf[0] + r32Buf[1]);
-                ptrDst[dst+nDstInterval * 2] = ERI_rCosPI4 * (r32Buf[0] - r32Buf[1]);
-
-                r32Buf[2] = ERI_DCTofK2[0] * r32Buf[2];
-                r32Buf[3] = ERI_DCTofK2[1] * r32Buf[3];
-
-                r32Buf[0] =                 r32Buf[2] + r32Buf[3];
-                r32Buf[1] = ERI_r2CosPI4 * (r32Buf[2] - r32Buf[3]);
-
-                r32Buf[1] -= r32Buf[0];
-
-                ptrDst[dst+nDstInterval]     = r32Buf[0];
-                ptrDst[dst+nDstInterval * 3] = r32Buf[1];
-            }
-            else
-            {
-                uint i;
-                uint nDegreeNum = 1u << nDegreeDCT;
-                uint nHalfDegree = nDegreeNum >> 1;
-                for (i = 0; i < nHalfDegree; i++)
-                {
-                    ptrWorkBuf[work+i] = ptrSrc[src+i] + ptrSrc[src + nDegreeNum - i - 1];
-                    ptrWorkBuf[work+i + nHalfDegree] = ptrSrc[src+i] - ptrSrc[src + nDegreeNum - i - 1];
-                }
-                int nDstStep = nDstInterval << 1;
-                eriFastDCT (ptrDst, dst, nDstStep, ptrWorkBuf, work, ptrSrc, src, nDegreeDCT - 1);
-
-                float[] pDCTofK = ERI_pMatrixDCTofK[nDegreeDCT - 1];
-                src = (int)(work+nHalfDegree); // ptrSrc = ptrWorkBuf + nHalfDegree;
-                dst += nDstInterval;    // ptrDst += nDstInterval;
-
-                for (i = 0; i < nHalfDegree; i++)
-                {
-                    ptrWorkBuf[src + i] *= pDCTofK[i];
-                }
-
-                eriFastDCT (ptrDst, dst, nDstStep, ptrWorkBuf, src, ptrWorkBuf, work, nDegreeDCT - 1);
-                // eriFastDCT (ptrDst, nDstStep, ptrSrc, ptrWorkBuf, nDegreeDCT - 1);
-
-                int ptrNext = dst; // within ptrDst;
-                for (i = 0; i < nHalfDegree; i++)
-                {
-                    ptrDst[ptrNext] += ptrDst[ptrNext]; // *ptrNext += *ptrNext;
-                    ptrNext += nDstStep;
-                }
-                ptrNext = dst;
-                for (i = 1; i < nHalfDegree; i ++)
-                {
-                    ptrDst[ptrNext + nDstStep] -= ptrDst[ptrNext];
-                    ptrNext += nDstStep;
-                }
-            }
-        }
-
-        static void eriFastIDCT (float[] ptrDst, float[] srcBuf, int ptrSrc, int nSrcInterval, float[] ptrWorkBuf, int nDegreeDCT)
-        {
-            Debug.Assert ((nDegreeDCT >= MIN_DCT_DEGREE) && (nDegreeDCT <= MAX_DCT_DEGREE));
-
-            if (nDegreeDCT == MIN_DCT_DEGREE)
-            {
-                float[] r32Buf1 = new float[2];
-                float[] r32Buf2 = new float[4];
-
-                r32Buf1[0] = srcBuf[ptrSrc];
-                r32Buf1[1] = ERI_rCosPI4 * srcBuf[ptrSrc + nSrcInterval * 2];
-
-                r32Buf2[0] = r32Buf1[0] + r32Buf1[1];
-                r32Buf2[1] = r32Buf1[0] - r32Buf1[1];
-
-                r32Buf1[0] = ERI_DCTofK2[0] * srcBuf[ptrSrc + nSrcInterval];
-                r32Buf1[1] = ERI_DCTofK2[1] * srcBuf[ptrSrc + nSrcInterval * 3];
-
-                r32Buf2[2] =                 r32Buf1[0] + r32Buf1[1];
-                r32Buf2[3] = ERI_r2CosPI4 * (r32Buf1[0] - r32Buf1[1]);
-
-                r32Buf2[3] -= r32Buf2[2];
-
-                ptrDst[0] = r32Buf2[0] + r32Buf2[2];
-                ptrDst[3] = r32Buf2[0] - r32Buf2[2];
-                ptrDst[1] = r32Buf2[1] + r32Buf2[3];
-                ptrDst[2] = r32Buf2[1] - r32Buf2[3];
-            }
-            else
-            {
-                uint nDegreeNum = 1u << nDegreeDCT;
-                uint nHalfDegree = nDegreeNum >> 1;
-                int nSrcStep = nSrcInterval << 1;
-                eriFastIDCT (ptrDst, srcBuf, ptrSrc, nSrcStep, ptrWorkBuf, nDegreeDCT - 1);
-
-                float[] pDCTofK = ERI_pMatrixDCTofK[nDegreeDCT - 1];
-                int pOddDst = (int)nHalfDegree; // within ptrDst
-                int ptrNext = ptrSrc + nSrcInterval; // within srcBuf
-
-                uint i;
-                for (i = 0; i < nHalfDegree; i++)
-                {
-                    ptrWorkBuf[i] = srcBuf[ptrNext] * pDCTofK[i];
-                    ptrNext += nSrcStep;
-                }
-
-                eriFastDCT (ptrDst, pOddDst, 1, ptrWorkBuf, 0, ptrWorkBuf, (int)nHalfDegree, nDegreeDCT - 1);
-                // eriFastDCT(pOddDst, 1, ptrWorkBuf, (ptrWorkBuf + nHalfDegree), nDegreeDCT - 1);
-
-                for (i = 0; i < nHalfDegree; i ++)
-                {
-                    ptrDst[pOddDst + i] += ptrDst[pOddDst + i];
-                }
-
-                for (i = 1; i < nHalfDegree; i++)
-                {
-                    ptrDst[pOddDst + i] -= ptrDst[pOddDst + i - 1];
-                }
-                float[] r32Buf = new float[4];
-                uint nQuadDegree = nHalfDegree >> 1;
-                for (i = 0; i < nQuadDegree; i++)
-                {
-                    r32Buf[0] = ptrDst[i] + ptrDst[nHalfDegree + i];
-                    r32Buf[3] = ptrDst[i] - ptrDst[nHalfDegree + i];
-                    r32Buf[1] = ptrDst[nHalfDegree - 1 - i] + ptrDst[nDegreeNum - 1 - i];
-                    r32Buf[2] = ptrDst[nHalfDegree - 1 - i] - ptrDst[nDegreeNum - 1 - i];
-
-                    ptrDst[i]                   = r32Buf[0];
-                    ptrDst[nHalfDegree - 1 - i] = r32Buf[1];
-                    ptrDst[nHalfDegree + i]     = r32Buf[2];
-                    ptrDst[nDegreeNum - 1 - i]  = r32Buf[3];
-                }
-            }
-        }
-
-        void eriRevolve2x2 (float[] buf1, int ptrBuf1, float[] buf2, int ptrBuf2, float rSin, float rCos, int nStep, int nCount)
-        {
-            for (int i = 0; i < nCount; i++)
-            {
-                float r1 = buf1[ptrBuf1];
-                float r2 = buf2[ptrBuf2];
-
-                buf1[ptrBuf1] = r1 * rCos - r2 * rSin;
-                buf2[ptrBuf2] = r1 * rSin + r2 * rCos;
-
-                ptrBuf1 += nStep;
-                ptrBuf2 += nStep;
             }
         }
     }

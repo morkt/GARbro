@@ -66,6 +66,7 @@
     <Compile Include="Abel\ImageGPS.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="Entis\ErisaMatrix.cs" />
     <Compile Include="ImageLZ.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
     <Compile Include="SimpleEncryption.cs" />

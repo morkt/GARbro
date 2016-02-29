@@ -40,10 +40,10 @@ namespace GameRes.Formats.Entis
         public int      Version;
         public CvType   Transformation;
         public EriCode  Architecture;
-        public int      FormatType;
+        public EriType FormatType;
         public bool     VerticalFlip;
         public int      ClippedPixel;
-        public int      SamplingFlags;
+        public EriSampling SamplingFlags;
         public ulong    QuantumizedBits;
         public ulong    AllottedBits;
         public int      BlockingDegree;
@@ -79,7 +79,8 @@ namespace GameRes.Formats.Entis
         Nemesis             = -16,
     }
 
-    public enum EriImage
+    [Flags]
+    public enum EriType
     {
         RGB         = 0x00000001,
         Gray        = 0x00000002,
@@ -88,11 +89,18 @@ namespace GameRes.Formats.Entis
         HSB         = 0x00000006,
         RGBA        = 0x04000001,
         BGRA        = 0x04000003,
-        TypeMask    = 0x0000FFFF,
+        Mask        = 0x0000FFFF,
         WithPalette = 0x01000000,
         UseClipping = 0x02000000,
         WithAlpha   = 0x04000000,
         SideBySide  = 0x10000000,
+    }
+
+    public enum EriSampling
+    {
+        YUV_4_4_4 = 0x00040404,
+        YUV_4_2_2 = 0x00040202,
+        YUV_4_1_1 = 0x00040101,
     }
 
     internal class EriFile : BinaryReader
@@ -185,7 +193,7 @@ namespace GameRes.Formats.Entis
                         info = new EriMetaData { StreamPos = stream_pos, Version = version };
                         info.Transformation = (CvType)reader.ReadInt32();
                         info.Architecture = (EriCode)reader.ReadInt32();
-                        info.FormatType = reader.ReadInt32();
+                        info.FormatType = (EriType)reader.ReadInt32();
                         int w = reader.ReadInt32();
                         int h = reader.ReadInt32();
                         info.Width  = (uint)Math.Abs (w);
@@ -193,7 +201,7 @@ namespace GameRes.Formats.Entis
                         info.VerticalFlip = h < 0;
                         info.BPP = reader.ReadInt32();
                         info.ClippedPixel = reader.ReadInt32();
-                        info.SamplingFlags = reader.ReadInt32();
+                        info.SamplingFlags = (EriSampling)reader.ReadInt32();
                         info.QuantumizedBits = reader.ReadUInt64();
                         info.AllottedBits = reader.ReadUInt64();
                         info.BlockingDegree = reader.ReadInt32();

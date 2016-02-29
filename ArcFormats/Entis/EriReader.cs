@@ -22,20 +22,20 @@ namespace GameRes.Formats.Entis
         ERISADecodeContext m_context;
         int             m_dst;
 
-        uint            m_nBlockSize;
-        uint            m_nBlockArea;
-        uint            m_nBlockSamples;
-        uint            m_nChannelCount;
-        uint            m_nWidthBlocks;
-        uint            m_nHeightBlocks;
+        int             m_nBlockSize;
+        int             m_nBlockArea;
+        int             m_nBlockSamples;
+        int             m_nChannelCount;
+        int             m_nWidthBlocks;
+        int             m_nHeightBlocks;
 
         int             m_dwBytesPerLine;
 
         int             m_ptrDstBlock;
         int             m_nDstLineBytes;
         int             m_nDstPixelBytes;
-        uint            m_nDstWidth;
-        uint            m_nDstHeight;
+        int             m_nDstWidth;
+        int             m_nDstHeight;
 
         // buffers for lossless encoding
         byte[]          m_ptrOperations;
@@ -44,6 +44,28 @@ namespace GameRes.Formats.Entis
         sbyte[]         m_ptrDecodeBuf;
         sbyte[]         m_ptrArrangeBuf;
         int[]           m_pArrangeTable = new int[4];
+
+        // lossy encoding
+        int             m_nBlocksetCount;
+        int             m_nYUVLineBytes;
+        int             m_nYUVPixelBytes;
+        sbyte[]         m_ptrLossyOps;
+        float[]         m_ptrVertBufLOT;
+        float[]         m_ptrHorzBufLOT;
+        float[][]       m_ptrBlocksetBuf;
+        float[]         m_ptrMatrixBuf;
+        float[]         m_ptrIQParamBuf;
+        byte[]          m_ptrIQParamTable;
+
+        sbyte[]         m_ptrBlockLineBuf;
+        sbyte[]         m_ptrNextBlockBuf;
+        sbyte[]         m_ptrImageBuf;
+        sbyte[]         m_ptrYUVImage;
+
+        sbyte[]         m_ptrMovingVector;
+        sbyte[]         m_ptrMoveVecFlags;
+        int[]           m_ptrMovePrevBlocks;
+        int[]           m_ptrNextPrevBlocks;
 
         HuffmanTree     m_pHuffmanTree;
         ErisaProbModel  m_pProbERISA;
@@ -60,6 +82,40 @@ namespace GameRes.Formats.Entis
         {
             m_info = info;
             m_src_frame = key_frame;
+            switch (m_info.Architecture)
+            {
+            case EriCode.Nemesis:
+            case EriCode.RunlengthHuffman:
+            case EriCode.RunlengthGamma:
+                if (CvType.Lossless_ERI == m_info.Transformation && 0 == m_info.BlockingDegree)
+                    throw new InvalidFormatException();
+                break;
+            case EriCode.ArithmeticCode:
+                if (CvType.Lossless_ERI != m_info.Transformation)
+                    throw new InvalidFormatException();
+                break;
+            default:
+                throw new InvalidFormatException();
+            }
+            switch (m_info.FormatType & EriType.Mask)
+            {
+            case EriType.RGB:
+                if (m_info.BPP <= 8)
+                    m_nChannelCount = 1;
+                else if (0 == (m_info.FormatType & EriType.WithAlpha))
+                    m_nChannelCount = 3;
+                else
+                    m_nChannelCount = 4;
+                break;
+
+            case EriType.Gray:
+                m_nChannelCount = 1;
+                break;
+
+            default:
+                throw new InvalidFormatException();
+            }
+
             if (CvType.Lossless_ERI == m_info.Transformation)
                 InitializeLossless();
             else if (CvType.LOT_ERI == m_info.Transformation
@@ -67,6 +123,7 @@ namespace GameRes.Formats.Entis
                 InitializeLossy();
             else
                 throw new NotSupportedException ("Not supported ERI compression");
+
             if (null != palette)
                 Palette = new BitmapPalette (palette);
             CreateImageBuffer();
@@ -95,46 +152,13 @@ namespace GameRes.Formats.Entis
 
         private void InitializeLossless ()
         {
-            switch (m_info.Architecture)
-            {
-            case EriCode.Nemesis:
-            case EriCode.RunlengthHuffman:
-            case EriCode.RunlengthGamma:
-                if (0 == m_info.BlockingDegree)
-                    throw new InvalidFormatException();
-                break;
-            case EriCode.ArithmeticCode:
-                break;
-            default:
-                throw new InvalidFormatException();
-            }
-
-            switch (m_info.FormatType & (int)EriImage.TypeMask)
-            {
-            case (int)EriImage.RGB:
-                if (m_info.BPP <= 8)
-                    m_nChannelCount = 1;
-                else if (0 == (m_info.FormatType & (int)EriImage.WithAlpha))
-                    m_nChannelCount = 3;
-                else
-                    m_nChannelCount = 4;
-                break;
-
-            case (int)EriImage.Gray:
-                m_nChannelCount = 1;
-                break;
-
-            default:
-                throw new InvalidFormatException();
-            }
-
             if (0 != m_info.BlockingDegree)
             {
-                m_nBlockSize = (uint) (1 << m_info.BlockingDegree);
-                m_nBlockArea = (uint) (1 << (m_info.BlockingDegree * 2));
+                m_nBlockSize = 1 << m_info.BlockingDegree;
+                m_nBlockArea = 1 << (m_info.BlockingDegree * 2);
                 m_nBlockSamples = m_nBlockArea * m_nChannelCount;
-                m_nWidthBlocks  = (uint)((m_info.Width  + m_nBlockSize - 1) >> m_info.BlockingDegree);
-                m_nHeightBlocks = (uint)((m_info.Height + m_nBlockSize - 1) >> m_info.BlockingDegree);
+                m_nWidthBlocks  = ((int)m_info.Width  + m_nBlockSize - 1) >> m_info.BlockingDegree;
+                m_nHeightBlocks = ((int)m_info.Height + m_nBlockSize - 1) >> m_info.BlockingDegree;
 
                 m_ptrOperations = new byte[m_nWidthBlocks * m_nHeightBlocks];
                 m_ptrColumnBuf  = new sbyte[m_nBlockSize * m_nChannelCount];
@@ -165,25 +189,99 @@ namespace GameRes.Formats.Entis
 
         private void InitializeLossy ()
         {
-            throw new NotImplementedException ("Lossy ERI compression not implemented");
+            if (3 != m_info.BlockingDegree)
+                throw new InvalidFormatException();
+
+            m_nBlockSize = 1 << m_info.BlockingDegree;
+            m_nBlockArea = 1 << (m_info.BlockingDegree * 2);
+            m_nBlockSamples = m_nBlockArea * m_nChannelCount;
+            m_nWidthBlocks  = ((int)m_info.Width + m_nBlockSize * 2 - 1) >> (m_info.BlockingDegree + 1);
+            m_nHeightBlocks = ((int)m_info.Height + m_nBlockSize * 2 - 1) >> (m_info.BlockingDegree + 1);
+
+            if (CvType.LOT_ERI == m_info.Transformation)
+            {
+                ++m_nWidthBlocks;
+                ++m_nHeightBlocks;
+            }
+
+            if (EriSampling.YUV_4_4_4  == m_info.SamplingFlags)
+            {
+                m_nBlocksetCount = m_nChannelCount * 4;
+            }
+            else if (EriSampling.YUV_4_1_1 == m_info.SamplingFlags)
+            {
+                switch (m_nChannelCount)
+                {
+                case 1:
+                    m_nBlocksetCount = 4;
+                    break;
+                case 3:
+                    m_nBlocksetCount = 6;
+                    break;
+                case 4:
+                    m_nBlocksetCount = 10;
+                    break;
+                default:
+                    throw new InvalidFormatException();
+                }
+            }
+            else
+                throw new InvalidFormatException();
+
+            m_ptrDecodeBuf  = new sbyte[m_nBlockArea * 16];
+            m_ptrVertBufLOT = new float[m_nBlockSamples * 2 * m_nWidthBlocks];
+            m_ptrHorzBufLOT = new float[m_nBlockSamples * 2];
+            m_ptrBlocksetBuf = new float[16][];
+            m_ptrMatrixBuf = new float[m_nBlockArea * 16];
+            m_ptrIQParamBuf = new float[m_nBlockArea * 2];
+            m_ptrIQParamTable = new byte[m_nBlockArea * 2];
+
+            int dwTotalBlocks = m_nWidthBlocks * m_nHeightBlocks;
+            m_ptrLossyOps = new sbyte[dwTotalBlocks * 2];
+            m_ptrImageBuf = new sbyte[dwTotalBlocks * m_nBlockArea * m_nBlocksetCount];
+            m_ptrMovingVector = new sbyte[dwTotalBlocks * 4];
+            m_ptrMoveVecFlags = new sbyte[dwTotalBlocks];
+            m_ptrMovePrevBlocks = new int[dwTotalBlocks * 4];
+
+            for (int i = 0; i < 16; i ++)
+            {
+                m_ptrBlocksetBuf[i] = new float[m_nBlockArea];
+            }
+
+            m_nYUVPixelBytes = m_nChannelCount;
+            if (3 == m_nYUVPixelBytes)
+            {
+                m_nYUVPixelBytes = 4;
+            }
+            m_nYUVLineBytes = ((m_nYUVPixelBytes * m_nWidthBlocks * m_nBlockSize * 2) + 0xF) & (~0xF);
+            int nYUVImageSize = m_nYUVLineBytes * m_nHeightBlocks * m_nBlockSize * 2;
+            m_ptrBlockLineBuf = new sbyte[m_nYUVLineBytes * 16];
+            m_ptrYUVImage = new sbyte[nYUVImageSize];
+
+            InitializeZigZagTable();
+
+            m_pHuffmanTree = new HuffmanTree();
+            m_pProbERISA = new ErisaProbModel();
+
+            m_context = new HuffmanDecodeContext (0x10000);
         }
 
         int[] m_ptrTable;
 
         void InitializeArrangeTable ()
         {
-            uint i, j, k, l, m;
+            int i, j, k, l, m;
 
             m_ptrTable = new int[m_nBlockSamples * 4];
             m_pArrangeTable[0] = 0;
-            m_pArrangeTable[1] = (int)m_nBlockSamples;
-            m_pArrangeTable[2] = (int)m_nBlockSamples * 2;
-            m_pArrangeTable[3] = (int)m_nBlockSamples * 3;
+            m_pArrangeTable[1] = m_nBlockSamples;
+            m_pArrangeTable[2] = m_nBlockSamples * 2;
+            m_pArrangeTable[3] = m_nBlockSamples * 3;
 
             int ptrNext = m_pArrangeTable[0];
             for (i = 0; i < m_nBlockSamples; ++i)
             {
-                m_ptrTable[ptrNext+i] = (int)i;
+                m_ptrTable[ptrNext+i] = i;
             }
 
             ptrNext = m_pArrangeTable[1];
@@ -195,7 +293,7 @@ namespace GameRes.Formats.Entis
                     m = l + j;
                     for (k = 0; k < m_nBlockSize; k++)
                     {
-                        m_ptrTable[ptrNext++] = (int)m;
+                        m_ptrTable[ptrNext++] = m;
                         m += m_nBlockSize;
                     }
                 }
@@ -207,7 +305,7 @@ namespace GameRes.Formats.Entis
                 k = i;
                 for (j = 0; j < m_nChannelCount; j++)
                 {
-                    m_ptrTable[ptrNext++] = (int)k;
+                    m_ptrTable[ptrNext++] = k;
                     k += m_nBlockArea;
                 }
             }
@@ -221,8 +319,58 @@ namespace GameRes.Formats.Entis
                     l += m_nBlockSize;
                     for (k = 0; k < m_nChannelCount; k++)
                     {
-                        m_ptrTable[ptrNext++] = (int)m;
+                        m_ptrTable[ptrNext++] = m;
                         m += m_nBlockArea;
+                    }
+                }
+            }
+        }
+
+        void InitializeZigZagTable ()
+        {
+            m_ptrTable = new int[m_nBlockArea];
+            m_pArrangeTable[0] = 0;
+
+            uint i = 0;
+            int x = 0, y = 0;
+            for (;;)
+            {
+                for (;;)
+                {
+                    m_ptrTable[i++] = x + y * m_nBlockSize;
+                    if (i >= m_nBlockArea)
+                        return;
+                    ++x;
+                    --y;
+                    if (x >= m_nBlockSize)
+                    {
+                        --x;
+                        y += 2;
+                        break;
+                    }
+                    else if (y < 0)
+                    {
+                        y = 0;
+                        break;
+                    }
+                }
+                for (;;)
+                {
+                    m_ptrTable[i++] = x + y * m_nBlockSize;
+                    if (i >= m_nBlockArea)
+                        return;
+                    ++y;
+                    --x;
+                    if (y >= m_nBlockSize)
+                    {
+                        --y;
+                        x += 2;
+                        break;
+                    }
+                    else if (x < 0)
+                    {
+                        x = 0;
+                        break;
                     }
                 }
             }
@@ -301,11 +449,11 @@ namespace GameRes.Formats.Entis
             }
             int i;
             int ptrNextOperation = 0; // index within m_ptrOperations
-            if ((0 != (fEncodeType & 0x01)) && (m_nChannelCount >= 3))
+            if ((0 != (fEncodeType & 1)) && (m_nChannelCount >= 3))
             {
                 if (m_info.Architecture == EriCode.Nemesis)
                     throw new InvalidFormatException();
-                int nAllBlockCount = (int)(m_nWidthBlocks * m_nHeightBlocks);
+                int nAllBlockCount = m_nWidthBlocks * m_nHeightBlocks;
                 for (i = 0; i < nAllBlockCount; i++)
                 {
                     if (EriCode.RunlengthGamma == m_info.Architecture)
@@ -324,7 +472,7 @@ namespace GameRes.Formats.Entis
 
             if (EriCode.RunlengthGamma == m_info.Architecture)
             {
-                if (0 != (fEncodeType & 0x01))
+                if (0 != (fEncodeType & 1))
                 {
                     context.InitGammaContext();
                 }
@@ -338,31 +486,27 @@ namespace GameRes.Formats.Entis
                 Debug.Assert (EriCode.Nemesis == m_info.Architecture);
                 (context as ProbDecodeContext).PrepareToDecodeERISACode();
             }
-            int nWidthSamples = (int)(m_nChannelCount * m_nWidthBlocks * m_nBlockSize);
+            int nWidthSamples = m_nChannelCount * m_nWidthBlocks * m_nBlockSize;
             for (i = 0; i < nWidthSamples; ++i)
                 m_ptrLineBuf[i] = 0;
 
-            int nAllBlockLines = (int)(m_nBlockSize * m_nChannelCount);
+            int nAllBlockLines = m_nBlockSize * m_nChannelCount;
             int nLeftHeight = (int)m_info.Height;
 
-            for (int nPosY = 0; nPosY < (int) m_nHeightBlocks; ++nPosY)
+            for (int nPosY = 0; nPosY < m_nHeightBlocks; ++nPosY)
             {
-                int nColumnBufSamples = (int)(m_nBlockSize * m_nChannelCount);
+                int nColumnBufSamples = m_nBlockSize * m_nChannelCount;
                 for (i = 0; i < nColumnBufSamples; ++i)
                     m_ptrColumnBuf[i] = 0;
 
-                m_ptrDstBlock = m_dst + nPosY * m_dwBytesPerLine * (int)m_nBlockSize;
-                m_nDstHeight = m_nBlockSize;
-                if ((int)m_nDstHeight > nLeftHeight)
-                {
-                    m_nDstHeight = (uint)nLeftHeight;
-                }
+                m_ptrDstBlock = m_dst + nPosY * m_dwBytesPerLine * m_nBlockSize;
+                m_nDstHeight = Math.Min (m_nBlockSize, nLeftHeight);
                 int nLeftWidth = (int)m_info.Width;
                 int ptrNextLineBuf = 0; // m_ptrLineBuf;
 
-                for (int nPosX = 0; nPosX < (int)m_nWidthBlocks; ++nPosX)
+                for (int nPosX = 0; nPosX < m_nWidthBlocks; ++nPosX)
                 {
-                    m_nDstWidth = Math.Min (m_nBlockSize, (uint)nLeftWidth);
+                    m_nDstWidth = Math.Min (m_nBlockSize, nLeftWidth);
 
                     uint dwOperationCode;
                     if (m_nChannelCount >= 3)
@@ -388,20 +532,20 @@ namespace GameRes.Formats.Entis
                     }
                     else
                     {
-                        if ((int)EriImage.Gray == m_info.FormatType)
+                        if (EriType.Gray == m_info.FormatType)
                         {
                             dwOperationCode = 0xC0;
                         }
                         else
                         {
-                            dwOperationCode = 0x00;
+                            dwOperationCode = 0;
                         }
-                        if (0 == (fEncodeType & 0x01) && m_info.Architecture == EriCode.RunlengthGamma)
+                        if (0 == (fEncodeType & 1) && m_info.Architecture == EriCode.RunlengthGamma)
                         {
                             context.InitGammaContext();
                         }
                     }
-                    if (context.DecodeBytes (m_ptrArrangeBuf, m_nBlockSamples) < m_nBlockSamples)
+                    if (context.DecodeBytes (m_ptrArrangeBuf, (uint)m_nBlockSamples) < m_nBlockSamples)
                     {
                         throw new InvalidFormatException();
                     }
@@ -410,17 +554,21 @@ namespace GameRes.Formats.Entis
 
                     pfnRestoreFunc();
 
-                    m_ptrDstBlock += (int)(m_nDstPixelBytes * m_nBlockSize);
-                    nLeftWidth -= (int) m_nBlockSize;
+                    m_ptrDstBlock += m_nDstPixelBytes * m_nBlockSize;
+                    nLeftWidth -= m_nBlockSize;
                 }
-                nLeftHeight -= (int)m_nBlockSize;
+                nLeftHeight -= m_nBlockSize;
             }
         }
+
+        #pragma warning disable 162 // unreachable code
 
         private void DecodeType2Image (RLEDecodeContext context)
         {
             if (m_info.BPP != 8)
                 throw new InvalidFormatException();
+
+            throw new NotImplementedException ("Arithmetic compression not implemented");
 
             if (EriCode.ArithmeticCode == m_info.Architecture)
             {
@@ -444,6 +592,149 @@ namespace GameRes.Formats.Entis
         private void DecodeLossyImage (HuffmanDecodeContext context)
         {
             throw new NotImplementedException ("Lossy ERI compression not implemented");
+            context.FlushBuffer();
+
+            uint nERIVersion = context.GetNBits (8);
+            uint fOpTable = context.GetNBits (8);
+            uint fEncodeType = context.GetNBits (8);
+            uint nBitCount = context.GetNBits (8);
+
+            var orig_trans = m_info.Transformation;
+            CalcImageSizeInBlocks ((fEncodeType == 1) ? CvType.DCT_ERI : orig_trans);
+
+            m_ptrDstBlock = m_dst;
+            m_nDstPixelBytes = m_info.BPP >> 3;
+            m_nDstLineBytes = m_dwBytesPerLine;
+            m_nDstWidth = (int)m_info.Width;
+            m_nDstHeight = (int)m_info.Height;
+
+            var pfnRestoreFunc = GetLSRestoreFunc (m_info.FormatType, m_info.BPP);
+            if (null == pfnRestoreFunc)
+                throw new InvalidFormatException();
+
+            if (context.GetABit() != 0)
+                throw new InvalidFormatException();
+
+            if (0x28 == nERIVersion)
+            {
+                if (EriCode.RunlengthGamma != m_info.Architecture)
+                    throw new InvalidFormatException();
+                Debug.Assert (m_pHuffmanTree != null);
+                context.PrepareToDecodeERINACode (HuffmanDecodeContext.efERINAOrder0);
+            }
+            else
+                throw new InvalidFormatException();
+
+            for (int i = 0; i < m_nBlockArea * 2; ++i)
+            {
+                m_ptrIQParamTable[i] = (byte)context.GetHuffmanCode (m_pHuffmanTree);
+            }
+            int nTotalBlocks = m_nWidthBlocks * m_nHeightBlocks;
+            int nTotalSamples = nTotalBlocks * m_nBlockArea * m_nBlocksetCount;
+            context.InitGammaContext();
+            if (context.DecodeGammaCodeBytes (m_ptrLossyOps, (uint)nTotalBlocks * 2) < nTotalBlocks * 2)
+                throw new InvalidFormatException();
+
+            Debug.Assert (8 == m_nBlockSize);
+            const int nBlockSize = 16;
+            uint nWidthDivBlocks  = (m_info.Width + (nBlockSize - 1)) / nBlockSize;
+            uint nHeightDivBlocks = (m_info.Height + (nBlockSize - 1)) / nBlockSize;
+            uint nTotalDivBlocks = nWidthDivBlocks * nHeightDivBlocks;
+
+            if (0 != (fOpTable & 1))
+            {
+                context.InitGammaContext();
+                if (context.DecodeGammaCodeBytes (m_ptrMoveVecFlags, nTotalDivBlocks) < nTotalDivBlocks)
+                    throw new InvalidFormatException();
+                context.InitGammaContext();
+                if (context.DecodeGammaCodeBytes (m_ptrMovingVector, nTotalDivBlocks * 4) < nTotalDivBlocks * 4 )
+                    throw new InvalidFormatException();
+            }
+            else if (null != m_src_frame)
+            {
+                for (uint i = 0; i < nTotalDivBlocks; ++i)
+                    m_ptrMoveVecFlags[i] = 1;
+                for (uint i = 0; i < nTotalDivBlocks*4; ++i)
+                    m_ptrMovingVector[i] = 0;
+            }
+            if (null != m_src_frame)
+            {
+                SetupMovingVector();
+            }
+            if (CvType.LOT_ERI == m_info.Transformation)
+            {
+                for (int i = 0; i < m_ptrVertBufLOT.Length; ++i)
+                    m_ptrVertBufLOT[i] = 0;
+            }
+
+            Action<float[], int> pfnBlockMatrix;
+            if (CvType.LOT_ERI == m_info.Transformation)
+                pfnBlockMatrix = MatrixILOT8x8;
+            else
+                pfnBlockMatrix = MatrixIDCT8x8;
+
+            Action<int, int> pfnBlockScaling;
+            if (EriSampling.YUV_4_1_1 == m_info.SamplingFlags)
+                pfnBlockScaling = BlockScaling411;
+            else
+                pfnBlockScaling = BlockScaling444;
+
+            int ptrQParam = 0; // m_ptrLossyOps
+            int nLineBlockSamples = m_nWidthBlocks * m_nBlockArea * m_nBlocksetCount;
+
+            m_ptrNextPrevBlocks = m_ptrMovePrevBlocks;
+            for (int nPosY = 0; nPosY < m_nHeightBlocks; ++nPosY)
+            {
+                if (CvType.LOT_ERI == m_info.Transformation)
+                {
+                    for (int i = 0; i < m_ptrHorzBufLOT.Length; ++i)
+                        m_ptrHorzBufLOT[i] = 0;
+                }
+                int ptrVertBufLOT = 0; // m_ptrVertBufLOT;
+                m_ptrNextBlockBuf = m_ptrBlockLineBuf;
+
+                if (context.DecodeBytes (m_ptrImageBuf, (uint)nLineBlockSamples) < nLineBlockSamples)
+                    throw new InvalidFormatException();
+
+                int ptrSrcData = 0; // m_ptrImageBuf;
+
+                for (int nPosX = 0; nPosX < m_nWidthBlocks; ++nPosX)
+                {
+                    ArrangeAndIQuantumize (ptrSrcData, ptrQParam);
+                    ptrSrcData += m_nBlockArea * m_nBlocksetCount;
+                    ptrQParam += 2;
+
+                    pfnBlockMatrix (m_ptrVertBufLOT, ptrVertBufLOT);
+                    ptrVertBufLOT += m_nBlockArea * 2 * m_nChannelCount;
+                    pfnBlockScaling (nPosX, nPosY);
+                }
+            }
+            pfnRestoreFunc();
+
+            if (0 != (fOpTable & 0xC))
+            {
+                throw new NotImplementedException ("Filtering operations not implemented");
+            }
+            m_info.Transformation = orig_trans;
+        }
+
+        void CalcImageSizeInBlocks (CvType fdwTransformation)
+        {
+            m_info.Transformation = fdwTransformation;
+
+            m_nWidthBlocks = (((int)m_info.Width + m_nBlockSize * 2 - 1) >> (m_info.BlockingDegree + 1));
+            m_nHeightBlocks = ((int)m_info.Height + m_nBlockSize * 2 - 1) >> (m_info.BlockingDegree + 1);
+
+            if (CvType.LOT_ERI == fdwTransformation)
+            {
+                ++m_nWidthBlocks;
+                ++m_nHeightBlocks;
+            }
+        }
+
+        void SetupMovingVector ()
+        {
+            throw new NotImplementedException ("Lossy delta compression not implemented");
         }
 
         void PerformOperation (uint dwOpCode, int nAllBlockLines, sbyte[] pNextLineBuf, int iNextLineIdx )
@@ -456,7 +747,7 @@ namespace GameRes.Formats.Entis
 
             if (0 == nArrangeCode)
             {
-                Buffer.BlockCopy (m_ptrArrangeBuf, 0, m_ptrDecodeBuf, 0, (int)m_nBlockSamples);
+                Buffer.BlockCopy (m_ptrArrangeBuf, 0, m_ptrDecodeBuf, 0, m_nBlockSamples);
                 if (0 == dwOpCode)
                 {
                     return;
@@ -465,7 +756,7 @@ namespace GameRes.Formats.Entis
             else
             {
                 int pArrange = m_pArrangeTable[nArrangeCode];
-                for (i = 0; i < (int)m_nBlockSamples; i++)
+                for (i = 0; i < m_nBlockSamples; i++)
                 {
                     m_ptrDecodeBuf[m_ptrTable[pArrange + i]] = m_ptrArrangeBuf[i];
                 }
@@ -474,12 +765,12 @@ namespace GameRes.Formats.Entis
 
             int ptrNextBuf = 0;     // m_ptrDecodeBuf
             int ptrNextColBuf = 0;  // m_ptrColumnBuf
-            if (0 != (nDiffOperation & 0x01))
+            if (0 != (nDiffOperation & 1))
             {
                 for (i = 0; i < nAllBlockLines; i++)
                 {
                     sbyte nLastVal = m_ptrColumnBuf[ptrNextColBuf];
-                    for (j = 0; j < (int)m_nBlockSize; j++)
+                    for (j = 0; j < m_nBlockSize; j++)
                     {
                         nLastVal += m_ptrDecodeBuf[ptrNextBuf];
                         m_ptrDecodeBuf[ptrNextBuf++] = nLastVal;
@@ -492,35 +783,35 @@ namespace GameRes.Formats.Entis
                 for (i = 0; i < nAllBlockLines; i ++)
                 {
                     m_ptrColumnBuf[ptrNextColBuf++] = m_ptrDecodeBuf[ptrNextBuf + m_nBlockSize - 1];
-                    ptrNextBuf += (int)m_nBlockSize;
+                    ptrNextBuf += m_nBlockSize;
                 }
             }
             int iNextDst = 0;
-            for (k = 0; k < (int)m_nChannelCount; k++)
+            for (k = 0; k < m_nChannelCount; k++)
             {
                 sbyte[] ptrLastLine = pNextLineBuf;
                 int     idxLastLine = iNextLineIdx;
-                for (i = 0; i < (int)m_nBlockSize; i++)
+                for (i = 0; i < m_nBlockSize; i++)
                 {
-                    for (j = 0; j < (int)m_nBlockSize; j++)
+                    for (j = 0; j < m_nBlockSize; j++)
                     {
                         m_ptrDecodeBuf[iNextDst+j] += ptrLastLine[idxLastLine+j];
                     }
                     ptrLastLine = m_ptrDecodeBuf;
                     idxLastLine = iNextDst;
-                    iNextDst += (int)m_nBlockSize;
+                    iNextDst += m_nBlockSize;
                 }
-                Buffer.BlockCopy (ptrLastLine, idxLastLine, pNextLineBuf, iNextLineIdx, (int)m_nBlockSize);
-                iNextLineIdx += (int)m_nBlockSize;
+                Buffer.BlockCopy (ptrLastLine, idxLastLine, pNextLineBuf, iNextLineIdx, m_nBlockSize);
+                iNextLineIdx += m_nBlockSize;
             }
         }
 
-        PtrProcedure GetLLRestoreFunc (int fdwFormatType, int dwBitsPerPixel)
+        PtrProcedure GetLLRestoreFunc (EriType fdwFormatType, int dwBitsPerPixel)
         {
             switch (dwBitsPerPixel)
             {
             case 32:
-                if ((int)EriImage.RGBA == fdwFormatType)
+                if (EriType.RGBA == fdwFormatType)
                 {
                     Format = PixelFormats.Bgra32;
                     if (null == m_src_frame)
@@ -552,11 +843,45 @@ namespace GameRes.Formats.Entis
             return null;
         }
 
+        PtrProcedure GetLSRestoreFunc (EriType fdwFormatType, int dwBitsPerPixel)
+        {
+            switch (dwBitsPerPixel)
+            {
+            case 32:
+                if (EriType.RGBA == fdwFormatType)
+                {
+                    Format = PixelFormats.Bgra32;
+                    if (null == m_src_frame)
+                        return LossyRestoreRGBA32;
+                    else
+                        return LossyRestoreDeltaRGBA32;
+                }
+                Format = PixelFormats.Bgr32;
+                if (null == m_src_frame)
+                    return LossyRestoreRGB24;
+                else
+                    return LossyRestoreDeltaRGB24;
+            case 24:
+                Format = PixelFormats.Bgr24;
+                if (null == m_src_frame)
+                    return LossyRestoreRGB24;
+                else
+                    return LossyRestoreDeltaRGB24;
+            case    8:
+                Format = PixelFormats.Gray8;
+                if (null == m_src_frame)
+                    return LossyRestoreGray8;
+                else
+                    return LossyRestoreDeltaGray8;
+            }
+            return null;
+        }
+
         void RestoreRGBA32 ()
         {
             int ptrDstLine = m_ptrDstBlock;
             int ptrSrcLine = 0; //m_ptrDecodeBuf;
-            int nBlockSamples = (int)m_nBlockArea;
+            int nBlockSamples = m_nBlockArea;
             int nBlockSamplesX3 = nBlockSamples * 3;
 
             for (uint y = 0; y < m_nDstHeight; y++)
@@ -572,7 +897,7 @@ namespace GameRes.Formats.Entis
                     m_output[ptrDstNext++] = (byte)m_ptrDecodeBuf[ptrSrcNext + nBlockSamplesX3];
                     ptrSrcNext ++;
                 }
-                ptrSrcLine += (int)m_nBlockSize;
+                ptrSrcLine += m_nBlockSize;
                 ptrDstLine += m_nDstLineBytes;
             }
         }
@@ -582,7 +907,7 @@ namespace GameRes.Formats.Entis
             int ptrDstLine = m_ptrDstBlock;
             int ptrSrcLine = 0; //m_ptrDecodeBuf;
             int nBytesPerPixel = m_nDstPixelBytes;
-            int nBlockSamples = (int)m_nBlockArea;
+            int nBlockSamples = m_nBlockArea;
 
             for (uint y = 0; y < m_nDstHeight; y++)
             {
@@ -597,7 +922,7 @@ namespace GameRes.Formats.Entis
                     ptrSrcNext ++;
                     ptrDstNext += nBytesPerPixel;
                 }
-                ptrSrcLine += (int)m_nBlockSize;
+                ptrSrcLine += m_nBlockSize;
                 ptrDstLine += m_nDstLineBytes;
             }
         }
@@ -606,7 +931,7 @@ namespace GameRes.Formats.Entis
         {
             int ptrDstLine = m_ptrDstBlock;
             int ptrSrcLine = 0; //m_ptrDecodeBuf;
-            int nBlockSamples = (int)m_nBlockArea;
+            int nBlockSamples = m_nBlockArea;
             int nBlockSamplesX3 = nBlockSamples * 3;
 
             for (uint y = 0; y < m_nDstHeight; y++)
@@ -623,7 +948,7 @@ namespace GameRes.Formats.Entis
                     ptrSrcNext ++;
                     ptrDstNext += 4;
                 }
-                ptrSrcLine += (int)m_nBlockSize;
+                ptrSrcLine += m_nBlockSize;
                 ptrDstLine += m_nDstLineBytes;
             }
         }
@@ -633,7 +958,7 @@ namespace GameRes.Formats.Entis
             int ptrDstLine = m_ptrDstBlock;
             int ptrSrcLine = 0; //m_ptrDecodeBuf;
             int nBytesPerPixel = m_nDstPixelBytes;
-            int nBlockSamples = (int)m_nBlockArea;
+            int nBlockSamples = m_nBlockArea;
 
             for (uint y = 0; y < m_nDstHeight; y++)
             {
@@ -648,7 +973,7 @@ namespace GameRes.Formats.Entis
                     ptrSrcNext ++;
                     ptrDstNext += nBytesPerPixel;
                 }
-                ptrSrcLine += (int)m_nBlockSize;
+                ptrSrcLine += m_nBlockSize;
                 ptrDstLine += m_nDstLineBytes;
             }
         }
@@ -657,7 +982,7 @@ namespace GameRes.Formats.Entis
         {
             int ptrDstLine = m_ptrDstBlock;
             int ptrSrcLine = 0; //m_ptrDecodeBuf;
-            int nBlockSamples = (int)m_nBlockArea;
+            int nBlockSamples = m_nBlockArea;
 
             for (uint y = 0; y < m_nDstHeight; y++)
             {
@@ -673,7 +998,7 @@ namespace GameRes.Formats.Entis
                     m_output[ptrDstNext++] = (byte)(word >> 8);
                     ptrSrcNext ++;
                 }
-                ptrSrcLine += (int)m_nBlockSize;
+                ptrSrcLine += m_nBlockSize;
                 ptrDstLine += m_nDstLineBytes;
             }
         }
@@ -685,10 +1010,198 @@ namespace GameRes.Formats.Entis
 
             for (uint y = 0; y < m_nDstHeight; y++)
             {
-                Buffer.BlockCopy (m_ptrDecodeBuf, ptrSrcLine, m_output, ptrDstLine, (int)m_nDstWidth);
-                ptrSrcLine += (int)m_nBlockSize;
+                Buffer.BlockCopy (m_ptrDecodeBuf, ptrSrcLine, m_output, ptrDstLine, m_nDstWidth);
+                ptrSrcLine += m_nBlockSize;
                 ptrDstLine += m_nDstLineBytes;
             }
+        }
+
+        void LossyRestoreRGB24 ()
+        {
+            ConvertImageYUVtoRGB();
+
+            int nSrcLineBytes = m_nYUVLineBytes;
+            int nSrcPixelBytes = m_nYUVPixelBytes;
+            int ptrSrcImage = 0; // m_ptrYUVImage;
+            int nDstLineBytes = m_nDstLineBytes;
+            int nDstPixelBytes = m_nDstPixelBytes;
+            int ptrDstImage = m_ptrDstBlock;
+            int nWidth = m_nDstWidth;
+
+            for (uint y = 0; y < m_nDstHeight; ++y)
+            {
+                int ptrSrcLine = ptrSrcImage;
+                int ptrDstLine = ptrDstImage;
+                for (uint x = 0; x < nWidth; ++x)
+                {
+                    m_output[ptrDstLine]   = (byte)m_ptrYUVImage[ptrSrcLine];
+                    m_output[ptrDstLine+1] = (byte)m_ptrYUVImage[ptrSrcLine+1];
+                    m_output[ptrDstLine+2] = (byte)m_ptrYUVImage[ptrSrcLine+2];
+                    ptrSrcLine += nSrcPixelBytes;
+                    ptrDstLine += nDstPixelBytes;
+                }
+                ptrSrcImage += nSrcLineBytes;
+                ptrDstImage += nDstLineBytes;
+            }
+        }
+
+        void LossyRestoreRGBA32 ()
+        {
+            ConvertImageYUVtoRGB();
+
+            int nSrcLineBytes = m_nYUVLineBytes;
+            int ptrSrcImage = 0; //m_ptrYUVImage;
+            int nDstLineBytes = m_nDstLineBytes;
+            int ptrDstImage = m_ptrDstBlock;
+            int nLineBytes = m_nDstWidth*4;
+
+            for (uint y = 0; y < m_nDstHeight; ++y)
+            {
+                Buffer.BlockCopy (m_ptrYUVImage, ptrSrcImage, m_output, ptrDstImage, nLineBytes);
+                ptrSrcImage += nSrcLineBytes;
+                ptrDstImage += nDstLineBytes;
+            }
+        }
+
+        void LossyRestoreDeltaRGB24 ()
+        {
+            MoveImageWithVector();
+            ConvertImageYUVtoRGB (m_src_frame != null);
+
+            int nSrcLineBytes = m_nYUVLineBytes;
+            int nSrcPixelBytes = m_nYUVPixelBytes;
+            int ptrSrcImage = 0; //m_ptrYUVImage;
+            int nDstLineBytes = m_nDstLineBytes;
+            int nDstPixelBytes = m_nDstPixelBytes;
+            int ptrDstImage = m_ptrDstBlock;
+            int nWidth = m_nDstWidth;
+
+            for (uint y = 0; y < m_nDstHeight; ++y)
+            {
+                int ptrSrcLine = ptrSrcImage;
+                int ptrDstLine = ptrDstImage;
+                for (uint x = 0; x < nWidth; ++x)
+                {
+                    int b = m_src_frame[ptrDstLine]   + (m_ptrYUVImage[ptrSrcLine]   << 1);
+                    int g = m_src_frame[ptrDstLine+1] + (m_ptrYUVImage[ptrSrcLine+1] << 1);
+                    int r = m_src_frame[ptrDstLine+2] + (m_ptrYUVImage[ptrSrcLine+2] << 1);
+
+                    if ((uint)b > 0xFF)
+                    {
+                        b = (~b >> 31) & 0xFF;
+                    }
+                    if ((uint)g > 0xFF)
+                    {
+                        g = (~g >> 31) & 0xFF;
+                    }
+                    if ((uint)r > 0xFF)
+                    {
+                        r = (~r >> 31) & 0xFF;
+                    }
+                    m_output[ptrDstLine]   = (byte)b;
+                    m_output[ptrDstLine+1] = (byte)g;
+                    m_output[ptrDstLine+2] = (byte)r;
+                    ptrSrcLine += nSrcPixelBytes;
+                    ptrDstLine += nDstPixelBytes;
+                }
+                ptrSrcImage += nSrcLineBytes;
+                ptrDstImage += nDstLineBytes;
+            }
+        }
+
+        void LossyRestoreDeltaRGBA32 ()
+        {
+            MoveImageWithVector();
+            ConvertImageYUVtoRGB (m_src_frame != null);
+
+            int nSrcLineBytes = m_nYUVLineBytes;
+            int ptrSrcImage = 0; // m_ptrYUVImage;
+            int nDstLineBytes = m_nDstLineBytes;
+            int ptrDstImage = m_ptrDstBlock;
+            int nWidth = m_nDstWidth;
+
+            for (uint y = 0; y < m_nDstHeight; ++y)
+            {
+                int ptrSrcLine = ptrSrcImage;
+                int ptrDstLine = ptrDstImage;
+                for (uint x = 0; x < nWidth; ++x)
+                {
+                    int b = m_src_frame[ptrDstLine]   + (m_ptrYUVImage[ptrSrcLine]   << 1);
+                    int g = m_src_frame[ptrDstLine+1] + (m_ptrYUVImage[ptrSrcLine+1] << 1);
+                    int r = m_src_frame[ptrDstLine+2] + (m_ptrYUVImage[ptrSrcLine+2] << 1);
+                    int a = m_src_frame[ptrDstLine+3] + (m_ptrYUVImage[ptrSrcLine+3] << 1);
+
+                    if ((uint)b > 0xFF)
+                    {
+                        b = (~b >> 31) & 0xFF;
+                    }
+                    if ((uint)g > 0xFF)
+                    {
+                        g = (~g >> 31) & 0xFF;
+                    }
+                    if ((uint)r > 0xFF)
+                    {
+                        r = (~r >> 31) & 0xFF;
+                    }
+                    if ((uint) a > 0xFF)
+                    {
+                        a = (~a >> 31) & 0xFF;
+                    }
+                    m_output[ptrDstLine]   = (byte)b;
+                    m_output[ptrDstLine+1] = (byte)g;
+                    m_output[ptrDstLine+2] = (byte)r;
+                    m_output[ptrDstLine+3] = (byte)a;
+                    ptrSrcLine += 4;
+                    ptrDstLine += 4;
+                }
+                ptrSrcImage += nSrcLineBytes;
+                ptrDstImage += nDstLineBytes;
+            }
+        }
+
+        void LossyRestoreGray8 ()
+        {
+            int nSrcLineBytes = m_nYUVLineBytes;
+            int ptrSrcImage = 0; // m_ptrYUVImage
+            int nDstLineBytes = m_nDstLineBytes;
+            int ptrDstImage = m_ptrDstBlock;
+            for (uint y = 0; y < m_nDstHeight; ++y)
+            {
+                Buffer.BlockCopy (m_ptrYUVImage, ptrSrcImage, m_output, ptrDstImage, m_nDstWidth);
+                ptrSrcImage += nSrcLineBytes;
+                ptrDstImage += nDstLineBytes;
+            }
+        }
+
+        void LossyRestoreDeltaGray8 ()
+        {
+            int nSrcLineBytes = m_nYUVLineBytes;
+            int ptrSrcImage = 0; // m_ptrYUVImage
+            int nDstLineBytes = m_nDstLineBytes;
+            int ptrDstImage = m_ptrDstBlock;
+            int nWidth = m_nDstWidth;
+
+            for (uint y = 0; y < m_nDstHeight; ++y)
+            {
+                int ptrSrcLine = ptrSrcImage;
+                int ptrDstLine = ptrDstImage;
+                for (int x = 0; x < nWidth; ++x)
+                {
+                    int g = m_output[ptrDstLine+x] + (m_ptrYUVImage[ptrSrcLine+x] << 1);
+                    if ((uint)g > 0xFF)
+                    {
+                        g = (~g >> 31) & 0xFF;
+                    }
+                    m_output[ptrDstLine+x] = (byte)g;
+                }
+                ptrSrcImage += nSrcLineBytes;
+                ptrDstImage += nDstLineBytes;
+            }
+        }
+
+        void MoveImageWithVector ()
+        {
+            throw new NotImplementedException ("Lossy delta compression not implemented");
         }
 
         void ColorOperation0000 ()
@@ -698,8 +1211,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation0101 ()
         {
             int ptrNext = 0; // m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext];
@@ -711,8 +1224,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation0110 ()
         {
             int ptrNext = 0; // m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea * 2;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea * 2;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext];
@@ -724,8 +1237,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation0111 ()
         {
             int ptrNext = 0; // m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext];
@@ -739,8 +1252,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation1001 ()
         {
             int ptrNext = 0; //m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext + nChSamples];
@@ -752,8 +1265,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation1010 ()
         {
             int ptrNext = 0; // m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext + nChSamples];
@@ -765,8 +1278,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation1011 ()
         {
             int ptrNext = 0; //m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext + nChSamples];
@@ -780,8 +1293,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation1101 ()
         {
             int ptrNext = 0; //m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea * 2;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea * 2;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext + nChSamples];
@@ -793,8 +1306,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation1110 ()
         {
             int ptrNext = 0; // m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext + nChSamples * 2];
@@ -806,8 +1319,8 @@ namespace GameRes.Formats.Entis
         void ColorOperation1111 ()
         {
             int ptrNext = 0; // m_ptrDecodeBuf;
-            uint nChSamples = m_nBlockArea;
-            uint nRepCount = m_nBlockArea;
+            int nChSamples = m_nBlockArea;
+            int nRepCount = m_nBlockArea;
             do
             {
                 sbyte nBase = m_ptrDecodeBuf[ptrNext + nChSamples * 2];
@@ -816,6 +1329,378 @@ namespace GameRes.Formats.Entis
                 ptrNext ++;
             }
             while (0 != --nRepCount);
+        }
+
+        void ArrangeAndIQuantumize (int ptrSrcData, int ptrCoefficient)
+        {
+            int i, j, k;
+            float rMatrixScale = (float)(512.0 / m_nBlockSize);
+            var pIQParamPtr = new int[2];
+            for (i = 0; i < 2; ++i)
+            {
+                float rScale = 1.0f;
+                if (0 != (m_ptrLossyOps[ptrCoefficient+i] & 1))
+                {
+                    rScale = 1.5f;
+                }
+                rScale *= (float)Math.Pow (2.0, (m_ptrLossyOps[ptrCoefficient+i] / 2));
+                rScale *= rMatrixScale;
+
+                int pIQParamTable = i * m_nBlockArea; // m_ptrIQParamTable 
+                pIQParamPtr[i] = pIQParamTable; // m_ptrIQParamBuf 
+                for (j = 0; j < m_nBlockArea; ++j)
+                {
+                    m_ptrIQParamBuf[pIQParamPtr[i]+j] = (float)(rScale * (m_ptrIQParamTable[pIQParamTable+j] + 1));
+                }
+            }
+            if (CvType.DCT_ERI == m_info.Transformation)
+            {
+                m_ptrImageBuf[ptrSrcData+m_nBlockArea]   += m_ptrImageBuf[ptrSrcData];
+                m_ptrImageBuf[ptrSrcData+m_nBlockArea*2] += m_ptrImageBuf[ptrSrcData];
+                m_ptrImageBuf[ptrSrcData+m_nBlockArea*3] += m_ptrImageBuf[ptrSrcData];
+
+                if (EriSampling.YUV_4_4_4 == m_info.SamplingFlags)
+                {
+                    k = m_nBlockArea * 4;
+                    j = 1;
+                }
+                else
+                {
+                    k = m_nBlockArea * 6;
+                    j = 3;
+                }
+                for (i = j; i < m_nChannelCount; ++i)
+                {
+                    m_ptrImageBuf[ptrSrcData + k + m_nBlockArea]   += m_ptrImageBuf[ptrSrcData+k];
+                    m_ptrImageBuf[ptrSrcData + k + m_nBlockArea*2] += m_ptrImageBuf[ptrSrcData+k];
+                    m_ptrImageBuf[ptrSrcData + k + m_nBlockArea*3] += m_ptrImageBuf[ptrSrcData+k];
+                    k += m_nBlockArea * 4;
+                }
+            }
+            var pIQParam = new int[16]; // within m_ptrIQParamBuf
+            pIQParam[0] = pIQParam[1] = pIQParam[2] = pIQParam[3] = pIQParamPtr[0];
+            if (EriSampling.YUV_4_4_4 == m_info.SamplingFlags)
+            {
+                for (i = 4; i < 12; ++i)
+                {
+                    pIQParam[i] = pIQParamPtr[1];
+                }
+                for (i = 12; i < m_nBlocksetCount; ++i)
+                {
+                    pIQParam[i] = pIQParamPtr[0];
+                }
+            }
+            else
+            {
+                pIQParam[4] = pIQParam[5] = pIQParamPtr[1];
+                for (i = 6; i < m_nBlocksetCount; ++i)
+                {
+                    pIQParam[i] = pIQParamPtr[0];
+                }
+            }
+            int pArrange = m_pArrangeTable[0];
+            for (i = 0; i < m_nBlocksetCount; ++i)
+            {
+                float[] ptrDst = m_ptrBlocksetBuf[i];
+                Erisa.ConvertArraySByteToFloat (m_ptrMatrixBuf, m_ptrImageBuf, ptrSrcData, m_nBlockArea);
+                ptrSrcData += m_nBlockArea;
+                Erisa.VectorMultiply (m_ptrMatrixBuf, m_ptrIQParamBuf, pIQParam[i], m_nBlockArea);
+                for (j = 0; j < m_nBlockArea; ++j)
+                {
+                    ptrDst[m_ptrTable[pArrange + j]] = m_ptrMatrixBuf[j];
+                }
+            }
+        }
+
+        void MatrixIDCT8x8 (float[] matrix, int index)
+        {
+            for (int i = 0; i < m_nBlocksetCount; i ++ )
+            {
+                Erisa.FastIDCT8x8 (m_ptrBlocksetBuf[i]);
+            }
+        }
+
+        void MatrixILOT8x8 (float[] matrix, int ptrVertBufLOT)
+        {
+            int i, j, k, l = 0;
+            int ptrHorzBufLOT = 0; // m_ptrHorzBufLOT;
+            for (i = 0; i < 2; ++i)
+            {
+                for (j = 0; j < 2; ++j)
+                {
+                    Erisa.FastILOT8x8 (m_ptrBlocksetBuf[l], m_ptrHorzBufLOT, ptrHorzBufLOT, matrix, ptrVertBufLOT + j * m_nBlockArea);
+                    ++l;
+                }
+                ptrHorzBufLOT += m_nBlockArea;
+            }
+            ptrVertBufLOT += m_nBlockArea * 2;
+            if (m_nChannelCount < 3)
+                return;
+
+            if (EriSampling.YUV_4_4_4 == m_info.SamplingFlags)
+            {
+                for (k = 0; k < 2; k++)
+                {
+                    for (i = 0; i < 2; i++)
+                    {
+                        for (j = 0; j < 2; j++)
+                        {
+                            Erisa.FastILOT8x8 (m_ptrBlocksetBuf[l], m_ptrHorzBufLOT, ptrHorzBufLOT, matrix, ptrVertBufLOT + j * m_nBlockArea );
+                            l++;
+                        }
+                        ptrHorzBufLOT += m_nBlockArea;
+                    }
+                    ptrVertBufLOT += m_nBlockArea * 2;
+                }
+            }
+            else if (EriSampling.YUV_4_1_1 == m_info.SamplingFlags)
+            {
+                for (k = 0; k < 2; k++)
+                {
+                    Erisa.FastILOT8x8 (m_ptrBlocksetBuf[l], m_ptrHorzBufLOT, ptrHorzBufLOT, matrix, ptrVertBufLOT);
+                    l++;
+                    ptrHorzBufLOT += m_nBlockArea;
+                    ptrVertBufLOT += m_nBlockArea;
+                }
+            }
+            else
+                return;
+            if (m_nChannelCount < 4)
+                return;
+
+            for (i = 0; i < 2; i++)
+            {
+                for (j = 0; j < 2; j++)
+                {
+                    Erisa.FastILOT8x8 (m_ptrBlocksetBuf[l], m_ptrHorzBufLOT, ptrHorzBufLOT, matrix, ptrVertBufLOT + j * m_nBlockArea);
+                    l++;
+                }
+                ptrHorzBufLOT += m_nBlockArea;
+            }
+            ptrVertBufLOT += m_nBlockArea * 2;
+        }
+
+        void BlockScaling444 (int x, int y)
+        {
+            int nBlockOffset = m_info.Transformation == CvType.LOT_ERI ? 1 : 0;
+            for (int i = 0; i < 2; i++)
+            {
+                int yPos = y * 2 + i - nBlockOffset;
+                if (yPos < 0)
+                {
+                    continue;
+                }
+                for (int j = 0; j < 2; j++)
+                {
+                    int xPos = x * 2 + j - nBlockOffset;
+                    if (xPos < 0)
+                        continue;
+                    int k = i * 2 + j;
+                    if (null != m_src_frame)
+                    {
+                        Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k], m_nBlockArea);
+                    }
+                    else
+                    {
+                        Erisa.ConvertArrayFloatToByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k], m_nBlockArea);
+                    }
+                    StoreYUVImageChannel (xPos, yPos, 0);
+
+                    if (m_nChannelCount < 3)
+                    {
+                        continue;
+                    }
+                    Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k + 4], m_nBlockArea );
+                    StoreYUVImageChannel (xPos, yPos, 1);
+
+                    Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k + 8], m_nBlockArea);
+                    StoreYUVImageChannel (xPos, yPos, 2);
+
+                    if (m_nChannelCount < 4)
+                        continue;
+                    if (null != m_src_frame)
+                    {
+                        Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k + 12], m_nBlockArea);
+                    }
+                    else
+                    {
+                        Erisa.ConvertArrayFloatToByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k + 12], m_nBlockArea);
+                    }
+                    StoreYUVImageChannel (xPos, yPos, 3);
+                }
+            }
+        }
+
+        void BlockScaling411 (int x, int y)
+        {
+            int nBlockOffset = m_info.Transformation == CvType.LOT_ERI ? 1 : 0;
+            for (int i = 0; i < 2; i++)
+            {
+                int yPos = y * 2 + i - nBlockOffset * 2;
+                if (yPos < 0)
+                    continue;
+                for (int j = 0; j < 2; j++)
+                {
+                    int xPos = x * 2 + j - nBlockOffset * 2;
+                    if (xPos < 0)
+                        continue;
+                    int k = i * 2 + j;
+                    if (null != m_src_frame)
+                    {
+                        Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k], m_nBlockArea );
+                    }
+                    else
+                    {
+                        Erisa.ConvertArrayFloatToByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k], m_nBlockArea );
+                    }
+                    StoreYUVImageChannel (xPos, yPos, 0);
+
+                    if (m_nChannelCount < 4)
+                        continue;
+                    if (null != m_src_frame)
+                    {
+                        Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k + 6], m_nBlockArea);
+                    }
+                    else
+                    {
+                        Erisa.ConvertArrayFloatToByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[k + 6], m_nBlockArea);
+                    }
+                    StoreYUVImageChannel (xPos, yPos, 3);
+                }
+            }
+            if (m_nChannelCount < 3)
+                return;
+
+            y -= nBlockOffset;
+            x -= nBlockOffset;
+            if (y < 0 || x < 0)
+                return;
+
+            Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[4], m_nBlockArea);
+            StoreYUVImageChannelX2 (x, y, 1);
+
+            Erisa.ConvertArrayFloatToSByte (m_ptrDecodeBuf, m_ptrBlocksetBuf[5], m_nBlockArea);
+            StoreYUVImageChannelX2 (x, y, 2);
+        }
+
+        void ConvertImageYUVtoRGB (bool differential = false)
+        {
+            if (m_nChannelCount < 3)
+                return;
+
+            int nPixelBytes = m_nYUVPixelBytes;
+            int nWidth = m_nDstWidth;
+            int nHeight = m_nDstHeight;
+            int ptrYUVLine = 0; // m_ptrYUVImage
+
+            for (uint y = 0; y < nHeight; ++y)
+            {
+                int ptrYUVPixel = ptrYUVLine;
+                if (differential)
+                {
+                    for (uint x = 0; x < nWidth; ++x)
+                    {
+                        int Cy = m_ptrYUVImage[ptrYUVPixel];
+                        int u = m_ptrYUVImage[ptrYUVPixel+1];
+                        int v = m_ptrYUVImage[ptrYUVPixel+2];
+                        int b = Cy + ((u * 7) >> 2) + 0x80;
+                        int g = Cy - ((u * 3 + v * 6) >> 3) + 0x80;
+                        int r = Cy + ((v * 3) >> 1) + 0x80;
+                        if ((uint)b > 0xFF)
+                        {
+                            b = (~b >> 31) & 0xFF;
+                        }
+                        m_ptrYUVImage[ptrYUVPixel] = (sbyte)(b - 0x80);
+                        if ((uint)g > 0xFF)
+                        {
+                            g = (~g >> 31) & 0xFF;
+                        }
+                        m_ptrYUVImage[ptrYUVPixel+1] = (sbyte)(g - 0x80);
+                        if ((uint)r > 0xFF)
+                        {
+                            r = (~r >> 31) & 0xFF;
+                        }
+                        m_ptrYUVImage[ptrYUVPixel+2] = (sbyte)(r - 0x80);
+                        ptrYUVPixel += nPixelBytes;
+                    }
+                }
+                else
+                {
+                    for (uint x = 0; x < nWidth; ++x)
+                    {
+                        int Cy = (byte)m_ptrYUVImage[ptrYUVPixel];
+                        int u = m_ptrYUVImage[ptrYUVPixel+1];
+                        int v = m_ptrYUVImage[ptrYUVPixel+2];
+                        int b = Cy + ((u * 7) >> 2);
+                        int g = Cy - ((u * 3 + v * 6) >> 3);
+                        int r = Cy + ((v * 3) >> 1);
+                        if ((uint)b > 0xFF)
+                        {
+                            b = (~b >> 31) & 0xFF;
+                        }
+                        m_ptrYUVImage[ptrYUVPixel] = (sbyte)b;
+                        if ((uint)g > 0xFF)
+                        {
+                            g = (~g >> 31) & 0xFF;
+                        }
+                        m_ptrYUVImage[ptrYUVPixel+1] = (sbyte)g;
+                        if ((uint)r > 0xFF)
+                        {
+                            r = (~r >> 31) & 0xFF;
+                        }
+                        m_ptrYUVImage[ptrYUVPixel+2] = (sbyte)r;
+                        ptrYUVPixel += nPixelBytes;
+                    }
+                }
+                ptrYUVLine += m_nYUVLineBytes;
+            }
+        }
+
+        void StoreYUVImageChannel (int xBlock, int yBlock, int iChannel)
+        {
+            int nPixelBytes = m_nYUVPixelBytes;
+            int nBlockSize = m_nBlockSize;
+            int nBlockArea = m_nBlockArea;
+            int ptrDstYUV = (yBlock * nBlockSize * m_nYUVLineBytes)
+                          + (xBlock * nBlockSize * nPixelBytes) + iChannel;
+            int ptrSrcYUV = 0; // m_ptrDecodeBuf;
+
+            for (int y = 0; y < nBlockSize; y++)
+            {
+                int ptrDstLine = ptrDstYUV;
+                for (int x = 0; x < nBlockSize; x++)
+                {
+                    m_ptrYUVImage[ptrDstLine] = m_ptrDecodeBuf[ptrSrcYUV++];
+                    ptrDstLine += nPixelBytes;
+                }
+                ptrDstYUV += m_nYUVLineBytes;
+            }
+        }
+
+        void StoreYUVImageChannelX2 (int xBlock, int yBlock, int iChannel)
+        {
+            int nPixelBytes = m_nYUVPixelBytes;
+            int nLineBytes = m_nYUVLineBytes;
+            int nBlockSize = m_nBlockSize;
+            int nBlockArea = m_nBlockArea;
+            int ptrDstYUV = (yBlock * nBlockSize * 2 * nLineBytes)
+                          + (xBlock * nBlockSize * 2 * nPixelBytes) + iChannel;
+            int ptrSrcYUV = 0; // m_ptrDecodeBuf;
+
+            for (int y = 0; y < nBlockSize; y++)
+            {
+                int ptrDstLine = ptrDstYUV;
+                for (int x = 0; x < nBlockSize; x++)
+                {
+                    sbyte d = m_ptrDecodeBuf[ptrSrcYUV++];
+                    m_ptrYUVImage[ptrDstLine + nLineBytes + nPixelBytes] = d;
+                    m_ptrYUVImage[ptrDstLine + nLineBytes] = d;
+                    m_ptrYUVImage[ptrDstLine + nPixelBytes] = d;
+                    m_ptrYUVImage[ptrDstLine] = d;
+                    ptrDstLine += nPixelBytes * 2;
+                }
+                ptrDstYUV += nLineBytes * 2;
+            }
         }
     }
 
@@ -826,7 +1711,7 @@ namespace GameRes.Formats.Entis
         public const int HuffmanNull   = 0x8000;
         public const int HuffmanMax    = 0x4000;
         public const int HuffmanRoot   = 0x200;
-    };
+    }
 
     internal class HuffmanNode
     {
@@ -862,10 +1747,10 @@ namespace GameRes.Formats.Entis
             }
             for (int i = 0; i < 0x100; i++)
             {
-                m_iSymLookup[i] = (int)Erina.HuffmanNull;
+                m_iSymLookup[i] = Erina.HuffmanNull;
             }
-            m_iEscape = (int)Erina.HuffmanNull;
-            m_iTreePointer = (int)Erina.HuffmanRoot;
+            m_iEscape = Erina.HuffmanNull;
+            m_iTreePointer = Erina.HuffmanRoot;
             m_hnTree[Erina.HuffmanRoot].Weight = 0;
             m_hnTree[Erina.HuffmanRoot].Parent = Erina.HuffmanNull;
             m_hnTree[Erina.HuffmanRoot].ChildCode = Erina.HuffmanNull;
@@ -957,7 +1842,7 @@ namespace GameRes.Formats.Entis
                 var phnNew = m_hnTree[i];
                 phnNew.Weight = 1;
                 phnNew.ChildCode = Erina.CodeFlag | nNewCode;
-                m_iSymLookup[nNewCode & 0xFF] = i ;
+                m_iSymLookup[nNewCode & 0xFF] = i;
 
                 var phnRoot = m_hnTree[Erina.HuffmanRoot];
                 if (phnRoot.ChildCode != Erina.HuffmanNull)
@@ -1410,7 +2295,7 @@ namespace GameRes.Formats.Entis
                 nCode = iChild & ~Erina.CodeFlag;
                 if (nCode != Erina.HuffmanEscape)
                 {
-                    return nCode ;
+                    return nCode;
                 }
             }
             nCode = GetGammaCode();
@@ -1631,7 +2516,7 @@ namespace GameRes.Formats.Entis
                 SymTable[i].Occured = 1;
                 SymTable[i].Symbol = i;
             }
-            SymTable[0x100].Occured = 1 ;
+            SymTable[0x100].Occured = 1;
             SymTable[0x100].Symbol = EscCode;
 
             for (short i = 0; i < SubSortMax; ++i)
@@ -1664,7 +2549,7 @@ namespace GameRes.Formats.Entis
             }
             for (int i = 0; i < SubSortMax; ++i)
             {
-                SubModel[i].Occured >>= 1 ;
+                SubModel[i].Occured >>= 1;
             }
         }
 

@@ -115,7 +115,7 @@ namespace GameRes.Formats.Entis
             var earc = (EriMultiImage)arc;
             var eent = (EriEntry)entry;
             var pixels = earc.GetFrame (eent.FrameIndex);
-            if (32 == earc.Info.BPP && 0 == (earc.Info.FormatType & (int)EriImage.WithAlpha))
+            if (32 == earc.Info.BPP && 0 == (earc.Info.FormatType & EriType.WithAlpha))
             {
                 for (int p = 3; p < pixels.Length; p += 4)
                     pixels[p] = 0xFF;
