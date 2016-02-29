@@ -68,7 +68,7 @@ namespace GameRes.Formats.Aoi
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new CryptoStream (input, new X.XorTransform (0xB2), CryptoStreamMode.Read);
+            return new CryptoStream (input, new XorTransform (0xB2), CryptoStreamMode.Read);
         }
     }
 }

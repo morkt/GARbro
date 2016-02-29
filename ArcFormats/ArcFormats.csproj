@@ -68,6 +68,7 @@
     <Compile Include="ArcCG.cs" />
     <Compile Include="ImageLZ.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
+    <Compile Include="SimpleEncryption.cs" />
     <Compile Include="Softpal\ArcPAC.cs" />
     <Compile Include="Softpal\AudioBGM.cs" />
     <Compile Include="Softpal\ImagePGD.cs" />

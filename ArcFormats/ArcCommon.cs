@@ -27,7 +27,6 @@ using GameRes.Utility;
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 
 namespace GameRes.Formats
 {
@@ -388,38 +387,6 @@ namespace GameRes.Formats
             m_cached_bits -= n;
             m_cache &= ~(-1 << m_cached_bits);
             return (uint)(((-1 << m_cached_bits) & mask) >> m_cached_bits);
-        }
-    }
-
-    public sealed class NotTransform : ICryptoTransform
-    {
-        private const int BlockSize = 256;
-
-        public bool          CanReuseTransform { get { return true; } }
-        public bool CanTransformMultipleBlocks { get { return true; } }
-        public int              InputBlockSize { get { return BlockSize; } }
-        public int             OutputBlockSize { get { return BlockSize; } }
-
-        public int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount,
-                                   byte[] outputBuffer, int outputOffset)
-        {
-            for (int i = 0; i < inputCount; ++i)
-            {
-                outputBuffer[outputOffset++] = (byte)~inputBuffer[inputOffset+i];
-            }
-            return inputCount;
-        }
-
-        public byte[] TransformFinalBlock (byte[] inputBuffer, int inputOffset, int inputCount)
-        {
-            byte[] outputBuffer = new byte[inputCount];
-            TransformBlock (inputBuffer, inputOffset, inputCount, outputBuffer, 0);
-            return outputBuffer;
-        }
-
-        public void Dispose ()
-        {
-            System.GC.SuppressFinalize (this);
         }
     }
 
