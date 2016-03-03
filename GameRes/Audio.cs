@@ -114,6 +114,50 @@ namespace GameRes
         #endregion
     }
 
+    /// <summary>
+    /// Class representing raw PCM sound input.
+    /// </summary>
+    public class RawPcmInput : SoundInput
+    {
+        public override string SourceFormat { get { return "raw"; } }
+
+        public override int SourceBitrate
+        {
+            get { return (int)Format.AverageBytesPerSecond * 8; }
+        }
+
+        public RawPcmInput (Stream file, WaveFormat format) : base (file)
+        {
+            this.Format = format;
+            this.PcmSize = file.Length;
+        }
+
+        #region IO.Stream methods
+        public override long Position
+        {
+            get { return Source.Position; }
+            set { Source.Position = value; }
+        }
+
+        public override bool CanSeek { get { return Source.CanSeek; } }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            return Source.Seek (offset, origin);
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            return Source.Read (buffer, offset, count);
+        }
+
+        public override int ReadByte ()
+        {
+            return Source.ReadByte();
+        }
+        #endregion
+    }
+
     public abstract class AudioFormat : IResource
     {
         public override string Type { get { return "audio"; } }
