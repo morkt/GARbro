@@ -67,18 +67,19 @@ namespace GameRes.Formats.Cri
 
     internal sealed class HcaReader : IDisposable
     {
-        BigEndianReader m_input;
         WaveFormat      m_format;
-        uint            m_key1;
-        uint            m_key2;
+        byte[]          m_input;
 
         public WaveFormat Format { get { return m_format; } }
 
         public HcaReader (Stream input, uint key1, uint key2)
         {
-            m_input = new BigEndianReader (input, Encoding.UTF8, true);
-            m_key1 = key1;
-            m_key2 = key2;
+            using (var file = new BigEndianReader (input, Encoding.UTF8, true))
+                ParseHeader (file);
+            m_ath = new AthTable (m_ath_type.Value, m_format.SamplesPerSecond);
+            m_cipher = new Cipher (m_ciph_type.Value, key1, key2);
+
+            InitBuffer (input);
         }
 
         delegate void SampleConverter (float f, BinaryWriter output);
@@ -93,7 +94,8 @@ namespace GameRes.Formats.Cri
         };
 
         int             m_version;
-        uint            m_fmt_block_count;
+        int             m_data_offset;
+        uint?           m_fmt_block_count;
         int?            m_ciph_type;
         int?            m_ath_type;
         CompParams      m_comp;
@@ -105,67 +107,90 @@ namespace GameRes.Formats.Cri
 
         public byte[] Unpack (ConversionFormat target)
         {
-            ParseHeader (target);
-            m_ath = new AthTable (m_ath_type.Value, m_format.SamplesPerSecond);
-            m_cipher = new Cipher (m_ciph_type.Value, m_key1, m_key2);
-
+            InitWaveFormat (target);
             m_block = new byte[m_comp.BlockSize];
-            var output = new byte[m_fmt_block_count * 0x400 * m_format.BlockAlign];
+            var output = new byte[m_fmt_block_count.Value * 0x400 * m_format.BlockAlign];
             using (var mem = new MemoryStream (output))
             using (var writer = new BinaryWriter (mem))
                 Decode (writer, ConversionMap[target]);
             return output;
         }
 
-        void ParseHeader (ConversionFormat target)
+        void InitWaveFormat (ConversionFormat target)
         {
-            uint signature = ReadSignature();
+            m_format.FormatTag = (ushort)target;
+            m_format.BitsPerSample = FormatBpsMap[target];
+            m_format.BlockAlign = (ushort)(m_format.Channels * m_format.BitsPerSample / 8);
+            m_format.AverageBytesPerSecond = m_format.SamplesPerSecond * m_format.BlockAlign;
+        }
+
+        void InitBuffer (Stream input)
+        {
+            var mem = input as MemoryStream;
+            if (null == mem)
+            {
+                m_input = new byte[input.Length];
+                input.Position = m_data_offset;
+                input.Read (m_input, m_data_offset, m_input.Length-m_data_offset);
+            }
+            else
+            {
+                try
+                {
+                    m_input = mem.GetBuffer();
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    m_input = mem.ToArray();
+                }
+            }
+        }
+
+        void ParseHeader (BigEndianReader input)
+        {
+            uint signature = ReadSignature (input);
             if (signature != 0x48434100) // 'HCA'
                 throw new InvalidFormatException();
-            m_version = m_input.ReadUInt16();
-            int header_size = m_input.ReadUInt16();
-            while (m_input.Position < header_size)
+            m_version = input.ReadUInt16();
+            m_data_offset = input.ReadUInt16();
+            while (input.Position < m_data_offset)
             {
-                signature = ReadSignature();
+                signature = ReadSignature (input);
                 switch (signature)
                 {
                 case 0x666D7400: // 'fmt'
-                    uint format = m_input.ReadUInt32();
-                    m_format.FormatTag = (ushort)target;
+                    uint format = input.ReadUInt32();
                     m_format.Channels = (byte)(format >> 24);
                     m_format.SamplesPerSecond = format & 0xFFFFFF;
-                    m_format.BitsPerSample = FormatBpsMap[target];
-                    m_format.BlockAlign = (ushort)(m_format.Channels * m_format.BitsPerSample / 8);
-                    m_format.AverageBytesPerSecond = m_format.SamplesPerSecond * m_format.BlockAlign;
-                    m_fmt_block_count = m_input.ReadUInt32();
-                    m_input.Skip (4);
+                    m_fmt_block_count = input.ReadUInt32();
+                    input.Skip (4);
                     continue;
 
                 case 0x636F6D70: // 'comp'
-                    m_comp = new CompParams { BlockSize = m_input.ReadUInt16() };
-                    m_input.Read (m_comp.R, 0, 8);
-                    m_input.Skip (2);
+                    m_comp = new CompParams { BlockSize = input.ReadUInt16() };
+                    input.Read (m_comp.R, 0, 8);
+                    input.Skip (2);
                     continue;
 
                 case 0x6C6F6F70: // 'loop'
-                    m_input.Skip (12);
+                    input.Skip (12);
                     continue;
 
                 case 0x63697068: // 'ciph'
-                    m_ciph_type = m_input.ReadUInt16();
+                    m_ciph_type = input.ReadUInt16();
                     continue;
 
                 case 0x72766100: // 'rva'
-                    m_rva_volume = m_input.ReadSingle();
+                    m_rva_volume = input.ReadSingle();
                     continue;
 
                 case 0x61746800: // 'ath'
-                    m_ath_type = m_input.ReadUInt16();
+                    m_ath_type = input.ReadUInt16();
                     continue;
                 }
                 break; // unknown section encountered
             }
-            if (0 == m_format.FormatTag || null == m_comp)
+            if (null == m_fmt_block_count || null == m_comp)
                 throw new NotSupportedException ("Not supported HCA format");
             if (m_comp.BlockSize < 8)
                 throw new InvalidFormatException ("Invalid HCA block size");
@@ -190,7 +215,6 @@ namespace GameRes.Formats.Cri
             if (0 == m_comp.R[2])
                 m_comp.R[2] = 1;
             InitChannels();
-            m_input.Position = header_size;
         }
 
         void InitChannels ()
@@ -244,10 +268,13 @@ namespace GameRes.Formats.Cri
 
         void Decode (BinaryWriter output, SampleConverter pack_sample)
         {
-            int bytes_per_sample = m_format.BitsPerSample / 8;
+            int block_offset = m_data_offset;
             for (uint i = 0; i < m_fmt_block_count; ++i)
             {
-                m_input.Read (m_block, 0, m_block.Length);
+                if (block_offset + m_comp.BlockSize > m_input.Length)
+                    throw new EndOfStreamException();
+                Buffer.BlockCopy (m_input, block_offset, m_block, 0, m_comp.BlockSize);
+                block_offset += m_comp.BlockSize;
                 DecodeBlock();
                 for (int j = 0; j < 8; ++j)
                 for (int k = 0; k < 0x80; ++k)
@@ -308,12 +335,12 @@ namespace GameRes.Formats.Cri
             output.Write ((short)v);
         }
 
-        uint ReadSignature ()
+        static uint ReadSignature (BigEndianReader input)
         {
-            return m_input.ReadUInt32() & 0x7F7F7F7F;
+            return input.ReadUInt32() & 0x7F7F7F7F;
         }
 
-        ushort CheckSum (byte[] data, ushort sum = 0)
+        static ushort CheckSum (byte[] data, ushort sum = 0)
         {
             for (int i = 0; i < data.Length; ++i)
                 sum = (ushort)((sum << 8) ^ CheckSumTable[(sum >> 8) ^ data[i]]);
@@ -955,7 +982,6 @@ namespace GameRes.Formats.Cri
         {
             if (!_disposed)
             {
-                m_input.Dispose();
                 _disposed = true;
             }
         }
