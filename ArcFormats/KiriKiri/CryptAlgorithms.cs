@@ -24,6 +24,7 @@
 //
 
 using System;
+using GameRes.Utility;
 
 namespace GameRes.Formats.KiriKiri
 {
@@ -170,24 +171,22 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class SwanSongCrypt : ICrypt
+    public class FlyingShineCrypt : ICrypt
     {
         static private byte Adjust (uint hash, out int shift)
         {
-            int cl = (int)(hash & 0xff);
-            if (0 == cl) cl = 0x0f;
-            shift = cl & 7;
-            int ch = (int)((hash >> 8) & 0xff);
-            if (0 == ch) ch = 0xf0;
-            return (byte)ch;
+            shift = (int)(hash & 0xff);
+            if (0 == shift) shift = 0x0f;
+            byte key = (byte)(hash >> 8);
+            if (0 == key) key = 0xf0;
+            return key;
         }
 
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
             int shift;
             byte xor = Adjust (entry.Hash, out shift);
-            uint data = (uint)(value ^ xor);
-            return (byte)((data >> shift) | (data << (8 - shift)));
+            return Binary.RotByteR ((byte)(value ^ xor), shift);
         }
 
         public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
@@ -196,8 +195,8 @@ namespace GameRes.Formats.KiriKiri
             byte xor = Adjust (entry.Hash, out shift);
             for (int i = 0; i < count; ++i)
             {
-                uint data = (uint)(values[pos+i] ^ xor);
-                values[pos+i] = (byte)((data >> shift) | (data << (8 - shift)));
+                byte data = (byte)(values[pos+i] ^ xor);
+                values[pos+i] = Binary.RotByteR (data, shift);
             }
         }
 
@@ -207,8 +206,7 @@ namespace GameRes.Formats.KiriKiri
             byte xor = Adjust (entry.Hash, out shift);
             for (int i = 0; i < count; ++i)
             {
-                uint data = values[pos+i];
-                data = (byte)((data << shift) | (data >> (8 - shift)));
+                byte data = Binary.RotByteL (values[pos+i], shift);
                 values[pos+i] = (byte)(data ^ xor);
             }
         }
@@ -336,7 +334,7 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class SaiminCrypt : ICrypt
+    public class DieselmineCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
@@ -525,6 +523,67 @@ namespace GameRes.Formats.KiriKiri
         public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
             Decrypt (entry, offset, values, pos, count);
+        }
+    }
+
+    [Serializable]
+    public class AppliqueCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ (entry.Hash >> 12));
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)(entry.Hash >> 12);
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
+
+    [Serializable]
+    public class TokidokiCrypt : ICrypt
+    {
+        public override bool HashAfterCrypt { get { return true; } }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            uint key;
+            uint limit = GetParameters (entry, out key);
+            for (int i = 0; i < count && offset < limit; ++i, ++offset)
+            {
+                values[pos+i] ^= (byte)(key >> (((int)offset & 3) << 3));
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+
+        uint GetParameters (Xp3Entry entry, out uint key)
+        {
+            var ext = System.IO.Path.GetExtension (entry.Name);
+            if (!string.IsNullOrEmpty (ext))
+            {
+                ext = ext.ToLowerInvariant();
+                var ext_bin = new byte[16];
+                Encodings.cp932.GetBytes (ext, 0, Math.Min (4, ext.Length), ext_bin, 0);
+                key = ~LittleEndian.ToUInt32 (ext_bin, 0);
+                if (".asd.ks.tjs".Contains (ext))
+                    return entry.Size;
+            }
+            else
+                key = uint.MaxValue;
+            return Math.Min (entry.Size, 0x100u);
         }
     }
 }
