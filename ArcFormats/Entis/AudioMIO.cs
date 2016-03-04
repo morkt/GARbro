@@ -97,10 +97,10 @@ namespace GameRes.Formats.Entis
                     throw new InvalidFormatException();
                 m_stream_pos = 0x50 + section.Length;
                 int header_size = (int)section.Length;
-                while (header_size > 8)
+                while (header_size > 0x10)
                 {
                     section = erif.ReadSection();
-                    header_size -= 8;
+                    header_size -= 0x10;
                     if (section.Length <= 0 || section.Length > header_size)
                         break;
                     if ("SoundInf" == section.Id)
