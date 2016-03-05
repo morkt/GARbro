@@ -44,7 +44,7 @@ namespace GameRes.Compression
         public int  FrameInitPos { get; set; }
     }
 
-    internal sealed class LzssCoroutine : LzssSettings
+    internal sealed class LzssCoroutine : LzssSettings, IDisposable
     {
         byte[] m_buffer;
         int    m_offset;
@@ -122,6 +122,20 @@ namespace GameRes.Compression
                 }
             }
         }
+
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                if (m_unpack != null)
+                    m_unpack.Dispose();
+                _disposed = true;
+            }
+            GC.SuppressFinalize (this);
+        }
+        #endregion
     }
 
     public class LzssStream : Stream
@@ -193,6 +207,7 @@ namespace GameRes.Compression
             {
                 if (m_should_dispose && disposing)
                     m_input.Dispose();
+                m_reader.Dispose();
                 m_disposed = true;
                 base.Dispose (disposing);
             }

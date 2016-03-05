@@ -2,7 +2,7 @@
 //! \date       Sun Sep 07 06:50:11 2014
 //! \brief      KiriKiri Cx encryption scheme implementation.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -130,8 +130,6 @@ namespace GameRes.Formats.KiriKiri
                 key2 = (key2+1) & 0xffff;
             if (0 == key3)
                 key3 = 1;
-
-//            Trace.WriteLine (string.Format ("[offset:{3:x4}] [key1:{0:x4}] [key2:{1:x4}] [key3:{2:x6}]", key1, key2, key3, offset));
 
             if ((key2 >= offset) && (key2 < offset + count))
                 buffer[pos + key2 - offset] ^= (byte)(ret.Item1 >> 16);
@@ -405,65 +403,67 @@ namespace GameRes.Formats.KiriKiri
         public uint Execute (uint hash)
         {
             var context = new Context();
-            var iterator = m_code.GetEnumerator();
-            uint immed = 0;
-            while (iterator.MoveNext())
+            using (var iterator = m_code.GetEnumerator())
             {
-                var bytecode = (CxByteCode)iterator.Current;
-                if (CxByteCode.IMMED == (bytecode & CxByteCode.IMMED))
+                uint immed = 0;
+                while (iterator.MoveNext())
                 {
-                    if (!iterator.MoveNext())
-                        throw new CxProgramException ("Incomplete IMMED bytecode in CxEncryption program");
-                    immed = iterator.Current;
-                }
-                switch (bytecode)
-                {
-                case CxByteCode.NOP: break;
-                case CxByteCode.IMMED: break;
-                case CxByteCode.MOV_EDI_ARG:    context.edi = hash; break;
-                case CxByteCode.PUSH_EBX:       context.stack.Push (context.ebx); break;
-                case CxByteCode.POP_EBX:        context.ebx = context.stack.Pop(); break;
-                case CxByteCode.PUSH_ECX:       context.stack.Push (context.ecx); break;
-                case CxByteCode.POP_ECX:        context.ecx = context.stack.Pop(); break;
-                case CxByteCode.MOV_EBX_EAX:    context.ebx = context.eax; break;
-                case CxByteCode.MOV_EAX_EDI:    context.eax = context.edi; break;
-                case CxByteCode.MOV_ECX_EBX:    context.ecx = context.ebx; break;
-                case CxByteCode.MOV_EAX_EBX:    context.eax = context.ebx; break;
+                    var bytecode = (CxByteCode)iterator.Current;
+                    if (CxByteCode.IMMED == (bytecode & CxByteCode.IMMED))
+                    {
+                        if (!iterator.MoveNext())
+                            throw new CxProgramException ("Incomplete IMMED bytecode in CxEncryption program");
+                        immed = iterator.Current;
+                    }
+                    switch (bytecode)
+                    {
+                    case CxByteCode.NOP: break;
+                    case CxByteCode.IMMED: break;
+                    case CxByteCode.MOV_EDI_ARG:    context.edi = hash; break;
+                    case CxByteCode.PUSH_EBX:       context.stack.Push (context.ebx); break;
+                    case CxByteCode.POP_EBX:        context.ebx = context.stack.Pop(); break;
+                    case CxByteCode.PUSH_ECX:       context.stack.Push (context.ecx); break;
+                    case CxByteCode.POP_ECX:        context.ecx = context.stack.Pop(); break;
+                    case CxByteCode.MOV_EBX_EAX:    context.ebx = context.eax; break;
+                    case CxByteCode.MOV_EAX_EDI:    context.eax = context.edi; break;
+                    case CxByteCode.MOV_ECX_EBX:    context.ecx = context.ebx; break;
+                    case CxByteCode.MOV_EAX_EBX:    context.eax = context.ebx; break;
 
-                case CxByteCode.AND_ECX_0F:     context.ecx &= 0x0f; break;
-                case CxByteCode.SHR_EBX_1:      context.ebx >>= 1; break;
-                case CxByteCode.SHL_EAX_1:      context.eax <<= 1; break;
-                case CxByteCode.SHR_EAX_CL:     context.eax >>= (int)context.ecx; break;
-                case CxByteCode.SHL_EAX_CL:     context.eax <<= (int)context.ecx; break;
-                case CxByteCode.OR_EAX_EBX:     context.eax |= context.ebx; break;
-                case CxByteCode.NOT_EAX:        context.eax = ~context.eax; break;
-                case CxByteCode.NEG_EAX:        context.eax = (uint)-context.eax; break;
-                case CxByteCode.DEC_EAX:        context.eax--; break;
-                case CxByteCode.INC_EAX:        context.eax++; break;
+                    case CxByteCode.AND_ECX_0F:     context.ecx &= 0x0f; break;
+                    case CxByteCode.SHR_EBX_1:      context.ebx >>= 1; break;
+                    case CxByteCode.SHL_EAX_1:      context.eax <<= 1; break;
+                    case CxByteCode.SHR_EAX_CL:     context.eax >>= (int)context.ecx; break;
+                    case CxByteCode.SHL_EAX_CL:     context.eax <<= (int)context.ecx; break;
+                    case CxByteCode.OR_EAX_EBX:     context.eax |= context.ebx; break;
+                    case CxByteCode.NOT_EAX:        context.eax = ~context.eax; break;
+                    case CxByteCode.NEG_EAX:        context.eax = (uint)-context.eax; break;
+                    case CxByteCode.DEC_EAX:        context.eax--; break;
+                    case CxByteCode.INC_EAX:        context.eax++; break;
 
-                case CxByteCode.ADD_EAX_EBX:    context.eax += context.ebx; break;
-                case CxByteCode.SUB_EAX_EBX:    context.eax -= context.ebx; break;
-                case CxByteCode.IMUL_EAX_EBX:   context.eax *= context.ebx; break;
+                    case CxByteCode.ADD_EAX_EBX:    context.eax += context.ebx; break;
+                    case CxByteCode.SUB_EAX_EBX:    context.eax -= context.ebx; break;
+                    case CxByteCode.IMUL_EAX_EBX:   context.eax *= context.ebx; break;
 
-                case CxByteCode.ADD_EAX_IMMED:  context.eax += immed; break;
-                case CxByteCode.SUB_EAX_IMMED:  context.eax -= immed; break;
-                case CxByteCode.AND_EBX_IMMED:  context.ebx &= immed; break;
-                case CxByteCode.AND_EAX_IMMED:  context.eax &= immed; break;
-                case CxByteCode.XOR_EAX_IMMED:  context.eax ^= immed; break;
-                case CxByteCode.MOV_EAX_IMMED:  context.eax = immed; break;
-                case CxByteCode.MOV_EAX_INDIRECT:
-                    if (context.eax >= m_ControlBlock.Length)
-                        throw new CxProgramException ("Index out of bounds in CxEncryption program");
-                    context.eax = ~m_ControlBlock[context.eax];
-                    break;
+                    case CxByteCode.ADD_EAX_IMMED:  context.eax += immed; break;
+                    case CxByteCode.SUB_EAX_IMMED:  context.eax -= immed; break;
+                    case CxByteCode.AND_EBX_IMMED:  context.ebx &= immed; break;
+                    case CxByteCode.AND_EAX_IMMED:  context.eax &= immed; break;
+                    case CxByteCode.XOR_EAX_IMMED:  context.eax ^= immed; break;
+                    case CxByteCode.MOV_EAX_IMMED:  context.eax = immed; break;
+                    case CxByteCode.MOV_EAX_INDIRECT:
+                        if (context.eax >= m_ControlBlock.Length)
+                            throw new CxProgramException ("Index out of bounds in CxEncryption program");
+                        context.eax = ~m_ControlBlock[context.eax];
+                        break;
 
-                case CxByteCode.RETN:
-                    if (context.stack.Count > 0)
-                        throw new CxProgramException ("Imbalanced stack in CxEncryption program");
-                    return context.eax;
+                    case CxByteCode.RETN:
+                        if (context.stack.Count > 0)
+                            throw new CxProgramException ("Imbalanced stack in CxEncryption program");
+                        return context.eax;
 
-                default:
-                    throw new CxProgramException ("Invalid bytecode in CxEncryption program");
+                    default:
+                        throw new CxProgramException ("Invalid bytecode in CxEncryption program");
+                    }
                 }
             }
             throw new CxProgramException ("CxEncryption program without RETN bytecode");
