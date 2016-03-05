@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 
 namespace GameRes.Formats.PkWare
 {
@@ -84,7 +85,7 @@ namespace GameRes.Formats.PkWare
         public override string Description { get { return "PKWARE archive format"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool     CanCreate { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -143,5 +144,39 @@ namespace GameRes.Formats.PkWare
                 }
             }
         }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new ZipOptions {
+                CompressionLevel = CompressionLevel.Optimal,
+                FileNameEncoding = Encodings.cp932,
+            };
+        }
+
+        // TODO: GUI widget for options
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            var zip_options = (ZipOptions)options;
+            using (var zip = new ZipArchive (output, ZipArchiveMode.Create, true, zip_options.FileNameEncoding))
+            {
+                foreach (var entry in list)
+                {
+                    var zip_entry = zip.CreateEntry (entry.Name, zip_options.CompressionLevel);
+                    using (var input = File.OpenRead (entry.Name))
+                    using (var zip_file = zip_entry.Open())
+                    {
+                        input.CopyTo (zip_file);
+                    }
+                }
+            }
+        }
+    }
+
+    public class ZipOptions : ResourceOptions
+    {
+        public CompressionLevel CompressionLevel { get; set; }
+        public         Encoding FileNameEncoding { get; set; }
     }
 }
