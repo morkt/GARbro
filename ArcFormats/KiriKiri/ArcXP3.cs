@@ -315,11 +315,18 @@ NextEntry:
                         try {
                             for (byte* ptr = page_begin; ptr != page_end; ++ptr)
                             {
+                                // TODO: search every byte only when inside resource section,
+                                // otherwise stick to paragraph boundary.
                                 int i = 0;
                                 while (ptr[i] == s_xp3_header[i])
                                 {
                                     if (++i == s_xp3_header.Length)
+                                    {
+                                        // check whether index offset is non-zero
+                                        if (0 == *(uint*)(ptr+i))
+                                            break;
                                         return offset + (ptr - page_begin);
+                                    }
                                 }
                             }
                         }
