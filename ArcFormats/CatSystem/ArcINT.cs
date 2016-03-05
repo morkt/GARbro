@@ -146,7 +146,6 @@ namespace GameRes.Formats.CatSystem
             var dir = new List<Entry> (entry_count);
             foreach (var name_length in NameSizes)
             {
-                dir.Clear();
                 try
                 {
                     long current_offset = 8;
