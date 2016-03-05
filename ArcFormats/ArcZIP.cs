@@ -30,6 +30,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.PkWare
 {
@@ -97,7 +99,8 @@ namespace GameRes.Formats.PkWare
                 var zip = new ZipArchive (input, ZipArchiveMode.Read, false, Encodings.cp932);
                 try
                 {
-                    var dir = zip.Entries.Select (z => new ZipEntry (z) as Entry).ToList();
+                    var dir = zip.Entries.Where (z => !z.FullName.EndsWith ("/"))
+                        .Select (z => new ZipEntry (z) as Entry).ToList();
                     return new PkZipArchive (file, this, dir, zip);
                 }
                 catch
@@ -147,9 +150,18 @@ namespace GameRes.Formats.PkWare
 
         public override ResourceOptions GetDefaultOptions ()
         {
+            Encoding enc;
+            try
+            {
+                enc = Encoding.GetEncoding (Settings.Default.ZIPEncodingCP);
+            }
+            catch
+            {
+                enc = Encodings.cp932;
+            }
             return new ZipOptions {
-                CompressionLevel = CompressionLevel.Optimal,
-                FileNameEncoding = Encodings.cp932,
+                CompressionLevel = Settings.Default.ZIPCompression,
+                FileNameEncoding = enc,
             };
         }
 
@@ -158,7 +170,8 @@ namespace GameRes.Formats.PkWare
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
                                      EntryCallback callback)
         {
-            var zip_options = (ZipOptions)options;
+            var zip_options = GetOptions<ZipOptions> (options);
+            int callback_count = 0;
             using (var zip = new ZipArchive (output, ZipArchiveMode.Create, true, zip_options.FileNameEncoding))
             {
                 foreach (var entry in list)
@@ -167,6 +180,8 @@ namespace GameRes.Formats.PkWare
                     using (var input = File.OpenRead (entry.Name))
                     using (var zip_file = zip_entry.Open())
                     {
+                        if (null != callback)
+                            callback (++callback_count, entry, arcStrings.MsgAddingFile);
                         input.CopyTo (zip_file);
                     }
                 }

@@ -116,5 +116,11 @@
     <Setting Name="YPFScheme" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="ZIPCompression" Type="System.IO.Compression.CompressionLevel" Scope="User">
+      <Value Profile="(Default)">Optimal</Value>
+    </Setting>
+    <Setting Name="ZIPEncodingCP" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">932</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
