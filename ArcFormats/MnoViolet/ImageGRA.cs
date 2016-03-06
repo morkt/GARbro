@@ -26,9 +26,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using GameRes.Compression;
 
 namespace GameRes.Formats.MnoViolet
@@ -78,15 +76,12 @@ namespace GameRes.Formats.MnoViolet
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as GraMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GraFormat.Read should be supplied with GraMetaData", "info");
-
+            var meta = (GraMetaData)info;
             stream.Position = 0x14;
             using (var reader = new LzssReader (stream, meta.PackedSize, meta.UnpackedSize))
             {
                 reader.Unpack();
-                int stride = (int)info.Width*info.BPP/8;
+                int stride = ((int)info.Width*info.BPP/8 + 3) & ~3;
                 PixelFormat format;
                 if (24 == info.BPP)
                     format = PixelFormats.Bgr24;
