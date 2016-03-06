@@ -665,10 +665,38 @@ namespace GameRes
         {
             m_vfs.Flush();
         }
-        
+
         public static IEnumerable<Entry> GetFiles ()
         {
             return m_vfs.Top.GetFiles();
+        }
+
+        /// <summary>
+        /// Returns enumeration of files within current directory that match specified pattern.
+        /// </summary>
+        public static IEnumerable<Entry> GetFiles (string pattern)
+        {
+            var glob = new FileNameGlob (pattern);
+            return GetFiles().Where (f => glob.IsMatch (Path.GetFileName (f.Name)));
+        }
+    }
+
+    public class FileNameGlob
+    {
+        Regex   m_glob;
+
+        public FileNameGlob (string pattern)
+        {
+            pattern = Regex.Escape (pattern);
+            if (pattern.EndsWith (@"\.\*")) // "*" and "*.*" are equivalent
+                pattern = pattern.Remove (pattern.Length-4) + @"(?:\..*)?";
+            pattern = pattern.Replace (@"\*", ".*").Replace (@"\?", ".");
+            m_glob = new Regex ("^"+pattern+"$", RegexOptions.IgnoreCase);
+        }
+
+        public bool IsMatch (string str)
+        {
+            return m_glob.IsMatch (str);
         }
     }
 
