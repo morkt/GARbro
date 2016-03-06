@@ -1132,8 +1132,7 @@ namespace GARbro.GUI
                     CurrentDirectory.SelectAll();
                     return;
                 }
-                var mask = Regex.Escape (selection.Mask.Text).Replace (@"\*", ".*").Replace (@"\?", ".");
-                var glob = new Regex ("^"+mask+"$", RegexOptions.IgnoreCase);
+                var glob = new FileNameGlob (selection.Mask.Text);
                 var matching = ViewModel.Where (entry => glob.IsMatch (entry.Name));
                 if (!matching.Any())
                 {
