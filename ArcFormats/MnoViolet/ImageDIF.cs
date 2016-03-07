@@ -77,7 +77,7 @@ namespace GameRes.Formats.MnoViolet
                 return null;
             var files = VFS.GetFiles (base_name+".*");
             if (!files.Any())
-                return null;
+                throw new FileNotFoundException (string.Format ("Base image '{0}' not found"), base_name);
             var base_entry = files.First();
             using (var input = VFS.OpenSeekableStream (base_entry))
             {
@@ -85,7 +85,7 @@ namespace GameRes.Formats.MnoViolet
                 // prevented here unless we save state in a static member.
                 var format = ImageFormat.FindFormat (input, base_entry.Name);
                 if (null == format)
-                    return null;
+                    throw new InvalidFormatException (string.Format ("Unable to interpret base image '{0}'", base_name));
                 format.Item2.FileName = base_entry.Name;
                 return new DifMetaData
                 {
@@ -122,7 +122,7 @@ namespace GameRes.Formats.MnoViolet
             if (base_bitmap.Format.BitsPerPixel != 24)
                 base_bitmap = new FormatConvertedBitmap (base_bitmap, PixelFormats.Bgr24, null, 0);
 
-            int src_stride = base_bitmap.PixelWidth * 3;
+            int src_stride = base_bitmap.PixelWidth * 3; // XXX
             int dst_stride = (src_stride + 3) & ~3;
             var pixels = new byte[dst_stride * base_bitmap.PixelHeight];
             int row_offset = 0;
