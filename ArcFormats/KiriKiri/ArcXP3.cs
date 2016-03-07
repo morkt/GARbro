@@ -259,7 +259,10 @@ NextEntry:
                     header.BaseStream.Position = dir_offset;
                 }
             }
-            return new ArcFile (file, this, dir);
+            var arc = new ArcFile (file, this, dir);
+            if (crypt_algorithm.IsValueCreated)
+                crypt_algorithm.Value.Init (arc);
+            return arc;
         }
 
         static readonly Regex ObfuscatedPathRe = new Regex (@"[^\\/]+[\\/]\.\.[\\/]");

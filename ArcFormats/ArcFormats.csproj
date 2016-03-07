@@ -66,12 +66,16 @@
     <Compile Include="Abel\ImageGPS.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="ArcZIP.cs" />
     <Compile Include="Cri\ArcCPK.cs" />
     <Compile Include="Cri\AudioHCA.cs" />
     <Compile Include="Cri\BigEndianReader.cs" />
     <Compile Include="Cri\ImageXTX.cs" />
     <Compile Include="Entis\ErisaMatrix.cs" />
+    <Compile Include="Hexenhaus\ArcARCC.cs" />
     <Compile Include="ImageLZ.cs" />
+    <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
+    <Compile Include="MnoViolet\ImageDIF.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
     <Compile Include="SimpleEncryption.cs" />
     <Compile Include="Softpal\ArcPAC.cs" />

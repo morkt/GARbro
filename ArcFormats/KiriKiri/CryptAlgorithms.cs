@@ -56,6 +56,13 @@ namespace GameRes.Formats.KiriKiri
         {
             throw new NotImplementedException (Strings.arcStrings.MsgEncNotImplemented);
         }
+
+        /// <summary>
+        /// Perform necessary initialization specific to an archive being opened.
+        /// </summary>
+        public virtual void Init (ArcFile arc)
+        {
+        }
     }
 
     [Serializable]
@@ -109,6 +116,44 @@ namespace GameRes.Formats.KiriKiri
         public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
             Decrypt (entry, offset, values, pos, count);
+        }
+    }
+
+    [Serializable]
+    public class MizukakeCrypt : ICrypt
+    {
+        public override bool HashAfterCrypt { get { return true; } }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            if (offset <= 0x103 && offset + count > 0x103)
+                values[pos+0x103-offset]--;
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= 0xB6;
+            }
+            if (offset > 0x3F82)
+                return;
+            if (offset + count > 0x3F82)
+                values[pos+0x3F82-offset] ^= 1;
+            if (offset > 0x83)
+                return;
+            if (offset + count > 0x83)
+                values[pos+0x83-offset] ^= 3;
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= 0xB6;
+            }
+            if (offset <= 0x3F82 && offset + count > 0x3F82)
+                values[pos+0x3F82-offset] ^= 1;
+            if (offset <= 0x83 && offset + count > 0x83)
+                values[pos+0x83-offset] ^= 3;
+            if (offset <= 0x103 && offset + count > 0x103)
+                values[pos+0x103-offset]++;
         }
     }
 
@@ -504,7 +549,7 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class IncubusCrypt : ICrypt
+    public class PoringSoftCrypt : ICrypt
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
@@ -578,7 +623,7 @@ namespace GameRes.Formats.KiriKiri
                 var ext_bin = new byte[16];
                 Encodings.cp932.GetBytes (ext, 0, Math.Min (4, ext.Length), ext_bin, 0);
                 key = ~LittleEndian.ToUInt32 (ext_bin, 0);
-                if (".asd.ks.tjs".Contains (ext))
+                if (".asd\0.ks\0.tjs\0".Contains (ext+'\0'))
                     return entry.Size;
             }
             else
