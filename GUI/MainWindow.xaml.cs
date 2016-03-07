@@ -658,7 +658,7 @@ namespace GARbro.GUI
                 items = items.Skip (start_index).Concat (items.Take (start_index));
             }
             string input = m_current_input.Phrase.ToString();
-            var matched = items.Where (e => e.Name.StartsWith (input, StringIgnoreCase)).FirstOrDefault();
+            var matched = items.FirstOrDefault (e => e.Name.StartsWith (input, StringIgnoreCase));
             if (null != matched)
                 lv_SelectItem (matched);
             else

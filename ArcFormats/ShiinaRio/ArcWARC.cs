@@ -290,7 +290,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
 
         static EncryptionScheme GetScheme (string scheme)
         {
-            return Decoder.KnownSchemes.Where (s => s.Name == scheme).FirstOrDefault();
+            return Decoder.KnownSchemes.FirstOrDefault (s => s.Name == scheme);
         }
     }
 

@@ -78,7 +78,7 @@ namespace GameRes.Formats.KiriKiri
 
         public override void Init (ArcFile arc)
         {
-            var list_bin = arc.Dir.Where (e => e.Name == "plugin/list.bin").FirstOrDefault() as Xp3Entry;
+            var list_bin = arc.Dir.FirstOrDefault (e => e.Name == "plugin/list.bin") as Xp3Entry;
             if (null == list_bin || list_bin.UnpackedSize <= 0x30)
                 return;
             var bin = new byte[list_bin.UnpackedSize];
