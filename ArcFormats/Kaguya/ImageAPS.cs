@@ -77,28 +77,33 @@ namespace GameRes.Formats.Kaguya
                 uint data_size = reader.ReadUInt32();
                 if (data_size > stream.Length-stream.Position)
                     return null;
-                int compression = reader.ReadInt16();
-                var info = new ApsMetaData
-                {
-                    Width = (uint)rect.Width,
-                    Height = (uint)rect.Height,
-                    BPP = 32,
-                    IsPacked = 0 != compression,
-                };
-                if (0 == compression)
-                {
-                    info.UnpackedSize = reader.ReadUInt32();
-                }
-                else if (1 == compression)
-                {
-                    info.PackedSize = reader.ReadUInt32();
-                    info.UnpackedSize = reader.ReadUInt32();
-                }
-                else
-                    return null;
-                info.DataOffset = (uint)stream.Position;
-                return info;
+                return ReadCompressionMetaData (reader, rect);
             }
+        }
+
+        internal ApsMetaData ReadCompressionMetaData (BinaryReader reader, Rectangle rect)
+        {
+            int compression = reader.ReadInt16();
+            var info = new ApsMetaData
+            {
+                Width = (uint)rect.Width,
+                Height = (uint)rect.Height,
+                BPP = 32,
+                IsPacked = 0 != compression,
+            };
+            if (0 == compression)
+            {
+                info.UnpackedSize = reader.ReadUInt32();
+            }
+            else if (1 == compression)
+            {
+                info.PackedSize = reader.ReadUInt32();
+                info.UnpackedSize = reader.ReadUInt32();
+            }
+            else
+                return null;
+            info.DataOffset = (uint)reader.BaseStream.Position;
+            return info;
         }
 
         public override ImageData Read (Stream stream, ImageMetaData info)
@@ -131,6 +136,60 @@ namespace GameRes.Formats.Kaguya
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("Aps3Format.Write not implemented");
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class ApsFormat : Aps3Format
+    {
+        public override string         Tag { get { return "APS"; } }
+        public override string Description { get { return "KaGuYa tiled image format"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public ApsFormat ()
+        {
+            Extensions = new string[] { "aps", "parts" };
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            using (var reader = new ArcView.Reader (stream))
+            {
+                int name_count = reader.ReadInt16();
+                if (name_count <= 0 || name_count > 1000)
+                    return null;
+                for (int i = 0; i < name_count; ++i)
+                {
+                    int name_length = reader.ReadInt32();
+                    if (name_length <= 0 || name_length > 260)
+                        return null;
+                    stream.Seek (name_length, SeekOrigin.Current);
+                }
+                int tile_count = reader.ReadInt16();
+                if (tile_count <= 0 || tile_count > 1000)
+                    return null;
+                var rect = new Rectangle (0, 0, 0, 0);
+                for (int i = 0; i < tile_count; ++i)
+                {
+                    int name_length = reader.ReadInt32();
+                    if (name_length <= 0 || name_length > 260)
+                        return null;
+                    stream.Seek (name_length+0xC, SeekOrigin.Current);
+                    int x = reader.ReadInt32();
+                    int y = reader.ReadInt32();
+                    int w = reader.ReadInt32() - x;
+                    int h = reader.ReadInt32() - y;
+                    var part_rect = new Rectangle (x, y, w, h);
+                    rect = Rectangle.Union (rect, part_rect);
+                    stream.Seek (0x28, SeekOrigin.Current);
+                }
+                return ReadCompressionMetaData (reader, rect);
+            }
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("ApsFormat.Write not implemented");
         }
     }
 }
