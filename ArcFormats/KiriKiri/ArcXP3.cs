@@ -260,9 +260,17 @@ NextEntry:
                 }
             }
             var arc = new ArcFile (file, this, dir);
-            if (crypt_algorithm.IsValueCreated)
-                crypt_algorithm.Value.Init (arc);
-            return arc;
+            try
+            {
+                if (crypt_algorithm.IsValueCreated)
+                    crypt_algorithm.Value.Init (arc);
+                return arc;
+            }
+            catch
+            {
+                arc.Dispose();
+                throw;
+            }
         }
 
         static readonly Regex ObfuscatedPathRe = new Regex (@"[^\\/]+[\\/]\.\.[\\/]");
