@@ -2,7 +2,7 @@
 //! \date       Thu Mar 05 09:36:40 2015
 //! \brief      BIP tiled bitmap format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -33,7 +33,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
-namespace GameRes.Formats.PS2
+namespace GameRes.Formats.Cri
 {
     internal class BipMetaData : ImageMetaData
     {

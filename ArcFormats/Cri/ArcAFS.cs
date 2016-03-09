@@ -2,7 +2,7 @@
 //! \date       Tue Jan 06 10:27:51 2015
 //! \brief      PS2 archive implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,14 +23,10 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.IO;
-using System.Linq;
-using GameRes.Utility;
 
-namespace GameRes.Formats.PS2
+namespace GameRes.Formats.Cri
 {
     [Export(typeof(ArchiveFormat))]
     public class AfsOpener : ArchiveFormat
