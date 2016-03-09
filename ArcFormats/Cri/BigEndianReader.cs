@@ -41,9 +41,10 @@ namespace GameRes.Formats.Cri
             set { m_input.BaseStream.Position = value; }
         }
 
-        public BigEndianReader(Stream input)
+        public Stream BaseStream { get { return m_input.BaseStream; } }
+
+        public BigEndianReader (Stream input) : this (input, Encoding.UTF8, false)
         {
-            m_input = new BinaryReader (input, Encoding.UTF8, false);
         }
 
         public BigEndianReader (Stream input, Encoding enc, bool leave_open = false)
@@ -114,9 +115,16 @@ namespace GameRes.Formats.Cri
         bool _disposed = false;
         public void Dispose ()
         {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
             if (!_disposed)
             {
-                m_input.Dispose();
+                if (disposing)
+                    m_input.Dispose();
                 _disposed = true;
             }
         }
