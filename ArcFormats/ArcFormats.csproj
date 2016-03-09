@@ -184,7 +184,7 @@
     <Compile Include="Lilim\ArcABM.cs" />
     <Compile Include="ActiveSoft\ArcADPACK.cs" />
     <Compile Include="AdvSys\ArcAdvSysT.cs" />
-    <Compile Include="ArcAFS.cs" />
+    <Compile Include="Cri\ArcAFS.cs" />
     <Compile Include="elf\ArcAi5Win.cs" />
     <Compile Include="ArcAil.cs" />
     <Compile Include="AliceSoft\ArcALD.cs" />
@@ -349,7 +349,7 @@
     <Compile Include="AnimeGameSystem\ImageAinos.cs" />
     <Compile Include="Kaguya\ImageAP.cs" />
     <Compile Include="Ethornell\ImageBGI.cs" />
-    <Compile Include="ImageBIP.cs" />
+    <Compile Include="Cri\ImageBIP.cs" />
     <Compile Include="Macromedia\ImageBITD.cs" />
     <Compile Include="GSD\ImageBMD.cs" />
     <Compile Include="GSD\ImageBMZ.cs" />
