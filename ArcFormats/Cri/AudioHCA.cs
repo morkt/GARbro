@@ -39,7 +39,7 @@ namespace GameRes.Formats.Cri
     public class HcaAudio : AudioFormat
     {
         public override string         Tag { get { return "HCA"; } }
-        public override string Description { get { return "CRI MiddleWare compressed audio"; } }
+        public override string Description { get { return "CRI MiddleWare high compressed audio"; } }
         public override uint     Signature { get { return 0x00414348; } } // 'HCA'
 
         public HcaAudio ()

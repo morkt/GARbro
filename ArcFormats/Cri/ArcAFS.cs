@@ -74,11 +74,4 @@ namespace GameRes.Formats.Cri
             return offset & ~(long)(block_size - 1);
         }
     }
-
-    [Export(typeof(AudioFormat))]
-    public class AdxAudio : OggAudio
-    {
-        public override string         Tag { get { return "ADX"; } }
-        public override string Description { get { return "PS2 audio format (Ogg/Vorbis)"; } }
-    }
 }
