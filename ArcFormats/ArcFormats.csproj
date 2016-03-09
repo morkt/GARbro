@@ -68,8 +68,10 @@
     <Compile Include="ArcCG.cs" />
     <Compile Include="ArcZIP.cs" />
     <Compile Include="Cri\ArcCPK.cs" />
+    <Compile Include="Cri\ArcSPC.cs" />
     <Compile Include="Cri\AudioHCA.cs" />
     <Compile Include="Cri\BigEndianReader.cs" />
+    <Compile Include="Cri\ImageSPC.cs" />
     <Compile Include="Cri\ImageXTX.cs" />
     <Compile Include="Entis\ErisaMatrix.cs" />
     <Compile Include="Hexenhaus\ArcARCC.cs" />

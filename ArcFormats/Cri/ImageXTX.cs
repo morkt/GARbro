@@ -59,7 +59,7 @@ namespace GameRes.Formats.Cri
             if (!Binary.AsciiEqual (header, 0, "xtx\0"))
             {
                 var header_size = LittleEndian.ToUInt32 (header, 0);
-                if (header_size >= stream.Length)
+                if (header_size >= 0x1000) // XXX use some arbitrary "large" value to avoid call to Stream.Length
                     return null;
                 stream.Position = header_size;
                 if (0x20 != stream.Read (header, 0, 0x20))
