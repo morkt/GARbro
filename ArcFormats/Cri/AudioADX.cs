@@ -64,7 +64,7 @@ namespace GameRes.Formats.Cri
         long            m_position;
         int             m_buffered_sample;
         int             m_buffered_count;
-        int             m_bytes_per_sample;
+        int             m_bytes_per_frame;
         ThreadLocal<short[]> m_frame_buffer;
 
         public override string SourceFormat { get { return "adx"; } }
@@ -77,43 +77,43 @@ namespace GameRes.Formats.Cri
             this.Format = m_reader.Format;
             this.PcmSize = m_reader.SampleCount * Format.BlockAlign;
             m_bitrate = (int)(Format.SamplesPerSecond * (file.Length-m_data_offset) * 8 / m_reader.SampleCount);
-            m_frame_buffer = new ThreadLocal<short[]> (() => new short[m_reader.SamplesPerFrame * m_reader.Format.Channels]);
-            m_bytes_per_sample = Format.BitsPerSample / 8;
+            int frame_buffer_length = m_reader.SamplesPerFrame * m_reader.Format.Channels;
+            m_frame_buffer = new ThreadLocal<short[]> (() => new short[frame_buffer_length]);
+            m_bytes_per_frame = frame_buffer_length * Format.BitsPerSample / 8;
         }
 
         public override int Read (byte[] buffer, int offset, int count)
         {
             int total_read = 0;
             int current_sample = (int)(m_position / Format.BlockAlign);
-            if (current_sample >= m_buffered_sample && current_sample < m_buffered_sample + m_buffered_count)
+            bool need_refill = !(current_sample >= m_buffered_sample && current_sample < m_buffered_sample + m_buffered_count);
+            int src_offset = (int)(m_position % m_bytes_per_frame);
+            while (count > 0 && m_position < PcmSize)
             {
-                int src_offset = (int)(m_position % (m_frame_buffer.Value.Length * m_bytes_per_sample));
+                if (need_refill)
+                    FillBuffer();
                 int available = Math.Min (count, m_buffered_count * Format.BlockAlign - src_offset);
                 Buffer.BlockCopy (m_frame_buffer.Value, src_offset, buffer, offset, available);
                 offset += available;
                 count -= available;
                 total_read += available;
                 m_position += available;
-            }
-            int bytes_per_frame = m_reader.SamplesPerFrame * m_bytes_per_sample * Format.Channels;
-            while (count > 0 && m_position < PcmSize)
-            {
-                int frame_number = (int)(m_position / bytes_per_frame);
-                m_reader.SetPosition (m_data_offset + frame_number * m_reader.FrameSize * Format.Channels);
-                for (int i = 0; i < Format.Channels; ++i)
-                {
-                    m_reader.DecodeFrame (i, m_frame_buffer.Value);
-                }
-                m_buffered_sample = frame_number * m_reader.SamplesPerFrame;
-                m_buffered_count = Math.Min (m_reader.SampleCount - m_buffered_sample, m_reader.SamplesPerFrame);
-                int available = Math.Min (count, m_buffered_count * Format.BlockAlign);
-                Buffer.BlockCopy (m_frame_buffer.Value, 0, buffer, offset, available);
-                offset += available;
-                count -= available;
-                total_read += available;
-                m_position += available;
+                src_offset = 0;
+                need_refill = true;
             }
             return total_read;
+        }
+
+        void FillBuffer ()
+        {
+            int frame_number = (int)(m_position / m_bytes_per_frame);
+            m_reader.SetPosition (m_data_offset + frame_number * m_reader.FrameSize * Format.Channels);
+            for (int i = 0; i < Format.Channels; ++i)
+            {
+                m_reader.DecodeFrame (i, m_frame_buffer.Value);
+            }
+            m_buffered_sample = frame_number * m_reader.SamplesPerFrame;
+            m_buffered_count = Math.Min (m_reader.SampleCount - m_buffered_sample, m_reader.SamplesPerFrame);
         }
 
         // FIXME
