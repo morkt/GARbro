@@ -81,6 +81,8 @@
     <Compile Include="MnoViolet\ImageDIF.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
     <Compile Include="SimpleEncryption.cs" />
+    <Compile Include="Slg\AudioVOI.cs" />
+    <Compile Include="Slg\ImageALB.cs" />
     <Compile Include="Softpal\ArcPAC.cs" />
     <Compile Include="Softpal\AudioBGM.cs" />
     <Compile Include="Softpal\ImagePGD.cs" />
