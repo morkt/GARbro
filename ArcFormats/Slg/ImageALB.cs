@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using GameRes.Formats.Cri;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Slg

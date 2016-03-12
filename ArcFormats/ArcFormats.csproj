@@ -67,6 +67,7 @@
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="ArcZIP.cs" />
+    <Compile Include="CommonStreams.cs" />
     <Compile Include="Cri\ArcCPK.cs" />
     <Compile Include="Cri\ArcSPC.cs" />
     <Compile Include="Cri\AudioADX.cs" />
