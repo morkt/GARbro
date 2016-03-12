@@ -116,7 +116,7 @@ namespace GameRes.Formats.Cri
 
         public override int Read (byte[] buffer, int offset, int count)
         {
-            int total_read = 0;
+            int read, total_read = 0;
             if (m_source_depleted)
             {
                 m_buffer.Position = m_read_pos;
@@ -135,21 +135,22 @@ namespace GameRes.Formats.Cri
                     return total_read;
                 offset += total_read;
             }
-            else
+            else if (count > 0)
             {
                 m_buffer.Seek (0, SeekOrigin.End);
                 while (m_read_pos > m_buffer.Length)
                 {
-                    int b = m_source.ReadByte();
-                    if (-1 == b)
+                    int available = (int)Math.Min (m_read_pos - m_buffer.Length, count);
+                    read = m_source.Read (buffer, offset, available);
+                    if (0 == read)
                     {
                         m_source_depleted = true;
                         return 0;
                     }
-                    m_buffer.WriteByte ((byte)b);
+                    m_buffer.Write (buffer, offset, read);
                 }
             }
-            int read = m_source.Read (buffer, offset, count);
+            read = m_source.Read (buffer, offset, count);
             m_read_pos += read;
             m_buffer.Write (buffer, offset, read);
             return total_read + read;
