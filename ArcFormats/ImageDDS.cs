@@ -37,6 +37,10 @@ namespace GameRes.Formats.Microsoft
         public int      DataOffset;
         public DdsPF    PixelFlags;
         public string   FourCC;
+        public uint     RBitMask;
+        public uint     GBitMask;
+        public uint     BBitMask;
+        public uint     ABitMask;
     }
 
     [Flags]
@@ -59,7 +63,7 @@ namespace GameRes.Formats.Microsoft
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
-            var header = new byte[0x5C];
+            var header = new byte[0x6C];
             if (header.Length != stream.Read (header, 0, header.Length))
                 return null;
             int dwSize = LittleEndian.ToInt32 (header, 4);
@@ -76,6 +80,10 @@ namespace GameRes.Formats.Microsoft
                 BPP    = LittleEndian.ToInt32 (header, 0x58),
                 PixelFlags = bitflags,
                 FourCC = four_cc,
+                RBitMask = LittleEndian.ToUInt32 (header, 0x5C),
+                GBitMask = LittleEndian.ToUInt32 (header, 0x60),
+                BBitMask = LittleEndian.ToUInt32 (header, 0x64),
+                ABitMask = LittleEndian.ToUInt32 (header, 0x68),
                 DataOffset = 4 + dwSize,
             };
         }
@@ -87,20 +95,42 @@ namespace GameRes.Formats.Microsoft
                 throw new NotSupportedException ("Not supported DDS texture color format");
             if (!string.IsNullOrEmpty (meta.FourCC))
                 throw new NotImplementedException ("Compressed DDS textures not implemented");
+            if (meta.PixelFlags.HasFlag (DdsPF.Rgb)
+                && (0 == meta.RBitMask || 0 == meta.GBitMask || 0 == meta.BBitMask))
+                throw new InvalidFormatException();
+            var pixels = ReadPixelData (stream, meta);
             PixelFormat format;
-            if (24 == info.BPP)
-                format = PixelFormats.Bgr24;
-            else if (16 == info.BPP)
-                throw new NotImplementedException ("16bpp DDS textures not implemented");
-            else if (meta.PixelFlags.HasFlag (DdsPF.AlphaPixels))
+            if (meta.PixelFlags.HasFlag (DdsPF.AlphaPixels) && meta.ABitMask != 0)
                 format = PixelFormats.Bgra32;
             else
                 format = PixelFormats.Bgr32;
-            stream.Position = meta.DataOffset;
-            var pixels = new byte[info.Width*info.Height*((format.BitsPerPixel+7)/8)];
-            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
-                throw new InvalidFormatException ("Unexpected end of file");
             return ImageData.Create (info, format, null, pixels);
+        }
+
+        byte[] ReadPixelData (Stream stream, DdsMetaData info)
+        {
+            int src_pixel_size = (info.BPP+7) / 8;
+            int input_size = (int)info.Width*(int)info.Height*src_pixel_size;
+            var input = new byte[input_size+4];
+            stream.Position = info.DataOffset;
+            if (input_size != stream.Read (input, 0, input_size))
+                throw new InvalidFormatException ("Unexpected end of file");
+            if (32 == info.BPP && 0xFF0000 == info.RBitMask && 0x00FF00 == info.GBitMask && 0x0000FF == info.BBitMask)
+                return input;
+            bool has_alpha = info.PixelFlags.HasFlag (DdsPF.AlphaPixels) && info.ABitMask != 0;
+            var output = new byte[info.Width*info.Height*4];
+            int dst = 0;
+            for (int src = 0; src < input_size; src += src_pixel_size)
+            {
+                uint src_pixel = LittleEndian.ToUInt32 (input, src);
+                output[dst++] = (byte)((src_pixel & info.BBitMask) * 0xFFu / info.BBitMask);
+                output[dst++] = (byte)((src_pixel & info.GBitMask) * 0xFFu / info.GBitMask);
+                output[dst++] = (byte)((src_pixel & info.RBitMask) * 0xFFu / info.RBitMask);
+                if (has_alpha)
+                    output[dst] = (byte)((src_pixel & info.ABitMask) * 0xFFu / info.ABitMask);
+                dst++;
+            }
+            return output;
         }
 
         public override void Write (Stream file, ImageData image)
