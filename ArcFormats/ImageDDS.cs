@@ -117,17 +117,29 @@ namespace GameRes.Formats.Microsoft
                 throw new InvalidFormatException ("Unexpected end of file");
             if (32 == info.BPP && 0xFF0000 == info.RBitMask && 0x00FF00 == info.GBitMask && 0x0000FF == info.BBitMask)
                 return input;
-            bool has_alpha = info.PixelFlags.HasFlag (DdsPF.AlphaPixels) && info.ABitMask != 0;
             var output = new byte[info.Width*info.Height*4];
             int dst = 0;
+            Func<int, uint> get_pixel;
+            if (8 == info.BPP)
+                get_pixel = x => input[x];
+            else if (info.BPP <= 16)
+                get_pixel = x => LittleEndian.ToUInt16 (input, x);
+            else
+                get_pixel = x => LittleEndian.ToUInt32 (input, x);
+            Func<uint, uint, byte> convert_pixel;
+            if (info.BPP > 24)
+                convert_pixel = (p, mask) => (byte)((p & mask) * 0xFFL / mask);
+            else
+                convert_pixel = (p, mask) => (byte)((p & mask) * 0xFFu / mask);
+            bool has_alpha = info.PixelFlags.HasFlag (DdsPF.AlphaPixels) && info.ABitMask != 0;
             for (int src = 0; src < input_size; src += src_pixel_size)
             {
-                uint src_pixel = LittleEndian.ToUInt32 (input, src);
-                output[dst++] = (byte)((src_pixel & info.BBitMask) * 0xFFu / info.BBitMask);
-                output[dst++] = (byte)((src_pixel & info.GBitMask) * 0xFFu / info.GBitMask);
-                output[dst++] = (byte)((src_pixel & info.RBitMask) * 0xFFu / info.RBitMask);
+                uint src_pixel = get_pixel (src);
+                output[dst++] = convert_pixel (src_pixel, info.BBitMask);
+                output[dst++] = convert_pixel (src_pixel, info.GBitMask);
+                output[dst++] = convert_pixel (src_pixel, info.RBitMask);
                 if (has_alpha)
-                    output[dst] = (byte)((src_pixel & info.ABitMask) * 0xFFu / info.ABitMask);
+                    output[dst] = convert_pixel (src_pixel, info.ABitMask);
                 dst++;
             }
             return output;
