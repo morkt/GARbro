@@ -65,7 +65,7 @@ namespace GameRes.Formats.Slg
                 else if (Dds.Value.Signature == signature)
                     format = Dds.Value;
                 else
-                    return null;
+                    format = ImageFormat.Jpeg;
                 var info = format.ReadMetaData (file);
                 if (null == info)
                     return null;
