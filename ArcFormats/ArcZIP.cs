@@ -70,12 +70,13 @@ namespace GameRes.Formats.PkWare
         bool _zip_disposed = false;
         protected override void Dispose (bool disposing)
         {
-            if (_zip_disposed)
-                return;
-
-            if (disposing)
-                m_zip.Dispose();
-            _zip_disposed = true;
+            if (!_zip_disposed)
+            {
+                if (disposing)
+                    m_zip.Dispose();
+                _zip_disposed = true;
+            }
+            base.Dispose (disposing);
         }
         #endregion
     }
