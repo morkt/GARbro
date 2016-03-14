@@ -1,8 +1,8 @@
 //! \file       ArcDX.cs
 //! \date       Thu Oct 08 00:18:56 2015
-//! \brief      Encrypted Flatz archives with 'DX' signature.
+//! \brief      DxLib engine archives with 'DX' signature.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,9 +27,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Utility;
 
-namespace GameRes.Formats.Flat
+namespace GameRes.Formats.DxLib
 {
     internal class DxArchive : ArcFile
     {
@@ -42,44 +43,49 @@ namespace GameRes.Formats.Flat
         }
     }
 
-    [Export(typeof(ArchiveFormat))]
-    public class DatOpener : ArchiveFormat
+    [Serializable]
+    public class DxScheme : ResourceScheme
     {
-        public override string         Tag { get { return "DAT/FLAT"; } }
-        public override string Description { get { return "Flat DX resource archive"; } }
+        public IList<byte[]> KnownKeys;
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class DxOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "DXA"; } }
+        public override string Description { get { return "DxLib engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
-        public DatOpener ()
+        public DxOpener ()
         {
-            Signatures = new uint[] { 0x19EF8ED4 }; // the only recognized encryption scheme
+            Extensions = new string[] { "dxa", "hud", "usi", "med", "dat" };
+            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0 };
         }
 
-        static readonly string[] KnownKeys = new string[]
-        {
-            "omanco", // Cross Quartz
-        };
+        public static IList<byte[]> KnownKeys = new List<byte[]>();
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int signature = file.View.ReadUInt16 (0);
-            int version   = file.View.ReadUInt16 (2);
-            var key = new byte[12];
-            foreach (var key_str in KnownKeys)
+            uint signature = file.View.ReadUInt32 (0);
+            foreach (var key in KnownKeys)
             {
-                GetKeyBytes (key_str, key);
-                int xor_id  = key[0] | (key[1] << 8);
-                int xor_ver = key[2] | (key[3] << 8);
-                if ((signature ^ xor_id) != 0x5844) // 'DX'
-                    continue;
-                xor_ver ^= version;
-                if (xor_ver < 1 || xor_ver > 4)
-                    continue;
-                var dir = ReadIndex (file, xor_ver, key);
-                if (null != dir)
-                    return new DxArchive (file, this, dir, key);
-                break;
+                uint sig_key = LittleEndian.ToUInt32 (key, 0);
+                uint sig_test = signature ^ sig_key;
+                int version = (int)(sig_test >> 16);
+                if (0x5844 == (sig_test & 0xFFFF) && version <= 4) // 'DX'
+                {
+                    var dir = ReadIndex (file, version, key);
+                    if (null != dir)
+                    {
+                        // move last used key to the top of the known keys list
+                        KnownKeys.Remove (key);
+                        KnownKeys.Insert (0, key);
+                        return new DxArchive (file, this, dir, key);
+                    }
+                    break;
+                }
             }
             return null;
         }
@@ -167,8 +173,8 @@ namespace GameRes.Formats.Flat
 
         List<Entry> ReadIndex (ArcView file, int version, byte[] key)
         {
-            var header = new byte[0x18];
-            if (0x18 != file.View.Read (4, header, 0, 0x18))
+            var header = file.View.ReadBytes (4, 0x18);
+            if (0x18 != header.Length)
                 return null;
             Decrypt (header, 0, header.Length, 4, key);
             var dx = new DxHeader {
@@ -197,27 +203,40 @@ namespace GameRes.Formats.Flat
             }
         }
 
-        private static void GetKeyBytes (string key, byte[] dst)
+        public static byte[] CreateKey (string keyword)
         {
-            int key_length = Math.Min (dst.Length, key.Length);
-            key_length = Encodings.cp932.GetBytes (key, 0, key_length, dst, 0);
-            int j = 0;
-            for (int i = key_length; i < dst.Length; ++i)
+            byte[] key;
+            if (string.IsNullOrEmpty (keyword))
             {
-                dst[i] = dst[j++];
+                key = Enumerable.Repeat<byte> (0xAA, 12).ToArray();
             }
-            dst[0] = (byte)~dst[0];
-            dst[1] = (byte)((dst[1] >> 4) | (dst[1] << 4));
-            dst[2] = (byte)(dst[2] ^ 0x8A);
-            dst[3] = (byte)(~((dst[3] >> 4) | (dst[3] << 4)));
-            dst[4] = (byte)~dst[4];
-            dst[5] = (byte)(dst[5] ^ 0xAC);
-            dst[6] = (byte)~dst[6];
-            dst[7] = (byte)(~((dst[7] >> 3) | (dst[7] << 5)));
-            dst[8] = (byte)((dst[8] >> 5) | (dst[8] << 3));
-            dst[9] = (byte)(dst[9] ^ 0x7F);
-            dst[10] = (byte)(((dst[10] >> 4) | (dst[10] << 4)) ^ 0xD6);
-            dst[11] = (byte)(dst[11] ^ 0xCC);
+            else
+            {
+                key = new byte[12];
+                int char_count = Math.Min (keyword.Length, 12);
+                int length = Encodings.cp932.GetBytes (keyword, 0, char_count, key, 0);
+                if (length < 12)
+                    Binary.CopyOverlapped (key, 0, length, 12-length);
+            }
+            key[0] ^= 0xFF;
+            key[1]  = Binary.RotByteR (key[1], 4);
+            key[2] ^= 0x8A;
+            key[3]  = (byte)~Binary.RotByteR (key[3], 4);
+            key[4] ^= 0xFF;
+            key[5] ^= 0xAC;
+            key[6] ^= 0xFF;
+            key[7]  = (byte)~Binary.RotByteR (key[7], 3);
+            key[8]  = Binary.RotByteL (key[8], 3);
+            key[9] ^= 0x7F;
+            key[10] = (byte)(Binary.RotByteR (key[10], 4) ^ 0xD6);
+            key[11] ^= 0xCC;
+            return key;
+        }
+
+        public override ResourceScheme Scheme
+        {
+            get { return new DxScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((DxScheme)value).KnownKeys; }
         }
     }
 
@@ -334,62 +353,31 @@ namespace GameRes.Formats.Flat
         #endregion
     }
 
-    internal class EncryptedStream : Stream
+    internal class EncryptedStream : ProxyStream
     {
-        private Stream      m_stream;
         private int         m_base_pos;
         private byte[]      m_key;
-        private bool        m_should_dispose;
 
-        public Stream BaseStream { get { return m_stream; } }
-
-        public override bool  CanRead { get { return m_stream.CanRead; } }
-        public override bool  CanSeek { get { return m_stream.CanSeek; } }
-        public override bool CanWrite { get { return m_stream.CanWrite; } }
-        public override long   Length { get { return m_stream.Length; } }
-        public override long Position
+        public EncryptedStream (Stream stream, long base_position, byte[] key, bool leave_open = false)
+            : base (stream, leave_open)
         {
-            get { return m_stream.Position; }
-            set { m_stream.Position = value; }
-        }
-
-        public EncryptedStream (Stream input, long base_position, byte[] key)
-        {
-            m_stream = input;
             m_key = key;
             m_base_pos = (int)(base_position % m_key.Length);
-            m_should_dispose = true;
-        }
-
-        #region System.IO.Stream methods
-        public override void Flush()
-        {
-            m_stream.Flush();
-        }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            return m_stream.Seek (offset, origin);
-        }
-
-        public override void SetLength (long length)
-        {
-            m_stream.SetLength (length);
         }
 
         public override int Read (byte[] buffer, int offset, int count)
         {
             var key_pos = m_base_pos + Position;
-            int read = m_stream.Read (buffer, offset, count);
+            int read = BaseStream.Read (buffer, offset, count);
             if (read > 0)
-                DatOpener.Decrypt (buffer, offset, count, key_pos, m_key);
+                DxOpener.Decrypt (buffer, offset, count, key_pos, m_key);
             return read;
         }
 
         public override int ReadByte ()
         {
             int key_pos = (int)((m_base_pos + Position) % m_key.Length);
-            int b = m_stream.ReadByte();
+            int b = BaseStream.ReadByte();
             if (-1 != b)
             {
                 b ^= m_key[key_pos];
@@ -407,30 +395,13 @@ namespace GameRes.Formats.Flat
                 if (m_key.Length == key_pos)
                     key_pos = 0;
             }
-            m_stream.Write (write_buf, 0, count);
+            BaseStream.Write (write_buf, 0, count);
         }
 
         public override void WriteByte (byte value)
         {
             int key_pos = (int)((m_base_pos + Position) % m_key.Length);
-            m_stream.WriteByte ((byte)(value ^ m_key[key_pos]));
+            BaseStream.WriteByte ((byte)(value ^ m_key[key_pos]));
         }
-        #endregion
-
-        #region IDisposable Members
-        bool disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing && m_should_dispose)
-                {
-                    m_stream.Dispose();
-                }
-                disposed = true;
-                base.Dispose (disposing);
-            }
-        }
-        #endregion
     }
 }
