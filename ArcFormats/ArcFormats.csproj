@@ -77,6 +77,7 @@
     <Compile Include="Cri\ImageXTX.cs" />
     <Compile Include="Entis\ErisaMatrix.cs" />
     <Compile Include="Hexenhaus\ArcARCC.cs" />
+    <Compile Include="Hexenhaus\ArcWAG.cs" />
     <Compile Include="ImageLZ.cs" />
     <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
