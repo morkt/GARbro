@@ -161,6 +161,8 @@ namespace GameRes.Formats.Hexenhaus
             ImageMetaData info;
             using (var png = new StreamRegion (stream, 0x10, true))
                 info = base.ReadMetaData (png);
+            if (null == info)
+                return null;
             stream.Seek (-14, SeekOrigin.End);
             var cntr = new byte[12];
             stream.Read (cntr, 0, 12);
