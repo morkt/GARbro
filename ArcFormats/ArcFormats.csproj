@@ -147,7 +147,7 @@
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
-    <Compile Include="ArcDX.cs" />
+    <Compile Include="DxLib\ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
     <Compile Include="Bishop\ArcBSA.cs" />
     <Compile Include="Bishop\ArcBSC.cs" />
