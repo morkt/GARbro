@@ -298,7 +298,7 @@ namespace GameRes.Formats.DxLib
             if (dir.DirOffset != -1 && dir.ParentDirOffset != -1)
             {
                 m_input.BaseStream.Position = m_header.FileTable + dir.DirOffset;
-                root = root + ExtractFileName (m_input.ReadUInt32()) + '\\';
+                root = Path.Combine (root, ExtractFileName (m_input.ReadUInt32()));
             }
             long current_pos = m_header.FileTable + dir.FileTable;
             for (int i = 0; i < dir.FileCount; ++i)
@@ -310,6 +310,8 @@ namespace GameRes.Formats.DxLib
                 uint offset = m_input.ReadUInt32();
                 if (0 != (attr & 0x10)) // FILE_ATTRIBUTE_DIRECTORY
                 {
+                    if (0 == offset || table_offset == offset)
+                        throw new InvalidFormatException ("Infinite recursion in DXA directory index");
                     ReadFileTable (root, offset);
                 }
                 else
@@ -318,7 +320,7 @@ namespace GameRes.Formats.DxLib
                     int packed_size = -1;
                     if (m_version >= 2)
                         packed_size = m_input.ReadInt32();
-                    var entry = FormatCatalog.Instance.Create<PackedEntry> (root+ExtractFileName (name_offset));
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (Path.Combine (root, ExtractFileName (name_offset)));
                     entry.Offset = m_header.BaseOffset + offset;
                     entry.UnpackedSize = size;
                     entry.IsPacked = -1 != packed_size;
