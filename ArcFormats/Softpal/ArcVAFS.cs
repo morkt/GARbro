@@ -43,7 +43,7 @@ namespace GameRes.Formats.Softpal
 
         public VafsOpener ()
         {
-            Extensions = new string[] { "052", "055" };
+            Extensions = new string[] { "052", "055", "058" };
         }
 
         static readonly Lazy<ImageFormat> s_PicFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PIC/SOFTPAL"));
@@ -57,7 +57,9 @@ namespace GameRes.Formats.Softpal
             var base_name = Path.GetFileNameWithoutExtension (file.Name).ToUpperInvariant();
             if (0 == data_offset && "TP" == base_name)
             {
-                if (file.Name.EndsWith (".055"))
+                var ext = Path.GetExtension (file.Name).TrimStart ('.');
+                int version;
+                if (int.TryParse (ext, out version) && version >= 55)
                     return OpenTp055Arc (file);
                 else
                     return OpenTpArc (file);
