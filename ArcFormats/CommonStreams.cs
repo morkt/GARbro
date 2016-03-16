@@ -58,11 +58,6 @@ namespace GameRes.Formats
             return m_stream.Read (buffer, offset, count);
         }
 
-        public override int ReadByte ()
-        {
-            return m_stream.ReadByte();
-        }
-
         public override void Flush()
         {
             m_stream.Flush();
@@ -81,11 +76,6 @@ namespace GameRes.Formats
         public override void Write (byte[] buffer, int offset, int count)
         {
             m_stream.Write (buffer, offset, count);
-        }
-
-        public override void WriteByte (byte value)
-        {
-            m_stream.WriteByte (value);
         }
 
         bool _proxy_disposed = false;
