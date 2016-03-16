@@ -75,6 +75,8 @@
     <Compile Include="Cri\BigEndianReader.cs" />
     <Compile Include="Cri\ImageSPC.cs" />
     <Compile Include="Cri\ImageXTX.cs" />
+    <Compile Include="EmonEngine\ArcEME.cs" />
+    <Compile Include="EmonEngine\ImageBMP.cs" />
     <Compile Include="Entis\ErisaMatrix.cs" />
     <Compile Include="Hexenhaus\ArcARCC.cs" />
     <Compile Include="Hexenhaus\ArcODIO.cs" />
