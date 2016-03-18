@@ -61,13 +61,15 @@ namespace GameRes.Formats.DxLib
         public DxOpener ()
         {
             Extensions = new string[] { "dxa", "hud", "usi", "med", "dat" };
-            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0 };
+            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0 };
         }
 
         public static IList<byte[]> KnownKeys = new List<byte[]>();
 
         public override ArcFile TryOpen (ArcView file)
         {
+            if (file.MaxOffset < 0x1C)
+                return null;
             uint signature = file.View.ReadUInt32 (0);
             foreach (var key in KnownKeys)
             {
@@ -79,13 +81,53 @@ namespace GameRes.Formats.DxLib
                     var dir = ReadIndex (file, version, key);
                     if (null != dir)
                     {
-                        // move last used key to the top of the known keys list
-                        KnownKeys.Remove (key);
+                        if (KnownKeys[0] != key)
+                        {
+                            // move last used key to the top of the known keys list
+                            KnownKeys.Remove (key);
+                            KnownKeys.Insert (0, key);
+                        }
+                        return new DxArchive (file, this, dir, key);
+                    }
+                    return null;
+                }
+            }
+            return GuessKey (file);
+        }
+
+        ArcFile GuessKey (ArcView file)
+        {
+            if (file.MaxOffset > uint.MaxValue)
+                return null;
+            var key = new byte[12];
+            for (short version = 4; version >= 1; --version)
+            {
+                file.View.Read (0, key, 0, 12);
+                key[0] ^= (byte)'D'; 
+                key[1] ^= (byte)'X';
+                key[2] ^= (byte)version;
+                int base_offset = version > 3 ? 0x1C : 0x18;
+                key[8] ^= (byte)base_offset;
+                uint key0 = LittleEndian.ToUInt32 (key, 0);
+                uint index_offset = file.View.ReadUInt32 (12) ^ key0;
+                if (index_offset <= base_offset || index_offset >= file.MaxOffset)
+                    continue;
+                uint index_size = (uint)(file.MaxOffset - index_offset);
+                if (index_size > 0xFFFFFF)
+                    continue;
+                key[4] ^= (byte)index_size;
+                key[5] ^= (byte)(index_size >> 8);
+                key[6] ^= (byte)(index_size >> 16);
+                try
+                {
+                    var dir = ReadIndex (file, version, key);
+                    if (null != dir)
+                    {
                         KnownKeys.Insert (0, key);
                         return new DxArchive (file, this, dir, key);
                     }
-                    break;
                 }
+                catch { /* ignore parse errors */ }
             }
             return null;
         }
@@ -184,6 +226,8 @@ namespace GameRes.Formats.DxLib
                 FileTable  = LittleEndian.ToUInt32 (header, 0x0c),
                 DirTable   = LittleEndian.ToUInt32 (header, 0x10),
             };
+            if (dx.DirTable >= dx.IndexSize || dx.FileTable >= dx.IndexSize)
+                return null;
             using (var encrypted = file.CreateStream (dx.IndexOffset, dx.IndexSize))
             using (var index = new EncryptedStream (encrypted, dx.IndexOffset, key))
             using (var reader = new IndexReader (dx, version, index))
