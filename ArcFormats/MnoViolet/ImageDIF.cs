@@ -77,7 +77,7 @@ namespace GameRes.Formats.MnoViolet
                 return null;
             var files = VFS.GetFiles (base_name+".*");
             if (!files.Any())
-                throw new FileNotFoundException (string.Format ("Base image '{0}' not found"), base_name);
+                throw new FileNotFoundException (string.Format ("Base image '{0}' not found", base_name));
             var base_entry = files.First();
             using (var input = VFS.OpenSeekableStream (base_entry))
             {
