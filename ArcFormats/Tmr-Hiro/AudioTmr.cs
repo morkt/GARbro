@@ -54,7 +54,17 @@ namespace GameRes.Formats.TmrHiro
             int length = ReadInt32 (file);
             if (length != file.Length - 9)
                 return null;
-            return new RawInput (file, length);
+            var format = new WaveFormat
+            {
+                FormatTag                = 1,
+                Channels                 = 2,
+                SamplesPerSecond         = 44100,
+                BitsPerSample            = 16,
+                BlockAlign               = 4,
+                AverageBytesPerSecond    = 44100*4,
+            };
+            var pcm = new StreamRegion (file, 9, length);
+            return new RawPcmInput (pcm, format);
         }
 
         private static int ReadInt32 (Stream file)
@@ -65,54 +75,5 @@ namespace GameRes.Formats.TmrHiro
             dword |= file.ReadByte() << 24;
             return dword;
         }
-    }
-
-    public class RawInput : SoundInput
-    {
-        public override string SourceFormat { get { return "raw"; } }
-
-        public override int SourceBitrate
-        {
-            get { return (int)Format.AverageBytesPerSecond * 8; }
-        }
-
-        public RawInput (Stream file, int data_length) : base (new StreamRegion (file, 9, data_length))
-        {
-            this.Format = new WaveFormat
-            {
-                FormatTag                = 1,
-                Channels                 = 2,
-                SamplesPerSecond         = 44100,
-                BitsPerSample            = 16,
-                BlockAlign               = 4,
-                AverageBytesPerSecond    = 44100*4,
-            };
-            this.PcmSize = data_length;
-        }
-
-        #region IO.Stream methods
-        public override long Position
-        {
-            get { return Source.Position; }
-            set { Source.Position = value; }
-        }
-
-        public override bool CanSeek { get { return Source.CanSeek; } }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            return Source.Seek (offset, origin);
-        }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            return Source.Read (buffer, offset, count);
-        }
-
-        public override int ReadByte ()
-        {
-            return Source.ReadByte();
-        }
-        #endregion
     }
 }
