@@ -52,6 +52,11 @@ namespace GameRes.Formats.FVP
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
+        public HzcOpener ()
+        {
+            Extensions = new string[] { "hzc" };
+        }
+
         static readonly Lazy<ImageFormat> Hzc = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("HZC"));
 
         public override ArcFile TryOpen (ArcView file)

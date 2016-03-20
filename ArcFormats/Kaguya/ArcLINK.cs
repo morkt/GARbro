@@ -31,13 +31,18 @@ using System.IO;
 namespace GameRes.Formats.Kaguya
 {
     [Export(typeof(ArchiveFormat))]
-    public class PakOpener : ArchiveFormat
+    public class LinkOpener : ArchiveFormat
     {
         public override string         Tag { get { return "LINK/KAGUYA"; } }
         public override string Description { get { return "KaGuYa script engine resource archive"; } }
         public override uint     Signature { get { return 0x4B4E494C; } } // 'LINK'
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
+
+        public LinkOpener ()
+        {
+            Extensions = new string[] { "arc" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
