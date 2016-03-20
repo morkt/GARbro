@@ -2,7 +2,7 @@
 //! \date       Thu Aug 21 06:11:09 2014
 //! \brief      Digital Romance System archive implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -160,6 +160,8 @@ namespace GameRes.Formats.Ikura
                     entry = new Entry { Name = name, Type = "script" };
                     has_scripts = true;
                 }
+                else if (name.EndsWith (".bin"))
+                    entry = new ImageEntry { Name = name };
                 else
                     entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (dir_offset+12);
