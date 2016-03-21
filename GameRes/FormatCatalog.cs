@@ -29,11 +29,11 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.IO;
 using System.Linq;
-using GameRes.Collections;
-using System.Runtime.Serialization.Formatters.Binary;
-using Microsoft.CSharp;
-using System.Text;
 using System.CodeDom.Compiler;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
+using Microsoft.CSharp;
+using GameRes.Collections;
 
 namespace GameRes
 {
@@ -245,6 +245,12 @@ namespace GameRes
                 }
                 var provider = new CSharpCodeProvider();
                 var parameters = new CompilerParameters { OutputAssembly = target };
+#if DEBUG
+                parameters.IncludeDebugInformation = true;
+#endif
+                parameters.ReferencedAssemblies.Add ("System.dll");
+                parameters.ReferencedAssemblies.Add ("System.ComponentModel.Composition.dll");
+                parameters.ReferencedAssemblies.Add (System.Reflection.Assembly.GetExecutingAssembly().Location);
                 var source = files.Select (f => f.FullName).ToArray();
                 var results = provider.CompileAssemblyFromFile (parameters, source);
                 if (results.Errors.HasErrors)
