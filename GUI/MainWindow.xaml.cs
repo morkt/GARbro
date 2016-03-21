@@ -90,6 +90,7 @@ namespace GARbro.GUI
 
         void WindowRendered ()
         {
+            var compilation_error = FormatCatalog.Instance.LastError;
             DirectoryViewModel vm = null;
             try
             {
@@ -105,6 +106,10 @@ namespace GARbro.GUI
             }
             ViewModel = vm;
             lv_SelectItem (0);
+            if (compilation_error != null)
+            {
+                PopupError (compilation_error.Message, "GameRes library initialization error");
+            }
             if (!vm.IsArchive)
                 SetStatusText (guiStrings.MsgReady);
         }
