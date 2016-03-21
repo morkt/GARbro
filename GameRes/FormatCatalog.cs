@@ -31,6 +31,9 @@ using System.IO;
 using System.Linq;
 using GameRes.Collections;
 using System.Runtime.Serialization.Formatters.Binary;
+using Microsoft.CSharp;
+using System.Text;
+using System.CodeDom.Compiler;
 
 namespace GameRes
 {
@@ -77,12 +80,16 @@ namespace GameRes
 
         private FormatCatalog ()
         {
+            var assembly_location = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var plugins_dll = Path.Combine (assembly_location, "ArcPlugins.dll");
+            CompilePlugins (Path.Combine (assembly_location, "Plugins"), plugins_dll);
+
             //An aggregate catalog that combines multiple catalogs
             var catalog = new AggregateCatalog();
             //Adds all the parts found in the same assembly as the Program class
             catalog.Catalogs.Add (new AssemblyCatalog (typeof(FormatCatalog).Assembly));
             //Adds parts matching pattern found in the directory of the assembly
-            catalog.Catalogs.Add (new DirectoryCatalog (Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location), "Arc*.dll"));
+            catalog.Catalogs.Add (new DirectoryCatalog (assembly_location, "Arc*.dll"));
 
             //Create the CompositionContainer with the parts in the catalog
             var container = new CompositionContainer (catalog);
@@ -217,6 +224,44 @@ namespace GameRes
             }
             var bin = new BinaryFormatter();
             bin.Serialize (output, db);
+        }
+
+        private void CompilePlugins (string source_dir, string target)
+        {
+            try
+            {
+                if (!Directory.Exists (source_dir))
+                    return;
+                var dir = new DirectoryInfo (source_dir);
+                var files = dir.EnumerateFiles ("*.cs");
+                if (!files.Any())
+                    return;
+                if (File.Exists (target))
+                {
+                    var target_info = new FileInfo (target);
+                    var recent_plugin = files.OrderByDescending (f => f.LastWriteTime).First();
+                    if (recent_plugin.LastWriteTime < target_info.LastWriteTime)
+                        return;
+                }
+                var provider = new CSharpCodeProvider();
+                var parameters = new CompilerParameters { OutputAssembly = target };
+                var source = files.Select (f => f.FullName).ToArray();
+                var results = provider.CompileAssemblyFromFile (parameters, source);
+                if (results.Errors.HasErrors)
+                {
+                    var error_text = new StringBuilder ("Plugins compilation failed due to errors.\r\n");
+                    foreach (CompilerError error in results.Errors)
+                    {
+                        var filename = Path.GetFileName (error.FileName);
+                        error_text.AppendFormat ("{0}:{1}: [{2}] {3}\r\n", filename, error.Line, error.ErrorNumber, error.ErrorText);
+                    }
+                    throw new ApplicationException (error_text.ToString());
+                }
+            }
+            catch (Exception X)
+            {
+                LastError = X;
+            }
         }
     }
 
