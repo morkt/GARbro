@@ -256,10 +256,6 @@
     <Resource Include="Images\search4files.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ArcFormats\ArcFormats.csproj">
-      <Project>{a8865685-27cc-427b-ac38-e48d2ad05df4}</Project>
-      <Name>ArcFormats</Name>
-    </ProjectReference>
     <ProjectReference Include="..\GameRes\GameRes.csproj">
       <Project>{453c087f-e416-4ae9-8c03-d8760da0574b}</Project>
       <Name>GameRes</Name>
