@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Propeller
@@ -79,7 +78,7 @@ namespace GameRes.Formats.Propeller
             {
                 dir.Add (new PackedEntry { Name = base_name+".bmp", Type = "image", Offset = current });
             }
-            foreach (var entry in dir.Cast<PackedEntry>())
+            foreach (PackedEntry entry in dir)
             {
                 entry.UnpackedSize  = file.View.ReadUInt32 (entry.Offset);
                 entry.Size          = file.View.ReadUInt32 (entry.Offset+4);

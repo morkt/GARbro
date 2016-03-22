@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Ankh
@@ -78,7 +77,7 @@ namespace GameRes.Formats.Ankh
             }
             if (0 == dir.Count)
                 return null;
-            foreach (var entry in dir.Cast<PackedEntry>())
+            foreach (PackedEntry entry in dir)
             {
                 if (entry.Size < 4)
                     continue;

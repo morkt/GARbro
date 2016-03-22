@@ -77,7 +77,7 @@ namespace GameRes.Formats.SHSystem
         static protected void DetectFileTypes (ArcView file, List<Entry> dir)
         {
             byte[] signature_buffer = new byte[4];
-            foreach (var entry in dir.Cast<PackedEntry>())
+            foreach (PackedEntry entry in dir)
             {
                 uint packed_size   = file.View.ReadUInt32 (entry.Offset);
                 uint unpacked_size = file.View.ReadUInt32 (entry.Offset+4);

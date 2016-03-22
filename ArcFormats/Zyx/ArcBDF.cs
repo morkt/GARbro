@@ -73,7 +73,7 @@ namespace GameRes.Formats.Zyx
                 }
                 pixels = FirstFrame.Clone() as byte[];
                 int i = 1;
-                foreach (var entry in Dir.Skip(1).Cast<BdfFrame>())
+                foreach (BdfFrame entry in Dir.Skip(1))
                 {
                     if (i++ > frame.Number)
                         break;

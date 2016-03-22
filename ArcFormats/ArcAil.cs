@@ -79,7 +79,7 @@ namespace GameRes.Formats.Ail
                 return null;
             byte[] preview = new byte[16];
             byte[] sign_buf = new byte[4];
-            foreach (var entry in dir.Cast<PackedEntry>())
+            foreach (PackedEntry entry in dir)
             {
                 uint extra = 6;
                 if (extra > entry.Size)

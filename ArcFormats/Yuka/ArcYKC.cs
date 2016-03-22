@@ -79,7 +79,7 @@ namespace GameRes.Formats.Yuka
                 index_offset += 0x14;
             }
             // read in two cycles to avoid memory mapped file page switching when accessing names
-            foreach (var entry in dir.Cast<YukaEntry>())
+            foreach (YukaEntry entry in dir)
             {
                 entry.Name = file.View.ReadString (entry.NameOffset, entry.NameLength);
                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);

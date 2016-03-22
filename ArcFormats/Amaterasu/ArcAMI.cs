@@ -179,7 +179,7 @@ namespace GameRes.Formats.Amaterasu
                 var file_table = new SortedDictionary<uint, PackedEntry>();
                 if (null != base_archive)
                 {
-                    foreach (var entry in base_archive.Dir.Cast<AmiEntry>())
+                    foreach (AmiEntry entry in base_archive.Dir)
                         file_table[entry.Id] = entry;
                 }
                 int update_count = UpdateFileTable (file_table, list);
