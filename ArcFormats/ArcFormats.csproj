@@ -150,6 +150,7 @@
     <Compile Include="Softpal\ImagePIC.cs" />
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
+    <Compile Include="SuperNekoX\ArcGPC.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="DxLib\ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
