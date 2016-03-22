@@ -140,7 +140,7 @@ namespace GameRes.Formats.SuperNekoX
                     else
                         signature = reader.ReadUInt32();
                     IResource res;
-                    if (0x020000 == signature)
+                    if (0x020000 == signature || 0x0A0000 == signature)
                         res = ImageFormat.Tga;
                     else
                         res = AutoEntry.DetectFileType (signature);
