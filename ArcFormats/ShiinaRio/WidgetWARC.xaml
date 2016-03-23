@@ -12,8 +12,8 @@
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=WARCScheme, Mode=TwoWay}"
               SelectedValuePath="Name"
               DisplayMemberPath="Name"
-              Width="200" Grid.Row="0"/>
+              Width="200" Grid.Row="0" HorizontalAlignment="Left"/>
     <TextBox Name="Original" Background="Transparent" BorderThickness="0" Text="{Binding Path=OriginalTitle}"
-             IsReadOnly="True" TextWrapping="NoWrap" Grid.Row="1" Margin="0,3,0,3"
+             IsReadOnly="True" TextWrapping="NoWrap" Grid.Row="1" Margin="0,3,0,3" HorizontalAlignment="Left"
              DataContext="{Binding ElementName=Scheme, Path=SelectedItem}"/>
 </Grid>
