@@ -81,6 +81,7 @@
     <Compile Include="Entis\ErisaMatrix.cs" />
     <Compile Include="Hexenhaus\ArcARCC.cs" />
     <Compile Include="Hexenhaus\ArcODIO.cs" />
+    <Compile Include="Emote\ArcPSB.cs" />
     <Compile Include="Hexenhaus\ArcWAG.cs" />
     <Compile Include="Ikura\ImageYGP.cs" />
     <Compile Include="ImageLZ.cs" />
