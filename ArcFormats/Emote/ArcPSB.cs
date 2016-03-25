@@ -132,7 +132,7 @@ namespace GameRes.Formats.Emote
         }
 
         public int      Version { get { return m_version; } }
-        public bool IsEncrypted { get { return 0 != (m_flags & 1); } }
+        public bool IsEncrypted { get { return 0 != (m_flags & 3); } }
         public int   DataOffset { get { return m_chunk_data; } }
 
         public T GetRootKey<T> (string key)
@@ -163,8 +163,9 @@ namespace GameRes.Formats.Emote
             if (Version < 2)
                 throw new NotSupportedException ("Not supported PSB version");
             m_name_map = ReadNames();
-//            var dict = GetDict (m_root); // returns all metadata in a single dictionary
-
+#if DEBUG
+            var dict = GetDict (m_root); // returns all metadata in a single dictionary
+#endif
             return true;
         }
 
@@ -218,10 +219,10 @@ namespace GameRes.Formats.Emote
             if (m_version < 3)
                 m_flags = 2;
 
-            var header = new byte[0x24];
+            var header = new byte[0x20];
             m_input.Read (header, 0, header.Length);
             if (0 != (m_flags & 1))
-                Decrypt (header, 0, 0x24);
+                Decrypt (header, 0, 0x20);
 
             m_names         = LittleEndian.ToInt32 (header, 0x04);
             m_strings       = LittleEndian.ToInt32 (header, 0x08);
@@ -232,19 +233,23 @@ namespace GameRes.Formats.Emote
             m_root          = LittleEndian.ToInt32 (header, 0x1C);
 
             int buffer_length = (int)m_input.BaseStream.Length;
-            if (!(m_names           >= 0x28 && m_names < buffer_length
-                  && m_strings      >= 0x28 && m_strings < buffer_length
-                  && m_strings_data >= 0x28 && m_strings_data < buffer_length
-                  && m_chunk_offsets >= 0x28 && m_chunk_offsets < buffer_length
-                  && m_chunk_lengths >= 0x28 && m_chunk_lengths < buffer_length
+            if (!(m_names           >= 0x28 && m_names < m_chunk_data
+                  && m_strings      >= 0x28 && m_strings < m_chunk_data
+                  && m_strings_data >= 0x28 && m_strings_data < m_chunk_data
+                  && m_chunk_offsets >= 0x28 && m_chunk_offsets < m_chunk_data
+                  && m_chunk_lengths >= 0x28 && m_chunk_lengths < m_chunk_data
                   && m_chunk_data   >= 0x28 && m_chunk_data < buffer_length
-                  && m_root         >= 0x28 && m_root < buffer_length))
+                  && m_root         >= 0x28 && m_root < m_chunk_data))
                 return false;
 
-            m_data = new byte[m_chunk_data];
+            if (null == m_data || m_data.Length < m_chunk_data)
+                m_data = new byte[m_chunk_data];
             int data_pos = (int)m_input.BaseStream.Position;
             m_input.Read (m_data, data_pos, m_chunk_data-data_pos);
-            return true;
+            if (0 != (m_flags & 2))
+                Decrypt (m_data, m_names, m_chunk_offsets-m_names);
+            // root object is a dictionary
+            return 0x21 == m_data[m_root];
         }
 
         bool GetKey (string name, int dict_offset, out int value_offset)
@@ -597,21 +602,52 @@ namespace GameRes.Formats.Emote
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
             var meta = (PsbTexMetaData)info;
-            if (meta.TexType != "RGBA8")
+            var pixels = new byte[meta.Width * meta.Height * 4];
+            if ("RGBA8" == meta.TexType)
+                ReadRgba8 (stream, meta, pixels);
+            else if ("RGBA4444" == meta.TexType)
+                ReadRgba4444 (stream, meta, pixels);
+            else
                 throw new NotImplementedException (string.Format ("PSB texture format '{0}' not implemented", meta.TexType));
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
+        }
+
+        void ReadRgba8 (Stream input, PsbTexMetaData meta, byte[] output)
+        {
             int dst_stride = (int)meta.Width * 4;
-            var pixels = new byte[dst_stride * (int)meta.Height];
             long next_row = meta.DataOffset;
             int src_stride = meta.FullWidth * 4;
             int dst = 0;
             for (uint i = 0; i < meta.Height; ++i)
             {
-                stream.Position = next_row;
-                stream.Read (pixels, dst, dst_stride);
+                input.Position = next_row;
+                input.Read (output, dst, dst_stride);
                 dst += dst_stride;
                 next_row += src_stride;
             }
-            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
+        }
+
+        void ReadRgba4444 (Stream input, PsbTexMetaData meta, byte[] output)
+        {
+            int dst_stride = (int)meta.Width * 4;
+            int src_stride = meta.FullWidth * 2;
+            int dst = 0;
+            var row = new byte[src_stride];
+            input.Position = meta.DataOffset;
+            for (uint i = 0; i < meta.Height; ++i)
+            {
+                input.Read (row, 0, src_stride);
+                int src = 0;
+                for (int x = 0; x < dst_stride; x += 4)
+                {
+                    uint p = LittleEndian.ToUInt16 (row, src);
+                    src += 2;
+                    output[dst++] = (byte)((p & 0x000Fu) * 0xFFu / 0x000Fu);
+                    output[dst++] = (byte)((p & 0x00F0u) * 0xFFu / 0x00F0u);
+                    output[dst++] = (byte)((p & 0x0F00u) * 0xFFu / 0x0F00u);
+                    output[dst++] = (byte)((p & 0xF000u) * 0xFFu / 0xF000u);
+                }
+            }
         }
 
         public override void Write (Stream file, ImageData image)
