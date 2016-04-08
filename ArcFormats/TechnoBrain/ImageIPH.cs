@@ -46,11 +46,11 @@ namespace GameRes.Formats.TechnoBrain
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
+            // 'RIFF' isn't included into signature to avoid auto-detection of the WAV files as IPH images.
+            if (0x46464952 != FormatCatalog.ReadSignature (stream)) // 'RIFF'
+                return null;
             using (var reader = new ArcView.Reader (stream))
             {
-                // 'RIFF' isn't included into signature to avoid auto-detection of the WAV files as IPH images.
-                if (0x46464952 != reader.ReadInt32()) // 'RIFF'
-                    return null;
                 if (0x38 != reader.ReadInt32())
                     return null;
                 var signature = reader.ReadInt32();
@@ -75,10 +75,9 @@ namespace GameRes.Formats.TechnoBrain
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = (IphMetaData)info;
-            if (meta.BPP != 16)
+            if (info.BPP != 16)
                 throw new NotSupportedException ("Not supported IPH color depth");
-            using (var reader = new IphReader (stream, meta))
+            using (var reader = new IphReader (stream, (IphMetaData)info))
             {
                 reader.Unpack();
                 return ImageData.Create (info, reader.Format, null, reader.Data);
