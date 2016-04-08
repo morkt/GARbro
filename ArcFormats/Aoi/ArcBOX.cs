@@ -30,6 +30,17 @@ using System.Security.Cryptography;
 
 namespace GameRes.Formats.Aoi
 {
+    internal class BoxArchive : ArcFile
+    {
+        public readonly byte Key;
+
+        public BoxArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, byte key)
+            : base (arc, impl, dir)
+        {
+            Key = key;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class BoxOpener : ArchiveFormat
     {
@@ -41,7 +52,12 @@ namespace GameRes.Formats.Aoi
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "AOIBX10"))
+            int version;
+            if (file.View.AsciiEqual (4, "X10"))
+                version = 10;
+            else if (file.View.AsciiEqual (4, "OX7\0"))
+                version = 7;
+            else
                 return null;
             int count = file.View.ReadInt32 (8);
             if (!IsSaneCount (count))
@@ -62,13 +78,17 @@ namespace GameRes.Formats.Aoi
                 dir.Add (entry);
                 index_offset += 0x18;
             }
-            return new ArcFile (file, this, dir);
+            byte key = 7 == version ? (byte)0xB4 : (byte)0xB2;
+            return new BoxArchive (file, this, dir, key);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new CryptoStream (input, new XorTransform (0xB2), CryptoStreamMode.Read);
+            var barc = arc as BoxArchive;
+            if (null == barc)
+                return input;
+            return new CryptoStream (input, new XorTransform (barc.Key), CryptoStreamMode.Read);
         }
     }
 }
