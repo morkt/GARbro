@@ -102,7 +102,7 @@ namespace GameRes.Formats.Malie
                         {
                             if (!string.IsNullOrEmpty (file))
                             {
-                                var filename = VFS.CombinePath (tex.Name, file + ".png");
+                                var filename = VFS.CombinePath (tex.Name, file);
                                 tiles.Add (new DziTile { X = x, Y = y, FileName = filename });
                             }
                             x += 256;
@@ -123,24 +123,30 @@ namespace GameRes.Formats.Malie
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as DziMetaData;
-            if (null == meta)
-                throw new ArgumentException ("DziFormat.Read should be supplied with DziMetaData", "info");
-
+            var meta = (DziMetaData)info;
             PixelFormat format = PixelFormats.Bgra32;
             var bitmap = new WriteableBitmap ((int)meta.Width, (int)meta.Height, ImageData.DefaultDpiX,
                                               ImageData.DefaultDpiY, format, null);
             int actual_width = 0;
             int actual_height = 0;
+            byte[] pixels = null;
             foreach (var tile in meta.Tiles.First())
             {
-                using (var file = VFS.OpenStream (VFS.FindFile (tile.FileName)))
+                var image_entry = VFS.GetFiles (tile.FileName + ".*").FirstOrDefault();
+                if (null == image_entry)
+                    throw new FileNotFoundException ("Tile not found", tile.FileName);
+                using (var input = VFS.OpenStream (image_entry))
                 {
-                    var decoder = new PngBitmapDecoder (file,
-                        BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                    var converted = new FormatConvertedBitmap (decoder.Frames[0], format, null, 0);
+                    var image = Read (image_entry.Name, input);
+                    if (null == image)
+                        throw new FileFormatException ("Unknown DZI tile format");
+                    var converted = image.Bitmap;
+                    if (converted.Format != format)
+                        converted = new FormatConvertedBitmap (converted, format, null, 0);
                     int stride = converted.PixelWidth * 4;
-                    var pixels = new byte[stride * converted.PixelHeight];
+                    int tile_size = stride * converted.PixelHeight;
+                    if (null == pixels || pixels.Length < tile_size)
+                        pixels = new byte[tile_size];
                     converted.CopyPixels (pixels, stride, 0);
                     var width  = Math.Min (converted.PixelWidth,  bitmap.PixelWidth  - tile.X);
                     var height = Math.Min (converted.PixelHeight, bitmap.PixelHeight - tile.Y);
