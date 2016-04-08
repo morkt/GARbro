@@ -63,6 +63,11 @@ namespace GameRes
         IEnumerable<Entry> GetFiles ();
 
         /// <summary>
+        /// Returns enumeration of files within current directory that match specified pattern.
+        /// </summary>
+        IEnumerable<Entry> GetFiles (string pattern);
+
+        /// <summary>
         /// System.IO.Path.Combine() analog.
         /// </summary>
         string CombinePath (string path1, string path2);
@@ -131,6 +136,20 @@ namespace GameRes
             }
         }
 
+        public IEnumerable<Entry> GetFiles (string pattern)
+        {
+            string path = Path.GetDirectoryName (pattern);
+            pattern = Path.GetFileName (pattern);
+            path = CombinePath (CurrentDirectory, path);
+            var info = new DirectoryInfo (path);
+            foreach (var file in info.EnumerateFiles (pattern))
+            {
+                if (0 != (file.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
+                    continue;
+                yield return EntryFromFileInfo (file);
+            }
+        }
+
         public IEnumerable<Entry> GetFilesRecursive ()
         {
             var info = new DirectoryInfo (CurrentDirectory);
@@ -192,7 +211,7 @@ namespace GameRes
 
         public bool FileExists (string filename)
         {
-            return m_dir.ContainsKey (filename);
+            return m_dir.ContainsKey (CombinePath (CurrentDirectory, filename));
         }
 
         public Stream OpenStream (Entry entry)
@@ -217,6 +236,8 @@ namespace GameRes
         public abstract IEnumerable<Entry> GetFilesRecursive ();
 
         public abstract string CombinePath (string path1, string path2);
+
+        public abstract IEnumerable<Entry> GetFiles (string pattern);
 
         #region IDisposable Members
         bool _arc_disposed = false;
@@ -278,6 +299,12 @@ namespace GameRes
         public override IEnumerable<Entry> GetFilesRecursive ()
         {
             return m_arc.Dir;
+        }
+
+        public override IEnumerable<Entry> GetFiles (string pattern)
+        {
+            var glob = new FileNameGlob (pattern);
+            return m_arc.Dir.Where (f => glob.IsMatch (f.Name));
         }
 
         public override string CombinePath (string path1, string path2)
@@ -364,6 +391,19 @@ namespace GameRes
                 return from file in m_arc.Dir
                        where file.Name.StartsWith (m_cwd + PathDelimiter)
                        select file;
+        }
+
+        public override IEnumerable<Entry> GetFiles (string pattern)
+        {
+            string path = Path.GetDirectoryName (pattern);
+            pattern = Path.GetFileName (pattern);
+            path = CombinePath (CurrentDirectory, path);
+            if (!string.IsNullOrEmpty (path))
+                path += PathDelimiter;
+            var glob = new FileNameGlob (pattern);
+            return from file in m_arc.Dir
+                   where file.Name.StartsWith (path) && glob.IsMatch (Path.GetFileName (file.Name))
+                   select file;
         }
 
         public IEnumerable<Entry> GetFilesRecursive (IEnumerable<Entry> list)
@@ -676,8 +716,7 @@ namespace GameRes
         /// </summary>
         public static IEnumerable<Entry> GetFiles (string pattern)
         {
-            var glob = new FileNameGlob (pattern);
-            return GetFiles().Where (f => glob.IsMatch (Path.GetFileName (f.Name)));
+            return m_vfs.Top.GetFiles (pattern);
         }
     }
 
