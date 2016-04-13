@@ -56,7 +56,7 @@ IN THE SOFTWARE.
     </Window.Resources>
     <Grid DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:AboutBox}}}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0" Margin="10">
