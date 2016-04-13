@@ -39,4 +39,5 @@ Author
 Written by [morkt](https://github.com/morkt/GARbro) under [MIT License](https://github.com/morkt/GARbro/blob/master/LICENSE).
 
 Korean translation by [mireado](https://github.com/mireado)
+
 Simplified Chinese translation by [tenyuhuang](https://github.com/tenyuhuang)
