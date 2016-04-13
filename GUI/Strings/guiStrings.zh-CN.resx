@@ -1,0 +1,452 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="ButtonExtract" xml:space="preserve">
+    <value>提取</value>
+  </data>
+  <data name="ButtonOK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="CtxMenuClose" xml:space="preserve">
+    <value>_关闭</value>
+  </data>
+  <data name="CtxMenuCopy" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="CtxMenuCreate" xml:space="preserve">
+    <value>创建压缩文件...</value>
+  </data>
+  <data name="CtxMenuCut" xml:space="preserve">
+    <value>剪切</value>
+  </data>
+  <data name="CtxMenuDelete" xml:space="preserve">
+    <value>_删除</value>
+  </data>
+  <data name="CtxMenuExplorer" xml:space="preserve">
+    <value>在_资源管理器中浏览</value>
+  </data>
+  <data name="CtxMenuExtract" xml:space="preserve">
+    <value>提取</value>
+  </data>
+  <data name="CtxMenuOpen" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="CtxMenuPaste" xml:space="preserve">
+    <value>粘贴</value>
+  </data>
+  <data name="CtxMenuRefresh" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="CtxMenuRename" xml:space="preserve">
+    <value>_重命名</value>
+  </data>
+  <data name="CtxMenuSortBy" xml:space="preserve">
+    <value>排序方式</value>
+  </data>
+  <data name="CtxMenuSortByName" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="CtxMenuSortBySize" xml:space="preserve">
+    <value>大小</value>
+  </data>
+  <data name="CtxMenuSortByType" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="CtxMenuUnsorted" xml:space="preserve">
+    <value>未分类</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="HeaderSize" xml:space="preserve">
+    <value>大小</value>
+  </data>
+  <data name="HeaderType" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="LabelArchiveFormat" xml:space="preserve">
+    <value>压缩文件格式</value>
+  </data>
+  <data name="LabelArchiveName" xml:space="preserve">
+    <value>压缩文件名称</value>
+  </data>
+  <data name="LabelArchiveOptions" xml:space="preserve">
+    <value>压缩选项</value>
+  </data>
+  <data name="LabelExtractAllTo" xml:space="preserve">
+    <value>从{0}中提取文件到</value>
+  </data>
+  <data name="LabelExtractFileTo" xml:space="preserve">
+    <value>将{0}解压到</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>关于游戏资源浏览器（GARbro）</value>
+  </data>
+  <data name="MsgDeletedItem" xml:space="preserve">
+    <value>已删除{0}</value>
+  </data>
+  <data name="MsgDirectoryNotFound" xml:space="preserve">
+    <value>未找到文件夹。</value>
+  </data>
+  <data name="MsgEmptyArchive" xml:space="preserve">
+    <value>压缩包无内容。</value>
+  </data>
+  <data name="MsgErrorExtracting" xml:space="preserve">
+    <value>提取文件失败。</value>
+  </data>
+  <data name="MsgErrorOpening" xml:space="preserve">
+    <value>打开文件失败。</value>
+  </data>
+  <data name="MsgExtractComplete" xml:space="preserve">
+    <value>已将{0}提取至{1}。</value>
+  </data>
+  <data name="MsgExtractedFiles1" xml:space="preserve">
+    <value>已提取文件：{0}。</value>
+  </data>
+  <data name="MsgExtractingArchive" xml:space="preserve">
+    <value>正在从{0}中提取文件……</value>
+  </data>
+  <data name="MsgExtractingFile" xml:space="preserve">
+    <value>正在从{0}中提取文件……</value>
+  </data>
+  <data name="MsgExtractingTo" xml:space="preserve">
+    <value>正在从{0}中提取文件至{1}……</value>
+  </data>
+  <data name="MsgImageSize" xml:space="preserve">
+    <value>图像 {0} x {1} x {2}bpp</value>
+  </data>
+  <data name="MsgNoFiles" xml:space="preserve">
+    <value>没有可以提取的文件。</value>
+  </data>
+  <data name="MsgReady" xml:space="preserve">
+    <value>就绪</value>
+  </data>
+  <data name="MsgUnableInterpretImage" xml:space="preserve">
+    <value>无法读取图像格式。</value>
+  </data>
+  <data name="MsgVersion" xml:space="preserve">
+    <value>版本 {0}</value>
+  </data>
+  <data name="TextAboutBuiltin" xml:space="preserve">
+    <value>[内置]</value>
+  </data>
+  <data name="TextAboutArchives" xml:space="preserve">
+    <value>压缩文件</value>
+  </data>
+  <data name="TextAboutImages" xml:space="preserve">
+    <value>图像</value>
+  </data>
+  <data name="TextAboutTitle" xml:space="preserve">
+    <value>关于游戏资源浏览器（GARbro）</value>
+  </data>
+  <data name="TextAllFiles" xml:space="preserve">
+    <value>全部文件</value>
+  </data>
+  <data name="TextAsIs" xml:space="preserve">
+    <value>保持原样</value>
+  </data>
+  <data name="TextChooseArchive" xml:space="preserve">
+    <value>选择压缩文件位置</value>
+  </data>
+  <data name="TextChooseDestDir" xml:space="preserve">
+    <value>选择目标文件夹</value>
+  </data>
+  <data name="TextCreateArchive" xml:space="preserve">
+    <value>创建压缩文件</value>
+  </data>
+  <data name="TextCreateArchiveError" xml:space="preserve">
+    <value>创建压缩文件失败。</value>
+  </data>
+  <data name="Type_directory" xml:space="preserve">
+    <value>&lt;文件夹&gt;</value>
+  </data>
+  <data name="TextEncoding" xml:space="preserve">
+    <value>文本编码</value>
+  </data>
+  <data name="TextExtractImages" xml:space="preserve">
+    <value>提取图像</value>
+  </data>
+  <data name="TextExtractText" xml:space="preserve">
+    <value>提取文字</value>
+  </data>
+  <data name="TextExtractTitle" xml:space="preserve">
+    <value>从压缩文件中提取</value>
+  </data>
+  <data name="TextParametersTitle" xml:space="preserve">
+    <value>压缩文件参数</value>
+  </data>
+  <data name="TextSaveAs" xml:space="preserve">
+    <value>另存为</value>
+  </data>
+  <data name="TextSaveImagesAs" xml:space="preserve">
+    <value>将图像另存为</value>
+  </data>
+  <data name="TextTitle" xml:space="preserve">
+    <value>游戏资源浏览器（GARbro）</value>
+  </data>
+  <data name="TooltipBack" xml:space="preserve">
+    <value>后退</value>
+  </data>
+  <data name="TooltipForward" xml:space="preserve">
+    <value>前进</value>
+  </data>
+  <data name="MsgOverwrite" xml:space="preserve">
+    <value>文件{0}
+已经存在。
+
+是否覆盖？</value>
+  </data>
+  <data name="TextConfirmOverwrite" xml:space="preserve">
+    <value>确认覆盖</value>
+  </data>
+  <data name="MsgCreatingArchive" xml:space="preserve">
+    <value>正在创建压缩文件{0}</value>
+  </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>打开...</value>
+  </data>
+  <data name="MenuRecent" xml:space="preserve">
+    <value>最近使用过的文件</value>
+  </data>
+  <data name="MsgChooseFiles" xml:space="preserve">
+    <value>请选择需要提取的文件</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>_退出</value>
+  </data>
+  <data name="MenuFile" xml:space="preserve">
+    <value>_文件</value>
+  </data>
+  <data name="MenuHelp" xml:space="preserve">
+    <value>_帮助</value>
+  </data>
+  <data name="MsgExtractedFiles2" xml:space="preserve">
+    <value>已提取{0}个文件</value>
+  </data>
+  <data name="MsgFiles1" xml:space="preserve">
+    <value>{0}个文件</value>
+  </data>
+  <data name="MsgFiles2" xml:space="preserve">
+    <value>{0}个文件</value>
+  </data>
+  <data name="MsgConfirmDeleteFiles" xml:space="preserve">
+    <value>您确定要删除这些文件吗？</value>
+  </data>
+  <data name="TextDeleteFiles" xml:space="preserve">
+    <value>删除文件</value>
+  </data>
+  <data name="MsgDeletedItems1" xml:space="preserve">
+    <value>已删除{0}个文件。</value>
+  </data>
+  <data name="MsgDeletedItems2" xml:space="preserve">
+    <value>已删除{0}个文件。</value>
+  </data>
+  <data name="MenuFitWindow" xml:space="preserve">
+    <value>让预览窗口适应图像</value>
+  </data>
+  <data name="MenuToggleMenuBar" xml:space="preserve">
+    <value>显示/隐藏_主菜单烂</value>
+  </data>
+  <data name="MenuToggleStatusBar" xml:space="preserve">
+    <value>显示/隐藏_状态栏</value>
+  </data>
+  <data name="MenuToggleToolBar" xml:space="preserve">
+    <value>显示/隐藏_工具栏</value>
+  </data>
+  <data name="MenuView" xml:space="preserve">
+    <value>_视图</value>
+  </data>
+  <data name="CtxMenuConvert" xml:space="preserve">
+    <value>转换多媒体文件...</value>
+  </data>
+  <data name="ButtonConvert" xml:space="preserve">
+    <value>转换</value>
+  </data>
+  <data name="LabelDestinationFormat" xml:space="preserve">
+    <value>请选择目标文件类型</value>
+  </data>
+  <data name="TextConvertMedia" xml:space="preserve">
+    <value>媒体转换</value>
+  </data>
+  <data name="MsgConvertingFile" xml:space="preserve">
+    <value>正在转换文件{0}</value>
+  </data>
+  <data name="TextMediaConvertError" xml:space="preserve">
+    <value>转换错误。</value>
+  </data>
+  <data name="LabelEncoding" xml:space="preserve">
+    <value>正在编码</value>
+  </data>
+  <data name="TextConvertAudio" xml:space="preserve">
+    <value>将音频转换为常规格式</value>
+  </data>
+  <data name="TextExtractAudio" xml:space="preserve">
+    <value>提取音频</value>
+  </data>
+  <data name="TooltipAudioFormats" xml:space="preserve">
+    <value>WAV，MP3或OGG</value>
+  </data>
+  <data name="TextAboutAudio" xml:space="preserve">
+    <value>音频</value>
+  </data>
+  <data name="TextAboutLicense" xml:space="preserve">
+    <value>许可证书</value>
+  </data>
+  <data name="MsgUnableInterpretAudio" xml:space="preserve">
+    <value>无法读取音频格式。</value>
+  </data>
+  <data name="MsgNoMediaFiles" xml:space="preserve">
+    <value>没有选择媒体文件。</value>
+  </data>
+  <data name="TextAudioConversion" xml:space="preserve">
+    <value>音频文件将被转换为WAV，MP3或OGG格式。</value>
+  </data>
+  <data name="LabelSkipFailures" xml:space="preserve">
+    <value>跳过不可转换的文件</value>
+  </data>
+  <data name="MsgNoMatching" xml:space="preserve">
+    <value>没有与“{0}”匹配的项目。</value>
+  </data>
+  <data name="MsgSelectedFiles1" xml:space="preserve">
+    <value>选中{0}个文件。</value>
+  </data>
+  <data name="MsgSelectedFiles2" xml:space="preserve">
+    <value>选中{0}个文件。</value>
+  </data>
+  <data name="LabelEnterMask" xml:space="preserve">
+    <value>请输入通配符掩码</value>
+  </data>
+  <data name="TextSelectFiles" xml:space="preserve">
+    <value>选择文件</value>
+  </data>
+  <data name="TextErrorExtracting" xml:space="preserve">
+    <value>提取{0}时
+	发生错误。
+{1}</value>
+  </data>
+  <data name="CtxMenuFileType" xml:space="preserve">
+    <value>选择文件类型</value>
+  </data>
+  <data name="Type_NONE" xml:space="preserve">
+    <value>无</value>
+  </data>
+</root>
