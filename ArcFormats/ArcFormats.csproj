@@ -304,7 +304,7 @@
     <Compile Include="YuRis\ImageYCG.cs" />
     <Compile Include="Zyx\ArcBDF.cs" />
     <Compile Include="Zyx\ImageSPL.cs" />
-    <EmbeddedResource Include="Strings\arcStrings.zh-CN.resx" />
+    <EmbeddedResource Include="Strings\arcStrings.zh-Hans.resx" />
     <None Include="ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="NitroPlus\ArcSteinsGate.cs" />
