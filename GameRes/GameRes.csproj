@@ -88,6 +88,7 @@
       <LastGenOutput>garStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\garStrings.ru-RU.resx" />
+    <EmbeddedResource Include="Strings\garStrings.zh-CN.resx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
