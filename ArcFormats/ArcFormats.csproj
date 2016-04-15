@@ -86,6 +86,7 @@
     <Compile Include="Ikura\ImageYGP.cs" />
     <Compile Include="ImageLZ.cs" />
     <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
+    <Compile Include="Liar\ImageLIM.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
