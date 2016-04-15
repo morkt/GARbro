@@ -479,10 +479,12 @@ namespace GameRes.Formats.Liar
             int flag = stream.ReadByte() & 0xF;
             if (flag != 2 && flag != 3)
                 return null;
-            stream.Seek (5, SeekOrigin.Current);
+            stream.ReadByte();
             using (var file = new ArcView.Reader (stream))
             {
-                var meta = new ImageMetaData { BPP = 32 };
+                int bpp = 0x10 == file.ReadUInt16() ? 16 : 32;
+                var meta = new ImageMetaData { BPP = bpp };
+                file.ReadUInt16();
                 meta.Width  = file.ReadUInt32();
                 meta.Height = file.ReadUInt32();
                 return meta;
@@ -512,16 +514,24 @@ namespace GameRes.Formats.Liar
             byte[]          m_image;
             int             m_width;
             int             m_height;
+            int             m_bpp;
 
             public byte[]        Data { get { return m_image; } }
-            public PixelFormat Format { get { return PixelFormats.Bgra32; } }
+            public PixelFormat Format { get; private set; }
 
             public Reader (Stream file, ImageMetaData info)
             {
                 m_input = new ArcView.Reader (file);
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
-                m_image = new byte[m_width*m_height*4];
+                m_bpp = info.BPP;
+                if (32 == m_bpp)
+                    Format = PixelFormats.Bgra32;
+                else if (16 == m_bpp)
+                    Format = PixelFormats.Bgr565;
+                else
+                    throw new InvalidFormatException();
+                m_image = new byte[m_width*m_height*m_bpp/8];
             }
 
             int         m_remaining;
@@ -530,24 +540,18 @@ namespace GameRes.Formats.Liar
 
             public void Unpack ()
             {
+                if (32 == m_bpp)
+                    Unpack32bpp();
+                else
+                    Unpack16bpp();
+            }
+
+            void Unpack32bpp ()
+            {
                 byte mask = 0xFF;
                 for (int i = 3; i >= 0; --i)
                 {
-                    int channel_size = m_input.ReadInt32();
-                    if (null == m_output)
-                        m_output = new byte[channel_size];
-                    else if (channel_size != m_output.Length)
-                        throw new InvalidFormatException();
-
-                    m_remaining = m_input.ReadInt32();
-                    int index_size = m_input.ReadUInt16();
-                    if (null == m_index || index_size > m_index.Length)
-                        m_index = new byte[index_size];
-                    m_input.ReadInt16(); // ignored
-                    if (m_index.Length != m_input.Read (m_index, 0, m_index.Length))
-                        throw new InvalidFormatException ("Unexpected end of file");
-
-                    UnpackChannel();
+                    UnpackChannel (3);
                     int src = 0;
                     for (int p = i; p < m_image.Length; p += 4)
                     {
@@ -557,13 +561,117 @@ namespace GameRes.Formats.Liar
                 }
             }
 
-            void UnpackChannel ()
+            void Unpack16bpp ()
             {
+                int image_size = m_input.ReadInt32();
+                m_output = m_image;
+
+                m_remaining = m_input.ReadInt32();
+                int index_size = m_input.ReadUInt16() * 2;
+                if (null == m_index || index_size > m_index.Length)
+                    m_index = new byte[index_size];
+                m_input.ReadInt16(); // ignored
+                if (index_size != m_input.Read (m_index, 0, index_size))
+                    throw new InvalidFormatException ("Unexpected end of file");
+
+                int card;
+                if (index_size > 8192)
+                {
+                    m_index_threshold = 14;
+                    m_index_length_limit = 16;
+                    card = 4;
+                }
+                else
+                {
+                    m_index_threshold = 6;
+                    m_index_length_limit = 12;
+                    card = 3;
+                }
                 m_current = 0;
                 int dst = 0;
                 while (dst < m_output.Length)
                 {
-                    int bits = GetBits (3);
+                    int bits = GetBits (card);
+                    if (-1 == bits)
+                        break;
+
+                    if (0 != bits)
+                    {
+                        int index = GetIndex (bits);
+                        if (index < 0)
+                            break;
+                        if (dst + 1 >= m_output.Length)
+                            break;
+
+                        m_output[dst++] = m_index[index*2];
+                        m_output[dst++] = m_index[index*2+1];
+                    }
+                    else
+                    {
+                        int count = GetBits (4);
+                        if (-1 == count)
+                            break;
+
+                        bits = GetBits (card);
+                        if (-1 == bits)
+                            break;
+
+                        int index = GetIndex (bits);
+                        if (-1 == index)
+                            break;
+                        count += 2;
+                        index *= 2;
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (dst + 1 >= m_output.Length)
+                                return;
+                            m_output[dst++] = m_index[index];
+                            m_output[dst++] = m_index[index+1];
+                        }
+                    }
+                }
+                if (m_input.BaseStream.Position < m_input.BaseStream.Length)
+                {
+                    m_output = null;
+                    UnpackChannel (3);
+                    var pixels = new byte[m_width*m_height*4];
+                    int alpha_src = 0;
+                    dst = 0;
+                    for (int i = 0; i < m_image.Length; i += 2)
+                    {
+                        int color = LittleEndian.ToUInt16 (m_image, i);
+                        pixels[dst++] = (byte)((color & 0x001F) * 0xFF / 0x1F);
+                        pixels[dst++] = (byte)((color & 0x07E0) * 0xFF / 0x7E0);
+                        pixels[dst++] = (byte)((color & 0xF800) * 0xFF / 0xF800);
+                        pixels[dst++] = (byte)~m_output[alpha_src++];
+                    }
+                    m_image = pixels;
+                    Format = PixelFormats.Bgra32;
+                }
+            }
+
+            void UnpackChannel (int card)
+            {
+                m_index_threshold = 6;
+                m_index_length_limit = 12;
+
+                int channel_size = m_input.ReadInt32();
+                if (null == m_output || m_output.Length < channel_size)
+                    m_output = new byte[channel_size];
+                m_remaining = m_input.ReadInt32();
+
+                int index_size = m_input.ReadUInt16();
+                if (null == m_index || index_size > m_index.Length)
+                    m_index = new byte[index_size];
+                m_input.ReadInt16(); // ignored
+                if (index_size != m_input.Read (m_index, 0, index_size))
+                    throw new InvalidFormatException ("Unexpected end of file");
+
+                m_current = 0;
+                int dst = 0;
+                while (dst < m_output.Length)
+                {
+                    int bits = GetBits (card);
                     if (-1 == bits)
                         break;
 
@@ -583,7 +691,7 @@ namespace GameRes.Formats.Liar
                         if (-1 == count)
                             break;
 
-                        bits = GetBits (3);
+                        bits = GetBits (card);
                         if (-1 == bits)
                             break;
 
@@ -608,7 +716,10 @@ namespace GameRes.Formats.Liar
                 {
                     if (0 == m_current)
                     {
+                        if (0 == m_remaining)
+                            return 0;
                         m_bits = m_input.ReadByte();
+                        --m_remaining;
                         m_current = 8;
                     }
                     v <<= 1;
@@ -620,9 +731,12 @@ namespace GameRes.Formats.Liar
                 return v;
             }
 
+            int m_index_threshold;
+            int m_index_length_limit;
+
             private int GetIndex (int bits)
             {
-                if (bits < 7)
+                if (bits <= m_index_threshold)
                 {
                     if (0 == bits)
                         return -1;
@@ -630,7 +744,7 @@ namespace GameRes.Formats.Liar
                         return GetBits (1);
                     return (1 << bits) | GetBits (bits);
                 }
-                for (int i = 6; i < 12; ++i)
+                for (int i = m_index_threshold; i < m_index_length_limit; ++i)
                 {
                     bits = GetBits (1);
                     if (-1 == bits)
