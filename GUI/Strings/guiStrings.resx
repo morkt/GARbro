@@ -449,4 +449,7 @@ Overwrite?</value>
   <data name="Type_NONE" xml:space="preserve">
     <value>none</value>
   </data>
+  <data name="LabelDestinationDir" xml:space="preserve">
+    <value>Destination directory</value>
+  </data>
 </root>

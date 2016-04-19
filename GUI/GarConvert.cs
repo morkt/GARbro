@@ -2,7 +2,7 @@
 //! \date       Fri Aug 22 08:22:47 2014
 //! \brief      Game resources conversion methods.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -56,6 +56,14 @@ namespace GARbro.GUI
                 return;
             }
             var convert_dialog = new ConvertMedia();
+
+            string destination = ViewModel.Path.First();
+            if (ViewModel.IsArchive)
+                destination = Path.GetDirectoryName (destination);
+            if (!IsWritableDirectory (destination) && Directory.Exists (Settings.Default.appLastDestination))
+                destination = Settings.Default.appLastDestination;
+            convert_dialog.DestinationDir.Text = destination;
+
             convert_dialog.Owner = this;
             var result = convert_dialog.ShowDialog() ?? false;
             if (!result)
@@ -68,15 +76,23 @@ namespace GARbro.GUI
             }
             try
             {
-                Directory.SetCurrentDirectory (ViewModel.Path.First());
+                destination = convert_dialog.DestinationDir.Text;
+                Directory.SetCurrentDirectory (destination);
                 var converter = new GarConvertMedia (this);
                 converter.IgnoreErrors = convert_dialog.IgnoreErrors.IsChecked ?? false;
                 converter.Convert (source, format);
+                Settings.Default.appLastDestination = destination;
             }
             catch (Exception X)
             {
                 PopupError (X.Message, guiStrings.TextMediaConvertError);
             }
+        }
+
+        bool IsWritableDirectory (string path)
+        {
+             var info = new DirectoryInfo (path);
+             return !info.Attributes.HasFlag (FileAttributes.ReadOnly);
         }
     }
 
@@ -165,13 +181,14 @@ namespace GARbro.GUI
             {
                 if (null == input)
                     return;
+                string output_name = Path.GetFileName (filename);
                 var source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
                 string source_format = input.SourceFormat;
                 if (CommonAudioFormats.Contains (source_format))
                 {
                     if (source_ext == source_format)
                         return;
-                    string output_name = Path.ChangeExtension (filename, source_format);
+                    output_name = Path.ChangeExtension (output_name, source_format);
                     using (var output = CreateNewFile (output_name))
                     {
                         input.Source.Position = 0;
@@ -182,7 +199,7 @@ namespace GARbro.GUI
                 {
                     if (source_ext == "wav")
                         return;
-                    string output_name = Path.ChangeExtension (filename, "wav");
+                    output_name = Path.ChangeExtension (output_name, "wav");
                     using (var output = CreateNewFile (output_name))
                         AudioFormat.Wav.Write (input, output);
                 }
@@ -194,8 +211,9 @@ namespace GARbro.GUI
             string source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
             if (m_image_format.Extensions.Any (ext => ext == source_ext))
                 return;
+            string target_name = Path.GetFileName (filename);
             string target_ext = m_image_format.Extensions.FirstOrDefault();
-            string target_name = Path.ChangeExtension (filename, target_ext);
+            target_name = Path.ChangeExtension (target_name, target_ext);
             using (var file = File.OpenRead (filename))
             {
                 var image = ImageFormat.Read (filename, file);

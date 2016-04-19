@@ -448,4 +448,8 @@
   <data name="Type_NONE" xml:space="preserve">
     <value>없음</value>
   </data>
+  <data name="LabelDestinationDir" xml:space="preserve">
+    <value>Destination directory</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

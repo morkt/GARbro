@@ -470,4 +470,7 @@
   <data name="Type_NONE" xml:space="preserve">
     <value>без типа</value>
   </data>
+  <data name="LabelDestinationDir" xml:space="preserve">
+    <value>Сохранить результаты в</value>
+  </data>
 </root>
