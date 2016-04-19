@@ -92,6 +92,7 @@
     <Compile Include="RealLive\ArcOVK.cs" />
     <Compile Include="RealLive\AudioNWA.cs" />
     <Compile Include="RealLive\ImageG00.cs" />
+    <Compile Include="RealLive\ImagePDT.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
     <Compile Include="SimpleEncryption.cs" />
     <Compile Include="Slg\AudioVOI.cs" />
