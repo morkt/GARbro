@@ -68,7 +68,7 @@ namespace GameRes.Formats.Marble
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             ArcFile arc = null;
             uint filename_len = file.View.ReadUInt32 (4);
@@ -96,7 +96,7 @@ namespace GameRes.Formats.Marble
                 {
                     string name = file.View.ReadString (index_offset, filename_len);
                     if (0 == name.Length)
-                        return null;
+                        break;
                     if (filename_len-name.Length > 1)
                     {
                         string ext = file.View.ReadString (index_offset+name.Length+1, filename_len-(uint)name.Length-1);
@@ -169,8 +169,7 @@ namespace GameRes.Formats.Marble
             if (entry.Type != "script" || !entry.Name.EndsWith (".s"))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var marc = arc as MblArchive;
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             if (null == marc || null == marc.Key)
             {
                 for (int i = 0; i < data.Length; ++i)
@@ -178,7 +177,7 @@ namespace GameRes.Formats.Marble
                     data[i] = (byte)-data[i];
                 }
             }
-            else
+            else if (marc.Key.Length > 0)
             {
                 for (int i = 0; i < data.Length; ++i)
                 {
