@@ -89,6 +89,9 @@
     <Compile Include="Liar\ImageLIM.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
+    <Compile Include="RealLive\ArcOVK.cs" />
+    <Compile Include="RealLive\AudioNWA.cs" />
+    <Compile Include="RealLive\ImageG00.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
     <Compile Include="SimpleEncryption.cs" />
     <Compile Include="Slg\AudioVOI.cs" />
