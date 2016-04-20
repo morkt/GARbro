@@ -501,5 +501,17 @@ namespace GameRes.Formats.Properties {
                 this["ZIPEncodingCP"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string AZScriptScheme {
+            get {
+                return ((string)(this["AZScriptScheme"]));
+            }
+            set {
+                this["AZScriptScheme"] = value;
+            }
+        }
     }
 }

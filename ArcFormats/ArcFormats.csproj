@@ -68,6 +68,9 @@
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="ArcZIP.cs" />
+    <Compile Include="AZSys\WidgetAZ.xaml.cs">
+      <DependentUpon>WidgetAZ.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CommonStreams.cs" />
     <Compile Include="Cri\ArcCPK.cs" />
     <Compile Include="Cri\ArcSPC.cs" />
@@ -486,6 +489,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Amaterasu\CreateAMIWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AZSys\WidgetAZ.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

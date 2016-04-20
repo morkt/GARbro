@@ -2,7 +2,7 @@
 //! \date       Wed Apr 22 09:52:23 2015
 //! \brief      AZ system archive implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,11 +28,34 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
+using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.AZSys
 {
+    [Serializable]
+    public class AsbScheme : ResourceScheme
+    {
+        public Dictionary<string, uint> KnownKeys;
+    }
+
+    internal class AsbOptions : ResourceOptions
+    {
+        public uint AsbKey;
+    }
+
+    internal class AsbArchive : ArcFile
+    {
+        public readonly uint Key;
+
+        public AsbArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, uint key)
+            : base (arc, impl, dir)
+        {
+            Key = key;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class ArcOpener : ArchiveFormat
     {
@@ -45,6 +68,14 @@ namespace GameRes.Formats.AZSys
         public ArcOpener ()
         {
             Extensions = new string[] { "arc" };
+        }
+
+        public static Dictionary<string, uint> KnownKeys = new Dictionary<string, uint>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new AsbScheme { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((AsbScheme)value).KnownKeys; }
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -65,6 +96,7 @@ namespace GameRes.Formats.AZSys
             var reader = new IndexReader (packed_index, count);
             var index = reader.Unpack();
             int index_offset = 0;
+            bool contains_scripts = false;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
@@ -75,21 +107,27 @@ namespace GameRes.Formats.AZSys
                     entry.Offset = base_offset + LittleEndian.ToUInt32 (index, index_offset);
                     entry.Size = LittleEndian.ToUInt32 (index, index_offset + 4);
                     if (entry.CheckPlacement (file.MaxOffset))
+                    {
                         dir.Add (entry);
+                        contains_scripts = contains_scripts || name.EndsWith (".asb", StringComparison.InvariantCultureIgnoreCase);
+                    }
                 }
                 index_offset += 0x40;
             }
             if (0 == dir.Count)
                 return null;
-            return new ArcFile (file, this, dir);
+            if (!contains_scripts || 0 == KnownKeys.Count)
+                return new ArcFile (file, this, dir);
+            var options = Query<AsbOptions> (arcStrings.ArcEncryptedNotice);
+            if (0 == options.AsbKey)
+                return new ArcFile (file, this, dir);
+            return new AsbArchive (file, this, dir, options.AsbKey);
         }
-
-        static readonly uint[] KnownKeys = new uint[] { 0x1de71cb9 }; // Triptych
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (entry.Size < 20
-                || !entry.Name.EndsWith (".asb", StringComparison.InvariantCultureIgnoreCase)
+            var azarc = arc as AsbArchive;
+            if (null == azarc || entry.Size < 20
                 || !arc.File.View.AsciiEqual (entry.Offset, "ASB\x1a"))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             uint packed   = arc.File.View.ReadUInt32 (entry.Offset+4);
@@ -97,7 +135,7 @@ namespace GameRes.Formats.AZSys
             if (12 + packed != entry.Size)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
 
-            uint key = KnownKeys[0] ^ unpacked;
+            uint key = azarc.Key ^ unpacked;
             key ^= ((key << 12) | key) << 11;
 
             uint first = arc.File.View.ReadUInt16 (entry.Offset+16);
@@ -119,6 +157,24 @@ namespace GameRes.Formats.AZSys
             if (checksum != Crc32.Compute (input, 4, input.Length-4))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             return new ZLibStream (new MemoryStream (input, 4, input.Length-4), CompressionMode.Decompress);
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new AsbOptions { AsbKey = GetAsbKey (Settings.Default.AZScriptScheme) };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetAZ();
+        }
+
+        uint GetAsbKey (string scheme)
+        {
+            uint key;
+            if (KnownKeys.TryGetValue (scheme, out key))
+                return key;
+            return 0;
         }
 
         internal class IndexReader
