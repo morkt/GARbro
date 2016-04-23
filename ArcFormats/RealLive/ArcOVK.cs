@@ -41,6 +41,8 @@ namespace GameRes.Formats.RealLive
 
         public override ArcFile TryOpen (ArcView file)
         {
+            if (!file.Name.EndsWith (".ovk", StringComparison.InvariantCultureIgnoreCase))
+                return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
                 return null;
