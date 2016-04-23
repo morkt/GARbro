@@ -71,6 +71,7 @@
     <Compile Include="AZSys\WidgetAZ.xaml.cs">
       <DependentUpon>WidgetAZ.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Circus\ArcValkyrieComplex.cs" />
     <Compile Include="CommonStreams.cs" />
     <Compile Include="Cri\ArcCPK.cs" />
     <Compile Include="Cri\ArcSPC.cs" />
