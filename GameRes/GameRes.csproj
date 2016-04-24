@@ -58,6 +58,7 @@
     <Compile Include="ArcView.cs" />
     <Compile Include="Audio.cs" />
     <Compile Include="AudioWAV.cs" />
+    <Compile Include="Checksum.cs" />
     <Compile Include="FileSystem.cs" />
     <Compile Include="FormatCatalog.cs" />
     <Compile Include="GameRes.cs" />
