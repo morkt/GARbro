@@ -35,6 +35,11 @@ namespace GameRes.Formats.Selen
         public override string         Tag { get { return "EDIM"; } }
         public override string Description { get { return "Selen audio format (MP3)"; } }
         public override uint     Signature { get { return 0x40010000; } }
+
+        public EdimAudio ()
+        {
+            Signatures = new uint[] { 0x40010000, 0x64010000 };
+        }
         
         public override SoundInput TryOpen (Stream file)
         {
