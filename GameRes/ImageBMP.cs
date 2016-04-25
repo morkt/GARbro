@@ -2,7 +2,7 @@
 //! \date       Wed Jul 16 18:06:47 2014
 //! \brief      BMP image implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -33,6 +33,12 @@ using System.Windows.Media;
 
 namespace GameRes
 {
+    public class BmpMetaData : ImageMetaData
+    {
+        public uint ImageLength;
+        public uint HeaderLength;
+    }
+
     [Export(typeof(ImageFormat))]
     public class BmpFormat : ImageFormat
     {
@@ -42,6 +48,20 @@ namespace GameRes
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
+            var bmp_info = info as BmpMetaData;
+            if (bmp_info != null && file.CanSeek
+                && info.Width * info.Height * (uint)info.BPP/8 + bmp_info.HeaderLength == bmp_info.ImageLength)
+            {
+                if (0x20 == info.BPP)
+                {
+                    return ReadBitmapBGRA (file, bmp_info);
+                }
+                else if (0x18 == info.BPP
+                         && (bmp_info.ImageLength + info.Width * info.Height) == file.Length)
+                {
+                    return ReadBitmapWithAlpha (file, bmp_info);
+                }
+            }
             var decoder = new BmpBitmapDecoder (file,
                 BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
             BitmapSource frame = decoder.Frames.First();
@@ -54,6 +74,46 @@ namespace GameRes
             var encoder = new BmpBitmapEncoder();
             encoder.Frames.Add (BitmapFrame.Create (image.Bitmap));
             encoder.Save (file);
+        }
+
+        private ImageData ReadBitmapWithAlpha (Stream file, BmpMetaData info)
+        {
+            file.Position = info.ImageLength;
+            var alpha = new byte[info.Width*info.Height];
+            if (alpha.Length != file.Read (alpha, 0, alpha.Length))
+                throw new EndOfStreamException();
+
+            file.Position = info.HeaderLength;
+            int dst_stride = (int)info.Width * 4;
+            var pixels = new byte[(int)info.Height * dst_stride];
+            int a_src = 0;
+            for (int y = (int)info.Height-1; y >= 0; --y)
+            {
+                int dst = dst_stride * y;
+                for (int x = 0; x < dst_stride; x += 4)
+                {
+                    file.Read (pixels, dst+x, 3);
+                    pixels[dst+x+3] = alpha[a_src++];
+                }
+            }
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, dst_stride);
+        }
+
+        private ImageData ReadBitmapBGRA (Stream file, BmpMetaData info)
+        {
+            file.Position = info.HeaderLength;
+            int stride = (int)info.Width * 4;
+            var pixels = new byte[(int)info.Height * stride];
+            bool has_alpha = false;
+            for (int y = (int)info.Height-1; y >= 0; --y)
+            {
+                int dst = stride * y;
+                file.Read (pixels, dst, stride);
+                for (int x = 3; !has_alpha && x < stride; x += 4)
+                    has_alpha = pixels[dst+x] != 0;
+            }
+            PixelFormat format = has_alpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+            return ImageData.Create (info, format, null, pixels, stride);
         }
 
         void SkipBytes (BinaryReader file, uint num)
@@ -88,12 +148,14 @@ namespace GameRes
                 uint height = file.ReadUInt32();
                 file.ReadInt16();
                 int bpp = file.ReadInt16();
-                return new ImageMetaData {
+                return new BmpMetaData {
                     Width = width,
                     Height = height,
                     OffsetX = 0,
                     OffsetY = 0,
-                    BPP = bpp
+                    BPP = bpp,
+                    ImageLength = size,
+                    HeaderLength = header_size + 14,
                 };
             }
         }
