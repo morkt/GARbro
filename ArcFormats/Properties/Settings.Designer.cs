@@ -513,5 +513,17 @@ namespace GameRes.Formats.Properties {
                 this["AZScriptScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string AGSTitle {
+            get {
+                return ((string)(this["AGSTitle"]));
+            }
+            set {
+                this["AGSTitle"] = value;
+            }
+        }
     }
 }

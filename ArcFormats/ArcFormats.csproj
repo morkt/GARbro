@@ -67,6 +67,9 @@
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="AliceSoft\ArcAFA.cs" />
     <Compile Include="AliceSoft\ArcALK.cs" />
+    <Compile Include="AnimeGameSystem\WidgetAGS.xaml.cs">
+      <DependentUpon>WidgetAGS.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="ArcZIP.cs" />
@@ -492,6 +495,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Amaterasu\CreateAMIWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AnimeGameSystem\WidgetAGS.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

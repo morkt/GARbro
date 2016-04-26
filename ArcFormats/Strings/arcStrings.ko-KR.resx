@@ -372,4 +372,9 @@
     <value>Try to guess</value>
     <comment>translation pending</comment>
   </data>
+  <data name="AGSMightBeEncrypted" xml:space="preserve">
+    <value>Archive contents might be encrypted,
+choose appropriate encryption scheme.</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

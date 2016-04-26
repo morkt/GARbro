@@ -367,4 +367,9 @@
   <data name="YPFTryGuess" xml:space="preserve">
     <value>尝试猜测</value>
   </data>
+  <data name="AGSMightBeEncrypted" xml:space="preserve">
+    <value>Archive contents might be encrypted,
+choose appropriate encryption scheme.</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

@@ -367,4 +367,8 @@ Choose appropriate encryption scheme.</value>
   <data name="YPFTryGuess" xml:space="preserve">
     <value>Try to guess</value>
   </data>
+  <data name="AGSMightBeEncrypted" xml:space="preserve">
+    <value>Archive contents might be encrypted,
+choose appropriate encryption scheme.</value>
+  </data>
 </root>

@@ -2,7 +2,7 @@
 //! \date       Thu Nov 05 04:40:35 2015
 //! \brief      AnimeGameSystem resource archive.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,6 +27,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Ags
@@ -67,7 +69,102 @@ namespace GameRes.Formats.Ags
                 dir.Add (entry);
                 index_offset += 0x18;
             }
+            var arc_name = Path.GetFileName (file.Name);
+            if (EncryptedArchives.Contains (arc_name))
+            {
+                var options = Query<AgsOptions> (arcStrings.AGSMightBeEncrypted);
+                EncryptionKey key;
+                if (options.Scheme.FileMap.TryGetValue (arc_name, out key))
+                    return new DatArchive (file, this, dir, key);
+            }
             return new ArcFile (file, this, dir);
         }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var earc = arc as DatArchive;
+            if (null == earc)
+                return base.OpenEntry (arc, entry);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            byte key = earc.Key.Initial;
+            for (int i = 0; i < data.Length; ++i)
+            {
+                data[i] ^= key;
+                key += earc.Key.Increment;
+            }
+            return new MemoryStream (data);
+        }
+
+        public static readonly EncryptionScheme DefaultScheme = new EncryptionScheme {
+            FileMap = new Dictionary<string, EncryptionKey>()
+        };
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new AgsOptions { Scheme = GetScheme (Settings.Default.AGSTitle) };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetAGS();
+        }
+
+        public static EncryptionScheme GetScheme (string title)
+        {
+            EncryptionScheme scheme;
+            if (string.IsNullOrEmpty (title) || !KnownSchemes.TryGetValue (title, out scheme))
+                scheme = DefaultScheme;
+            return scheme;
+        }
+
+        public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme>();
+        static HashSet<string> EncryptedArchives = new HashSet<string>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new AgsScheme { KnownSchemes = KnownSchemes, EncryptedArchives = EncryptedArchives }; }
+            set
+            {
+                var ags = (AgsScheme)value;
+                KnownSchemes = ags.KnownSchemes;
+                EncryptedArchives = ags.EncryptedArchives;
+            }
+        }
+    }
+
+    internal class DatArchive : ArcFile
+    {
+        public EncryptionKey Key;
+
+        public DatArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, EncryptionKey key)
+            : base (arc, impl, dir)
+        {
+            Key = key;
+        }
+    }
+
+    internal class AgsOptions : ResourceOptions
+    {
+        public EncryptionScheme Scheme;
+    }
+
+    [Serializable]
+    public struct EncryptionKey
+    {
+        public byte Initial;
+        public byte Increment;
+    }
+
+    [Serializable]
+    public class EncryptionScheme
+    {
+        public Dictionary<string, EncryptionKey> FileMap;
+    }
+
+    [Serializable]
+    public class AgsScheme : ResourceScheme
+    {
+        public Dictionary<string, EncryptionScheme> KnownSchemes;
+        public HashSet<string>                      EncryptedArchives;
     }
 }
