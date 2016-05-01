@@ -63,8 +63,8 @@ namespace GameRes.Formats
         {
             if (0 == signature) return null;
             // resolve some special cases first
-            if (s_OggFormat.Value.Signature == signature)
-                return s_OggFormat.Value;
+            if (OggAudio.Instance.Signature == signature)
+                return OggAudio.Instance;
             if (AudioFormat.Wav.Signature == signature)
                 return AudioFormat.Wav;
             if (0x4D42 == (signature & 0xFFFF)) // 'BM'

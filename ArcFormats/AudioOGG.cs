@@ -26,6 +26,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using NVorbis;
 
 namespace GameRes.Formats
@@ -133,5 +134,9 @@ namespace GameRes.Formats
         {
             return new OggInput (file);
         }
+
+        public static AudioFormat Instance { get { return s_OggFormat.Value; } }
+
+        static readonly Lazy<AudioFormat> s_OggFormat = new Lazy<AudioFormat> (() => FormatCatalog.Instance.AudioFormats.FirstOrDefault (x => x.Tag == "OGG"));
     }
 }
