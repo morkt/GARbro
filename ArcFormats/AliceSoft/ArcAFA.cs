@@ -46,6 +46,7 @@ namespace GameRes.Formats.AliceSoft
                 return null;
             if (!file.View.AsciiEqual (0x1C, "INFO"))
                 return null;
+            int version = file.View.ReadInt32 (0x10);
             long base_offset = file.View.ReadUInt32 (0x18);
             uint packed_size = file.View.ReadUInt32 (0x20);
             int unpacked_size = file.View.ReadInt32 (0x24);
@@ -73,7 +74,8 @@ namespace GameRes.Formats.AliceSoft
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
                     index.ReadInt32();
                     index.ReadInt32();
-                    index.ReadInt32();
+                    if (version < 2)
+                        index.ReadInt32();
                     entry.Offset = index.ReadUInt32() + base_offset;
                     entry.Size   = index.ReadUInt32();
                     if (!entry.CheckPlacement (file.MaxOffset))
