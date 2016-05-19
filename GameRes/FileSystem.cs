@@ -2,7 +2,7 @@
 //! \date       Fri Jun 05 15:32:27 2015
 //! \brief      Gameres file system abstraction.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -73,6 +73,11 @@ namespace GameRes
         string CombinePath (string path1, string path2);
 
         /// <summary>
+        /// System.IO.Path.GetDirectoryName() analog.
+        /// </summary>
+        string GetDirectoryName (string path);
+
+        /// <summary>
         /// Recursively enumerates files in the current directory and its subdirectories.
         /// Subdirectory entries are omitted from resulting set.
         /// </summary>
@@ -103,6 +108,11 @@ namespace GameRes
         public string CombinePath (string path1, string path2)
         {
             return Path.Combine (path1, path2);
+        }
+
+        public string GetDirectoryName (string path)
+        {
+            return Path.GetDirectoryName (path);
         }
 
         public Entry FindFile (string filename)
@@ -138,7 +148,7 @@ namespace GameRes
 
         public IEnumerable<Entry> GetFiles (string pattern)
         {
-            string path = Path.GetDirectoryName (pattern);
+            string path = GetDirectoryName (pattern);
             pattern = Path.GetFileName (pattern);
             path = CombinePath (CurrentDirectory, path);
             var info = new DirectoryInfo (path);
@@ -237,6 +247,8 @@ namespace GameRes
 
         public abstract string CombinePath (string path1, string path2);
 
+        public abstract string GetDirectoryName (string path);
+
         public abstract IEnumerable<Entry> GetFiles (string pattern);
 
         #region IDisposable Members
@@ -310,6 +322,11 @@ namespace GameRes
         public override string CombinePath (string path1, string path2)
         {
             return Path.Combine (path1, path2);
+        }
+
+        public override string GetDirectoryName (string path)
+        {
+            return "";
         }
     }
 
@@ -395,15 +412,20 @@ namespace GameRes
 
         public override IEnumerable<Entry> GetFiles (string pattern)
         {
-            string path = Path.GetDirectoryName (pattern);
+            string path = GetDirectoryName (pattern);
+            if (string.IsNullOrEmpty (path))
+                path = CurrentDirectory;
             pattern = Path.GetFileName (pattern);
-            path = CombinePath (CurrentDirectory, path);
-            if (!string.IsNullOrEmpty (path))
-                path += PathDelimiter;
             var glob = new FileNameGlob (pattern);
-            return from file in m_arc.Dir
-                   where file.Name.StartsWith (path) && glob.IsMatch (Path.GetFileName (file.Name))
-                   select file;
+            if (string.IsNullOrEmpty (path))
+            {
+                return m_arc.Dir.Where (f => glob.IsMatch (Path.GetFileName (f.Name)));
+            }
+            else
+            {
+                path += PathDelimiter;
+                return m_arc.Dir.Where (f => f.Name.StartsWith (path) && glob.IsMatch (Path.GetFileName (f.Name)));
+            }
         }
 
         public IEnumerable<Entry> GetFilesRecursive (IEnumerable<Entry> list)
@@ -466,6 +488,14 @@ namespace GameRes
             }
             m_cwd = new_path;
         }
+
+        public override string GetDirectoryName (string path)
+        {
+            int sep = path.LastIndexOfAny (m_path_delimiters);
+            if (-1 == sep)
+                return "";
+            return path.Substring (0, sep);
+        }
     }
 
     public sealed class FileSystemStack : IDisposable
@@ -497,7 +527,7 @@ namespace GameRes
                     Pop();
                     if (!string.IsNullOrEmpty (LastVisitedPath))
                     {
-                        Top.CurrentDirectory = Path.GetDirectoryName (LastVisitedPath);
+                        Top.CurrentDirectory = Top.GetDirectoryName (LastVisitedPath);
                     }
                 }
                 else
@@ -647,6 +677,11 @@ namespace GameRes
         public static string CombinePath (string path1, string path2)
         {
             return m_vfs.Top.CombinePath (path1, path2);
+        }
+
+        public static string GetDirectoryName (string path)
+        {
+            return m_vfs.Top.GetDirectoryName (path);
         }
 
         public static Entry FindFile (string filename)
