@@ -227,6 +227,13 @@ namespace GameRes.Formats
             return r;
         }
 
+        public static uint PAddB (uint x, uint y)
+        {
+            uint r13 = (x & 0xFF00FF00u) + (y & 0xFF00FF00u);
+            uint r02 = (x & 0x00FF00FFu) + (y & 0x00FF00FFu);
+            return (r13 & 0xFF00FF00u) | (r02 & 0x00FF00FFu);
+        }
+
         public static ulong PAddW (ulong x, ulong y)
         {
             ulong mask = 0xffff;
