@@ -98,6 +98,12 @@
     <Compile Include="Liar\ImageLIM.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
+    <Compile Include="NonColor\ArcDAT.cs" />
+    <Compile Include="Crc64.cs" />
+    <Compile Include="NonColor\WidgetNCARC.xaml.cs">
+      <DependentUpon>WidgetNCARC.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="RealLive\ArcG00.cs" />
     <Compile Include="RealLive\ArcOVK.cs" />
     <Compile Include="RealLive\AudioNWA.cs" />
     <Compile Include="RealLive\ImageG00.cs" />
@@ -293,6 +299,16 @@
     <Compile Include="ShiinaRio\ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
+    <Compile Include="WebP\Alpha.cs" />
+    <Compile Include="WebP\Decoder.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebP\Filters.cs" />
+    <Compile Include="WebP\Huffman.cs" />
+    <Compile Include="WebP\ImageWEBP.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WebP\Lossless.cs" />
     <Compile Include="Will\ArcPNA.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
     <Compile Include="Xuse\ArcBIN.cs" />
@@ -518,6 +534,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="NonColor\WidgetNCARC.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="NScripter\CreateONSWidget.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -615,7 +635,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)

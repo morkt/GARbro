@@ -525,5 +525,17 @@ namespace GameRes.Formats.Properties {
                 this["AGSTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NCARCScheme {
+            get {
+                return ((string)(this["NCARCScheme"]));
+            }
+            set {
+                this["NCARCScheme"] = value;
+            }
+        }
     }
 }
