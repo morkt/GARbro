@@ -12,8 +12,10 @@ using System;
 using System.IO;
 using System.ComponentModel.Composition;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using GameRes.Utility;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 
 namespace GameRes.Formats.KiriKiri
 {
@@ -75,21 +77,128 @@ namespace GameRes.Formats.KiriKiri
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            var meta = info as TlgMetaData;
-            if (null == meta)
-                throw new System.ArgumentException ("TlgFormat.Read should be supplied with TlgMetaData", "info");
-            file.Seek (meta.DataOffset, SeekOrigin.Begin);
-            if (6 == meta.Version)
-                return ReadV6 (file, meta);
-            else
-                return ReadV5 (file, meta);
+            var meta = (TlgMetaData)info;
+            file.Position = meta.DataOffset;
+
+            using (var src = new ArcView.Reader (file))
+            {
+                var image = ReadTlg (src, meta);
+
+                int tail_size = (int)Math.Min (file.Length - file.Position, 512);
+                if (tail_size > 8)
+                {
+                    var tail = src.ReadBytes (tail_size);
+                    try
+                    {
+                        var blended_image = ApplyTags (image, meta, tail);
+                        if (null != blended_image)
+                            return blended_image;
+                    }
+                    catch (Exception X)
+                    {
+                        Trace.WriteLine (X.Message, "[TlgFormat.Read]");
+                    }
+                }
+                PixelFormat format = 32 == meta.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+                return ImageData.Create (meta, format, null, image, (int)meta.Width * 4);
+            }
         }
 
         public override void Write (Stream file, ImageData image)
         {
             throw new NotImplementedException ("TlgFormat.Write not implemented");
         }
-        
+
+        byte[] ReadTlg (BinaryReader src, TlgMetaData info)
+        {
+            if (6 == info.Version)
+                return ReadV6 (src, info);
+            else
+                return ReadV5 (src, info);
+        }
+
+        ImageData ApplyTags (byte[] image, TlgMetaData meta, byte[] tail)
+        {
+            int i = tail.Length - 8;
+            while (i >= 0)
+            {
+                if ('s' == tail[i+3] && 'g' == tail[i+2] && 'a' == tail[i+1] && 't' == tail[i])
+                    break;
+                --i;
+            }
+            if (i < 0)
+                return null;
+            var tags = new TagsParser (tail, i+4);
+            if (!tags.Parse())
+                return null;
+            var base_name   = tags.GetString (1);
+            meta.OffsetX    = tags.GetInt (2) & 0xFFFF;
+            meta.OffsetY    = tags.GetInt (3) & 0xFFFF;
+            if (string.IsNullOrEmpty (base_name))
+                return null;
+
+            base_name = VFS.CombinePath (VFS.GetDirectoryName (meta.FileName), base_name);
+            if (base_name == meta.FileName)
+                return null;
+
+            TlgMetaData base_info;
+            byte[] base_image;
+            using (var base_file = VFS.OpenSeekableStream (base_name))
+            using (var base_src = new BinaryReader (base_file))
+            {
+                base_info = ReadMetaData (base_file) as TlgMetaData;
+                if (null == base_info)
+                    return null;
+                base_info.FileName = base_name;
+                base_file.Position = base_info.DataOffset;
+                base_image = ReadTlg (base_src, base_info);
+            }
+            var pixels = BlendImage (base_image, base_info, image, meta);
+            PixelFormat format = 32 == base_info.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+            return ImageData.Create (base_info, format, null, pixels, (int)base_info.Width*4);
+        }
+
+        byte[] BlendImage (byte[] base_image, ImageMetaData base_info, byte[] overlay, ImageMetaData overlay_info)
+        {
+            int dst_stride = (int)base_info.Width * 4;
+            int src_stride = (int)overlay_info.Width * 4;
+            int dst = overlay_info.OffsetY * dst_stride + overlay_info.OffsetX * 4;
+            int src = 0;
+            int gap = dst_stride - src_stride;
+            for (uint y = 0; y < overlay_info.Height; ++y)
+            {
+                for (uint x = 0; x < overlay_info.Width; ++x)
+                {
+                    byte src_alpha = overlay[src+3];
+                    if (src_alpha != 0)
+                    {
+                        if (0xFF == src_alpha || 0 == base_image[dst+3])
+                        {
+                            base_image[dst]   = overlay[src];
+                            base_image[dst+1] = overlay[src+1];
+                            base_image[dst+2] = overlay[src+2];
+                            base_image[dst+3] = src_alpha;
+                        }
+                        else
+                        {
+                            // FIXME this blending algorithm is oversimplified.
+                            base_image[dst+0] = (byte)((overlay[src+0] * src_alpha
+                                              + base_image[dst+0] * (0xFF - src_alpha)) / 0xFF);
+                            base_image[dst+1] = (byte)((overlay[src+1] * src_alpha
+                                              + base_image[dst+1] * (0xFF - src_alpha)) / 0xFF);
+                            base_image[dst+2] = (byte)((overlay[src+2] * src_alpha
+                                              + base_image[dst+2] * (0xFF - src_alpha)) / 0xFF);
+                            base_image[dst+3] = (byte)Math.Max (src_alpha, base_image[dst+3]);
+                        }
+                    }
+                    dst += 4;
+                    src += 4;
+                }
+                dst += gap;
+            }
+            return base_image;
+        }
+
         const int TVP_TLG6_H_BLOCK_SIZE = 8;
         const int TVP_TLG6_W_BLOCK_SIZE = 8;
 
@@ -97,280 +206,264 @@ namespace GameRes.Formats.KiriKiri
         const int TVP_TLG6_LeadingZeroTable_BITS = 12;
         const int TVP_TLG6_LeadingZeroTable_SIZE = (1<<TVP_TLG6_LeadingZeroTable_BITS);
 
-        ImageData ReadV6 (Stream stream, TlgMetaData info)
+        byte[] ReadV6 (BinaryReader src, TlgMetaData info)
         {
-            using (var src = new ArcView.Reader (stream))
+            int width = (int)info.Width;
+            int height = (int)info.Height;
+            int colors = info.BPP / 8;
+            int max_bit_length = src.ReadInt32();
+
+            int x_block_count = ((width - 1)/ TVP_TLG6_W_BLOCK_SIZE) + 1;
+            int y_block_count = ((height - 1)/ TVP_TLG6_H_BLOCK_SIZE) + 1;
+            int main_count = width / TVP_TLG6_W_BLOCK_SIZE;
+            int fraction = width -  main_count * TVP_TLG6_W_BLOCK_SIZE;
+
+            var image_bits = new uint[height * width];
+            var bit_pool = new byte[max_bit_length / 8 + 5];
+            var pixelbuf = new uint[width * TVP_TLG6_H_BLOCK_SIZE + 1];
+            var filter_types = new byte[x_block_count * y_block_count];
+            var zeroline = new uint[width];
+            var LZSS_text = new byte[4096];
+
+            // initialize zero line (virtual y=-1 line)
+            uint zerocolor = 3 == colors ? 0xff000000 : 0x00000000;
+            for (var i = 0; i < width; ++i)
+                zeroline[i] = zerocolor;
+
+            uint[] prevline = zeroline;
+            int prevline_index = 0;
+
+            // initialize LZSS text (used by chroma filter type codes)
+            int p = 0;
+            for (uint i = 0; i < 32*0x01010101; i += 0x01010101)
             {
-                int width = (int)info.Width;
-                int height = (int)info.Height;
-                int colors = info.BPP / 8;
-                int max_bit_length = src.ReadInt32();
-
-                int x_block_count = ((width - 1)/ TVP_TLG6_W_BLOCK_SIZE) + 1;
-                int y_block_count = ((height - 1)/ TVP_TLG6_H_BLOCK_SIZE) + 1;
-                int main_count = width / TVP_TLG6_W_BLOCK_SIZE;
-                int fraction = width -  main_count * TVP_TLG6_W_BLOCK_SIZE;
-
-                var image_bits = new uint[height * width];
-                var bit_pool = new byte[max_bit_length / 8 + 5];
-                var pixelbuf = new uint[width * TVP_TLG6_H_BLOCK_SIZE + 1];
-                var filter_types = new byte[x_block_count * y_block_count];
-                var zeroline = new uint[width];
-                var LZSS_text = new byte[4096];
-
-                // initialize zero line (virtual y=-1 line)
-                uint zerocolor = 3 == colors ? 0xff000000 : 0x00000000;
-                for (var i = 0; i < width; ++i)
-                    zeroline[i] = zerocolor;
-
-                uint[] prevline = zeroline;
-                int prevline_index = 0;
-
-                // initialize LZSS text (used by chroma filter type codes)
-                int p = 0;
-                for (uint i = 0; i < 32*0x01010101; i += 0x01010101)
+                for (uint j = 0; j < 16*0x01010101; j += 0x01010101)
                 {
-                    for (uint j = 0; j < 16*0x01010101; j += 0x01010101)
-                    {
-                        LZSS_text[p++] = (byte)(i       & 0xff);
-                        LZSS_text[p++] = (byte)(i >> 8  & 0xff);
-                        LZSS_text[p++] = (byte)(i >> 16 & 0xff);
-                        LZSS_text[p++] = (byte)(i >> 24 & 0xff);
-                        LZSS_text[p++] = (byte)(j       & 0xff);
-                        LZSS_text[p++] = (byte)(j >> 8  & 0xff);
-                        LZSS_text[p++] = (byte)(j >> 16 & 0xff);
-                        LZSS_text[p++] = (byte)(j >> 24 & 0xff);
-                    }
+                    LZSS_text[p++] = (byte)(i       & 0xff);
+                    LZSS_text[p++] = (byte)(i >> 8  & 0xff);
+                    LZSS_text[p++] = (byte)(i >> 16 & 0xff);
+                    LZSS_text[p++] = (byte)(i >> 24 & 0xff);
+                    LZSS_text[p++] = (byte)(j       & 0xff);
+                    LZSS_text[p++] = (byte)(j >> 8  & 0xff);
+                    LZSS_text[p++] = (byte)(j >> 16 & 0xff);
+                    LZSS_text[p++] = (byte)(j >> 24 & 0xff);
                 }
-                // read chroma filter types.
-                // chroma filter types are compressed via LZSS as used by TLG5.
-                {
-                    int inbuf_size = src.ReadInt32();
-                    byte[] inbuf = src.ReadBytes (inbuf_size);
-                    if (inbuf_size != inbuf.Length)
-                        return null;
-                    TVPTLG5DecompressSlide (filter_types, inbuf, inbuf_size, LZSS_text, 0);
-                }
+            }
+            // read chroma filter types.
+            // chroma filter types are compressed via LZSS as used by TLG5.
+            {
+                int inbuf_size = src.ReadInt32();
+                byte[] inbuf = src.ReadBytes (inbuf_size);
+                if (inbuf_size != inbuf.Length)
+                    return null;
+                TVPTLG5DecompressSlide (filter_types, inbuf, inbuf_size, LZSS_text, 0);
+            }
 
-                // for each horizontal block group ...
-                for (int y = 0; y < height; y += TVP_TLG6_H_BLOCK_SIZE)
-                {
-                    int ylim = y + TVP_TLG6_H_BLOCK_SIZE;
-                    if (ylim >= height) ylim = height;
+            // for each horizontal block group ...
+            for (int y = 0; y < height; y += TVP_TLG6_H_BLOCK_SIZE)
+            {
+                int ylim = y + TVP_TLG6_H_BLOCK_SIZE;
+                if (ylim >= height) ylim = height;
 
-                    int pixel_count = (ylim - y) * width;
+                int pixel_count = (ylim - y) * width;
+
+                // decode values
+                for (int c = 0; c < colors; c++)
+                {
+                    // read bit length
+                    int bit_length = src.ReadInt32();
+
+                    // get compress method
+                    int method = (bit_length >> 30) & 3;
+                    bit_length &= 0x3fffffff;
+
+                    // compute byte length
+                    int byte_length = bit_length / 8;
+                    if (0 != (bit_length % 8)) byte_length++;
+
+                    // read source from input
+                    src.Read (bit_pool, 0, byte_length);
 
                     // decode values
-                    for (int c = 0; c < colors; c++)
+                    // two most significant bits of bitlength are
+                    // entropy coding method;
+                    // 00 means Golomb method,
+                    // 01 means Gamma method (not yet suppoted),
+                    // 10 means modified LZSS method (not yet supported),
+                    // 11 means raw (uncompressed) data (not yet supported).
+
+                    switch (method)
                     {
-                        // read bit length
-                        int bit_length = src.ReadInt32();
-
-                        // get compress method
-                        int method = (bit_length >> 30) & 3;
-                        bit_length &= 0x3fffffff;
-
-                        // compute byte length
-                        int byte_length = bit_length / 8;
-                        if (0 != (bit_length % 8)) byte_length++;
-
-                        // read source from input
-                        src.Read (bit_pool, 0, byte_length);
-
-                        // decode values
-                        // two most significant bits of bitlength are
-                        // entropy coding method;
-                        // 00 means Golomb method,
-                        // 01 means Gamma method (not yet suppoted),
-                        // 10 means modified LZSS method (not yet supported),
-                        // 11 means raw (uncompressed) data (not yet supported).
-
-                        switch (method)
-                        {
-                        case 0:
-                            if (c == 0 && colors != 1)
-                                TVPTLG6DecodeGolombValuesForFirst (pixelbuf, pixel_count, bit_pool);
-                            else
-                                TVPTLG6DecodeGolombValues (pixelbuf, c*8, pixel_count, bit_pool);
-                            break;
-                        default:
-                            throw new InvalidFormatException ("Unsupported entropy coding method");
-                        }
-                    }
-
-                    // for each line
-                    int ft = (y / TVP_TLG6_H_BLOCK_SIZE) * x_block_count; // within filter_types
-                    int skipbytes = (ylim - y) * TVP_TLG6_W_BLOCK_SIZE;
-
-                    for (int yy = y; yy < ylim; yy++)
-                    {
-                        int curline = yy*width;
-
-                        int dir = (yy&1)^1;
-                        int oddskip = ((ylim - yy -1) - (yy-y));
-                        if (0 != main_count)
-                        {
-                            int start =
-                                ((width < TVP_TLG6_W_BLOCK_SIZE) ? width : TVP_TLG6_W_BLOCK_SIZE) *
-                                    (yy - y);
-                            TVPTLG6DecodeLineGeneric (
-                                prevline, prevline_index,
-                                image_bits, curline,
-                                width, 0, main_count,
-                                filter_types, ft,
-                                skipbytes,
-                                pixelbuf, start,
-                                zerocolor, oddskip, dir);
-                        }
-
-                        if (main_count != x_block_count)
-                        {
-                            int ww = fraction;
-                            if (ww > TVP_TLG6_W_BLOCK_SIZE) ww = TVP_TLG6_W_BLOCK_SIZE;
-                            int start = ww * (yy - y);
-                            TVPTLG6DecodeLineGeneric (
-                                prevline, prevline_index,
-                                image_bits, curline,
-                                width, main_count, x_block_count,
-                                filter_types, ft,
-                                skipbytes,
-                                pixelbuf, start,
-                                zerocolor, oddskip, dir);
-                        }
-                        prevline = image_bits;
-                        prevline_index = curline;
-//                        Array.Copy (image_bits, curline, prevline, 0, width);
+                    case 0:
+                        if (c == 0 && colors != 1)
+                            TVPTLG6DecodeGolombValuesForFirst (pixelbuf, pixel_count, bit_pool);
+                        else
+                            TVPTLG6DecodeGolombValues (pixelbuf, c*8, pixel_count, bit_pool);
+                        break;
+                    default:
+                        throw new InvalidFormatException ("Unsupported entropy coding method");
                     }
                 }
-                unsafe
+
+                // for each line
+                int ft = (y / TVP_TLG6_H_BLOCK_SIZE) * x_block_count; // within filter_types
+                int skipbytes = (ylim - y) * TVP_TLG6_W_BLOCK_SIZE;
+
+                for (int yy = y; yy < ylim; yy++)
                 {
-                    fixed (void* data = image_bits)
+                    int curline = yy*width;
+
+                    int dir = (yy&1)^1;
+                    int oddskip = ((ylim - yy -1) - (yy-y));
+                    if (0 != main_count)
                     {
-                        int stride = width * 4;
-                        PixelFormat format = 32 == info.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-                        var bitmap = BitmapSource.Create(width, height, ImageData.DefaultDpiX, ImageData.DefaultDpiY,
-                            format, null, (IntPtr) data, height * stride, stride);
-                        bitmap.Freeze();
-                        return new ImageData(bitmap, info);
+                        int start =
+                            ((width < TVP_TLG6_W_BLOCK_SIZE) ? width : TVP_TLG6_W_BLOCK_SIZE) *
+                                (yy - y);
+                        TVPTLG6DecodeLineGeneric (
+                            prevline, prevline_index,
+                            image_bits, curline,
+                            width, 0, main_count,
+                            filter_types, ft,
+                            skipbytes,
+                            pixelbuf, start,
+                            zerocolor, oddskip, dir);
                     }
+
+                    if (main_count != x_block_count)
+                    {
+                        int ww = fraction;
+                        if (ww > TVP_TLG6_W_BLOCK_SIZE) ww = TVP_TLG6_W_BLOCK_SIZE;
+                        int start = ww * (yy - y);
+                        TVPTLG6DecodeLineGeneric (
+                            prevline, prevline_index,
+                            image_bits, curline,
+                            width, main_count, x_block_count,
+                            filter_types, ft,
+                            skipbytes,
+                            pixelbuf, start,
+                            zerocolor, oddskip, dir);
+                    }
+                    prevline = image_bits;
+                    prevline_index = curline;
                 }
             }
+            int stride = width * 4;
+            var pixels = new byte[height * stride];
+            Buffer.BlockCopy (image_bits, 0, pixels, 0, pixels.Length);
+            return pixels;
         }
 
-        ImageData ReadV5 (Stream stream, TlgMetaData info)
+        byte[] ReadV5 (BinaryReader src, TlgMetaData info)
         {
-            using (var src = new ArcView.Reader (stream))
+            int width = (int)info.Width;
+            int height = (int)info.Height;
+            int colors = info.BPP / 8;
+            int blockheight = src.ReadInt32();
+            int blockcount = (height - 1) / blockheight + 1;
+
+            // skip block size section
+            src.BaseStream.Seek (blockcount * 4, SeekOrigin.Current);
+
+            int stride = width * 4;
+            var image_bits = new byte[height * stride];
+            var text = new byte[4096];
+            for (int i = 0; i < 4096; ++i)
+                text[i] = 0;
+
+            var inbuf = new byte[blockheight * width + 10];
+            byte [][] outbuf = new byte[4][];
+            for (int i = 0; i < colors; i++)
+                outbuf[i] = new byte[blockheight * width + 10];
+
+            int z = 0;
+            int prevline = -1;
+            for (int y_blk = 0; y_blk < height; y_blk += blockheight)
             {
-                int width = (int)info.Width;
-                int height = (int)info.Height;
-                int colors = info.BPP / 8;
-                int blockheight = src.ReadInt32();
-                int blockcount = (height - 1) / blockheight + 1;
-
-                // skip block size section
-                src.BaseStream.Seek (blockcount * 4, SeekOrigin.Current);
-
-                int stride = width * 4;
-                var image_bits = new byte[height * stride];
-                var text = new byte[4096];
-                for (int i = 0; i < 4096; ++i)
-                    text[i] = 0;
-
-                var inbuf = new byte[blockheight * width + 10];
-                byte [][] outbuf = new byte[4][];
-                for (int i = 0; i < colors; i++)
-                    outbuf[i] = new byte[blockheight * width + 10];
-
-                int z = 0;
-                int prevline = -1;
-                for (int y_blk = 0; y_blk < height; y_blk += blockheight)
+                // read file and decompress
+                for (int c = 0; c < colors; c++)
                 {
-                    // read file and decompress
-                    for (int c = 0; c < colors; c++)
+                    byte mark = src.ReadByte();
+                    int size;
+                    size = src.ReadInt32();
+                    if (mark == 0)
                     {
-                        byte mark = src.ReadByte();
-                        int size;
-                        size = src.ReadInt32();
-                        if (mark == 0)
-                        {
-                            // modified LZSS compressed data
-                            if (size != src.Read (inbuf, 0, size))
-                                return null;
-                            z = TVPTLG5DecompressSlide (outbuf[c], inbuf, size, text, z);
-                        }
-                        else
-                        {
-                            // raw data
-                            src.Read (outbuf[c], 0, size);
-                        }
+                        // modified LZSS compressed data
+                        if (size != src.Read (inbuf, 0, size))
+                            return null;
+                        z = TVPTLG5DecompressSlide (outbuf[c], inbuf, size, text, z);
                     }
-
-                    // compose colors and store
-                    int y_lim = y_blk + blockheight;
-                    if (y_lim > height) y_lim = height;
-                    int outbuf_pos = 0;
-                    for (int y = y_blk; y < y_lim; y++)
+                    else
                     {
-                        int current = y * stride;
-                        int current_org = current;
-                        if (prevline >= 0)
-                        {
-                            // not first line
-                            switch(colors)
-                            {
-                            case 3:
-                                TVPTLG5ComposeColors3To4 (image_bits, current, prevline,
-                                                          outbuf, outbuf_pos, width);
-                                break;
-                            case 4:
-                                TVPTLG5ComposeColors4To4 (image_bits, current, prevline,
-                                                          outbuf, outbuf_pos, width);
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            // first line
-                            switch(colors)
-                            {
-                            case 3:
-                                for (int pr = 0, pg = 0, pb = 0, x = 0;
-                                     x < width; x++)
-                                {
-                                    int b = outbuf[0][outbuf_pos+x];
-                                    int g = outbuf[1][outbuf_pos+x];
-                                    int r = outbuf[2][outbuf_pos+x];
-                                    b += g; r += g;
-                                    image_bits[current++] = (byte)(pb += b);
-                                    image_bits[current++] = (byte)(pg += g);
-                                    image_bits[current++] = (byte)(pr += r);
-                                    image_bits[current++] = 0xff;
-                                }
-                                break;
-                            case 4:
-                                for (int pr = 0, pg = 0, pb = 0, pa = 0, x = 0;
-                                     x < width; x++)
-                                {
-                                    int b = outbuf[0][outbuf_pos+x];
-                                    int g = outbuf[1][outbuf_pos+x];
-                                    int r = outbuf[2][outbuf_pos+x];
-                                    int a = outbuf[3][outbuf_pos+x];
-                                    b += g; r += g;
-                                    image_bits[current++] = (byte)(pb += b);
-                                    image_bits[current++] = (byte)(pg += g);
-                                    image_bits[current++] = (byte)(pr += r);
-                                    image_bits[current++] = (byte)(pa += a);
-                                }
-                                break;
-                            }
-                        }
-                        outbuf_pos += width;
-                        prevline = current_org;
+                        // raw data
+                        src.Read (outbuf[c], 0, size);
                     }
                 }
-                PixelFormat format = 4 == colors ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-                return ImageData.Create (info, format, null, image_bits, stride);
+
+                // compose colors and store
+                int y_lim = y_blk + blockheight;
+                if (y_lim > height) y_lim = height;
+                int outbuf_pos = 0;
+                for (int y = y_blk; y < y_lim; y++)
+                {
+                    int current = y * stride;
+                    int current_org = current;
+                    if (prevline >= 0)
+                    {
+                        // not first line
+                        switch(colors)
+                        {
+                        case 3:
+                            TVPTLG5ComposeColors3To4 (image_bits, current, prevline,
+                                                        outbuf, outbuf_pos, width);
+                            break;
+                        case 4:
+                            TVPTLG5ComposeColors4To4 (image_bits, current, prevline,
+                                                        outbuf, outbuf_pos, width);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // first line
+                        switch(colors)
+                        {
+                        case 3:
+                            for (int pr = 0, pg = 0, pb = 0, x = 0;
+                                    x < width; x++)
+                            {
+                                int b = outbuf[0][outbuf_pos+x];
+                                int g = outbuf[1][outbuf_pos+x];
+                                int r = outbuf[2][outbuf_pos+x];
+                                b += g; r += g;
+                                image_bits[current++] = (byte)(pb += b);
+                                image_bits[current++] = (byte)(pg += g);
+                                image_bits[current++] = (byte)(pr += r);
+                                image_bits[current++] = 0xff;
+                            }
+                            break;
+                        case 4:
+                            for (int pr = 0, pg = 0, pb = 0, pa = 0, x = 0;
+                                    x < width; x++)
+                            {
+                                int b = outbuf[0][outbuf_pos+x];
+                                int g = outbuf[1][outbuf_pos+x];
+                                int r = outbuf[2][outbuf_pos+x];
+                                int a = outbuf[3][outbuf_pos+x];
+                                b += g; r += g;
+                                image_bits[current++] = (byte)(pb += b);
+                                image_bits[current++] = (byte)(pg += g);
+                                image_bits[current++] = (byte)(pr += r);
+                                image_bits[current++] = (byte)(pa += a);
+                            }
+                            break;
+                        }
+                    }
+                    outbuf_pos += width;
+                    prevline = current_org;
+                }
             }
+            return image_bits;
         }
 
         void TVPTLG5ComposeColors3To4 (byte[] outp, int outp_index, int upper,
@@ -486,35 +579,6 @@ namespace GameRes.Formats.KiriKiri
             return tvp_packed_bytes_add ((((a&b) + (((a^b) & 0xfefefefe) >> 1)) + ((a^b)&0x01010101)), v);
         }
 
-        /*
-#define TVP_TLG6_DO_CHROMA_DECODE(N, R, G, B) case (N<<1): \
-        TVP_TLG6_DO_CHROMA_DECODE_PROTO(R, G, B, IA, {inbuf_index+=step;}) break; \
-        case (N<<1)+1: \
-        TVP_TLG6_DO_CHROMA_DECODE_PROTO2(R, G, B, IA, {inbuf_index+=step;}) break;
-
-#define TVP_TLG6_DO_CHROMA_DECODE_PROTO(B, G, R, A, POST_INCREMENT) do \
-                { \
-                    uint u = prevline[prevline_index]; \
-                    p = tvp_med(p, u, up, \
-                        (0xff0000 & ((R)<<16)) + (0xff00 & ((G)<<8)) + (0xff & (B)) + ((A) << 24) ); \
-                    up = u; \
-                    curline[curline_index] = p; \
-                    curline_index++; \
-                    prevline_index++; \
-                    POST_INCREMENT \
-                } while(--w);
-#define TVP_TLG6_DO_CHROMA_DECODE_PROTO2(B, G, R, A, POST_INCREMENT) do \
-                { \
-                    uint u = *prevline; \
-                    p = avg(p, u, up, \
-                        (0xff0000 & ((R)<<16)) + (0xff00 & ((G)<<8)) + (0xff & (B)) + ((A) << 24) ); \
-                    up = u; \
-                    *curline = p; \
-                    curline ++; \
-                    prevline ++; \
-                    POST_INCREMENT \
-                } while(--w);
-*/
         delegate uint tvp_decoder (uint a, uint b, uint c, uint v);
 
         void TVPTLG6DecodeLineGeneric (uint[] prevline, int prevline_index,
@@ -554,21 +618,15 @@ namespace GameRes.Formats.KiriKiri
                 if (step == -1) inbuf_index += ww-1;
                 if (0 != (i & 1)) inbuf_index += oddskip * ww;
 
-//                byte IA = (byte)(inbuf[inbuf_index]>>24);
-//                byte IR = (byte)(inbuf[inbuf_index]>>16);
-//                byte IG = (byte)(inbuf[inbuf_index]>>8 );
-//                byte IB = (byte)(inbuf[inbuf_index]    );
                 tvp_decoder decoder;
                 switch (filtertypes[filtertypes_index+i])
                 {
-//		TVP_TLG6_DO_CHROMA_DECODE( 0, IB, IG, IR); 
                 case 0:
                     decoder = (a, b, c, v) => tvp_med (a, b, c, v);
                     break;
                 case 1:
                     decoder = (a, b, c, v) => tvp_avg (a, b, c, v);
                     break;
-//		TVP_TLG6_DO_CHROMA_DECODE( 1, IB+IG, IG, IR+IG); 
                 case 2:
                     decoder = (a, b, c, v) => tvp_med (a, b, c, (uint)
                         ((0xff0000 & ((((v>>16)&0xff)+((v>>8)&0xff))<<16)) + (((v>>8)&0xff)<<8) + (0xff & ((v&0xff)+((v>>8)&0xff))) + ((v&0xff000000))));
@@ -577,7 +635,6 @@ namespace GameRes.Formats.KiriKiri
                     decoder = (a, b, c, v) => tvp_avg (a, b, c, (uint)
                         ((0xff0000 & ((((v>>16)&0xff)+((v>>8)&0xff))<<16)) + (((v>>8)&0xff)<<8) + (0xff & ((v&0xff)+((v>>8)&0xff))) + ((v&0xff000000))));
                     break;
-//		TVP_TLG6_DO_CHROMA_DECODE( 2, IB, IG+IB, IR+IB+IG); 
                 case 4:
                     decoder = (a, b, c, v) => tvp_med (a, b, c, (uint)
                         ((0xff0000 & ((((v>>16)&0xff)+(v&0xff)+((v>>8)&0xff))<<16)) + (0xff00 & ((((v>>8)&0xff)+(v&0xff))<<8)) + (0xff & ((v&0xff))) + ((v&0xff000000))));
@@ -586,7 +643,6 @@ namespace GameRes.Formats.KiriKiri
                     decoder = (a, b, c, v) => tvp_avg (a, b, c, (uint)
                         ((0xff0000 & ((((v>>16)&0xff)+(v&0xff)+((v>>8)&0xff))<<16)) + (0xff00 & ((((v>>8)&0xff)+(v&0xff))<<8)) + (0xff & ((v&0xff))) + ((v&0xff000000))));
                     break;
-//		TVP_TLG6_DO_CHROMA_DECODE( 3, IB+IR+IG, IG+IR, IR); 
                 case 6:
                     decoder = (a, b, c, v) => tvp_med (a, b, c, (uint)
                         ((0xff0000 & ((((v>>16)&0xff))<<16)) + (0xff00 & ((((v>>8)&0xff)+((v>>16)&0xff))<<8)) + (0xff & ((v&0xff)+((v>>16)&0xff)+((v>>8)&0xff))) + ((v&0xff000000))));
@@ -683,7 +739,6 @@ namespace GameRes.Formats.KiriKiri
                     decoder = (a, b, c, v) => tvp_avg (a, b, c, (uint)
                         ((0xff0000 & ((((v>>16)&0xff)+(v&0xff)+((v>>8)&0xff)+((v>>16)&0xff))<<16)) + (0xff00 & ((((v>>8)&0xff)+((v>>16)&0xff))<<8)) + (0xff & ((v&0xff)+((v>>8)&0xff)+((v>>16)&0xff))) + ((v&0xff000000))));
                     break;
-//		TVP_TLG6_DO_CHROMA_DECODE(15, IB, IG+(IB<<1), IR+(IB<<1));
                 case 30:
                     decoder = (a, b, c, v) => tvp_med (a, b, c, (uint)
                         ((0xff0000 & ((((v>>16)&0xff)+((v&0xff)<<1))<<16)) + (0xff00 & ((((v>>8)&0xff)+((v&0xff)<<1))<<8)) + (0xff & ((v&0xff))) + ((v&0xff000000))));
@@ -726,7 +781,6 @@ namespace GameRes.Formats.KiriKiri
 
             static TVP_Tables ()
             {
-//                TVPInitDitherTable();
                 TVPTLG6InitLeadingZeroTable();
                 TVPTLG6InitGolombTable();
             }
@@ -998,6 +1052,84 @@ namespace GameRes.Formats.KiriKiri
                     zero = !zero;
                 }
             }
+        }
+    }
+
+    internal class TagsParser
+    {
+        byte[]                              m_tags;
+        Dictionary<int, Tuple<int, int>>    m_map = new Dictionary<int, Tuple<int, int>>();
+        int                                 m_offset;
+
+        public TagsParser (byte[] tags, int offset)
+        {
+            m_tags = tags;
+            m_offset = offset;
+        }
+
+        public bool Parse ()
+        {
+            int length = LittleEndian.ToInt32 (m_tags, m_offset);
+            m_offset += 4;
+            if (length <= 0 || length > m_tags.Length - m_offset)
+                return false;
+            while (m_offset < m_tags.Length)
+            {
+                int key_len = ParseInt();
+                if (key_len < 0)
+                    return false;
+                int key;
+                switch (key_len)
+                {
+                case 1:
+                    key = m_tags[m_offset];
+                    break;
+                case 2:
+                    key = LittleEndian.ToUInt16 (m_tags, m_offset);
+                    break;
+                case 4:
+                    key = LittleEndian.ToInt32 (m_tags, m_offset);
+                    break;
+                default:
+                    return false;
+                }
+                m_offset += key_len + 1;
+                int value_len = ParseInt();
+                if (value_len < 0)
+                    return false;
+                m_map[key] = Tuple.Create (m_offset, value_len);
+                m_offset += value_len + 1;
+            }
+            return m_map.Count > 0;
+        }
+
+        int ParseInt ()
+        {
+            int colon = Array.IndexOf (m_tags, (byte)':', m_offset);
+            if (-1 == colon)
+                return -1;
+            var len_str = Encoding.ASCII.GetString (m_tags, m_offset, colon-m_offset);
+            m_offset = colon + 1;
+            return Int32.Parse (len_str);
+        }
+
+        public int GetInt (int key)
+        {
+            var val = m_map[key];
+            switch (val.Item2)
+            {
+            case 0: return 0;
+            case 1: return m_tags[val.Item1];
+            case 2: return LittleEndian.ToUInt16 (m_tags, val.Item1);
+            case 4: return LittleEndian.ToInt32 (m_tags, val.Item1);
+            default: throw new InvalidFormatException();
+            }
+        }
+
+        public string GetString (int key)
+        {
+            var val = m_map[key];
+            return Encodings.cp932.GetString (m_tags, val.Item1, val.Item2);
         }
     }
 }
