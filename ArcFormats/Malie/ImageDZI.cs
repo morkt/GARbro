@@ -58,7 +58,7 @@ namespace GameRes.Formats.Malie
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
-            var tex = VFS.FindFile ("tex");
+            var tex = VFS.FindFile (VFS.CombinePath (VFS.Top.CurrentDirectory, "tex"));
             if (!(tex is SubDirEntry))
                 return null;
             using (var reader = new StreamReader (stream, Encoding.UTF8, false, 2048, true))
