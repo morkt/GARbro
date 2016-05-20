@@ -296,7 +296,7 @@ namespace GameRes.Formats.Purple
             // judging by the code, files with "pb3" extension could as well contain PNG or BMP images,
             // so we couldn't just shortcut to another instance of Pb3Reader here.
 
-            var path = Path.GetDirectoryName (m_info.FileName);
+            var path = VFS.GetDirectoryName (m_info.FileName);
             name = VFS.CombinePath (path, name);
             if (name.Equals (m_info.FileName, StringComparison.InvariantCultureIgnoreCase))
                 throw new InvalidFormatException();

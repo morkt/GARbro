@@ -51,7 +51,7 @@ namespace GameRes.Formats.Miris
 
         public override ArcFile TryOpen (ArcView file)
         {
-            var base_dir = Path.GetDirectoryName (file.Name);
+            var base_dir = VFS.GetDirectoryName (file.Name);
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
             var list_file = VFS.CombinePath (base_dir, base_name+"l.dat");
             if (!VFS.FileExists (list_file))

@@ -297,7 +297,7 @@ namespace GameRes.Formats.Entis
                         if ((meta.BPP + 7) / 8 < 3)
                             throw new InvalidFormatException();
 
-                        ref_file = VFS.CombinePath (Path.GetDirectoryName (meta.FileName), ref_file);
+                        ref_file = VFS.CombinePath (VFS.GetDirectoryName (meta.FileName), ref_file);
                         using (var ref_src = VFS.OpenSeekableStream (ref_file))
                         {
                             var ref_info = ReadMetaData (ref_src) as EriMetaData;

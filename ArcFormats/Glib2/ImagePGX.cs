@@ -151,7 +151,7 @@ namespace GameRes.Formats.Glib2
         {
             try
             {
-                var info_name = VFS.CombinePath (Path.GetDirectoryName (image_name), "info");
+                var info_name = VFS.CombinePath (VFS.GetDirectoryName (image_name), "info");
                 if (!VFS.FileExists (info_name))
                     return null;
                 if (string.IsNullOrEmpty (m_last_info_dir)

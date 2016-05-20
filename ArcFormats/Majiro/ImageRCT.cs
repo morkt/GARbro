@@ -182,7 +182,7 @@ namespace GameRes.Formats.Majiro
             try
             {
                 string name = Encodings.cp932.GetString (name_bin, 0, name_bin.Length-1);
-                string dir_name = Path.GetDirectoryName (meta.FileName);
+                string dir_name = VFS.GetDirectoryName (meta.FileName);
                 name = VFS.CombinePath (dir_name, name);
                 if (VFS.FileExists (name))
                 {
