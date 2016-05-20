@@ -694,6 +694,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Playing {0} / {3} / {2}bps / {1}Hz.
+        /// </summary>
+        public static string MsgPlaying {
+            get {
+                return ResourceManager.GetString("MsgPlaying", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Ready.
         /// </summary>
         public static string MsgReady {

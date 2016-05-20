@@ -473,4 +473,8 @@
   <data name="LabelDestinationDir" xml:space="preserve">
     <value>Сохранить результаты в</value>
   </data>
+  <data name="MsgPlaying" xml:space="preserve">
+    <value>Проигрывается {0} / {3} / {2}bps / {1}Гц</value>
+    <comment>{0}=filename, {1}=sampling rate, {2}=bitrate, {3}=total time </comment>
+  </data>
 </root>

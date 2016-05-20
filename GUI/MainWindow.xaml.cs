@@ -921,7 +921,7 @@ namespace GARbro.GUI
                     AudioDevice.PlaybackStopped += OnPlaybackStopped;
                     AudioDevice.Play();
                     var fmt = CurrentAudio.WaveFormat;
-                    SetResourceText (string.Format ("Playing {0} / {3} / {2}bps / {1}Hz", entry.Name,
+                    SetResourceText (string.Format (guiStrings.MsgPlaying, entry.Name,
                                                     fmt.SampleRate, sound.SourceBitrate / 1000,
                                                     CurrentAudio.TotalTime.ToString ("m':'ss")));
                 }

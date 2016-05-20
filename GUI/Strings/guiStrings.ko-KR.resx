@@ -452,4 +452,8 @@
     <value>Destination directory</value>
     <comment>translation pending</comment>
   </data>
+  <data name="MsgPlaying" xml:space="preserve">
+    <value>Playing {0} / {3} / {2}bps / {1}Hz</value>
+    <comment>translation pending. {0}=filename, {1}=sampling rate, {2}=bitrate, {3}=total time </comment>
+  </data>
 </root>
