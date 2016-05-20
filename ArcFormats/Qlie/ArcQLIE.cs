@@ -129,17 +129,17 @@ namespace GameRes.Formats.Qlie
             byte[] arc_key = null;
             byte[] key_file = null;
             uint name_key = 0xC4; // default name encryption key for versions 1 and 2
+            bool use_pack_keyfile = false;
             if (3 == pack_version)
             {
                 key_file = FindKeyFile (file);
+                use_pack_keyfile = key_file != null;
                 // currently, user is prompted to choose encryption scheme only if there's 'key.fkey' file found.
-                if (key_file != null)
+                if (use_pack_keyfile)
                     arc_key = QueryEncryption();
-                if (null == arc_key)
-                    key_file = null;
+//                use_pack_keyfile = null != arc_key;
 
-                var key_data = new byte[0x100];
-                file.View.Read (file.MaxOffset-0x41C, key_data, 0, 0x100);
+                var key_data = file.View.ReadBytes (file.MaxOffset-0x41C, 0x100);
                 name_key = GenerateKey (key_data) & 0x0FFFFFFFu;
             }
 
@@ -159,7 +159,7 @@ namespace GameRes.Formats.Qlie
 
                 string name = Encodings.cp932.GetString (name_buffer, 0, name_length);
                 var entry = FormatCatalog.Instance.Create<QlieEntry> (name);
-                if (key_file != null)
+                if (use_pack_keyfile)
                     entry.RawName = name_buffer.Take (name_length).ToArray();
 
                 index_offset += 2 + name_length;
@@ -172,7 +172,7 @@ namespace GameRes.Formats.Qlie
                 entry.IsEncrypted = 0 != file.View.ReadInt32 (index_offset+0x14);
                 entry.Hash = file.View.ReadUInt32 (index_offset+0x18);
                 entry.KeyFile = key_file;
-                if (3 == pack_version && null != arc_key && entry.Name.Contains ("pack_keyfile"))
+                if (3 == pack_version && use_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
                 {
                     // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
                     key_file = ReadEntryBytes (file, entry, name_key, arc_key);
@@ -197,8 +197,7 @@ namespace GameRes.Formats.Qlie
 
         private byte[] ReadEntryBytes (ArcView file, QlieEntry entry, uint hash, byte[] game_key)
         {
-            var data = new byte[entry.Size];
-            file.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = file.View.ReadBytes (entry.Offset, entry.Size);
             if (entry.IsEncrypted)
             {
                 if (entry.KeyFile != null)
