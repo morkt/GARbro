@@ -97,6 +97,7 @@
     <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
     <Compile Include="Liar\ImageLIM.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
+    <Compile Include="Nexas\ImageGRP.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
     <Compile Include="NonColor\ArcDAT.cs" />
     <Compile Include="Crc64.cs" />
@@ -276,7 +277,7 @@
     <Compile Include="MnoViolet\ArcMnoViolet.cs" />
     <Compile Include="FC01\ArcMRG.cs" />
     <Compile Include="ArcNEKO.cs" />
-    <Compile Include="ArcNexas.cs" />
+    <Compile Include="Nexas\ArcPAC.cs" />
     <Compile Include="NitroPlus\ArcNitro.cs" />
     <Compile Include="Entis\ArcNOA.cs" />
     <Compile Include="NitroPlus\ArcNPA.cs" />
