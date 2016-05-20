@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
@@ -107,7 +108,6 @@ namespace GameRes.Formats.RealLive
         int             m_width;
         int             m_height;
         int             m_type;
-        int             m_bytes_pp;
 
         public byte[]           Data { get { return m_output; } }
         public PixelFormat    Format { get; private set; }
@@ -134,15 +134,13 @@ namespace GameRes.Formats.RealLive
 
         void UnpackV0 ()
         {
-            m_bytes_pp = 3;
-            m_output = LzDecompress (1);
+            m_output = LzDecompress (m_input, 1, 3);
             Format = PixelFormats.Bgr24;
         }
 
         void UnpackV1 ()
         {
-            m_bytes_pp = 1;
-            m_output = LzDecompress (2);
+            m_output = LzDecompress (m_input, 2, 1);
             int colors = LittleEndian.ToUInt16 (m_output, 0);
             int src = 2;
             var palette = new Color[colors];
@@ -158,7 +156,6 @@ namespace GameRes.Formats.RealLive
 
         void UnpackV2 ()
         {
-            m_bytes_pp = 1;
             Format = PixelFormats.Bgra32;
             int tile_count = m_input.ReadInt32();
             var tiles = new List<Tile> (tile_count);
@@ -170,7 +167,7 @@ namespace GameRes.Formats.RealLive
                 tiles.Add (tile);
                 m_input.BaseStream.Seek (0x10, SeekOrigin.Current);
             }
-            using (var input = new MemoryStream (LzDecompress (2)))
+            using (var input = new MemoryStream (LzDecompress (m_input, 2, 1)))
             using (var reader = new BinaryReader (input))
             {
                 if (reader.ReadInt32() != tile_count)
@@ -182,45 +179,42 @@ namespace GameRes.Formats.RealLive
                     tiles[i].Offset = reader.ReadUInt32();
                     tiles[i].Length = reader.ReadInt32();
                 }
-                foreach (var tile in tiles)
-                {
-                    if (0 == tile.Length)
-                        continue;
-                    input.Position = tile.Offset;
-                    int tile_type = reader.ReadUInt16();
-                    int count = reader.ReadUInt16();
-                    if (tile_type != 1)
-                        throw new InvalidFormatException();
-                    input.Seek (0x70, SeekOrigin.Current);
-                    for (int i = 0; i < count; ++i)
-                    {
-                        int tile_x = reader.ReadUInt16();
-                        int tile_y = reader.ReadUInt16();
-                        reader.ReadInt16();
-                        int tile_width = reader.ReadUInt16();
-                        int tile_height = reader.ReadUInt16();
-                        input.Seek (0x52, SeekOrigin.Current);
+                var tile = tiles.First (t => t.Length != 0);
 
-                        tile_x += tile.X;
-                        tile_y += tile.Y;
-                        if (tile_x + tile_width > m_width || tile_y + tile_height > m_height)
-                            throw new InvalidFormatException();
-                        int dst = tile_y * dst_stride + tile_x * 4;
-                        int tile_stride = tile_width * 4;
-                        for (int row = 0; row < tile_height; ++row)
-                        {
-                            reader.Read (m_output, dst, tile_stride);
-                            dst += dst_stride;
-                        }
+                input.Position = tile.Offset;
+                int tile_type = reader.ReadUInt16();
+                int count = reader.ReadUInt16();
+                if (tile_type != 1)
+                    throw new InvalidFormatException();
+                input.Seek (0x70, SeekOrigin.Current);
+                for (int i = 0; i < count; ++i)
+                {
+                    int tile_x = reader.ReadUInt16();
+                    int tile_y = reader.ReadUInt16();
+                    reader.ReadInt16();
+                    int tile_width = reader.ReadUInt16();
+                    int tile_height = reader.ReadUInt16();
+                    input.Seek (0x52, SeekOrigin.Current);
+
+                    tile_x += tile.X;
+                    tile_y += tile.Y;
+                    if (tile_x + tile_width > m_width || tile_y + tile_height > m_height)
+                        throw new InvalidFormatException();
+                    int dst = tile_y * dst_stride + tile_x * 4;
+                    int tile_stride = tile_width * 4;
+                    for (int row = 0; row < tile_height; ++row)
+                    {
+                        reader.Read (m_output, dst, tile_stride);
+                        dst += dst_stride;
                     }
                 }
             }
         }
 
-        byte[] LzDecompress (int min_count)
+        public static byte[] LzDecompress (BinaryReader input, int min_count, int bytes_pp)
         {
-            int packed_size = m_input.ReadInt32() - 8;
-            int output_size = m_input.ReadInt32();
+            int packed_size = input.ReadInt32() - 8;
+            int output_size = input.ReadInt32();
             var output = new byte[output_size];
             int dst = 0;
             int bits = 2;
@@ -229,25 +223,25 @@ namespace GameRes.Formats.RealLive
                 bits >>= 1;
                 if (1 == bits)
                 {
-                    bits = m_input.ReadByte() | 0x100;
+                    bits = input.ReadByte() | 0x100;
                     --packed_size;
                 }
                 if (0 != (bits & 1))
                 {
-                    m_input.Read (output, dst, m_bytes_pp);
-                    dst += m_bytes_pp;
-                    packed_size -= m_bytes_pp;
+                    input.Read (output, dst, bytes_pp);
+                    dst += bytes_pp;
+                    packed_size -= bytes_pp;
                 }
                 else
                 {
                     if (packed_size < 2)
                         break;
-                    int offset = m_input.ReadUInt16();
+                    int offset = input.ReadUInt16();
                     packed_size -= 2;
                     int count = (offset & 0xF) + min_count;
                     offset >>= 4;
-                    offset *= m_bytes_pp;
-                    count *= m_bytes_pp;
+                    offset *= bytes_pp;
+                    count *= bytes_pp;
                     Binary.CopyOverlapped (output, dst-offset, dst, count);
                     dst += count;
                 }
