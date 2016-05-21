@@ -84,7 +84,7 @@ namespace GameRes.Formats.NitroPlus
                 return null;
             int unpacked_size = file.View.ReadInt32 (8);
             uint packed_size = file.View.ReadUInt32 (0xC);
-            var input = file.CreateStream (0x114, packed_size);
+            using (var input = file.CreateStream (0x114, packed_size))
             using (var header_stream = new ZLibStream (input, CompressionMode.Decompress))
             using (var header = new BinaryReader (header_stream, Encoding.ASCII, true))
             {
@@ -147,7 +147,7 @@ namespace GameRes.Formats.NitroPlus
             var dir = new List<Entry> (count);
             uint header_size = file.View.ReadUInt32 (0x110) ^ size_xor;
             long base_offset = 0x114 + header_size;
-            var input = file.CreateStream (0x114, header_size);
+            using (var input = file.CreateStream (0x114, header_size))
             using (var header_stream = new ZLibStream (input, CompressionMode.Decompress))
             using (var header = new BinaryReader (header_stream, Encoding.ASCII, true))
             {
