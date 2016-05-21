@@ -140,7 +140,7 @@ namespace GameRes.Formats.Marble
                     dir.Add (entry);
                     index_offset += 8;
                 }
-                if (0 == dir.Count)
+                if (0 == dir.Count || (1 == dir.Count && count > 1))
                     return null;
                 if (contains_scripts)
                 {
