@@ -35,6 +35,7 @@ namespace GameRes.Formats.MnoViolet
     {
         public int PackedSize;
         public int UnpackedSize;
+        public long DataOffset;
     }
 
     [Export(typeof(ImageFormat))]
@@ -46,7 +47,7 @@ namespace GameRes.Formats.MnoViolet
 
         public GraFormat ()
         {
-            Signatures = new uint[] { 0x00617267, 0x0073616d }; // 'gra', 'mas'
+            Signatures = new uint[] { 0x00617267, 0x0073616d, 0 }; // 'gra', 'mas'
         }
 
         public override void Write (Stream file, ImageData image)
@@ -61,6 +62,19 @@ namespace GameRes.Formats.MnoViolet
                 uint sign   = input.ReadUInt32();
                 uint width  = input.ReadUInt32();
                 uint height = input.ReadUInt32();
+                if (0 == width || width > 0x8000 || 0 == height || height > 0x8000)
+                    return null;
+                int bpp;
+                if (0x617267 == sign) // 'gra'
+                    bpp = 24;
+                else if (0x73616D == sign) // 'mas'
+                    bpp = 8;
+                else if (1 == sign)
+                    bpp = input.ReadInt32();
+                else
+                    return null;
+                if (bpp != 32 && bpp != 24 && bpp != 8)
+                    return null;
                 int packed_size = input.ReadInt32();
                 int data_size   = input.ReadInt32();
                 return new GraMetaData
@@ -69,7 +83,8 @@ namespace GameRes.Formats.MnoViolet
                     Height = height,
                     PackedSize = packed_size,
                     UnpackedSize = data_size,
-                    BPP = 0x617267 == sign ? 24 : 8,
+                    BPP = bpp,
+                    DataOffset = stream.Position,
                 };
             }
         }
@@ -77,13 +92,15 @@ namespace GameRes.Formats.MnoViolet
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
             var meta = (GraMetaData)info;
-            stream.Position = 0x14;
+            stream.Position = meta.DataOffset;
             using (var reader = new LzssReader (stream, meta.PackedSize, meta.UnpackedSize))
             {
                 reader.Unpack();
                 int stride = ((int)info.Width*info.BPP/8 + 3) & ~3;
                 PixelFormat format;
-                if (24 == info.BPP)
+                if (32 == info.BPP)
+                    format = PixelFormats.Bgra32;
+                else if (24 == info.BPP)
                     format = PixelFormats.Bgr24;
                 else
                     format = PixelFormats.Gray8;
