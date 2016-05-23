@@ -38,6 +38,7 @@ namespace GameRes.Formats.Glib2
     internal class PgxMetaData : ImageMetaData
     {
         public int  PackedSize;
+        public int  Flags;
     }
 
     internal class StxLayerInfo
@@ -66,18 +67,24 @@ namespace GameRes.Formats.Glib2
             {
                 Width   = LittleEndian.ToUInt32 (header, 8),
                 Height  = LittleEndian.ToUInt32 (header, 12),
-                BPP     = LittleEndian.ToInt16 (header, 0x10) == 0 ? 24 : 32,
+                BPP     = (LittleEndian.ToInt16 (header, 0x10) & 1) == 0 ? 24 : 32,
                 PackedSize = LittleEndian.ToInt32 (header, 0x14),
+                Flags   = LittleEndian.ToUInt16 (header, 0x12),
             };
         }
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
             var meta = (PgxMetaData)info;
+            stream.Position = 0x20;
+            if (0 != (meta.Flags & 0x1000))
+            {
+                ReadGms (stream);
+            }
             PixelFormat format = 32 == meta.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             int stride = (int)meta.Width * 4;
             var pixels = new byte[stride * (int)meta.Height];
-            stream.Seek (-meta.PackedSize, SeekOrigin.End);
+//            stream.Seek (-meta.PackedSize, SeekOrigin.End);
             LzssUnpack (stream, pixels);
             var layer = InfoCache.GetInfo (info.FileName);
             if (null != layer && null != layer.Rect)
@@ -86,6 +93,31 @@ namespace GameRes.Formats.Glib2
                 info.OffsetY = layer.Rect.Value.Y;
             }
             return ImageData.Create (info, format, null, pixels);
+        }
+
+        void ReadGms (Stream input)
+        {
+            var header = new byte[0x10];
+            if (0x10 != input.Read (header, 0, 0x10))
+                throw new EndOfStreamException();
+            byte swap = header[13];
+            header[13] = header[9];
+            header[9] = swap;
+            swap = header[15];
+            header[15] = header[11];
+            header[11] = swap;
+            swap = header[4];
+            header[4] = header[8];
+            header[8] = swap;
+            swap = header[6];
+            header[6] = header[10];
+            header[10] = swap;
+            int unpacked_size = LittleEndian.ToInt32 (header, 12);
+            var gms_info = new byte[unpacked_size];
+            LzssUnpack (input, gms_info);
+
+            // foreach (byte in gms_info) byte ^= 0xFF
+            // decrypted array contains image meta data (see InfoReader class)
         }
 
         public override void Write (Stream file, ImageData image)
