@@ -45,33 +45,50 @@ namespace GameRes.Formats.MnoViolet
             Extensions = new string[] { "dat" };
         }
 
+        static readonly uint[] NameSizes = { 100, 68, 44 };
+        static readonly Lazy<ImageFormat> s_GraFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("GRA"));
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
-            uint name_size = 100;
-            uint index_size = (uint)((name_size+8) * count);
-            uint first_offset = file.View.ReadUInt32 (4+name_size+4);
-            if (first_offset != (4 + index_size) || index_size > file.View.Reserve (4, index_size))
-                return null;
-            var dir = new List<Entry> (count);
-            long index_offset = 4;
-            for (int i = 0; i < count; ++i)
+            List<Entry> dir = null;
+            foreach (var name_size in NameSizes)
             {
-                string name = file.View.ReadString (index_offset, name_size);
-                if (0 == name.Length)
-                    return null;
-                index_offset += name_size;
-                uint offset = file.View.ReadUInt32 (index_offset+4);
-                var entry = AutoEntry.Create (file, offset, name);
-                entry.Size   = file.View.ReadUInt32 (index_offset);
-                if (offset <= index_size || !entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-                index_offset += 8;
+                uint index_size = (uint)((name_size+8) * count);
+                uint first_offset = file.View.ReadUInt32 (4+name_size+4);
+                if (first_offset == (4 + index_size) && first_offset < file.MaxOffset)
+                {
+                    if (null == dir)
+                        dir = new List<Entry> (count);
+                    long index_offset = 4;
+                    for (int i = 0; i < count; ++i)
+                    {
+                        string name = file.View.ReadString (index_offset, name_size);
+                        if (string.IsNullOrWhiteSpace (name))
+                            goto CheckNextLength;
+                        index_offset += name_size;
+                        uint offset = file.View.ReadUInt32 (index_offset+4);
+                        var entry = new AutoEntry (name, () => {
+                            uint signature = file.View.ReadUInt32 (offset);
+                            if (1 == signature)
+                                return s_GraFormat.Value;
+                            return AutoEntry.DetectFileType (signature);
+                        });
+                        entry.Offset = offset;
+                        entry.Size   = file.View.ReadUInt32 (index_offset);
+                        if (offset <= index_size || !entry.CheckPlacement (file.MaxOffset))
+                            goto CheckNextLength;
+                        dir.Add (entry);
+                        index_offset += 8;
+                    }
+                    return new ArcFile (file, this, dir);
+                }
+CheckNextLength:
+                ;
             }
-            return new ArcFile (file, this, dir);
+            return null;
         }
     }
 }
