@@ -460,11 +460,7 @@ namespace GameRes.Formats.Lucifen
             if (name_length < 1)
                 throw new InvalidFormatException ("Invalid LPK entry name");
             string name = Encodings.cp932.GetString (m_name, 0, name_length);
-            var entry = new LuciEntry {
-                Name = name,
-                Type = FormatCatalog.Instance.GetTypeFromName (name),
-                IsPacked = m_info.PackedEntries,
-            };
+            var entry = FormatCatalog.Instance.Create<LuciEntry> (name);
             int entry_pos = m_entries_offset + EntrySize * entry_num;
             if (entry_pos+EntrySize > m_index.Length)
                 throw new InvalidFormatException ("Invalid LPK entry index");
@@ -473,10 +469,14 @@ namespace GameRes.Formats.Lucifen
             long offset = LittleEndian.ToUInt32 (m_index, entry_pos);
             entry.Offset = m_info.AlignedOffset ? offset << 11 : offset;
             entry.Size = LittleEndian.ToUInt32 (m_index, entry_pos+4);
-            if (entry.IsPacked)
-                entry.UnpackedSize = LittleEndian.ToUInt32 (m_index, entry_pos+8);
-            else
-                entry.UnpackedSize = entry.Size;
+            entry.UnpackedSize = entry.Size;
+            if (m_info.PackedEntries)
+            {
+                uint unpacked_size = LittleEndian.ToUInt32 (m_index, entry_pos+8);
+                entry.IsPacked = unpacked_size != 0;
+                if (entry.IsPacked)
+                    entry.UnpackedSize = unpacked_size;
+            }
             m_dir.Add (entry);
         }
     }
