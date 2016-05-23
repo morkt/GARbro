@@ -48,7 +48,7 @@ namespace GameRes.Formats.Magi
             if (!IsSaneCount (count))
                 return null;
             uint index_size = file.View.ReadUInt32 (0xC);
-            if (index_size > file.MaxOffset)
+            if (index_size < 2 || index_size > file.MaxOffset)
                 return null;
 
             long base_offset = 0x118 + index_size;
