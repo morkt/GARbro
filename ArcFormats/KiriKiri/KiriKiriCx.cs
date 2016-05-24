@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.Serialization;
+using System.Text;
 
 namespace GameRes.Formats.KiriKiri
 {
@@ -48,6 +49,7 @@ namespace GameRes.Formats.KiriKiri
         public byte[]   EvenBranchOrder;
 
         public uint[]   ControlBlock;
+        public string   TpmFileName;
     }
 
     [Serializable]
@@ -61,6 +63,7 @@ namespace GameRes.Formats.KiriKiri
         protected byte[] EvenBranchOrder;
 
         protected uint[] ControlBlock;
+        protected string TpmFileName;
 
         [NonSerialized]
         CxProgram[] m_program_list = new CxProgram[0x80];
@@ -81,6 +84,59 @@ namespace GameRes.Formats.KiriKiri
             EvenBranchOrder = scheme.EvenBranchOrder;
 
             ControlBlock = scheme.ControlBlock;
+            TpmFileName = scheme.TpmFileName;
+        }
+
+        static readonly byte[] s_ctl_block_signature = Encoding.ASCII.GetBytes (" Encryption control block");
+
+        /// <summary>
+        /// Look for control block within specified TPM plugin file.
+        /// </summary>
+
+        public override void Init (ArcFile arc)
+        {
+            if (ControlBlock != null)
+                return;
+            if (string.IsNullOrEmpty (TpmFileName))
+                throw new InvalidEncryptionScheme();
+
+            var dir_name = VFS.GetDirectoryName (arc.File.Name);
+            var tpm_name = VFS.CombinePath (dir_name, TpmFileName);
+            using (var tpm = VFS.OpenView (tpm_name))
+            {
+                if (tpm.MaxOffset < 0x1000 || tpm.MaxOffset > uint.MaxValue)
+                    throw new InvalidEncryptionScheme ("Invalid KiriKiri TPM plugin");
+                using (var view = tpm.CreateViewAccessor (0, (uint)tpm.MaxOffset))
+                unsafe
+                {
+                    byte* begin = view.GetPointer (0);
+                    byte* end   = begin + (((uint)tpm.MaxOffset - 0x1000u) & ~0xFu);
+                    try {
+                        while (begin < end)
+                        {
+                            int i;
+                            for (i = 0; i < s_ctl_block_signature.Length; ++i)
+                            {
+                                if (begin[i] != s_ctl_block_signature[i])
+                                    break;
+                            }
+                            if (s_ctl_block_signature.Length == i)
+                            {
+                                ControlBlock = new uint[0x400];
+                                uint* src = (uint*)begin;
+                                for (i = 0; i < ControlBlock.Length; ++i)
+                                    ControlBlock[i] = ~src[i];
+                                return;
+                            }
+                            begin += 0x10; // control block expected to be on a paragraph boundary
+                        }
+                        throw new InvalidEncryptionScheme ("No control block found inside TPM plugin");
+                    }
+                    finally {
+                        view.SafeMemoryMappedViewHandle.ReleasePointer();
+                    }
+                }
+            }
         }
 
         uint GetBaseOffset (uint hash)
