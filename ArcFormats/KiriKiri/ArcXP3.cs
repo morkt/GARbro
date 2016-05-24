@@ -199,7 +199,6 @@ namespace GameRes.Formats.KiriKiri
                                     entry.Cipher = crypt_algorithm.Value;
                                 else
                                     entry.Cipher = NoCryptAlgorithm;
-                                entry.IsEncrypted = !(entry.Cipher is NoCrypt);
 
                                 var name = new string (header.ReadChars (name_size));
                                 if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
@@ -208,6 +207,8 @@ namespace GameRes.Formats.KiriKiri
                                 }
                                 entry.Name = name;
                                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                                entry.IsEncrypted = !(entry.Cipher is NoCrypt)
+                                    && !(entry.Cipher.StratupTjsNotEncrypted && "startup.tjs" == name);
                                 break;
                             }
                         case 0x6d676573: // "segm"
@@ -522,13 +523,14 @@ NextEntry:
 
                     var xp3entry = new Xp3Entry {
                         Name            = name,
-                        IsEncrypted     = use_encryption,
                         Cipher          = scheme,
+                        IsEncrypted     = use_encryption
+                                       && !(scheme.StratupTjsNotEncrypted && name.EndsWith ("startup.tjs"))
                     };
                     bool compress = compress_contents && ShouldCompressFile (entry);
                     using (var file = File.Open (name, FileMode.Open, FileAccess.Read))
                     {
-                        if (!use_encryption || 0 == file.Length)
+                        if (!xp3entry.IsEncrypted || 0 == file.Length)
                             RawFileCopy (file, xp3entry, output, compress);
                         else
                             EncryptedFileCopy (file, xp3entry, output, compress);
@@ -787,7 +789,8 @@ NextEntry:
                 int read = m_stream.Read (buffer, offset, count);
                 if (0 != read)
                 {
-                    m_entry.Cipher.Decrypt (m_entry, m_offset, buffer, offset, read);
+                    if (m_entry.IsEncrypted)
+                        m_entry.Cipher.Decrypt (m_entry, m_offset, buffer, offset, read);
                     m_offset += read;
                     total += read;
                     offset += read;
@@ -807,7 +810,8 @@ NextEntry:
                 b = m_stream.ReadByte();
                 if (-1 != b)
                 {
-                    b = m_entry.Cipher.Decrypt (m_entry, m_offset++, (byte)b);
+                    if (m_entry.IsEncrypted)
+                        b = m_entry.Cipher.Decrypt (m_entry, m_offset++, (byte)b);
                     break;
                 }
                 NextSegment();

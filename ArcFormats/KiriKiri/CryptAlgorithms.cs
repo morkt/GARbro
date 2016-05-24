@@ -37,11 +37,16 @@ namespace GameRes.Formats.KiriKiri
         public virtual bool HashAfterCrypt { get { return false; } }
 
         /// <summary>
+        /// sometimes startup.tjs file is not encrypted.
+        /// </summary>
+        public bool StratupTjsNotEncrypted { get; set; }
+
+        /// <summary>
         /// whether XP3 index is obfuscated:
         ///  - duplicate entries
         ///  - entries have additional dummy segments
         /// </summary>
-        public virtual bool ObfuscatedIndex { get { return false; } }
+        public bool ObfuscatedIndex { get; set; }
 
         public virtual byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
