@@ -463,18 +463,12 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 uint idx = index;
                 while (idx >= 256)
                 {
-                    uint is_right;
-
                     if (--m_curbits < 0)
                     {
                         m_curbits = 31;
                         m_cache = ReadUInt32();
-                        is_right = m_cache >> 31;
                     }
-                    else
-                        is_right = (m_cache >> m_curbits) & 1;		
-
-                    if (0 != is_right)
+                    if (0 != ((m_cache >> m_curbits) & 1))
                         idx = rhs[idx];
                     else
                         idx = lhs[idx];
