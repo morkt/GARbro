@@ -27,6 +27,7 @@ using GameRes.Utility;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
+using System.Collections.Generic;
 
 namespace GameRes.Formats.TmrHiro
 {
@@ -63,6 +64,8 @@ namespace GameRes.Formats.TmrHiro
             int bpp = LittleEndian.ToUInt16 (header, 6);
             if (bpp != 24 && bpp != 32)
                 return null;
+            int screen_width  = LittleEndian.ToUInt16 (header, 2);
+            int screen_height = LittleEndian.ToUInt16 (header, 4);
             int left    = LittleEndian.ToUInt16 (header, 8);
             int right   = LittleEndian.ToUInt16 (header, 0xA);
             int top     = LittleEndian.ToUInt16 (header, 0xC);
@@ -73,7 +76,7 @@ namespace GameRes.Formats.TmrHiro
                 Height      = (uint)(bottom-top),
                 BPP         = bpp,
                 OffsetX     = left,
-                OffsetY     = top,
+                OffsetY     = screen_height - bottom,
                 AlphaSize   = LittleEndian.ToInt32 (header, 0x10),
                 RSize       = LittleEndian.ToInt32 (header, 0x14),
                 GSize       = LittleEndian.ToInt32 (header, 0x18),
@@ -148,11 +151,20 @@ namespace GameRes.Formats.TmrHiro
 
             if (1 == m_pack_type)
             {
-                UnpackRLE (src_size);
+                UnpackRLE (m_input, src_size);
             }
             else
             {
-                throw new System.NotImplementedException ("Huffman-compressed images not implemented");
+                var data = UnpackHuffman (m_input);
+                if (0xA2 == m_pack_type)
+                {
+                    UnpackLZ77 (data, m_channel);
+                }
+                else
+                {
+                    using (var mem = new MemoryStream (data))
+                        UnpackRLE (mem, data.Length);
+                }
             }
             for (int y = (int)m_info.Height-1; y >= 0; --y)
             {
@@ -165,31 +177,132 @@ namespace GameRes.Formats.TmrHiro
             }
         }
 
-        void UnpackRLE (int src_size)
+        void UnpackRLE (Stream input, int src_size)
         {
             int src = 0;
             int dst = 0;
             while (src < src_size)
             {
-                int count = m_input.ReadByte();
+                int count = input.ReadByte();
                 if (-1 == count)
                     return;
                 ++src;
                 if (count > 0x7F)
                 {
                     count &= 0x7F;
-                    byte v = (byte)m_input.ReadByte();
+                    byte v = (byte)input.ReadByte();
                     ++src;
                     for (int i = 0; i < count; ++i)
                         m_channel[dst++] = v;
                 }
                 else
                 {
-                    m_input.Read (m_channel, dst, count);
+                    input.Read (m_channel, dst, count);
                     src += count;
                     dst += count;
                 }
             }
+        }
+
+        static void UnpackLZ77 (byte[] input, byte[] output)
+        {
+            var special = input[8];
+            int src = 12;
+            int dst = 0;
+            while (dst < output.Length)
+            {
+                byte b = input[src++];
+                if (b == special)
+                {
+                    byte offset = input[src++];
+                    if (offset != special)
+                    {
+                        byte count = input[src++];
+                        if (offset > special)
+                            --offset;
+
+                        Binary.CopyOverlapped (output, dst - offset, dst, count);
+                        dst += count;
+                    }
+                    else
+                        output[dst++] = offset;
+                }
+                else
+                    output[dst++] = b;
+            }
+        }
+
+        const int RootNodeIndex = 0x1FE;
+        int m_huffman_unpacked;
+
+        byte[] UnpackHuffman (Stream input)
+        {
+            var tree = CreateHuffmanTree (input);
+            var unpacked = new byte[m_huffman_unpacked];
+            using (var bits = new LsbBitStream (input, true))
+            {
+                int dst = 0;
+                while (dst < m_huffman_unpacked)
+                {
+                    int node = RootNodeIndex;
+                    while (node > 0xFF)
+                    {
+                        if (0 != bits.GetNextBit())
+                            node = tree[node].Right;
+                        else
+                            node = tree[node].Left;
+                    }
+                    unpacked[dst++] = (byte)node;
+                }
+            }
+            return unpacked;
+        }
+
+        HuffmanNode[] CreateHuffmanTree (Stream input)
+        {
+            var nodes = new HuffmanNode[0x200];
+            var tree = new List<int> (0x100);
+            using (var reader = new ArcView.Reader (input))
+            {
+                m_huffman_unpacked = reader.ReadInt32();
+                reader.ReadInt32(); // packed_size
+
+                for (int i = 0; i < 0x100; i++)
+                {
+                    nodes[i].Freq = reader.ReadUInt32();
+                    AddNode (tree, nodes, i);
+                }
+            }
+            int last_node = 0x100;
+            while (tree.Count > 1)
+            {
+                int l = tree[0];
+                tree.RemoveAt (0);
+                int r = tree[0];
+                tree.RemoveAt (0);
+                nodes[last_node].Freq = nodes[l].Freq + nodes[r].Freq;
+                nodes[last_node].Left = l;
+                nodes[last_node].Right = r;
+                AddNode (tree, nodes, last_node++);
+            }
+            return nodes;
+        }
+
+        static void AddNode (List<int> tree, HuffmanNode[] nodes, int index)
+        {
+            uint freq = nodes[index].Freq;
+            int i;
+            for (i = 0; i < tree.Count; ++i)
+                if (nodes[tree[i]].Freq > freq)
+                    break;
+            tree.Insert (i, index);
+        }
+
+        internal struct HuffmanNode
+        {
+            public uint Freq;
+            public int  Left;
+            public int  Right;
         }
     }
 }
