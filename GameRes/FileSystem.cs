@@ -366,7 +366,8 @@ namespace GameRes
             Entry entry = null;
             if (m_dir.TryGetValue (filename, out entry))
                 return entry;
-            if (m_dir.Keys.Any (n => n.StartsWith (filename + PathDelimiter)))
+            var dir_name = filename + PathDelimiter;
+            if (m_dir.Keys.Any (n => n.StartsWith (dir_name)))
                 return new SubDirEntry (filename);
             throw new FileNotFoundException();
         }
@@ -404,10 +405,10 @@ namespace GameRes
         {
             if (0 == m_cwd.Length)
                 return m_arc.Dir;
-            else
-                return from file in m_arc.Dir
-                       where file.Name.StartsWith (m_cwd + PathDelimiter)
-                       select file;
+            var path = m_cwd + PathDelimiter;
+            return from file in m_arc.Dir
+                   where file.Name.StartsWith (path)
+                   select file;
         }
 
         public override IEnumerable<Entry> GetFiles (string pattern)
@@ -438,9 +439,12 @@ namespace GameRes
                 else if (".." == entry.Name) // skip reference to parent directory
                     continue;
                 else // add all files contained within directory, recursive
+                {
+                    var dir_name = entry.Name+PathDelimiter;
                     result.AddRange (from file in m_arc.Dir
-                                     where file.Name.StartsWith (entry.Name+PathDelimiter)
+                                     where file.Name.StartsWith (dir_name)
                                      select file);
+                }
             }
             return result;
         }
@@ -482,7 +486,8 @@ namespace GameRes
             string new_path = string.Join (PathDelimiter, cur_dir);
             if (0 != new_path.Length)
             {
-                var entry = m_arc.Dir.FirstOrDefault (e => e.Name.StartsWith (new_path + PathDelimiter));
+                var dir_name = new_path + PathDelimiter;
+                var entry = m_arc.Dir.FirstOrDefault (e => e.Name.StartsWith (dir_name));
                 if (null == entry)
                     throw new DirectoryNotFoundException();
             }
