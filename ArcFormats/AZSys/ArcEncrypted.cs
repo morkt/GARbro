@@ -188,18 +188,21 @@ namespace GameRes.Formats.AZSys
                 return UnpackData (data);
             }
             Decrypt (data, entry.Offset, azarc.RegularKey);
-            if (data.Length > 0x14 && Binary.AsciiEqual (data, 0, "ASB\0"))
+            if (data.Length > 0x14 && Binary.AsciiEqual (data, 0, "ASB\0") && DecryptAsb (data))
             {
-                return OpenAsb (data);
+                var asb = UnpackData (data, 0x10);
+                var header = new byte[0x10];
+                Buffer.BlockCopy (data, 0, header, 0, 0x10);
+                return new PrefixStream (header, asb);
             }
             return new MemoryStream (data);
         }
 
-        Stream OpenAsb (byte[] data)
+        internal bool DecryptAsb (byte[] data)
         {
             int packed_size = LittleEndian.ToInt32 (data, 4);
             if (packed_size <= 4 || packed_size > data.Length-0x10)
-                return new MemoryStream (data);
+                return false;
 
             uint unpacked_size = LittleEndian.ToUInt32 (data, 8);
             uint key = unpacked_size ^ 0x9E370001;
@@ -212,10 +215,7 @@ namespace GameRes.Formats.AZSys
                         *data32++ -= key;
                 }
             }
-            var asb = UnpackData (data, 0x10);
-            var header = new byte[0x10];
-            Buffer.BlockCopy (data, 0, header, 0, 0x10);
-            return new PrefixStream (header, asb);
+            return true;
         }
 
         byte[] ReadSysenvSeed (ArcView file, Entry entry, uint key)
@@ -266,8 +266,18 @@ namespace GameRes.Formats.AZSys
                 if (checksum != Crc32.Compute (packed_index, 4, packed_index.Length-4))
                     throw new InvalidFormatException ("Index checksum mismatch");
             }
-            uint base_offset = (uint)header.Length + index_length;
             using (var input = new MemoryStream (packed_index, 4, packed_index.Length-4))
+            {
+                var dir = ParseIndex (input, count, header.Length + index_length, file.MaxOffset);
+                if (null == dir)
+                    return null;
+                uint content_key = GetContentKey (file, dir, scheme);
+                return new AzArchive (file, this, dir, scheme.IndexKey, content_key);
+            }
+        }
+
+        internal List<Entry> ParseIndex (Stream input, int count, long base_offset, long max_offset)
+        {
             using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
             using (var index = new BinaryReader (zstream))
             {
@@ -287,12 +297,11 @@ namespace GameRes.Formats.AZSys
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = base_offset + offset;
                     entry.Size   = size;
-                    if (!entry.CheckPlacement (file.MaxOffset))
+                    if (!entry.CheckPlacement (max_offset))
                         return null;
                     dir.Add (entry);
                 }
-                uint content_key = GetContentKey (file, dir, scheme);
-                return new AzArchive (file, this, dir, scheme.IndexKey, content_key);
+                return dir;
             }
         }
 
@@ -326,7 +335,7 @@ namespace GameRes.Formats.AZSys
             }
             else
             {
-                var system_arc = VFS.CombinePath (Path.GetDirectoryName (file.Name), "system.arc");
+                var system_arc = VFS.CombinePath (VFS.GetDirectoryName (file.Name), "system.arc");
                 using (var arc = VFS.OpenView (system_arc))
                 {
                     var header = arc.View.ReadBytes (0, 0x30);
@@ -343,6 +352,218 @@ namespace GameRes.Formats.AZSys
                 }
             }
             return scheme.IndexKey;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class ArcIsaacEncryptedOpener : ArcEncryptedOpener
+    {
+        public override string         Tag { get { return "ARC/AZ/ISAAC"; } }
+        public override string Description { get { return "AZ system encrypted resource archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public ArcIsaacEncryptedOpener ()
+        {
+            Extensions = new string[] { "arc" };
+            Signatures = new uint[] { 0 };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            byte[] header_encrypted = file.View.ReadBytes (0, 0x30);
+            if (header_encrypted.Length < 0x30)
+                return null;
+            byte[] header = new byte[header_encrypted.Length];
+            Buffer.BlockCopy (header_encrypted, 0, header, 0, header.Length);
+
+            var cipher = new AzIsaacEncryption ((uint)file.MaxOffset);
+            cipher.Decrypt (header, 0, header.Length, 0);
+            if (!Binary.AsciiEqual (header, 0, "ARC\0"))
+                return null;
+
+            int ext_count = LittleEndian.ToInt32 (header, 4);
+            int count = LittleEndian.ToInt32 (header, 8);
+            uint index_length = LittleEndian.ToUInt32 (header, 12);
+            if (ext_count < 1 || ext_count > 8 || !IsSaneCount (count) || index_length >= file.MaxOffset)
+                return null;
+
+            var packed_index = file.View.ReadBytes (0x30, index_length);
+            if (packed_index.Length != index_length)
+                return null;
+            cipher.Decrypt (packed_index, 0, packed_index.Length, 0x30);
+
+            using (var input = new MemoryStream (packed_index))
+            {
+                var dir = ParseIndex (input, count, header.Length + index_length, file.MaxOffset);
+                if (null == dir)
+                    return null;
+                return new ArcFile (file, this, dir);
+            }
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            var cipher = new AzIsaacEncryption (entry.Size);
+            cipher.Decrypt (data, 0, data.Length, 0);
+            if (data.Length > 0x14 && Binary.AsciiEqual (data, 0, "ASB\0") && DecryptAsb (data))
+            {
+                var header = new byte[0x10];
+                Buffer.BlockCopy (data, 0, header, 0, 0x10);
+                Stream input = new MemoryStream (data, 0x10, data.Length-0x10);
+                input = new ZLibStream (input, CompressionMode.Decompress);
+                return new PrefixStream (header, input);
+            }
+            return new MemoryStream (data);
+        }
+    }
+
+    internal class AzIsaacEncryption
+    {
+        uint[]      m_key = new uint[0x100];
+
+        public AzIsaacEncryption (uint seed)
+        {
+            var isaac = new Isaac64Cipher (seed);
+            for (int i = 0; i < m_key.Length; ++i)
+            {
+                m_key[i] = isaac.GetRand32();
+            }
+        }
+
+        public void Decrypt (byte[] data, int index, int length, ushort offset)
+        {
+            for (int i = 0; i < length; ++i)
+            {
+                data[index + i] ^= (byte)Binary.RotL (m_key[offset & 0xFF] ^ 0x1000193, offset >> 8);
+                ++offset;
+            }
+        }
+    }
+
+    /// <summary>
+    /// ISAAC 64-bit pseudorandom number generator.
+    /// </summary>
+    internal class Isaac64Cipher
+    {
+        int         m_count;
+        ulong[]     m_entropy = new ulong[0x100];
+        ulong[]     m_state   = new ulong[0x100];
+
+        public Isaac64Cipher (uint seed)
+        {
+            unsafe
+            {
+                fixed (ulong* e = m_entropy)
+                {
+                    uint* e32 = (uint*)e;
+                    *e32 = seed ^ 0x9E370001u;
+                    for (uint i = 1; i < 0x200u; ++i)
+                    {
+                        e32[i] = i - 0x61C88647u * (e32[i-1] ^ (e32[i-1] >> 30));
+                    }
+                }
+            }
+            Init();
+        }
+
+        static void Mix (ref ulong a, ref ulong b, ref ulong c, ref ulong d, ref ulong e, ref ulong f, ref ulong g, ref ulong h)
+        {
+            a -= e; f ^= h >> 9;  h += a;
+            b -= f; g ^= a << 9;  a += b;
+            c -= g; h ^= b >> 23; b += c;
+            d -= h; a ^= c << 15; c += d;
+            e -= a; b ^= d >> 14; d += e;
+            f -= b; c ^= e << 20; e += f;
+            g -= c; d ^= f >> 17; f += g;
+            h -= d; e ^= g << 14; g += h;
+        }
+
+        ulong aa = 0, bb = 0, cc = 0;
+
+        void Init ()
+        {
+            int i;
+            ulong a, b, c, d, e, f, g, h;
+            aa = bb = cc = 0;
+            a = b = c = d = e = f = g = h = 0x9E3779B97F4A7C13ul;
+
+            for (i = 0; i < 4; ++i)
+            {
+                Mix (ref a, ref b, ref c, ref d, ref e, ref f, ref g, ref h);
+            }
+
+            for (i = 0; i < 0x100; i += 8)
+            {
+                a += m_entropy[i  ]; b += m_entropy[i+1]; c += m_entropy[i+2]; d += m_entropy[i+3];
+                e += m_entropy[i+4]; f += m_entropy[i+5]; g += m_entropy[i+6]; h += m_entropy[i+7];
+
+                Mix (ref a, ref b, ref c, ref d, ref e, ref f, ref g, ref h);
+                m_state[i  ] = a; m_state[i+1] = b; m_state[i+2] = c; m_state[i+3] = d;
+                m_state[i+4] = e; m_state[i+5] = f; m_state[i+6] = g; m_state[i+7] = h;
+            }
+
+            for (i = 0; i < 0x100; i += 8)
+            {
+                a += m_state[i  ]; b += m_state[i+1]; c += m_state[i+2]; d += m_state[i+3];
+                e += m_state[i+4]; f += m_state[i+5]; g += m_state[i+6]; h += m_state[i+7];
+
+                Mix (ref a, ref b, ref c, ref d, ref e, ref f, ref g, ref h);
+                m_state[i  ] = a; m_state[i+1] = b; m_state[i+2] = c; m_state[i+3] = d;
+                m_state[i+4] = e; m_state[i+5] = f; m_state[i+6] = g; m_state[i+7] = h;
+            }
+            Shuffle();
+            m_count = 0x100;
+        }
+
+        void RngStep (ulong mix, ref ulong a, ref ulong b, ref int m, ref int m2, ref int r)
+        {
+            ulong x = m_state[m];
+            a = mix + m_state[m2++];
+            ulong y = m_state[(x >> 3) & 0xFF] + a + b;
+            m_state[m++] = y;
+            m_entropy[r++] = b = m_state[(y >> 11) & 0xFF] + x;
+        }
+
+        void Shuffle ()
+        {
+            ulong a, b;
+            int m1 = 0;
+            int r = 0;
+            a = aa;
+            b = bb + (++cc);
+            int mend, m2;
+            mend = m2 = 0x80;
+            while (m1 < mend)
+            {
+                RngStep(~(a ^ (a << 21)), ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(  a ^ (a >> 5)  , ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(  a ^ (a << 12) , ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(  a ^ (a >> 33) , ref a, ref b, ref m1, ref m2, ref r);
+            }
+            m2 = 0;
+            while (m2 < mend)
+            {
+                RngStep(~(a ^ (a << 21)), ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(  a ^ (a >> 5)  , ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(  a ^ (a << 12) , ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(  a ^ (a >> 33) , ref a, ref b, ref m1, ref m2, ref r);
+            }
+            bb = b;
+            aa = a;
+        }
+
+        public uint GetRand32 ()
+        {
+            if (0 == m_count--)
+            {
+                Shuffle();
+                m_count = 0xFF;
+            }
+            ulong num = m_entropy[m_count];
+            return (uint)num ^ (uint)(num >> 32);
         }
     }
 }
