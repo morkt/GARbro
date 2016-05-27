@@ -331,6 +331,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Development site.
+        /// </summary>
+        public static string LabelDevSite {
+            get {
+                return ResourceManager.GetString("LabelDevSite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encoding.
         /// </summary>
         public static string LabelEncoding {

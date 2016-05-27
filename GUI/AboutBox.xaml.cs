@@ -22,11 +22,13 @@
 //
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Navigation;
 using GARbro.GUI.Properties;
 using GARbro.GUI.Strings;
 
@@ -184,6 +186,24 @@ namespace GARbro.GUI
             }
         }
         #endregion
+
+        private void Hyperlink_RequestNavigate (object sender, RequestNavigateEventArgs e)
+        {
+            try
+            {
+                if (e.Uri.IsAbsoluteUri)
+                {
+                    Process.Start (new ProcessStartInfo (e.Uri.AbsoluteUri));
+                    e.Handled = true;
+                }
+                else
+                    throw new ApplicationException ("URI is not absolute");
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine ("Link navigation failed: "+X.Message, e.Uri.ToString());
+            }
+        }
     }
 
     public class BooleanToVisibiltyConverter : IValueConverter

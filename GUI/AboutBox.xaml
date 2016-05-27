@@ -1,6 +1,6 @@
 ﻿<!-- Game Resource browser
 
-Copyright (C) 2014-2015 by morkt
+Copyright (C) 2014-2016 by morkt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -28,10 +28,12 @@ IN THE SOFTWARE.
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
         xmlns:gr="clr-namespace:GameRes;assembly=GameRes"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        xmlns:sys="clr-namespace:System;assembly=System"
         Title="{x:Static s:guiStrings.TextAboutTitle}" Height="306" Width="550" ResizeMode="NoResize"
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <Window.Resources>
+        <sys:Uri x:Key="DevLink">https://github.com/morkt/GARbro#readme</sys:Uri>
         <local:BooleanToVisibiltyConverter x:Key="guiBoolToVisibilityConverter" />
         <local:CanCreateConverter x:Key="guiCanCreateConverter"/>
         <CollectionViewSource x:Key="ArcFormatsSource" Source="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}">
@@ -62,7 +64,12 @@ IN THE SOFTWARE.
         <StackPanel Grid.Column="0" Margin="10">
             <TextBox Text="{Binding Path=AssemblyTitle, Mode=OneWay}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="0,0,0,10" />
             <TextBox Text="{Binding Path=VersionString, Mode=OneWay}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="0,0,0,10" />
-            <TextBox Text="{Binding Path=AssemblyCopyright, Mode=OneWay}" IsReadOnly="True" Background="Transparent" BorderThickness="0" />
+            <TextBox Text="{Binding Path=AssemblyCopyright, Mode=OneWay}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="0,0,0,10" />
+            <TextBlock Background="Transparent" Margin="0,0,0,10" Padding="3,0,0,0">
+                <Hyperlink NavigateUri="{StaticResource DevLink}" RequestNavigate="Hyperlink_RequestNavigate">
+                    <TextBlock Text="{x:Static s:guiStrings.LabelDevSite}" ToolTip="{StaticResource DevLink}"/>
+                </Hyperlink>
+            </TextBlock>
         </StackPanel>
         <Button Grid.Column="0" VerticalAlignment="Bottom" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsDefault="true"
                 Content="{x:Static s:guiStrings.ButtonOK}" Margin="10,0,0,10" Width="70" Height="25" Click="Button_Click" IsCancel="True"/>

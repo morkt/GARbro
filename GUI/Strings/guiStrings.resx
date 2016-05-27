@@ -456,4 +456,7 @@ Overwrite?</value>
     <value>Playing {0} / {3} / {2}bps / {1}Hz</value>
     <comment>{0}=filename, {1}=sampling rate, {2}=bitrate, {3}=total time </comment>
   </data>
+  <data name="LabelDevSite" xml:space="preserve">
+    <value>Development site</value>
+  </data>
 </root>
