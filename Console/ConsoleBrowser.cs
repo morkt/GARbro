@@ -123,6 +123,7 @@ namespace GARbro
 
         static void Main (string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
             if (0 == args.Length)
             {
                 Usage();
