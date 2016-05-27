@@ -34,6 +34,8 @@ namespace GameRes.Formats.AZSys
     internal class Typ1MetaData : CpbMetaData
     {
         public bool HasPalette;
+        public bool SeparateChannels;
+        public uint PackedSize;
     }
 
     [Export(typeof(ImageFormat))]
@@ -55,14 +57,26 @@ namespace GameRes.Formats.AZSys
             bool has_palette = stream.ReadByte() != 0;
             using (var input = new ArcView.Reader (stream))
             {
-                var info = new Typ1MetaData { BPP = bpp, HasPalette = has_palette };
+                var info = new Typ1MetaData { BPP = bpp };
                 info.Width  = input.ReadUInt16();
                 info.Height = input.ReadUInt16();
-                input.ReadInt32();
-                info.Channel[0] = input.ReadUInt32();
-                info.Channel[1] = input.ReadUInt32();
-                info.Channel[2] = input.ReadUInt32();
-                info.Channel[3] = input.ReadUInt32();
+                uint packed_size = input.ReadUInt32();
+                uint palette_size = 8 == bpp ? 0x400u : 0u;
+                if (packed_size+palette_size+0xE == stream.Length)
+                {
+                    info.SeparateChannels = false;
+                    info.HasPalette = palette_size > 0;
+                    info.PackedSize = packed_size;
+                }
+                else
+                {
+                    info.SeparateChannels = true;
+                    info.HasPalette = has_palette;
+                    info.Channel[0] = input.ReadUInt32();
+                    info.Channel[1] = input.ReadUInt32();
+                    info.Channel[2] = input.ReadUInt32();
+                    info.Channel[3] = input.ReadUInt32();
+                }
                 return info;
             }
         }
@@ -84,11 +98,10 @@ namespace GameRes.Formats.AZSys
         {
             int             m_width;
             int             m_height;
-            int             m_bpp;
             int             m_pixel_size;
             Stream          m_input;
             byte[]          m_output;
-            uint[]          m_channel;
+            Typ1MetaData    m_info;
 
             public PixelFormat    Format { get; private set; }
             public BitmapPalette Palette { get; private set; }
@@ -98,24 +111,18 @@ namespace GameRes.Formats.AZSys
             {
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
-                m_bpp = info.BPP;
-                m_pixel_size = 8 == m_bpp ? 1 : 4;
-                m_channel = info.Channel;
+                m_info = info;
+                m_pixel_size = 8 == m_info.BPP ? 1 : 4;
                 m_output = new byte[m_width * m_height * m_pixel_size];
-                if (8 == m_bpp)
-                    Format = info.HasPalette ? PixelFormats.Indexed8 : PixelFormats.Gray8;
-                else if (24 == m_bpp)
+                if (8 == m_info.BPP)
+                    Format = m_info.HasPalette ? PixelFormats.Indexed8 : PixelFormats.Gray8;
+                else if (24 == m_info.BPP)
                     Format = PixelFormats.Bgr32;
-                else if (32 == m_bpp)
+                else if (32 == m_info.BPP)
                     Format = PixelFormats.Bgra32;
                 else
                     throw new InvalidFormatException ("Invalid CPB color depth");
                 m_input = input;
-                if (info.HasPalette)
-                {
-                    m_input.Position = 0x1E;
-                    Palette = ReadPalette();
-                }
             }
 
             public BitmapPalette ReadPalette ()
@@ -137,7 +144,18 @@ namespace GameRes.Formats.AZSys
 
             public void Unpack ()
             {
-                if (8 == m_bpp)
+                if (m_info.HasPalette)
+                {
+                    m_input.Position = m_info.SeparateChannels ? 0x1E : 0x0E;
+                    Palette = ReadPalette();
+                }
+                if (!m_info.SeparateChannels)
+                {
+                    m_input.Position = m_info.HasPalette ? 0x40E : 0xE;
+                    using (var z = new ZLibStream (m_input, CompressionMode.Decompress, true))
+                        z.Read (m_output, 0, m_output.Length);
+                }
+                else if (8 == m_info.BPP)
                     UnpackIndexed();
                 else
                     UnpackRGB();
@@ -162,7 +180,7 @@ namespace GameRes.Formats.AZSys
                 long start_pos = 0x1E;
                 for (int i = 0; i < 4; ++i)
                 {
-                    if (0 == m_channel[StreamMap[i]])
+                    if (0 == m_info.Channel[StreamMap[i]])
                         continue;
                     m_input.Position = start_pos + 4; // skip crc32
                     using (var input = new ZLibStream (m_input, CompressionMode.Decompress, true))
@@ -175,7 +193,7 @@ namespace GameRes.Formats.AZSys
                             dst += m_pixel_size;
                         }
                     }
-                    start_pos += m_channel[StreamMap[i]];
+                    start_pos += m_info.Channel[StreamMap[i]];
                 }
             }
         }
