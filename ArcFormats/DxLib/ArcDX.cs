@@ -61,7 +61,7 @@ namespace GameRes.Formats.DxLib
         public DxOpener ()
         {
             Extensions = new string[] { "dxa", "hud", "usi", "med", "dat" };
-            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0 };
+            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0x5524F211, 0 };
         }
 
         public static IList<byte[]> KnownKeys = new List<byte[]>();

@@ -73,6 +73,7 @@
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="ArcZIP.cs" />
+    <Compile Include="AudioVOC.cs" />
     <Compile Include="AZSys\WidgetAZ.xaml.cs">
       <DependentUpon>WidgetAZ.xaml</DependentUpon>
     </Compile>
@@ -85,6 +86,8 @@
     <Compile Include="Cri\BigEndianReader.cs" />
     <Compile Include="Cri\ImageSPC.cs" />
     <Compile Include="Cri\ImageXTX.cs" />
+    <Compile Include="DxLib\ArcMED.cs" />
+    <Compile Include="elf\ArcVOL.cs" />
     <Compile Include="EmonEngine\ArcEME.cs" />
     <Compile Include="EmonEngine\ImageBMP.cs" />
     <Compile Include="Entis\ErisaMatrix.cs" />
