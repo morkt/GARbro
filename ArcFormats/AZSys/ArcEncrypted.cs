@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace GameRes.Formats.AZSys
 {
@@ -112,8 +113,60 @@ namespace GameRes.Formats.AZSys
         }
     }
 
+    public abstract class ArcEncryptedBase : ArchiveFormat
+    {
+        internal List<Entry> ParseIndex (Stream input, int count, long base_offset, long max_offset)
+        {
+            using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
+            using (var index = new BinaryReader (zstream))
+            {
+                var dir = new List<Entry> (count);
+                var name_buffer = new byte[0x20];
+                for (int i = 0; i < count; ++i)
+                {
+                    uint offset = index.ReadUInt32();
+                    uint size   = index.ReadUInt32();
+                    uint crc    = index.ReadUInt32();
+                    index.ReadInt32();
+                    if (name_buffer.Length != index.Read (name_buffer, 0, name_buffer.Length))
+                        return null;
+                    var name = Binary.GetCString (name_buffer, 0, 0x20);
+                    if (0 == name.Length)
+                        return null;
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Offset = base_offset + offset;
+                    entry.Size   = size;
+                    if (!entry.CheckPlacement (max_offset))
+                        return null;
+                    dir.Add (entry);
+                }
+                return dir;
+            }
+        }
+
+        internal bool DecryptAsb (byte[] data)
+        {
+            int packed_size = LittleEndian.ToInt32 (data, 4);
+            if (packed_size <= 4 || packed_size > data.Length-0x10)
+                return false;
+
+            uint unpacked_size = LittleEndian.ToUInt32 (data, 8);
+            uint key = unpacked_size ^ 0x9E370001;
+            unsafe
+            {
+                fixed (byte* raw = &data[0x10])
+                {
+                    uint* data32 = (uint*)raw;
+                    for (int i = packed_size/4; i > 0; --i)
+                        *data32++ -= key;
+                }
+            }
+            return true;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
-    public class ArcEncryptedOpener : ArchiveFormat
+    public class ArcEncryptedOpener : ArcEncryptedBase
     {
         public override string         Tag { get { return "ARC/AZ/encrypted"; } }
         public override string Description { get { return "AZ system encrypted resource archive"; } }
@@ -198,28 +251,11 @@ namespace GameRes.Formats.AZSys
             return new MemoryStream (data);
         }
 
-        internal bool DecryptAsb (byte[] data)
+        uint ReadSysenvSeed (ArcView file, IEnumerable<Entry> dir, uint key)
         {
-            int packed_size = LittleEndian.ToInt32 (data, 4);
-            if (packed_size <= 4 || packed_size > data.Length-0x10)
-                return false;
-
-            uint unpacked_size = LittleEndian.ToUInt32 (data, 8);
-            uint key = unpacked_size ^ 0x9E370001;
-            unsafe
-            {
-                fixed (byte* raw = &data[0x10])
-                {
-                    uint* data32 = (uint*)raw;
-                    for (int i = packed_size/4; i > 0; --i)
-                        *data32++ -= key;
-                }
-            }
-            return true;
-        }
-
-        byte[] ReadSysenvSeed (ArcView file, Entry entry, uint key)
-        {
+            var entry = dir.FirstOrDefault (e => e.Name.Equals ("sysenv.tbl", StringComparison.InvariantCultureIgnoreCase));
+            if (null == entry)
+                return key;
             var data = file.View.ReadBytes (entry.Offset, entry.Size);
             if (data.Length <= 4)
                 throw new InvalidFormatException ("Invalid sysenv.tbl size");
@@ -233,7 +269,7 @@ namespace GameRes.Formats.AZSys
                 var seed = new byte[0x10];
                 if (0x10 != sysenv_stream.Read (seed, 0, 0x10))
                     throw new InvalidFormatException ("Invalid sysenv.tbl size");
-                return seed;
+                return EncryptionScheme.GenerateContentKey (seed);
             }
         }
 
@@ -276,35 +312,6 @@ namespace GameRes.Formats.AZSys
             }
         }
 
-        internal List<Entry> ParseIndex (Stream input, int count, long base_offset, long max_offset)
-        {
-            using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
-            using (var index = new BinaryReader (zstream))
-            {
-                var dir = new List<Entry> (count);
-                var name_buffer = new byte[0x20];
-                for (int i = 0; i < count; ++i)
-                {
-                    uint offset = index.ReadUInt32();
-                    uint size   = index.ReadUInt32();
-                    uint crc    = index.ReadUInt32();
-                    index.ReadInt32();
-                    if (name_buffer.Length != index.Read (name_buffer, 0, name_buffer.Length))
-                        return null;
-                    var name = Binary.GetCString (name_buffer, 0, 0x20);
-                    if (0 == name.Length)
-                        return null;
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
-                    entry.Offset = base_offset + offset;
-                    entry.Size   = size;
-                    if (!entry.CheckPlacement (max_offset))
-                        return null;
-                    dir.Add (entry);
-                }
-                return dir;
-            }
-        }
-
         static void Decrypt (byte[] data, long offset, uint key)
         {
             ulong hash = key * 0x9E370001ul;
@@ -326,12 +333,7 @@ namespace GameRes.Formats.AZSys
 
             if ("system.arc".Equals (Path.GetFileName (file.Name), StringComparison.InvariantCultureIgnoreCase))
             {
-                var sysenv = dir.FirstOrDefault (e => e.Name.Equals ("sysenv.tbl", StringComparison.InvariantCultureIgnoreCase));
-                if (null != sysenv)
-                {
-                    var seed = ReadSysenvSeed (file, sysenv, scheme.IndexKey);
-                    return EncryptionScheme.GenerateContentKey (seed);
-                }
+                return ReadSysenvSeed (file, dir, scheme.IndexKey);
             }
             else
             {
@@ -342,21 +344,15 @@ namespace GameRes.Formats.AZSys
                     Decrypt (header, 0, scheme.IndexKey);
                     using (var arc_file = ReadIndex (arc, header, scheme))
                     {
-                        var sysenv = arc_file.Dir.FirstOrDefault (e => e.Name.Equals ("sysenv.tbl", StringComparison.InvariantCultureIgnoreCase));
-                        if (null != sysenv)
-                        {
-                            var seed = ReadSysenvSeed (arc, sysenv, scheme.IndexKey);
-                            return EncryptionScheme.GenerateContentKey (seed);
-                        }
+                        return ReadSysenvSeed (arc, arc_file.Dir, scheme.IndexKey);
                     }
                 }
             }
-            return scheme.IndexKey;
         }
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class ArcIsaacEncryptedOpener : ArcEncryptedOpener
+    public class ArcIsaacEncryptedOpener : ArcEncryptedBase
     {
         public override string         Tag { get { return "ARC/AZ/ISAAC"; } }
         public override string Description { get { return "AZ system encrypted resource archive"; } }
@@ -367,7 +363,6 @@ namespace GameRes.Formats.AZSys
         public ArcIsaacEncryptedOpener ()
         {
             Extensions = new string[] { "arc" };
-            Signatures = new uint[] { 0 };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -417,6 +412,15 @@ namespace GameRes.Formats.AZSys
                 return new PrefixStream (header, input);
             }
             return new MemoryStream (data);
+        }
+
+        /// <summary>
+        /// Calculate SHA1 sum of archive file.
+        /// </summary>
+        public byte[] CalculateSum (Stream arc)
+        {
+            using (var sha1 = SHA1.Create())
+                return sha1.ComputeHash (arc);
         }
     }
 
@@ -469,7 +473,10 @@ namespace GameRes.Formats.AZSys
             Init();
         }
 
-        static void Mix (ref ulong a, ref ulong b, ref ulong c, ref ulong d, ref ulong e, ref ulong f, ref ulong g, ref ulong h)
+        ulong aa, bb, cc;
+        ulong a, b, c, d, e, f, g, h;
+
+        void Mix ()
         {
             a -= e; f ^= h >> 9;  h += a;
             b -= f; g ^= a << 9;  a += b;
@@ -481,18 +488,15 @@ namespace GameRes.Formats.AZSys
             h -= d; e ^= g << 14; g += h;
         }
 
-        ulong aa = 0, bb = 0, cc = 0;
-
         void Init ()
         {
-            int i;
-            ulong a, b, c, d, e, f, g, h;
             aa = bb = cc = 0;
             a = b = c = d = e = f = g = h = 0x9E3779B97F4A7C13ul;
 
+            int i;
             for (i = 0; i < 4; ++i)
             {
-                Mix (ref a, ref b, ref c, ref d, ref e, ref f, ref g, ref h);
+                Mix();
             }
 
             for (i = 0; i < 0x100; i += 8)
@@ -500,7 +504,7 @@ namespace GameRes.Formats.AZSys
                 a += m_entropy[i  ]; b += m_entropy[i+1]; c += m_entropy[i+2]; d += m_entropy[i+3];
                 e += m_entropy[i+4]; f += m_entropy[i+5]; g += m_entropy[i+6]; h += m_entropy[i+7];
 
-                Mix (ref a, ref b, ref c, ref d, ref e, ref f, ref g, ref h);
+                Mix();
                 m_state[i  ] = a; m_state[i+1] = b; m_state[i+2] = c; m_state[i+3] = d;
                 m_state[i+4] = e; m_state[i+5] = f; m_state[i+6] = g; m_state[i+7] = h;
             }
@@ -510,7 +514,7 @@ namespace GameRes.Formats.AZSys
                 a += m_state[i  ]; b += m_state[i+1]; c += m_state[i+2]; d += m_state[i+3];
                 e += m_state[i+4]; f += m_state[i+5]; g += m_state[i+6]; h += m_state[i+7];
 
-                Mix (ref a, ref b, ref c, ref d, ref e, ref f, ref g, ref h);
+                Mix();
                 m_state[i  ] = a; m_state[i+1] = b; m_state[i+2] = c; m_state[i+3] = d;
                 m_state[i+4] = e; m_state[i+5] = f; m_state[i+6] = g; m_state[i+7] = h;
             }
@@ -518,41 +522,37 @@ namespace GameRes.Formats.AZSys
             m_count = 0x100;
         }
 
-        void RngStep (ulong mix, ref ulong a, ref ulong b, ref int m, ref int m2, ref int r)
+        void RngStep (ulong mix, ref int m, ref int m2, ref int r)
         {
             ulong x = m_state[m];
-            a = mix + m_state[m2++];
-            ulong y = m_state[(x >> 3) & 0xFF] + a + b;
+            aa = mix + m_state[m2++];
+            ulong y = m_state[(x >> 3) & 0xFF] + aa + bb;
             m_state[m++] = y;
-            m_entropy[r++] = b = m_state[(y >> 11) & 0xFF] + x;
+            m_entropy[r++] = bb = m_state[(y >> 11) & 0xFF] + x;
         }
 
         void Shuffle ()
         {
-            ulong a, b;
             int m1 = 0;
             int r = 0;
-            a = aa;
-            b = bb + (++cc);
+            bb += ++cc;
             int mend, m2;
             mend = m2 = 0x80;
             while (m1 < mend)
             {
-                RngStep(~(a ^ (a << 21)), ref a, ref b, ref m1, ref m2, ref r);
-                RngStep(  a ^ (a >> 5)  , ref a, ref b, ref m1, ref m2, ref r);
-                RngStep(  a ^ (a << 12) , ref a, ref b, ref m1, ref m2, ref r);
-                RngStep(  a ^ (a >> 33) , ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(~(aa ^ (aa << 21)), ref m1, ref m2, ref r);
+                RngStep(  aa ^ (aa >> 5)  , ref m1, ref m2, ref r);
+                RngStep(  aa ^ (aa << 12) , ref m1, ref m2, ref r);
+                RngStep(  aa ^ (aa >> 33) , ref m1, ref m2, ref r);
             }
             m2 = 0;
             while (m2 < mend)
             {
-                RngStep(~(a ^ (a << 21)), ref a, ref b, ref m1, ref m2, ref r);
-                RngStep(  a ^ (a >> 5)  , ref a, ref b, ref m1, ref m2, ref r);
-                RngStep(  a ^ (a << 12) , ref a, ref b, ref m1, ref m2, ref r);
-                RngStep(  a ^ (a >> 33) , ref a, ref b, ref m1, ref m2, ref r);
+                RngStep(~(aa ^ (aa << 21)), ref m1, ref m2, ref r);
+                RngStep(  aa ^ (aa >> 5)  , ref m1, ref m2, ref r);
+                RngStep(  aa ^ (aa << 12) , ref m1, ref m2, ref r);
+                RngStep(  aa ^ (aa >> 33) , ref m1, ref m2, ref r);
             }
-            bb = b;
-            aa = a;
         }
 
         public uint GetRand32 ()
