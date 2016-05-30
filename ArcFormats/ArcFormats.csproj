@@ -99,6 +99,7 @@
     <Compile Include="ImageLZ.cs" />
     <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
     <Compile Include="Liar\ImageLIM.cs" />
+    <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NitroPlus\ArcPAK.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
     <Compile Include="Nexas\ImageGRP.cs" />
