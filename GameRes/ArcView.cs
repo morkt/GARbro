@@ -613,4 +613,43 @@ namespace GameRes
             }
         }
     }
+
+    /// <summary>
+    /// Unsafe wrapper around unmanaged memory mapped view pointer.
+    /// </summary>
+    public unsafe class ViewPointer : IDisposable
+    {
+        MemoryMappedViewAccessor    m_view;
+        byte*                       m_ptr;
+
+        public ViewPointer (MemoryMappedViewAccessor view, long offset)
+        {
+            m_view = view;
+            m_ptr = m_view.GetPointer (offset);
+        }
+
+        public byte* Value { get { return m_ptr; } }
+
+        #region IDisposable Members
+        bool _disposed = false;
+
+        public void Dispose ()
+        {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    m_view.SafeMemoryMappedViewHandle.ReleasePointer();
+                }
+                _disposed = true;
+            }
+        }
+        #endregion
+    }
 }
