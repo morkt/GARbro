@@ -58,14 +58,17 @@ namespace GameRes.Formats.Marble
             var header = new byte[0x10];
             if (header.Length != stream.Read (header, 0, header.Length))
                 return null;
-            if (header[0] != 'Y' || header[1] != 'B' || header[3] != 3)
+            if (header[0] != 'Y' || header[1] != 'B')
+                return null;
+            int bpp = header[3];
+            if (bpp != 3 && bpp != 4)
                 return null;
 
             return new PrsMetaData
             {
                 Width = LittleEndian.ToUInt16 (header, 12),
                 Height = LittleEndian.ToUInt16 (header, 14),
-                BPP = 24,
+                BPP = 8 * bpp,
                 Flag = header[2],
                 PackedSize = LittleEndian.ToUInt32 (header, 4),
             };
@@ -73,15 +76,10 @@ namespace GameRes.Formats.Marble
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as PrsMetaData;
-            if (null == meta)
-                throw new ArgumentException ("PrsFormat.Read should be supplied with PrsMetaData", "info");
-
-            stream.Position = 0x10;
-            using (var reader = new Reader (stream, meta))
+            using (var reader = new Reader (stream, (PrsMetaData)info))
             {
                 reader.Unpack();
-                return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data, (int)meta.Width*3);
+                return ImageData.Create (info, reader.Format, null, reader.Data, reader.Stride);
             }
         }
 
@@ -91,15 +89,24 @@ namespace GameRes.Formats.Marble
             byte[]          m_output;
             uint            m_size;
             byte            m_flag;
+            int             m_depth;
 
-            public byte[] Data { get { return m_output; } }
+            public byte[]        Data { get { return m_output; } }
+            public PixelFormat Format { get; private set; }
+            public int         Stride { get; private set; }
 
             public Reader (Stream file, PrsMetaData info)
             {
                 m_input = new BinaryReader (file, Encoding.ASCII, true);
-                m_output = new byte[info.Width*info.Height*3];
                 m_size = info.PackedSize;
                 m_flag = info.Flag;
+                m_depth = info.BPP / 8;
+                if (3 == m_depth)
+                    Format = PixelFormats.Bgr24;
+                else
+                    Format = PixelFormats.Bgra32;
+                Stride = (int)info.Width * m_depth;
+                m_output = new byte[Stride * (int)info.Height];
             }
 
             static readonly int[] LengthTable = InitLengthTable();
@@ -116,6 +123,7 @@ namespace GameRes.Formats.Marble
 
             public void Unpack ()
             {
+                m_input.BaseStream.Position = 0x10;
                 int dst = 0;
                 int remaining = (int)m_size;
                 int bit = 0;
@@ -188,9 +196,22 @@ namespace GameRes.Formats.Marble
                 }
                 if ((m_flag & 0x80) != 0)
                 {
-                    for (int i = 3; i < m_output.Length; ++i)
-                        m_output[i] += m_output[i-3];
+                    for (int i = m_depth; i < m_output.Length; ++i)
+                        m_output[i] += m_output[i-m_depth];
                 }
+                if (4 == m_depth && IsDummyAlphaChannel())
+                    Format = PixelFormats.Bgr32;
+            }
+
+            bool IsDummyAlphaChannel ()
+            {
+                byte alpha = m_output[3];
+                if (0xFF == alpha)
+                    return false;
+                for (int i = 7; i < m_output.Length; i += 4)
+                    if (m_output[i] != alpha)
+                        return false;
+                return true;
             }
 
             #region IDisposable Members
