@@ -87,6 +87,9 @@
     <Compile Include="Cri\ImageSPC.cs" />
     <Compile Include="Cri\ImageXTX.cs" />
     <Compile Include="DxLib\ArcMED.cs" />
+    <Compile Include="DxLib\WidgetSCR.xaml.cs">
+      <DependentUpon>WidgetSCR.xaml</DependentUpon>
+    </Compile>
     <Compile Include="elf\ArcVOL.cs" />
     <Compile Include="EmonEngine\ArcEME.cs" />
     <Compile Include="EmonEngine\ImageBMP.cs" />
@@ -529,6 +532,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CatSystem\CreateINTWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DxLib\WidgetSCR.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

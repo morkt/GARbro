@@ -537,5 +537,17 @@ namespace GameRes.Formats.Properties {
                 this["NCARCScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string MEDScriptScheme {
+            get {
+                return ((string)(this["MEDScriptScheme"]));
+            }
+            set {
+                this["MEDScriptScheme"] = value;
+            }
+        }
     }
 }

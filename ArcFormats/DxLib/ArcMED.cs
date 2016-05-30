@@ -27,9 +27,69 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
+using GameRes.Utility;
 
 namespace GameRes.Formats.DxLib
 {
+    public interface IScriptEncryption
+    {
+        int StartOffset { get; }
+
+        bool IsEncrypted (byte[] data);
+        void Decrypt (byte[] data, int offset, int length);
+    }
+
+    [Serializable]
+    public class FudegakiEncryption : IScriptEncryption
+    {
+        readonly byte[] Key;
+
+        public FudegakiEncryption (string keyword)
+        {
+            Key = Encodings.cp932.GetBytes (keyword);
+        }
+
+        public int StartOffset { get { return 0x10; } }
+
+        public bool IsEncrypted (byte[] data)
+        {
+            return LittleEndian.ToInt32 (data, 0) + 0x10 == data.Length && Key.Length > 0;
+        }
+
+        public void Decrypt (byte[] data, int offset, int length)
+        {
+            for (int i = 0; i < length; ++i)
+            {
+                data[offset+i] += Key[(offset+i) % Key.Length];
+            }
+        }
+    }
+
+    [Serializable]
+    public class MedOptions : ResourceOptions
+    {
+        public IScriptEncryption Encryption;
+    }
+
+    [Serializable]
+    public class ScrMedScheme : ResourceScheme
+    {
+        public Dictionary<string, IScriptEncryption> KnownSchemes;
+    }
+
+    internal class ScrMedArchive : ArcFile
+    {
+        public readonly IScriptEncryption Encryption;
+
+        public ScrMedArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, IScriptEncryption enc)
+            : base (arc, impl, dir)
+        {
+            Encryption = enc;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class MedOpener : ArchiveFormat
     {
@@ -40,6 +100,14 @@ namespace GameRes.Formats.DxLib
         public override bool     CanCreate { get { return false; } }
 
         static readonly Lazy<ImageFormat> PrsFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PRS"));
+
+        public static Dictionary<string, IScriptEncryption> KnownSchemes = new Dictionary<string, IScriptEncryption>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new ScrMedScheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((ScrMedScheme)value).KnownSchemes; }
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -72,7 +140,49 @@ namespace GameRes.Formats.DxLib
                 dir.Add (entry);
                 index_offset += 8;
             }
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
+            if (base_name.EndsWith ("_scr", StringComparison.InvariantCultureIgnoreCase)
+                && KnownSchemes.Count > 0)
+            {
+                var options = Query<MedOptions> (arcStrings.ArcEncryptedNotice);
+                if (options.Encryption != null)
+                    return new ScrMedArchive (file, this, dir, options.Encryption);
+            }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var scr_arc = arc as ScrMedArchive;
+            if (null == scr_arc || entry.Size <= scr_arc.Encryption.StartOffset)
+                return base.OpenEntry (arc, entry);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            if (scr_arc.Encryption.IsEncrypted (data))
+            {
+                var offset = scr_arc.Encryption.StartOffset;
+                scr_arc.Encryption.Decrypt (data, offset, data.Length-offset);
+            }
+            return new MemoryStream (data);
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new MedOptions {
+                Encryption = GetEncryption (Settings.Default.MEDScriptScheme),
+            };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetSCR();
+        }
+
+        public static IScriptEncryption GetEncryption (string scheme)
+        {
+            IScriptEncryption enc;
+            if (string.IsNullOrEmpty (scheme) || !KnownSchemes.TryGetValue (scheme, out enc))
+                return null;
+            return enc;
         }
     }
 }
