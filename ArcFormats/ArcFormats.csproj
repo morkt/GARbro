@@ -91,6 +91,7 @@
       <DependentUpon>WidgetSCR.xaml</DependentUpon>
     </Compile>
     <Compile Include="elf\ArcVOL.cs" />
+    <Compile Include="elf\ImageGPH.cs" />
     <Compile Include="EmonEngine\ArcEME.cs" />
     <Compile Include="EmonEngine\ImageBMP.cs" />
     <Compile Include="Entis\ErisaMatrix.cs" />
