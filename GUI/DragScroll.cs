@@ -24,6 +24,16 @@ namespace GARbro.GUI
         {
             obj.SetValue(IsEnabledProperty, value);
         }
+        
+        public static Cursor GetDraggingCursor (UIElement e)
+        {
+            return (Cursor)e.GetValue (DraggingCursorProperty);
+        }
+
+        public static void SetDraggingCursor (UIElement e, Cursor value)
+        {
+            e.SetValue (DraggingCursorProperty, value);
+        }
 
         public bool IsEnabled
         {
@@ -31,8 +41,16 @@ namespace GARbro.GUI
             set { SetValue(IsEnabledProperty, value); }
         }
 
+        public Cursor DraggingCursor
+        {
+            get { return (Cursor)GetValue (DraggingCursorProperty); }
+            set { SetValue (DraggingCursorProperty, value); }
+        }
+
         public static readonly DependencyProperty IsEnabledProperty =
             DependencyProperty.RegisterAttached("IsEnabled", typeof(bool), typeof(TouchScrolling), new UIPropertyMetadata(false, IsEnabledChanged));
+        public static readonly DependencyProperty DraggingCursorProperty =
+            DependencyProperty.RegisterAttached("DraggingCursor", typeof(Cursor), typeof(TouchScrolling));
 
         static Dictionary<object, MouseCapture> _captures = new Dictionary<object, MouseCapture>();
 
@@ -109,7 +127,7 @@ namespace GARbro.GUI
             if (target == null) return;
 
             target.ReleaseMouseCapture();
-            target.Cursor = Cursors.Arrow;
+            Mouse.OverrideCursor = null;
         }
 
         static void target_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -138,7 +156,9 @@ namespace GARbro.GUI
             if (System.Math.Abs(dy) > 5 || System.Math.Abs(dx) > 5)
             {
                 target.CaptureMouse();
-                target.Cursor = Cursors.SizeAll;
+                var cursor = target.GetValue (DraggingCursorProperty) as Cursor;
+                if (cursor != null)
+                    Mouse.OverrideCursor = cursor;
             }
             scroller.ScrollToHorizontalOffset(capture.HorizontalOffset - dx);
             scroller.ScrollToVerticalOffset(capture.VerticalOffset - dy);

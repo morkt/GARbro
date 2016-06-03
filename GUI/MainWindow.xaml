@@ -343,7 +343,8 @@
             <Grid Grid.Column="2" Name="PreviewPane" SnapsToDevicePixels="True">
                 <ScrollViewer Name="ImageView" Background="LightGray" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                     <Image Name="ImageCanvas" Stretch="None" UseLayoutRounding="True" SnapsToDevicePixels="True"
-                           local:TouchScrolling.IsEnabled="True" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                           local:TouchScrolling.IsEnabled="True" RenderOptions.BitmapScalingMode="NearestNeighbor"
+                           Cursor="Images/Cursors/grab.cur" local:TouchScrolling.DraggingCursor="Images/Cursors/grabbing.cur" />
                 </ScrollViewer>
                 <jv:TextViewer x:Name="TextView" Visibility="Collapsed" BorderThickness="1,0,0,0" BorderBrush="Black"/>
             </Grid>

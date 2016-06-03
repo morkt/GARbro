@@ -271,6 +271,12 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Cursors\grab.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Cursors\grabbing.cur" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName) "$(SolutionDir)\"
