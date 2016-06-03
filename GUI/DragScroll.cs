@@ -105,6 +105,10 @@ namespace GARbro.GUI
                 VerticalOffset = scroller.VerticalOffset,
                 Point = e.GetPosition(scroller),
             };
+
+            var cursor = target.GetValue (DraggingCursorProperty) as Cursor;
+            if (cursor != null)
+                Mouse.OverrideCursor = cursor;
         }
 
         static void target_Loaded(object sender, RoutedEventArgs e)
@@ -156,9 +160,6 @@ namespace GARbro.GUI
             if (System.Math.Abs(dy) > 5 || System.Math.Abs(dx) > 5)
             {
                 target.CaptureMouse();
-                var cursor = target.GetValue (DraggingCursorProperty) as Cursor;
-                if (cursor != null)
-                    Mouse.OverrideCursor = cursor;
             }
             scroller.ScrollToHorizontalOffset(capture.HorizontalOffset - dx);
             scroller.ScrollToVerticalOffset(capture.VerticalOffset - dy);
