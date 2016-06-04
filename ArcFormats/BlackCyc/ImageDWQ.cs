@@ -142,7 +142,7 @@ namespace GameRes.Formats.BlackCyc
                 BaseType = Encoding.ASCII.GetString (header.Bytes, 0, 0x10).TrimEnd(),
                 PackedSize = packed_size,
                 PackType = header.PackType,
-                HasAlpha = header.AType || 7 == header.PackType,
+                HasAlpha = header.AType || 7 == header.PackType || 3 == header.PackType,
             };
         }
 
