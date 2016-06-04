@@ -120,8 +120,10 @@
     <Compile Include="RealLive\ImagePDT.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
     <Compile Include="SimpleEncryption.cs" />
+    <Compile Include="Slg\ArcSZS.cs" />
     <Compile Include="Slg\AudioVOI.cs" />
     <Compile Include="Slg\ImageALB.cs" />
+    <Compile Include="Slg\ImageTIG.cs" />
     <Compile Include="Softpal\ArcPAC.cs" />
     <Compile Include="Softpal\AudioBGM.cs" />
     <Compile Include="Softpal\ImagePGD.cs" />
