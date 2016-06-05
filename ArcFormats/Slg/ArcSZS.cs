@@ -44,7 +44,7 @@ namespace GameRes.Formats.Slg
             int version = file.View.ReadByte (4) - '0';
             if (version < 0 || !file.View.AsciiEqual (5, "0__"))
                 return null;
-            int count = file.View.ReadInt16 (0xC);
+            int count = file.View.ReadInt32 (0xC);
             if (!IsSaneCount (count))
                 return null;
 
