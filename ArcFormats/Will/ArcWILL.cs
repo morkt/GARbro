@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Will
 {
@@ -69,6 +70,8 @@ namespace GameRes.Formats.Will
             for (int i = 0; i < ext_count; ++i)
             {
                 string ext = file.View.ReadString (dir_offset, 4).ToLowerInvariant();
+                if (0 == ext.Length)
+                    return null;
                 int count = file.View.ReadInt32 (dir_offset+4);
                 uint offset = file.View.ReadUInt32 (dir_offset+8);
                 if (count <= 0 || count > 0xffff || offset <= dir_offset || offset > file.MaxOffset)
@@ -76,7 +79,12 @@ namespace GameRes.Formats.Will
                 ext_list.Add (new ExtRecord { Extension = ext, FileCount = count, DirOffset = offset });
                 dir_offset += 12;
             }
-            var dir = ReadFileList (file, ext_list, 9);
+            List<Entry> dir = null;
+            try
+            {
+                dir = ReadFileList (file, ext_list, 9);
+            }
+            catch { /* ignore parse errors */ }
             if (null == dir)
                 dir = ReadFileList (file, ext_list, 13);
             if (null == dir)
@@ -122,8 +130,7 @@ namespace GameRes.Formats.Will
         {
             for (int i = 0; i < data.Length; ++i)
             {
-                byte v = data[i];
-                data[i] = (byte)(v >> 2 | v << 6);
+                data[i] = Binary.RotByteR (data[i], 2);
             }
         }
 
@@ -131,8 +138,7 @@ namespace GameRes.Formats.Will
         {
             for (int i = 0; i < data.Length; ++i)
             {
-                byte v = data[i];
-                data[i] = (byte)(v << 2 | v >> 6);
+                data[i] = Binary.RotByteL (data[i], 2);
             }
         }
 
