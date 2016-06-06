@@ -83,8 +83,6 @@ namespace GameRes.Formats.Selen
                     entry.Type = DetectEdimType (arc, entry);
                 else if (entry.Name.EndsWith (".bitd"))
                     entry.Type = "image";
-                else if (entry.Name.EndsWith (".xmed"))
-                    entry.Type = "script";
             }
         }
 
