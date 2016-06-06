@@ -92,9 +92,7 @@ namespace GameRes.Formats.Will
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            var meta = info as WipMetaData;
-            if (null == meta)
-                throw new ArgumentException ("WipFormat.Read should be supplied with WipMetaData", "info");
+            var meta = (WipMetaData)info;
             file.Position = 8 + 24 * meta.FrameCount;
             Color[] palette = null;
             if (8 == meta.BPP)
@@ -149,51 +147,47 @@ namespace GameRes.Formats.Will
 //                int stride = (int)info.Width*((info.BPP+7)/8);
                 int stride = (int)info.Width*4;
                 m_data = new byte[stride * (int)info.Height];
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
+                m_input = new ArcView.Reader (file);
             }
 
             private byte[] m_window = new byte[0x1000];
 
             public void Unpack ()
             {
-                int current = 0;
+                int dst = 0;
                 int window_index = 1;
                 int control = 0;
-                byte input = 0;
-                for (uint length = m_length; length > 0; )
+                for (int length = (int)m_length; length > 0; )
                 {
                     control >>= 1;
                     if (0 == (control & 0x100))
                     {
-                        input = m_input.ReadByte();
+                        control = m_input.ReadByte() | 0xFF00;
                         --length;
-                        control = input | 0xff00;
                     }
                     if (0 != (control & 1))
                     {
                         if (length < 1)
                             throw new InvalidFormatException();
-                        input = m_input.ReadByte();
+                        byte b = m_input.ReadByte();
                         --length;
-                        m_data[current++] = input;
-                        m_window[window_index++] = input;
+                        m_data[dst++] = b;
+                        m_window[window_index++] = b;
                         window_index &= 0xfff;
                     }
                     else
                     {
                         if (length < 2)
                             throw new InvalidFormatException();
-                        int di = m_input.ReadByte();
-                        input = m_input.ReadByte();
+                        int hi = m_input.ReadByte();
+                        int lo = m_input.ReadByte();
                         length -= 2;
-                        int offset = ((di << 8) | input) >> 4;
-                        int count = (input & 0xf) + 2;
-                        for (int i = 0; i < count; ++i)
+                        int offset = hi << 4 | lo >> 4;
+                        for (int count = (lo & 0xF) + 2; count > 0; --count)
                         {
-                            int src = (i + offset) & 0xfff;
-                            input = m_window[src];
-                            m_data[current++] = input;
-                            m_window[window_index++] = input;
+                            byte b = m_window[offset++ & 0xfff];
+                            m_data[dst++] = b;
+                            m_window[window_index++] = b;
                             window_index &= 0xfff;
                         }
                     }
