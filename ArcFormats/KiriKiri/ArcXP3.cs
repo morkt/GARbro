@@ -449,7 +449,7 @@ NextEntry:
 
         ICrypt QueryCryptAlgorithm ()
         {
-            var options = Query<Xp3Options> (arcStrings.ArcEncryptedNotice);
+            var options = Query<Xp3Options> (arcStrings.XP3EncryptedNotice);
             return options.Scheme;
         }
 

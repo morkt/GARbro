@@ -371,4 +371,8 @@ Choose appropriate encryption scheme.</value>
     <value>Archive contents might be encrypted,
 choose appropriate encryption scheme.</value>
   </data>
+  <data name="XP3EncryptedNotice" xml:space="preserve">
+    <value>Archive content could be encrypted.
+Choose appropriate encryption scheme.</value>
+  </data>
 </root>

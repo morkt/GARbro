@@ -307,6 +307,10 @@
   <data name="XP3CompressHeader" xml:space="preserve">
     <value>Сжать оглавление</value>
   </data>
+  <data name="XP3EncryptedNotice" xml:space="preserve">
+    <value>Возможно, содержимое архива зашифровано.
+Выберите алгоритм шифрования.</value>
+  </data>
   <data name="XP3LabelVersion" xml:space="preserve">
     <value>Версия</value>
   </data>

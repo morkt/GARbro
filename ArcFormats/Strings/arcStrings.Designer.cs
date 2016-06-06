@@ -743,6 +743,16 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Archive content could be encrypted.
+        ///Choose appropriate encryption scheme..
+        /// </summary>
+        public static string XP3EncryptedNotice {
+            get {
+                return ResourceManager.GetString("XP3EncryptedNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Version.
         /// </summary>
         public static string XP3LabelVersion {
