@@ -311,6 +311,8 @@
     <Compile Include="ShiinaRio\ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
+    <Compile Include="Vitamin\ImageMFC.cs" />
+    <Compile Include="Vitamin\ImageSBI.cs" />
     <Compile Include="WebP\Alpha.cs" />
     <Compile Include="WebP\Decoder.cs">
       <SubType>Code</SubType>
