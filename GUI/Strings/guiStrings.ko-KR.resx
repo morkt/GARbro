@@ -449,11 +449,10 @@
     <value>없음</value>
   </data>
   <data name="LabelDestinationDir" xml:space="preserve">
-    <value>Destination directory</value>
-    <comment>translation pending</comment>
+    <value>출력 폴더</value>
   </data>
   <data name="MsgPlaying" xml:space="preserve">
-    <value>Playing {0} / {3} / {2}bps / {1}Hz</value>
-    <comment>translation pending. {0}=filename, {1}=sampling rate, {2}=bitrate, {3}=total time </comment>
+    <value>{0} 재생중 / {3} / {2}bps / {1}Hz</value>
+    <comment>{0}=파일이름, {1}=sampling rate, {2}=bitrate, {3}=총 시간 </comment>
   </data>
 </root>
