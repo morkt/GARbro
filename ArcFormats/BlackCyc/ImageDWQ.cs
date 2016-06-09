@@ -97,7 +97,7 @@ namespace GameRes.Formats.BlackCyc
             {
                 if (!Binary.AsciiEqual (header.Bytes, 0x0D, "0 ") ||
                     !Binary.AsciiEqual (header.Bytes, 0x2C, "BMP ") ||
-                    header.PackType != 0)
+                    header.PackType != 0 && header.PackType != 1)
                     return null;
                 using (var bmp = new StreamRegion (stream, 0x40, true))
                 {
@@ -173,6 +173,7 @@ namespace GameRes.Formats.BlackCyc
                         break;
                     }
 
+                case 1:
                 case 3: // PACKBMP+MASK
                     {
                         var reader = new DwqBmpReader (input, meta);
