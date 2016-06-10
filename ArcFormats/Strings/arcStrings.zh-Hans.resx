@@ -377,4 +377,8 @@ choose appropriate encryption scheme.</value>
 Choose appropriate encryption scheme.</value>
     <comment>translation pending</comment>
   </data>
+  <data name="GALChoose" xml:space="preserve">
+    <value>Choose title or enter 32-bit hex key</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

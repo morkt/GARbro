@@ -72,6 +72,7 @@
     </Compile>
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="LiveMaker\ArcVF.cs" />
     <Compile Include="ArcZIP.cs" />
     <Compile Include="AudioVOC.cs" />
     <Compile Include="AZSys\WidgetAZ.xaml.cs">
@@ -103,6 +104,10 @@
     <Compile Include="ImageLZ.cs" />
     <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
     <Compile Include="Liar\ImageLIM.cs" />
+    <Compile Include="LiveMaker\ImageGAL.cs" />
+    <Compile Include="LiveMaker\WidgetGAL.xaml.cs">
+      <DependentUpon>WidgetGAL.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NitroPlus\ArcPAK.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
@@ -546,6 +551,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FC01\WidgetMCG.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LiveMaker\WidgetGAL.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
