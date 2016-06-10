@@ -223,7 +223,6 @@ namespace GameRes.Formats.Softpal
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            stream.Position = 0x20;
             using (var reader = new PgdReader (stream, (PgdGeMetaData)info))
             {
                 var pixels = reader.UnpackGE();
@@ -237,15 +236,110 @@ namespace GameRes.Formats.Softpal
         }
     }
 
+    internal class PgdIncMetaData : ImageMetaData
+    {
+        public string   BaseName;
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class Pgd3Format : ImageFormat
+    {
+        public override string         Tag { get { return "PGD3"; } }
+        public override string Description { get { return "Softpal incremental image format"; } }
+        public override uint     Signature { get { return 0x33444750; } } // 'PGD3'
+
+        public Pgd3Format ()
+        {
+            Extensions = new string[] { "pgd" };
+            Signatures = new uint[] { 0x33444750, 0x32444750 }; // 'PGD3', 'PGD2'
+        }
+
+        public override ImageMetaData ReadMetaData (Stream stream)
+        {
+            var header = new byte[0x30];
+            if (header.Length != stream.Read (header, 0, header.Length))
+                return null;
+            string base_name = Binary.GetCString (header, 0xE, 0x22);
+            if (string.IsNullOrEmpty (base_name))
+                return null;
+            return new PgdIncMetaData
+            {
+                OffsetX = LittleEndian.ToUInt16 (header, 4),
+                OffsetY = LittleEndian.ToUInt16 (header, 6),
+                Width   = LittleEndian.ToUInt16 (header, 8),
+                Height  = LittleEndian.ToUInt16 (header, 0xA),
+                BPP     = LittleEndian.ToUInt16 (header, 0xC),
+                BaseName = base_name,
+            };
+        }
+
+        static readonly Lazy<ImageFormat> PalFormat = new Lazy<ImageFormat> (() => FindByTag ("PGD/GE"));
+
+        public override ImageData Read (Stream stream, ImageMetaData info)
+        {
+            var meta = (PgdIncMetaData)info;
+            string dir_name = VFS.GetDirectoryName (meta.FileName);
+            string name = VFS.CombinePath (dir_name, meta.BaseName);
+            PgdGeMetaData base_info;
+            byte[] image, overlay;
+            PixelFormat format;
+            using (var base_file = VFS.OpenSeekableStream (name))
+            {
+                base_info = PalFormat.Value.ReadMetaData (base_file) as PgdGeMetaData;
+                if (null == base_info)
+                    throw new InvalidFormatException ("Invalid baseline image format");
+                if (meta.OffsetX + meta.Width > base_info.Width ||
+                    meta.OffsetY + meta.Height > base_info.Height)
+                    throw new InvalidFormatException ("Incompatible baseline image dimensions");
+                base_info.FileName = name;
+                using (var reader = new PgdReader (base_file, base_info))
+                {
+                    image = reader.UnpackGE();
+                    format = reader.Format;
+                }
+            }
+            using (var reader = new PgdReader (stream, meta))
+                overlay = reader.UnpackOverlay();
+
+            int overlay_bpp = meta.BPP / 8;
+            int base_bpp = format.BitsPerPixel / 8;
+            int dst = (meta.OffsetY * (int)base_info.Width + meta.OffsetX) * base_bpp;
+            int gap = (int)(base_info.Width - meta.Width) * base_bpp;
+            int src = 0;
+            bool apply_alpha = overlay_bpp == 4 && base_bpp == 4;
+            for (uint y = 0; y < meta.Height; ++y)
+            {
+                for (uint x = 0; x < meta.Width; ++x)
+                {
+                    image[dst  ] ^= overlay[src  ];
+                    image[dst+1] ^= overlay[src+1];
+                    image[dst+2] ^= overlay[src+2];
+                    if (apply_alpha)
+                        image[dst+3] ^= overlay[src+3];
+                    dst += base_bpp;
+                    src += overlay_bpp;
+                }
+                dst += gap;
+            }
+            base_info.FileName = meta.FileName;
+            return ImageData.Create (base_info, format, null, image);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new NotImplementedException ("Pgd3Format.Write not implemented");
+        }
+    }
+
     internal sealed class PgdReader : IDisposable
     {
         BinaryReader        m_input;
         byte[]              m_output;
         int                 m_width;
         int                 m_height;
+        int                 m_bpp;
         int                 m_method;
 
-        public byte[]        Data { get { return m_output; } }
         public PixelFormat Format { get; private set; }
 
         public PgdReader (Stream input, int position)
@@ -264,6 +358,13 @@ namespace GameRes.Formats.Softpal
             m_method = info.Method;
         }
 
+        public PgdReader (Stream input, PgdIncMetaData info) : this (input, 0x30)
+        {
+            m_width = (int)info.Width;
+            m_height = (int)info.Height;
+            m_bpp = info.BPP;
+        }
+
         public byte[] UnpackGE ()
         {
             UnpackGePre();
@@ -274,6 +375,12 @@ namespace GameRes.Formats.Softpal
             case 3: return PostProcess3 (m_output);
             default: throw new NotSupportedException ("Not supported PGD compression");
             }
+        }
+
+        public byte[] UnpackOverlay ()
+        {
+            UnpackGePre();
+            return PostProcessPal (m_output, 0, m_bpp / 8);
         }
 
         public byte[] Unpack00 ()
@@ -329,14 +436,12 @@ namespace GameRes.Formats.Softpal
                 if (0 != (ctl & 1))
                 {
                     int offset = m_input.ReadUInt16();
-                    if (0 != (offset & 8))
+                    count = offset & 7;
+                    if (0 == (offset & 8))
                     {
-                        count = (offset & 7) + 4;
+                        count = count << 8 | m_input.ReadByte();
                     }
-                    else
-                    {
-                        count = ((offset & 7) << 8 | m_input.ReadByte()) + 4;
-                    }
+                    count += 4;
                     offset >>= 4;
                     Binary.CopyOverlapped (m_output, dst - offset, dst, count);
                 }
@@ -429,17 +534,21 @@ namespace GameRes.Formats.Softpal
                 Format = PixelFormats.Bgr24;
             else
                 throw new InvalidFormatException();
-            int pixel_size = bpp / 8;
-            int width  = LittleEndian.ToUInt16 (input, 4);
-            int height = LittleEndian.ToUInt16 (input, 6);
-            int stride = width * pixel_size;
-            var output = new byte[height * stride];
-            int ctl = 8;
-            int src = ctl + height;
+            m_width  = LittleEndian.ToUInt16 (input, 4);
+            m_height = LittleEndian.ToUInt16 (input, 6);
+            return PostProcessPal (input, 8, bpp / 8);
+        }
+
+        byte[] PostProcessPal (byte[] input, int src, int pixel_size)
+        {
+            int stride = m_width * pixel_size;
+            var output = new byte[m_height * stride];
+            int ctl = src;
+            src += m_height;
             int dst = 0;
-            for (int row = 0; row < height; ++row)
+            for (int row = 0; row < m_height; ++row)
             {
-                int c = input[ctl++];
+                byte c = input[ctl++];
                 if (0 != (c & 1))
                 {
                     int prev = dst;
