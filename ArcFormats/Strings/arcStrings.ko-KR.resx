@@ -373,7 +373,6 @@
 적절한 암호체계를 선택하세요.</value>
   </data>
   <data name="GALChoose" xml:space="preserve">
-    <value>Choose title or enter 32-bit hex key</value>
-    <comment>translation pending</comment>
+    <value>제목을 선택하거나 암호값 입력하기</value>
   </data>
 </root>

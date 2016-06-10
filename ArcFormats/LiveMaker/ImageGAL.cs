@@ -57,7 +57,7 @@ namespace GameRes.Formats.LiveMaker
     [Serializable]
     public class GalScheme : ResourceScheme
     {
-        public Dictionary<string, uint> KnownKeys;
+        public Dictionary<string, string> KnownKeys;
     }
 
     [Export(typeof(ImageFormat))]
@@ -67,7 +67,7 @@ namespace GameRes.Formats.LiveMaker
         public override string Description { get { return "LiveMaker image format"; } }
         public override uint     Signature { get { return 0x656C6147; } } // 'Gale'
 
-        public static Dictionary<string, uint> KnownKeys = new Dictionary<string, uint>();
+        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
 
         public override ResourceScheme Scheme
         {
@@ -145,7 +145,7 @@ namespace GameRes.Formats.LiveMaker
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new GalOptions { Key = Settings.Default.GALKey };
+            return new GalOptions { Key = KeyFromString (Settings.Default.GALKey) };
         }
 
         public override object GetAccessWidget ()
@@ -159,6 +159,13 @@ namespace GameRes.Formats.LiveMaker
                 return 0;
             var options = Query<GalOptions> (arcStrings.ArcImageEncrypted);
             return options.Key;
+        }
+
+        public static uint KeyFromString (string key)
+        {
+            if (string.IsNullOrWhiteSpace (key) || key.Length < 4)
+                return 0;
+            return (uint)(key[0] | key[1] << 8 | key[2] << 16 | key[3] << 24);
         }
     }
 

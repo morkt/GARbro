@@ -159,7 +159,7 @@
     <value>Ключи шифрования</value>
   </data>
   <data name="GALChoose" xml:space="preserve">
-    <value>Выберите наименование или введите 32-битный ключ</value>
+    <value>Выберите наименование или введите ключ</value>
   </data>
   <data name="INTChooseExe" xml:space="preserve">
     <value>Выберите исполняемый файл</value>

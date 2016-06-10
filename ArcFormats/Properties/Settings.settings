@@ -134,8 +134,8 @@
     <Setting Name="MEDScriptScheme" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="GALKey" Type="System.UInt32" Scope="User">
-      <Value Profile="(Default)">0</Value>
+    <Setting Name="GALKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
     </Setting>
   </Settings>
 </SettingsFile>

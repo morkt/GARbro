@@ -378,7 +378,6 @@ Choose appropriate encryption scheme.</value>
     <comment>translation pending</comment>
   </data>
   <data name="GALChoose" xml:space="preserve">
-    <value>Choose title or enter 32-bit hex key</value>
-    <comment>translation pending</comment>
+    <value>请选择游戏名称或输入密钥</value>
   </data>
 </root>

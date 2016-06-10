@@ -189,7 +189,7 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Choose title or enter 32-bit hex key.
+        ///   Looks up a localized string similar to Choose title or enter a key.
         /// </summary>
         public static string GALChoose {
             get {

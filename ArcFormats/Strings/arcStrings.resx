@@ -376,6 +376,6 @@ choose appropriate encryption scheme.</value>
 Choose appropriate encryption scheme.</value>
   </data>
   <data name="GALChoose" xml:space="preserve">
-    <value>Choose title or enter 32-bit hex key</value>
+    <value>Choose title or enter a key</value>
   </data>
 </root>
