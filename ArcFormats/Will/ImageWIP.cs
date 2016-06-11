@@ -70,8 +70,6 @@ namespace GameRes.Formats.Will
                     Trace.WriteLine ("unsupported bpp", "WipFormat");
                     return null;
                 }
-                if (frames > 1)
-                    Trace.WriteLine ("Extra frames ignored", "WipFormat");
                 return new WipMetaData
                 {
                     Width   = width,
@@ -93,6 +91,8 @@ namespace GameRes.Formats.Will
         public override ImageData Read (Stream file, ImageMetaData info)
         {
             var meta = (WipMetaData)info;
+            if (meta.FrameCount > 1)
+                Trace.WriteLine ("Extra frames ignored", info.FileName);
             file.Position = 8 + 24 * meta.FrameCount;
             Color[] palette = null;
             if (8 == meta.BPP)
@@ -114,11 +114,12 @@ namespace GameRes.Formats.Will
                     byte[] raw = reader.Data;
                     int size = (int)meta.Width * (int)meta.Height;
                     byte[] pixels = new byte[size*3];
+                    int dst = 0;
                     for (int i = 0; i < size; ++i)
                     {
-                        pixels[i*3]   = raw[i];
-                        pixels[i*3+1] = raw[i+size];
-                        pixels[i*3+2] = raw[i+size*2];
+                        pixels[dst++] = raw[i];
+                        pixels[dst++] = raw[i+size];
+                        pixels[dst++] = raw[i+size*2];
                     }
                     return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
                 }
