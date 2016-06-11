@@ -1,6 +1,6 @@
 //! \file       ImageSYG.cs
 //! \date       Sun Jun 05 19:14:11 2016
-//! \brief      West Vision image format.
+//! \brief      Risa game platform system image format.
 //
 // Copyright (C) 2016 by morkt
 //
@@ -39,7 +39,7 @@ namespace GameRes.Formats.WestVision
     public class SygFormat : ImageFormat
     {
         public override string         Tag { get { return "SYG"; } }
-        public override string Description { get { return "West Vision image format"; } }
+        public override string Description { get { return "Risa game platform system image"; } }
         public override uint     Signature { get { return 0x47595324; } } // '$SYG'
 
         public override ImageMetaData ReadMetaData (Stream stream)

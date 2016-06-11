@@ -323,7 +323,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="WebP\Lossless.cs" />
-    <Compile Include="WestVision\ImageSYG.cs" />
+    <Compile Include="Risa\ImageSYG.cs" />
     <Compile Include="Will\ArcPNA.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
     <Compile Include="Xuse\ArcBIN.cs" />
