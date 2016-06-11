@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Compression;
 using GameRes.Utility;
 
@@ -54,7 +55,7 @@ namespace GameRes.Formats.Lune
                 DecryptIndex (index_buffer, count);
             var reader = new IndexReader (index_buffer, count);
             var dir = reader.Scan();
-            if (0 == dir.Count)
+            if (0 == dir.Count || dir.Any (e => !e.CheckPlacement (file.MaxOffset)))
                 return null;
             return new ArcFile (file, this, dir);
         }
