@@ -549,5 +549,17 @@ namespace GameRes.Formats.Properties {
                 this["MEDScriptScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string GALKey {
+            get {
+                return ((string)(this["GALKey"]));
+            }
+            set {
+                this["GALKey"] = value;
+            }
+        }
     }
 }

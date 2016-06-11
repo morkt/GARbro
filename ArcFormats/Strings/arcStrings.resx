@@ -375,4 +375,7 @@ choose appropriate encryption scheme.</value>
     <value>Archive content could be encrypted.
 Choose appropriate encryption scheme.</value>
   </data>
+  <data name="GALChoose" xml:space="preserve">
+    <value>Choose title or enter a key</value>
+  </data>
 </root>

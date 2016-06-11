@@ -117,6 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="MsgFileIsEmpty" xml:space="preserve">
+    <value>File is empty</value>
+    <comment>translation pending</comment>
+  </data>
   <data name="MsgFileTooLarge" xml:space="preserve">
     <value>文件尺寸太大。</value>
   </data>

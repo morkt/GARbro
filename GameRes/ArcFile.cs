@@ -161,9 +161,22 @@ namespace GameRes
                 if (stream.CanSeek)
                     size = (uint)stream.Length;
                 else if (null != packed_entry && packed_entry.IsPacked)
+                {
                     size = packed_entry.UnpackedSize;
+                    if (0 == size)
+                    {
+                        using (var copy = new MemoryStream())
+                        {
+                            stream.CopyTo (copy);
+                            copy.Position = 0;
+                            return new ArcView (copy, entry.Name, (uint)copy.Length);
+                        }
+                    }
+                }
                 else
                     size = entry.Size;
+                if (0 == size)
+                    throw new FileSizeException (Strings.garStrings.MsgFileIsEmpty);
                 return new ArcView (stream, entry.Name, size);
             }
         }

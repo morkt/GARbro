@@ -189,6 +189,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose title or enter a key.
+        /// </summary>
+        public static string GALChoose {
+            get {
+                return ResourceManager.GetString("GALChoose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to âge proprietary image format.
         /// </summary>
         public static string GRPDescription {
