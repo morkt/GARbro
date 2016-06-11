@@ -118,8 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="MsgFileIsEmpty" xml:space="preserve">
-    <value>File is empty</value>
-    <comment>translation pending</comment>
+    <value>파일이 비어있습니다</value>
   </data>
   <data name="MsgFileTooLarge" xml:space="preserve">
     <value>파일이 너무 큽니다</value>
