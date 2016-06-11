@@ -2,7 +2,7 @@
 //! \date       Sat Aug 01 12:28:22 2015
 //! \brief      Black Cyc audio file.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -60,6 +60,10 @@ namespace GameRes.Formats.BlackCyc
                 format = Wav;
                 offset = 0x40;
             }
+            else if (1 == header.PackType)
+            {
+                return Unpack (file);
+            }
             else if (2 == header.PackType)
             {
                 format = OggAudio.Instance;
@@ -79,6 +83,63 @@ namespace GameRes.Formats.BlackCyc
         public override void Write (SoundInput source, Stream output)
         {
             throw new System.NotImplementedException ("EdimFormat.Write not implemenented");
+        }
+
+        SoundInput Unpack (Stream input)
+        {
+            input.Position = 0x40;
+            var header = new byte[0x24];
+            if (0x14 != input.Read (header, 0, 0x14))
+                return null;
+            int fmt_size = LittleEndian.ToInt32 (header, 0x10);
+            if (fmt_size + input.Position > input.Length)
+                return null;
+            int header_size = fmt_size + 0x14;
+            if (header_size > header.Length)
+                Array.Resize (ref header, header_size);
+            if (fmt_size != input.Read (header, 0x14, fmt_size))
+                return null;
+            int riff_size = LittleEndian.ToInt32 (header, 4) + 8;
+            int data_size = riff_size - header_size;
+            var pcm = new MemoryStream (riff_size);
+            try
+            {
+                pcm.Write (header, 0, header_size);
+                using (var output = new BinaryWriter (pcm, Encoding.Default, true))
+                using (var bits = new LsbBitStream (input, true))
+                {
+                    int written = 0;
+                    short sample = 0;
+                    while (written < data_size)
+                    {
+                        int c = bits.GetBits (4);
+                        if (-1 == c)
+                            c = 0;
+                        int code = 0;
+                        if (c > 0)
+                            code = bits.GetBits (c) << (32 - c);
+                        code >>= 32 - c;
+                        int sign = code >> 31;
+                        code ^= 0x4000 >> (15 - c);
+                        code -= sign;
+                        sample += (short)code;
+                        output.Write (sample);
+                        written += 2;
+                    }
+                }
+                pcm.Position = 0;
+                var sound = Wav.TryOpen (pcm);
+                if (sound != null)
+                    input.Dispose();
+                else
+                    pcm.Dispose();
+                return sound;
+            }
+            catch
+            {
+                pcm.Dispose();
+                throw;
+            }
         }
     }
 }
