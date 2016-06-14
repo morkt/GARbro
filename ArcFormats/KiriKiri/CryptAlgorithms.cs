@@ -581,11 +581,13 @@ namespace GameRes.Formats.KiriKiri
     {
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
-            return (byte)(value ^ (entry.Hash >> 12));
+            return offset < 5 ? value : (byte)(value ^ (entry.Hash >> 12));
         }
 
         public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
+            if (offset < 5)
+                return;
             byte key = (byte)(entry.Hash >> 12);
             for (int i = 0; i < count; ++i)
             {
@@ -634,6 +636,29 @@ namespace GameRes.Formats.KiriKiri
             else
                 key = uint.MaxValue;
             return Math.Min (entry.Size, 0x100u);
+        }
+    }
+
+    [Serializable]
+    public class SourireCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ entry.Hash ^ 0xCD);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)(entry.Hash ^ 0xCD);
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
         }
     }
 }
