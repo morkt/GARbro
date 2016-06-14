@@ -48,6 +48,8 @@ namespace GARbro.GUI
 
         void ApplicationStartup (object sender, StartupEventArgs e)
         {
+            UpgradeSettings();
+
             string exe_dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
 #if DEBUG
             Trace.Listeners.Add (new TextWriterTraceListener (Path.Combine (exe_dir, "trace.log")));
@@ -86,13 +88,34 @@ namespace GARbro.GUI
             }
             catch (Exception X)
             {
-                Trace.WriteLine (X.Message, "scheme deserialization failed");
+                Trace.WriteLine (string.Format ("Scheme deserialization failed: {0}", X.Message), "[GARbro.GUI.App]");
             }
         }
 
         void ApplicationExit (object sender, ExitEventArgs e)
         {
             Settings.Default.Save();
+        }
+
+        void UpgradeSettings ()
+        {
+            if (Settings.Default.UpgradeRequired)
+            {
+                try
+                {
+                    Settings.Default.Upgrade();
+                    Settings.Default.UpgradeRequired = false;
+                    Settings.Default.Save();
+                }
+                catch (System.Exception X)
+                {
+                    Trace.WriteLine (string.Format ("Settings upgrade failed: {0}", X.Message), "[GARbro.GUI.App]");
+                }
+             }
+ 
+            // do not restore in minimized state
+            if (Settings.Default.winState == System.Windows.WindowState.Minimized)
+                Settings.Default.winState = System.Windows.WindowState.Normal;
         }
 
         void DeserializeScheme (Stream file)

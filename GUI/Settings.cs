@@ -15,21 +15,7 @@
             //
             // this.SettingsSaving += this.SettingsSavingEventHandler;
             //
-            this.SettingsLoaded += OnSettingsLoadedHandler;
-        }
-
-        void OnSettingsLoadedHandler (object sender, System.Configuration.SettingsLoadedEventArgs e)
-        {
-            if (Settings.Default.UpgradeRequired)
-            {
-                Settings.Default.Upgrade();
-                Settings.Default.UpgradeRequired = false;
-                Settings.Default.Save();
-             }
- 
-            // do not restore in minimized state
-            if (Settings.Default.winState == System.Windows.WindowState.Minimized)
-                Settings.Default.winState = System.Windows.WindowState.Normal;
+            // this.SettingsLoaded += OnSettingsLoadedHandler;
         }
 
         private void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e) {
