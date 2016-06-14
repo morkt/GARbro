@@ -153,13 +153,13 @@ namespace GameRes.Formats.LiveMaker
                 dir.Add (FormatCatalog.Instance.Create<PackedEntry> (name));
             }
             rnd.Reset();
-            uint offset = file.View.ReadUInt32 (index_offset) ^ rnd.GetRand32();
+            long offset = file.View.ReadInt64 (index_offset) ^ (int)rnd.GetRand32();
             foreach (var entry in dir)
             {
                 index_offset += 8;
-                uint next_offset = file.View.ReadUInt32 (index_offset) ^ rnd.GetRand32();
+                long next_offset = file.View.ReadInt64 (index_offset) ^ (int)rnd.GetRand32();
                 entry.Offset = offset;
-                entry.Size = next_offset - offset;
+                entry.Size = (uint)(next_offset - offset);
                 offset = next_offset;
             }
             index_offset += 8;
