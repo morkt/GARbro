@@ -70,6 +70,7 @@ namespace GameRes.Formats.EmonEngine
                 entry.Size          = LittleEndian.ToUInt32 (index, current_offset+0x4C);
                 entry.UnpackedSize  = LittleEndian.ToUInt32 (index, current_offset+0x50);
                 entry.Offset        = LittleEndian.ToUInt32 (index, current_offset+0x54);
+                entry.IsPacked      = entry.UnpackedSize != entry.Size;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 if (3 == entry.SubType)
