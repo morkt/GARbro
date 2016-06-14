@@ -587,7 +587,12 @@ namespace GameRes.Formats.KiriKiri
         public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
             if (offset < 5)
-                return;
+            {
+                int skip = Math.Min (5 - (int)offset, count);
+                offset += skip;
+                pos += skip;
+                count -= skip;
+            }
             byte key = (byte)(entry.Hash >> 12);
             for (int i = 0; i < count; ++i)
             {
