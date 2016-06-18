@@ -35,6 +35,7 @@ using GameRes;
 using GARbro.GUI.Strings;
 using GARbro.GUI.Properties;
 using Ookii.Dialogs.Wpf;
+using System.Runtime.InteropServices;
 
 namespace GARbro.GUI
 {
@@ -89,10 +90,20 @@ namespace GARbro.GUI
             }
         }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        static extern bool GetVolumeInformation (string rootName, string volumeName, uint volumeNameSize,
+                                                 IntPtr serialNumber, IntPtr maxComponentLength, 
+                                                 out uint flags, string fs, uint fs_size);
+
         bool IsWritableDirectory (string path)
         {
-             var info = new DirectoryInfo (path);
-             return !info.Attributes.HasFlag (FileAttributes.ReadOnly);
+            var root = Path.GetPathRoot (path);
+            if (null == root)
+                return false;
+            uint flags;
+            if (!GetVolumeInformation (root, null, 0, IntPtr.Zero, IntPtr.Zero, out flags, null, 0))
+                return false;
+            return (flags & 0x00080000) == 0; // FILE_READ_ONLY_VOLUME
         }
     }
 
@@ -209,16 +220,18 @@ namespace GARbro.GUI
         void ConvertImage (string filename)
         {
             string source_ext = Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant();
-            if (m_image_format.Extensions.Any (ext => ext == source_ext))
-                return;
             string target_name = Path.GetFileName (filename);
             string target_ext = m_image_format.Extensions.FirstOrDefault();
             target_name = Path.ChangeExtension (target_name, target_ext);
             using (var file = File.OpenRead (filename))
             {
-                var image = ImageFormat.Read (filename, file);
-                if (null == image)
+                var src_format = ImageFormat.FindFormat (file, filename);
+                if (null == src_format)
                     return;
+                if (src_format.Item1 == m_image_format && m_image_format.Extensions.Any (ext => ext == source_ext))
+                    return;
+                file.Position = 0;
+                var image = src_format.Item1.Read (file, src_format.Item2);
                 try
                 {
                     using (var output = CreateNewFile (target_name))
