@@ -72,6 +72,7 @@ namespace GameRes
             try
             {
                 uint signature = file.View.ReadUInt32 (0);
+                var tried = new HashSet<ArchiveFormat>();
                 for (;;)
                 {
                     var range = FormatCatalog.Instance.LookupSignature<ArchiveFormat> (signature);
@@ -80,6 +81,8 @@ namespace GameRes
                         range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
                     foreach (var impl in range)
                     {
+                        if (!tried.Add (impl))
+                            continue;
                         try
                         {
                             var arc = impl.TryOpen (file);
