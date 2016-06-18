@@ -58,7 +58,7 @@ namespace GameRes
         {
             var encoder = new TiffBitmapEncoder();
             encoder.Compression = TiffCompressOption.Zip;
-            encoder.Frames.Add (BitmapFrame.Create (image.Bitmap));
+            encoder.Frames.Add (BitmapFrame.Create (image.Bitmap, null, null, null));
             encoder.Save (file);
         }
 

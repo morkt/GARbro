@@ -52,7 +52,7 @@ namespace GameRes
         public override void Write (Stream file, ImageData image)
         {
             var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add (BitmapFrame.Create (image.Bitmap));
+            encoder.Frames.Add (BitmapFrame.Create (image.Bitmap, null, null, null));
             if (0 == image.OffsetX && 0 == image.OffsetY)
             {
                 encoder.Save (file);

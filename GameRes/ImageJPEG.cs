@@ -61,7 +61,7 @@ namespace GameRes
         {
             var encoder = new JpegBitmapEncoder();
             encoder.QualityLevel = Quality;
-            encoder.Frames.Add (BitmapFrame.Create (image.Bitmap));
+            encoder.Frames.Add (BitmapFrame.Create (image.Bitmap, null, null, null));
             encoder.Save (file);
         }
 
