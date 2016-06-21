@@ -72,6 +72,7 @@
     </Compile>
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="Banana\ImageGEC.cs" />
     <Compile Include="Bruns\AudioUM3.cs" />
     <Compile Include="Bruns\ImageEENC.cs" />
     <Compile Include="LiveMaker\ArcVF.cs" />

@@ -43,7 +43,7 @@ namespace GameRes.Formats.Banana // namespace is arbitrary, actual format source
 
         public PkOpener ()
         {
-            Extensions = new string[] { "pk" };
+            Extensions = new string[] { "pk", "dat" };
         }
 
         public override ArcFile TryOpen (ArcView file)
