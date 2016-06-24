@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Aoi
@@ -149,6 +150,11 @@ namespace GameRes.Formats.Aoi
         public override bool  IsHierarchic { get { return false; } }
         public override bool     CanCreate { get { return false; } }
 
+        public AoiMyOpener ()
+        {
+            Extensions = new string[] { "box" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "Y01\0"))
@@ -204,6 +210,51 @@ namespace GameRes.Formats.Aoi
                 + ((offset - 0x5CC8E9D7u + (v7 << (31 - v8)) + (v7 >> (v8 + 1))) >> (int)(((offset >> 24) & 0xF) + 1));
             uint key = (offset - 0x5CC8E9D7 + (v9 << (int)(31 - (offset >> 28))) + (v9 >> (int)((offset >> 28) + 1))) >> (int)(offset & 0xF);
             return (byte)key;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class AoiMyUnicodeOpener : AoiMyOpener
+    {
+        public override string         Tag { get { return "AOIMY/UNICODE"; } }
+        public override string Description { get { return "Aoi engine script archive"; } }
+        public override uint     Signature { get { return 0x004F0041; } } // 'A O '
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            var name_buffer = new byte[0x20];
+            file.View.Read (0, name_buffer, 0, 0x16);
+            if ("AOIMY01\0" != Encoding.Unicode.GetString (name_buffer, 0, 0x10))
+                return null;
+            int count = Binary.BigEndian (file.View.ReadInt32 (0x10));
+            if (!IsSaneCount (count))
+                return null;
+            int index_offset = 0x18;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                if (0x20 != file.View.Read (index_offset, name_buffer, 0, 0x20))
+                    return null;
+                int n;
+                for (n = 0; n < name_buffer.Length; n += 2)
+                    if (0 == name_buffer[n] && 0 == name_buffer[n+1])
+                        break;
+                if (0 == n)
+                    return null;
+                var entry = new Entry {
+                    Name = Encoding.Unicode.GetString (name_buffer, 0, n),
+                    Type = "script",
+                    Offset = Binary.BigEndian (file.View.ReadUInt32 (index_offset+0x20)),
+                    Size = Binary.BigEndian (file.View.ReadUInt32 (index_offset+0x24)),
+                };
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 0x28;
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 }

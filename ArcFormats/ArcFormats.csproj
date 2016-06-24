@@ -71,6 +71,7 @@
       <DependentUpon>WidgetAGS.xaml</DependentUpon>
     </Compile>
     <Compile Include="Ankh\ArcGRP.cs" />
+    <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
     <Compile Include="Cmvs\ArcPBZ.cs" />
