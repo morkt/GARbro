@@ -2,7 +2,7 @@
 //! \date       Wed Jul 15 00:59:44 2015
 //! \brief      U-Me Soft image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -63,11 +63,7 @@ namespace GameRes.Formats.UMeSoft
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as GrxMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GrxFormat.Read should be supplied with GrxMetaData", "info");
-
-            var reader = new Reader (stream, meta);
+            var reader = new Reader (stream, (GrxMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, null, reader.Data, reader.Stride);
         }
@@ -83,7 +79,7 @@ namespace GameRes.Formats.UMeSoft
             byte[]      m_output;
             GrxMetaData m_info;
             int         m_pixel_size;
-            uint        m_aligned_width;
+            int         m_aligned_width;
 
             public byte[]        Data { get { return m_output; } }
             public PixelFormat Format { get; private set; }
@@ -93,7 +89,6 @@ namespace GameRes.Formats.UMeSoft
             {
                 m_input = input;
                 m_info = info;
-                m_input.Seek (0x10, SeekOrigin.Current);
                 m_pixel_size = m_info.BPP / 8;
                 switch (m_info.BPP)
                 {
@@ -113,35 +108,69 @@ namespace GameRes.Formats.UMeSoft
                 default:
                     throw new InvalidFormatException();
                 }
-                m_aligned_width = (m_info.Width + 3u) & ~3u;
-                Stride = (int)(m_aligned_width * m_pixel_size);
+                m_aligned_width = ((int)m_info.Width + 3) & ~3;
+                Stride = m_aligned_width * m_pixel_size;
                 m_output = new byte[Stride * (int)info.Height];
             }
 
             public void Unpack ()
             {
+                m_input.Position = 0x10;
                 if (!m_info.IsPacked)
                     m_input.Read (m_output, 0, m_output.Length);
                 else
                     UnpackColorData (m_output, m_info.BPP/8, m_pixel_size);
 
-                if (m_info.BPP >= 24 && m_info.HasAlpha && m_info.AlphaOffset > 0)
+                if (m_info.HasAlpha && m_info.AlphaOffset > 0)
                 {
-                    Format = PixelFormats.Bgra32;
-                    m_input.Position = m_info.AlphaOffset;
-                    var alpha = new byte[m_aligned_width * m_info.Height];
+                    m_input.Position = 0x10 + m_info.AlphaOffset;
+                    var alpha = new byte[m_aligned_width * (int)m_info.Height];
                     UnpackColorData (alpha, 1, 1);
-                    int dst = 3;
-                    int src = 0;
-                    for (uint y = 0; y < m_info.Height; ++y)
+                    if (m_info.BPP >= 24)
                     {
-                        for (uint x = 0; x < m_aligned_width; ++x)
+                        int dst = 3;
+                        int src = 0;
+                        for (uint y = 0; y < m_info.Height; ++y)
                         {
-                            m_output[dst] = alpha[src++];
-                            dst += 4;
+                            for (int x = 0; x < m_aligned_width; ++x)
+                            {
+                                m_output[dst] = alpha[src++];
+                                dst += 4;
+                            }
                         }
+                        Format = PixelFormats.Bgra32;
                     }
+                    else if (16 == m_info.BPP)
+                        ApplyAlpha16bpp (alpha);
                 }
+            }
+
+            void ApplyAlpha16bpp (byte[] alpha)
+            {
+                int dst_stride = m_aligned_width * 4;
+                var pixels = new byte[dst_stride * (int)m_info.Height];
+                int src = 0;
+                int dst = 0;
+                int gap = dst_stride - (int)m_info.Width * 4;
+                int a = 0;
+                for (uint y = 0; y < m_info.Height; ++y)
+                {
+                    for (int x = 0; x < m_info.Width; ++x)
+                    {
+                        int pixel = LittleEndian.ToUInt16 (m_output, src + x*2);
+                        pixels[dst++] = (byte)((pixel & 0x001F) * 0xFF / 0x001F);
+                        pixels[dst++] = (byte)((pixel & 0x07E0) * 0xFF / 0x07E0);
+                        pixels[dst++] = (byte)((pixel & 0xF800) * 0xFF / 0xF800);
+                        pixels[dst++] = alpha[a+x];
+                    }
+                    dst += gap;
+                    src += Stride;
+                    a += m_aligned_width;
+                }
+                m_pixel_size = 4;
+                Stride = dst_stride;
+                m_output = pixels;
+                Format = PixelFormats.Bgra32;
             }
 
             static readonly int[,] OffsetTable = new int[2,16] {
@@ -287,10 +316,7 @@ namespace GameRes.Formats.UMeSoft
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as SgxMetaData;
-            if (null == meta)
-                throw new ArgumentException ("SgxFormat.Read should be supplied with SgxMetaData", "info");
-
+            var meta = (SgxMetaData)info;
             stream.Position = meta.GrxOffset;
             return base.Read (stream, meta.GrxInfo);
         }
