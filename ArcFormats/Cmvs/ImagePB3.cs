@@ -133,6 +133,13 @@ namespace GameRes.Formats.Purple
             int height = (int)m_info.Height;
             m_output = new byte[m_stride * height];
 
+            int x_blocks = width >> 4;
+            if (0 != (width & 0xF))
+                ++x_blocks;
+            int y_blocks = height >> 4;
+            if (0 != (height & 0xF))
+                ++y_blocks;
+
             int plane_size = width * height;
             byte[] plane = new byte[plane_size];
 
@@ -156,13 +163,6 @@ namespace GameRes.Formats.Purple
                 for (int i = 0; i < 0x7DE; ++i)
                     m_lzss_frame[i] = 0;
                 LzssUnpack (bit_src, data_src, plane, channel_size);
-
-                int x_blocks = width >> 4;
-                if (0 != (width & 0xF))
-                    ++x_blocks;
-                int y_blocks = height >> 4;
-                if (0 != (height & 0xF))
-                    ++y_blocks;
 
                 if (0 == y_blocks || 0 == x_blocks)
                     continue;
