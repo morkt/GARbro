@@ -74,6 +74,7 @@
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
+    <Compile Include="BlackRainbow\ArcPAK.cs" />
     <Compile Include="Cmvs\ArcPBZ.cs" />
     <Compile Include="Cmvs\AudioMV.cs" />
     <Compile Include="Cmvs\ImagePSB.cs" />
