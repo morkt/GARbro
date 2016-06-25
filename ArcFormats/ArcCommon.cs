@@ -91,8 +91,6 @@ namespace GameRes.Formats
         {
             return null == m_res.Value ? "" : m_res.Value.Type;
         }
-
-        static readonly Lazy<AudioFormat> s_OggFormat = new Lazy<AudioFormat> (() => FormatCatalog.Instance.AudioFormats.FirstOrDefault (x => x.Tag == "OGG"));
     }
 
     public class HuffmanDecoder
