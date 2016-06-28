@@ -2,7 +2,7 @@
 //! \date       Sun May 31 21:17:54 2015
 //! \brief      IAF image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -53,10 +53,12 @@ namespace GameRes.Formats.Triangle
             if (12 != stream.Read (header, 0, 12))
                 return null;
             int data_offset;
-            int packed_size = LittleEndian.ToInt32 (header, 1);
-            int x, y, unpacked_size;
-            if (5+packed_size+0x14 == stream.Length)
+            int packed_size0 = LittleEndian.ToInt32 (header, 0);
+            int packed_size1 = LittleEndian.ToInt32 (header, 1);
+            int x, y, packed_size, unpacked_size;
+            if (5+packed_size1+0x14 == stream.Length)
             {
+                packed_size = packed_size1;
                 data_offset = 5;
                 stream.Seek (-0x14, SeekOrigin.End);
                 if (0x14 != stream.Read (header, 0, 0x14))
@@ -65,13 +67,24 @@ namespace GameRes.Formats.Triangle
                 y = LittleEndian.ToInt32 (header, 4);
                 unpacked_size = LittleEndian.ToInt32 (header, 0x10);
             }
+            else if (4+packed_size0+0xC == stream.Length)
+            {
+                packed_size = packed_size0;
+                data_offset = 4;
+                stream.Seek (-12, SeekOrigin.End);
+                if (12 != stream.Read (header, 0, 12))
+                    return null;
+                x = LittleEndian.ToInt32 (header, 0);
+                y = LittleEndian.ToInt32 (header, 4);
+                unpacked_size = LittleEndian.ToInt32 (header, 8);
+            }
             else
             {
+                packed_size = (int)stream.Length-12;
                 data_offset = 12;
                 x = LittleEndian.ToInt32 (header, 0);
                 y = LittleEndian.ToInt32 (header, 4);
                 unpacked_size = LittleEndian.ToInt32 (header, 8);
-                packed_size = (int)stream.Length-12;
             }
             if (Math.Abs (x) > 4096 || Math.Abs (y) > 4096)
                 return null;
@@ -171,10 +184,32 @@ namespace GameRes.Formats.Triangle
 
         static ImageData BitmapWithAlphaChannel (ImageMetaData info, byte[] bitmap, int alpha_offset)
         {
-            int src_pixel_size = info.BPP/8;
-            int src_stride = (int)info.Width*src_pixel_size;
+            int info_offset = alpha_offset+0x0E;
+            int palette_offset = info_offset + LittleEndian.ToInt32 (bitmap, info_offset);
             int src_pixels = LittleEndian.ToInt32 (bitmap, 0x0A);
             int src_alpha  = alpha_offset + LittleEndian.ToInt32 (bitmap, alpha_offset+0x0A);
+
+            int colors  = (src_alpha - palette_offset) / 4;
+            var alpha_map = new byte[0x100];
+            if (colors > 0)
+            {
+                for (int i = 0; i < colors; ++i)
+                {
+                    byte b = bitmap[palette_offset];
+                    byte g = bitmap[palette_offset+1];
+                    byte r = bitmap[palette_offset+2];
+                    alpha_map[i] = (byte)((b + g + r) / 3);
+                    palette_offset += 4;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 0x100; ++i)
+                    alpha_map[i] = (byte)i;
+            }
+
+            int src_pixel_size = info.BPP/8;
+            int src_stride = (int)info.Width*src_pixel_size;
             var pixels = new byte[info.Width * info.Height * 4];
             int dst = 0;
             for (int y = (int)info.Height-1; y >= 0; --y)
@@ -186,7 +221,7 @@ namespace GameRes.Formats.Triangle
                     pixels[dst++] = bitmap[src];
                     pixels[dst++] = bitmap[src+1];
                     pixels[dst++] = bitmap[src+2];
-                    pixels[dst++] = (byte)~bitmap[alpha++];
+                    pixels[dst++] = (byte)~alpha_map[bitmap[alpha++]];
                     src += src_pixel_size;
                 }
             }
