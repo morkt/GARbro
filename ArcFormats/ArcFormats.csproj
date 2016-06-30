@@ -73,6 +73,7 @@
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="Astronauts\ArcGXP.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
     <Compile Include="BlackRainbow\ArcPAK.cs" />
     <Compile Include="Cmvs\ArcPBZ.cs" />
