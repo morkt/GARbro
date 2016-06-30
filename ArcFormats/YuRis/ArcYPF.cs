@@ -183,7 +183,7 @@ namespace GameRes.Formats.YuRis
                 scheme = new YpfScheme {
                     SwapTable   = GuessSwapTable (version),
                     GuessKey    = true,
-                    ExtraHeaderSize = 0x1F4 == version || 0x1E1 == version ? 4u : 0u,
+                    ExtraHeaderSize = version >= 0x1D9 ? 4u : 0u,
                 };
             return scheme;
         }
@@ -354,7 +354,7 @@ namespace GameRes.Formats.YuRis
                 uint* header = (uint*)raw;
                 uint version = header[1];
                 int first_item, last_item;
-                if (version >= 0x22A || 0x1E1 == version || 0x1D9 == version)
+                if (version >= 0x1D9)
                 {
                     first_item = 3;
                     last_item = 7;
