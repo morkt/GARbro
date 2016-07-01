@@ -2,7 +2,7 @@
 //! \date       Mon Jul 13 03:20:13 2015
 //! \brief      F&C Co. MGR archive format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -63,15 +63,17 @@ namespace GameRes.Formats.FC01
             uint index_size = file.View.ReadUInt32 (8) - 0x10;
             if (index_size < 0x40 || index_size >= file.MaxOffset)
                 return null;
-            var index = new byte[index_size];
-            if (index.Length != file.View.Read (0x10, index, 0, index_size))
+            var index = file.View.ReadBytes (0x10, index_size);
+            if (index.Length != index_size)
                 return null;
             /*
             var key_src = KnownKey;
             if (key1index >= key_src.Item1.Length || key2index >= key_src.Item2.Length)
                 return null;
-            byte index_key = (byte)(key_src.Item1[key1index] + key_src.Item2[key2index]);
+            byte? key = (byte)(key_src.Item1[key1index] + key_src.Item2[key2index]);
             */
+            if (key2index >= 2)
+                return null;
             var key = GuessKey (file, index);
             if (null == key)
                 throw new UnknownEncryptionScheme();
@@ -83,13 +85,10 @@ namespace GameRes.Formats.FC01
             for (int i = 0; i < count; ++i)
             {
                 string name = Binary.GetCString (index, current_offset, 0x0E);
-                var entry = new MrgEntry
-                {
-                    Name = name,
-                    Type = FormatCatalog.Instance.GetTypeFromName (name),
-                    Offset = next_offset,
-                    Method = index[current_offset+0x12],
-                };
+                var entry = FormatCatalog.Instance.Create<MrgEntry> (name);
+                entry.Offset = next_offset;
+                entry.Method = index[current_offset+0x12];
+
                 next_offset = LittleEndian.ToUInt32 (index, current_offset+0x3C); 
                 entry.Size = next_offset - (uint)entry.Offset;
                 if (entry.Offset < index_size || !entry.CheckPlacement (file.MaxOffset))
@@ -112,8 +111,7 @@ namespace GameRes.Formats.FC01
             {
                 if (entry.Size < 0x108)
                     return arc.File.CreateStream (entry.Offset, entry.Size);
-                var data = new byte[entry.Size];
-                arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+                var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                 var reader = new MrgDecoder (data);
                 reader.Unpack();
                 input = new MemoryStream (reader.Data);
@@ -169,6 +167,132 @@ namespace GameRes.Formats.FC01
         }
     }
 
+    internal class Mrg2Entry : MrgEntry
+    {
+        public uint ArcKey;
+        public uint Key;
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Mrg2Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "MRG/2"; } }
+        public override string Description { get { return "Overture engine resource archive"; } }
+        public override uint     Signature { get { return 0x0047524D; } } // 'MRG'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public Mrg2Opener ()
+        {
+            Extensions = new string[] { "mrg" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int count = file.View.ReadInt32 (12);
+            if (!IsSaneCount (count))
+                return null;
+            int version = file.View.ReadUInt16 (6);
+            if (version < 2)
+                return null;
+            uint index_size = file.View.ReadUInt32 (8) - 0x10;
+            if (index_size < 0x40 || index_size >= file.MaxOffset)
+                return null;
+            var index = file.View.ReadBytes (0x10, index_size);
+            if (index.Length != index_size)
+                return null;
+
+            uint arc_checksum = GetNameChecksum (Path.GetFileName (file.Name));
+            Decrypt (index, 0, index.Length, arc_checksum, 0x285EE76F);
+            int current_offset = 0;
+            uint next_offset = LittleEndian.ToUInt32 (index, current_offset+0x4F);
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                string name = Binary.GetCString (index, current_offset, 0x40);
+                var entry = FormatCatalog.Instance.Create<Mrg2Entry> (name);
+                entry.Offset = next_offset;
+                next_offset = LittleEndian.ToUInt32 (index, current_offset+0xA6);
+                entry.Size = next_offset - (uint)entry.Offset;
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                entry.Method = LittleEndian.ToUInt16 (index, current_offset+0x45);
+                if (0 == entry.Method)
+                {
+                    entry.ArcKey = arc_checksum;
+                    entry.Key = GetNameChecksum (entry.Name);
+                }
+                entry.IsPacked = entry.Method != 0;
+                entry.UnpackedSize = LittleEndian.ToUInt32 (index, current_offset+0x41);
+                dir.Add (entry);
+                current_offset += 0x57;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var mrg_entry = entry as Mrg2Entry;
+            if (null == mrg_entry || mrg_entry.Method > 3)
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            Stream input;
+            if (0 == mrg_entry.Method)
+            {
+                var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+                Decrypt (data, 0, data.Length, mrg_entry.Key, mrg_entry.ArcKey);
+                input = new MemoryStream (data);
+            }
+            else if (mrg_entry.Method >= 2)
+            {
+                var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+                var reader = new MrgDecoder (data);
+                reader.Unpack();
+                input = new MemoryStream (reader.Data);
+            }
+            else
+                input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (1 == mrg_entry.Method || 3 == mrg_entry.Method)
+            {
+                using (input)
+                using (var reader = new MrgLzssReader (input, (int)input.Length, (int)mrg_entry.UnpackedSize))
+                {
+                    reader.Unpack();
+                    return new MemoryStream (reader.Data);
+                }
+            }
+            return input;
+        }
+
+        void Decrypt (byte[] data, int index, int length, uint checksum, uint key)
+        {
+            var table = new byte[0x100];
+            for (int i = 0; i < 0x100; ++i)
+            {
+                uint n = key + Binary.RotL (checksum, 16);
+                key = checksum;
+                checksum += n;
+                table[i] = (byte)checksum;
+            }
+            for (int i = 0; i < length; ++i)
+            {
+                data[index+i] ^= table[i & 0xFF];
+            }
+        }
+
+        uint GetNameChecksum (string name)
+        {
+            if (string.IsNullOrEmpty (name))
+                return 0;
+            uint checksum = char.ToUpper (name[0]);
+            for (int i = 0; i < name.Length; ++i)
+            {
+                if (name[i] != '.')
+                    checksum += char.ToUpper (name[i]) + (checksum << 6);
+            }
+            return checksum;
+        }
+    }
+
     /// <summary>
     /// LZSS decompression with slightly modified offset/count values encoding.
     /// </summary>
@@ -182,7 +306,7 @@ namespace GameRes.Formats.FC01
 
         public MrgLzssReader (Stream input, int input_length, int output_length)
         {
-            m_input = new BinaryReader (input, Encoding.ASCII, true);
+            m_input = new ArcView.Reader (input);
             m_output = new byte[output_length];
             m_size = input_length;
         }
