@@ -327,6 +327,8 @@
     <Compile Include="BlackCyc\ArcVPK.cs" />
     <Compile Include="Vitamin\ImageMFC.cs" />
     <Compile Include="Vitamin\ImageSBI.cs" />
+    <Compile Include="VnEngine\ArcAXR.cs" />
+    <Compile Include="VnEngine\ImageZAW.cs" />
     <Compile Include="WebP\Alpha.cs" />
     <Compile Include="WebP\Decoder.cs">
       <SubType>Code</SubType>
