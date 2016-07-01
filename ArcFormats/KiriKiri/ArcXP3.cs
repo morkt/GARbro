@@ -148,6 +148,7 @@ namespace GameRes.Formats.KiriKiri
 
             var crypt_algorithm = new Lazy<ICrypt> (QueryCryptAlgorithm);
 
+            var filename_map = new Dictionary<uint, string>();
             var dir = new List<Entry>();
             dir_offset = 0;
             using (var header = new BinaryReader (header_stream, Encoding.Unicode))
@@ -155,26 +156,35 @@ namespace GameRes.Formats.KiriKiri
                 while (-1 != header.PeekChar())
                 {
                     uint entry_signature = header.ReadUInt32();
-                    if (0x656c6946 != entry_signature) // "File"
-                    {
-                        break;
-                    }
                     long entry_size = header.ReadInt64();
+                    if (entry_size < 0)
+                        return null;
                     dir_offset += 12 + entry_size;
-                    var entry = new Xp3Entry();
-                    while (entry_size > 0)
+                    if (0x6E666E68 == entry_signature) // "hnfn"
                     {
-                        uint section = header.ReadUInt32();
-                        long section_size = header.ReadInt64();
-                        entry_size -= 12;
-                        if (section_size > entry_size)
-                            break;
-                        entry_size -= section_size;
-                        long next_section_pos = header.BaseStream.Position + section_size;
-                        switch (section)
+                        uint hash = header.ReadUInt32();
+                        int name_size = header.ReadInt16();
+                        entry_size -= 6;
+                        if (name_size * 2 <= entry_size)
                         {
-                        case 0x6f666e69: // "info"
+                            filename_map[hash] = new string (header.ReadChars (name_size));
+                        }
+                    }
+                    else if (0x656C6946 == entry_signature) // "File"
+                    {
+                        var entry = new Xp3Entry();
+                        while (entry_size > 0)
+                        {
+                            uint section = header.ReadUInt32();
+                            long section_size = header.ReadInt64();
+                            entry_size -= 12;
+                            if (section_size > entry_size)
+                                break;
+                            entry_size -= section_size;
+                            long next_section_pos = header.BaseStream.Position + section_size;
+                            switch (section)
                             {
+                            case 0x6f666e69: // "info"
                                 if (entry.Size != 0 || !string.IsNullOrEmpty (entry.Name))
                                 {
                                     goto NextEntry; // ambiguous entry, ignore
@@ -200,19 +210,21 @@ namespace GameRes.Formats.KiriKiri
                                 else
                                     entry.Cipher = NoCryptAlgorithm;
 
-                                var name = new string (header.ReadChars (name_size));
-                                if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
+                                string name = null;
+                                if (0 == filename_map.Count || !filename_map.TryGetValue (entry.Hash, out name))
                                 {
-                                    goto NextEntry;
+                                    name = new string (header.ReadChars (name_size));
+                                    if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
+                                    {
+                                        goto NextEntry;
+                                    }
                                 }
                                 entry.Name = name;
                                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                                 entry.IsEncrypted = !(entry.Cipher is NoCrypt)
                                     && !(entry.Cipher.StratupTjsNotEncrypted && "startup.tjs" == name);
                                 break;
-                            }
-                        case 0x6d676573: // "segm"
-                            {
+                            case 0x6d676573: // "segm"
                                 int segment_count = (int)(section_size / 0x1c);
                                 if (segment_count > 0)
                                 {
@@ -237,29 +249,31 @@ namespace GameRes.Formats.KiriKiri
                                     entry.Offset = entry.Segments.First().Offset;
                                 }
                                 break;
-                            }
-                        case 0x726c6461: // "adlr"
-                            if (4 == section_size)
-                                entry.Hash = header.ReadUInt32();
-                            break;
+                            case 0x726c6461: // "adlr"
+                                if (4 == section_size)
+                                    entry.Hash = header.ReadUInt32();
+                                break;
 
-                        default: // unknown section
-                            break;
+                            default: // unknown section
+                                break;
+                            }
+                            header.BaseStream.Position = next_section_pos;
                         }
-                        header.BaseStream.Position = next_section_pos;
-                    }
-                    if (!string.IsNullOrEmpty (entry.Name) && entry.Segments.Any())
-                    {
-                        if (entry.Cipher.ObfuscatedIndex)
+                        if (!string.IsNullOrEmpty (entry.Name) && entry.Segments.Any())
                         {
-                            DeobfuscateEntry (entry);
+                            if (entry.Cipher.ObfuscatedIndex)
+                            {
+                                DeobfuscateEntry (entry);
+                            }
+                            dir.Add (entry);
                         }
-                        dir.Add (entry);
                     }
 NextEntry:
                     header.BaseStream.Position = dir_offset;
                 }
             }
+            if (0 == dir.Count)
+                return null;
             var arc = new ArcFile (file, this, dir);
             try
             {
