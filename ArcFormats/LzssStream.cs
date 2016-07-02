@@ -138,26 +138,21 @@ namespace GameRes.Compression
         #endregion
     }
 
-    public class LzssStream : Stream
+    public class LzssStream : GameRes.Formats.InputProxyStream
     {
-        Stream          m_input;
         LzssCoroutine   m_reader;
-        bool            m_should_dispose;
 
         public LzssStream (Stream input, LzssMode mode = LzssMode.Decompress, bool leave_open = false)
+            : base (input, leave_open)
         {
             if (mode != LzssMode.Decompress)
                 throw new NotImplementedException ("LzssStream compression not implemented");
-            m_input = input;
             m_reader = new LzssCoroutine (input);
-            m_should_dispose = !leave_open;
         }
 
         public LzssSettings   Config  { get { return m_reader; } }
 
-        public override bool CanRead  { get { return m_input.CanRead; } }
         public override bool CanSeek  { get { return false; } }
-        public override bool CanWrite { get { return false; } }
         public override long Length
         {
             get { throw new NotSupportedException ("LzssStream.Length property is not supported"); }
@@ -184,29 +179,12 @@ namespace GameRes.Compression
             throw new NotSupportedException ("LzssStream.Seek method is not supported");
         }
 
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException ("LzssStream.SetLength method is not supported");
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("LzssStream.Write method is not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("LzssStream.WriteByte method is not supported");
-        }
-
         #region IDisposable Members
         bool m_disposed = false;
         protected override void Dispose (bool disposing)
         {
             if (!m_disposed)
             {
-                if (m_should_dispose && disposing)
-                    m_input.Dispose();
                 m_reader.Dispose();
                 m_disposed = true;
                 base.Dispose (disposing);

@@ -159,26 +159,22 @@ namespace GameRes.Formats.Entis
             public uint Size;
         }
 
-        class ChunkStream : Stream
+        class ChunkStream : InputProxyStream
         {
-            Stream      m_source;
             MioChunk    m_chunk;
 
-            public ChunkStream (Stream source, MioChunk chunk)
+            public ChunkStream (Stream source, MioChunk chunk) : base (source, true)
             {
-                m_source = source;
                 m_chunk = chunk;
-                m_source.Position = m_chunk.Position;
+                BaseStream.Position = m_chunk.Position;
             }
 
             public override bool  CanRead { get { return true; } }
-            public override bool CanWrite { get { return false; } }
-            public override bool  CanSeek { get { return m_source.CanSeek; } }
             public override long   Length { get { return m_chunk.Size; } }
 
             public override long Position
             {
-                get { return m_source.Position-m_chunk.Position; }
+                get { return BaseStream.Position-m_chunk.Position; }
                 set { Seek (value, SeekOrigin.Begin); }
             }
 
@@ -187,43 +183,23 @@ namespace GameRes.Formats.Entis
                 if (origin == SeekOrigin.Begin)
                     offset += m_chunk.Position;
                 else if (origin == SeekOrigin.Current)
-                    offset += m_source.Position;
+                    offset += BaseStream.Position;
                 else
                     offset += m_chunk.Position + m_chunk.Size;
                 if (offset < m_chunk.Position)
                     offset = m_chunk.Position;
-                m_source.Position = offset;
+                BaseStream.Position = offset;
                 return offset - m_chunk.Position;
-            }
-
-            public override void Flush()
-            {
-                m_source.Flush();
             }
 
             public override int Read (byte[] buf, int index, int count)
             {
-                long remaining = (m_chunk.Position + m_chunk.Size) - m_source.Position;
+                long remaining = (m_chunk.Position + m_chunk.Size) - BaseStream.Position;
                 if (count > remaining)
                     count = (int)remaining;
                 if (count <= 0)
                     return 0;
-                return m_source.Read (buf, index, count);
-            }
-
-            public override void SetLength (long length)
-            {
-                throw new System.NotSupportedException ();
-            }
-
-            public override void Write (byte[] buffer, int offset, int count)
-            {
-                throw new System.NotSupportedException ();
-            }
-
-            public override void WriteByte (byte value)
-            {
-                throw new System.NotSupportedException ();
+                return BaseStream.Read (buf, index, count);
             }
         }
 

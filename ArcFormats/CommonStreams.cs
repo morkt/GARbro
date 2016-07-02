@@ -91,7 +91,26 @@ namespace GameRes.Formats
         }
     }
 
-    public class PrefixStream : ProxyStream
+    public class InputProxyStream : ProxyStream
+    {
+        public InputProxyStream (Stream input, bool leave_open = false) : base (input, leave_open)
+        {
+        }
+
+        public override bool CanWrite { get { return false; } }
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException ("Stream.Write method is not supported");
+        }
+
+        public override void SetLength (long length)
+        {
+            throw new NotSupportedException ("Stream.SetLength method is not supported");
+        }
+    }
+
+    public class PrefixStream : InputProxyStream
     {
         byte[]  m_header;
         long    m_position = 0;
@@ -102,7 +121,6 @@ namespace GameRes.Formats
             m_header = header;
         }
 
-        public override bool CanWrite { get { return false; } }
         public override long Length   { get { return BaseStream.Length + m_header.Length; } }
         public override long Position
         {
@@ -166,28 +184,13 @@ namespace GameRes.Formats
                 m_position++;
             return b;
         }
-
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException ("PrefixStream.SetLength method is not supported");
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("PrefixStream.Write method is not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("PrefixStream.WriteByte method is not supported");
-        }
     }
 
     /// <summary>
     /// Represents a region within existing stream.
     /// Underlying stream should allow seeking (CanSeek == true).
     /// </summary>
-    public class StreamRegion : ProxyStream
+    public class StreamRegion : InputProxyStream
     {
         private long    m_begin;
         private long    m_end;
@@ -206,7 +209,6 @@ namespace GameRes.Formats
         }
 
         public override bool CanSeek  { get { return true; } }
-        public override bool CanWrite { get { return false; } }
         public override long Length   { get { return m_end - m_begin; } }
         public override long Position
         {
@@ -244,21 +246,6 @@ namespace GameRes.Formats
                 return BaseStream.ReadByte();
             else
                 return -1;
-        }
-
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException ("StreamRegion.SetLength method is not supported");
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("StreamRegion.Write method is not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("StreamRegion.WriteByte method is not supported");
         }
     }
 

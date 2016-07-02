@@ -42,7 +42,7 @@ namespace GameRes.Formats
         }
     }
 
-    internal class Um3Stream : ProxyStream
+    internal class Um3Stream : InputProxyStream
     {
         public Um3Stream (Stream main, bool leave_open = false)
             : base (main, leave_open)
@@ -71,16 +71,6 @@ namespace GameRes.Formats
             if (-1 != b && pos < 0x800)
                 b ^= 0xFF;
             return b;
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("Um3Stream.Write not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("Um3Stream.Write not supported");
         }
     }
 }

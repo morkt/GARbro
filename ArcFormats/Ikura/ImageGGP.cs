@@ -87,28 +87,23 @@ namespace GameRes.Formats.Ikura
         }
     }
 
-    internal class EncryptedStream : Stream
+    internal class EncryptedStream : InputProxyStream
     {
-        private Stream  m_stream;
         private byte[]  m_key;
         private long    m_position;
-        private bool    m_should_dispose;
 
         public EncryptedStream (Stream main, byte[] key, bool leave_open = false)
+            : base (main, leave_open)
         {
             if (null == key)
                 throw new ArgumentNullException ("key");
             if (key.Length < 8)
                 throw new ArgumentException ("key");
-            m_stream = main;
             m_key = key;
             m_position = 0;
-            m_should_dispose = !leave_open;
         }
 
-        public override bool CanRead  { get { return m_stream.CanRead; } }
         public override bool CanSeek  { get { return false; } }
-        public override bool CanWrite { get { return false; } }
         public override long Length   { get { throw new NotSupportedException(); } }
         public override long Position
         {
@@ -121,14 +116,9 @@ namespace GameRes.Formats.Ikura
             throw new NotSupportedException();
         }
 
-        public override void Flush()
-        {
-            m_stream.Flush();
-        }
-
         public override int Read (byte[] buffer, int offset, int count)
         {
-            int read = m_stream.Read (buffer, offset, count);
+            int read = BaseStream.Read (buffer, offset, count);
             if (read > 0)
             {
                 for (int i = 0; i < read; ++i)
@@ -141,39 +131,12 @@ namespace GameRes.Formats.Ikura
 
         public override int ReadByte ()
         {
-            int b = m_stream.ReadByte();
+            int b = BaseStream.ReadByte();
             if (-1 != b)
             {
                 b ^= m_key[m_position++ & 7];
             }
             return b;
-        }
-
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException ("EncryptedStream.SetLength method is not supported");
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("EncryptedStream.Write method is not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("EncryptedStream.WriteByte method is not supported");
-        }
-
-        bool m_disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!m_disposed)
-            {
-                if (m_should_dispose && disposing)
-                    m_stream.Dispose();
-                m_disposed = true;
-                base.Dispose (disposing);
-            }
         }
     }
 }

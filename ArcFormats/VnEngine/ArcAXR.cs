@@ -134,7 +134,7 @@ namespace GameRes.Formats.VnEngine
         }
     }
 
-    internal class AxrEncryptedStream : ProxyStream
+    internal class AxrEncryptedStream : InputProxyStream
     {
         byte[]  m_key;
 
@@ -143,8 +143,6 @@ namespace GameRes.Formats.VnEngine
         {
             m_key = key;
         }
-
-        public override bool CanWrite { get { return false; } }
 
         public override int Read (byte[] buffer, int offset, int count)
         {
@@ -164,16 +162,6 @@ namespace GameRes.Formats.VnEngine
             if (-1 != b)
                 b ^= m_key[start];
             return b;
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("AxrEncryptedStream.Write method is not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("AxrEncryptedStream.WriteByte method is not supported");
         }
     }
 }

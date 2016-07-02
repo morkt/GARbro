@@ -761,7 +761,7 @@ NextEntry:
         long        m_offset = 0;
         bool        m_eof = false;
 
-        public override bool CanRead  { get { return m_stream != null; } }
+        public override bool CanRead  { get { return !disposed; } }
         public override bool CanSeek  { get { return false; } }
         public override bool CanWrite { get { return false; } }
         public override long Length   { get { return m_entry.UnpackedSize; } }

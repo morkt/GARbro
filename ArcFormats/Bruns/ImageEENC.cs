@@ -114,7 +114,7 @@ namespace GameRes.Formats.Bruns
         }
     }
 
-    internal class EencStream : ProxyStream
+    internal class EencStream : InputProxyStream
     {
         uint    m_key;
 
@@ -123,8 +123,6 @@ namespace GameRes.Formats.Bruns
         {
             m_key = key;
         }
-
-        public override bool CanWrite { get { return false; } }
 
         public override int Read (byte[] buffer, int offset, int count)
         {
@@ -145,21 +143,6 @@ namespace GameRes.Formats.Bruns
             if (-1 != b)
                 b ^= (byte)(m_key >> (pos << 3));
             return b;
-        }
-
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException ("EencStream.SetLength method is not supported");
-        }
-
-        public override void Write (byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException ("EencStream.Write method is not supported");
-        }
-
-        public override void WriteByte (byte value)
-        {
-            throw new NotSupportedException ("EencStream.WriteByte method is not supported");
         }
     }
 }
