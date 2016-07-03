@@ -120,6 +120,7 @@
     <Compile Include="MangaGamer\WidgetMGPK.xaml.cs">
       <DependentUpon>WidgetMGPK.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Marble\VideoANIM.cs" />
     <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NitroPlus\ArcPAK.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
