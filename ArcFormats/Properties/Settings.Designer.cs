@@ -561,5 +561,17 @@ namespace GameRes.Formats.Properties {
                 this["GALKey"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string MGPKTitle {
+            get {
+                return ((string)(this["MGPKTitle"]));
+            }
+            set {
+                this["MGPKTitle"] = value;
+            }
+        }
     }
 }

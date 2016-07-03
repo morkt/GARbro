@@ -117,6 +117,9 @@
     <Compile Include="LiveMaker\WidgetGAL.xaml.cs">
       <DependentUpon>WidgetGAL.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MangaGamer\WidgetMGPK.xaml.cs">
+      <DependentUpon>WidgetMGPK.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NitroPlus\ArcPAK.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
@@ -298,7 +301,7 @@
     <Compile Include="Marble\ArcMBL.cs" />
     <Compile Include="Silky\ArcMFG.cs" />
     <Compile Include="Masys\ArcMGD.cs" />
-    <Compile Include="ArcMGPK.cs" />
+    <Compile Include="MangaGamer\ArcMGPK.cs" />
     <Compile Include="MnoViolet\ArcMnoViolet.cs" />
     <Compile Include="FC01\ArcMRG.cs" />
     <Compile Include="ArcNEKO.cs" />
@@ -566,6 +569,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="LiveMaker\WidgetGAL.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MangaGamer\WidgetMGPK.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
