@@ -80,8 +80,7 @@ namespace GameRes.Formats.Tactics
             if (null == tarc.Password)
                 return new LzssStream (arc.File.CreateStream (entry.Offset, entry.Size));
 
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             int p = 0;
             for (int i = 0; i < data.Length; ++i)
             {
@@ -120,32 +119,38 @@ namespace GameRes.Formats.Tactics
                 if (!IsSaneCount (m_count) || m_packed_size+0x20L > m_file.MaxOffset)
                     return null;
                 m_index = new byte[m_unpacked_size];
+                var readers = new Func<Stream, bool>[] {
+                    ReadV0,
+                    s => ReadV1 (s, 0x18),
+                    s => ReadV1 (s, 0x10),
+                };
                 using (var input = m_file.CreateStream (0x20, m_packed_size))
                 {
-                    try
+                    foreach (var read in readers)
                     {
-                        if (ReadV0 (input))
-                            return m_dir.Value;
+                        try
+                        {
+                            if (read (input))
+                                return m_dir.Value;
+                        }
+                        catch { /* ignore parse errors */ }
+                        input.Position = 0;
+                        if (m_dir.IsValueCreated)
+                            m_dir.Value.Clear();
                     }
-                    catch { /* ignore V0 parse errors, try V1 */ }
-
-                    if (m_dir.IsValueCreated)
-                        m_dir.Value.Clear();
-                    input.Position = 0;
-                    if (ReadV1 (input))
-                        return m_dir.Value;
                     return null;
                 }
             }
 
-            bool ReadV1 (Stream input)
+            bool ReadV1 (Stream input, int entry_size)
             {
                 // NOTE CryptoStream will close an input stream
-                using (var xored = new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read))
+                using (var proxy = new InputProxyStream (input, true))
+                using (var xored = new CryptoStream (proxy, new NotTransform(), CryptoStreamMode.Read))
                 using (var lzss = new LzssStream (xored))
                     lzss.Read (m_index, 0, m_index.Length);
 
-                int index_offset = Array.IndexOf (m_index, (byte)0);
+                int index_offset = Array.IndexOf<byte> (m_index, 0);
                 if (-1 == index_offset || 0 == index_offset)
                     return false;
                 Password = m_index.Take (index_offset++).ToArray();
@@ -160,11 +165,15 @@ namespace GameRes.Formats.Tactics
                     entry.IsPacked = entry.UnpackedSize != 0;
                     if (!entry.CheckPlacement (m_file.MaxOffset))
                         return false;
+                    if (!entry.IsPacked)
+                        entry.UnpackedSize = entry.Size;
                     int name_len = LittleEndian.ToInt32 (m_index, index_offset + 0xC);
-                    entry.Name = Encodings.cp932.GetString (m_index, index_offset+0x18, name_len);
+                    if (name_len <= 0 || name_len > 0x100)
+                        return false;
+                    entry.Name = Encodings.cp932.GetString (m_index, index_offset+entry_size, name_len);
                     entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                     m_dir.Value.Add (entry);
-                    index_offset += 0x18 + name_len;
+                    index_offset += entry_size + name_len;
                 }
                 return true;
             }
@@ -183,7 +192,7 @@ namespace GameRes.Formats.Tactics
                 {
                     m_index[i] = (byte)(~m_index[i] - 5);
                 }
-                int index_offset = Array.IndexOf (m_index, (byte)0);
+                int index_offset = Array.IndexOf<byte> (m_index, 0);
                 if (-1 == index_offset || 0 == index_offset)
                     return false;
                 index_offset++;
@@ -191,7 +200,7 @@ namespace GameRes.Formats.Tactics
 
                 for (int i = 0; i < m_count && index_offset < m_index.Length; ++i)
                 {
-                    int name_end = Array.IndexOf (m_index, (byte)0, index_offset);
+                    int name_end = Array.IndexOf<byte> (m_index, 0, index_offset);
                     if (-1 == name_end)
                         name_end = m_index.Length;
                     if (index_offset == name_end)
