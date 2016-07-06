@@ -117,6 +117,7 @@
     <Compile Include="Hexenhaus\ArcWAG.cs" />
     <Compile Include="Ikura\ImageYGP.cs" />
     <Compile Include="ImageLZ.cs" />
+    <Compile Include="ImageRSA.cs" />
     <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
     <Compile Include="Liar\ImageLIM.cs" />
     <Compile Include="LiveMaker\ImageGAL.cs" />
