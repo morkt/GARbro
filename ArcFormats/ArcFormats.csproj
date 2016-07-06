@@ -79,8 +79,14 @@
     <Compile Include="Cmvs\ArcPBZ.cs" />
     <Compile Include="Cmvs\AudioMV.cs" />
     <Compile Include="Cmvs\ImagePSB.cs" />
+    <Compile Include="Cyberworks\ArcDAT.cs" />
+    <Compile Include="Cyberworks\AudioTINK.cs" />
     <Compile Include="Bruns\AudioUM3.cs" />
     <Compile Include="Bruns\ImageEENC.cs" />
+    <Compile Include="Cyberworks\ImageTINK.cs" />
+    <Compile Include="Cyberworks\WidgetBELL.xaml.cs">
+      <DependentUpon>WidgetBELL.xaml</DependentUpon>
+    </Compile>
     <Compile Include="LiveMaker\ArcVF.cs" />
     <Compile Include="ArcZIP.cs" />
     <Compile Include="AudioVOC.cs" />
@@ -558,6 +564,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CatSystem\CreateINTWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Cyberworks\WidgetBELL.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

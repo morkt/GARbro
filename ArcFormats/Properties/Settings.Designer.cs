@@ -573,5 +573,17 @@ namespace GameRes.Formats.Properties {
                 this["MGPKTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BELLTitle {
+            get {
+                return ((string)(this["BELLTitle"]));
+            }
+            set {
+                this["BELLTitle"] = value;
+            }
+        }
     }
 }
