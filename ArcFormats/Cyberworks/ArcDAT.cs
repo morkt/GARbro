@@ -213,8 +213,7 @@ namespace GameRes.Formats.Cyberworks
                 int id = input.ReadByte();
                 if (id == scheme.Value2)
                 {
-                    using (var seekable = new SeekableStream (input))
-                    using (var reader = new AImageReader (seekable, scheme))
+                    using (var reader = new AImageReader (input, scheme))
                     {
                         reader.Unpack();
                         return TgaStream.Create (reader.Info, reader.Data, scheme.Flipped);

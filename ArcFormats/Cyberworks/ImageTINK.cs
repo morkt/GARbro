@@ -116,12 +116,13 @@ namespace GameRes.Formats.Cyberworks
                 if (src_stride * (int)Info.Height != data_size)
                     throw new InvalidFormatException();
                 m_output = new byte[dst_stride * (int)Info.Height];
+                var gap = new byte[src_stride-dst_stride];
                 int dst = 0;
                 for (uint y = 0; y < Info.Height; ++y)
                 {
                     m_input.Read (m_output, dst, dst_stride);
+                    m_input.Read (gap, 0, gap.Length);
                     dst += dst_stride;
-                    m_input.BaseStream.Seek (src_stride-dst_stride, SeekOrigin.Current);
                 }
             }
         }
