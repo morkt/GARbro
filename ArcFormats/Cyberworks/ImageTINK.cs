@@ -39,6 +39,7 @@ namespace GameRes.Formats.Cyberworks
         UnpackedSize    = 5,
         AlphaSize       = 6,
         BitsSize        = 7,
+        Ignored         = Field1,
     }
 
     internal sealed class AImageReader : IDisposable

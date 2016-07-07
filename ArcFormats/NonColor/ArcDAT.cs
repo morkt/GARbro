@@ -135,6 +135,7 @@ namespace GameRes.Formats.NonColor
                 }
                 else
                 {
+                    System.Diagnostics.Trace.WriteLine ("Unknown hash", hash.ToString ("X8"));
                     continue;
                 }
                 if (flags != 2)
