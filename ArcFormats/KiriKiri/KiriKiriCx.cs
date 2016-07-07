@@ -110,7 +110,7 @@ namespace GameRes.Formats.KiriKiri
                 unsafe
                 {
                     byte* begin = view.GetPointer (0);
-                    byte* end   = begin + (((uint)tpm.MaxOffset - 0x1000u) & ~0xFu);
+                    byte* end   = begin + (((uint)tpm.MaxOffset - 0x1000u) & ~0x3u);
                     try {
                         while (begin < end)
                         {
@@ -128,7 +128,7 @@ namespace GameRes.Formats.KiriKiri
                                     ControlBlock[i] = ~src[i];
                                 return;
                             }
-                            begin += 0x10; // control block expected to be on a paragraph boundary
+                            begin += 4; // control block expected to be on a dword boundary
                         }
                         throw new InvalidEncryptionScheme ("No control block found inside TPM plugin");
                     }
