@@ -28,8 +28,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Security.Cryptography;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.NitroPlus
 {
@@ -45,6 +46,11 @@ namespace GameRes.Formats.NitroPlus
         public uint Size;
         public uint UnpackedSize;
         public bool IsCompressed { get { return Size < UnpackedSize; } }
+    }
+
+    public class Npk2Options : ResourceOptions
+    {
+        public byte[] Key;
     }
 
     internal class NpkArchive : ArcFile
@@ -141,8 +147,14 @@ namespace GameRes.Formats.NitroPlus
                 entry.UnpackedSize = index.ReadUInt32();
                 index.Read (name_buffer, 0, 0x20); // skip
                 int segment_count = index.ReadInt32();
-                if (segment_count <= 0)
+                if (segment_count < 0)
                     return null;
+                if (0 == segment_count)
+                {
+                    entry.Offset = 0;
+                    dir.Add (entry);
+                    continue;
+                }
                 entry.Segments.Capacity = segment_count;
                 uint packed_size = 0;
                 bool is_packed = false;
@@ -169,6 +181,8 @@ namespace GameRes.Formats.NitroPlus
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
+            if (0 == entry.Size)
+                return Stream.Null;
             var narc = arc as NpkArchive;
             var nent = entry as NpkEntry;
             if (null == narc || null == nent)
@@ -183,11 +197,28 @@ namespace GameRes.Formats.NitroPlus
             return new NpkStream (narc, nent);
         }
 
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new Npk2Options { Key = GetKey (Settings.Default.NPKScheme) };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetNPK();
+        }
+
         byte[] QueryEncryption ()
         {
-            if (0 == KnownKeys.Count)
-                return null;
-            return KnownKeys.Values.First();
+            var options = Query<Npk2Options> (arcStrings.ArcEncryptedNotice);
+            return options.Key;
+        }
+
+        byte[] GetKey (string title)
+        {
+            byte[] key;
+            if (KnownKeys.TryGetValue (title, out key))
+                return key;
+            return key;
         }
     }
 

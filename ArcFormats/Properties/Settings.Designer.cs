@@ -585,5 +585,17 @@ namespace GameRes.Formats.Properties {
                 this["BELLTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NPKScheme {
+            get {
+                return ((string)(this["NPKScheme"]));
+            }
+            set {
+                this["NPKScheme"] = value;
+            }
+        }
     }
 }

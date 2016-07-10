@@ -133,6 +133,9 @@
     <Compile Include="MnoViolet\ImageDIF.cs" />
     <Compile Include="Nexas\ImageGRP.cs" />
     <Compile Include="NitroPlus\ArcNPK.cs" />
+    <Compile Include="NitroPlus\WidgetNPK.xaml.cs">
+      <DependentUpon>WidgetNPK.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NonColor\ArcDAT.cs" />
     <Compile Include="Crc64.cs" />
     <Compile Include="NonColor\WidgetNCARC.xaml.cs">
@@ -590,6 +593,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="NitroPlus\CreateNPAWidget.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NitroPlus\WidgetNPK.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
