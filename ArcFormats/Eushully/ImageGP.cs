@@ -69,7 +69,9 @@ namespace GameRes.Formats.Eushully
                 int palette_size = reader.ReadInt32();
                 uint width = reader.ReadUInt16();
                 uint height = reader.ReadUInt16();
-                if (0 == palette_size || 0 == width || 0 == height || palette_size >= stream.Length)
+                if (palette_size <= 0 || 0 == width || 0 == height || palette_size >= stream.Length)
+                    return null;
+                if (bpp <= 8 && palette_size > 0x100)
                     return null;
                 return new GpMetaData
                 {

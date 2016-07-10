@@ -90,7 +90,13 @@ namespace GameRes.Formats.Selen
                 ++count;
                 if (count > 0x7f)
                     return null;
-                m_input.Seek (b > 0x7f ? 1 : count, SeekOrigin.Current);
+                if (b > 0x7f)
+                {
+                    if (-1 == m_input.ReadByte())
+                        return null;
+                }
+                else
+                    m_input.Seek (count, SeekOrigin.Current);
 
                 key_lines.Clear();
                 key_lines.AddRange (scan_lines.Keys);
@@ -118,6 +124,7 @@ namespace GameRes.Formats.Selen
             var valid_lines = from line in scan_lines where line.Key == line.Value
                               orderby line.Key
                               select line.Key;
+            bool is_eof = -1 == m_input.ReadByte();
             foreach (var width in valid_lines)
             {
                 int height = Math.DivRem (total, width, out rem);
