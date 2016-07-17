@@ -31,6 +31,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
+using GameRes.Utility;
 
 namespace GameRes.Formats.NitroPlus
 {
@@ -85,7 +86,7 @@ namespace GameRes.Formats.NitroPlus
         public override string Description { get { return "Mware engine resource archive"; } }
         public override uint     Signature { get { return 0x324B504E; } } // 'NPK2'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool     CanCreate { get { return true; } }
 
         public static Dictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
 
@@ -207,6 +208,11 @@ namespace GameRes.Formats.NitroPlus
             return new GUI.WidgetNPK();
         }
 
+        public override object GetCreationWidget ()
+        {
+            return new GUI.WidgetNPK();
+        }
+
         byte[] QueryEncryption ()
         {
             var options = Query<Npk2Options> (arcStrings.ArcEncryptedNotice);
@@ -219,6 +225,132 @@ namespace GameRes.Formats.NitroPlus
             if (KnownKeys.TryGetValue (title, out key))
                 return key;
             return key;
+        }
+
+        class NpkStoredEntry : PackedEntry
+        {
+            public byte[]   RawName;
+            public int      SegmentCount;
+            public uint     AlignedSize;
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            var npk_options = GetOptions<Npk2Options> (options);
+            if (null == npk_options.Key)
+                throw new InvalidEncryptionScheme();
+
+            var enc = Encodings.cp932.WithFatalFallback();
+            int index_length = 0;
+            var dir = new List<NpkStoredEntry>();
+            foreach (var entry in list)
+            {
+                var npk_entry = new NpkStoredEntry
+                {
+                    Name = entry.Name,
+                    RawName = enc.GetBytes (entry.Name),
+                    SegmentCount = 0 == entry.Size ? 0 : 1,
+                };
+                dir.Add (npk_entry);
+
+                index_length += 3 + npk_entry.RawName.Length + 0x28 + npk_entry.SegmentCount * 0x14;
+            }
+            index_length = (index_length + 0xF) & ~0xF;
+
+            int callback_count = 0;
+            using (var aes = Aes.Create())
+            {
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+                aes.Key = npk_options.Key;
+                aes.IV = GenerateAesIV();
+                output.Position = 0x20 + index_length;
+                foreach (var entry in dir)
+                {
+                    if (null != callback)
+                        callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                    using (var file = File.OpenRead (entry.Name))
+                        CopyFile (file, entry, output, aes);
+                }
+                output.Position = 0;
+                var buffer = new byte[] { (byte)'N', (byte)'P', (byte)'K', (byte)'2', 1, 0, 0, 0 };
+                output.Write (buffer, 0, 8);
+                output.Write (aes.IV, 0, 0x10);
+                LittleEndian.Pack (dir.Count, buffer, 0);
+                LittleEndian.Pack (index_length, buffer, 4);
+                output.Write (buffer, 0, 8);
+
+                using (var encryptor = aes.CreateEncryptor())
+                using (var proxy = new ProxyStream (output, true))
+                using (var index_stream = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write))
+                using (var index = new BinaryWriter (index_stream))
+                {
+                    var fill = new byte[0x20];
+                    if (null != callback)
+                        callback (callback_count++, null, arcStrings.MsgWritingIndex);
+                    foreach (var entry in dir)
+                    {
+                        index.Write ((byte)0);
+                        index.Write ((short)entry.RawName.Length);
+                        index.Write (entry.RawName);
+                        index.Write (entry.UnpackedSize);
+                        index.Write (fill);
+                        index.Write (entry.SegmentCount);
+                        if (entry.SegmentCount > 0)
+                        {
+                            index.Write (entry.Offset);
+                            index.Write (entry.AlignedSize);
+                            index.Write (entry.Size);
+                            index.Write (entry.UnpackedSize);
+                        }
+                    }
+                }
+            }
+        }
+
+        byte[] GenerateAesIV ()
+        {
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                var iv = new byte[0x10];
+                rng.GetBytes (iv);
+                return iv;
+            }
+        }
+
+        void CopyFile (FileStream file, NpkStoredEntry entry, Stream archive, Aes aes)
+        {
+            if (file.Length > uint.MaxValue)
+                throw new FileSizeException();
+            entry.Offset = archive.Position;
+            entry.Size = (uint)file.Length;
+            entry.UnpackedSize = (uint)file.Length;
+            if (entry.Size > 0)
+            {
+                using (var proxy = new ProxyStream (archive, true))
+                {
+                    var encryptor = aes.CreateEncryptor();
+                    Stream output = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write);
+                    var measure = new CountedStream (output);
+                    output = measure;
+                    if (ShouldCompress (entry.Name))
+                        output = new DeflateStream (output, CompressionLevel.Optimal);
+                    using (output)
+                        file.CopyTo (output);
+                    entry.Size = (uint)measure.Count;
+                }
+            }
+            entry.AlignedSize = (uint)(archive.Position - entry.Offset);
+        }
+
+        bool ShouldCompress (string filename)
+        {
+            return !(filename.EndsWith (".png", StringComparison.InvariantCultureIgnoreCase) ||
+                     filename.EndsWith (".jpg", StringComparison.InvariantCultureIgnoreCase) ||
+                     filename.EndsWith (".ogg", StringComparison.InvariantCultureIgnoreCase) ||
+                     filename.EndsWith (".mpg", StringComparison.InvariantCultureIgnoreCase));
         }
     }
 
@@ -349,5 +481,47 @@ namespace GameRes.Formats.NitroPlus
     public class Npk2Scheme : ResourceScheme
     {
         public Dictionary<string, byte[]> KnownKeys;
+    }
+
+    /// <summary>
+    /// Filter stream that counts total bytes read/written.
+    /// </summary>
+    public class CountedStream : ProxyStream
+    {
+        long    m_count;
+
+        public long Count { get { return m_count; } }
+
+        public CountedStream (Stream source, bool leave_open = false) : base (source, leave_open)
+        {
+            m_count = 0;
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            int read = BaseStream.Read (buffer, offset, count); 
+            m_count += read;
+            return read;
+        }
+
+        public override int ReadByte ()
+        {
+            int b = BaseStream.ReadByte();
+            if (b != -1)
+                ++m_count;
+            return b;
+        }
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            BaseStream.Write (buffer, offset, count);
+            m_count += count;
+        }
+
+        public override void WriteByte (byte b)
+        {
+            BaseStream.WriteByte (b);
+            ++m_count;
+        }
     }
 }
