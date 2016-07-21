@@ -141,6 +141,8 @@
     <Compile Include="NonColor\WidgetNCARC.xaml.cs">
       <DependentUpon>WidgetNCARC.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Patisserie\ArcBIN.cs" />
+    <Compile Include="Patisserie\ArcRAW.cs" />
     <Compile Include="RealLive\ArcG00.cs" />
     <Compile Include="RealLive\ArcOVK.cs" />
     <Compile Include="RealLive\AudioNWA.cs" />
