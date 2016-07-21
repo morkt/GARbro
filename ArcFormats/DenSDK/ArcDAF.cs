@@ -33,18 +33,67 @@ using GameRes.Utility;
 namespace GameRes.Formats.DenSdk
 {
     [Export(typeof(ArchiveFormat))]
-    public class DatOpener : ArchiveFormat
+    public class Daf1Opener : ArchiveFormat
     {
-        public override string         Tag { get { return "DAT/DenSDK"; } }
+        public override string         Tag { get { return "DAF1"; } }
+        public override string Description { get { return "DenSDK resource archive"; } }
+        public override uint     Signature { get { return 0x31464144; } } // 'DAF1'
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public Daf1Opener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            uint index_offset = file.View.ReadUInt32 (4);
+            int count = file.View.ReadInt32 (8);
+            if (!IsSaneCount (count) || index_offset >= file.MaxOffset)
+                return null;
+            uint data_offset = file.View.ReadUInt32 (0x10);
+            if (data_offset <= index_offset || data_offset > file.MaxOffset)
+                return null;
+            file.View.Reserve (index_offset, data_offset-index_offset);
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                uint entry_size = file.View.ReadUInt32 (index_offset);
+                if (entry_size <= 0x18)
+                    return null;
+                var name = file.View.ReadString (index_offset+0x18, entry_size-0x18);
+                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                entry.Offset        = file.View.ReadUInt32(index_offset+4);
+                entry.Size          = file.View.ReadUInt32(index_offset+8);
+                entry.UnpackedSize  = file.View.ReadUInt32 (index_offset+0xC);
+                entry.IsPacked      = file.View.ReadInt32(index_offset+0x14) != 0;
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += entry_size;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            var pent = entry as PackedEntry;
+            if (null == pent || !pent.IsPacked)
+                return input;
+            return new ZLibStream (input, CompressionMode.Decompress);
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Daf2Opener : Daf1Opener
+    {
+        public override string         Tag { get { return "DAF2"; } }
         public override string Description { get { return "DenSDK resource archive"; } }
         public override uint     Signature { get { return 0x32464144; } } // 'DAF2'
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
-
-        public DatOpener ()
-        {
-            Extensions = new string[] { "dat" };
-        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -80,9 +129,9 @@ namespace GameRes.Formats.DenSdk
                     return null;
                 var name = Binary.GetCString (index, index_offset+0x34, entry_size-0x34);
                 var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                entry.Offset        = base_offset + (LittleEndian.ToUInt32 (index, index_offset+4) ^ (uint)key);
-                entry.Size          = LittleEndian.ToUInt32 (index, index_offset+8) ^ (uint)key;
-                entry.UnpackedSize  = LittleEndian.ToUInt32 (index, index_offset+0xC) ^ (uint)key;
+                entry.Offset        = base_offset + (LittleEndian.ToUInt32 (index, index_offset+4) ^ key);
+                entry.Size          = LittleEndian.ToUInt32 (index, index_offset+8) ^ key;
+                entry.UnpackedSize  = LittleEndian.ToUInt32 (index, index_offset+0xC) ^ key;
                 entry.IsPacked      = LittleEndian.ToInt32 (index, index_offset+0x30) != 0;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
@@ -90,15 +139,6 @@ namespace GameRes.Formats.DenSdk
                 index_offset += entry_size;
             }
             return new ArcFile (file, this, dir);
-        }
-
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            var pent = entry as PackedEntry;
-            if (null == pent || !pent.IsPacked)
-                return input;
-            return new ZLibStream (input, CompressionMode.Decompress);
         }
     }
 }
