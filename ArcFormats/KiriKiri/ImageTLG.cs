@@ -46,11 +46,29 @@ namespace GameRes.Formats.KiriKiri
             int offset = 0xf;
             if (!Binary.AsciiEqual (header, "TLG0.0\x00sds\x1a"))
                 offset = 0;
-            bool version6 = Binary.AsciiEqual (header, offset, "TLG6.0\x00raw\x1a");
-            if (!version6 && !Binary.AsciiEqual (header, offset, "TLG5.0\x00raw\x1a"))
+            int version;
+            if (!Binary.AsciiEqual (header, offset+6, "\x00raw\x1a"))
+                return null;
+            if (Binary.AsciiEqual (header, offset, "TLG6.0"))
+                version = 6;
+            else if (Binary.AsciiEqual (header, offset, "TLG5.0"))
+                version = 5;
+            else if (Binary.AsciiEqual (header, offset, "XXXYYY"))
+            {
+                version = 5;
+                header[offset+0x0C] ^= 0xAB;
+                header[offset+0x10] ^= 0xAC;
+            }
+            else if (Binary.AsciiEqual (header, offset, "XXXZZZ"))
+            {
+                version = 6;
+                header[offset+0x0F] ^= 0xAB;
+                header[offset+0x13] ^= 0xAC;
+            }
+            else
                 return null;
             int colors = header[offset+11];
-            if (version6)
+            if (6 == version)
             {
                 if (1 != colors && 4 != colors && 3 != colors)
                     return null;
@@ -70,7 +88,7 @@ namespace GameRes.Formats.KiriKiri
                 Width   = width,
                 Height  = height,
                 BPP     = colors*8,
-                Version     = version6 ? 6 : 5,
+                Version     = version,
                 DataOffset  = offset+8,
             };
         }
