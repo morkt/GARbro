@@ -79,6 +79,7 @@
     <Compile Include="Cmvs\ArcPBZ.cs" />
     <Compile Include="Cmvs\AudioMV.cs" />
     <Compile Include="Cmvs\ImagePSB.cs" />
+    <Compile Include="Crowd\ImageGAX.cs" />
     <Compile Include="Cyberworks\ArcDAT.cs" />
     <Compile Include="Cyberworks\AudioTINK.cs" />
     <Compile Include="Bruns\AudioUM3.cs" />
