@@ -666,4 +666,34 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, values, pos, count);
         }
     }
+
+    [Serializable]
+    public class HibikiCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            if (0 != (offset & 4) || offset <= 0x64)
+                return (byte)(value ^ (entry.Hash >> 5));
+            else
+                return (byte)(value ^ (entry.Hash >> 8));
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            byte key1 = (byte)(entry.Hash >> 5);
+            byte key2 = (byte)(entry.Hash >> 8);
+            for (int i = 0; i < count; ++i, ++offset)
+            {
+                if (0 != (offset & 4) || offset <= 0x64)
+                    buffer[pos+i] ^= key1;
+                else
+                    buffer[pos+i] ^= key2;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+    }
 }
