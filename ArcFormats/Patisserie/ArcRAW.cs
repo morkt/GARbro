@@ -55,7 +55,7 @@ namespace GameRes.Formats.Patisserie
             while (current_offset < end)
             {
                 var entry = new Entry {
-                    Name = string.Format (i.ToString ("D4")),
+                    Name = string.Format ("{0:D4}.tga", i++),
                     Type = "image",
                     Offset = current_offset,
                 };
@@ -66,7 +66,6 @@ namespace GameRes.Formats.Patisserie
                     return null;
                 dir.Add (entry);
                 current_offset += entry.Size;
-                ++i;
             }
             return new ArcFile (file, this, dir);
         }
