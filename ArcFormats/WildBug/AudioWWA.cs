@@ -2,7 +2,7 @@
 //! \date       Mon Aug 10 11:48:29 2015
 //! \brief      Wild Bug compressed audio format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -49,36 +49,17 @@ namespace GameRes.Formats.WildBug
             if (1 != header[0xC] || 0 == count || 0 == dir_size)
                 return null;
 
-            return new WwaInput (file, count, dir_size);
-        }
-
-        public override void Write (SoundInput source, Stream output)
-        {
-            throw new System.NotImplementedException ("WwaFormat.Write not implemenented");
-        }
-    }
-
-    internal class WwaInput : SoundInput
-    {
-        public override string SourceFormat { get { return "raw"; } }
-
-        public override int SourceBitrate
-        {
-            get { return (int)Format.AverageBytesPerSecond * 8; }
-        }
-
-        public WwaInput (Stream file, int count, int dir_size) : base (null)
-        {
             file.Position = 0x10;
-            var header = new byte[count * dir_size];
+            header = new byte[count * dir_size];
             if (header.Length != file.Read (header, 0, header.Length))
                 throw new InvalidFormatException();
 
             var section = WpxSection.Find (header, 0x20, count, dir_size);
             if (null == section || section.UnpackedSize < 0x10 || section.DataFormat != 0x80)
                 throw new InvalidFormatException();
+            var fmt = new byte[section.UnpackedSize];
             file.Position = section.Offset;
-            Format = ReadFormat (file);
+            file.Read (fmt, 0, section.UnpackedSize);
 
             section = WpxSection.Find (header, 0x21, count, dir_size);
             if (null == section)
@@ -88,49 +69,32 @@ namespace GameRes.Formats.WildBug
             var data = reader.Unpack (section.DataFormat);
             if (null == data)
                 throw new InvalidFormatException();
-            Source = new MemoryStream (data);
-            file.Dispose();
-        }
 
-        static WaveFormat ReadFormat (Stream file)
-        {
-            var format = new WaveFormat();
-            using (var input = new ArcView.Reader (file))
+            int total_size = 20 + fmt.Length + data.Length;
+            using (var wav_file = new MemoryStream (20 + fmt.Length))
+            using (var wav = new BinaryWriter (wav_file))
             {
-                format.FormatTag = input.ReadUInt16 ();
-                format.Channels = input.ReadUInt16 ();
-                format.SamplesPerSecond = input.ReadUInt32 ();
-                format.AverageBytesPerSecond = input.ReadUInt32 ();
-                format.BlockAlign = input.ReadUInt16 ();
-                format.BitsPerSample = input.ReadUInt16 ();
+                wav.Write (Wav.Signature);
+                wav.Write (total_size);
+                wav.Write (0x45564157); // 'WAVE'
+                wav.Write (0x20746d66); // 'fmt '
+                wav.Write (fmt.Length);
+                wav.Write (fmt);
+                wav.Write (0x61746164); // 'data'
+                wav.Write (data.Length);
+                var wav_header = wav_file.ToArray();
+                var data_stream = new MemoryStream (data);
+                var source = new PrefixStream (wav_header, data_stream);
+                var sound = new WaveInput (source);
+                file.Dispose();
+                return sound;
             }
-            return format;
         }
 
-        #region IO.Stream methods
-        public override long Position
+        public override void Write (SoundInput source, Stream output)
         {
-            get { return Source.Position; }
-            set { Source.Position = value; }
+            throw new System.NotImplementedException ("WwaFormat.Write not implemenented");
         }
-
-        public override bool CanSeek { get { return Source.CanSeek; } }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            return Source.Seek (offset, origin);
-        }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            return Source.Read (buffer, offset, count);
-        }
-
-        public override int ReadByte ()
-        {
-            return Source.ReadByte();
-        }
-        #endregion
     }
 
     internal class WwaReader : WpxDecoder
@@ -151,10 +115,81 @@ namespace GameRes.Formats.WildBug
                     else if (0 != (flags & 2))
                         return UnpackVB(); // sub_461B34
                 }
+                else if (0 != (flags & 4))
+                    throw new NotImplementedException ();
+                else if (0 != (flags & 2))
+                    return UnpackV2();
                 throw new NotImplementedException ();
             }
             else
                 return ReadUncompressed();
+        }
+
+        byte[] UnpackV2 () // 0x02 format
+        {
+            m_available = FillBuffer();
+            if (0 == m_available)
+                return null;
+
+            int step = 4;
+            if (m_available < step + 0x80)
+                return null;
+
+            int v9 = 3;
+            int dst = 0;
+            m_output[dst++] = m_buffer[0];
+            int remaining = m_output.Length - 1;
+            m_current = 1 + v9 + 128; // within m_buffer
+
+            var ref_table = new byte[0x10000];
+            if (!FillRefTable (ref_table, 1 + v9))
+                return null;
+            while (remaining > 0)
+            {
+                while (0 != GetNextBit())
+                {
+                    int v20 = 0;
+                    int v21 = 0;
+                    v9 = 16384;
+                    for (;;)
+                    {
+                        ++v20;
+                        if (0 != GetNextBit())
+                            v21 |= v9;
+                        if (ref_table[2 * v21] == v20)
+                            break;
+                        v9 >>= 1;
+                        if (0 == v9)
+                            return null;
+                    }
+                    m_output[dst++] = ref_table[2 * v21 + 1];
+                    --remaining;
+                    if (0 == remaining)
+                        return m_output;
+                }
+                int offset;
+                int count = 2;
+                if (0 != GetNextBit())
+                {
+                    offset = ReadNext();
+                }
+                else
+                {
+                    offset  = ReadNext();
+                    offset |= ReadNext() << 8;
+                    count = 3;
+                }
+                if (0 == GetNextBit())
+                {
+                    count += ReadCount();
+                }
+                if (remaining < count)
+                    return null;
+                Binary.CopyOverlapped (m_output, dst - offset - 1, dst, count);
+                dst += count;
+                remaining -= count;
+            }
+            return m_output;
         }
 
         byte[] UnpackVB ()
@@ -162,13 +197,13 @@ namespace GameRes.Formats.WildBug
             m_available = FillBuffer();
             if (0 == m_available)
                 return null;
-            var ref_table = new byte[0x10000];
-            int v6 = -1 & 3;
-            m_output[0] = m_buffer[0];
-            int dst = 1;
+            int v6 = 3;
+            int dst = 0;
+            m_output[dst++] = m_buffer[0];
             int remaining = m_output.Length - 1;
             m_current = 1 + v6 + 128;
 
+            var ref_table = new byte[0x10000];
             if (!FillRefTable (ref_table, 1 + v6))
                 return null;
             while (remaining > 0)
