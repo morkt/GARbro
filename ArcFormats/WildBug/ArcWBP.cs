@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -35,12 +36,17 @@ namespace GameRes.Formats.WildBug
         public override string         Tag { get { return "WBP"; } }
         public override string Description { get { return "Wild Bug's engine resource archive"; } }
         public override uint     Signature { get { return 0x46435241; } } // 'ARCF'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "ARCFORM3 WBUG "))
+            int version;
+            if (file.View.AsciiEqual (0, "ARCFORM3 WBUG "))
+                version = 3;
+            else if (file.View.AsciiEqual (0, "ARCFORM4 WBUG "))
+                version = 4;
+            else
                 return null;
             int count = file.View.ReadInt32 (0x10);
             if (!IsSaneCount (count))
@@ -53,6 +59,14 @@ namespace GameRes.Formats.WildBug
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
 
+            if (3 == version)
+                return OpenV3 (file, count, index_offset);
+            else
+                return OpenV4 (file, count, index_offset, index_size);
+        }
+
+        ArcFile OpenV3 (ArcView file, int count, uint index_offset)
+        {
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
@@ -67,6 +81,71 @@ namespace GameRes.Formats.WildBug
                     return null;
                 dir.Add (entry);
                 index_offset += name_length + 0x14;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        ArcFile OpenV4 (ArcView file, int count, uint index_offset, uint index_size)
+        {
+            var buffer = new byte[0x400];
+            var dir_names = new uint[0x100];
+            file.View.Read (0x24, buffer, 0, 0x400);
+            Buffer.BlockCopy (buffer, 0, dir_names, 0, 0x400);
+            var res_names = new uint[0x100];
+            file.View.Read (0x424, buffer, 0, 0x400);
+            Buffer.BlockCopy (buffer, 0, res_names, 0, 0x400);
+
+            var dir_table = new Dictionary<int, string>();
+            for (int i = 0; i < 0x100; ++i)
+            {
+                if (0 == dir_names[i])
+                    continue;
+                uint dir_offset = dir_names[i];
+                for (;;)
+                {
+                    byte hash = file.View.ReadByte (dir_offset);
+                    if (hash != i)
+                        break;
+                    byte name_length = file.View.ReadByte (dir_offset+1);
+                    int dir_id = file.View.ReadUInt16 (dir_offset+2);
+                    file.View.Read (dir_offset + 4, buffer, 0, name_length);
+                    byte checksum = 0;
+                    for (int j = 0; j < name_length; ++j)
+                        checksum += buffer[j];
+                    if (hash != checksum)
+                        return null;
+                    dir_table[dir_id] = Encodings.cp932.GetString (buffer, 0, name_length).TrimStart ('\\');
+                    dir_offset += 5u + name_length;
+                }
+            }
+            uint index_end = index_offset + index_size;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < 0x100; ++i)
+            {
+                if (0 == res_names[i])
+                    continue;
+                uint res_offset = res_names[i];
+                while (res_offset < index_end)
+                {
+                    byte hash = file.View.ReadByte (res_offset);
+                    if (hash != i)
+                        break;
+                    byte name_length = file.View.ReadByte (res_offset+1);
+                    int dir_id  = file.View.ReadUInt16 (res_offset+2);
+                    file.View.Read (res_offset+0x14, buffer, 0, name_length);
+                    byte checksum = 0;
+                    for (int j = 0; j < name_length; ++j)
+                        checksum += buffer[j];
+                    if (hash != checksum)
+                        return null;
+                    var dir_name = dir_table[dir_id];
+                    var name = dir_table[dir_id] + Encodings.cp932.GetString (buffer, 0, name_length);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Offset = file.View.ReadUInt32 (res_offset+4);
+                    entry.Size   = file.View.ReadUInt32 (res_offset+8);
+                    res_offset += (0x18u + name_length) & ~3u;
+                    dir.Add (entry);
+                }
             }
             return new ArcFile (file, this, dir);
         }
