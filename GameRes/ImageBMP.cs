@@ -49,17 +49,20 @@ namespace GameRes
         public override ImageData Read (Stream file, ImageMetaData info)
         {
             var bmp_info = info as BmpMetaData;
-            if (bmp_info != null && file.CanSeek
-                && info.Width * info.Height * (uint)info.BPP/8 + bmp_info.HeaderLength == bmp_info.ImageLength)
+            if (bmp_info != null && file.CanSeek)
             {
-                if (0x20 == info.BPP)
+                uint bmp_length = info.Width * info.Height * (uint)info.BPP/8 + bmp_info.HeaderLength;
+                if (bmp_length == bmp_info.ImageLength || bmp_length+2 == bmp_info.ImageLength)
                 {
-                    return ReadBitmapBGRA (file, bmp_info);
-                }
-                else if (0x18 == info.BPP
-                         && (bmp_info.ImageLength + info.Width * info.Height) == file.Length)
-                {
-                    return ReadBitmapWithAlpha (file, bmp_info);
+                    if (0x20 == info.BPP)
+                    {
+                        return ReadBitmapBGRA (file, bmp_info);
+                    }
+                    else if (0x18 == info.BPP
+                            && (bmp_info.ImageLength + info.Width * info.Height) == file.Length)
+                    {
+                        return ReadBitmapWithAlpha (file, bmp_info);
+                    }
                 }
             }
             var decoder = new BmpBitmapDecoder (file,
