@@ -67,7 +67,8 @@ namespace GameRes.Formats.BlackRainbow
         {
             stream.Seek (8, SeekOrigin.Current);
             using (var zstream = new ZLibStream (stream, CompressionMode.Decompress, true))
-                return base.Read (zstream, info);
+            using (var input = new SeekableStream (zstream))
+                return base.Read (input, info);
         }
     }
 }
