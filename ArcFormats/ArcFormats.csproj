@@ -37,6 +37,15 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <BaseAddress>6291456</BaseAddress>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Prerelease|AnyCPU'">
+    <OutputPath>bin\Prerelease\</OutputPath>
+    <BaseAddress>6291456</BaseAddress>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="NAudio, Version=1.7.2.19, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -88,6 +97,10 @@
     <Compile Include="Cyberworks\WidgetBELL.xaml.cs">
       <DependentUpon>WidgetBELL.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Ipac\ArcIPAC.cs" />
+    <Compile Include="Ipac\AudioWST.cs" />
+    <Compile Include="Ipac\ImageIES.cs" />
+    <Compile Include="Kiss\ArcARC.cs" />
     <Compile Include="LiveMaker\ArcVF.cs" />
     <Compile Include="ArcZIP.cs" />
     <Compile Include="AudioVOC.cs" />
