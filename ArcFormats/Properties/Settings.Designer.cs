@@ -597,5 +597,29 @@ namespace GameRes.Formats.Properties {
                 this["NPKScheme"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TacticsArcPassword {
+            get {
+                return ((string)(this["TacticsArcPassword"]));
+            }
+            set {
+                this["TacticsArcPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TacticsArcTitle {
+            get {
+                return ((string)(this["TacticsArcTitle"]));
+            }
+            set {
+                this["TacticsArcTitle"] = value;
+            }
+        }
     }
 }

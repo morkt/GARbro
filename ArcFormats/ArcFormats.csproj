@@ -97,6 +97,7 @@
     <Compile Include="Cyberworks\WidgetBELL.xaml.cs">
       <DependentUpon>WidgetBELL.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DDSystem\ArcDDP.cs" />
     <Compile Include="Ipac\ArcIPAC.cs" />
     <Compile Include="Ipac\AudioWST.cs" />
     <Compile Include="Ipac\ImageIES.cs" />
@@ -229,6 +230,9 @@
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="SuperNekoX\ArcGPC.cs" />
+    <Compile Include="Tactics\WidgetTactics.xaml.cs">
+      <DependentUpon>WidgetTactics.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="DxLib\ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
@@ -645,6 +649,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="RPM\WidgetARC.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tactics\WidgetTactics.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
