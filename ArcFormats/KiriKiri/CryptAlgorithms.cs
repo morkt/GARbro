@@ -24,6 +24,8 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.KiriKiri
@@ -694,6 +696,50 @@ namespace GameRes.Formats.KiriKiri
         public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
         {
             Decrypt (entry, offset, buffer, pos, count);
+        }
+    }
+
+    [Serializable]
+    public class AkabeiCrypt : ICrypt
+    {
+        private readonly uint m_seed;
+
+        public AkabeiCrypt (uint seed)
+        {
+            m_seed = seed;
+        }
+
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            int key_pos = (int)offset & 0x1F;
+            var key = GetKey (entry.Hash).ElementAt (key_pos);
+            return (byte)(value ^ key);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var key = GetKey (entry.Hash).ToArray();
+            int key_pos = (int)offset;
+            for (int i = 0; i < count; ++i)
+            {
+                buffer[pos+i] ^= key[key_pos++ & 0x1F];
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+
+        IEnumerable<byte> GetKey (uint hash)
+        {
+            hash = (hash ^ m_seed) & 0x7FFFFFFF;
+            hash = hash << 31 | hash;
+            for (int i = 0; i < 0x20; ++i)
+            {
+                yield return (byte)hash;
+                hash = (hash & 0xFFFFFFFE) << 23 | hash >> 8;
+            }
         }
     }
 }
