@@ -81,6 +81,7 @@
     </Compile>
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="Aoi\ImageAGF.cs" />
+    <Compile Include="ArcARCX.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="Astronauts\ArcGXP.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
