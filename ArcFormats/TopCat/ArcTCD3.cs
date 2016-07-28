@@ -2,7 +2,7 @@
 //! \date       Thu Oct 08 13:14:57 2015
 //! \brief      TopCat data archives (TCD)
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -60,10 +60,17 @@ namespace GameRes.Formats.TopCat
             Offset = offset;
         }
 
+        static readonly Lazy<ImageFormat> SpdcFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("SPD"));
+
         private static IResource DetectFileType (ArcView file, long offset)
         {
             uint signature = file.View.ReadUInt32 (offset);
-            return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+            byte spdc_key = (byte)(signature - 'S');
+            if ('P' == (((signature >> 8)  - spdc_key) & 0xFF) &&
+                'D' == (((signature >> 16) - spdc_key) & 0xFF) &&
+                'C' == (((signature >> 24) - spdc_key) & 0xFF))
+                return SpdcFormat.Value;
+            return AutoEntry.DetectFileType (signature);
         }
     }
 
@@ -204,35 +211,45 @@ namespace GameRes.Formats.TopCat
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             if (0x5367674F == signature) // 'OggS'
                 return DecryptOgg (arc, entry);
+
             var header = new byte[0x14];
             arc.File.View.Read (entry.Offset, header, 0, 0x14);
-            bool spdc_entry = false;
-            if (null == tcda.Key)
+            byte header_key = (byte)(header[0x12] + header[0x10]);
+            header[0] -= header_key;
+            header[1] -= header_key;
+            header[2] -= header_key;
+            header[3] -= header_key;
+            if (!Binary.AsciiEqual (header, "SPDC"))
             {
-                foreach (var key in KnownKeys.Values)
+                LittleEndian.Pack (signature, header, 0);
+                bool spdc_entry = false;
+                if (null == tcda.Key)
                 {
-                    int first = signature + key * (tcde.Index + 3);
-                    if (0x43445053 == first) // 'SPDC'
+                    foreach (var key in KnownKeys.Values)
                     {
-                        tcda.Key = key;
-                        spdc_entry = true;
-                        break;
+                        int first = signature + key * (tcde.Index + 3);
+                        if (0x43445053 == first) // 'SPDC'
+                        {
+                            tcda.Key = key;
+                            spdc_entry = true;
+                            break;
+                        }
                     }
                 }
-            }
-            else if (0x43445053 == signature + tcda.Key.Value * (tcde.Index + 3))
-            {
-                spdc_entry = true;
-            }
-            if (spdc_entry && 0 != tcda.Key.Value)
-            {
-                unsafe
+                else if (0x43445053 == signature + tcda.Key.Value * (tcde.Index + 3))
                 {
-                    fixed (byte* raw = header)
+                    spdc_entry = true;
+                }
+                if (spdc_entry && 0 != tcda.Key.Value)
+                {
+                    unsafe
                     {
-                        int* dw = (int*)raw;
-                        for (int i = 0; i < 5; ++i)
-                            dw[i] += tcda.Key.Value * (tcde.Index + 3 + i);
+                        fixed (byte* raw = header)
+                        {
+                            int* dw = (int*)raw;
+                            for (int i = 0; i < 5; ++i)
+                                dw[i] += tcda.Key.Value * (tcde.Index + 3 + i);
+                        }
                     }
                 }
             }
@@ -262,8 +279,7 @@ namespace GameRes.Formats.TopCat
 
         Stream DecryptOgg (ArcFile arc, Entry entry)
         {
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             int remaining = data.Length;
             int src = 0;
             while (remaining > 0x1B && Binary.AsciiEqual (data, src, "OggS"))
