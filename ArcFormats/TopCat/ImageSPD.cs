@@ -158,6 +158,9 @@ namespace GameRes.Formats.TopCat
             case Compression.Spdc:
                 UnpackSpdc();
                 break;
+            case Compression.Lz:
+                UnpackLz();
+                break;
             case Compression.LzRle:
             case Compression.LzRle2:
             case Compression.LzRleAlpha:
