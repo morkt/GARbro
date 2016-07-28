@@ -81,9 +81,9 @@ namespace GameRes.Formats.SHSystem
             {
                 uint packed_size   = file.View.ReadUInt32 (entry.Offset);
                 uint unpacked_size = file.View.ReadUInt32 (entry.Offset+4);
-                if (0 == packed_size)
+                entry.IsPacked = 0 != packed_size;
+                if (!entry.IsPacked)
                     packed_size = unpacked_size;
-                entry.IsPacked = packed_size != unpacked_size;
                 entry.Size = packed_size;
                 entry.UnpackedSize = unpacked_size;
                 entry.Offset += 8;
@@ -104,12 +104,10 @@ namespace GameRes.Formats.SHSystem
                 if (0 != signature)
                 {
                     IResource res;
-                    if (0x4D42 == (signature & 0xFFFF))
-                        res = ImageFormat.Bmp;
-                    else if (0x020000 == signature || 0x0A0000 == signature)
+                    if (0x020000 == signature || 0x0A0000 == signature)
                         res = ImageFormat.Tga;
                     else
-                        res = FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+                        res = AutoEntry.DetectFileType (signature);
                     if (res != null)
                     {
                         entry.Type = res.Type;
@@ -158,20 +156,11 @@ namespace GameRes.Formats.SHSystem
             if (!IsSaneCount (count))
                 return null;
 
-            int index_offset = 8;
-            var index = new List<Tuple<int, int>> (count);
-            for (int i = 0; i < count; ++i)
-            {
-                int size   = file.View.ReadInt32 (index_offset);
-                int offset = file.View.ReadInt32 (index_offset+4);
-                index_offset += 8;
-                if (size != 0)
-                    index.Add (Tuple.Create (offset, size));
-            }
+            var index = ReadIndex (file, 8, count);
             var dir = new List<Entry>();
             foreach (var section in index)
             {
-                index_offset = section.Item1;
+                int index_offset = section.Item1;
                 for (int section_size = section.Item2; section_size > 0; )
                 {
                     int entry_size = file.View.ReadByte (index_offset);
@@ -190,6 +179,20 @@ namespace GameRes.Formats.SHSystem
             }
             DetectFileTypes (file, dir);
             return new ArcFile (file, this, dir);
+        }
+
+        internal static List<Tuple<int, int>> ReadIndex (ArcView file, uint index_offset, int count)
+        {
+            var index = new List<Tuple<int, int>> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                int size   = file.View.ReadInt32 (index_offset);
+                int offset = file.View.ReadInt32 (index_offset+4);
+                index_offset += 8;
+                if (size != 0)
+                    index.Add (Tuple.Create (offset, size));
+            }
+            return index;
         }
     }
 
