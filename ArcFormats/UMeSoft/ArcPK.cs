@@ -78,5 +78,59 @@ namespace GameRes.Formats.UMeSoft
                 return null;
             return new ArcFile (file, this, dir);
         }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase) &&
+                !entry.Name.EndsWith (".tbl", StringComparison.InvariantCultureIgnoreCase))
+                return base.OpenEntry (arc, entry);
+            int output_size = arc.File.View.ReadInt32 (entry.Offset);
+            if (output_size <= 0)
+                return base.OpenEntry (arc, entry);
+            using (var input = arc.File.CreateStream (entry.Offset+4, entry.Size-4))
+            {
+                var data = LzUnpack (input, output_size);
+                for (int i = 0; i < data.Length; ++i)
+                    data[i] ^= 0x42;
+                return new MemoryStream (data);
+            }
+        }
+
+        byte[] LzUnpack (Stream input, int output_size)
+        {
+            var output = new byte[output_size];
+            int ctl = 0;
+            int mask = 0;
+            int dst = 0;
+            while (dst < output_size)
+            {
+                mask >>= 1;
+                if (0 == mask)
+                {
+                    ctl = input.ReadByte();
+                    if (-1 == ctl)
+                        break;
+                    mask = 0x80;
+                }
+                if (0 == (ctl & mask))
+                {
+                    output[dst++] = (byte)input.ReadByte();
+                }
+                else
+                {
+                    int lo = input.ReadByte();
+                    int hi = input.ReadByte();
+                    if (-1 == lo || -1 == hi)
+                        break;
+                    int offset = hi << 4 | lo >> 4;
+                    if (0 == offset)
+                        break;
+                    int count  = (lo & 0xF) + 3;
+                    Binary.CopyOverlapped (output, dst - offset, dst, count);
+                    dst += count;
+                }
+            }
+            return output;
+        }
     }
 }
