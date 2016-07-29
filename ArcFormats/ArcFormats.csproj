@@ -161,6 +161,7 @@
     <Compile Include="RealLive\ArcG00.cs" />
     <Compile Include="RealLive\ArcOVK.cs" />
     <Compile Include="RealLive\AudioNWA.cs" />
+    <Compile Include="RealLive\AudioOWP.cs" />
     <Compile Include="RealLive\ImageG00.cs" />
     <Compile Include="RealLive\ImagePDT.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
