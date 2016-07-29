@@ -308,17 +308,22 @@ namespace GameRes.Formats.UMeSoft
                 var info = base.ReadMetaData (stream) as GrxMetaData;
                 if (null == info)
                     return null;
-                if (info.AlphaOffset > 0)
-                    info.AlphaOffset += offset;
-                return new SgxMetaData { GrxOffset = offset, GrxInfo = info };
+                return new SgxMetaData
+                {
+                    Width   = info.Width,
+                    Height  = info.Height,
+                    BPP     = info.BPP,
+                    GrxOffset = offset,
+                    GrxInfo = info
+                };
             }
         }
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
             var meta = (SgxMetaData)info;
-            stream.Position = meta.GrxOffset;
-            return base.Read (stream, meta.GrxInfo);
+            using (var grx = new StreamRegion (stream, meta.GrxOffset, true))
+                return base.Read (grx, meta.GrxInfo);
         }
     }
 }
