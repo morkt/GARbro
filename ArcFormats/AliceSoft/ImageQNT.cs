@@ -80,20 +80,15 @@ namespace GameRes.Formats.AliceSoft
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as QntMetaData;
-            if (null == meta)
-                throw new ArgumentException ("QntFormat.Read should be supplied with QntMetaData", "info");
             stream.Position = 0x44;
-            using (var reader = new Reader (stream, meta))
-            {
-                reader.Unpack();
-                int stride = (int)info.Width * (reader.BPP / 8);
-                PixelFormat format = 24 == reader.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
-                return ImageData.Create (info, format, null, reader.Data, stride);
-            }
+            var reader = new Reader (stream, (QntMetaData)info);
+            reader.Unpack();
+            int stride = (int)info.Width * (reader.BPP / 8);
+            PixelFormat format = 24 == reader.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+            return ImageData.Create (info, format, null, reader.Data, stride);
         }
 
-        internal class Reader : IDisposable
+        internal class Reader
         {
             byte[]  m_input;
             byte[]  m_alpha;
@@ -196,13 +191,6 @@ namespace GameRes.Formats.AliceSoft
                     }
                 }
             }
-
-            #region IDisposable Members
-            public void Dispose ()
-            {
-                GC.SuppressFinalize (this);
-            }
-            #endregion
         }
     }
 }
