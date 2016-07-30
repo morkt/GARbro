@@ -31,25 +31,20 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.NScripter
 {
-    internal class EncryptedViewStream : Stream
+    internal abstract class ViewStreamBase : Stream
     {
-        ArcView.Frame   m_view;
-        byte[]          m_key;
-        long            m_max_offset;
-        long            m_position = 0;
-        byte[]          m_current_block = new byte[BlockLength];
-        int             m_current_block_length = 0;
-        long            m_current_block_position = 0;
-
-        static readonly HashAlgorithm MD5  = System.Security.Cryptography.MD5.Create();
-        static readonly HashAlgorithm SHA1 = System.Security.Cryptography.SHA1.Create();
+        private     ArcView.Frame   m_view;
+        private     long            m_max_offset;
+        private     long            m_position = 0;
+        protected   byte[]          m_current_block = new byte[BlockLength];
+        protected   int             m_current_block_length = 0;
+        protected   long            m_current_block_position = 0;
 
         public const int BlockLength = 1024;
 
-        public EncryptedViewStream (ArcView mmap, byte[] key)
+        public ViewStreamBase (ArcView mmap)
         {
             m_view = mmap.CreateFrame();
-            m_key = key;
             m_max_offset = mmap.MaxOffset;
         }
 
@@ -61,10 +56,9 @@ namespace GameRes.Formats.NScripter
             {
                 if (refill_buffer)
                 {
-                    int block_num = (int)(m_position / BlockLength);
                     m_current_block_position = m_position & ~((long)BlockLength-1);
                     m_current_block_length = m_view.Read (m_current_block_position, m_current_block, 0, (uint)BlockLength);
-                    DecryptBlock (block_num);
+                    DecryptBlock();
                 }
                 int src_offset = (int)m_position & (BlockLength-1);
                 int available = Math.Min (count, m_current_block_length - src_offset);
@@ -78,55 +72,7 @@ namespace GameRes.Formats.NScripter
             return total_read;
         }
 
-        private void DecryptBlock (int block_num)
-        {
-            byte[] bn = new byte[8];
-            LittleEndian.Pack (block_num, bn, 0);
-
-            var md5_hash = MD5.ComputeHash (bn);
-            var sha1_hash = SHA1.ComputeHash (bn);
-            var hmac_key = new byte[16];
-            for (int i = 0; i < 16; i++)
-                hmac_key[i] = (byte)(md5_hash[i] ^ sha1_hash[i]);
-
-            byte[] hmac_hash;
-            using (var HMAC = new HMACSHA512 (hmac_key))
-                hmac_hash = HMAC.ComputeHash (m_key);
-
-            int[] map = Enumerable.Range (0, 256).ToArray();
-
-            byte index = 0;
-            int h = 0;
-            for (int i = 0; i < 256; i++)
-            {
-                if (hmac_hash.Length == h)
-                    h = 0;
-                int tmp = map[i];
-                index = (byte)(tmp + hmac_hash[h++] + index);
-                map[i] = map[index];
-                map[index] = tmp;
-            }
-
-            int i0 = 0, i1 = 0;
-            for (int i = 0; i < 300; i++)
-            {
-                i0 = (i0 + 1) & 0xFF;
-                int tmp = map[i0];
-                i1 = (i1 + tmp) & 0xFF;
-                map[i0] = map[i1];
-                map[i1] = tmp;
-            }
-
-            for (int i = 0; i < m_current_block_length; i++)
-            {
-                i0 = (i0 + 1) & 0xFF;
-                int tmp = map[i0];
-                i1 = (i1 + tmp) & 0xFF;
-                map[i0] = map[i1];
-                map[i1] = tmp;
-                m_current_block[i] ^= (byte)map[(map[i0] + tmp) & 0xFF];
-            }
-        }
+        protected abstract void DecryptBlock ();
 
         #region IO.Stream methods
         public override bool  CanRead { get { return !m_disposed; } }
@@ -179,5 +125,69 @@ namespace GameRes.Formats.NScripter
             }
         }
         #endregion
+    }
+
+    internal class EncryptedViewStream : ViewStreamBase
+    {
+        byte[]          m_key;
+
+        static readonly HashAlgorithm MD5  = System.Security.Cryptography.MD5.Create();
+        static readonly HashAlgorithm SHA1 = System.Security.Cryptography.SHA1.Create();
+
+        public EncryptedViewStream (ArcView mmap, byte[] key) : base (mmap)
+        {
+            m_key = key;
+        }
+
+        protected override void DecryptBlock ()
+        {
+            int block_num = (int)(m_current_block_position / BlockLength);
+            byte[] bn = new byte[8];
+            LittleEndian.Pack (block_num, bn, 0);
+
+            var md5_hash = MD5.ComputeHash (bn);
+            var sha1_hash = SHA1.ComputeHash (bn);
+            var hmac_key = new byte[16];
+            for (int i = 0; i < 16; i++)
+                hmac_key[i] = (byte)(md5_hash[i] ^ sha1_hash[i]);
+
+            byte[] hmac_hash;
+            using (var HMAC = new HMACSHA512 (hmac_key))
+                hmac_hash = HMAC.ComputeHash (m_key);
+
+            int[] map = Enumerable.Range (0, 256).ToArray();
+
+            byte index = 0;
+            int h = 0;
+            for (int i = 0; i < 256; i++)
+            {
+                if (hmac_hash.Length == h)
+                    h = 0;
+                int tmp = map[i];
+                index = (byte)(tmp + hmac_hash[h++] + index);
+                map[i] = map[index];
+                map[index] = tmp;
+            }
+
+            int i0 = 0, i1 = 0;
+            for (int i = 0; i < 300; i++)
+            {
+                i0 = (i0 + 1) & 0xFF;
+                int tmp = map[i0];
+                i1 = (i1 + tmp) & 0xFF;
+                map[i0] = map[i1];
+                map[i1] = tmp;
+            }
+
+            for (int i = 0; i < m_current_block_length; i++)
+            {
+                i0 = (i0 + 1) & 0xFF;
+                int tmp = map[i0];
+                i1 = (i1 + tmp) & 0xFF;
+                map[i0] = map[i1];
+                map[i1] = tmp;
+                m_current_block[i] ^= (byte)map[(map[i0] + tmp) & 0xFF];
+            }
+        }
     }
 }
