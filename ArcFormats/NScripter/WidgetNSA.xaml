@@ -1,7 +1,6 @@
 ﻿<Grid x:Class="GameRes.Formats.GUI.WidgetNSA"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:fmt="clr-namespace:GameRes.Formats.NScripter"
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
       xmlns:s="clr-namespace:GameRes.Formats.Strings">
     <Grid.RowDefinitions>
@@ -10,7 +9,7 @@
         <RowDefinition/>
     </Grid.RowDefinitions>
     <Label Content="{x:Static s:arcStrings.NSAChoose}" Grid.Row="0" HorizontalAlignment="Left"/>
-    <ComboBox Name="Title" ItemsSource="{Binding Source={x:Static fmt:NsaOpener.KnownKeys}, Mode=OneWay}"
+    <ComboBox Name="Title" ItemsSource="{Binding}"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=NSATitle, Mode=TwoWay}"
               SelectedValuePath="Key" DisplayMemberPath="Key" SelectionChanged="Title_SelectionChanged"
               Width="200" Grid.Row="1" HorizontalAlignment="Left"/>

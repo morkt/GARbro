@@ -9,9 +9,10 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetNSA : Grid
     {
-        public WidgetNSA ()
+        public WidgetNSA (IDictionary<string, string> known_keys)
         {
             InitializeComponent ();
+            this.Title.ItemsSource = known_keys;
             this.Password.Text = Settings.Default.NSAPassword;
             if (null != this.Title.SelectedItem)
             {

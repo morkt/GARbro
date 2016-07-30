@@ -218,7 +218,7 @@ namespace GameRes.Formats.NScripter
 
         public override object GetAccessWidget ()
         {
-            return new GUI.WidgetNSA();
+            return new GUI.WidgetNSA (KnownKeys);
         }
 
         public override object GetCreationWidget ()
