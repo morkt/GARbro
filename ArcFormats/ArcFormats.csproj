@@ -144,6 +144,7 @@
       <DependentUpon>WidgetMGPK.xaml</DependentUpon>
     </Compile>
     <Compile Include="Marble\VideoANIM.cs" />
+    <Compile Include="MD5.cs" />
     <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NitroPlus\ArcPAK.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
@@ -157,6 +158,7 @@
     <Compile Include="NonColor\WidgetNCARC.xaml.cs">
       <DependentUpon>WidgetNCARC.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NScripter\ArcNS2.cs" />
     <Compile Include="Patisserie\ArcBIN.cs" />
     <Compile Include="Patisserie\ArcRAW.cs" />
     <Compile Include="RealLive\ArcG00.cs" />
