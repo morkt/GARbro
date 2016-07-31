@@ -210,7 +210,7 @@ namespace GameRes.Formats.TopCat
             if (0x43445053 == signature) // 'SPDC'
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             if (0x5367674F == signature) // 'OggS'
-                return DecryptOgg (arc, entry);
+                return RestoreOggStream (arc, entry);
 
             var header = new byte[0x14];
             arc.File.View.Read (entry.Offset, header, 0, 0x14);
@@ -219,10 +219,10 @@ namespace GameRes.Formats.TopCat
             header[1] -= header_key;
             header[2] -= header_key;
             header[3] -= header_key;
-            if (!Binary.AsciiEqual (header, "SPDC"))
+            bool spdc_entry = Binary.AsciiEqual (header, "SPDC");
+            if (!spdc_entry)
             {
                 LittleEndian.Pack (signature, header, 0);
-                bool spdc_entry = false;
                 if (null == tcda.Key)
                 {
                     foreach (var key in KnownKeys.Values)
@@ -252,9 +252,57 @@ namespace GameRes.Formats.TopCat
                         }
                     }
                 }
+
+                if (!spdc_entry && entry.Name.StartsWith ("TXT\\", StringComparison.InvariantCultureIgnoreCase)
+                    && signature < 0x01000000)
+                    return OpenScript (tcda, tcde, signature);
             }
             var rest = arc.File.CreateStream (entry.Offset+0x14, entry.Size-0x14);
             return new PrefixStream (header, rest);
+        }
+
+        Stream OpenScript (TcdArchive arc, TcdEntry entry, int unpacked_size)
+        {
+            byte[] data = new byte[unpacked_size];
+            using (var input = arc.File.CreateStream (entry.Offset+4, entry.Size-4))
+                UnpackLz (input, data);
+            DecryptScript (data);
+            return new MemoryStream (data);
+        }
+
+        void UnpackLz (Stream input, byte[] output)
+        {
+            int dst = 0;
+            int bits = 2;
+            while (dst < output.Length)
+            {
+                bits >>= 1;
+                if (1 == bits)
+                {
+                    bits = input.ReadByte();
+                    if (-1 == bits)
+                        break;
+                    bits |= 0x100;
+                }
+                if (0 == (bits & 1))
+                {
+                    int count = input.ReadByte();
+                    int offset = input.ReadByte() << 4 | count >> 4;
+                    count = Math.Min ((count & 0xF) + 3, output.Length - dst);
+                    Binary.CopyOverlapped (output, dst-offset, dst, count);
+                    dst += count;
+                }
+                else
+                {
+                    output[dst++] = (byte)input.ReadByte();
+                }
+            }
+        }
+
+        void DecryptScript (byte[] data)
+        {
+            for (int i = 0; i < data.Length; ++i)
+                data[i] = Binary.RotByteR (data[i], 1);
         }
 
         static Lazy<uint[]> OggCrcTable = new Lazy<uint[]> (InitOggCrcTable);
@@ -277,7 +325,7 @@ namespace GameRes.Formats.TopCat
             return table;
         }
 
-        Stream DecryptOgg (ArcFile arc, Entry entry)
+        Stream RestoreOggStream (ArcFile arc, Entry entry)
         {
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             int remaining = data.Length;
