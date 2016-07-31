@@ -254,7 +254,7 @@ namespace GameRes.Formats.TopCat
                 }
 
                 if (!spdc_entry && entry.Name.StartsWith ("TXT\\", StringComparison.InvariantCultureIgnoreCase)
-                    && signature < 0x01000000)
+                    && signature > 0 && signature < 0x01000000)
                     return OpenScript (tcda, tcde, signature);
             }
             var rest = arc.File.CreateStream (entry.Offset+0x14, entry.Size-0x14);
