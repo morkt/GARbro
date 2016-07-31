@@ -60,7 +60,8 @@ namespace GameRes.Formats.Cyberworks
 
         public void Unpack ()
         {
-            var header = new int[m_scheme.HeaderOrder.Length];
+            int header_length = Math.Max (8, m_scheme.HeaderOrder.Length);
+            var header = new int[header_length];
             for (int i = 0; i < m_scheme.HeaderOrder.Length; ++i)
             {
                 int b = GetInt();
