@@ -62,46 +62,52 @@ namespace GameRes.Formats.Cyberworks
         }
 
         static Regex s_arcname_re = new Regex (@"^.+0(?<id>(?<num>\d)(?<idx>[a-z])?)(?:|\..*)$", RegexOptions.IgnoreCase);
+        static Regex s_datname_re = new Regex (@"^(?<name>d[a-z]+?)(?<idx>[ah])?\.dat$", RegexOptions.IgnoreCase);
 
         public override ArcFile TryOpen (ArcView file)
         {
             var arc_name = Path.GetFileName (file.Name);
-            var match = s_arcname_re.Match (arc_name);
-            if (!match.Success)
-                return null;
-            char num = match.Groups["num"].Value[0];
-            if (num < '4' || num > '6')
-                return null;
             int arc_idx = 0;
-            if (match.Groups["idx"].Success)
-                arc_idx = char.ToUpper (match.Groups["idx"].Value[0]) - '@';
-
-            var toc_name_builder = new StringBuilder (arc_name);
-            var num_pos = match.Groups["id"].Index;
-            toc_name_builder.Remove (num_pos, match.Groups["id"].Length);
-            toc_name_builder.Insert (num_pos, num-'3');
-            var toc_name = toc_name_builder.ToString();
-
-            toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), toc_name);
-            byte[] toc;
-            using (var toc_view = VFS.OpenView (toc_name))
+            StringBuilder toc_name_builder;
+            var match = s_arcname_re.Match (arc_name);
+            if (match.Success)
             {
-                if (toc_view.MaxOffset <= 0x10)
+                char num = match.Groups["num"].Value[0];
+                if (num < '4' || num > '6')
                     return null;
-                uint unpacked_size = DecodeDecimal (toc_view, 0);
-                if (unpacked_size <= 4 || unpacked_size > 0x1000000)
-                    return null;
-                uint packed_size = DecodeDecimal (toc_view, 8);
-                if (packed_size > toc_view.MaxOffset)
-                    return null;
-                toc = new byte[unpacked_size];
-                using (var toc_s = toc_view.CreateStream (0x10, packed_size))
-                using (var lzss = new LzssStream (toc_s))
-                {
-                    if (toc.Length != lzss.Read (toc, 0, toc.Length))
-                        return null;
-                }
+                if (match.Groups["idx"].Success)
+                    arc_idx = char.ToUpper (match.Groups["idx"].Value[0]) - '@';
+
+                toc_name_builder = new StringBuilder (arc_name);
+                toc_name_builder.Append (arc_name);
+                var num_pos = match.Groups["id"].Index;
+                toc_name_builder.Remove (num_pos, match.Groups["id"].Length);
+                toc_name_builder.Insert (num_pos, num-'3');
             }
+            else if ((match = s_datname_re.Match (arc_name)).Success)
+            {
+                toc_name_builder = new StringBuilder (match.Groups["name"].Value);
+                if (match.Groups["idx"].Success)
+                {
+                    if ('a' == match.Groups["idx"].Value[0])
+                    {
+                        arc_idx = 1;
+                        toc_name_builder.Append ('h');
+                    }
+                }
+                else
+                    toc_name_builder.Append ('h');
+                toc_name_builder.Append (".dat");
+            }
+            else
+                return null;
+
+            var toc_name = toc_name_builder.ToString();
+            toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), toc_name);
+            var toc = ReadToc (toc_name);
+            if (null == toc)
+                return null;
+
             int entry_size = LittleEndian.ToInt32 (toc, 0) + 4;
             if (entry_size < 0x16)
                 return null;
@@ -163,6 +169,29 @@ namespace GameRes.Formats.Cyberworks
                 return new ArcFile (file, this, dir);
             var options = Query<BellOptions> (arcStrings.ArcEncryptedNotice);
             return new BellArchive (file, this, dir, options.Scheme);
+        }
+
+        byte[] ReadToc (string toc_name)
+        {
+            using (var toc_view = VFS.OpenView (toc_name))
+            {
+                if (toc_view.MaxOffset <= 0x10)
+                    return null;
+                uint unpacked_size = DecodeDecimal (toc_view, 0);
+                if (unpacked_size <= 4 || unpacked_size > 0x1000000)
+                    return null;
+                uint packed_size = DecodeDecimal (toc_view, 8);
+                if (packed_size > toc_view.MaxOffset - 0x10)
+                    return null;
+                using (var toc_s = toc_view.CreateStream (0x10, packed_size))
+                using (var lzss = new LzssStream (toc_s))
+                {
+                    var toc = new byte[unpacked_size];
+                    if (toc.Length != lzss.Read (toc, 0, toc.Length))
+                        return null;
+                    return toc;
+                }
+            }
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
