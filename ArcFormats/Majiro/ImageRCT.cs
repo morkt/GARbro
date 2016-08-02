@@ -65,6 +65,7 @@ namespace GameRes.Formats.Majiro
         public override uint     Signature { get { return 0x9a925a98; } }
 
         public bool OverlayFrames = true;
+        public bool ApplyMask = true;
 
         public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
 
@@ -135,7 +136,53 @@ namespace GameRes.Formats.Majiro
             var pixels = ReadPixelsData (file, meta);
             if (base_image != null)
                 pixels = CombineImage (base_image, pixels);
+
+            if (ApplyMask)
+            {
+                var base_name = Path.GetFileNameWithoutExtension (meta.FileName);
+                var mask_name = base_name + "_.rc8";
+                mask_name = VFS.CombinePath (VFS.GetDirectoryName (meta.FileName), mask_name);
+                if (VFS.FileExists (mask_name))
+                {
+                    try
+                    {
+                        return ApplyMaskToImage (meta, pixels, mask_name);
+                    }
+                    catch { /* ignore mask read errors */ }
+                }
+            }
             return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
+        }
+
+        ImageData ApplyMaskToImage (RctMetaData info, byte[] image, string mask_name)
+        {
+            using (var mask_file = VFS.OpenSeekableStream (mask_name))
+            {
+                var format = FindFormat (mask_file, mask_name);
+                if (null == format || !(format.Item1 is Rc8Format)
+                    || info.Width != format.Item2.Width || info.Height != format.Item2.Height)
+                    throw new InvalidFormatException();
+
+                using (var reader = new Rc8Format.Reader (mask_file, format.Item2))
+                {
+                    reader.Unpack();
+                    var palette = reader.Palette;
+                    int dst_stride = (int)info.Width * 4;
+                    var pixels = new byte[dst_stride * (int)info.Height];
+                    var alpha = reader.Data;
+                    int a_src = 0;
+                    int src = 0;
+                    for (int dst = 0; dst < pixels.Length; dst += 4)
+                    {
+                        pixels[dst  ] = image[src++];
+                        pixels[dst+1] = image[src++];
+                        pixels[dst+2] = image[src++];
+                        var color = palette[alpha[a_src++]];
+                        pixels[dst+3] = (byte)~((color.B + color.G + color.R) / 3);
+                    }
+                    return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, dst_stride);
+                }
+            }
         }
 
         byte[] CombineImage (byte[] base_image, byte[] overlay)
@@ -607,7 +654,6 @@ namespace GameRes.Formats.Majiro
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            file.Position = 0x14;
             using (var reader = new Reader (file, info))
             {
                 reader.Unpack();
@@ -634,6 +680,7 @@ namespace GameRes.Formats.Majiro
             public Reader (Stream file, ImageMetaData info)
             {
                 m_width = info.Width;
+                file.Position = 0x14;
                 var palette_data = new byte[0x300];
                 if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
                     throw new InvalidFormatException();
