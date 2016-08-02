@@ -171,8 +171,9 @@ namespace GameRes
         /// </summary>
         public void Extract (ArcFile file, Entry entry)
         {
-            using (var reader = OpenEntry (file, entry))
-                CopyEntry (file, reader, entry);
+            using (var input = OpenEntry (file, entry))
+            using (var output = CreateFile (entry.Name))
+                input.CopyTo (output);
         }
 
         /// <summary>
@@ -181,12 +182,6 @@ namespace GameRes
         public virtual Stream OpenEntry (ArcFile arc, Entry entry)
         {
             return arc.File.CreateStream (entry.Offset, entry.Size);
-        }
-
-        public virtual void CopyEntry (ArcFile arc, Stream input, Entry entry)
-        {
-            using (var output = CreateFile (entry.Name))
-                input.CopyTo (output);
         }
 
         /// <summary>
