@@ -85,20 +85,31 @@ namespace GameRes
             catalog.Catalogs.Add (new DirectoryCatalog (Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location), "Arc*.dll"));
 
             //Create the CompositionContainer with the parts in the catalog
-            var container = new CompositionContainer (catalog);
-
-            //Fill the imports of this object
-            container.ComposeParts (this);
-            AddResourceImpl (m_image_formats);
-            AddResourceImpl (m_arc_formats);
-            AddResourceImpl (m_audio_formats);
-            AddResourceImpl (m_script_formats);
+            using (var container = new CompositionContainer (catalog))
+            {
+                //Fill the imports of this object
+                container.ComposeParts (this);
+                AddResourceImpl (m_image_formats, container);
+                AddResourceImpl (m_arc_formats, container);
+                AddResourceImpl (m_audio_formats, container);
+                AddResourceImpl (m_script_formats, container);
+            }
         }
 
-        private void AddResourceImpl (IEnumerable<IResource> formats)
+        private void AddResourceImpl (IEnumerable<IResource> formats, CompositionContainer container)
         {
             foreach (var impl in formats)
             {
+                try
+                {
+                    var part = AttributedModelServices.CreatePart (impl);
+                    if (part.ImportDefinitions.Any())
+                        container.SatisfyImportsOnce (part);
+                }
+                catch (Exception X)
+                {
+                    System.Diagnostics.Trace.WriteLine (X.Message, impl.Tag);
+                }
                 foreach (var ext in impl.Extensions)
                 {
                     m_extension_map.Add (ext.ToUpperInvariant(), impl);

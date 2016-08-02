@@ -30,6 +30,7 @@ using System.ComponentModel.Composition;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
 using System.Windows.Media;
+using System.Collections.Generic;
 
 namespace GameRes
 {
@@ -39,29 +40,39 @@ namespace GameRes
         public uint HeaderLength;
     }
 
+    public interface IBmpExtension
+    {
+        ImageData Read (Stream file, BmpMetaData info);
+    }
+
     [Export(typeof(ImageFormat))]
     public class BmpFormat : ImageFormat
     {
-        public override string Tag { get { return "BMP"; } }
+        public override string         Tag { get { return "BMP"; } }
         public override string Description { get { return "Windows device independent bitmap"; } }
-        public override uint Signature { get { return 0; } }
+        public override uint     Signature { get { return 0; } }
+
+        #pragma warning disable 649
+        [ImportMany(typeof(IBmpExtension))]
+        private IEnumerable<IBmpExtension>  m_extensions;
+        #pragma warning restore 649
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
             var bmp_info = info as BmpMetaData;
-            if (bmp_info != null && file.CanSeek)
+            if (bmp_info != null)
             {
-                uint bmp_length = info.Width * info.Height * (uint)info.BPP/8 + bmp_info.HeaderLength;
-                if (bmp_length == bmp_info.ImageLength || bmp_length+2 == bmp_info.ImageLength)
+                foreach (var ext in m_extensions)
                 {
-                    if (0x20 == info.BPP)
+                    try
                     {
-                        return ReadBitmapBGRA (file, bmp_info);
+                        var image = ext.Read (file, bmp_info);
+                        if (null != image)
+                            return image;
                     }
-                    else if (0x18 == info.BPP
-                            && (bmp_info.ImageLength + info.Width * info.Height) == file.Length)
+                    catch (System.Exception X)
                     {
-                        return ReadBitmapWithAlpha (file, bmp_info);
+                        System.Diagnostics.Trace.WriteLine (X.Message, ext.ToString());
                     }
                 }
             }
@@ -77,46 +88,6 @@ namespace GameRes
             var encoder = new BmpBitmapEncoder();
             encoder.Frames.Add (BitmapFrame.Create (image.Bitmap, null, null, null));
             encoder.Save (file);
-        }
-
-        private ImageData ReadBitmapWithAlpha (Stream file, BmpMetaData info)
-        {
-            file.Position = info.ImageLength;
-            var alpha = new byte[info.Width*info.Height];
-            if (alpha.Length != file.Read (alpha, 0, alpha.Length))
-                throw new EndOfStreamException();
-
-            file.Position = info.HeaderLength;
-            int dst_stride = (int)info.Width * 4;
-            var pixels = new byte[(int)info.Height * dst_stride];
-            int a_src = 0;
-            for (int y = (int)info.Height-1; y >= 0; --y)
-            {
-                int dst = dst_stride * y;
-                for (int x = 0; x < dst_stride; x += 4)
-                {
-                    file.Read (pixels, dst+x, 3);
-                    pixels[dst+x+3] = alpha[a_src++];
-                }
-            }
-            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, dst_stride);
-        }
-
-        private ImageData ReadBitmapBGRA (Stream file, BmpMetaData info)
-        {
-            file.Position = info.HeaderLength;
-            int stride = (int)info.Width * 4;
-            var pixels = new byte[(int)info.Height * stride];
-            bool has_alpha = false;
-            for (int y = (int)info.Height-1; y >= 0; --y)
-            {
-                int dst = stride * y;
-                file.Read (pixels, dst, stride);
-                for (int x = 3; !has_alpha && x < stride; x += 4)
-                    has_alpha = pixels[dst+x] != 0;
-            }
-            PixelFormat format = has_alpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-            return ImageData.Create (info, format, null, pixels, stride);
         }
 
         void SkipBytes (BinaryReader file, uint num)
@@ -161,6 +132,71 @@ namespace GameRes
                     HeaderLength = header_size + 14,
                 };
             }
+        }
+    }
+
+    [Export(typeof(IBmpExtension))]
+    public class BitmapWithAlpha : IBmpExtension
+    {
+        public ImageData Read (Stream file, BmpMetaData info)
+        {
+            if (file.CanSeek)
+            {
+                var width_x_height = info.Width * info.Height;
+                uint bmp_length = width_x_height * (uint)info.BPP/8 + info.HeaderLength;
+                if (bmp_length == info.ImageLength || bmp_length+2 == info.ImageLength)
+                {
+                    if (0x20 == info.BPP)
+                    {
+                        return ReadBitmapBGRA (file, info);
+                    }
+                    else if (0x18 == info.BPP && (info.ImageLength + width_x_height) == file.Length)
+                    {
+                        return ReadBitmapWithAlpha (file, info);
+                    }
+                }
+            }
+            return null;
+        }
+
+        private ImageData ReadBitmapWithAlpha (Stream file, BmpMetaData info)
+        {
+            file.Position = info.ImageLength;
+            var alpha = new byte[info.Width*info.Height];
+            if (alpha.Length != file.Read (alpha, 0, alpha.Length))
+                throw new EndOfStreamException();
+
+            file.Position = info.HeaderLength;
+            int dst_stride = (int)info.Width * 4;
+            var pixels = new byte[(int)info.Height * dst_stride];
+            int a_src = 0;
+            for (int y = (int)info.Height-1; y >= 0; --y)
+            {
+                int dst = dst_stride * y;
+                for (int x = 0; x < dst_stride; x += 4)
+                {
+                    file.Read (pixels, dst+x, 3);
+                    pixels[dst+x+3] = alpha[a_src++];
+                }
+            }
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, dst_stride);
+        }
+
+        private ImageData ReadBitmapBGRA (Stream file, BmpMetaData info)
+        {
+            file.Position = info.HeaderLength;
+            int stride = (int)info.Width * 4;
+            var pixels = new byte[(int)info.Height * stride];
+            bool has_alpha = false;
+            for (int y = (int)info.Height-1; y >= 0; --y)
+            {
+                int dst = stride * y;
+                file.Read (pixels, dst, stride);
+                for (int x = 3; !has_alpha && x < stride; x += 4)
+                    has_alpha = pixels[dst+x] != 0;
+            }
+            PixelFormat format = has_alpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+            return ImageData.Create (info, format, null, pixels, stride);
         }
     }
 }
