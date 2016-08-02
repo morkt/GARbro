@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Security.Cryptography;
+using GameRes.Cryptography;
 using GameRes.Utility;
 
 namespace GameRes.Formats.CsWare

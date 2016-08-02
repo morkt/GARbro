@@ -34,7 +34,7 @@ using Simias.Encryption;
 using System.Runtime.InteropServices;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
-using GameRes.Utility;
+using GameRes.Cryptography;
 
 namespace GameRes.Formats.CatSystem
 {

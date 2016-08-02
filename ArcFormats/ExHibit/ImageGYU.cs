@@ -30,6 +30,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using GameRes.Utility;
 using GameRes.Compression;
+using GameRes.Cryptography;
 
 namespace GameRes.Formats.ExHibit
 {

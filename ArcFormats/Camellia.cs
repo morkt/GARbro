@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 
-namespace GameRes.Encryption
+namespace GameRes.Cryptography
 {
     public class Camellia
     {

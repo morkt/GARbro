@@ -7,7 +7,7 @@
 // C# port by morkt
 //
 
-namespace GameRes.Utility
+namespace GameRes.Cryptography
 {
     public class MersenneTwister
     {
