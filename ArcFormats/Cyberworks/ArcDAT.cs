@@ -79,7 +79,6 @@ namespace GameRes.Formats.Cyberworks
                     arc_idx = char.ToUpper (match.Groups["idx"].Value[0]) - '@';
 
                 toc_name_builder = new StringBuilder (arc_name);
-                toc_name_builder.Append (arc_name);
                 var num_pos = match.Groups["id"].Index;
                 toc_name_builder.Remove (num_pos, match.Groups["id"].Length);
                 toc_name_builder.Insert (num_pos, num-'3');
