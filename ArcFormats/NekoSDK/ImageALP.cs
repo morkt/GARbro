@@ -50,6 +50,7 @@ namespace GameRes.Formats.NekoSDK
             }
             file.Position = info.HeaderLength;
             int dst_stride = (int)info.Width * 4;
+            int gap = -((int)info.Width * info.BPP / 8) & 3;
             var pixels = new byte[(int)info.Height * dst_stride];
             int src_pixel_size = info.BPP / 8;
             int dst = (int)(info.Height-1) * dst_stride;
@@ -61,6 +62,8 @@ namespace GameRes.Formats.NekoSDK
                     file.Read (pixels, dst+x, src_pixel_size);
                     pixels[dst+x+3] = alpha[a_src++];
                 }
+                if (gap != 0)
+                    file.Seek (gap, SeekOrigin.Current);
                 dst -= dst_stride;
             }
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, dst_stride);
