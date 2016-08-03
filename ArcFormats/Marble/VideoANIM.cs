@@ -58,7 +58,7 @@ namespace GameRes.Formats.Marble
             uint audio_offset = file.View.ReadUInt32 (0x14);
             if (audio_size > 0)
             {
-                if (audio_offset >= file.MaxOffset || audio_size >= file.MaxOffset - audio_offset)
+                if (audio_offset >= file.MaxOffset || audio_size > file.MaxOffset - audio_offset)
                     return null;
             }
             int table_offset = 0x18 + count * 6;
