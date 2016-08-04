@@ -143,6 +143,7 @@
     <Compile Include="LiveMaker\WidgetGAL.xaml.cs">
       <DependentUpon>WidgetGAL.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Maika\ArcMK2.cs" />
     <Compile Include="MangaGamer\WidgetMGPK.xaml.cs">
       <DependentUpon>WidgetMGPK.xaml</DependentUpon>
     </Compile>
