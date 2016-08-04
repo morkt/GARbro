@@ -621,5 +621,17 @@ namespace GameRes.Formats.Properties {
                 this["TacticsArcTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string GYUTitle {
+            get {
+                return ((string)(this["GYUTitle"]));
+            }
+            set {
+                this["GYUTitle"] = value;
+            }
+        }
     }
 }

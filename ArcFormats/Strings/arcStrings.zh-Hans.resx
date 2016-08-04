@@ -380,4 +380,8 @@ Choose appropriate encryption scheme.</value>
   <data name="GALChoose" xml:space="preserve">
     <value>请选择游戏名称或输入密钥</value>
   </data>
+  <data name="GYUImageEncrypted" xml:space="preserve">
+    <value>图像已加密。
+请选择正确的加密方式。</value>
+  </data>
 </root>

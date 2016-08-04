@@ -2,7 +2,7 @@
 //! \date       Mon Nov 02 00:38:41 2015
 //! \brief      ExHIBIT engine image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -25,12 +25,16 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using GameRes.Utility;
 using GameRes.Compression;
 using GameRes.Cryptography;
+using GameRes.Formats.Strings;
+using GameRes.Formats.Properties;
 
 namespace GameRes.Formats.ExHibit
 {
@@ -44,12 +48,26 @@ namespace GameRes.Formats.ExHibit
         public int  PaletteSize;
     }
 
+    [Serializable]
+    public class GyuMap : ResourceScheme
+    {
+        public Dictionary<string, Dictionary<int, uint>> KnownKeys;
+    }
+
     [Export(typeof(ImageFormat))]
     public class GyuFormat : ImageFormat
     {
         public override string         Tag { get { return "GYU"; } }
         public override string Description { get { return "ExHIBIT engine image format"; } }
         public override uint     Signature { get { return 0x1A555947; } } // 'GYU'
+
+        public static Dictionary<string, Dictionary<int, uint>> KnownKeys = new Dictionary<string, Dictionary<int, uint>>();
+
+        public override ResourceScheme Scheme
+        {
+            get { return new GyuMap { KnownKeys = KnownKeys }; }
+            set { KnownKeys = ((GyuMap)value).KnownKeys; }
+        }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
@@ -71,12 +89,28 @@ namespace GameRes.Formats.ExHibit
             }
         }
 
+        IDictionary<int, uint> CurrentMap = null;
+
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
             var meta = (GyuMetaData)info;
             if (0 == meta.Key)
-                throw new UnknownEncryptionScheme ("Unknown image encryption key");
-
+            {
+                bool got_key = false;
+                var name = Path.GetFileNameWithoutExtension (meta.FileName);
+                int num;
+                if (int.TryParse (name, out num))
+                {
+                    if (null == CurrentMap)
+                        CurrentMap = QueryScheme();
+                    got_key = CurrentMap != null && CurrentMap.TryGetValue (num, out meta.Key);
+                }
+                if (!got_key)
+                {
+                    CurrentMap = null;
+                    throw new UnknownEncryptionScheme ("Unknown image encryption key");
+                }
+            }
             var reader = new GyuReader (stream, meta);
             reader.Unpack();
             return ImageData.CreateFlipped (meta, reader.Format, reader.Palette, reader.Data, reader.Stride);
@@ -85,6 +119,33 @@ namespace GameRes.Formats.ExHibit
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("GyuFormat.Write not implemented");
+        }
+
+        private IDictionary<int, uint> QueryScheme ()
+        {
+            if (0 == KnownKeys.Count)
+                return null;
+            if (1 == KnownKeys.Count)
+                return KnownKeys.First().Value;
+            var options = Query<GyuOptions> (arcStrings.GYUImageEncrypted);
+            return options.Scheme;
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new GyuOptions { Scheme = GetScheme (Settings.Default.GYUTitle) };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetGYU();
+        }
+
+        Dictionary<int, uint> GetScheme (string title)
+        {
+            Dictionary<int, uint> scheme = null;
+            KnownKeys.TryGetValue (title, out scheme);
+            return scheme;
         }
     }
 
@@ -283,5 +344,10 @@ namespace GameRes.Formats.ExHibit
                 data[i2] = tmp;
             }
         }
+    }
+
+    public class GyuOptions : ResourceOptions
+    {
+        public IDictionary<int, uint> Scheme;
     }
 }

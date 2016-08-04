@@ -216,6 +216,16 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Image is encrypted.
+        ///Choose appropriate encryption scheme..
+        /// </summary>
+        public static string GYUImageEncrypted {
+            get {
+                return ResourceManager.GetString("GYUImageEncrypted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose game executable file.
         /// </summary>
         public static string INTChooseExe {
@@ -415,7 +425,7 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Calcualting checksum....
+        ///   Looks up a localized string similar to Calculating checksum....
         /// </summary>
         public static string MsgCalculatingChecksum {
             get {

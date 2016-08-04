@@ -161,6 +161,10 @@
   <data name="GALChoose" xml:space="preserve">
     <value>Выберите наименование или введите ключ</value>
   </data>
+  <data name="GYUImageEncrypted" xml:space="preserve">
+    <value>Изображение зашифровано.
+Выберите способ шифрования.</value>
+  </data>
   <data name="INTChooseExe" xml:space="preserve">
     <value>Выберите исполняемый файл</value>
   </data>

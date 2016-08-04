@@ -179,7 +179,7 @@ Choose appropriate encryption scheme.</value>
     <value>Adding file</value>
   </data>
   <data name="MsgCalculatingChecksum" xml:space="preserve">
-    <value>Calcualting checksum...</value>
+    <value>Calculating checksum...</value>
   </data>
   <data name="MsgCompressingIndex" xml:space="preserve">
     <value>Compressing index...</value>
@@ -377,5 +377,9 @@ Choose appropriate encryption scheme.</value>
   </data>
   <data name="GALChoose" xml:space="preserve">
     <value>Choose title or enter a key</value>
+  </data>
+  <data name="GYUImageEncrypted" xml:space="preserve">
+    <value>Image is encrypted.
+Choose appropriate encryption scheme.</value>
   </data>
 </root>

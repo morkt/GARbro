@@ -375,4 +375,8 @@
   <data name="GALChoose" xml:space="preserve">
     <value>제목을 선택하거나 암호값 입력하기</value>
   </data>
+  <data name="GYUImageEncrypted" xml:space="preserve">
+    <value>이미지가 암호화됨.
+적절한 암호체계를 선택하세요.</value>
+  </data>
 </root>
