@@ -26,6 +26,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Ego
 {
@@ -62,6 +63,52 @@ namespace GameRes.Formats.Ego
             var reader = new Pak0Reader (file, data_offset, dir_count, count);
             var dir = reader.ReadIndex();
             return null != dir ? new ArcFile (file, this, dir) : null;
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry.Size <= 0x1C || !arc.File.View.AsciiEqual (entry.Offset, "SCR "))
+                return base.OpenEntry (arc, entry);
+            uint version = arc.File.View.ReadUInt32 (entry.Offset+4);
+            uint method  = arc.File.View.ReadUInt32 (entry.Offset+8);
+            if (0 == version || !(1 == method || 2 == method))
+                return base.OpenEntry (arc, entry);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            DecryptScript (method, data);
+            return new MemoryStream (data);
+        }
+
+        unsafe void DecryptScript (uint method, byte[] script)
+        {
+            int length = LittleEndian.ToInt32 (script, 0x10);
+            if (length < 4 || length > script.Length + 0x14)
+                return;
+            uint key = LittleEndian.ToUInt32 (script, 0xC);
+            fixed (byte* data8 = &script[0x14])
+            {
+                uint* data32 = (uint*)data8;
+                length /= 4;
+                if (1 == method)
+                {
+                    for (int i = 0; i < length; ++i)
+                    {
+                        if (0 == (i & 0xFF))
+                            key = 0 == key ? 1u : 0u;
+                        key += 0x7654321;
+                        *data32++ ^= key;
+                    }
+                }
+                else if (2 == method)
+                {
+                    for (int i = 0; i < length; ++i)
+                    {
+                        if (0 == (i & 0xFF))
+                            key = ~key;
+                        key += 0x7654321;
+                        *data32++ ^= key;
+                    }
+                }
+            }
         }
     }
 
