@@ -49,6 +49,7 @@ namespace GameRes.Formats.LiveMaker
 
         public override ArcFile TryOpen (ArcView file)
         {
+            uint base_offset = 0;
             ArcView index_file = file;
             ArcView extra_file = null;
             try
@@ -58,24 +59,32 @@ namespace GameRes.Formats.LiveMaker
                 //   game.001  -- [optional] extra part
                 //   game.ext  -- [optional] separate index (could be included into the main body)
 
-                if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
-                    return null;
                 uint signature = index_file.View.ReadUInt32 (0);
-                if (0x666676 != signature)
+                if (file.Name.EndsWith (".exe", StringComparison.InvariantCultureIgnoreCase)
+                    && (0x5A4D == (signature & 0xFFFF))) // 'MZ'
+                {
+                    base_offset = SkipExeData (index_file);
+                    signature = index_file.View.ReadUInt32 (base_offset);
+                }
+                else if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return null;
+                }
+                else if (0x666676 != signature)
                 {
                     var ext_filename = Path.ChangeExtension (file.Name, ".ext");
                     if (!VFS.FileExists (ext_filename))
                         return null;
                     index_file = VFS.OpenView (ext_filename);
                     signature = index_file.View.ReadUInt32 (0);
-                    if (0x666676 != signature)
-                        return null;
                 }
-                int count = index_file.View.ReadInt32 (6);
+                if (0x666676 != signature)
+                    return null;
+                int count = index_file.View.ReadInt32 (base_offset+6);
                 if (!IsSaneCount (count))
                     return null;
 
-                var dir = ReadIndex (index_file, count);
+                var dir = ReadIndex (index_file, base_offset, count);
                 if (null == dir)
                     return null;
                 long max_offset = file.MaxOffset;
@@ -133,9 +142,9 @@ namespace GameRes.Formats.LiveMaker
                 return input;
         }
 
-        List<Entry> ReadIndex (ArcView file, int count)
+        List<Entry> ReadIndex (ArcView file, uint base_offset, int count)
         {
-            uint index_offset = 0xA;
+            uint index_offset = base_offset+0xA;
             var name_buffer = new byte[0x100];
             var rnd = new TpRandom (0x75D6EE39u);
             var dir = new List<Entry> (count);
@@ -153,11 +162,11 @@ namespace GameRes.Formats.LiveMaker
                 dir.Add (FormatCatalog.Instance.Create<PackedEntry> (name));
             }
             rnd.Reset();
-            long offset = file.View.ReadInt64 (index_offset) ^ (int)rnd.GetRand32();
+            long offset = base_offset + (file.View.ReadInt64 (index_offset) ^ (int)rnd.GetRand32());
             foreach (var entry in dir)
             {
                 index_offset += 8;
-                long next_offset = file.View.ReadInt64 (index_offset) ^ (int)rnd.GetRand32();
+                long next_offset = base_offset + (file.View.ReadInt64 (index_offset) ^ (int)rnd.GetRand32());
                 entry.Offset = offset;
                 entry.Size = (uint)(next_offset - offset);
                 offset = next_offset;
@@ -177,6 +186,31 @@ namespace GameRes.Formats.LiveMaker
                 name_buf[i] ^= (byte)key.GetRand32();
             }
             return Encodings.cp932.GetString (name_buf, 0, name_length);
+        }
+
+        uint SkipExeData (ArcView file)
+        {
+            uint offset = 0;
+            uint pe_offset = file.View.ReadUInt32 (0x3c);
+            if (pe_offset < file.MaxOffset && 0x4550 == file.View.ReadUInt32 (pe_offset)) // 'PE'
+            {
+                int opt_header = file.View.ReadUInt16 (pe_offset+0x14); // SizeOfOptionalHeader
+                offset = file.View.ReadUInt32 (pe_offset+0x54); // SizeOfHeaders
+                long section_table = pe_offset+opt_header+0x18;
+                int count = file.View.ReadUInt16 (pe_offset+6); // NumberOfSections
+                if (section_table + 0x28*count < file.MaxOffset)
+                {
+                    for (int i = 0; i < count; ++i)
+                    {
+                        uint size = file.View.ReadUInt32 (section_table+0x10);
+                        uint addr = file.View.ReadUInt32 (section_table+0x14);
+                        section_table += 0x28;
+                        if (0 != size)
+                            offset = Math.Max (addr + size, offset);
+                    }
+                }
+            }
+            return offset;
         }
     }
 
@@ -239,6 +273,7 @@ namespace GameRes.Formats.LiveMaker
                     ExtraFile.Dispose();
                 _vff_disposed = true;
             }
+            base.Dispose (disposing);
         }
     }
 }
