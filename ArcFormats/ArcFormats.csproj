@@ -99,6 +99,7 @@
       <DependentUpon>WidgetBELL.xaml</DependentUpon>
     </Compile>
     <Compile Include="DDSystem\ArcDDP.cs" />
+    <Compile Include="Dogenzaka\ArcBIN.cs" />
     <Compile Include="ExHibit\WidgetGYU.xaml.cs">
       <DependentUpon>WidgetGYU.xaml</DependentUpon>
     </Compile>
@@ -136,7 +137,7 @@
     <Compile Include="Hexenhaus\ArcWAG.cs" />
     <Compile Include="Ikura\ImageYGP.cs" />
     <Compile Include="ImageLZ.cs" />
-    <Compile Include="ImageRSA.cs" />
+    <Compile Include="Dogenzaka\ImageRSA.cs" />
     <Compile Include="KiriKiri\ChainReactionCrypt.cs" />
     <Compile Include="Liar\ImageLIM.cs" />
     <Compile Include="LiveMaker\ImageGAL.cs" />
