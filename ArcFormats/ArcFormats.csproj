@@ -86,6 +86,8 @@
     <Compile Include="Astronauts\ArcGXP.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
     <Compile Include="BlackRainbow\ArcPAK.cs" />
+    <Compile Include="CaramelBox\ArcARC4.cs" />
+    <Compile Include="CaramelBox\ImageFCB.cs" />
     <Compile Include="Cmvs\ArcPBZ.cs" />
     <Compile Include="Cmvs\AudioMV.cs" />
     <Compile Include="Cmvs\ImagePSB.cs" />
