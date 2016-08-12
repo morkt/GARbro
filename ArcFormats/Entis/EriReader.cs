@@ -591,7 +591,6 @@ namespace GameRes.Formats.Entis
 
         private void DecodeLossyImage (HuffmanDecodeContext context)
         {
-            throw new NotImplementedException ("Lossy ERI compression not implemented");
             context.FlushBuffer();
 
             uint nERIVersion = context.GetNBits (8);
@@ -607,6 +606,14 @@ namespace GameRes.Formats.Entis
             m_nDstLineBytes = m_dwBytesPerLine;
             m_nDstWidth = (int)m_info.Width;
             m_nDstHeight = (int)m_info.Height;
+
+            if (9 == nERIVersion)
+            {
+                if (fOpTable != 0 || (fEncodeType & 0xFE) != 0 || nBitCount != 8)
+                    throw new InvalidFormatException();
+                DecodeLossyV9 (context, fEncodeType);
+                return;
+            }
 
             var pfnRestoreFunc = GetLSRestoreFunc (m_info.FormatType, m_info.BPP);
             if (null == pfnRestoreFunc)
@@ -624,6 +631,8 @@ namespace GameRes.Formats.Entis
             }
             else
                 throw new InvalidFormatException();
+
+            throw new NotImplementedException ("Lossy ERI compression not implemented");
 
             for (int i = 0; i < m_nBlockArea * 2; ++i)
             {
@@ -716,6 +725,169 @@ namespace GameRes.Formats.Entis
                 throw new NotImplementedException ("Filtering operations not implemented");
             }
             m_info.Transformation = orig_trans;
+        }
+
+        void DecodeLossyV9 (HuffmanDecodeContext context, uint fEncodeType)
+        {
+            throw new NotImplementedException();
+            /*
+            if (m_nChannelCount < 3)
+                throw new InvalidFormatException();
+            m_nDstPixelBytes = m_info.BPP >> 3;
+
+            var pfnRestoreFunc = GetLSRestoreFunc (m_info.FormatType, m_info.BPP);
+            if (null == pfnRestoreFunc)
+                throw new InvalidFormatException();
+
+            if (EriCode.RunlengthHuffman == m_info.Architecture)
+                context.PrepareToDecodeERINACode();
+
+            if (context.GetABit() != 0)
+                throw new InvalidFormatException();
+
+            float field_1A8 = 256.0f / (context.GetNBits (8) + 1);
+            uint v9 = context.GetNBits (8);
+            double field_1A4 = 2.0 / (double)m_nBlockSize;
+            int nTotalBlocks = m_nHeightBlocks * m_nWidthBlocks;
+            bool is_encode_type_1 = (fEncodeType & 1) != 0;
+            field_1A8 = (float)(field_1A8 * field_1A4);
+            float field_1AC = (float)(256.0 / (v9 + 1) * field_1A4);
+            if (is_encode_type_1)
+            {
+                uint v12 = (uint)(nTotalBlocks * m_nBlocksetCount);
+                context.InitGammaContext();
+                if (context.DecodeGammaCodeBytes (m_ptrMoveVecFlags, v12) < v12)
+                    throw new InvalidFormatException();
+
+                m_pHuffmanTree.Initialize();
+                int nAllBlockCount = 4 * nTotalBlocks;
+                for (int i = 0; i < nAllBlockCount; ++i)
+                {
+                    m_ptrIQParamTable[i] = (byte)context.GetHuffmanCode (m_pHuffmanTree);
+                }
+                if (m_info.Architecture != EriCode.RunlengthHuffman)
+                    context.InitGammaContext();
+            }
+            var field_70 = new byte[m_nBlocksetCount * 4];
+
+            int image_height = (int)m_info.Height;
+            int ptrSrcData = 0; // this->m_ptrMoveVecFlags;
+            int ptrQParam = 0; // this->m_ptrIQParamTable;
+            for (int nPosY = 0; nPosY < m_nHeightBlocks; ++nPosY)
+            {
+                int image_dst = (m_dwBytesPerLine * nPosY) << (m_info.BlockingDegree + 1);
+                int v48 = m_nBlockSize;
+                int v43 = m_nBlockSize;
+                if (image_height < m_nBlockSize)
+                {
+                    v48 = image_height;
+                    v43 = 0;
+                }
+                else if (image_height < 2 * m_nBlockSize)
+                {
+                    v43 = image_height - m_nBlockSize;
+                }
+                int image_width = (int)m_info.Width;
+                for (int i = 0; i < m_nBlocksetCount; ++i)
+                {
+                    m_ptrHorzBufLOT[i] = 0;
+                }
+                for (int nPosX = 0; nPosX < m_nWidthBlocks; ++nPosX)
+                {
+                    if (is_encode_type_1)
+                    {
+                        Buffer.BlockCopy (m_ptrMoveVecFlags, ptrSrcData, field_70, 0, 4 * m_nBlocksetCount);
+                        ptrSrcData += 4 * m_nBlocksetCount;
+                    }
+                    else
+                    {
+                        context.InitGammaContext();
+                        if (context.DecodeGammaCodeBytes (field_70, m_nBlocksetCount) < m_nBlocksetCount)
+                            throw new InvalidFormatException();
+                        m_ptrIQParamTable[ptrQParam  ] = (byte)context.GetHuffmanCode (m_pHuffmanTree);
+                        m_ptrIQParamTable[ptrQParam+1] = (byte)context.GetHuffmanCode (m_pHuffmanTree);
+                        m_ptrIQParamTable[ptrQParam+2] = (byte)context.GetHuffmanCode (m_pHuffmanTree);
+                        m_ptrIQParamTable[ptrQParam+3] = (byte)context.GetHuffmanCode (m_pHuffmanTree);
+                    }
+                    int v23 = m_nBlocksetCount * (m_nBlockArea - 1);
+                    if (EriCode.RunlengthHuffman == m_info.dwArchitecture)
+                    {
+                        if (sub_439080 (&this->field_70[4 * m_nBlocksetCount], v23) < v23 )
+                            throw new InvalidFormatException();
+                    }
+                    else
+                    {
+                        if (!is_encode_type_1)
+                            context.InitGammaContext();
+                        if (context.DecodeGammaCodeBytes ((SBYTE *)&this->field_70[4 * this->m_nBlocksetCount], v23) < v23)
+                            throw new InvalidFormatException();
+                    }
+                    for (int v24 = 0; v24 < m_nBlocksetCount; ++v24)
+                    {
+                        uint v27 = LittleEndian.ToUInt32 (field_70, v24 * 4) + m_ptrHorzBufLOT[v24];
+                        m_ptrHorzBufLOT[v24] = v27;
+                        LittleEndian.Pack (v27, field_70, v24 * 4);
+                    }
+                    sub_43ADE0 (this, (int)ptrQParam, (int)ptrQParam);
+                    ptrQParam += 4;
+                    sub_425A49 (this);
+                    field_94 (this);
+                    sub_43B1B0 (this);
+
+                    int v29 = m_nBlockSize;
+                    int v30 = m_nBlockSize;
+                    if (image_width < m_nBlockSize)
+                    {
+                        v29 = image_width;
+                        v30 = 0;
+                    }
+                    else if (image_width < 2 * m_nBlockSize)
+                    {
+                        v30 = image_width - m_nBlockSize;
+                    }
+                    int v59 = v30;
+                    int v61 = v30;
+                    int v58 = v29;
+                    int v54 = v48;
+                    int v55 = v48;
+                    int v60 = v29;
+                    int v56 = v43;
+                    int v57 = v43;
+                    int v31 = m_nDstPixelBytes;
+                    int v62 = 0;
+                    v32 = (float *)this->m_ptrBlocksetBuf;
+                    v63 = m_nBlockSize * v31;
+                    v33 = m_dwBytesPerLine;
+                    v64 = m_nBlockSize * v33;
+                    v65 = m_nBlockSize * (v33 + v31);
+                    for (int v34 = 0; v34 < 16; v34 += 4)
+                    {
+                        v35 = v66;
+                        v36 = v32;
+                        v37 = 4;
+                        do
+                        {
+                            v38 = *v36;
+                            v36 += 4;
+                            *v35 = v38;
+                            ++v35;
+                            --v37;
+                        }
+                        while ( v37 );
+                        pfnRestoreFunc (
+                            &image_dst[*(int *)((char *)&v62 + v34)],
+                            imginf->dwBytesPerLine,
+                            v66,
+                            *(uint *)((char *)&v58 + v34),
+                            *(uint *)((char *)&v54 + v34));
+                        ++v32;
+                    }
+                    image_width -= 2 * m_nBlockSize;
+                    image_dst += m_nDstPixelBytes << (m_info.BlockingDegree + 1);
+                }
+                image_height -= 2 * m_nBlockSize;
+            }
+            */
         }
 
         void CalcImageSizeInBlocks (CvType fdwTransformation)

@@ -2,7 +2,7 @@
 //! \date       Fri Aug 01 11:36:31 2014
 //! \brief      RCT/RC8 image format implementation.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -125,9 +125,7 @@ namespace GameRes.Formats.Majiro
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {
-            var meta = info as RctMetaData;
-            if (null == meta)
-                throw new ArgumentException ("RctFormat.Read should be supplied with RctMetaData", "info");
+            var meta = (RctMetaData)info;
 
             byte[] base_image = null;
             if (meta.FileName != null && meta.AddSize > 0 && OverlayFrames)

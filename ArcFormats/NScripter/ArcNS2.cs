@@ -178,7 +178,6 @@ namespace GameRes.Formats.NScripter
 
         protected override void DecryptBlock ()
         {
-            int block_count = m_current_block_length / BlockSize;
             var temp = new byte[32];
             var hash = new byte[16];
             for (int src = 0; src < m_current_block_length; src += BlockSize)
@@ -219,7 +218,7 @@ namespace GameRes.Formats.NScripter
                 Buffer.BlockCopy (temp, 16, m_current_block, src, 16);
                 for (int j = 0; j < 16; ++j)
                 {
-                    m_current_block[src + 16 + j] = (byte)(hash[j] ^ temp[j]);
+                    m_current_block[src2 + j] = (byte)(hash[j] ^ temp[j]);
                 }
             }
         }

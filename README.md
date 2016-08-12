@@ -16,7 +16,7 @@ Browse through the file system to a file of interest.  If you think it's an
 archive, try to 'enter' inside by pressing 'Enter' on it.  If GARbro
 recognizes format its contents will be displayed just like regular file
 system.  Some archives are encrypted, so you will be asked for credentials or
-a supposed game title.  If game is not listed among available options then
+a supposed game title.  If game is not listed among presented options then
 most likely archive could not be opened by current GARbro version.
 
 Files could be extracted from archives by pressing 'F4', with all images and
