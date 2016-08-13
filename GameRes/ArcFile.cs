@@ -64,25 +64,30 @@ namespace GameRes
         /// </returns>
         public static ArcFile TryOpen (string filename)
         {
-            var entry = VFS.FindFile (filename);
+            return TryOpen (VFS.FindFile (filename));
+        }
+
+        public static ArcFile TryOpen (Entry entry)
+        {
             if (entry.Size < 4)
                 return null;
+            var filename = entry.Name;
             var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant());
             var file = VFS.OpenView (entry);
             try
             {
                 uint signature = file.View.ReadUInt32 (0);
-                var tried = new HashSet<ArchiveFormat>();
+                var tried = Enumerable.Empty<ArchiveFormat>();
                 for (;;)
                 {
                     var range = FormatCatalog.Instance.LookupSignature<ArchiveFormat> (signature);
+                    if (tried.Any())
+                        range = range.Except (tried);
                     // check formats that match filename extension first
                     if (range.Skip(1).Any()) // if range.Count() > 1
                         range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
                     foreach (var impl in range)
                     {
-                        if (!tried.Add (impl))
-                            continue;
                         try
                         {
                             var arc = impl.TryOpen (file);
@@ -107,6 +112,7 @@ namespace GameRes
                     if (0 == signature)
                         break;
                     signature = 0;
+                    tried = range;
                 }
             }
             finally

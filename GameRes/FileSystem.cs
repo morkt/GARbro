@@ -550,7 +550,7 @@ namespace GameRes
                 return;
             }
             Flush();
-            var arc = ArcFile.TryOpen (entry.Name);
+            var arc = ArcFile.TryOpen (entry);
             if (null == arc)
             {
                 if (FormatCatalog.Instance.LastError is OperationCanceledException)
