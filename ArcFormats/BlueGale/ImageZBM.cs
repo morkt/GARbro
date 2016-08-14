@@ -63,6 +63,7 @@ namespace GameRes.Formats.BlueGale
                 var header = new byte[0x20];
                 stream.Position = data_offset;
                 Unpack (stream, header);
+                Decrypt (header);
                 if ('B' != header[0] || 'M' != header[1])
                     return null;
                 return new ZbmMetaData
@@ -82,8 +83,9 @@ namespace GameRes.Formats.BlueGale
             var data = new byte[meta.UnpackedSize];
             stream.Position = meta.DataOffset;
             Unpack (stream, data);
+            Decrypt (data);
             using (var bmp = new MemoryStream (data))
-                return ImageFormat.Bmp.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -91,20 +93,18 @@ namespace GameRes.Formats.BlueGale
             throw new System.NotImplementedException ("ZbmFormat.Write not implemented");
         }
 
-        static void Unpack (Stream input, byte[] output)
+        internal static void Unpack (Stream input, byte[] output, int dst = 0)
         {
             using (var bits = new MsbBitStream (input, true))
             {
                 bits.GetNextBit();
-                int dst = 0;
                 while (dst < output.Length)
                 {
                     int count = bits.GetBits (8);
                     if (-1 == count)
-                        throw new EndOfStreamException();
+                        break;
                     if (count > 0x7F)
                     {
-                        count &= 0x7F;
                         int offset = bits.GetBits (10);
                         if (-1 == offset)
                             throw new EndOfStreamException();
@@ -114,6 +114,8 @@ namespace GameRes.Formats.BlueGale
                     }
                     else
                     {
+                        if (0 == count)
+                            break;
                         for (int i = 0 ; i < count && dst < output.Length; i++)
                         {
                             int v = bits.GetBits (8);
@@ -124,7 +126,6 @@ namespace GameRes.Formats.BlueGale
                     }
                 }
             }
-            Decrypt (output);
         }
 
         static void Decrypt (byte[] data)
