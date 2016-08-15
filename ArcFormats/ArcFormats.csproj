@@ -178,6 +178,7 @@
     <Compile Include="RealLive\AudioOWP.cs" />
     <Compile Include="RealLive\ImageG00.cs" />
     <Compile Include="RealLive\ImagePDT.cs" />
+    <Compile Include="ShiinaRio\WarcEncryption.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
     <Compile Include="SimpleEncryption.cs" />
     <Compile Include="Slg\ArcSZS.cs" />
