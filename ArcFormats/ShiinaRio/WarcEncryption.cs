@@ -582,41 +582,58 @@ namespace GameRes.Formats.ShiinaRio
     }
 
     [Serializable]
-    public abstract class KeyDecryptExtra : IDecryptExtra
+    public abstract class KeyDecryptBase : IDecryptExtra
     {
-        readonly uint     Key;
-        readonly byte[]   DecodeTable;
+        protected readonly uint     Seed;
+        protected readonly byte[]   DecodeTable;
+        protected uint MinLength = 0x400;
 
-        public KeyDecryptExtra (uint key, byte[] decode_bin)
+        public KeyDecryptBase (uint seed, byte[] decode_bin)
         {
-            Key = key;
+            Seed = seed;
             DecodeTable = decode_bin;
         }
 
         public void Decrypt (byte[] data, int index, uint length, uint flags)
         {
-            if (length < 0x400)
+            if (length < MinLength)
                 return;
             if ((flags & 0x202) == 0x202)
-            {
-                var k = new uint[4];
-                InitKey (Key, k);
-                for (int i = 0; i < 0xFF; ++i)
-                {
-                    uint j = k[3] ^ (k[3] << 11) ^ k[0] ^ ((k[3] ^ (k[3] << 11) ^ (k[0] >> 11)) >> 8);
-                    k[3] = k[2];
-                    k[2] = k[1];
-                    k[1] = k[0];
-                    k[0] = j;
-                    data[index + i] ^= DecodeTable[j % DecodeTable.Length];
-                }
-            }
+                DecryptPre (data, index, length);
             if ((flags & 0x204) == 0x204)
+                DecryptPost (data, index, length);
+        }
+
+        protected abstract void DecryptPre (byte[] data, int index, uint length);
+
+        protected virtual void DecryptPost (byte[] data, int index, uint length)
+        {
+            data[index + 0x200] ^= (byte)Seed;
+            data[index + 0x201] ^= (byte)(Seed >> 8);
+            data[index + 0x202] ^= (byte)(Seed >> 16);
+            data[index + 0x203] ^= (byte)(Seed >> 24);
+        }
+    }
+
+    [Serializable]
+    public abstract class KeyDecryptExtra : KeyDecryptBase
+    {
+        public KeyDecryptExtra (uint seed, byte[] decode_bin) : base (seed, decode_bin)
+        {
+        }
+
+        protected override void DecryptPre (byte[] data, int index, uint length)
+        {
+            var k = new uint[4];
+            InitKey (Seed, k);
+            for (int i = 0; i < 0xFF; ++i)
             {
-                data[index + 0x200] ^= (byte)Key;
-                data[index + 0x201] ^= (byte)(Key >> 8);
-                data[index + 0x202] ^= (byte)(Key >> 16);
-                data[index + 0x203] ^= (byte)(Key >> 24);
+                uint j = k[3] ^ (k[3] << 11) ^ k[0] ^ ((k[3] ^ (k[3] << 11) ^ (k[0] >> 11)) >> 8);
+                k[3] = k[2];
+                k[2] = k[1];
+                k[1] = k[0];
+                k[0] = j;
+                data[index + i] ^= DecodeTable[j % DecodeTable.Length];
             }
         }
 
@@ -656,27 +673,64 @@ namespace GameRes.Formats.ShiinaRio
     }
 
     [Serializable]
-    public class UnknownCrypt : IDecryptExtra
+    public class MakiFesCrypt : KeyDecryptBase
+    {
+        public MakiFesCrypt (uint seed, byte[] key) : base (seed, key)
+        {
+        }
+
+        protected override void DecryptPre (byte[] data, int index, uint length)
+        {
+            uint k = Seed;
+            for (int i = 0; i < 0x100; ++i)
+            {
+                k = 0x343FD * k + 0x269EC3;
+                data[index+i] ^= DecodeTable[((int)(k >> 16) & 0x7FFF) % DecodeTable.Length];
+            }
+        }
+    }
+
+    [Serializable]
+    public class MajimeCrypt : IDecryptExtra
+    {
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x202) == 0x202)
+            {
+                int sum = 0;
+                int bit = 0;
+                byte v;
+                for (int i = 0; i < 0x100; ++i)
+                {
+                    v = data[index+i];
+                    sum += v >> 1;
+                    data[index+i] = (byte)(v >> 1 | bit);
+                    bit = v << 7;
+                }
+                data[index] |= (byte)bit;
+                data[index + 0x104] ^= (byte)sum;
+                data[index + 0x105] ^= (byte)(sum >> 8);
+            }
+        }
+    }
+
+    [Serializable]
+    public class AlcotCrypt : IDecryptExtra
     {
         public void Decrypt (byte[] data, int index, uint length, uint flags)
         {
             if (length < 0x400)
                 return;
-            int src = index;
-            uint key = 0;
-            for (uint i = (length & 0x7eu) + 1; i != 0; --i)
+            if ((flags & 0x204) == 0x204)
             {
-                key ^= data[src++];
-                for (int j = 0; j < 8; ++j)
-                {
-                    uint bit = key & 1;
-                    key = bit << 15 | key >> 1;
-                    if (0 == bit)
-                        key ^= 0x408;
-                }
+                var crc16 = new Kogado.Crc16();
+                crc16.Update (data, index, (int)length & 0x7E | 1);
+                var sum = crc16.Value ^ 0xFFFF;
+                data[index + 0x104] ^= (byte)sum;
+                data[index + 0x105] ^= (byte)(sum >> 8);
             }
-            data[index+0x104] ^= (byte)key;
-            data[index+0x105] ^= (byte)(key >> 8);
         }
     }
 }
