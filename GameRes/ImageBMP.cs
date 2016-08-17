@@ -62,6 +62,7 @@ namespace GameRes
             var bmp_info = info as BmpMetaData;
             if (bmp_info != null)
             {
+                bool can_seek = file.CanSeek;
                 foreach (var ext in m_extensions)
                 {
                     try
@@ -74,6 +75,8 @@ namespace GameRes
                     {
                         System.Diagnostics.Trace.WriteLine (X.Message, ext.ToString());
                     }
+                    if (can_seek)
+                        file.Position = 0;
                 }
             }
             var decoder = new BmpBitmapDecoder (file,
