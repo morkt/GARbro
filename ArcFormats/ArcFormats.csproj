@@ -398,6 +398,7 @@
     <Compile Include="Xuse\ArcWAG.cs" />
     <Compile Include="Xuse\ArcXARC.cs" />
     <Compile Include="Xuse\ArcXuse.cs" />
+    <Compile Include="Yox\ArcYOX.cs" />
     <Compile Include="Yuka\ArcYKC.cs" />
     <Compile Include="BlackCyc\AudioVAW.cs" />
     <Compile Include="WildBug\AudioWPN.cs" />
