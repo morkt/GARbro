@@ -2,7 +2,7 @@
 //! \date       Mon Jan 19 08:57:16 2015
 //! \brief      Innocent Grey archives format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,10 +23,10 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using GameRes.Utility;
 
 namespace GameRes.Formats.SystemEpsylon
 {
@@ -54,7 +54,7 @@ namespace GameRes.Formats.SystemEpsylon
             if (!file.View.AsciiEqual (4, "DAT."))
                 return null;
             int count = file.View.ReadInt32 (8);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             uint index_size = 0x30 * (uint)count;
             if (index_size > file.View.Reserve (0x10, index_size))
@@ -80,25 +80,25 @@ namespace GameRes.Formats.SystemEpsylon
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var pentry = entry as PackDatEntry;
-            if (null == pentry || 0 == (pentry.Flags & 0x10000))
+            if (null == pentry || entry.Size < 4 || 0 == (pentry.Flags & 0x10000))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
 
-            byte[] input = new byte[pentry.Size];
-            if (pentry.Size != arc.File.View.Read (entry.Offset, input, 0, pentry.Size))
-                return arc.File.CreateStream (entry.Offset, entry.Size);
-
-            unsafe
+            var input = arc.File.View.ReadBytes (entry.Offset, pentry.Size);
+            if (input.Length == pentry.Size)
             {
-                fixed (byte* buf_raw = input)
+                unsafe
                 {
-                    uint* encoded = (uint*)buf_raw;
-                    uint key = pentry.Size >> 2;
-                    key = (key << (((int)key & 7) + 8)) ^ key;
-                    for (uint i = entry.Size / 4; i != 0; --i )
+                    fixed (byte* buf_raw = input)
                     {
-                        *encoded ^= key;
-                        int cl = (int)(*encoded++ % 24);
-                        key = (key << cl) | (key >> (32 - cl));
+                        uint* encoded = (uint*)buf_raw;
+                        uint key = pentry.Size >> 2;
+                        key = (key << (((int)key & 7) + 8)) ^ key;
+                        for (uint i = entry.Size / 4; i != 0; --i )
+                        {
+                            *encoded ^= key;
+                            int cl = (int)(*encoded++ % 24);
+                            key = Binary.RotL (key, cl);
+                        }
                     }
                 }
             }
