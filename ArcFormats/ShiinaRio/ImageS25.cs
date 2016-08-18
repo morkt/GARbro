@@ -2,7 +2,7 @@
 //! \date       Sat Apr 18 17:00:54 2015
 //! \brief      ShiinaRio S25 multi-image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -58,7 +58,9 @@ namespace GameRes.Formats.ShiinaRio
                 int count = input.ReadInt32();
                 if (count < 0 || count > 0xfffff)
                     return null;
-                uint first_offset = input.ReadUInt32();
+                uint first_offset = 0;
+                for (int i = 0; i < count && 0 == first_offset; ++i)
+                    first_offset = input.ReadUInt32();
                 if (0 == first_offset)
                     return null;
                 input.BaseStream.Position = first_offset;
@@ -76,11 +78,7 @@ namespace GameRes.Formats.ShiinaRio
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as S25MetaData;
-            if (null == meta)
-                throw new ArgumentException ("S25Format.Read should be supplied with S25MetaData", "info");
-
-            using (var reader = new Reader (stream, meta))
+            using (var reader = new Reader (stream, (S25MetaData)info))
             {
                 var pixels = reader.Unpack();
                 return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
