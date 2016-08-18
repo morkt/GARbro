@@ -2,7 +2,7 @@
 //! \date       Tue Aug 04 22:58:17 2015
 //! \brief      LiLiM/Le.Chocolat compressed image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -57,7 +57,7 @@ namespace GameRes.Formats.Lilim
             else if (32 == type || 24 == type)
             {
                 uint unpacked_size = LittleEndian.ToUInt32 (header, 2);
-                if (unpacked_size == stream.Length) // probably an ordinary bmp file
+                if (0 == unpacked_size || unpacked_size == stream.Length) // probably an ordinary bmp file
                     return null;
                 frame_offset = LittleEndian.ToUInt32 (header, 0xA);
             }
@@ -77,11 +77,7 @@ namespace GameRes.Formats.Lilim
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as AbmImageData;
-            if (null == meta)
-                throw new ArgumentException ("AbmFormat.Read should be supplied with AbmMetaData", "info");
-
-            using (var reader = new AbmReader (stream, meta))
+            using (var reader = new AbmReader (stream, (AbmImageData)info))
             {
                 var pixels = reader.Unpack();
                 PixelFormat format = 32 == reader.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr24;
