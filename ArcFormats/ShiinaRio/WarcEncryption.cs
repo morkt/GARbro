@@ -139,7 +139,7 @@ namespace GameRes.Formats.ShiinaRio
                     d ^= (byte)((double)NextRand() / 16777216.0);
                 else
                     d ^= (byte)((double)NextRand() / 4294967296.0); // ? effectively a no-op
-                d = (byte)(((d & 1) << 7) | (d >> 1));
+                d = Binary.RotByteR (d, 1);
                 d ^= (byte)(m_scheme.CryptKey[n++] ^ m_scheme.CryptKey[x]);
                 data[index+i] = d;
                 x = d % (uint)m_scheme.CryptKey.Length;
@@ -367,8 +367,7 @@ namespace GameRes.Formats.ShiinaRio
                 v ^= buf[i-14];
                 v ^= buf[i-8];
                 v ^= buf[i-3];
-                v = v << 1 | v >> 31;
-                buf[i] = v;
+                buf[i] = Binary.RotL (v, 1);
             }
             uint[] key = new uint[10];
             Array.Copy (key_src, key, 5);
@@ -418,13 +417,13 @@ namespace GameRes.Formats.ShiinaRio
                     v26 = k1 ^ k2 ^ k3;
                     pc = 0;
                 }
-                uint v28 = buf[buf_idx] + k4 + v26 + pc + (k0 << 5 | k0 >> 27);
-                uint v29 = (k1 >> 2) | (k1 << 30);
+                uint new_k0 = buf[buf_idx] + k4 + v26 + pc + Binary.RotL (k0, 5);
+                uint new_k2 = Binary.RotR (k1, 2);
                 k1 = k0;
                 k4 = k3;
                 k3 = k2;
-                k2 = v29;
-                k0 = v28;
+                k2 = new_k2;
+                k0 = new_k0;
                 ++buf_idx;
             }
             key[0] += k0;
