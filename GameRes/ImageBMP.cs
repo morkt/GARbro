@@ -110,13 +110,18 @@ namespace GameRes
         {
             int c1 = stream.ReadByte();
             int c2 = stream.ReadByte();
-            if (0x42 != c1 || 0x4d != c2)
+            if ('B' != c1 || 'M' != c2)
                 return null;
             using (var file = new ArcView.Reader (stream))
             {
                 uint size = file.ReadUInt32();
                 if (size < 14+40)
-                    return null;
+                {
+                    // some otherwise valid bitmaps have size field set to zero
+                    if (size != 0 || !stream.CanSeek)
+                        return null;
+                    size = (uint)stream.Length;
+                }
                 SkipBytes (file, 8);
                 uint header_size = file.ReadUInt32();
                 if (header_size < 40 || size-14 < header_size)
