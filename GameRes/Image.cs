@@ -176,6 +176,10 @@ namespace GameRes
                             return Tuple.Create (impl, metadata);
                         }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
                     catch { }
                 }
                 if (0 == signature)
