@@ -172,18 +172,8 @@ namespace GameRes.Formats.ShiinaRio
         {
             if (length < 0x400 || null == m_scheme.DecodeBin)
                 return;
-            uint crc = 0xffffffff;
-            for (int i = 0; i < 0x100; ++i)
-            {
-                crc ^= (uint)data[index++] << 24;
-                for (int j = 0; j < 8; ++j)
-                {
-                    uint bit = crc & 0x80000000u;
-                    crc <<= 1;
-                    if (0 != bit)
-                        crc ^= 0x04c11db7;
-                }
-            }
+            uint crc = Crc32Normal.UpdateCrc (0xFFFFFFFF, data, index, 0x100);
+            index += 0x100;
             for (int i = 0; i < 0x40; ++i)
             {
                 uint src = LittleEndian.ToUInt32 (data, index) & 0x1ffcu;

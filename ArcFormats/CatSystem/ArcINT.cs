@@ -35,6 +35,7 @@ using System.Runtime.InteropServices;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
 using GameRes.Cryptography;
+using GameRes.Utility;
 
 namespace GameRes.Formats.CatSystem
 {
@@ -67,16 +68,7 @@ namespace GameRes.Formats.CatSystem
             uint key = 0xffffffff;
             foreach (var c in pass_bytes)
             {
-                uint val = (uint)c << 24;
-                key ^= val;
-                for (int i = 0; i < 8; ++i)
-                {
-                    bool carry = 0 != (key & 0x80000000);
-                    key <<= 1;
-                    if (carry)
-                        key ^= 0x4C11DB7;
-                }
-                key = ~key;
+                key = ~Crc32Normal.Table[(key >> 24) ^ c] ^ (key << 8);
             }
             return key;
         }

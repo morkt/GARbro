@@ -305,26 +305,6 @@ namespace GameRes.Formats.TopCat
                 data[i] = Binary.RotByteR (data[i], 1);
         }
 
-        static Lazy<uint[]> OggCrcTable = new Lazy<uint[]> (InitOggCrcTable);
-
-        static uint[] InitOggCrcTable ()
-        {
-            var table = new uint[0x100];
-            for (uint i = 0; i < 0x100; ++i)
-            {
-                uint a = i << 24;
-                for (int j = 0; j < 8; ++j)
-                {
-                    bool carry = 0 != (a & 0x80000000);
-                    a <<= 1;
-                    if (carry)
-                        a ^= 0x04C11DB7;
-                }
-                table[i] = a;
-            }
-            return table;
-        }
-
         Stream RestoreOggStream (ArcFile arc, Entry entry)
         {
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
@@ -332,32 +312,25 @@ namespace GameRes.Formats.TopCat
             int src = 0;
             while (remaining > 0x1B && Binary.AsciiEqual (data, src, "OggS"))
             {
-                int d = data[src+0x1A];
+                int segment_count = data[src+0x1A];
                 data[src+0x16] = 0;
                 data[src+0x17] = 0;
                 data[src+0x18] = 0;
                 data[src+0x19] = 0;
-                int dst = src + 0x1B;
-                int count = d + 0x1B;
-                if (d != 0)
+                int page_size = segment_count + 0x1B;
+                if (segment_count != 0)
                 {
-                    if (remaining < count)
+                    if (remaining < page_size)
                         break;
-                    for (int i = 0; i < d; ++i)
-                        count += data[dst++];
+                    int segment_table = src + 0x1B;
+                    for (int i = 0; i < segment_count; ++i)
+                        page_size += data[segment_table++];
                 }
-                remaining -= count;
+                remaining -= page_size;
                 if (remaining < 0)
                     break;
-                dst = src + 0x16;
-                uint crc = 0;
-                for (int i = 0; i < count; ++i)
-                {
-                    uint x = (crc >> 24) ^ data[src++];
-                    crc <<= 8;
-                    crc ^= OggCrcTable.Value[x];
-                }
-                LittleEndian.Pack (crc, data, dst);
+                uint crc = Crc32Normal.UpdateCrc (0, data, src, page_size);
+                LittleEndian.Pack (crc, data, src+0x16);
             }
             return new MemoryStream (data);
         }
