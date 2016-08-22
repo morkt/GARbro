@@ -331,6 +331,7 @@ namespace GameRes.Formats.TopCat
                     break;
                 uint crc = Crc32Normal.UpdateCrc (0, data, src, page_size);
                 LittleEndian.Pack (crc, data, src+0x16);
+                src += page_size;
             }
             return new MemoryStream (data);
         }
