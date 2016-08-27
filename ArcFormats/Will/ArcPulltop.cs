@@ -43,7 +43,7 @@ namespace GameRes.Formats.Will
 
         public Arc2Opener ()
         {
-            Extensions = new string[] { "arc" };
+            Extensions = new string[] { "arc", "ar2" };
         }
 
         public override ArcFile TryOpen (ArcView file)
