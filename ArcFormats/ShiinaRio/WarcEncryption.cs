@@ -722,4 +722,53 @@ namespace GameRes.Formats.ShiinaRio
             }
         }
     }
+
+    [Serializable]
+    public class DodakureCrypt : IDecryptExtra
+    {
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x204) == 0x204)
+            {
+                if (0x718E958D == LittleEndian.ToUInt32 (data, index))
+                {
+                    var input = new byte[0x200];
+                    Buffer.BlockCopy (data, index, input, 0, 0x200);
+                    int remaining = LittleEndian.ToInt32 (input, 8);
+                    int src = 12;
+                    int dst = index;
+                    bool rle = false;
+                    while (remaining > 0)
+                    {
+                        int count = input[src++];
+                        if (rle)
+                        {
+                            byte v = data[dst-1];
+                            for (int i = 0; i < count; ++i)
+                                data[dst++] = v;
+                        }
+                        else
+                        {
+                            Buffer.BlockCopy (input, src, data, dst, count);
+                            src += count;
+                            dst += count;
+                        }
+                        remaining -= count;
+                        if (count < 0xFF)
+                            rle = !rle;
+                    }
+                }
+                if (length > 0x200)
+                    data[index + 0x200] ^= (byte)length;
+                if (length > 0x201)
+                    data[index + 0x201] ^= (byte)(length >> 8);
+                if (length > 0x202)
+                    data[index + 0x202] ^= (byte)(length >> 16);
+                if (length > 0x203)
+                    data[index + 0x203] ^= (byte)(length >> 24);
+            }
+        }
+    }
 }
