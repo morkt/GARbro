@@ -110,6 +110,8 @@
     <Compile Include="Ipac\ArcIPAC.cs" />
     <Compile Include="Ipac\AudioWST.cs" />
     <Compile Include="Ipac\ImageIES.cs" />
+    <Compile Include="Irrlicht\ArcARK.cs" />
+    <Compile Include="Irrlicht\ArcPACK.cs" />
     <Compile Include="Kiss\ArcARC.cs" />
     <Compile Include="Leaf\ArcA.cs" />
     <Compile Include="Leaf\ArcAM.cs" />
