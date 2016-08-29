@@ -27,7 +27,7 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Cmvs
 {
-    public enum Md5Variant { A, B }
+    public enum Md5Variant { A, B, Chrono }
 
     public abstract class MD5 : Cryptography.MD5Base
     {
@@ -38,10 +38,13 @@ namespace GameRes.Formats.Cmvs
 
         static public MD5 Create (Md5Variant variant)
         {
-            if (Md5Variant.A == variant)
-                return new Md5VariantA();
-            else
-                return new Md5VariantB();
+            switch (variant)
+            {
+            case Md5Variant.A: return new Md5VariantA();
+            case Md5Variant.B: return new Md5VariantB();
+            case Md5Variant.Chrono: return new Md5Chrono();
+            default: throw new System.ArgumentException ("Unknown MD5 variant", "variant");
+            }
         }
 
         protected abstract void InitState ();
@@ -76,6 +79,17 @@ namespace GameRes.Formats.Cmvs
             data[1] = m_state[1];
             data[2] = m_state[2];
             data[3] = m_state[0];
+        }
+    }
+
+    public class Md5Chrono : Md5VariantA
+    {
+        protected override void SetResult (uint[] data)
+        {
+            data[0] = m_state[2] ^ 0x45A76C2F;
+            data[1] = m_state[1] - 0x5BA17FCB;
+            data[2] = m_state[0] ^ 0x79ABE8AD;
+            data[3] = m_state[3] - 0x1C08561B;
         }
     }
 
