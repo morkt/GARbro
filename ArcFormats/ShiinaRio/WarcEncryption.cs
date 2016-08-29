@@ -367,54 +367,41 @@ namespace GameRes.Formats.ShiinaRio
             uint k3 = key[3];
             uint k4 = key[4];
 
-            uint pc = 0;
-            uint v26 = 0;
-            int buf_idx = 0;
-            for (int ebp = 0; ebp < 0x50; ++ebp)
+            for (int buf_idx = 0; buf_idx < 0x50; ++buf_idx)
             {
-                if (ebp >= 0x10)
+                uint f, c;
+                if (buf_idx < 0x10)
                 {
-                    if (ebp >= 0x20)
-                    {
-                        if (ebp >= 0x30)
-                        {
-                            uint v27 = ~k3;
-                            if (ebp >= 0x40)
-                            {
-                                v26 = k1 ^ (k2 | v27);
-                                pc = 0xA953FD4E;
-                            }
-                            else
-                            {
-                                v26 = k1 & k3 | k2 & v27;
-                                pc = 0x8F1BBCDC;
-                            }
-                        }
-                        else
-                        {
-                            v26 = k3 ^ (k1 | ~k2);
-                            pc = 0x6ED9EBA1;
-                        }
-                    }
-                    else
-                    {
-                        v26 = k1 & k2 | k3 & ~k1;
-                        pc = 0x5A827999;
-                    }
+                    f = k1 ^ k2 ^ k3;
+                    c = 0;
+                }
+                else if (buf_idx < 0x20)
+                {
+                    f = k1 & k2 | k3 & ~k1;
+                    c = 0x5A827999;
+                }
+                else if (buf_idx < 0x30)
+                {
+                    f = k3 ^ (k1 | ~k2);
+                    c = 0x6ED9EBA1;
+                }
+                else if (buf_idx < 0x40)
+                {
+                    f = k1 & k3 | k2 & ~k3;
+                    c = 0x8F1BBCDC;
                 }
                 else
                 {
-                    v26 = k1 ^ k2 ^ k3;
-                    pc = 0;
+                    f = k1 ^ (k2 | ~k3);
+                    c = 0xA953FD4E;
                 }
-                uint new_k0 = buf[buf_idx] + k4 + v26 + pc + Binary.RotL (k0, 5);
+                uint new_k0 = buf[buf_idx] + k4 + f + c + Binary.RotL (k0, 5);
                 uint new_k2 = Binary.RotR (k1, 2);
                 k1 = k0;
                 k4 = k3;
                 k3 = k2;
                 k2 = new_k2;
                 k0 = new_k0;
-                ++buf_idx;
             }
             key[0] += k0;
             key[1] += k1;
