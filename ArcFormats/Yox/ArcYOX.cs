@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -53,15 +54,25 @@ namespace GameRes.Formats.Yox
                 return null;
 
             var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
+            Func<uint, bool> ReadIndex = entry_size => {
+                uint current_offset = index_offset;
+                for (int i = 0; i < count; ++i)
+                {
+                    var entry = new PackedEntry { Name = i.ToString ("D5") };
+                    entry.Offset = file.View.ReadUInt32 (current_offset);
+                    entry.Size   = file.View.ReadUInt32 (current_offset+4);
+                    if (0 == entry.Size || !entry.CheckPlacement (file.MaxOffset))
+                        return false;
+                    dir.Add (entry);
+                    current_offset += entry_size;
+                }
+                return true;
+            };
+            if (!ReadIndex (8))
             {
-                var entry = new PackedEntry { Name = i.ToString ("D5") };
-                entry.Offset = file.View.ReadUInt32 (index_offset);
-                entry.Size   = file.View.ReadUInt32 (index_offset+4);
-                if (!entry.CheckPlacement (file.MaxOffset))
+                dir.Clear();
+                if (!ReadIndex (0x10))
                     return null;
-                dir.Add (entry);
-                index_offset += 8;
             }
             using (var stream = file.CreateStream())
                 DetectFileTypes (stream, dir);
