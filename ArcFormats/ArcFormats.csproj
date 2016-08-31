@@ -87,6 +87,7 @@
     <Compile Include="Banana\ImageGEC.cs" />
     <Compile Include="BlackRainbow\ArcPAK.cs" />
     <Compile Include="BlueGale\VideoAMV.cs" />
+    <Compile Include="CaramelBox\ArcARC3.cs" />
     <Compile Include="CaramelBox\ArcARC4.cs" />
     <Compile Include="CaramelBox\ImageFCB.cs" />
     <Compile Include="Cmvs\ArcPBZ.cs" />
