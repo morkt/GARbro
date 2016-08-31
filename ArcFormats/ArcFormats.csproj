@@ -114,6 +114,9 @@
     <Compile Include="Irrlicht\ArcARK.cs" />
     <Compile Include="Irrlicht\ArcPACK.cs" />
     <Compile Include="Kiss\ArcARC.cs" />
+    <Compile Include="KScript\ArcKPC.cs" />
+    <Compile Include="KScript\ImageKGP.cs" />
+    <Compile Include="KScript\ImageKSL.cs" />
     <Compile Include="Leaf\ArcA.cs" />
     <Compile Include="Leaf\ArcAM.cs" />
     <Compile Include="Leaf\ArcLAC.cs" />
