@@ -52,42 +52,48 @@ namespace GameRes.Formats.Triangle
             var header = new byte[0x14];
             if (12 != stream.Read (header, 0, 12))
                 return null;
-            int data_offset;
             int packed_size0 = LittleEndian.ToInt32 (header, 0);
             int packed_size1 = LittleEndian.ToInt32 (header, 1);
-            int x, y, packed_size, unpacked_size;
+            int data_offset, packed_size, unpacked_pos;
+            int tail_size = 0;
             if (5+packed_size1+0x14 == stream.Length)
             {
                 packed_size = packed_size1;
                 data_offset = 5;
-                stream.Seek (-0x14, SeekOrigin.End);
-                if (0x14 != stream.Read (header, 0, 0x14))
-                    return null;
-                x = LittleEndian.ToInt32 (header, 0);
-                y = LittleEndian.ToInt32 (header, 4);
-                unpacked_size = LittleEndian.ToInt32 (header, 0x10);
+                tail_size = 0x14;
+                unpacked_pos = 0x10;
+            }
+            else if (5+packed_size1+0xC == stream.Length)
+            {
+                packed_size = packed_size1;
+                data_offset = 5;
+                tail_size = 12;
+                unpacked_pos = 8;
             }
             else if (4+packed_size0+0xC == stream.Length)
             {
                 packed_size = packed_size0;
                 data_offset = 4;
-                stream.Seek (-12, SeekOrigin.End);
-                if (12 != stream.Read (header, 0, 12))
-                    return null;
-                x = LittleEndian.ToInt32 (header, 0);
-                y = LittleEndian.ToInt32 (header, 4);
-                unpacked_size = LittleEndian.ToInt32 (header, 8);
+                tail_size = 12;
+                unpacked_pos = 8;
             }
             else
             {
                 packed_size = (int)stream.Length-12;
                 data_offset = 12;
-                x = LittleEndian.ToInt32 (header, 0);
-                y = LittleEndian.ToInt32 (header, 4);
-                unpacked_size = LittleEndian.ToInt32 (header, 8);
+                unpacked_pos = 8;
             }
+            if (tail_size > 0)
+            {
+                stream.Seek (-tail_size, SeekOrigin.End);
+                if (tail_size != stream.Read (header, 0, tail_size))
+                    return null;
+            }
+            int x = LittleEndian.ToInt32 (header, 0);
+            int y = LittleEndian.ToInt32 (header, 4);
             if (Math.Abs (x) > 4096 || Math.Abs (y) > 4096)
                 return null;
+            int unpacked_size = LittleEndian.ToInt32 (header, unpacked_pos);
             int pack_type = (unpacked_size >> 30) & 3;
             if (3 == pack_type)
                 return null;
