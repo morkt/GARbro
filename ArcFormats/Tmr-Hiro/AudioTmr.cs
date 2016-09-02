@@ -52,7 +52,7 @@ namespace GameRes.Formats.TmrHiro
             if (file.ReadByte() != 0)
                 return null;
             int length = ReadInt32 (file);
-            if (length != file.Length - 9)
+            if (-1 == length || length != file.Length - 9)
                 return null;
             var format = new WaveFormat
             {
