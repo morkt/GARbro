@@ -96,7 +96,7 @@ namespace GameRes.Formats.TmrHiro
                     entry.Name = Path.ChangeExtension (entry.Name, "ogg");
                     entry.Type = "audio";
                 }
-                else if ((((signature & 0xFF) == 1 || (signature & 0xFF) == 2)) && arc_name.EndsWith ("grd"))
+                else if ((((signature & 0xFF) == 1 || (signature & 0xFF) == 2)) && arc_name.Contains ("grd"))
                 {
                     entry.Name = Path.ChangeExtension (entry.Name, "grd");
                     entry.Type = "image";
