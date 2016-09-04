@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
 using System;
+using System.IO;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Google
@@ -405,7 +406,7 @@ namespace GameRes.Formats.Google
         }
         static uint Predictor11(uint left, uint[] data, int top)
         {
-            return Select (data[top], data[left], data[top-1]);
+            return Select (data[top], left, data[top-1]);
         }
         static uint Predictor12 (uint left, uint[] data, int top)
         {
@@ -598,6 +599,13 @@ namespace GameRes.Formats.Google
             br_.Init (data, data_i, (uint)data_size);
         }
 
+        public void Init (BinaryReader input, int length, VP8Io io)
+        { 
+            io_ = io;
+            br_.Init (input, (uint)length);
+            DecodeHeader();
+        }
+
         public bool Is8bOptimizable ()
         {
             if (hdr_.color_cache_size_ > 0)
@@ -615,6 +623,30 @@ namespace GameRes.Formats.Google
         }
 
         //------------------------------------------------------------------------------
+
+        void DecodeHeader ()
+        {
+            status_ = VP8StatusCode.Ok;
+
+            ReadImageInfo();
+            state_  = VP8DecodeState.ReadDim;
+            uint[] data = null;
+            if (!DecodeImageStream (io_.width, io_.height, true, ref data, false))
+                throw new InvalidFormatException();
+        }
+
+        void ReadImageInfo ()
+        {
+            if (0x2F != br_.ReadBits (8))
+                throw new InvalidFormatException();
+            width_  = (int)br_.ReadBits (14) + 1;
+            height_ = (int)br_.ReadBits (14) + 1;
+            io_.width  = width_;
+            io_.height = height_;
+            bool has_alpha = 0 != br_.ReadBits (1);
+            if (br_.ReadBits (3) != 0)
+                throw new InvalidFormatException();
+        }
 
         public bool DecodeImage ()
         {
@@ -634,14 +666,67 @@ namespace GameRes.Formats.Google
             }
 
             // Decode.
-            return DecodeImageData (pixels32_, width_, height_, height_, ProcessRows);
+            return DecodeImageData (pixels32_, width_, height_, height_, (dec, row) => dec.ProcessRows (row));
         }
 
         // Processes (transforms, scales & color-converts) the rows decoded after the
         // last call.
-        static void ProcessRows (LosslessDecoder dec, int row)
+        void ProcessRows (int row)
         {
-            throw new NotImplementedException ("Lossless RGB decoder not implemented");
+            int rows = width_ * last_row_;
+            int num_rows = row - last_row_;
+
+            if (num_rows <= 0) return;  // Nothing to be done.
+            ApplyInverseTransforms (num_rows, pixels32_, rows);
+
+            // Emit output.
+            int rows_data = argb_cache_;
+            int in_stride = io_.width * sizeof(uint);  // in unit of RGBA
+            int out_stride = in_stride;
+            if (SetCropWindow (last_row_, row))
+            {
+                int rgba = last_out_row_ * out_stride;
+                int num_rows_out = EmitRows (pixels32_, rows_data, in_stride,
+                                io_.mb_w, io_.mb_h, io_.opaque, rgba, out_stride);
+                // Update 'last_out_row_'.
+                last_out_row_ += num_rows_out;
+            }
+
+            // Update 'last_row_'.
+            last_row_ = row;
+        }
+
+        int EmitRows (uint[] input, int row_in, int in_stride, int mb_w, int mb_h, byte[] output, int row_out, int out_stride)
+        {
+            int lines = mb_h;
+            while (lines --> 0)
+            {
+                Buffer.BlockCopy (input, row_in, output, row_out, mb_w * 4);
+                row_in  += in_stride;
+                row_out += out_stride;
+            }
+            return mb_h;  // Num rows out == num rows in.
+        }
+
+        //------------------------------------------------------------------------------
+        // Cropping.
+
+        // Sets io->mb_y, io->mb_h & io->mb_w according to start row, end row and
+        // crop options. Also updates the input data pointer, so that it points to the
+        // start of the cropped window.
+        // Returns true if the crop window is not empty.
+        bool SetCropWindow (int y_start, int y_end)
+        {
+            if (y_end > io_.height)
+            {
+                y_end = io_.height;  // make sure we don't overflow on last row.
+            }
+            if (y_start >= y_end) return false;  // Crop window is empty.
+
+            io_.mb_y = y_start;
+            io_.mb_w = io_.width;
+            io_.mb_h = y_end - y_start;
+            return true;  // Non-empty crop window.
         }
 
         //------------------------------------------------------------------------------
@@ -1566,6 +1651,14 @@ namespace GameRes.Formats.Google
                 val_ = v;
                 pos_ = (uint)start+length;
                 buf_ = input;
+            }
+
+            public void Init (BinaryReader input, uint length)
+            {
+                var buf = input.ReadBytes ((int)length);
+                if (buf.Length != length)
+                    throw new EndOfStreamException();
+                Init (buf, 0, length);
             }
 
             public void CopyStateTo (LBitReader other)

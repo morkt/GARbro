@@ -74,6 +74,10 @@ namespace GameRes.Formats.Google
                 m_alpha_plane = new byte[info.Width * info.Height];
                 Format = PixelFormats.Bgra32;
             }
+            else if (m_info.HasAlpha)
+            {
+                Format = PixelFormats.Bgra32;
+            }
             else
             {
                 Format = PixelFormats.Bgr32;
@@ -90,13 +94,22 @@ namespace GameRes.Formats.Google
 
         public void Decode ()
         {
-            if (m_info.IsLossless)
-                throw new NotImplementedException ("Lossless WebP not implemented");
             m_input.BaseStream.Position = m_info.DataOffset;
-            GetHeaders();
-            EnterCritical();
-            InitFrame();
-            ParseFrame();
+            if (m_info.IsLossless)
+            {
+                m_io.opaque = m_output;
+                var ld = new LosslessDecoder();
+                ld.Init (m_input, m_info.DataSize, m_io);
+                if (!ld.DecodeImage())
+                    throw new InvalidFormatException();
+            }
+            else
+            {
+                GetHeaders();
+                EnterCritical();
+                InitFrame();
+                ParseFrame();
+            }
         }
 
         int ReadInt24 ()

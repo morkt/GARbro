@@ -35,6 +35,7 @@ namespace GameRes.Formats.Google
     {
         public WebPFeature  Flags;
         public bool         IsLossless;
+        public bool         HasAlpha;
         public long         DataOffset;
         public int          DataSize;
         public long         AlphaOffset;
@@ -102,12 +103,24 @@ namespace GameRes.Formats.Google
                     {
                         if (chunk_size < 10 || 10 != stream.Read (header, 0, 10))
                             return null;
-                        if (header[3] != 0x9D || header[4] != 1 || header[5] != 0x2A)
-                            return null;
-                        if (0 != (header[0] & 1)) // not a keyframe
-                            return null;
-                        info.Width  = LittleEndian.ToUInt16 (header, 6) & 0x3FFFu;
-                        info.Height = LittleEndian.ToUInt16 (header, 8) & 0x3FFFu;
+                        if (info.IsLossless)
+                        {
+                            if (header[0] != 0x2F || (header[4] >> 5) != 0)
+                                return null;
+                            uint wh = LittleEndian.ToUInt32 (header, 1);
+                            info.Width  = (wh & 0x3FFFu) + 1;
+                            info.Height = ((wh >> 14) & 0x3FFFu) + 1;
+                            info.HasAlpha = 0 != (header[4] & 0x10);
+                        }
+                        else
+                        {
+                            if (header[3] != 0x9D || header[4] != 1 || header[5] != 0x2A)
+                                return null;
+                            if (0 != (header[0] & 1)) // not a keyframe
+                                return null;
+                            info.Width  = LittleEndian.ToUInt16 (header, 6) & 0x3FFFu;
+                            info.Height = LittleEndian.ToUInt16 (header, 8) & 0x3FFFu;
+                        }
                     }
                     break;
                 }
