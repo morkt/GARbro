@@ -166,7 +166,7 @@ namespace GameRes.Formats.Marble
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (entry.Type != "script" || !entry.Name.EndsWith (".s"))
+            if (entry.Type != "script")
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var marc = arc as MblArchive;
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
