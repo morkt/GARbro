@@ -120,8 +120,10 @@
     <Compile Include="Leaf\ArcA.cs" />
     <Compile Include="Leaf\ArcAM.cs" />
     <Compile Include="Leaf\ArcLAC.cs" />
+    <Compile Include="Leaf\ArcTEX.cs" />
     <Compile Include="Leaf\AudioG.cs" />
     <Compile Include="Leaf\AudioW.cs" />
+    <Compile Include="Leaf\ImageLGF.cs" />
     <Compile Include="Leaf\ImagePX.cs" />
     <Compile Include="LiveMaker\ArcVF.cs" />
     <Compile Include="ArcZIP.cs" />
