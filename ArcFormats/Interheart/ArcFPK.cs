@@ -2,7 +2,7 @@
 //! \date       Mon May 25 10:01:24 2015
 //! \brief      FPK resource archives implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -42,17 +42,29 @@ namespace GameRes.Formats.CandySoft
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int count = file.View.ReadInt32 (0);
-            if (!IsSaneCount (count))
+            if (file.MaxOffset < 0x10)
                 return null;
+            int count = file.View.ReadInt32 (0);
             List<Entry> dir = null;
-            try
+            if (count < 0)
             {
-                dir = ReadIndex (file, count, 0x10);
+                count &= 0x7FFFFFFF;
+                if (!IsSaneCount (count))
+                    return null;
+                dir = ReadEncryptedIndex (file, count);
             }
-            catch { /* read failed, try another filename length */ }
-            if (null == dir)
-                dir = ReadIndex (file, count, 0x18);
+            else
+            {
+                if (!IsSaneCount (count))
+                    return null;
+                try
+                {
+                    dir = ReadIndex (file, count, 0x10);
+                }
+                catch { /* read failed, try another filename length */ }
+                if (null == dir)
+                    dir = ReadIndex (file, count, 0x18);
+            }
             if (null == dir)
                 return null;
             return new ArcFile (file, this, dir);
@@ -77,6 +89,39 @@ namespace GameRes.Formats.CandySoft
                     return null;
                 dir.Add (entry);
                 index_offset += 8 + name_size;
+            }
+            return dir;
+        }
+
+        private List<Entry> ReadEncryptedIndex (ArcView file, int count)
+        {
+            file.View.Reserve (file.MaxOffset-8, 8);
+            uint index_offset = file.View.ReadUInt32 (file.MaxOffset-4);
+            if (index_offset < 4 || index_offset >= file.MaxOffset-8)
+                return null;
+            var key = file.View.ReadBytes (file.MaxOffset-8, 4);
+            int name_size = 0x18;
+            int index_size = count * (12 + name_size);
+            var index = file.View.ReadBytes (index_offset, (uint)index_size);
+            if (index.Length != index_size)
+                return null;
+            for (int i = 0; i < index.Length; ++i)
+                index[i] ^= key[i & 3];
+
+            int index_pos = 0;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                string name = Binary.GetCString (index, index_pos+8, name_size);
+                if (string.IsNullOrWhiteSpace (name))
+                    return null;
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                entry.Offset = LittleEndian.ToUInt32 (index, index_pos);
+                entry.Size   = LittleEndian.ToUInt32 (index, index_pos+4);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_pos += 12 + name_size;
             }
             return dir;
         }
