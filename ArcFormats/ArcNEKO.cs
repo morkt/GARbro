@@ -2,7 +2,7 @@
 //! \date       Fri Mar 13 02:27:53 2015
 //! \brief      Nekopack archive format implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -33,280 +33,73 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Neko
 {
-    internal interface INekoEncryption
+    /// <summary>
+    /// Interface that represents archive format and encryption details.
+    /// </summary>
+    internal interface INekoFormat
     {
+        /// <summary>
+        /// Decrypt chunk of data using specified key.
+        /// </summary>
         void Decrypt (uint key, byte[] input, int offset, int length);
+        /// <summary>
+        /// Get a hash corresponding to a string stored in a supplied byte array.
+        /// </summary>
+        uint HashFromName (byte[] str, int offset, int length);
+
+        /// <summary>
+        /// Read a directory record from archive index.
+        /// </summary>
+        DirRecord ReadDir (BinaryReader input);
+        /// <summary>
+        /// Returns offset of an entry that immediately follows specified one.
+        /// </summary>
+        long NextOffset (Entry entry);
     }
 
-    internal class NekoArchive : ArcFile
+    internal struct DirRecord
     {
-        public readonly INekoEncryption Decoder;
-
-        public NekoArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, INekoEncryption decoder)
-            : base (arc, impl, dir)
-        {
-            Decoder = decoder;
-        }
+        public uint Hash;
+        public int  FileCount;
     }
 
-    [Export(typeof(ArchiveFormat))]
-    public class Pak1Opener : ArchiveFormat
+    internal sealed class IndexReader : IDisposable
     {
-        public override string         Tag { get { return "NEKOPACK/1"; } }
-        public override string Description { get { return "NekoPack resource archive"; } }
-        public override uint     Signature { get { return 0x4f4b454e; } } // "NEKO"
-        public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        BinaryReader    m_input;
+        int             m_index_size;
+        long            m_max_offset;
+        INekoFormat     m_format;
 
-        public Pak1Opener ()
+        public IndexReader (ArcView file, INekoFormat enc, byte[] index, int index_size)
         {
-            Extensions = new string[] { "dat" };
+            var input = new MemoryStream (index, 0, index_size);
+            m_input = new BinaryReader (input);
+            m_index_size = index_size;
+            m_max_offset = file.MaxOffset;
+            m_format = enc;
         }
 
-        public override ArcFile TryOpen (ArcView file)
+        public List<Entry> Parse (long current_offset)
         {
-            if (!file.View.AsciiEqual (4, "PACK"))
-                return null;
-            int length = file.View.ReadInt32 (0x14);
-            if (length <= 0 || length >= file.MaxOffset)
-                return null;
-            uint id = file.View.ReadUInt32 (8);
-            var dec = new NekoEncryption32bit (id);
-            byte[] index = ReadBlock (file.View, dec, 0x10, out length);
-            long offset = 0x18 + length;
+            var names_map = GetNamesMap (KnownDirNames);
+            var files_map = GetNamesMap (KnownFileNames);
+
             var dir = new List<Entry>();
-            int index_pos = 0;
-            for (int remaining = length; remaining > 0;)
+            while (m_input.BaseStream.Position < m_index_size)
             {
-                int count = LittleEndian.ToInt32 (index, index_pos+4);
-                if (count <= 0 || count > remaining/8-1)
-                    return null;
-                uint hash = LittleEndian.ToUInt32 (index, index_pos);
-                dir.Capacity = dir.Count + count;
-                index_pos += 8;
-                for (int j = 0; j < count; ++j)
-                {
-                    var entry = new Entry
-                        { Offset = offset, Size = LittleEndian.ToUInt32 (index, index_pos+4) };
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    index_pos += 8;
-                    offset += entry.Size + 8;
-                    dir.Add (entry);
-                }
-                remaining -= 8 + count * 8;
-            }
-            int i = 0;
-            byte[] buffer = new byte[0x10];
-            foreach (var entry in dir)
-            {
-                file.View.Read (entry.Offset, buffer, 0, 0x10);
-                uint hash = LittleEndian.ToUInt32 (buffer, 0);
-                if (0 != hash)
-                {
-                    dec.Decrypt (hash, buffer, 8, 8);
-                }
-                uint signature = LittleEndian.ToUInt32 (buffer, 8);
-                var res = AutoEntry.DetectFileType (signature);
-                string ext = "";
-                if (null != res)
-                {
-                    ext = res.Extensions.FirstOrDefault();
-                    entry.Type = res.Type;
-                }
-                else if (0x474e4d8a == signature)
-                    ext = "mng";
-                if (!string.IsNullOrEmpty (ext))
-                    entry.Name = string.Format ("{0:D4}.{1}", i, ext);
-                else
-                    entry.Name = i.ToString ("D4");
-                ++i;
-            }
-            return new NekoArchive (file, this, dir, dec);
-        }
-
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            var pak = arc as NekoArchive;
-            if (null == pak)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
-            int length;
-            var data = ReadBlock (arc.File.View, pak.Decoder, entry.Offset, out length);
-            return new MemoryStream (data, 0, length, false);
-        }
-
-        static uint HashFromString (uint seed, byte[] str, int offset, int length)
-        {
-            // 0x00000000, "NEKOPACK" -> 0xAC0BF0B1
-            // 0xAC0BF0B1, "RBS0011"  -> 0x9B75ADA7
-            uint result = seed;
-            for (int i = 0; i < length; ++i)
-            {
-                byte c = str[offset+i];
-                result += c + result * 37;
-            }
-            return result;
-        }
-
-        static uint HashFromName (uint seed, byte[] str, int offset, int length)
-        {
-            // 0x9B75ADA7, "script"    -> 0x0DDB021E
-            // 0x9B75ADA7, "start.bin" -> 0xCB8FB53B
-            uint result = seed;
-            for (int i = 0; i < length; ++i)
-            {
-                byte c = str[offset+i];
-                result = 81 * (ShiftMap[c] ^ result);
-            }
-            return result;
-        }
-
-        static readonly byte[] ShiftMap = new byte[]
-        {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x38, 0x2F, 0x33, 0x3C, 0x40, 0x3B, 0x2A, 0x2E, 0x31, 0x30, 0x26, 0x44, 0x35, 0x28, 0x3E, 0x12,
-            0x02, 0x22, 0x06, 0x20, 0x1A, 0x1C, 0x0F, 0x11, 0x18, 0x17, 0x42, 0x2B, 0x3A, 0x37, 0x34, 0x0C,
-            0x41, 0x08, 0x1D, 0x07, 0x15, 0x21, 0x05, 0x1E, 0x0A, 0x14, 0x0E, 0x10, 0x09, 0x27, 0x1F, 0x0B,
-            0x23, 0x16, 0x0D, 0x01, 0x25, 0x04, 0x1B, 0x03, 0x13, 0x24, 0x19, 0x2D, 0x12, 0x29, 0x32, 0x3F,
-            0x3D, 0x08, 0x1D, 0x07, 0x15, 0x21, 0x05, 0x1E, 0x0A, 0x14, 0x0E, 0x10, 0x09, 0x27, 0x1F, 0x0B,
-            0x23, 0x16, 0x0D, 0x01, 0x25, 0x04, 0x1B, 0x03, 0x13, 0x24, 0x19, 0x2C, 0x39, 0x43, 0x36, 0x00,
-            0x4B, 0xA9, 0xA7, 0xAF, 0x50, 0x52, 0x91, 0x9F, 0x47, 0x6B, 0x96, 0xAB, 0x87, 0xB5, 0x9B, 0xBB,
-            0x99, 0xA4, 0xBF, 0x5C, 0xC6, 0x9C, 0xC2, 0xC4, 0xB6, 0x4F, 0xB8, 0xC1, 0x85, 0xA8, 0x51, 0x7E,
-            0x5F, 0x82, 0x73, 0xC7, 0x90, 0x4E, 0x45, 0xA5, 0x7A, 0x63, 0x70, 0xB3, 0x79, 0x83, 0x60, 0x55,
-            0x5B, 0x5E, 0x68, 0xBA, 0x53, 0xA1, 0x67, 0x97, 0xAC, 0x71, 0x81, 0x59, 0x64, 0x7C, 0x9D, 0xBD,
-            0x9D, 0xBD, 0x95, 0xA0, 0xB2, 0xC0, 0x6F, 0x6A, 0x54, 0xB9, 0x6D, 0x88, 0x77, 0x48, 0x5D, 0x72,
-            0x49, 0x93, 0x57, 0x65, 0xBE, 0x4A, 0x80, 0xA2, 0x5A, 0x98, 0xA6, 0x62, 0x7F, 0x84, 0x75, 0xBC,
-            0xAD, 0xB1, 0x6E, 0x76, 0x8B, 0x9E, 0x8C, 0x61, 0x69, 0x8D, 0xB4, 0x78, 0xAA, 0xAE, 0x8F, 0xC3,
-            0x58, 0xC5, 0x74, 0xB7, 0x8E, 0x7D, 0x89, 0x8A, 0x56, 0x4D, 0x86, 0x94, 0x9A, 0x4C, 0x92, 0xB0,
-        };
-
-        static uint CalcParity (uint a1, uint a2)
-        {
-            uint v1 = (a2 ^ ((a2 ^ ((a2 ^ ((a2 ^ a1) + 1566083941u)) - 899497514u)) - 1894007588u)) + 1812433253u;
-            int v2 = (int)(((a2 ^ ((a2 ^ a1) + 1566083941u)) - 899497514u) >> 27);
-            return v1 << v2 | v1 >> (32-v2);
-        }
-
-        static byte[] ReadBlock (ArcView.Frame view, INekoEncryption enc, long offset, out int length)
-        {
-            uint hash = view.ReadUInt32 (offset);
-            length = view.ReadInt32 (offset+4);
-            // parity check
-//            if (CalcParity (((NekoEncryption32bit)enc).Parity, (uint)length) != hash)
-//                throw new InvalidFormatException();
-
-            int aligned_size = (length+7) & ~7;
-            byte[] buffer = new byte[aligned_size];
-            length = view.Read (offset+8, buffer, 0, (uint)length);
-            if (0 != hash)
-            {
-                enc.Decrypt (hash, buffer, 0, aligned_size);
-            }
-            return buffer;
-        }
-    }
-
-    internal class NekoEncryption32bit : INekoEncryption
-    {
-        public uint Parity { get; set; }
-
-        public NekoEncryption32bit (uint parity)
-        {
-            Parity = parity;
-        }
-
-        public void Decrypt (uint hash, byte[] buf, int offset, int length)
-        {
-            if (offset < 0 || offset > buf.Length)
-                throw new ArgumentException ("offset");
-            int count = Math.Min (length, buf.Length-offset) / 8;
-            if (0 == count)
-                return;
-            ulong key = KeyFromHash (hash);
-            unsafe
-            {
-                fixed (byte* data = buf)
-                {
-                    ulong* first = (ulong*)(data + offset);
-                    ulong* last = first + count;
-                    while (first != last)
-                    {
-                        ulong v = *first ^ key;
-                        key = MMX.PAddW (key, v);
-                        *first++ = v;
-                    }
-                }
-            }
-        }
-
-        public static ulong KeyFromHash (uint hash)
-        {
-            uint v2 = hash ^ (hash + 1566083941u);
-            uint v3 = v2 ^ (hash - 899497514u);
-            ulong result = v3 ^ (v2 - 1894007588u);
-            return result | (result ^ (v3 + 1812433253u)) << 32;
-        }
-    }
-
-    [Export(typeof(ArchiveFormat))]
-    public class Pak2Opener : ArchiveFormat
-    {
-        public override string         Tag { get { return "NEKOPACK/2"; } }
-        public override string Description { get { return "NekoPack resource archive"; } }
-        public override uint     Signature { get { return 0x4F4B454E; } } // "NEKO"
-        public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
-
-        public Pak2Opener ()
-        {
-            Extensions = new string[] { "dat" };
-        }
-
-        public override ArcFile TryOpen (ArcView file)
-        {
-            if (!file.View.AsciiEqual (4, "PACK"))
-                return null;
-
-            uint init_key = file.View.ReadUInt32 (0xC);
-            var xdec = new NekoXCode (init_key);
-            uint key = file.View.ReadUInt32 (0x10);
-            var buffer = file.View.ReadBytes (0x14, 8);
-            xdec.Decrypt (key, buffer, 0, 8);
-
-            uint index_size = LittleEndian.ToUInt32 (buffer, 0);
-            if (index_size != LittleEndian.ToUInt32 (buffer, 4))
-                return null;
-            var index = new byte[(index_size + 7u) & ~7u];
-            if (file.View.Read (0x1C, index, 0, index_size) < index_size)
-                return null;
-            xdec.Decrypt (key, index, 0, index.Length);
-
-            var names_map = GetNamesMap (init_key, KnownDirNames);
-            var files_map = GetNamesMap (init_key, KnownFileNames.Value);
-
-            int index_pos = 0;
-            var dir = new List<Entry>();
-            long current_offset = 0x1C + index.Length;
-            while (index_pos < (int)index_size)
-            {
-                uint dir_hash = LittleEndian.ToUInt32 (index, index_pos);
-                int count = LittleEndian.ToInt32 (index, index_pos+4);
-                if (count != LittleEndian.ToInt32 (index, index_pos+8))
-                    break;
-                index_pos += 12;
+                var dir_info = m_format.ReadDir (m_input);
                 string dir_name;
-                if (!names_map.TryGetValue (dir_hash, out dir_name))
-                    dir_name = dir_hash.ToString ("X8");
-                dir.Capacity = dir.Count + count;
-                for (int i = 0; i < count; ++i)
+                if (!names_map.TryGetValue (dir_info.Hash, out dir_name))
+                    dir_name = dir_info.Hash.ToString ("X8");
+                dir.Capacity = dir.Count + dir_info.FileCount;
+                for (int i = 0; i < dir_info.FileCount; ++i)
                 {
-                    uint name_hash = LittleEndian.ToUInt32 (index, index_pos);
-                    uint size = LittleEndian.ToUInt32 (index, index_pos+4);
+                    uint name_hash = m_input.ReadUInt32();
+                    uint size = m_input.ReadUInt32();
                     string file_name;
                     string type = "";
-                    if (!files_map.TryGetValue(name_hash, out file_name))
-                        file_name = name_hash.ToString("X8");
+                    if (!files_map.TryGetValue (name_hash, out file_name))
+                        file_name = name_hash.ToString ("X8");
                     else
                         type = FormatCatalog.Instance.GetTypeFromName (file_name);
                     var entry = new Entry
@@ -316,56 +109,53 @@ namespace GameRes.Formats.Neko
                         Offset = current_offset,
                         Size = size,
                     };
-                    if (!entry.CheckPlacement (file.MaxOffset))
+                    if (!entry.CheckPlacement (m_max_offset))
                         return null;
                     dir.Add (entry);
-                    index_pos += 8;
-                    current_offset += entry.Size;
+                    current_offset = m_format.NextOffset (entry);
                 }
             }
-            if (0 == dir.Count)
-                return null;
-            DetectTypes (file, dir, xdec);
-            return new NekoArchive (file, this, dir, xdec);
+            return dir.Count > 0 ? dir : null;
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        static string[]  KnownDirNames { get { return s_known_dir_names; } }
+        static string[] KnownFileNames { get { return s_known_file_names.Value; } }
+
+        static string[] s_known_dir_names = {
+            "image/actor", "image/back", "image/mask", "image/visual",
+            "sound/bgm", "sound/env", "sound/se", "voice", "script", "system", "count",
+        };
+
+        static Lazy<string[]> s_known_file_names = new Lazy<string[]> (ReadNekoPackLst);
+
+        IDictionary<uint, string> GetNamesMap (string[] known_names)
         {
-            var narc = arc as NekoArchive;
-            if (null == narc || entry.Size <= 12)
-                return base.OpenEntry (arc, entry);
-            uint key = arc.File.View.ReadUInt32 (entry.Offset);
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset+4, data, 0, 8);
-            narc.Decoder.Decrypt (key, data, 0, 8);
-            int size = LittleEndian.ToInt32 (data, 0);
-            if (size != LittleEndian.ToInt32 (data, 4))
+            var map = new Dictionary<uint, string> (known_names.Length);
+            var buffer = new byte[0x100];
+            foreach (var name in known_names)
             {
-                Trace.WriteLine ("entry decryption failed", "[NEKOPACK]");
-                return base.OpenEntry (arc, entry);
+                int length = Encodings.cp932.GetBytes (name, 0, name.Length, buffer, 0);
+                uint hash = m_format.HashFromName (buffer, 0, length);
+                if (!map.ContainsKey (hash))
+                    map[hash] = name;
+                else if (!map[hash].Equals (name, StringComparison.InvariantCultureIgnoreCase))
+                    Trace.WriteLine (string.Format ("{0}: hash collision with {1} [{2:X8}]", name, map[hash], hash),
+                                     "[NEKOPACK]");
             }
-            int aligned_size = (size + 7) & ~7;
-            if (aligned_size > data.Length)
-                data = new byte[aligned_size];
-            arc.File.View.Read (entry.Offset+12, data, 0, (uint)size);
-            narc.Decoder.Decrypt (key, data, 0, aligned_size);
-            return new MemoryStream (data, 0, size);
+            return map;
         }
 
-        void DetectTypes (ArcView file, List<Entry> dir, NekoXCode dec)
+        public void DetectTypes (IEnumerable<Entry> dir, Func<Entry, uint> get_signature)
         {
-            byte[] buffer = new byte[8];
             foreach (var entry in dir.Where (e => string.IsNullOrEmpty (e.Type)))
             {
-                if (entry.Name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase))
+                if (entry.Name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase) ||
+                    entry.Name.EndsWith (".nut", StringComparison.InvariantCultureIgnoreCase))
                 {
                     entry.Type = "script";
                     continue;
                 }
-                uint key = file.View.ReadUInt32 (entry.Offset);
-                file.View.Read (entry.Offset+12, buffer, 0, 8);
-                dec.Decrypt (key, buffer, 0, 8);
-                uint signature = LittleEndian.ToUInt32 (buffer, 0);
+                uint signature = get_signature (entry);
                 var res = AutoEntry.DetectFileType (signature);
                 string ext = "";
                 if (res != null)
@@ -373,7 +163,7 @@ namespace GameRes.Formats.Neko
                     ext = res.Extensions.FirstOrDefault();
                     entry.Type = res.Type;
                 }
-                else if (0x474e4d8a == signature)
+                else if (0x474E4D8A == signature)
                     ext = "mng";
                 else if (entry.Name.StartsWith ("script/"))
                     entry.Type = "script";
@@ -381,32 +171,6 @@ namespace GameRes.Formats.Neko
                 if (!string.IsNullOrEmpty (ext))
                     entry.Name = Path.ChangeExtension (entry.Name, ext);
             }
-        }
-
-        static uint ComputeHash (string name, uint hash)
-        {
-            foreach (var c in name)
-            {
-                hash = 0x100002A * (ShiftMap[c & 0xFF] ^ hash);
-            }
-            return hash;
-        }
-
-        static string[] KnownDirNames = {
-            "image/actor", "image/back", "image/mask", "image/visual",
-            "sound/bgm", "sound/env", "sound/se", "voice", "script", "system", "count",
-        };
-
-        static Lazy<string[]> KnownFileNames = new Lazy<string[]> (ReadNekoPackLst);
-
-        Dictionary<uint, string> GetNamesMap (uint key, string[] known_names)
-        {
-            var map = new Dictionary<uint, string> (known_names.Length);
-            foreach (var name in known_names)
-            {
-                map[ComputeHash (name, key)] = name;
-            }
-            return map;
         }
 
         static string[] ReadNekoPackLst ()
@@ -436,6 +200,326 @@ namespace GameRes.Formats.Neko
             }
         }
 
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_input.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
+    }
+
+    internal class NekoArchive : ArcFile
+    {
+        public readonly INekoFormat Decoder;
+
+        public NekoArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, INekoFormat decoder)
+            : base (arc, impl, dir)
+        {
+            Decoder = decoder;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Pak1Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "NEKOPACK/1"; } }
+        public override string Description { get { return "NekoPack resource archive"; } }
+        public override uint     Signature { get { return 0x4f4b454e; } } // "NEKO"
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public Pak1Opener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (4, "PACK"))
+                return null;
+            int length = file.View.ReadInt32 (0x14);
+            if (length < 0x10 || length >= file.MaxOffset)
+                return null;
+            uint seed = file.View.ReadUInt32 (8);
+            var dec = new NekoEncryption32bit (seed);
+            byte[] index = ReadBlock (file.View, dec, 0x10, out length);
+
+            using (var reader = new IndexReader (file, dec, index, length))
+            {
+                var dir = reader.Parse (0x18+length);
+                if (null == dir)
+                    return null;
+                byte[] buffer = new byte[0x10];
+                reader.DetectTypes (dir, entry => {
+                    file.View.Read (entry.Offset, buffer, 0, 0x10);
+                    uint hash = LittleEndian.ToUInt32 (buffer, 0);
+                    if (0 != hash)
+                        dec.Decrypt (hash, buffer, 8, 8);
+                    return LittleEndian.ToUInt32 (buffer, 8);
+                });
+                return new NekoArchive (file, this, dir, dec);
+            }
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var pak = arc as NekoArchive;
+            if (null == pak)
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            int length;
+            var data = ReadBlock (arc.File.View, pak.Decoder, entry.Offset, out length);
+            return new MemoryStream (data, 0, length);
+        }
+
+        static uint HashFromString (uint seed, byte[] str, int offset, int length)
+        {
+            // 0x00000000, "NEKOPACK" -> 0xAC0BF0B1
+            // 0xAC0BF0B1, "RBS0011"  -> 0x9B75ADA7
+            uint result = seed;
+            for (int i = 0; i < length; ++i)
+            {
+                byte c = str[offset+i];
+                result += c + result * 37;
+            }
+            return result;
+        }
+
+        static uint CalcParity (uint a1, uint a2)
+        {
+            uint v1 = (a2 ^ ((a2 ^ ((a2 ^ ((a2 ^ a1) + 1566083941u)) - 899497514u)) - 1894007588u)) + 1812433253u;
+            int v2 = (int)(((a2 ^ ((a2 ^ a1) + 1566083941u)) - 899497514u) >> 27);
+            return v1 << v2 | v1 >> (32-v2);
+        }
+
+        static byte[] ReadBlock (ArcView.Frame view, INekoFormat enc, long offset, out int length)
+        {
+            uint hash = view.ReadUInt32 (offset);
+            length = view.ReadInt32 (offset+4);
+
+            int aligned_size = (length+7) & ~7;
+            byte[] buffer = new byte[aligned_size];
+            length = view.Read (offset+8, buffer, 0, (uint)length);
+            if (0 != hash)
+            {
+                enc.Decrypt (hash, buffer, 0, aligned_size);
+            }
+            return buffer;
+        }
+    }
+
+    internal class NekoEncryption32bit : INekoFormat
+    {
+        readonly uint m_seed;
+
+        public NekoEncryption32bit (uint seed)
+        {
+            m_seed = seed;
+        }
+
+        public void Decrypt (uint hash, byte[] buf, int offset, int length)
+        {
+            if (offset < 0 || offset > buf.Length)
+                throw new ArgumentException ("offset");
+            int count = Math.Min (length, buf.Length-offset) / 8;
+            if (0 == count)
+                return;
+            ulong key = KeyFromHash (hash);
+            unsafe
+            {
+                fixed (byte* data = buf)
+                {
+                    ulong* first = (ulong*)(data + offset);
+                    ulong* last = first + count;
+                    while (first != last)
+                    {
+                        ulong v = *first ^ key;
+                        key = MMX.PAddW (key, v);
+                        *first++ = v;
+                    }
+                }
+            }
+        }
+
+        public uint HashFromName (byte[] str, int offset, int length)
+        {
+            // 0x9B75ADA7, "script"    -> 0x0DDB021E
+            // 0x9B75ADA7, "start.bin" -> 0xCB8FB53B
+            uint hash = m_seed;
+            for (int i = 0; i < length; ++i)
+            {
+                byte c = str[offset+i];
+                hash = 81 * (ShiftMap[c] ^ hash);
+            }
+            return hash;
+        }
+
+        public DirRecord ReadDir (BinaryReader input)
+        {
+            return new DirRecord {
+                Hash      = input.ReadUInt32(),
+                FileCount = input.ReadInt32()
+            };
+        }
+
+        public long NextOffset (Entry entry)
+        {
+            return entry.Offset + entry.Size + 8;
+        }
+
+        public static ulong KeyFromHash (uint hash)
+        {
+            uint v2 = hash ^ (hash + 1566083941u);
+            uint v3 = v2 ^ (hash - 899497514u);
+            ulong result = v3 ^ (v2 - 1894007588u);
+            return result | (result ^ (v3 + 1812433253u)) << 32;
+        }
+
+        static readonly byte[] ShiftMap = new byte[]
+        {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x38, 0x2F, 0x33, 0x3C, 0x40, 0x3B, 0x2A, 0x2E, 0x31, 0x30, 0x26, 0x44, 0x35, 0x28, 0x3E, 0x12,
+            0x02, 0x22, 0x06, 0x20, 0x1A, 0x1C, 0x0F, 0x11, 0x18, 0x17, 0x42, 0x2B, 0x3A, 0x37, 0x34, 0x0C,
+            0x41, 0x08, 0x1D, 0x07, 0x15, 0x21, 0x05, 0x1E, 0x0A, 0x14, 0x0E, 0x10, 0x09, 0x27, 0x1F, 0x0B,
+            0x23, 0x16, 0x0D, 0x01, 0x25, 0x04, 0x1B, 0x03, 0x13, 0x24, 0x19, 0x2D, 0x12, 0x29, 0x32, 0x3F,
+            0x3D, 0x08, 0x1D, 0x07, 0x15, 0x21, 0x05, 0x1E, 0x0A, 0x14, 0x0E, 0x10, 0x09, 0x27, 0x1F, 0x0B,
+            0x23, 0x16, 0x0D, 0x01, 0x25, 0x04, 0x1B, 0x03, 0x13, 0x24, 0x19, 0x2C, 0x39, 0x43, 0x36, 0x00,
+            0x4B, 0xA9, 0xA7, 0xAF, 0x50, 0x52, 0x91, 0x9F, 0x47, 0x6B, 0x96, 0xAB, 0x87, 0xB5, 0x9B, 0xBB,
+            0x99, 0xA4, 0xBF, 0x5C, 0xC6, 0x9C, 0xC2, 0xC4, 0xB6, 0x4F, 0xB8, 0xC1, 0x85, 0xA8, 0x51, 0x7E,
+            0x5F, 0x82, 0x73, 0xC7, 0x90, 0x4E, 0x45, 0xA5, 0x7A, 0x63, 0x70, 0xB3, 0x79, 0x83, 0x60, 0x55,
+            0x5B, 0x5E, 0x68, 0xBA, 0x53, 0xA1, 0x67, 0x97, 0xAC, 0x71, 0x81, 0x59, 0x64, 0x7C, 0x9D, 0xBD,
+            0x9D, 0xBD, 0x95, 0xA0, 0xB2, 0xC0, 0x6F, 0x6A, 0x54, 0xB9, 0x6D, 0x88, 0x77, 0x48, 0x5D, 0x72,
+            0x49, 0x93, 0x57, 0x65, 0xBE, 0x4A, 0x80, 0xA2, 0x5A, 0x98, 0xA6, 0x62, 0x7F, 0x84, 0x75, 0xBC,
+            0xAD, 0xB1, 0x6E, 0x76, 0x8B, 0x9E, 0x8C, 0x61, 0x69, 0x8D, 0xB4, 0x78, 0xAA, 0xAE, 0x8F, 0xC3,
+            0x58, 0xC5, 0x74, 0xB7, 0x8E, 0x7D, 0x89, 0x8A, 0x56, 0x4D, 0x86, 0x94, 0x9A, 0x4C, 0x92, 0xB0,
+        };
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Pak2Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "NEKOPACK/2"; } }
+        public override string Description { get { return "NekoPack resource archive"; } }
+        public override uint     Signature { get { return 0x4F4B454E; } } // "NEKO"
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool     CanCreate { get { return false; } }
+
+        public Pak2Opener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (4, "PACK"))
+                return null;
+
+            uint init_key = file.View.ReadUInt32 (0xC);
+            var xdec = new NekoXCode (init_key);
+            uint seed = file.View.ReadUInt32 (0x10);
+            var buffer = file.View.ReadBytes (0x14, 8);
+            xdec.Decrypt (seed, buffer, 0, 8);
+
+            uint index_size = LittleEndian.ToUInt32 (buffer, 0);
+            if (index_size < 0x14 || index_size != LittleEndian.ToUInt32 (buffer, 4))
+                return null;
+            var index = new byte[(index_size + 7u) & ~7u];
+            if (file.View.Read (0x1C, index, 0, index_size) < index_size)
+                return null;
+            xdec.Decrypt (seed, index, 0, index.Length);
+
+            using (var reader = new IndexReader (file, xdec, index, (int)index_size))
+            {
+                var dir = reader.Parse (0x1C+index.Length);
+                if (null == dir)
+                    return null;
+                reader.DetectTypes (dir, entry => {
+                    uint key = file.View.ReadUInt32 (entry.Offset);
+                    file.View.Read (entry.Offset+12, buffer, 0, 8);
+                    xdec.Decrypt (key, buffer, 0, 8);
+                    return LittleEndian.ToUInt32 (buffer, 0);
+                });
+                return new NekoArchive (file, this, dir, xdec);
+            }
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var narc = arc as NekoArchive;
+            if (null == narc || entry.Size <= 12)
+                return base.OpenEntry (arc, entry);
+            uint key = arc.File.View.ReadUInt32 (entry.Offset);
+            var data = new byte[entry.Size];
+            arc.File.View.Read (entry.Offset+4, data, 0, 8);
+            narc.Decoder.Decrypt (key, data, 0, 8);
+            int size = LittleEndian.ToInt32 (data, 0);
+            if (size != LittleEndian.ToInt32 (data, 4))
+            {
+                Trace.WriteLine ("entry decryption failed", "[NEKOPACK]");
+                return base.OpenEntry (arc, entry);
+            }
+            int aligned_size = (size + 7) & ~7;
+            if (aligned_size > data.Length)
+                data = new byte[aligned_size];
+            arc.File.View.Read (entry.Offset+12, data, 0, (uint)size);
+            narc.Decoder.Decrypt (key, data, 0, aligned_size);
+            return new MemoryStream (data, 0, size);
+        }
+    }
+
+    internal class NekoXCode : INekoFormat
+    {
+        uint            m_seed;
+        uint[]          m_random;
+        SimdProgram     m_program;
+
+        public NekoXCode (uint init_key)
+        {
+            m_seed = init_key;
+            m_random = InitTable (init_key);
+            m_program = new SimdProgram (init_key);
+        }
+
+        public void Decrypt (uint key, byte[] input, int offset, int length)
+        {
+            for (int i = 1; i < 7; ++i)
+            {
+                uint src = key % 0x28 * 2;
+                m_program.mm[i] = m_random[src] | (ulong)m_random[src+1] << 32;
+                key /= 0x28;
+            }
+            m_program.Execute (input, offset, length);
+        }
+
+        public uint HashFromName (byte[] str, int offset, int length)
+        {
+            uint hash = m_seed;
+            for (int i = 0; i < length; ++i)
+            {
+                hash = 0x100002A * (ShiftMap[str[offset+i] & 0xFF] ^ hash);
+            }
+            return hash;
+        }
+
+        public DirRecord ReadDir (BinaryReader input)
+        {
+            uint hash = input.ReadUInt32();
+            int count = input.ReadInt32();
+            if (count != input.ReadInt32())
+                throw new InvalidFormatException();
+            return new DirRecord { Hash = hash, FileCount = count };
+        }
+
+        public long NextOffset (Entry entry)
+        {
+            return entry.Offset + entry.Size;
+        }
+
         static readonly byte[] ShiftMap = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -454,29 +538,6 @@ namespace GameRes.Formats.Neko
             0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98,
             0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8,
         };
-    }
-
-    internal class NekoXCode : INekoEncryption
-    {
-        uint[]          m_random;
-        SimdProgram     m_program;
-
-        public NekoXCode (uint init_key)
-        {
-            m_random = InitTable (init_key);
-            m_program = new SimdProgram (init_key);
-        }
-
-        public void Decrypt (uint key, byte[] input, int offset, int length)
-        {
-            for (int i = 1; i < 7; ++i)
-            {
-                uint src = key % 0x28 * 2;
-                m_program.mm[i] = m_random[src] | (ulong)m_random[src+1] << 32;
-                key /= 0x28;
-            }
-            m_program.Execute (input, offset, length);
-        }
 
         class SimdProgram
         {
