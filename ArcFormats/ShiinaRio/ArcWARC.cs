@@ -123,6 +123,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             {
                 byte[] name_buf = new byte[decoder.EntryNameSize];
                 var dir = new List<Entry> ();
+                var unique_names = new HashSet<string>();
                 while (name_buf.Length == header.Read (name_buf, 0, name_buf.Length))
                 {
                     var name = Binary.GetCString (name_buf, 0, name_buf.Length);
@@ -135,7 +136,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                     entry.IsPacked     = entry.Size != entry.UnpackedSize;
                     entry.FileTime     = header.ReadInt64();
                     entry.Flags        = header.ReadUInt32();
-                    if (0 != name.Length)
+                    if (0 != name.Length && unique_names.Add (name))
                         dir.Add (entry);
                 }
                 if (0 == dir.Count)
@@ -427,8 +428,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         byte[] m_src;
         byte[] m_dst;
 
-        uint[] lhs = new uint[511];
-        uint[] rhs = new uint[511];
+        ushort[,] m_tree = new ushort[2,511];
 
         int m_origin;
         int m_total;
@@ -436,7 +436,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         int m_remaining;
         int m_curbits;
         uint m_cache;
-        uint m_curindex;
+        ushort m_curindex;
 
         public HuffmanReader (byte[] src, int index, int length, byte[] dst)
         {
@@ -456,31 +456,21 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             m_remaining = m_total;
             m_curbits = 0;
             m_curindex = 256;
-            uint index = CreateTree();
+            ushort root = CreateTree();
             for (int i = 0; i < m_dst.Length; ++i)
             {
-                uint idx = index;
-                while (idx >= 256)
+                ushort symbol = root;
+                while (symbol >= 256)
                 {
-                    if (--m_curbits < 0)
-                    {
-                        m_curbits = 31;
-                        m_cache = ReadUInt32();
-                    }
-                    if (0 != ((m_cache >> m_curbits) & 1))
-                        idx = rhs[idx];
-                    else
-                        idx = lhs[idx];
+                    symbol = m_tree[GetBits(1), symbol];
                 }
-                m_dst[i] = (byte)idx;
+                m_dst[i] = (byte)symbol;
             }
             return m_dst;
         }
 
         uint ReadUInt32 ()
         {
-            if (0 == m_remaining)
-                throw new InvalidFormatException ("Unexpected end of file");
             uint v;
             if (m_remaining >= 4)
             {
@@ -488,7 +478,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 m_input_pos += 4;
                 m_remaining -= 4;
             }
-            else
+            else if (m_remaining > 0)
             {
                 v = m_src[m_input_pos++];
                 int shift = 8;
@@ -498,6 +488,8 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                     shift += 8;
                 }
             }
+            else
+                throw new InvalidFormatException ("Unexpected end of file");
             return v;
         }
 
@@ -506,41 +498,26 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             uint ret_val = 0;
             if (req_bits > m_curbits)
             {
-                do
-                {
-                    req_bits -= m_curbits;
-                    ret_val |= (m_cache & ((1u << m_curbits) - 1u)) << req_bits;
-                    m_cache = ReadUInt32();
-                    m_curbits = 32;
-                }
-                while (req_bits > 32);
+                req_bits -= m_curbits;
+                ret_val |= (m_cache & ((1u << m_curbits) - 1u)) << req_bits;
+                m_cache = ReadUInt32();
+                m_curbits = 32;
             }
             m_curbits -= req_bits;
             return ret_val | ((1u << req_bits) - 1u) & (m_cache >> m_curbits);
         }
 
-        uint CreateTree ()
+        ushort CreateTree ()
         {
-            uint not_leaf;
-
-            if (m_curbits-- < 1)
-            {
-                m_curbits = 31;
-                m_cache = ReadUInt32();
-                not_leaf = m_cache >> 31;
-            }
-            else
-                not_leaf = (m_cache >> m_curbits) & 1;
-
-            uint i;
-            if (0 != not_leaf)
+            ushort i;
+            if (0 != GetBits (1))
             {
                 i = m_curindex++;
-                lhs[i] = CreateTree();
-                rhs[i] = CreateTree();
+                m_tree[0,i] = CreateTree();
+                m_tree[1,i] = CreateTree();
             }
             else
-                i = GetBits (8);
+                i = (ushort)GetBits (8);
             return i;
         }
     }
