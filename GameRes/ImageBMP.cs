@@ -57,10 +57,12 @@ namespace GameRes
         private IEnumerable<IBmpExtension>  m_extensions;
         #pragma warning restore 649
 
+        bool EnableExtensions = true;
+
         public override ImageData Read (Stream file, ImageMetaData info)
         {
             var bmp_info = info as BmpMetaData;
-            if (bmp_info != null)
+            if (bmp_info != null && EnableExtensions)
             {
                 bool can_seek = file.CanSeek;
                 foreach (var ext in m_extensions)
