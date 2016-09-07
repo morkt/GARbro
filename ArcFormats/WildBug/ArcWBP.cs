@@ -41,12 +41,11 @@ namespace GameRes.Formats.WildBug
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int version;
-            if (file.View.AsciiEqual (0, "ARCFORM3 WBUG "))
-                version = 3;
-            else if (file.View.AsciiEqual (0, "ARCFORM4 WBUG "))
-                version = 4;
-            else
+            if (!file.View.AsciiEqual (0, "ARCFORM") ||
+                !file.View.AsciiEqual (8, " WBUG "))
+                return null;
+            int version = file.View.ReadByte (7) - '0';
+            if (version < 2 || version > 4)
                 return null;
             int count = file.View.ReadInt32 (0x10);
             if (!IsSaneCount (count))
@@ -59,10 +58,10 @@ namespace GameRes.Formats.WildBug
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
 
-            if (3 == version)
-                return OpenV3 (file, count, index_offset);
-            else
+            if (4 == version)
                 return OpenV4 (file, count, index_offset, index_size);
+            else
+                return OpenV3 (file, count, index_offset);
         }
 
         ArcFile OpenV3 (ArcView file, int count, uint index_offset)
