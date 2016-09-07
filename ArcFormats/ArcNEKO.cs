@@ -122,7 +122,7 @@ namespace GameRes.Formats.Neko
         static string[] KnownFileNames { get { return s_known_file_names.Value; } }
 
         static string[] s_known_dir_names = {
-            "image/actor", "image/back", "image/mask", "image/visual",
+            "image/actor", "image/back", "image/mask", "image/visual", "image/actor/big",
             "sound/bgm", "sound/env", "sound/se", "voice", "script", "system", "count",
         };
 
@@ -177,7 +177,7 @@ namespace GameRes.Formats.Neko
         {
             try
             {
-                var dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
+                var dir = FormatCatalog.Instance.DataDirectory;
                 var lst_file = Path.Combine (dir, "nekopack.lst");
                 if (!File.Exists (lst_file))
                     return new string[0];

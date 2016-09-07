@@ -219,7 +219,7 @@ namespace GameRes.Formats.NonColor
         {
             if (null != LastAccessedScheme && LastAccessedScheme.Item1 == scheme.Hash)
                 return LastAccessedScheme.Item2;
-            var dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var dir = FormatCatalog.Instance.DataDirectory;
             var lst_file = Path.Combine (dir, PersistentFileMapName);
             var idx_file = Path.ChangeExtension (lst_file, ".idx");
             using (var idx_stream = File.OpenRead (idx_file))
