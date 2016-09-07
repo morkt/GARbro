@@ -95,8 +95,17 @@ namespace GameRes
 
         protected IResource ()
         {
-            Extensions = new string[] { Tag.ToLowerInvariant() };
+            Extensions = new string[] { GetDefaultExtension() };
             Signatures = new uint[] { this.Signature };
+        }
+
+        protected string GetDefaultExtension ()
+        {
+            var ext = Tag.ToLowerInvariant();
+            int slash = ext.IndexOf ('/');
+            if (slash != -1)
+                ext = ext.Substring (0, slash);
+            return ext;
         }
 
         public virtual ResourceOptions GetDefaultOptions ()
