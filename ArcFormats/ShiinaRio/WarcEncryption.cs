@@ -65,6 +65,65 @@ namespace GameRes.Formats.ShiinaRio
 
         public void Decrypt (byte[] data, int index, uint data_length)
         {
+            DoEncryption (data, index, data_length, DecryptContent);
+        }
+
+        public void Encrypt (byte[] data, int index, uint data_length)
+        {
+            DoEncryption (data, index, data_length, EncryptContent);
+        }
+
+        public void DecryptIndex (uint index_offset, byte[] index)
+        {
+            Decrypt (index, 0, (uint)index.Length);
+            XorIndex (index_offset, index);
+        }
+
+        public void EncryptIndex (uint index_offset, byte[] index)
+        {
+            XorIndex (index_offset, index);
+            Encrypt (index, 0, (uint)index.Length);
+        }
+
+        void DecryptContent (int x, byte[] data, int index, uint length)
+        {
+            int n = 0;
+            for (int i = 2; i < length; ++i)
+            {
+                byte d = data[index+i];
+                if (WarcVersion > 120)
+                    d ^= (byte)((double)NextRand() / 16777216.0);
+                d = Binary.RotByteR (d, 1);
+                d ^= (byte)(m_scheme.CryptKey[n++] ^ m_scheme.CryptKey[x]);
+                data[index+i] = d;
+                x = d % m_scheme.CryptKey.Length;
+                if (n >= m_scheme.CryptKey.Length)
+                    n = 0;
+            }
+        }
+
+        void EncryptContent (int x, byte[] data, int index, uint length)
+        {
+            int n = 0;
+            for (int i = 2; i < length; ++i)
+            {
+                byte k = (byte)(m_scheme.CryptKey[n++] ^ m_scheme.CryptKey[x]);
+                byte d = data[index+i];
+                x = d % m_scheme.CryptKey.Length;
+                d ^= k;
+                d = Binary.RotByteL (d, 1);
+                if (WarcVersion > 120)
+                    d ^= (byte)((double)NextRand() / 16777216.0);
+                data[index+i] = d;
+                if (n >= m_scheme.CryptKey.Length)
+                    n = 0;
+            }
+        }
+
+        delegate void ContentEncryptor (int start_key, byte[] data, int index, uint length);
+
+        void DoEncryption (byte[] data, int index, uint data_length, ContentEncryptor encryptor)
+        {
             if (data_length < 3)
                 return;
             uint effective_length = Math.Min (data_length, 1024u);
@@ -130,40 +189,22 @@ namespace GameRes.Formats.ShiinaRio
             if (b < 0)
                 token = 360.0 - token;
 
-            uint x = (fac + (byte)DecryptHelper2 (token)) % (uint)m_scheme.CryptKey.Length;
-            int n = 0;
-            for (int i = 2; i < effective_length; ++i)
-            {
-                byte d = data[index+i];
-                if (WarcVersion > 120)
-                    d ^= (byte)((double)NextRand() / 16777216.0);
-                else
-                    d ^= (byte)((double)NextRand() / 4294967296.0); // ? effectively a no-op
-                d = Binary.RotByteR (d, 1);
-                d ^= (byte)(m_scheme.CryptKey[n++] ^ m_scheme.CryptKey[x]);
-                data[index+i] = d;
-                x = d % (uint)m_scheme.CryptKey.Length;
-                if (n >= m_scheme.CryptKey.Length)
-                    n = 0;
-            }
+            int x = (int)((fac + (byte)DecryptHelper2 (token)) % (uint)m_scheme.CryptKey.Length);
+            encryptor (x, data, index, effective_length);
         }
 
-        public void DecryptIndex (uint index_offset, byte[] enc_index)
+        unsafe void XorIndex (uint index_offset, byte[] index)
         {
-            Decrypt (enc_index, 0, (uint)enc_index.Length);
-            unsafe
+            fixed (byte* buf_raw = index)
             {
-                fixed (byte* buf_raw = enc_index)
+                uint* encoded = (uint*)buf_raw;
+                for (int i = 0; i < index.Length/4; ++i)
+                    encoded[i] ^= index_offset;
+                if (WarcVersion >= 170)
                 {
-                    uint* encoded = (uint*)buf_raw;
-                    for (int i = 0; i < enc_index.Length/4; ++i)
-                        encoded[i] ^= index_offset;
-                    if (WarcVersion >= 170)
-                    {
-                        byte key = (byte)~WarcVersion;
-                        for (int i = 0; i < enc_index.Length; ++i)
-                            buf_raw[i] ^= key;
-                    }
+                    byte key = (byte)~WarcVersion;
+                    for (int i = 0; i < index.Length; ++i)
+                        buf_raw[i] ^= key;
                 }
             }
         }
@@ -555,6 +596,7 @@ namespace GameRes.Formats.ShiinaRio
     public interface IDecryptExtra
     {
         void Decrypt (byte[] data, int index, uint length, uint flags);
+        void Encrypt (byte[] data, int index, uint length, uint flags);
     }
 
     [Serializable]
@@ -577,6 +619,16 @@ namespace GameRes.Formats.ShiinaRio
             if ((flags & 0x202) == 0x202)
                 DecryptPre (data, index, length);
             if ((flags & 0x204) == 0x204)
+                DecryptPost (data, index, length);
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < MinLength)
+                return;
+            if ((flags & 0x102) == 0x102)
+                DecryptPre (data, index, length);
+            if ((flags & 0x104) == 0x104)
                 DecryptPost (data, index, length);
         }
 
@@ -677,15 +729,35 @@ namespace GameRes.Formats.ShiinaRio
             {
                 int sum = 0;
                 int bit = 0;
-                byte v;
                 for (int i = 0; i < 0x100; ++i)
                 {
-                    v = data[index+i];
+                    byte v = data[index+i];
                     sum += v >> 1;
                     data[index+i] = (byte)(v >> 1 | bit);
                     bit = v << 7;
                 }
                 data[index] |= (byte)bit;
+                data[index + 0x104] ^= (byte)sum;
+                data[index + 0x105] ^= (byte)(sum >> 8);
+            }
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x102) == 0x102)
+            {
+                int sum = 0;
+                int bit = 0;
+                for (int i = 0xFF; i >= 0; --i)
+                {
+                    byte v = data[index+i];
+                    sum += v & 0x7F;
+                    data[index+i] = (byte)(v << 1 | bit);
+                    bit = v >> 7;
+                }
+                data[index + 0xFF] |= (byte)bit;
                 data[index + 0x104] ^= (byte)sum;
                 data[index + 0x105] ^= (byte)(sum >> 8);
             }
@@ -697,16 +769,23 @@ namespace GameRes.Formats.ShiinaRio
     {
         public void Decrypt (byte[] data, int index, uint length, uint flags)
         {
-            if (length < 0x400)
-                return;
-            if ((flags & 0x204) == 0x204)
-            {
-                var crc16 = new Kogado.Crc16();
-                crc16.Update (data, index, (int)length & 0x7E | 1);
-                var sum = crc16.Value ^ 0xFFFF;
-                data[index + 0x104] ^= (byte)sum;
-                data[index + 0x105] ^= (byte)(sum >> 8);
-            }
+            if (length >= 0x400 && (flags & 0x204) == 0x204)
+                Crc16Crypt (data, index, (int)length);
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x400 && (flags & 0x104) == 0x104)
+                Crc16Crypt (data, index, (int)length);
+        }
+
+        void Crc16Crypt (byte[] data, int index, int length)
+        {
+            var crc16 = new Kogado.Crc16();
+            crc16.Update (data, index, length & 0x7E | 1);
+            var sum = crc16.Value ^ 0xFFFF;
+            data[index + 0x104] ^= (byte)sum;
+            data[index + 0x105] ^= (byte)(sum >> 8);
         }
     }
 
@@ -755,6 +834,96 @@ namespace GameRes.Formats.ShiinaRio
                     data[index + 0x202] ^= (byte)(length >> 16);
                 if (length > 0x203)
                     data[index + 0x203] ^= (byte)(length >> 24);
+            }
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x104) == 0x104)
+            {
+                throw new NotImplementedException();
+            }
+        }
+    }
+
+    [Serializable]
+    public class JokersCrypt : IDecryptExtra
+    {
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x400)
+                return;
+            if ((flags & 0x204) == 0x204)
+            {
+                if (0x718E958D == LittleEndian.ToUInt32 (data, index))
+                {
+                    var input = new byte[0x200];
+                    Buffer.BlockCopy (data, index, input, 0, 0x200);
+                    int remaining = LittleEndian.ToInt32 (input, 8);
+                    int src = 12;
+                    int dst = index;
+                    var ranges_hi = new uint[0x100];
+                    var ranges_lo = new uint[0x101];
+                    for (int i = 0; i < 0x100; ++i)
+                    {
+                        uint v = input[src++];
+                        ranges_hi[i] = v;
+                        ranges_lo[i+1] = v + ranges_lo[i];
+                    }
+                    uint denominator = ranges_lo[0x100];
+                    var symbol_table = new byte[denominator];
+                    uint low, high;
+                    for (int i = 0; i < 0x100; ++i)
+                    {
+                        low  = ranges_lo[i];
+                        high = ranges_lo[i + 1];
+                        int count = (int)(high - low);
+                        for (int j = 0; j < count; ++j)
+                            symbol_table[low + j] = (byte)i;
+                    }
+                    low  = 0;
+                    high = 0xFFFFFFFF;
+                    uint current = BigEndian.ToUInt32 (input, src);
+                    src += 4;
+                    for (int i = 0; i < remaining; ++i)
+                    {
+                        uint range = high / denominator;
+                        byte symbol = symbol_table[(current - low) / range];
+                        data[index+i] = symbol;
+                        low += ranges_lo[symbol] * range;
+                        high = ranges_hi[symbol] * range;
+                        while (0 == ((low ^ (high + low)) & 0xFF000000u))
+                        {
+                            low <<= 8;
+                            high <<= 8;
+                            current <<= 8;
+                            current |= input[src++];
+                        }
+                        while (high < 0x10000)
+                        {
+                            low <<= 8;
+                            high = 0x1000000 - (low & 0xFFFF00);
+                            current <<= 8;
+                            current |= input[src++];
+                        }
+                    }
+                }
+                data[index + 0x200] ^= (byte)length;
+                data[index + 0x201] ^= (byte)(length >> 8);
+                data[index + 0x202] ^= (byte)(length >> 16);
+                data[index + 0x203] ^= (byte)(length >> 24);
+            }
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x400)
+                return;
+            if ((flags & 0x104) == 0x104)
+            {
+                throw new NotImplementedException();
             }
         }
     }
