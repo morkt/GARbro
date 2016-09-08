@@ -742,4 +742,27 @@ namespace GameRes.Formats.KiriKiri
             }
         }
     }
+
+    [Serializable]
+    public class HaikuoCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ entry.Hash ^ (entry.Hash >> 8));
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            byte key = (byte)(entry.Hash ^ (entry.Hash >> 8));
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
 }
