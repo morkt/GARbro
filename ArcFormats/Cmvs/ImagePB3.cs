@@ -2,7 +2,7 @@
 //! \date       Wed Dec 02 13:55:45 2015
 //! \brief      Cmvs engine image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,7 +27,9 @@ using GameRes.Utility;
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Windows.Media;
+using System.Collections.Generic;
 
 namespace GameRes.Formats.Purple
 {
@@ -99,7 +101,10 @@ namespace GameRes.Formats.Purple
             if (info.Type == 1 && info.SubType != 0x10)
                 throw new NotSupportedException();
             m_info = info;
-            m_input = new byte[m_info.InputSize];
+            if (3 == m_info.Type || 2 == m_info.Type)
+                m_input = new byte[input.Length];
+            else
+                m_input = new byte[m_info.InputSize];
             if (m_input.Length != input.Read (m_input, 0, m_input.Length))
                 throw new EndOfStreamException();
             m_channels = m_info.BPP / 8;
@@ -119,11 +124,9 @@ namespace GameRes.Formats.Purple
             case 8:
             case 6: UnpackV6(); break;
             case 2:
-            case 3:
+            case 3: UnpackV3(); break;
             case 4:
             case 7: throw new NotSupportedException(string.Format ("PB3 v{0} images not supported", m_info.Type));
-            // V3 is pain in the ass to implement, machine code is full of unrolled loops resulting in a
-            // thousands lines of spaghetti code.
             }
         }
 
@@ -219,6 +222,52 @@ namespace GameRes.Formats.Purple
                     }
                     v68 += 16;
                 }
+            }
+        }
+
+        void UnpackV3 ()
+        {
+            var jbp = new JbpReader (m_input, 0x34);
+            m_output = jbp.Unpack();
+            if (m_stride != jbp.Stride)
+            {
+                int src_stride = jbp.Stride;
+                int src = src_stride;
+                int dst = m_stride;
+                for (uint y = 1; y < m_info.Height; ++y)
+                {
+                    Buffer.BlockCopy (m_output, src, m_output, dst, m_stride);
+                    src += src_stride;
+                    dst += m_stride;
+                }
+            }
+            int alpha_pos = LittleEndian.ToInt32 (m_input, 0x2C);
+            if (32 == m_info.BPP && alpha_pos > 0)
+            {
+                int dst = 3;
+                int output_end = m_stride * (int)m_info.Height;
+                while (dst < output_end)
+                {
+                    byte alpha = m_input[alpha_pos++];
+                    if (0 != alpha && 0xFF != alpha)
+                    {
+                        m_output[dst] = alpha;
+                        dst += 4;
+                    } 
+                    else
+                    {
+                        int count = m_input[alpha_pos++];
+                        while (count --> 0)
+                        {
+                            m_output[dst] = alpha;
+                            dst += 4;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Format = PixelFormats.Bgr32;
             }
         }
 
@@ -401,6 +450,442 @@ namespace GameRes.Formats.Purple
                 dst_origin += m_stride;
                 h += 8;
                 --y_blocks;
+            }
+        }
+    }
+
+    internal sealed class JbpReader
+    {
+        byte[]  m_input;
+        byte[]  m_output;
+        int     m_data_pos;
+        uint    m_format;
+
+        int     m_aligned_width;
+        int     m_aligned_height;
+        int     m_stride;
+        int     m_blocks_x;
+        int     m_blocks_y;
+        int     m_dc_bits;
+        int     m_ac_bits;
+
+        public int  Width { get { return m_aligned_width; } }
+        public int Height { get { return m_aligned_height; } }
+        public int Stride { get { return m_stride; } }
+
+        public JbpReader (byte[] input, int offset)
+        {
+            m_input     = input;
+            m_data_pos  = LittleEndian.ToInt32 (input, offset+4) + offset;
+            m_format    = LittleEndian.ToUInt32 (input, offset+8);
+            int width   = LittleEndian.ToUInt16 (input, offset+0x10);
+            int height  = LittleEndian.ToUInt16 (input, offset+0x12);
+            m_dc_bits = LittleEndian.ToInt32 (input, offset+0x1C);
+            m_ac_bits = LittleEndian.ToInt32 (input, offset+0x20);
+
+            switch ((m_format >> 28) & 3)
+            {
+            case 0:
+                m_aligned_width  = (width  + 7) & ~7;
+                m_aligned_height = (height + 7) & ~7;
+                break;
+            case 1:
+                m_aligned_width  = (width  + 0xF) & ~0xF;
+                m_aligned_height = (height + 0xF) & ~0xF;
+                break;
+            case 2:
+                m_aligned_width  = (width  + 0x1F) & ~0x1F;
+                m_aligned_height = (height + 0x0F) & ~0x0F;
+                break;
+            default:
+                throw new InvalidFormatException();
+            }
+            m_blocks_x = m_aligned_width  >> 4;
+            m_blocks_y = m_aligned_height >> 4;
+
+            m_stride = 4 * m_aligned_width;
+            m_output = new byte[m_stride * m_aligned_height];
+        }
+
+        short[] quant_y = new short[0x40];
+        short[] quant_c = new short[0x40];
+
+        JBitStream  bits_dc;
+        JBitStream  bits_ac;
+
+        HuffmanTree tree_dc;
+        HuffmanTree tree_ac;
+
+        public byte[] Unpack ()
+        {
+            var tree_data = new byte[0x10];
+            int tree_pos = m_data_pos+0x80;
+            for (int i = 0; i < 0x10; ++i)
+                tree_data[i] = (byte)(m_input[tree_pos+i] + 1);
+
+            var freq = new uint[0x20];
+            Buffer.BlockCopy (m_input, m_data_pos, freq, 0, 0x40);
+            tree_dc = new HuffmanTree (tree_data, freq);
+            Buffer.BlockCopy (m_input, m_data_pos+0x40, freq, 0, 0x40);
+            tree_ac = new HuffmanTree (tree_data, freq);
+
+            int quant_pos = tree_pos+0x10;
+            if (0 != (m_format & 0x8000000))
+            {
+                for (int i = 0; i < 0x40; ++i)
+                {
+                    quant_y[i] = m_input[quant_pos+i];
+                    quant_c[i] = m_input[quant_pos+i+0x40];
+                }
+            }
+            int bits_offset = quant_pos + 0x80;
+            bits_dc = new JBitStream (m_input, bits_offset,             m_dc_bits);
+            bits_ac = new JBitStream (m_input, bits_offset + m_dc_bits, m_ac_bits);
+
+            Decode();
+            return m_output;
+        }
+
+        static byte[] ZigzagOrder = new byte[64]
+        {
+             1,  8,  16, 9,  2,  3, 10, 17,
+            24, 32, 25, 18, 11,  4,  5, 12,
+            19, 26, 33, 40, 48, 41, 34, 27,
+            20, 13,  6,  7, 14, 21, 28, 35,
+            42, 49, 56, 57, 50, 43, 36, 29,
+            22, 15, 23, 30, 37, 44, 51, 58,
+            59, 52, 45, 38, 31, 39, 46, 53,
+            60, 61, 54, 47, 55, 62, 63,  0
+        };
+
+        void Decode ()
+        {
+            int total_blocks = m_blocks_x * m_blocks_y;
+            var blocks = new short[total_blocks, 6];
+            uint prev_v = 0;
+            for (int i = 0; i < total_blocks; ++i)
+            for (int j = 0; j < 6; ++j)
+            {
+                int bit_count = tree_dc.Read (bits_dc);
+                uint v = (uint)bits_dc.GetBits (bit_count);
+                if (v < (1u << (bit_count - 1)))
+                    v -= (1u << bit_count) - 1;
+
+                prev_v += v;
+                blocks[i,j] = (short)prev_v;
+            }
+
+            var dct_table = new short[6][];
+            for (int i = 0; i < 6; ++i)
+                dct_table[i] = new short[64];
+
+            for (int y = 0; y < m_blocks_y; ++y)
+            {
+                int dst1 = y * m_stride * 16;
+                int dst2 = dst1 + m_stride * 9;
+
+                for (int x = 0; x < m_blocks_x; ++x)
+                {
+                    for (int j = 0; j < 6; ++j)
+                    for (int k = 0; k < 64; ++k)
+                        dct_table[j][k] = 0;
+
+                    for (int n = 0; n < 6; ++n)
+                    {
+                        dct_table[n][0] = blocks[y * m_blocks_x + x, n];
+
+                        for (int i = 0; i < 63;)
+                        {
+                            int bit_count = tree_ac.Read (bits_ac);
+
+                            if (15 == bit_count)
+                                break;
+
+                            if (0 == bit_count)
+                            {
+                                int node_idx = 0;
+                                while (0 != bits_ac.GetNextBit())
+                                    node_idx++;
+                                i += tree_ac.Base[node_idx];
+                            }
+                            else
+                            {
+                                uint v = (uint)bits_ac.GetBits (bit_count);
+                                if (v < (1u << (bit_count - 1)))
+                                    v -= (1u << bit_count) - 1;
+                                dct_table[n][ZigzagOrder[i]] = (short)v;
+                                ++i;
+                            }
+                        }
+                    }
+
+                    Dct (dct_table[0], quant_y);
+                    Dct (dct_table[1], quant_y);
+                    Dct (dct_table[2], quant_y);
+                    Dct (dct_table[3], quant_y);
+                    Dct (dct_table[4], quant_c);
+                    Dct (dct_table[5], quant_c);
+
+                    Ycc2Rgb (dst1,             dst1+m_stride,    dct_table[0], dct_table[4], dct_table[5], 0);
+                    Ycc2Rgb (dst1+32,          dst1+m_stride+32, dct_table[1], dct_table[4], dct_table[5], 4);
+                    Ycc2Rgb (dst2-m_stride,    dst2,             dct_table[2], dct_table[4], dct_table[5], 32);
+                    Ycc2Rgb (dst2-m_stride+32, dst2+32,          dct_table[3], dct_table[4], dct_table[5], 36);
+
+                    dst1 += 64;
+                    dst2 += 64;
+                }
+            }
+        }
+
+        void Dct (short[] dct_table, short[] quant)
+        {
+            int a, b, c, d;
+            int w, x, y, z;
+            int s, t, u, v, n;
+
+            int p = 0;
+            int q = 0;
+
+            for (int i = 0; i < 8; ++i)
+            {
+                if (dct_table[p+0x08] == 0 && dct_table[p+0x10] == 0 &&
+                    dct_table[p+0x18] == 0 && dct_table[p+0x20] == 0 &&
+                    dct_table[p+0x28] == 0 && dct_table[p+0x30] == 0 &&
+                    dct_table[p+0x38] == 0)
+                {
+                    dct_table[p]      = dct_table[p+0x08] =
+                    dct_table[p+0x10] = dct_table[p+0x18] =
+                    dct_table[p+0x20] = dct_table[p+0x28] =
+                    dct_table[p+0x30] = dct_table[p+0x38] = (short)(dct_table[p] * quant[q]);
+                }
+                else
+                {
+                    c = quant[q+0x10] * dct_table[p+0x10];
+                    d = quant[q+0x30] * dct_table[p+0x30];
+                    x = ((c + d) * 35467) >> 16;
+                    c = ((c * 50159) >> 16) + x;
+                    d = ((d * -121094) >> 16) + x;
+                    a = dct_table[p+0x00] * quant[q+0x00];
+                    b = dct_table[p+0x20] * quant[q+0x20];
+                    w = a + b + c;
+                    x = a + b - c;
+                    y = a - b + d;
+                    z = a - b - d;
+
+                    c = dct_table[p+0x38] * quant[q+0x38];
+                    d = dct_table[p+0x28] * quant[q+0x28];
+                    a = dct_table[p+0x18] * quant[q+0x18];
+                    b = dct_table[p+0x08] * quant[q+0x08];
+                    n = ((a + b + c + d) * 77062) >> 16;
+
+                    u = n + ((c * 19571) >> 16)  + (((c + a) * -128553) >> 16) + (((c + b) * -58980) >> 16);
+                    v = n + ((d * 134553) >> 16) + (((d + b) * -25570) >> 16)  + (((d + a) * -167963) >> 16);
+                    t = n + ((b * 98390) >> 16)  + (((d + b) * -25570) >> 16)  + (((c + b) * -58980) >> 16);
+                    s = n + ((a * 201373) >> 16) + (((c + a) * -128553) >> 16) + (((d + a) * -167963) >> 16);
+
+                    dct_table[p]      = (short)(w + t);
+                    dct_table[p+0x38] = (short)(w - t);
+                    dct_table[p+0x08] = (short)(y + s);
+                    dct_table[p+0x30] = (short)(y - s);
+                    dct_table[p+0x10] = (short)(z + v);
+                    dct_table[p+0x28] = (short)(z - v);
+                    dct_table[p+0x18] = (short)(x + u);
+                    dct_table[p+0x20] = (short)(x - u);
+                }
+                p++;
+                q++;
+            }
+
+            p = 0;
+            for (int i = 0; i < 8; ++i)
+            {
+                a = dct_table[p];
+                c = dct_table[p+2];
+                b = dct_table[p+4];
+                d = dct_table[p+6];
+                x = ((c + d) * 35467) >> 16;
+                c = ((c * 50159) >> 16) + x;
+                d = ((d * -121094) >> 16) + x;
+                w = a + b + c;
+                x = a + b - c;
+                y = a - b + d;
+                z = a - b - d;
+
+                d = dct_table[p+5];
+                b = dct_table[p+1];
+                c = dct_table[p+7];
+                a = dct_table[p+3];
+                n = ((a + b + c + d) * 77062) >> 16;
+
+                s = n + ((a * 201373) >> 16) + (((a + c) * -128553) >> 16) + (((a + d) * -167963) >> 16);
+                t = n + ((b * 98390) >> 16)  + (((b + c) * -58980) >> 16)  + (((b + d) * -25570) >> 16);
+                u = n + ((c * 19571) >> 16)  + (((b + c) * -58980) >> 16)  + (((a + c) * -128553) >> 16);
+                v = n + ((d * 134553) >> 16) + (((b + d) * -25570) >> 16)  + (((a + d) * -167963) >> 16);
+
+                dct_table[p  ] = (short)((w + t) >> 3);
+                dct_table[p+7] = (short)((w - t) >> 3);
+                dct_table[p+1] = (short)((y + s) >> 3);
+                dct_table[p+6] = (short)((y - s) >> 3);
+                dct_table[p+2] = (short)((z + v) >> 3);
+                dct_table[p+5] = (short)((z - v) >> 3);
+                dct_table[p+3] = (short)((x + u) >> 3);
+                dct_table[p+4] = (short)((x - u) >> 3);
+
+                p += 8;
+            }
+        }
+
+        void Ycc2Rgb (int dc, int ac, short[] dct_y, short[] dct_cb, short[] dct_cr, int cbcr_src)
+        {
+            int y_src = 0;
+            for (int y = 0; y < 4; ++y)
+            {
+                for (int x = 0; x < 4; ++x)
+                {
+                    var cb = dct_cb[cbcr_src];
+                    var cr = dct_cr[cbcr_src];
+                    var r = ((cr * 0x166F0) >> 16);
+                    var g = ((cb * 0x5810) >> 16) + ((cr * 0xB6C0) >> 16);
+                    var b = ((cb * 0x1C590) >> 16);
+                    var c0 = dct_y[y_src  ] + 0x180;
+                    var c1 = dct_y[y_src+1] + 0x180;
+                    var c8 = dct_y[y_src+8] + 0x180;
+                    var c9 = dct_y[y_src+9] + 0x180;
+
+                    m_output[dc]            = Clamp (c0 + b);
+                    m_output[ac+1-m_stride] = Clamp (c0 - g);
+                    m_output[ac+2-m_stride] = Clamp (c0 + r);
+                    m_output[ac+4-m_stride] = Clamp (c1 + b);
+                    m_output[ac+5-m_stride] = Clamp (c1 - g);
+                    m_output[ac+6-m_stride] = Clamp (c1 + r);
+                    m_output[ac]            = Clamp (c8 + b);
+                    m_output[ac+1]          = Clamp (c8 - g);
+                    m_output[ac+2]          = Clamp (c8 + r);
+                    m_output[ac+4]          = Clamp (c9 + b);
+                    m_output[ac+5]          = Clamp (c9 - g);
+                    m_output[ac+6]          = Clamp (c9 + r);
+                    y_src += 2;
+                    dc += 8;
+                    ac += 8;
+                    cbcr_src++;
+                }
+
+                dc += m_stride * 2 - 32;
+                ac += m_stride * 2 - 32;
+
+                y_src += 8;
+                cbcr_src += 4;
+            }
+        }
+
+        static byte[] YccClampTable = Enumerable.Repeat<byte> (0, 0x100)
+            .Concat (Enumerable.Range (0, 0x100).Select (x => (byte)x))
+            .Concat (Enumerable.Repeat<byte> (0xFF, 0x100)).ToArray();
+
+        static byte Clamp (int c)
+        {
+            return YccClampTable[c];
+        }
+
+        internal class HuffmanTree
+        {
+            public  byte[]  Base;
+            private int[]   Nodes = new int[0x400];
+            private int     Root;
+            public  int     LeafCount { get { return Base.Length; } }
+
+            const uint      MaxFreq = 2100000000u;
+
+            public HuffmanTree (byte[] input, uint[] freq)
+            {
+                Base = input;
+                int depth = Base.Length;
+                for (;;)
+                {
+                    int l = -1;
+                    uint min = MaxFreq - 1;
+                    for (int i = 0; i < depth; ++i)
+                    {
+                        if (freq[i] < min)
+                        {
+                            min = freq[i];
+                            l = i;
+                        }
+                    }
+
+                    int r = -1;
+                    min = MaxFreq - 1;
+                    for (int i = 0; i < depth; ++i)
+                    {
+                        if ((i != l) && (freq[i] < min))
+                        {
+                            min = freq[i];
+                            r = i;
+                        }
+                    }
+
+                    if (l < 0 || r < 0)
+                        break;
+
+                    Nodes[depth] = l;
+                    Nodes[depth+0x200] = r;
+
+                    freq[depth++] = freq[l] + freq[r];
+                    freq[l] = MaxFreq;
+                    freq[r] = MaxFreq;
+                }
+                Root = depth - 1;
+            }
+
+            public int Read (JBitStream bits)
+            {
+                int v = Root;
+                while (v >= LeafCount)
+                    v = Nodes[v + (bits.GetNextBit() << 9)];
+                return v;
+            }
+        }
+
+        internal class JBitStream
+        {
+            byte[]      m_input;
+            int         m_pos;
+            int         m_end;
+
+            public JBitStream (byte[] input, int offset, int length)
+            {
+                m_input = input;
+                m_pos   = offset;
+                m_end   = offset + length;
+            }
+
+            int         m_bits = 0;
+            int         m_cached_bits = 0;
+
+            public int GetBits (int count)
+            {
+                while (m_cached_bits < count)
+                {
+                    if (m_pos >= m_end)
+                        throw new EndOfStreamException();
+                    m_bits = (m_bits << 8) | ReverseByteBits (m_input[m_pos++]);
+                    m_cached_bits += 8;
+                }
+                int mask = (1 << count) - 1;
+                m_cached_bits -= count;
+                return (m_bits >> m_cached_bits) & mask;
+            }
+
+            public int GetNextBit ()
+            {
+                return GetBits (1);
+            }
+
+            int ReverseByteBits (int x)
+            {
+                x = (x & 0xAA) >> 1 | (x & 0x55) << 1;
+                x = (x & 0xCC) >> 2 | (x & 0x33) << 2;
+                return (x >> 4 | x << 4) & 0xFF;
             }
         }
     }
