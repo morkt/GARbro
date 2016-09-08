@@ -146,7 +146,7 @@ namespace GameRes.Formats.KiriKiri
                     header_stream = ZLibCompressor.DeCompress (input);
             }
 
-            var crypt_algorithm = new Lazy<ICrypt> (QueryCryptAlgorithm);
+            var crypt_algorithm = new Lazy<ICrypt> (QueryCryptAlgorithm, false);
 
             var filename_map = new Dictionary<uint, string>();
             var dir = new List<Entry>();

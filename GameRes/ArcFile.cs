@@ -72,7 +72,7 @@ namespace GameRes
             if (entry.Size < 4)
                 return null;
             var filename = entry.Name;
-            var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant());
+            var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant(), false);
             var file = VFS.OpenView (entry);
             try
             {

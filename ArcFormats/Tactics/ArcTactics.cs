@@ -127,7 +127,7 @@ namespace GameRes.Formats.Tactics
                 m_packed_size = m_file.View.ReadUInt32 (0x10);
                 m_unpacked_size = m_file.View.ReadUInt32 (0x14);
                 m_count = m_file.View.ReadInt32 (0x18);
-                m_dir = new Lazy<List<Entry>> (() => new List<Entry> (m_count));
+                m_dir = new Lazy<List<Entry>> (() => new List<Entry> (m_count), false);
             }
 
             public List<Entry> ReadIndex ()

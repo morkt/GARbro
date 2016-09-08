@@ -157,7 +157,7 @@ namespace GameRes
             uint signature = FormatCatalog.ReadSignature (file);
             Lazy<string> ext = null;
             if (!string.IsNullOrEmpty (filename))
-                ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant());
+                ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant(), false);
             for (;;)
             {
                 var range = FormatCatalog.Instance.LookupSignature<ImageFormat> (signature);
