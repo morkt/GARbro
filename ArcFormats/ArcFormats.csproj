@@ -113,6 +113,8 @@
     <Compile Include="Ipac\ImageIES.cs" />
     <Compile Include="Irrlicht\ArcARK.cs" />
     <Compile Include="Irrlicht\ArcPACK.cs" />
+    <Compile Include="Ivory\ImageMMD.cs" />
+    <Compile Include="Ivory\ImageMOE.cs" />
     <Compile Include="Kiss\ArcARC.cs" />
     <Compile Include="KScript\ArcKPC.cs" />
     <Compile Include="KScript\ImageKGP.cs" />
