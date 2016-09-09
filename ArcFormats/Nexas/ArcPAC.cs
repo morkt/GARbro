@@ -73,41 +73,107 @@ namespace GameRes.Formats.NeXAS
         {
             if (!file.View.AsciiEqual (0, "PAC") || 'K' == file.View.ReadByte (3))
                 return null;
-            int count = file.View.ReadInt32 (4);
-            if (!IsSaneCount (count))
-                return null;
-            int pack_type = file.View.ReadInt32 (8);
-            uint index_size = file.View.ReadUInt32 (file.MaxOffset-4);
-            if (index_size >= file.MaxOffset)
+            var reader = new IndexReader (file);
+            var dir = reader.Read();
+            if (null == dir)
                 return null;
 
-            byte[] index_packed = new byte[index_size];
-            file.View.Read (file.MaxOffset-4-index_size, index_packed, 0, index_size);
-            for (int i = 0; i < index_packed.Length; ++i)
-                index_packed[i] = (byte)~index_packed[i];
-
-            var index = HuffmanDecode (index_packed, count*0x4c);
-            var dir = new List<Entry> (count);
-            int offset = 0;
-            for (int i = 0; i < count; ++i, offset += 0x4c)
-            {
-                var name = Binary.GetCString (index, offset, 0x40);
-                var entry = new PackedEntry
-                {
-                    Name = name,
-                    Type = FormatCatalog.Instance.GetTypeFromName (name),
-                    Offset = LittleEndian.ToUInt32 (index, offset+0x40),
-                    UnpackedSize = LittleEndian.ToUInt32 (index, offset+0x44),
-                    Size = LittleEndian.ToUInt32 (index, offset+0x48),
-                };
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                entry.IsPacked = pack_type != 0 && (pack_type != 4 || entry.Size != entry.UnpackedSize);
-                dir.Add (entry);
-            }
-            if (0 == pack_type)
+            if (Compression.None == reader.PackType)
                 return new ArcFile (file, this, dir);
-            return new PacArchive (file, this, dir, (Compression)pack_type);
+            return new PacArchive (file, this, dir, reader.PackType);
+        }
+
+        internal sealed class IndexReader
+        {
+            ArcView     m_file;
+            int         m_count;
+            int         m_pack_type;
+
+            const int MaxNameLength = 0x40;
+
+            public Compression PackType { get { return (Compression)m_pack_type; } }
+
+            public IndexReader (ArcView file)
+            {
+                m_file = file;
+                m_count = file.View.ReadInt32 (4);
+                m_pack_type = file.View.ReadInt32 (8);
+            }
+
+            List<Entry> m_dir;
+            
+            public List<Entry> Read ()
+            {
+                if (!IsSaneCount (m_count))
+                    return null;
+                m_dir = new List<Entry> (m_count);
+                bool success = false;
+                try
+                {
+                    success = ReadOld();
+                }
+                catch { /* ignore parse errors */ }
+                if (!success && !ReadNew())
+                    return null;
+                return m_dir;
+            }
+
+            bool ReadNew ()
+            {
+                uint index_size = m_file.View.ReadUInt32 (m_file.MaxOffset-4);
+                int unpacked_size = m_count*0x4C;
+                if (index_size >= m_file.MaxOffset || index_size > unpacked_size*2)
+                    return false;
+
+                var index_packed = m_file.View.ReadBytes (m_file.MaxOffset-4-index_size, index_size);
+                for (int i = 0; i < index_packed.Length; ++i)
+                    index_packed[i] = (byte)~index_packed[i];
+
+                var index = HuffmanDecode (index_packed, unpacked_size);
+                using (var input = new MemoryStream (index))
+                    if (!ReadFromStream (input, 0x40))
+                        return false;
+
+                return true;
+            }
+
+            bool ReadOld ()
+            {
+                using (var input = m_file.CreateStream())
+                {
+                    input.Position = 0xC;
+                    if (!ReadFromStream (input, 0x20))
+                        return false;
+                }
+                return true;
+            }
+
+            byte[] m_name_buffer = new byte[MaxNameLength];
+
+            bool ReadFromStream (Stream input, int name_length)
+            {
+                m_dir.Clear();
+                using (var index = new ArcView.Reader (input))
+                {
+                    for (int i = 0; i < m_count; ++i)
+                    {
+                        if (name_length != index.Read (m_name_buffer, 0, name_length))
+                            return false;
+                        var name = Binary.GetCString (m_name_buffer, 0, name_length);
+                        if (string.IsNullOrWhiteSpace (name))
+                            return false;
+                        var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                        entry.Offset        = index.ReadUInt32();
+                        entry.UnpackedSize  = index.ReadUInt32();
+                        entry.Size          = index.ReadUInt32();
+                        if (!entry.CheckPlacement (m_file.MaxOffset))
+                            return false;
+                        entry.IsPacked = m_pack_type != 0 && (m_pack_type != 4 || entry.Size != entry.UnpackedSize);
+                        m_dir.Add (entry);
+                    }
+                    return true;
+                }
+            }
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -120,19 +186,15 @@ namespace GameRes.Formats.NeXAS
             switch (pac.PackType)
             {
             case Compression.Lzss:
-                using (input)
-                using (var reader = new LzssReader (input, (int)pent.Size, (int)pent.UnpackedSize))
-                {
-                    reader.Unpack();
-                    return new MemoryStream (reader.Data, false);
-                }
+                return new LzssStream (input);
+
             case Compression.Huffman:
                 using (input)
                 {
                     var packed = new byte[entry.Size];
                     input.Read (packed, 0, packed.Length);
                     var unpacked = HuffmanDecode (packed, (int)pent.UnpackedSize);
-                    return new MemoryStream (unpacked, 0, (int)pent.UnpackedSize, false);
+                    return new MemoryStream (unpacked, 0, (int)pent.UnpackedSize);
                 }
             case Compression.Deflate:
             default:
