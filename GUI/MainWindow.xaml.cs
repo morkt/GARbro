@@ -590,10 +590,25 @@ namespace GARbro.GUI
 
         private void lv_KeyDown (object sender, KeyEventArgs e)
         {
-            if (e.IsDown && Key.Space == e.Key && LookupActive)
+            if (e.IsDown && LookupActive)
             {
-                LookupItem (" ", e.Timestamp);
-                e.Handled = true;
+                switch (e.Key)
+                {
+                case Key.Space:
+                    LookupItem (" ", e.Timestamp);
+                    e.Handled = true;
+                    break;
+                case Key.Down:
+                case Key.Up:
+                case Key.Left:
+                case Key.Right:
+                case Key.Next:
+                case Key.Prior:
+                case Key.Home:
+                case Key.End:
+                    m_current_input.Reset();
+                    break;
+                }
             }
         }
 
@@ -629,6 +644,11 @@ namespace GARbro.GUI
         {
             if (string.IsNullOrEmpty (key))
                 return;
+            if ("\x1B" == key) // escape key
+            {
+                m_current_input.Reset();
+                return;
+            }
             var source = CurrentDirectory.ItemsSource as CollectionView;
             if (source == null)
                 return;
