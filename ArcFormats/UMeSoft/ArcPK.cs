@@ -65,6 +65,8 @@ namespace GameRes.Formats.UMeSoft
                 if (name_len+14 > index_end-index_offset)
                     return null;
                 string name = file.View.ReadString (index_offset, name_len);
+                if (name.Length < (int)name_len / 2 + 1)
+                    return null;
                 index_offset += name_len+6;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Size = file.View.ReadUInt32 (index_offset);
