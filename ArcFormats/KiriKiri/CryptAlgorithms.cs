@@ -765,4 +765,38 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, values, pos, count);
         }
     }
+
+    [Serializable]
+    public class StripeCrypt : ICrypt
+    {
+        readonly byte   m_key;
+
+        public StripeCrypt (byte key)
+        {
+            m_key = key;
+        }
+
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)((value ^ m_key) + 1);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= m_key;
+                values[pos+i] ++;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] --;
+                values[pos+i] ^= m_key;
+            }
+        }
+    }
 }
