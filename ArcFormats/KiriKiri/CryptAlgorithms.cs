@@ -799,4 +799,27 @@ namespace GameRes.Formats.KiriKiri
             }
         }
     }
+
+    [Serializable]
+    public class ExaCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ (entry.Hash >> (int)((uint)offset % 5)));
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            int shift = (int)(offset % 5);
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= (byte)(entry.Hash >> ((shift+i) % 5));
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
 }
