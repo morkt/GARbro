@@ -222,7 +222,7 @@ namespace GameRes.Formats.KiriKiri
                                 entry.Name = name;
                                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                                 entry.IsEncrypted = !(entry.Cipher is NoCrypt)
-                                    && !(entry.Cipher.StratupTjsNotEncrypted && "startup.tjs" == name);
+                                    && !(entry.Cipher.StartupTjsNotEncrypted && "startup.tjs" == name);
                                 break;
                             case 0x6d676573: // "segm"
                                 int segment_count = (int)(section_size / 0x1c);
@@ -539,7 +539,7 @@ NextEntry:
                         Name            = name,
                         Cipher          = scheme,
                         IsEncrypted     = use_encryption
-                                       && !(scheme.StratupTjsNotEncrypted && name.EndsWith ("startup.tjs"))
+                                       && !(scheme.StartupTjsNotEncrypted && name.EndsWith ("startup.tjs"))
                     };
                     bool compress = compress_contents && ShouldCompressFile (entry);
                     using (var file = File.Open (name, FileMode.Open, FileAccess.Read))

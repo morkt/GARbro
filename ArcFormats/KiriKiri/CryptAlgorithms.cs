@@ -41,7 +41,7 @@ namespace GameRes.Formats.KiriKiri
         /// <summary>
         /// sometimes startup.tjs file is not encrypted.
         /// </summary>
-        public bool StratupTjsNotEncrypted { get; set; }
+        public bool StartupTjsNotEncrypted { get; set; }
 
         /// <summary>
         /// whether XP3 index is obfuscated:
