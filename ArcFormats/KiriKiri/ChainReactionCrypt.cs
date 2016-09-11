@@ -46,6 +46,17 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class ChainReactionCrypt : ICrypt
     {
+        readonly string     m_list_bin;
+
+        public ChainReactionCrypt () : this ("plugin/list.bin")
+        {
+        }
+
+        public ChainReactionCrypt (string list_file)
+        {
+            m_list_bin = list_file;
+        }
+
         public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
             uint limit = GetEncryptionLimit (entry);
@@ -64,7 +75,7 @@ namespace GameRes.Formats.KiriKiri
 //            Decrypt (entry, offset, values, pos, count);
         }
 
-        uint GetEncryptionLimit (Xp3Entry entry)
+        internal uint GetEncryptionLimit (Xp3Entry entry)
         {
             uint limit;
             if (EncryptionThresholdMap != null && EncryptionThresholdMap.TryGetValue (entry.Hash, out limit))
@@ -78,18 +89,18 @@ namespace GameRes.Formats.KiriKiri
 
         public override void Init (ArcFile arc)
         {
-            var list_bin = arc.Dir.FirstOrDefault (e => e.Name == "plugin/list.bin") as Xp3Entry;
-            if (null == list_bin || list_bin.UnpackedSize <= 0x30)
+            var bin = ReadListBin (arc);
+            if (null == bin || bin.Length <= 0x30)
                 return;
-            var bin = new byte[list_bin.UnpackedSize];
-            using (var input = arc.OpenEntry (list_bin))
-                input.Read (bin, 0, bin.Length);
 
-            for (int i = 0; i < 3; ++i)
+            if (!Binary.AsciiEqual (bin, "\"\x0D\x0A"))
             {
-                bin = DecodeListBin (bin);
-                if (null == bin)
-                    return;
+                for (int i = 0; i < 3; ++i)
+                {
+                    bin = DecodeListBin (bin);
+                    if (null == bin)
+                        return;
+                }
             }
             if (null == EncryptionThresholdMap)
                 EncryptionThresholdMap = new Dictionary<uint, uint>();
@@ -97,6 +108,17 @@ namespace GameRes.Formats.KiriKiri
                 EncryptionThresholdMap.Clear();
 
             ParseListBin (bin);
+        }
+
+        internal byte[] ReadListBin (ArcFile arc)
+        {
+            var list_bin = arc.Dir.FirstOrDefault (e => e.Name == m_list_bin) as Xp3Entry;
+            if (null == list_bin)
+                return null;
+            var bin = new byte[list_bin.UnpackedSize];
+            using (var input = arc.OpenEntry (list_bin))
+                input.Read (bin, 0, bin.Length);
+            return bin;
         }
 
         void ParseListBin (byte[] data)
@@ -200,6 +222,32 @@ namespace GameRes.Formats.KiriKiri
                     dst32[i] = src32[i] ^ src32[i+1];
                 }
                 dst32[length-1] = dst32[0] ^ src32[length-1];
+            }
+        }
+    }
+
+    [Serializable]
+    public class HachukanoCrypt : ChainReactionCrypt
+    {
+        public HachukanoCrypt () : base ("plugins/list.txt")
+        {
+            StartupTjsNotEncrypted = true;
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            uint limit = GetEncryptionLimit (entry);
+            switch (limit)
+            {
+            case 0: return;
+            case 1: limit = 0x100; break;
+            case 2: limit = 0x200; break;
+            case 3: limit = entry.Size; break;
+            }
+            uint key = entry.Hash;
+            for (int i = 0; i < count && offset < limit; ++i, ++offset)
+            {
+                values[pos+i] ^= (byte)(offset ^ (key >> (((int)offset & 3) << 3)));
             }
         }
     }
