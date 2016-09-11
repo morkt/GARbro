@@ -195,6 +195,8 @@
     <Compile Include="RealLive\AudioOWP.cs" />
     <Compile Include="RealLive\ImageG00.cs" />
     <Compile Include="RealLive\ImagePDT.cs" />
+    <Compile Include="ScrPlayer\ArcPAK.cs" />
+    <Compile Include="ScrPlayer\ImageI.cs" />
     <Compile Include="ShiinaRio\WarcEncryption.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
     <Compile Include="SimpleEncryption.cs" />
@@ -594,6 +596,11 @@
     </Compile>
     <EmbeddedResource Include="Softpal\WaveTable1" />
     <EmbeddedResource Include="Softpal\WaveTable2" />
+    <EmbeddedResource Include="ScrPlayer\ColorBitsTable1" />
+    <EmbeddedResource Include="ScrPlayer\ColorBitsTable2" />
+    <EmbeddedResource Include="ScrPlayer\ControlTable1" />
+    <EmbeddedResource Include="ScrPlayer\ControlTable2" />
+    <EmbeddedResource Include="ScrPlayer\ControlTable32" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameRes\GameRes.csproj">
