@@ -35,7 +35,7 @@ namespace GameRes.Formats.KiriKiri
         public TlgFormat ()
         {
             Extensions = new string[] { "tlg", "tlg5", "tlg6" };
-            Signatures = new uint[] { 0x30474c54, 0x35474c54, 0x36474c54 };
+            Signatures = new uint[] { 0x30474c54, 0x35474c54, 0x36474c54, 0x35474cAB };
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
@@ -49,6 +49,8 @@ namespace GameRes.Formats.KiriKiri
             int version;
             if (!Binary.AsciiEqual (header, offset+6, "\x00raw\x1a"))
                 return null;
+            if (0xAB == header[offset])
+                header[offset] = (byte)'T';
             if (Binary.AsciiEqual (header, offset, "TLG6.0"))
                 version = 6;
             else if (Binary.AsciiEqual (header, offset, "TLG5.0"))
