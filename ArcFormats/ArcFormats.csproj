@@ -75,6 +75,7 @@
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="AliceSoft\ArcAFA.cs" />
     <Compile Include="AliceSoft\ArcALK.cs" />
+    <Compile Include="AliceSoft\ImageAJP.cs" />
     <Compile Include="AliceSoft\ImageDCF.cs" />
     <Compile Include="AnimeGameSystem\WidgetAGS.xaml.cs">
       <DependentUpon>WidgetAGS.xaml</DependentUpon>
@@ -113,8 +114,12 @@
     <Compile Include="Ipac\ImageIES.cs" />
     <Compile Include="Irrlicht\ArcARK.cs" />
     <Compile Include="Irrlicht\ArcPACK.cs" />
+    <Compile Include="Ivory\ArcPK.cs" />
+    <Compile Include="Ivory\ArcPX.cs" />
+    <Compile Include="Ivory\AudioCTRK.cs" />
     <Compile Include="Ivory\ImageMMD.cs" />
     <Compile Include="Ivory\ImageMOE.cs" />
+    <Compile Include="Ivory\ImageSG.cs" />
     <Compile Include="Kiss\ArcARC.cs" />
     <Compile Include="KScript\ArcKPC.cs" />
     <Compile Include="KScript\ImageKGP.cs" />
