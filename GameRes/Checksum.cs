@@ -114,6 +114,8 @@ namespace GameRes.Utility
 
         public static uint Compute (byte[] buf, int pos, int len)
         {
+            if (0 == len)
+                return 1;
             unsafe
             {
                 fixed (byte* ptr = &buf[pos])
@@ -224,6 +226,8 @@ namespace GameRes.Utility
 
         public void Update (byte[] buf, int pos, int len)
         {
+            if (0 == len)
+                return;
             unsafe
             {
                 fixed (byte* ptr = &buf[pos])

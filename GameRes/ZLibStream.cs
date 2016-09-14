@@ -179,8 +179,11 @@ namespace GameRes.Compression
 
         public override void Write (byte[] buffer, int offset, int count)
         {
-            m_adler.Write (buffer, offset, count);
-            m_total_in += count;
+            if (count > 0)
+            {
+                m_adler.Write (buffer, offset, count);
+                m_total_in += count;
+            }
         }
 
         public override void WriteByte (byte value)
