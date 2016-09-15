@@ -38,10 +38,22 @@ namespace GameRes.Formats.ShiinaRio
         public    int EntryNameSize;
         public byte[] CryptKey;
         public uint[] HelperKey;
-        public byte[] ShiinaImage;
         public byte[] Region;
         public byte[] DecodeBin;
-        public IDecryptExtra ExtraCrypt;
+        public IByteArray       ShiinaImage;
+        public IDecryptExtra    ExtraCrypt;
+    }
+
+    public interface IByteArray
+    {
+        int       Length { get; }
+        byte this[int i] { get; }
+    }
+
+    public interface IDecryptExtra
+    {
+        void Decrypt (byte[] data, int index, uint length, uint flags);
+        void Encrypt (byte[] data, int index, uint length, uint flags);
     }
 
     internal class Decoder
@@ -593,10 +605,44 @@ namespace GameRes.Formats.ShiinaRio
         public static EncryptionScheme[] KnownSchemes = new EncryptionScheme[0];
     }
 
-    public interface IDecryptExtra
+    [Serializable]
+    public class ImageArray : IByteArray
     {
-        void Decrypt (byte[] data, int index, uint length, uint flags);
-        void Encrypt (byte[] data, int index, uint length, uint flags);
+        private byte[]  m_common;
+        private byte[]  m_extra;
+        private int     m_common_length;
+
+        static readonly byte[] EmptyArray = new byte[0]; // Array.Empty<T>() available in .Net 4.6 only
+
+        public ImageArray (byte[] common) : this (common, common.Length, EmptyArray)
+        {
+        }
+
+        public ImageArray (byte[] common, byte[] extra) : this (common, common.Length, extra)
+        {
+        }
+
+        public ImageArray (byte[] common, int common_length, byte[] extra)
+        {
+            if (common_length > common.Length)
+                throw new IndexOutOfRangeException();
+            m_common = common;
+            m_extra = extra;
+            m_common_length = common_length;
+        }
+
+        public int Length { get { return m_common_length + m_extra.Length; } }
+
+        public byte this[int i]
+        {
+            get
+            {
+                if (i < m_common_length)
+                    return m_common[i];
+                else
+                    return m_extra[i - m_common_length];
+            }
+        }
     }
 
     [Serializable]
