@@ -175,6 +175,7 @@
     </Compile>
     <Compile Include="Marble\VideoANIM.cs" />
     <Compile Include="MD5.cs" />
+    <Compile Include="Moonhir\ArcFPK.cs" />
     <Compile Include="Morning\ArcTTD.cs" />
     <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NekoSDK\ArcDAT.cs" />
