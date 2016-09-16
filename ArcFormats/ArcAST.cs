@@ -97,6 +97,7 @@ namespace GameRes.Formats.AST
                         Offset = offset,
                         Size = packed_size,
                         UnpackedSize = size,
+                        IsPacked = packed_size != size,
                     };
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
@@ -115,7 +116,7 @@ namespace GameRes.Formats.AST
             var pent = entry as PackedEntry;
             if (null == pent || !(arc is AstArchive))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            if (pent.Size == pent.UnpackedSize)
+            if (!pent.IsPacked)
             {
                 arc.File.View.Reserve (entry.Offset, entry.Size);
                 var sig = arc.File.View.ReadUInt32 (entry.Offset);
@@ -129,16 +130,67 @@ namespace GameRes.Formats.AST
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             }
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
-            using (var reader = new LzssReader (input, (int)pent.Size, (int)pent.UnpackedSize))
             {
-                reader.Unpack();
-                var data = reader.Data;
-                if (!Binary.AsciiEqual (data, 0, "RIFF") &&
-                    !Binary.AsciiEqual (data, 0, "OggS"))
-                    for (int i = 0; i < data.Length; ++i)
-                        data[i] ^= 0xff;
+                var data = UnpackLzss (input, pent.Size, pent.UnpackedSize);
                 return new MemoryStream (data);
             }
+        }
+
+        byte[] UnpackLzss (Stream input, uint input_size, uint output_size)
+        {
+            var output = new byte[output_size];
+            var frame = new byte[0x1000];
+            int frame_pos = 0xFEE;
+            const int frame_mask = 0xFFF;
+
+            int dst = 0;
+            int remaining = (int)input_size;
+            int ctl = 2;
+            while (dst < output.Length)
+            {
+                ctl >>= 1;
+                if (1 == ctl)
+                {
+                    if (remaining <= 0)
+                        break;
+                    ctl = input.ReadByte();
+                    if (-1 == ctl)
+                        break;
+                    --remaining;
+                    ctl |= 0x100;
+                }
+                if (0 != (ctl & 1))
+                {
+                    int b = input.ReadByte();
+                    if (-1 == b)
+                        break;
+                    --remaining;
+                    frame[frame_pos++] = output[dst++] = (byte)~b;
+                    frame_pos &= frame_mask;
+                }
+                else
+                {
+                    if (remaining < 2)
+                        break;
+                    int lo = input.ReadByte();
+                    int hi = input.ReadByte();
+                    if (-1 == hi)
+                        break;
+                    remaining -= 2;
+                    int offset = (hi & 0xf0) << 4 | lo;
+                    for (int count = 3 + (hi & 0xF); count != 0; --count)
+                    {
+                        if (dst >= output.Length)
+                            break;
+                        byte v = frame[offset++];
+                        offset &= frame_mask;
+                        frame[frame_pos++] = v;
+                        frame_pos &= frame_mask;
+                        output[dst++] = v;
+                    }
+                }
+            }
+            return output;
         }
     }
 }
