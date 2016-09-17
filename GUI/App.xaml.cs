@@ -80,11 +80,11 @@ namespace GARbro.GUI
             if (string.IsNullOrEmpty (InitPath))
                 InitPath = Directory.GetCurrentDirectory();
 
-            string scheme_file = Path.Combine (exe_dir, "Formats.dat");
+            string scheme_file = Path.Combine (FormatCatalog.Instance.DataDirectory, "Formats.dat");
             try
             {
                 using (var file = File.OpenRead (scheme_file))
-                    DeserializeScheme (file);
+                    FormatCatalog.Instance.DeserializeScheme (file);
             }
             catch (Exception X)
             {
@@ -116,20 +116,6 @@ namespace GARbro.GUI
             // do not restore in minimized state
             if (Settings.Default.winState == System.Windows.WindowState.Minimized)
                 Settings.Default.winState = System.Windows.WindowState.Normal;
-        }
-
-        void DeserializeScheme (Stream file)
-        {
-            using (var reader = new BinaryReader (file))
-            {
-                var scheme_id = FormatCatalog.Instance.SchemeID;
-                var header = reader.ReadChars (scheme_id.Length);
-                if (!header.SequenceEqual (scheme_id))
-                    throw new FormatException ("Invalid serialization file");
-                int version = reader.ReadInt32();
-                using (var zs = new ZLibStream (file, CompressionMode.Decompress))
-                    FormatCatalog.Instance.DeserializeScheme (zs);
-            }
         }
     }
 }

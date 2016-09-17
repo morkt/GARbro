@@ -31,6 +31,7 @@ using System.IO;
 using System.Linq;
 using GameRes.Collections;
 using System.Runtime.Serialization.Formatters.Binary;
+using GameRes.Compression;
 
 namespace GameRes
 {
@@ -203,19 +204,28 @@ namespace GameRes
 
         public void DeserializeScheme (Stream input)
         {
-            var bin = new BinaryFormatter();
-            var db = (SchemeDataBase)bin.Deserialize (input);
-            if (db.Version <= CurrentSchemeVersion)
-                return;
-
-            foreach (var format in Formats)
+            using (var reader = new BinaryReader (input, System.Text.Encoding.UTF8, true))
             {
-                ResourceScheme scheme;
-                if (!db.SchemeMap.TryGetValue (format.Tag, out scheme))
-                    continue;
-                format.Scheme = scheme;
+                var header = reader.ReadChars (SchemeID.Length);
+                if (!header.SequenceEqual (SchemeID))
+                    throw new FormatException ("Invalid serialization file");
+                int version = reader.ReadInt32();
+                if (version <= CurrentSchemeVersion)
+                    return;
             }
-            CurrentSchemeVersion = db.Version;
+            using (var zs = new ZLibStream (input, CompressionMode.Decompress))
+            {
+                var bin = new BinaryFormatter();
+                var db = (SchemeDataBase)bin.Deserialize (zs);
+
+                foreach (var format in Formats)
+                {
+                    ResourceScheme scheme;
+                    if (db.SchemeMap.TryGetValue (format.Tag, out scheme))
+                        format.Scheme = scheme;
+                }
+                CurrentSchemeVersion = db.Version;
+            }
         }
 
         public void SerializeScheme (Stream output)
@@ -230,8 +240,20 @@ namespace GameRes
                 if (null != scheme)
                     db.SchemeMap[format.Tag] = scheme;
             }
-            var bin = new BinaryFormatter();
-            bin.Serialize (output, db);
+            SerializeScheme (output, db);
+        }
+
+        public void SerializeScheme (Stream output, SchemeDataBase db)
+        {
+            using (var writer = new BinaryWriter (output))
+            {
+                writer.Write (SchemeID.ToCharArray());
+                writer.Write (db.Version);
+                writer.Flush();
+                var bin = new BinaryFormatter();
+                using (var zs = new ZLibStream (output, CompressionMode.Compress))
+                    bin.Serialize (zs, db);
+            }
         }
     }
 
