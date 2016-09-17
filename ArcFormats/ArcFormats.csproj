@@ -607,6 +607,7 @@
     <EmbeddedResource Include="ScrPlayer\ControlTable1" />
     <EmbeddedResource Include="ScrPlayer\ControlTable2" />
     <EmbeddedResource Include="ScrPlayer\ControlTable32" />
+    <None Include="Resources\Formats.dat" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GameRes\GameRes.csproj">
