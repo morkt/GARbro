@@ -973,4 +973,21 @@ namespace GameRes.Formats.ShiinaRio
             }
         }
     }
+
+    [Serializable]
+    public class AdlerCrypt : KeyDecryptBase
+    {
+        public AdlerCrypt (uint key) : base (key, null)
+        {
+        }
+
+        protected override void DecryptPre (byte[] data, int index, uint length)
+        {
+            uint key = Adler32.Compute (data, index, 0x100);
+            data[index + 0x204] ^= (byte)key;
+            data[index + 0x205] ^= (byte)(key >> 8);
+            data[index + 0x206] ^= (byte)(key >> 16);
+            data[index + 0x207] ^= (byte)(key >> 24);
+        }
+    }
 }
