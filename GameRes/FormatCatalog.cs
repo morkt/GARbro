@@ -213,7 +213,7 @@ namespace GameRes
                 if (version <= CurrentSchemeVersion)
                     return;
             }
-            using (var zs = new ZLibStream (input, CompressionMode.Decompress))
+            using (var zs = new ZLibStream (input, CompressionMode.Decompress, true))
             {
                 var bin = new BinaryFormatter();
                 var db = (SchemeDataBase)bin.Deserialize (zs);
@@ -245,15 +245,14 @@ namespace GameRes
 
         public void SerializeScheme (Stream output, SchemeDataBase db)
         {
-            using (var writer = new BinaryWriter (output))
+            using (var writer = new BinaryWriter (output, System.Text.Encoding.UTF8, true))
             {
                 writer.Write (SchemeID.ToCharArray());
                 writer.Write (db.Version);
-                writer.Flush();
-                var bin = new BinaryFormatter();
-                using (var zs = new ZLibStream (output, CompressionMode.Compress))
-                    bin.Serialize (zs, db);
             }
+            var bin = new BinaryFormatter();
+            using (var zs = new ZLibStream (output, CompressionMode.Compress, true))
+                bin.Serialize (zs, db);
         }
     }
 
