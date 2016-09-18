@@ -109,6 +109,7 @@
     <Compile Include="ExHibit\WidgetGYU.xaml.cs">
       <DependentUpon>WidgetGYU.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ImageMB.cs" />
     <Compile Include="Ipac\ArcIPAC.cs" />
     <Compile Include="Ipac\AudioWST.cs" />
     <Compile Include="Ipac\ImageIES.cs" />
