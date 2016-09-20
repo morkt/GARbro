@@ -275,6 +275,8 @@
     <Compile Include="Tactics\WidgetTactics.xaml.cs">
       <DependentUpon>WidgetTactics.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TamaSoft\ArcEPK.cs" />
+    <Compile Include="TamaSoft\ImageSUR.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="DxLib\ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
