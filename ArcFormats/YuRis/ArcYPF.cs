@@ -354,7 +354,7 @@ namespace GameRes.Formats.YuRis
                 uint* header = (uint*)raw;
                 uint version = header[1];
                 int first_item, last_item;
-                if (version >= 0x1D9)
+                if (version >= 0x1CE)
                 {
                     first_item = 3;
                     last_item = 7;
