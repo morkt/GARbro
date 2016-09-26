@@ -2,7 +2,7 @@
 //! \date       Thu Oct 08 16:25:55 2015
 //! \brief      TopCat compressed image.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -36,6 +36,7 @@ namespace GameRes.Formats.TopCat
     {
         public Compression  Method;
         public uint         UnpackedSize;
+        public bool         IsSpd8;
     }
 
     internal enum Compression
@@ -55,6 +56,11 @@ namespace GameRes.Formats.TopCat
         public override string         Tag { get { return "SPD"; } }
         public override string Description { get { return "TopCat compressed image format"; } }
         public override uint     Signature { get { return 0x43445053; } } // 'SPDC'
+
+        public SpdFormat ()
+        {
+            Signatures = new uint[] { 0x43445053, 0x38445053 }; // 'SPD8'
+        }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
@@ -76,6 +82,7 @@ namespace GameRes.Formats.TopCat
                         BPP    = (int)(dw[1] >> 16),
                         Method = (Compression)(dw[1] & 0xFFFF),
                         UnpackedSize = dw[4],
+                        IsSpd8 = header[3] == '8',
                     };
                 }
             }
@@ -83,9 +90,7 @@ namespace GameRes.Formats.TopCat
 
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
-            var meta = info as SpdMetaData;
-            if (null == meta)
-                throw new ArgumentException ("SpdFormat.Read should be supplied with SpdMetaData", "info");
+            var meta = (SpdMetaData)info;
             if (Compression.Jpeg == meta.Method)
                 return ReadJpeg (stream, meta);
 
@@ -116,7 +121,7 @@ namespace GameRes.Formats.TopCat
                         dw[i] += 0xA8961EF1;
                 }
             }
-            using (var rest = new StreamRegion (file, file.Position, file.Length-file.Position, true))
+            using (var rest = new StreamRegion (file, file.Position, true))
             using (var jpeg = new PrefixStream (header, rest))
             {
                 var decoder = new JpegBitmapDecoder (jpeg,
@@ -170,6 +175,8 @@ namespace GameRes.Formats.TopCat
                     var rgb = new byte[m_info.Height * m_info.Width * 4];
                     if (Compression.LzRle == m_info.Method || Compression.LzRle2 == m_info.Method)
                         UnpackRle (rgb);
+                    else if (m_info.IsSpd8)
+                        UnpackSpd8Alpha (rgb);
                     else
                         UnpackRleAlpha (rgb);
                     m_output = rgb;
@@ -271,6 +278,40 @@ namespace GameRes.Formats.TopCat
                         else
                             rgb[dst++] = m_output[ctl_src++];
                     }
+                }
+            }
+        }
+
+        void UnpackSpd8Alpha (byte[] rgb)
+        {
+            int rgb_src = LittleEndian.ToInt32 (m_output, 0);
+            int ctl_src = 8;
+            int dst = 0;
+            while (dst < rgb.Length)
+            {
+                int control = m_output[ctl_src++];
+                if (0 == control)
+                {
+                    int count = m_output[ctl_src++] + 1;
+                    dst += 4 * count;
+                }
+                else if (1 == control)
+                {
+                    int count = m_output[ctl_src++] + 1;
+                    for (int i = 0; i < count; ++i)
+                    {
+                        rgb[dst++] = m_output[rgb_src++];
+                        rgb[dst++] = m_output[rgb_src++];
+                        rgb[dst++] = m_output[rgb_src++];
+                        rgb[dst++] = 0xFF;
+                    }
+                }
+                else
+                {
+                    rgb[dst++] = m_output[rgb_src++];
+                    rgb[dst++] = m_output[rgb_src++];
+                    rgb[dst++] = m_output[rgb_src++];
+                    rgb[dst++] = (byte)~(control - 1);
                 }
             }
         }
