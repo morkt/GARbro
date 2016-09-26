@@ -115,24 +115,20 @@ namespace GameRes.Formats.TopCat
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var tcde = entry as TcdEntry;
-            var tcda = arc as TcdArchive;
-            if (null == tcde || null == tcda)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
-            if (entry.Name.EndsWith (".SPD", StringComparison.InvariantCultureIgnoreCase))
-                return OpenSpdc (tcda, tcde);
             if (entry.Name.EndsWith (".OGG", StringComparison.InvariantCultureIgnoreCase))
                 return RestoreOggStream (arc, entry);
             if (entry.Name.EndsWith (".TSF", StringComparison.InvariantCultureIgnoreCase) ||
                 entry.Name.EndsWith (".TCT", StringComparison.InvariantCultureIgnoreCase))
-                return OpenScript (tcda, tcde);
+                return OpenScript (arc, entry);
+            if (entry.Name.EndsWith (".SPD", StringComparison.InvariantCultureIgnoreCase))
+                return OpenSpdc (arc, entry);
             return arc.File.CreateStream (entry.Offset, entry.Size);
         }
 
-        Stream OpenSpdc (TcdArchive arc, TcdEntry entry)
+        Stream OpenSpdc (ArcFile arc, Entry entry)
         {
             int signature = arc.File.View.ReadInt32 (entry.Offset);
-            if (0x43445053 == signature || entry.Size <= 0x14) // 'SPDC'
+            if (0x43445053 == signature || 0x38445053 == signature || entry.Size <= 0x14)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
 
             var header = arc.File.View.ReadBytes (entry.Offset, 0x14);
@@ -145,32 +141,37 @@ namespace GameRes.Formats.TopCat
             if (!spdc_entry)
             {
                 LittleEndian.Pack (signature, header, 0);
-                if (null == arc.Key)
+                var tcde = entry as TcdEntry;
+                var tcda = arc as TcdArchive;
+                if (tcda != null && tcde != null)
                 {
-                    foreach (var key in TcdOpener.KnownKeys.Values)
+                    if (null == tcda.Key)
                     {
-                        int first = signature + key * (entry.Index + 3);
-                        if (0x43445053 == first) // 'SPDC'
+                        foreach (var key in TcdOpener.KnownKeys.Values)
                         {
-                            arc.Key = key;
-                            spdc_entry = true;
-                            break;
+                            int first = signature + key * (tcde.Index + 3);
+                            if (0x43445053 == first) // 'SPDC'
+                            {
+                                tcda.Key = key;
+                                spdc_entry = true;
+                                break;
+                            }
                         }
                     }
-                }
-                else if (0x43445053 == (signature + arc.Key.Value * (entry.Index + 3)))
-                {
-                    spdc_entry = true;
-                }
-                if (spdc_entry && 0 != arc.Key.Value)
-                {
-                    unsafe
+                    else if (0x43445053 == (signature + tcda.Key.Value * (tcde.Index + 3)))
                     {
-                        fixed (byte* raw = header)
+                        spdc_entry = true;
+                    }
+                    if (spdc_entry && 0 != tcda.Key.Value)
+                    {
+                        unsafe
                         {
-                            int* dw = (int*)raw;
-                            for (int i = 0; i < 5; ++i)
-                                dw[i] += arc.Key.Value * (entry.Index + 3 + i);
+                            fixed (byte* raw = header)
+                            {
+                                int* dw = (int*)raw;
+                                for (int i = 0; i < 5; ++i)
+                                    dw[i] += tcda.Key.Value * (tcde.Index + 3 + i);
+                            }
                         }
                     }
                 }
@@ -179,7 +180,7 @@ namespace GameRes.Formats.TopCat
             return new PrefixStream (header, rest);
         }
 
-        Stream OpenScript (TcdArchive arc, TcdEntry entry)
+        Stream OpenScript (ArcFile arc, Entry entry)
         {
             int unpacked_size = arc.File.View.ReadInt32 (entry.Offset);
             byte[] data = new byte[unpacked_size];
