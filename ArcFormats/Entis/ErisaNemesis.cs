@@ -123,7 +123,8 @@ namespace GameRes.Formats.Entis
                     {
                         break;
                     }
-                    Debug.Assert ((uint)pModel.SubModel[iLast].Symbol < pBase.dwWorkUsed);
+                    if ((uint)pModel.SubModel[iLast].Symbol >= pBase.dwWorkUsed)
+                        throw new InvalidFormatException ("Invalid Nemesis encoding sequence");
                     pModel = pBase.ptrProbIndex[pModel.SubModel[iLast].Symbol];
                 }
                 int iSym = DecodeERISACodeIndex (pModel);
@@ -192,7 +193,8 @@ namespace GameRes.Formats.Entis
                     else
                     {
                         m_nNemesisNext = (int)phrase.index[(phrase.first - nPhraseIndex) & Nemesis.IndexMask];
-                        Debug.Assert (m_pNemesisBuf[m_nNemesisNext] == bytLastSymbol);
+                        if (m_pNemesisBuf[m_nNemesisNext] != bytLastSymbol)
+                            throw new InvalidFormatException ("Invalid Nemesis encoding sequence");
                         m_nNemesisNext = (m_nNemesisNext + 1) & Nemesis.BufMask;
                     }
                     continue;
@@ -213,7 +215,8 @@ namespace GameRes.Formats.Entis
                 if ((pBase.dwWorkUsed < ErisaProbBase.SlotMax) && (iDeg < 4))
                 {
                     int iSymbol = ((byte)nSymbol) >> ErisaProbBase.m_nShiftCount[iDeg];
-                    Debug.Assert (iSymbol < ErisaProbModel.SubSortMax);
+                    if (iSymbol >= ErisaProbModel.SubSortMax)
+                        throw new InvalidFormatException ("Invalid Nemesis encoding sequence");
                     if (++pModel.SubModel[iSymbol].Occured >= ErisaProbBase.m_nNewProbLimit[iDeg])
                     {
                         int i;
@@ -227,7 +230,8 @@ namespace GameRes.Formats.Entis
                             {
                                 break;
                             }
-                            Debug.Assert ((uint)pModel.SubModel[iSymbol].Symbol < pBase.dwWorkUsed);
+                            if ((uint)pModel.SubModel[iSymbol].Symbol >= pBase.dwWorkUsed)
+                                throw new InvalidFormatException ("Invalid Nemesis encoding sequence");
                             pModel = pBase.ptrProbIndex[pModel.SubModel[iSymbol].Symbol];
                         }
                         if ((i <= iDeg) && (pModel.SubModel[iSymbol].Symbol < 0))
