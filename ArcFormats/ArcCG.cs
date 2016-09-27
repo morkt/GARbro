@@ -58,6 +58,8 @@ namespace GameRes.Formats.Parsley
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x20);
+                if (string.IsNullOrWhiteSpace (name))
+                    return null;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x20);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x24);
