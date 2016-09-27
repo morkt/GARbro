@@ -290,13 +290,7 @@ namespace GameRes.Formats.Purple
             for (int i = 0; i < secret_length; ++i)
                 secret_key[i] = secret[i] - key;
 
-            uint shift = key;
-            shift = (shift >> 8) ^ key;
-            shift = (shift >> 8) ^ key;
-            shift = (shift >> 8) ^ key;
-            shift = (shift >> 8) ^ key;
-            shift = ((shift ^ 0xB) & 0xF) + 7;
-
+            int shift = (int)(((key >> 24) ^ (key >> 16) ^ (key >> 8) ^ key ^ 0xB) & 0xF) + 7;
             unsafe
             {
                 fixed (byte* raw = data)
@@ -305,7 +299,7 @@ namespace GameRes.Formats.Purple
                     int i = 5;
                     for (int n = data.Length / 4; n > 0; --n)
                     {
-                        *data32 = Binary.RotR ((secret_key[i] ^ *data32) + scheme.IndexAddend, (int)shift) + 0x01010101;
+                        *data32 = Binary.RotR ((secret_key[i] ^ *data32) + scheme.IndexAddend, shift) + 0x01010101;
                         ++data32;
                         i = (i + 1) % 24;
                     }
