@@ -52,10 +52,10 @@ namespace GameRes.Formats.KiriKiri
     {
         List<Xp3Segment> m_segments = new List<Xp3Segment>();
 
-        public bool IsEncrypted { get; set; }
-        public ICrypt Cipher { get; set; }
+        public bool          IsEncrypted { get; set; }
+        public ICrypt             Cipher { get; set; }
         public List<Xp3Segment> Segments { get { return m_segments; } }
-        public uint Hash { get; set; }
+        public uint                 Hash { get; set; }
     }
 
     public class Xp3Options : ResourceOptions
@@ -71,6 +71,7 @@ namespace GameRes.Formats.KiriKiri
     public class Xp3Scheme : ResourceScheme
     {
         public Dictionary<string, ICrypt> KnownSchemes;
+        public Dictionary<string, string> ExeMap;
     }
 
     // Archive version 1: encrypt file first, then calculate checksum
@@ -96,17 +97,9 @@ namespace GameRes.Formats.KiriKiri
             (byte)'X', (byte)'P', (byte)'3', 0x0d, 0x0a, 0x20, 0x0a, 0x1a, 0x8b, 0x67, 0x01
         };
 
-        public override ResourceScheme Scheme
-        {
-            get { return new Xp3Scheme { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((Xp3Scheme)value).KnownSchemes; }
-        }
-
         public bool ForceEncryptionQuery = true;
 
         private static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
-
-        public static Dictionary<string, ICrypt> KnownSchemes = new Dictionary<string, ICrypt>();
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -146,7 +139,7 @@ namespace GameRes.Formats.KiriKiri
                     header_stream = ZLibCompressor.DeCompress (input);
             }
 
-            var crypt_algorithm = new Lazy<ICrypt> (QueryCryptAlgorithm, false);
+            var crypt_algorithm = new Lazy<ICrypt> (() => QueryCryptAlgorithm (file), false);
 
             var filename_map = new Dictionary<uint, string>();
             var dir = new List<Entry>();
@@ -461,8 +454,11 @@ NextEntry:
             return new GUI.WidgetXP3();
         }
 
-        ICrypt QueryCryptAlgorithm ()
+        ICrypt QueryCryptAlgorithm (ArcView file)
         {
+            var alg = GuessCryptAlgorithm (file);
+            if (null != alg)
+                return alg;
             var options = Query<Xp3Options> (arcStrings.XP3EncryptedNotice);
             return options.Scheme;
         }
@@ -500,7 +496,7 @@ NextEntry:
             bool compress_contents = xp3_options.CompressContents;
             bool retain_dirs = xp3_options.RetainDirs;
 
-            bool use_encryption = scheme != NoCryptAlgorithm;
+            bool use_encryption = !(scheme is NoCrypt);
 
             using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
             {
@@ -749,6 +745,40 @@ NextEntry:
             if (entry.Name.EndsWith (".ogg", StringComparison.InvariantCultureIgnoreCase))
                 return false;
             return true;
+        }
+
+        ICrypt GuessCryptAlgorithm (ArcView file)
+        {
+            if (0 == KiriKiriScheme.ExeMap.Count)
+                return null;
+            var exe_pattern = VFS.CombinePath (VFS.GetDirectoryName (file.Name), "*.exe");
+            foreach (var exe in VFS.GetFiles (exe_pattern).Select (e => Path.GetFileName (e.Name)))
+            {
+                string title;
+                if (KiriKiriScheme.ExeMap.TryGetValue (exe, out title))
+                {
+                    Settings.Default.XP3Scheme = title;
+                    return GetScheme (title);
+                }
+            }
+            return null;
+        }
+
+        static Xp3Scheme KiriKiriScheme = new Xp3Scheme
+        {
+            KnownSchemes = new Dictionary<string, ICrypt>(),
+            ExeMap       = new Dictionary<string, string>(),
+        };
+
+        public static IDictionary<string, ICrypt> KnownSchemes
+        {
+            get { return KiriKiriScheme.KnownSchemes; }
+        }
+
+        public override ResourceScheme Scheme
+        {
+            get { return KiriKiriScheme; }
+            set { KiriKiriScheme = (Xp3Scheme)value; }
         }
     }
 
