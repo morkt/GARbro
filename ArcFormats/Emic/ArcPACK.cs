@@ -2,7 +2,7 @@
 //! \date       Sun Aug 30 01:11:18 2015
 //! \brief      Emic engine archive implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,7 +23,6 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -47,7 +46,7 @@ namespace GameRes.Formats.Emic
     {
         public override string         Tag { get { return "PAC/EMIC"; } }
         public override string Description { get { return "Emic engine resource archive"; } }
-        public override uint     Signature { get { return 0x4B434150; } }
+        public override uint     Signature { get { return 0x4B434150; } } // 'PACK'
         public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
@@ -58,95 +57,100 @@ namespace GameRes.Formats.Emic
 
         public override ArcFile TryOpen (ArcView file)
         {
+            byte[] key;
             int count = file.View.ReadInt32 (0x28);
-            if (!IsSaneCount (count))
-                return null;
-
-            var reader = new PacReader (file, count);
-            var dir = reader.ReadIndex();
-            if (null == dir)
-                return null;
-            if (reader.Encrypted)
-                return new EmicArchive (file, this, dir, reader.Key);
+            uint is_encrypted = file.View.ReadUInt32 (4);
+            if (IsSaneCount (count) && is_encrypted <= 1)
+            {
+                key = file.View.ReadBytes (8, 0x20);
+                for (int i = 0; i < key.Length; ++i)
+                    key[i] ^= 0xAA;
+            }
             else
-                return new ArcFile (file, this, dir);
+            {
+                count = file.View.ReadInt32 (4);
+                is_encrypted = file.View.ReadUInt32 (8);
+                if (!IsSaneCount (count) || is_encrypted > 1)
+                    return null;
+                key = file.View.ReadBytes (0xC, 0x20);
+                for (int i = 0; i < key.Length; ++i)
+                    key[i] ^= 0xAB;
+            }
+            Stream input = file.CreateStream();
+            if (1 == is_encrypted)
+                input = new ByteStringEncryptedStream (input, 0, key);
+            using (var reader = new BinaryReader (input))
+            {
+                input.Position = 0x2C;
+                var index_buf = new byte[0x108];
+                var dir = new List<Entry> (count);
+                for (int i = 0; i < count; ++i)
+                {
+                    int name_len = reader.ReadInt32();
+                    if (name_len <= 0 || name_len > index_buf.Length) // file name is too long
+                        return null;
+                    if (name_len != reader.Read (index_buf, 0, name_len))
+                        return null;
+                    string name = Binary.GetCString (index_buf, 0, name_len);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Size   = reader.ReadUInt32();
+                    entry.Offset = reader.ReadUInt32();
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                }
+                if (1 == is_encrypted)
+                    return new EmicArchive (file, this, dir, key);
+                else
+                    return new ArcFile (file, this, dir);
+            }
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var emic = arc as EmicArchive;
-            if (null == emic)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
-            var reader = new PacReader (emic.File, emic.Key);
-            var data = new byte[entry.Size];
-            reader.Read (entry.Offset, data, 0, data.Length);
-            return new MemoryStream (data);
+            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (null != emic)
+                input = new ByteStringEncryptedStream (input, entry.Offset, emic.Key);
+            return input;
         }
     }
 
-    internal class PacReader
+    internal class ByteStringEncryptedStream : InputProxyStream
     {
-        ArcView     m_file;
-        int         m_count;
+        byte[]  m_key;
+        int     m_base_pos;
 
-        public bool Encrypted { get; private set; }
-        public byte[]     Key { get; private set; }
-
-        public PacReader (ArcView file, int count)
+        public ByteStringEncryptedStream (Stream main, long start_pos, byte[] key, bool leave_open = false)
+            : base (main, leave_open)
         {
-            m_file = file;
-            m_count = count;
-            Key = new byte[0x20];
-            Encrypted = 1 == m_file.View.ReadInt32 (4);
-            file.View.Read (8, Key, 0, (uint)Key.Length);
-            for (int i = 0; i < Key.Length; ++i)
-                Key[i] ^= 0xAA;
+            m_key = key;
+            m_base_pos = (int)(start_pos % m_key.Length);
         }
 
-        public PacReader (ArcView file, byte[] key)
+        public override int Read (byte[] buffer, int offset, int count)
         {
-            m_file = file;
-            Encrypted = true;
-            Key = key;
-        }
-
-        public List<Entry> ReadIndex ()
-        {
-            var index_buf = new byte[0x110];
-            var dir = new List<Entry> (m_count);
-            uint index_offset = 0x2C;
-            for (int i = 0; i < m_count; ++i)
+            int start_pos = (int)((m_base_pos + BaseStream.Position) % m_key.Length);
+            int read = BaseStream.Read (buffer, offset, count);
+            if (read > 0)
             {
-                Read (index_offset, index_buf, 0, 4);
-                int name_len = LittleEndian.ToInt32 (index_buf, 0);
-                if (name_len > index_buf.Length-8) // file name is too long
-                    return null;
-                index_offset += 4;
-                Read (index_offset, index_buf, 0, name_len+8);
-                string name = Binary.GetCString (index_buf, 0, name_len);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = LittleEndian.ToUInt32 (index_buf, name_len+4);
-                entry.Size   = LittleEndian.ToUInt32 (index_buf, name_len);
-                if (!entry.CheckPlacement (m_file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-                index_offset += (uint)name_len + 8;
-            }
-            return dir;
-        }
-
-        public int Read (long offset, byte[] buf, int index, int count)
-        {
-            int read = m_file.View.Read (offset, buf, index, (uint)count);
-            if (Encrypted)
-            {
-                int key_offset = (int)offset;
                 for (int i = 0; i < read; ++i)
                 {
-                    buf[i] ^= Key[key_offset++ & 0x1F];
+                    buffer[offset+i] ^= m_key[(start_pos + i) % m_key.Length];
                 }
             }
             return read;
+        }
+
+        public override int ReadByte ()
+        {
+            long pos = BaseStream.Position;
+            int b = BaseStream.ReadByte();
+            if (-1 != b)
+            {
+                b ^= m_key[(m_base_pos + pos) % m_key.Length];
+            }
+            return b;
         }
     }
 }
