@@ -75,10 +75,8 @@ namespace GameRes.Formats.NScripter
             if (string.IsNullOrEmpty (password))
                 return null;
             var key = Encoding.ASCII.GetBytes (password);
-            if (key.Length < 96)
-                throw new OperationCanceledException ("Password should be at least 96 characters long");
 
-            using (var input = new Ns2Stream (file, key))
+            using (var input = OpenEncryptedStream (file, key))
             {
                 dir = ReadIndex (input);
                 if (null == dir)
@@ -132,8 +130,16 @@ namespace GameRes.Formats.NScripter
             {
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             }
-            var encrypted = new Ns2Stream (arc.File, nsa_arc.Key);
+            var encrypted = OpenEncryptedStream (arc.File, nsa_arc.Key);
             return new StreamRegion (encrypted, entry.Offset, entry.Size);
+        }
+
+        Stream OpenEncryptedStream (ArcView file, byte[] key)
+        {
+            if (key.Length < 96)
+                return new EncryptedViewStream (file, key);
+            else
+                return new Ns2Stream (file, key);
         }
 
         private string QueryPassword ()
@@ -165,7 +171,7 @@ namespace GameRes.Formats.NScripter
     {
         byte[]          m_key;
 
-        static readonly Cryptography.MD5 MD5 = new Cryptography.MD5();
+        readonly Cryptography.MD5 MD5 = new Cryptography.MD5();
 
         const int BlockSize   = 32;
 
