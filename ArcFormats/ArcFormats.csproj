@@ -180,6 +180,7 @@
     <Compile Include="Morning\ArcTTD.cs" />
     <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NekoSDK\ArcDAT.cs" />
+    <Compile Include="NekoSDK\ArcPAK.cs" />
     <Compile Include="NekoSDK\ImageALP.cs" />
     <Compile Include="NitroPlus\ArcPAK.cs" />
     <Compile Include="MnoViolet\ImageDIF.cs" />
