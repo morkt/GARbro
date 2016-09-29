@@ -2,7 +2,7 @@
 //! \date       Sun Aug 30 02:15:38 2015
 //! \brief      Emic engine RGBA bitmap.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -40,6 +40,7 @@ namespace GameRes.Formats.Emic
         public MwpFormat ()
         {
             Extensions = new string[] { "bmp" };
+            Signatures = new uint[] { 0x1050574D, 0x4C594554 }; // 'TEYL'
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
