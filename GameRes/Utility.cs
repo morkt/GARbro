@@ -31,7 +31,7 @@ namespace GameRes.Utility
     {
         public static uint BigEndian (uint u)
         {
-            return (u & 0xff) << 24 | (u & 0xff00) << 8 | (u & 0xff0000) >> 8 | (u & 0xff000000) >> 24;
+            return u << 24 | (u & 0xff00) << 8 | (u & 0xff0000) >> 8 | u >> 24;
         }
         public static int BigEndian (int i)
         {
@@ -39,7 +39,7 @@ namespace GameRes.Utility
         }
         public static ushort BigEndian (ushort u)
         {
-            return (ushort)((u & 0xff) << 8 | (u & 0xff00) >> 8);
+            return (ushort)(u << 8 | u >> 8);
         }
         public static short BigEndian (short i)
         {
