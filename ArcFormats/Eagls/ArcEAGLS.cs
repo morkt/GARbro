@@ -204,7 +204,15 @@ namespace GameRes.Formats.Eagls
         public CgArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
             : base (arc, impl, dir)
         {
-            m_rng = DetectEncryptionScheme();
+            try
+            {
+                m_rng = DetectEncryptionScheme();
+            }
+            catch
+            {
+                this.Dispose();
+                throw;
+            }
         }
 
         IRandomGenerator DetectEncryptionScheme ()
