@@ -81,6 +81,7 @@
       <DependentUpon>WidgetAGS.xaml</DependentUpon>
     </Compile>
     <Compile Include="Ankh\ArcGRP.cs" />
+    <Compile Include="Ankh\AudioPCM.cs" />
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcARCX.cs" />
     <Compile Include="ArcCG.cs" />
@@ -197,6 +198,12 @@
     <Compile Include="NScripter\ArcNS2.cs" />
     <Compile Include="Patisserie\ArcBIN.cs" />
     <Compile Include="Patisserie\ArcRAW.cs" />
+    <Compile Include="Primel\ArcPCF.cs" />
+    <Compile Include="Primel\Compression.cs" />
+    <Compile Include="Primel\Encryption.cs" />
+    <Compile Include="Primel\ImageGBC.cs" />
+    <Compile Include="Primel\RC6.cs" />
+    <Compile Include="Primel\SHA256.cs" />
     <Compile Include="RealLive\ArcG00.cs" />
     <Compile Include="RealLive\ArcOVK.cs" />
     <Compile Include="RealLive\AudioNWA.cs" />
