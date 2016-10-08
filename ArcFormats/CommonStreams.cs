@@ -438,6 +438,96 @@ namespace GameRes.Formats
         #endregion
     }
 
+    /// <summary>
+    /// Concatenation of the two input Streams.
+    /// </summary>
+    public class ConcatStream : InputProxyStream
+    {
+        Stream      m_second;
+        long        m_position;
+        Stream      m_active;
+
+        public ConcatStream (Stream first, Stream second) : base (first)
+        {
+            m_second = second;
+            m_position = 0;
+            m_active = first;
+        }
+
+        internal Stream  First { get { return BaseStream; } }
+        internal Stream Second { get { return m_second; } }
+
+        public override bool CanSeek  { get { return First.CanSeek && Second.CanSeek; } }
+        public override long Length   { get { return First.Length + Second.Length; } }
+        public override long Position
+        {
+            get { return m_position; }
+            set { m_position = value; }
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            if (First.CanSeek)
+            {
+                if (m_position >= First.Length)
+                {
+                    m_active = Second;
+                    m_active.Position = m_position - First.Length;
+                }
+                else
+                {
+                    m_active = First;
+                    m_active.Position = m_position;
+                }
+            }
+            int total_read = 0;
+            while (count > 0)
+            {
+                int read = m_active.Read (buffer, offset, count);
+                if (0 == read)
+                    break;
+                total_read += read;
+                m_position += read;
+                offset += read;
+                count -= read;
+            }
+            if (count > 0 && m_active != Second)
+            {
+                m_active = Second;
+                if (m_active.CanSeek)
+                    m_active.Position = 0;
+                int read = m_active.Read (buffer, offset, count);
+                m_position += read;
+                total_read += read;
+            }
+            return total_read;
+        }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            if (SeekOrigin.Begin == origin)
+                Position = offset;
+            else if (SeekOrigin.Current == origin)
+                Position = m_position + offset;
+            else
+                Position = Length + offset;
+
+            return m_position;
+        }
+
+        bool _disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                    m_second.Dispose();
+                _disposed = true;
+                base.Dispose (disposing);
+            }
+        }
+    }
+
     public class XoredStream : ProxyStream
     {
         private byte        m_key;
