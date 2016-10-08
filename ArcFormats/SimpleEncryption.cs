@@ -119,12 +119,9 @@ namespace GameRes.Formats
         {
             int start_pos = (int)((m_base_pos + BaseStream.Position) % m_key.Length);
             int read = BaseStream.Read (buffer, offset, count);
-            if (read > 0)
+            for (int i = 0; i < read; ++i)
             {
-                for (int i = 0; i < read; ++i)
-                {
-                    buffer[offset+i] ^= m_key[(start_pos + i) % m_key.Length];
-                }
+                buffer[offset+i] ^= m_key[(start_pos + i) % m_key.Length];
             }
             return read;
         }
