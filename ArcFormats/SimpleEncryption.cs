@@ -30,7 +30,7 @@ namespace GameRes.Formats
 {
     public sealed class NotTransform : ICryptoTransform
     {
-        private const int BlockSize = 256;
+        private const int BlockSize = 1;
 
         public bool          CanReuseTransform { get { return true; } }
         public bool CanTransformMultipleBlocks { get { return true; } }
@@ -62,7 +62,7 @@ namespace GameRes.Formats
 
     public sealed class XorTransform : ICryptoTransform
     {
-        private const int BlockSize = 256;
+        private const int BlockSize = 1;
         private byte m_key;
 
         public bool          CanReuseTransform { get { return true; } }
