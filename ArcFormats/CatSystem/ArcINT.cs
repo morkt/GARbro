@@ -30,7 +30,6 @@ using System.Text;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Collections.Generic;
-using Simias.Encryption;
 using System.Runtime.InteropServices;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
