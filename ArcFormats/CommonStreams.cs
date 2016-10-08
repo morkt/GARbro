@@ -393,4 +393,55 @@ namespace GameRes.Formats
         }
         #endregion
     }
+
+    public class XoredStream : ProxyStream
+    {
+        private byte        m_key;
+
+        public XoredStream (Stream stream, byte key, bool leave_open = false)
+            : base (stream, leave_open)
+        {
+            m_key = key;
+        }
+
+        #region System.IO.Stream methods
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            int read = BaseStream.Read (buffer, offset, count);
+            for (int i = 0; i < read; ++i)
+            {
+                buffer[offset+i] ^= m_key;
+            }
+            return read;
+        }
+
+        public override int ReadByte ()
+        {
+            int b = BaseStream.ReadByte();
+            if (-1 != b)
+            {
+                b ^= m_key;
+            }
+            return b;
+        }
+
+        byte[] write_buf;
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            if (null == write_buf || write_buf.Length < count)
+                write_buf = new byte[count];
+            for (int i = 0; i < count; ++i)
+            {
+                write_buf[i] = (byte)(buffer[offset+i] ^ m_key);
+            }
+            BaseStream.Write (write_buf, 0, count);
+        }
+
+        public override void WriteByte (byte value)
+        {
+            BaseStream.WriteByte ((byte)(value ^ m_key));
+        }
+        #endregion
+    }
 }
