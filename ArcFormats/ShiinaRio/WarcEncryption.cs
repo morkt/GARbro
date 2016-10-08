@@ -975,9 +975,9 @@ namespace GameRes.Formats.ShiinaRio
     }
 
     [Serializable]
-    public class AdlerCrypt : KeyDecryptBase
+    public class KeyAdlerCrypt : KeyDecryptBase
     {
-        public AdlerCrypt (uint key) : base (key, null)
+        public KeyAdlerCrypt (uint key) : base (key, null)
         {
         }
 
@@ -988,6 +988,142 @@ namespace GameRes.Formats.ShiinaRio
             data[index + 0x205] ^= (byte)(key >> 8);
             data[index + 0x206] ^= (byte)(key >> 16);
             data[index + 0x207] ^= (byte)(key >> 24);
+        }
+    }
+
+    [Serializable]
+    public class AdlerCrypt : IDecryptExtra
+    {
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x400 && (flags & 0x204) == 0x204)
+                Transform (data, index, 0xFF);
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x400 && (flags & 0x104) == 0x104)
+                Transform (data, index, 0xFF);
+        }
+
+        void Transform (byte[] data, int index, int length)
+        {
+            uint key = Adler32.Compute (data, index, length);
+            data[index + 0x200] ^= (byte)key;
+            data[index + 0x201] ^= (byte)(key >> 8);
+            data[index + 0x202] ^= (byte)(key >> 16);
+            data[index + 0x203] ^= (byte)(key >> 24);
+        }
+    }
+
+    [Serializable]
+    public class BinboCrypt : IDecryptExtra
+    {
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x204) == 0x204)
+            {
+                if (0x718E958D == LittleEndian.ToUInt32 (data, index))
+                {
+                    var input = new byte[0x200];
+                    Buffer.BlockCopy (data, index, input, 0, 0x200);
+                    var reader = new LzComp (input, 8);
+                    reader.Unpack (data, index);
+                }
+                if (length > 0x200)
+                    data[index + 0x200] ^= (byte)length;
+                if (length > 0x201)
+                    data[index + 0x201] ^= (byte)(length >> 8);
+                if (length > 0x202)
+                    data[index + 0x202] ^= (byte)(length >> 16);
+                if (length > 0x203)
+                    data[index + 0x203] ^= (byte)(length >> 24);
+            }
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x104) == 0x104)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        sealed class LzComp
+        {
+            byte[]  m_input;
+            int     m_src;
+
+            uint    m_bits;
+            int     m_bits_count;
+
+            public LzComp (byte[] input, int index)
+            {
+                m_input = input;
+                m_src = index;
+            }
+
+            public void Unpack (byte[] output, int dst)
+            {
+                FillBitCache();
+                while (m_src < m_input.Length)
+                {
+                    if (GetBit() != 0)
+                    {
+                        output[dst++] = m_input[m_src++];
+                        continue;
+                    }
+                    int count, offset;
+                    if (GetBit() != 0)
+                    {
+                        count = LittleEndian.ToUInt16 (m_input, m_src);
+                        m_src += 2;
+                        offset = count >> 3 | -0x2000;
+                        count &= 7;
+                        if (count > 0)
+                        {
+                            count += 2;
+                        }
+                        else
+                        {
+                            count = m_input[m_src++];
+                            if (0 == count)
+                                break;
+                            count += 9;
+                        }
+                    }
+                    else
+                    {
+                        count = GetBit() << 1;
+                        count |= GetBit();
+                        count += 2;
+                        offset = m_input[m_src++] | -0x100;
+                    }
+                    Binary.CopyOverlapped (output, dst+offset, dst, count);
+                    dst += count;
+                }
+            }
+
+            int GetBit ()
+            {
+                uint v = m_bits >> --m_bits_count;
+                if (m_bits_count <= 0)
+                {
+                    FillBitCache();
+                }
+                return (int)(v & 1);
+            }
+
+            void FillBitCache ()
+            {
+                m_bits = LittleEndian.ToUInt32 (m_input, m_src);
+                m_src += 4;
+                m_bits_count = 32;
+            }
         }
     }
 }
