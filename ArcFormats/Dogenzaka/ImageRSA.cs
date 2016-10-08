@@ -29,6 +29,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using GameRes.Cryptography;
 
 namespace GameRes.Formats.Dogenzaka
 {
@@ -87,74 +88,6 @@ namespace GameRes.Formats.Dogenzaka
         public override void Write (Stream file, ImageData image)
         {
             throw new NotImplementedException ("Rc4PngFormat.Write not implemented");
-        }
-    }
-
-    public sealed class Rc4Transform : ICryptoTransform
-    {
-        private const int StateLength = 256;
-        private const int BlockSize = 256;
-        private byte[]	m_state = new byte[StateLength];
-        private int		x;
-        private int		y;
-        private byte[]  m_key;
-
-        public bool          CanReuseTransform { get { return false; } }
-        public bool CanTransformMultipleBlocks { get { return true; } }
-        public int              InputBlockSize { get { return BlockSize; } }
-        public int             OutputBlockSize { get { return BlockSize; } }
-
-        public Rc4Transform (byte[] key)
-        {
-            m_key = key;
-            x = 0;
-            y = 0;
-
-            for (int i = 0; i < StateLength; ++i)
-            {
-                m_state[i] = (byte)i;
-            }
-
-            int i1 = 0;
-            int i2 = 0;
-
-            for (int i = 0; i < StateLength; ++i)
-            {
-                i2 = ((m_key[i1] & 0xFF) + m_state[i] + i2) & 0xFF;
-                byte t = m_state[i];
-                m_state[i] = m_state[i2];
-                m_state[i2] = t;
-                i1 = (i1+1) % m_key.Length;
-            }
-        }
-
-        public int TransformBlock (byte[] inBuf, int inOffset, int inCount,
-                                   byte[] outBuf, int outOffset)
-        {
-            for (int i = 0; i < inCount; i++)
-            {
-                x = (x + 1) & 0xFF;
-                y = (m_state[x] + y) & 0xFF;
-
-                byte t = m_state[x];
-                m_state[x] = m_state[y];
-                m_state[y] = t;
-
-                outBuf[i+outOffset] = (byte)(inBuf[i + inOffset] ^ m_state[(m_state[x] + m_state[y]) & 0xFF]);
-            }
-            return inCount;
-        }
-
-        public byte[] TransformFinalBlock (byte[] inBuf, int inOffset, int inCount)
-        {
-            byte[] output = new byte[inCount];
-            TransformBlock (inBuf, inOffset, inCount, output, 0);
-            return output;
-        }
-
-        public void Dispose ()
-        {
-            GC.SuppressFinalize (this);
         }
     }
 }

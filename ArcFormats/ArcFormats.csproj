@@ -204,6 +204,7 @@
     <Compile Include="Primel\ImageGBC.cs" />
     <Compile Include="Primel\RC6.cs" />
     <Compile Include="Primel\SHA256.cs" />
+    <Compile Include="RC4.cs" />
     <Compile Include="RealLive\ArcG00.cs" />
     <Compile Include="RealLive\ArcOVK.cs" />
     <Compile Include="RealLive\AudioNWA.cs" />
