@@ -285,6 +285,11 @@ namespace GameRes.Cryptography
 				}
 			}
 		}
+
+        public ICryptoTransform CreateDecryptor ()
+        {
+            return new BlowfishDecryptor (this);
+        }
 		
 		private uint F(uint x)
 		{
