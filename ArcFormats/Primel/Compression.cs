@@ -354,45 +354,4 @@ namespace GameRes.Formats.Primel
             }
         }
     }
-
-    internal class LimitStream : InputProxyStream
-    {
-        bool    m_can_seek;
-        long    m_position;
-        long    m_last;
-
-        public LimitStream (Stream input, long last, bool leave_open = false) : base (input, leave_open)
-        {
-            m_can_seek = input.CanSeek;
-            m_position = 0;
-            m_last = last;
-        }
-
-        public override bool CanSeek  { get { return m_can_seek; } }
-        public override long Length   { get { return m_last; } }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            if (m_can_seek)
-                m_position = Position;
-            if (m_position >= m_last)
-                return 0;
-            count = (int)Math.Min (count, m_last - m_position);
-            int read = BaseStream.Read (buffer, offset, count);
-            m_position += read;
-            return read;
-        }
-
-        public override int ReadByte ()
-        {
-            if (m_can_seek)
-                m_position = Position;
-            if (m_position >= m_last)
-                return -1;
-            int b = BaseStream.ReadByte();
-            if (-1 != b)
-                ++m_position;
-            return b;
-        }
-    }
 }
