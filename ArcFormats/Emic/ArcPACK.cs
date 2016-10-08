@@ -115,42 +115,4 @@ namespace GameRes.Formats.Emic
             return input;
         }
     }
-
-    internal class ByteStringEncryptedStream : InputProxyStream
-    {
-        byte[]  m_key;
-        int     m_base_pos;
-
-        public ByteStringEncryptedStream (Stream main, long start_pos, byte[] key, bool leave_open = false)
-            : base (main, leave_open)
-        {
-            m_key = key;
-            m_base_pos = (int)(start_pos % m_key.Length);
-        }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            int start_pos = (int)((m_base_pos + BaseStream.Position) % m_key.Length);
-            int read = BaseStream.Read (buffer, offset, count);
-            if (read > 0)
-            {
-                for (int i = 0; i < read; ++i)
-                {
-                    buffer[offset+i] ^= m_key[(start_pos + i) % m_key.Length];
-                }
-            }
-            return read;
-        }
-
-        public override int ReadByte ()
-        {
-            long pos = BaseStream.Position;
-            int b = BaseStream.ReadByte();
-            if (-1 != b)
-            {
-                b ^= m_key[(m_base_pos + pos) % m_key.Length];
-            }
-            return b;
-        }
-    }
 }
