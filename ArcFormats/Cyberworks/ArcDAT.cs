@@ -166,8 +166,8 @@ namespace GameRes.Formats.Cyberworks
                 return null;
             if (!has_images)
                 return new ArcFile (file, this, dir);
-            var options = Query<BellOptions> (arcStrings.ArcEncryptedNotice);
-            return new BellArchive (file, this, dir, options.Scheme);
+            var scheme = QueryScheme (file.Name);
+            return new BellArchive (file, this, dir, scheme);
         }
 
         byte[] ReadToc (string toc_name)
@@ -273,6 +273,15 @@ namespace GameRes.Formats.Cyberworks
                     v += (b ^ 0x7F) * rank;
             }
             return v;
+        }
+
+        AImageScheme QueryScheme (string arc_name)
+        {
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title) && KnownSchemes.ContainsKey (title))
+                return KnownSchemes[title];
+            var options = Query<BellOptions> (arcStrings.ArcEncryptedNotice);
+            return options.Scheme;
         }
 
         public override ResourceOptions GetDefaultOptions ()

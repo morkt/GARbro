@@ -71,7 +71,6 @@ namespace GameRes.Formats.KiriKiri
     public class Xp3Scheme : ResourceScheme
     {
         public Dictionary<string, ICrypt> KnownSchemes;
-        public Dictionary<string, string> ExeMap;
     }
 
     // Archive version 1: encrypt file first, then calculate checksum
@@ -749,25 +748,15 @@ NextEntry:
 
         ICrypt GuessCryptAlgorithm (ArcView file)
         {
-            if (0 == KiriKiriScheme.ExeMap.Count)
+            var title = FormatCatalog.Instance.LookupGame (file.Name);
+            if (string.IsNullOrEmpty (title))
                 return null;
-            var exe_pattern = VFS.CombinePath (VFS.GetDirectoryName (file.Name), "*.exe");
-            foreach (var exe in VFS.GetFiles (exe_pattern).Select (e => Path.GetFileName (e.Name)))
-            {
-                string title;
-                if (KiriKiriScheme.ExeMap.TryGetValue (exe, out title))
-                {
-                    Settings.Default.XP3Scheme = title;
-                    return GetScheme (title);
-                }
-            }
-            return null;
+            return GetScheme (title);
         }
 
         static Xp3Scheme KiriKiriScheme = new Xp3Scheme
         {
             KnownSchemes = new Dictionary<string, ICrypt>(),
-            ExeMap       = new Dictionary<string, string>(),
         };
 
         public static IDictionary<string, ICrypt> KnownSchemes

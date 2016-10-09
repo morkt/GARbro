@@ -53,6 +53,8 @@ namespace GameRes
         private MultiValueDictionary<string, IResource> m_extension_map = new MultiValueDictionary<string, IResource>();
         private MultiValueDictionary<uint, IResource> m_signature_map = new MultiValueDictionary<uint, IResource>();
 
+        private Dictionary<string, string> m_game_map = new Dictionary<string, string>();
+
         /// <summary> The only instance of this class.</summary>
         public static FormatCatalog       Instance      { get { return m_instance; } }
 
@@ -205,6 +207,23 @@ namespace GameRes
             return signature;
         }
 
+        /// <summary>
+        /// Look up game title based on archive <paramref name="arc_name"/> and files matching
+        /// <paramref name="pattern"/> in the same directory as archive.
+        /// </summary>
+        /// <returns>Game title, or null if no match was found.</returns>
+        public string LookupGame (string arc_name, string pattern = "*.exe")
+        {
+            pattern = VFS.CombinePath (VFS.GetDirectoryName (arc_name), pattern);
+            foreach (var file in VFS.GetFiles (pattern).Select (e => Path.GetFileName (e.Name)))
+            {
+                string title;
+                if (m_game_map.TryGetValue (file, out title))
+                    return title;
+            }
+            return null;
+        }
+
         public void DeserializeScheme (Stream input)
         {
             using (var reader = new BinaryReader (input, System.Text.Encoding.UTF8, true))
@@ -228,6 +247,8 @@ namespace GameRes
                         format.Scheme = scheme;
                 }
                 CurrentSchemeVersion = db.Version;
+                if (db.GameMap != null)
+                    m_game_map = db.GameMap;
             }
         }
 
@@ -235,7 +256,8 @@ namespace GameRes
         {
             var db = new SchemeDataBase {
                 Version = CurrentSchemeVersion,
-                SchemeMap = new Dictionary<string, ResourceScheme>()
+                SchemeMap = new Dictionary<string, ResourceScheme>(),
+                GameMap = m_game_map,
             };
             foreach (var format in Formats)
             {
@@ -264,6 +286,7 @@ namespace GameRes
     {
         public int Version;
 
-        public Dictionary<string, ResourceScheme> SchemeMap;
+        public Dictionary<string, ResourceScheme>   SchemeMap;
+        public Dictionary<string, string>           GameMap;
     }
 }

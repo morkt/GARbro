@@ -90,7 +90,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             if (index_offset >= file.MaxOffset)
                 return null;
 
-            var scheme = QueryEncryption();
+            var scheme = QueryEncryption (file.Name);
             if (null == scheme)
                 return null;
             var decoder = new Decoder (version, scheme);
@@ -282,10 +282,18 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             return new GUI.WidgetWARC();
         }
 
-        EncryptionScheme QueryEncryption ()
+        EncryptionScheme QueryEncryption (string arc_name)
         {
-            var options = Query<WarOptions> (arcStrings.ArcEncryptedNotice);
-            return options.Scheme;
+            EncryptionScheme scheme = null;
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title))
+                scheme = GetScheme (title);
+            if (null == scheme)
+            {
+                var options = Query<WarOptions> (arcStrings.ArcEncryptedNotice);
+                scheme = options.Scheme;
+            }
+            return scheme;
         }
 
         static EncryptionScheme GetScheme (string scheme)
