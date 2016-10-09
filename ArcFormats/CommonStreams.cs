@@ -563,13 +563,19 @@ namespace GameRes.Formats
 
         public override void Write (byte[] buffer, int offset, int count)
         {
-            if (null == write_buf || write_buf.Length < count)
-                write_buf = new byte[count];
-            for (int i = 0; i < count; ++i)
+            if (null == write_buf)
+                write_buf = new byte[81920];
+            while (count > 0)
             {
-                write_buf[i] = (byte)(buffer[offset+i] ^ m_key);
+                int chunk = Math.Min (write_buf.Length, count);
+                for (int i = 0; i < chunk; ++i)
+                {
+                    write_buf[i] = (byte)(buffer[offset+i] ^ m_key);
+                }
+                BaseStream.Write (write_buf, 0, count);
+                offset += chunk;
+                count -= chunk;
             }
-            BaseStream.Write (write_buf, 0, count);
         }
 
         public override void WriteByte (byte value)
