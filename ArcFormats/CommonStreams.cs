@@ -572,7 +572,7 @@ namespace GameRes.Formats
                 {
                     write_buf[i] = (byte)(buffer[offset+i] ^ m_key);
                 }
-                BaseStream.Write (write_buf, 0, count);
+                BaseStream.Write (write_buf, 0, chunk);
                 offset += chunk;
                 count -= chunk;
             }
