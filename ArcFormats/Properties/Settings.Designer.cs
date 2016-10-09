@@ -633,5 +633,17 @@ namespace GameRes.Formats.Properties {
                 this["GYUTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string PAZTitle {
+            get {
+                return ((string)(this["PAZTitle"]));
+            }
+            set {
+                this["PAZTitle"] = value;
+            }
+        }
     }
 }

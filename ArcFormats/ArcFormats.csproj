@@ -179,6 +179,11 @@
     <Compile Include="MD5.cs" />
     <Compile Include="Moonhir\ArcFPK.cs" />
     <Compile Include="Morning\ArcTTD.cs" />
+    <Compile Include="Musica\ArcPAZ.cs" />
+    <Compile Include="Musica\ArcSQZ.cs" />
+    <Compile Include="Musica\WidgetPAZ.xaml.cs">
+      <DependentUpon>WidgetPAZ.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Nekopunch\ArcPAK.cs" />
     <Compile Include="NekoSDK\ArcDAT.cs" />
     <Compile Include="NekoSDK\ArcPAK.cs" />
@@ -677,6 +682,10 @@
     <Page Include="MangaGamer\WidgetMGPK.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Musica\WidgetPAZ.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="NitroPlus\CreateNPAWidget.xaml">
       <SubType>Designer</SubType>
