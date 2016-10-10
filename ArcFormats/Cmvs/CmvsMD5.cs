@@ -2,7 +2,7 @@
 //! \date       Mon Nov 30 13:29:27 2015
 //! \brief      Cmvs engine MD5 update algorithm.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,7 +27,7 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Cmvs
 {
-    public enum Md5Variant { A, B, Chrono, Memoria }
+    public enum Md5Variant { A, B, Chrono, Memoria, Natsu }
 
     public abstract class MD5 : Cryptography.MD5Base
     {
@@ -44,6 +44,7 @@ namespace GameRes.Formats.Cmvs
             case Md5Variant.B: return new Md5VariantB();
             case Md5Variant.Chrono: return new Md5Chrono();
             case Md5Variant.Memoria: return new Md5Memoria();
+            case Md5Variant.Natsu: return new Md5Natsu();
             default: throw new System.ArgumentException ("Unknown MD5 variant", "variant");
             }
         }
@@ -129,6 +130,25 @@ namespace GameRes.Formats.Cmvs
             data[1] = m_state[2];
             data[2] = m_state[3];
             data[3] = m_state[0];
+        }
+    }
+
+    public class Md5Natsu : MD5
+    {
+        protected override void InitState ()
+        {
+            m_state[0] = 0x63FE9A7C;
+            m_state[1] = 0xC2B93E98;
+            m_state[2] = 0xEF91BA5C;
+            m_state[3] = 0x72C9A82E;
+        }
+
+        protected override void SetResult (uint[] data)
+        {
+            data[0] = m_state[1] + 0x45876329;
+            data[1] = m_state[2] ^ 0x54F36D6C;
+            data[2] = m_state[3] + 0x4387A749;
+            data[3] = m_state[0] ^ 0xE3F9A742;
         }
     }
 }
