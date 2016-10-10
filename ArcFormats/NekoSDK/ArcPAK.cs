@@ -38,7 +38,7 @@ namespace GameRes.Formats.NekoSDK
         public override string         Tag { get { return "NEKOPACK/4"; } }
         public override string Description { get { return "NekoSDK engine resource archive"; } }
         public override uint     Signature { get { return 0x4F4B454E; } } // 'NEKOPACK'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool     CanCreate { get { return false; } }
 
         public PakOpener ()
@@ -78,13 +78,13 @@ namespace GameRes.Formats.NekoSDK
                     return null;
                 file.View.Read (index_offset, name_buffer, 0, name_length);
                 index_offset += name_length;
-                uint key = 0;
+                int key = 0;
                 for (uint i = 0; i < name_length; ++i)
-                    key += name_buffer[i];
+                    key += (sbyte)name_buffer[i];
                 var name = Binary.GetCString (name_buffer, 0, (int)name_length);
                 var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                entry.Offset = file.View.ReadUInt32 (index_offset)   ^ key;
-                entry.Size   = file.View.ReadUInt32 (index_offset+4) ^ key;
+                entry.Offset = file.View.ReadUInt32 (index_offset)   ^ (uint)key;
+                entry.Size   = file.View.ReadUInt32 (index_offset+4) ^ (uint)key;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
