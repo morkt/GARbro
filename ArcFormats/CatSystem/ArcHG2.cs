@@ -37,7 +37,7 @@ namespace GameRes.Formats.CatSystem
         public override string Description { get { return "CatSystem2 engine multi-image"; } }
         public override uint     Signature { get { return 0x322d4748; } } // 'HG-2'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

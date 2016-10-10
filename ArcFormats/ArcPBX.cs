@@ -38,7 +38,7 @@ namespace GameRes.Formats.Terios
         public override string Description { get { return "\"Pandora.box\" resource archive"; } }
         public override uint     Signature { get { return 0x646E6150; } } // 'Pand'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

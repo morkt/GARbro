@@ -36,6 +36,7 @@ namespace GameRes.Formats
         public override string         Tag { get { return "BM_"; } }
         public override string Description { get { return "LZ-compressed bitmap"; } }
         public override uint     Signature { get { return 0x44445A53u; } } // 'SZDD'
+        public override bool      CanWrite { get { return false; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

@@ -48,7 +48,7 @@ namespace GameRes.Formats.Musica
         public override string Description { get { return "Musica engine animated frames"; } }
         public override uint     Signature { get { return 0x315A5153; } } // 'SQZ1'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

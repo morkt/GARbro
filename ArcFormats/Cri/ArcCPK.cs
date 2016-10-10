@@ -47,7 +47,7 @@ namespace GameRes.Formats.Cri
         public override string Description { get { return "CRI Middleware resource archive"; } }
         public override uint     Signature { get { return 0x204B5043; } } // 'CPK '
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

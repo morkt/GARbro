@@ -72,7 +72,7 @@ namespace GameRes.Formats.Entis
         public override string Description { get { return "Entis GLS engine resource archive"; } }
         public override uint     Signature { get { return 0x69746e45; } } // 'Enti'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public NoaOpener ()
         {

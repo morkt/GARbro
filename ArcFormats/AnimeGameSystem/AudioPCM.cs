@@ -30,7 +30,7 @@ using System.IO;
 namespace GameRes.Formats.Ags
 {
     [Export(typeof(AudioFormat))]
-    public class PcmAudio : WaveAudio
+    public class PcmAudio : AudioFormat
     {
         public override string         Tag { get { return "PCM/AGS"; } }
         public override string Description { get { return "AnimeGameSystem PCM audio"; } }

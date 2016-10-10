@@ -36,7 +36,7 @@ namespace GameRes.Formats.Escude
         public override string Description { get { return "Escu:de resource archive"; } }
         public override uint     Signature { get { return 0x2D435345; } } // 'ESC-'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

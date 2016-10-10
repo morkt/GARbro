@@ -52,7 +52,7 @@ namespace GARbro.GUI
             ArchiveName.Text = initial_name;
         }
 
-        private readonly IEnumerable<ArchiveFormat> m_formats = FormatCatalog.Instance.ArcFormats.Where (f => f.CanCreate).OrderBy (f => f.Tag);
+        private readonly IEnumerable<ArchiveFormat> m_formats = FormatCatalog.Instance.ArcFormats.Where (f => f.CanWrite).OrderBy (f => f.Tag);
 
         public IEnumerable<ArchiveFormat> ArcFormats { get { return m_formats; } }
 

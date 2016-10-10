@@ -63,7 +63,7 @@ namespace GameRes.Formats.Mg
         public override string Description { get { return "MG resource archive"; } }
         public override uint     Signature { get { return 0x4b50474d; } } // MGPK
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public MgpkOpener ()
         {

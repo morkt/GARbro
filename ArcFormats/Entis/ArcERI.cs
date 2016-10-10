@@ -40,7 +40,7 @@ namespace GameRes.Formats.Entis
         public override string Description { get { return "Entis multi-frame image format"; } }
         public override uint     Signature { get { return 0x69746e45u; } } // 'Enti'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public EriOpener ()
         {

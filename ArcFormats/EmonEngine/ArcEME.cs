@@ -40,7 +40,7 @@ namespace GameRes.Formats.EmonEngine
         public override string Description { get { return "Emon Engine resource archive"; } } // 'えもんエンジン'
         public override uint     Signature { get { return 0x44455252; } } // 'RREDATA'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

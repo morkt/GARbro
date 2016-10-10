@@ -50,7 +50,7 @@ namespace GameRes.Formats.Aoi
         public override string Description { get { return "Aoi engine script archive"; } }
         public override uint     Signature { get { return 0x42494F41; } } // 'AOIB'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         static readonly Dictionary<int, byte> VersionKeyMap = new Dictionary<int, byte> {
             {  5, 0xAD },
@@ -148,7 +148,7 @@ namespace GameRes.Formats.Aoi
         public override string Description { get { return "Aoi engine script archive"; } }
         public override uint     Signature { get { return 0x4D494F41; } } // 'AOIM'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public AoiMyOpener ()
         {
@@ -220,7 +220,7 @@ namespace GameRes.Formats.Aoi
         public override string Description { get { return "Aoi engine script archive"; } }
         public override uint     Signature { get { return 0x004F0041; } } // 'A O '
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

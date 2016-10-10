@@ -93,7 +93,7 @@ namespace GameRes.Formats.Lucifen
         public override string Description { get { return "Lucifen system resource archive"; } }
         public override uint     Signature { get { return 0x314b504c; } } // 'LPK1'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         [Serializable]
         public class Key

@@ -105,7 +105,7 @@ namespace GameRes.Formats.NitroPlus
         public override string Description { get { return arcStrings.NPADescription; } }
         public override uint     Signature { get { return 0x0141504e; } } // NPA\x01
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme>();
 

@@ -42,6 +42,7 @@ namespace GameRes.Formats.Ikura
         public override string         Tag { get { return "DRG"; } }
         public override string Description { get { return "Digital Romance System image format"; } }
         public override uint     Signature { get { return ~0x4c4c5546u; } } // 'FULL'
+        public override bool      CanWrite { get { return true; } }
 
         public DrgFormat ()
         {

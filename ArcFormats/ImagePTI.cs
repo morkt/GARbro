@@ -35,6 +35,7 @@ namespace GameRes.Formats.Misc
         public override string         Tag { get { return "PTI"; } }
         public override string Description { get { return "Custom BMP image"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

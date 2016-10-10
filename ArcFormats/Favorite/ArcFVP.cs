@@ -38,7 +38,7 @@ namespace GameRes.Formats.FVP
         public override string Description { get { return "Favorite View Point resource archive"; } }
         public override uint     Signature { get { return 0x58504341; } } // "ACPX"
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public BinOpener ()
         {

@@ -42,11 +42,11 @@ namespace GameRes.Formats
     [Export(typeof(ArchiveFormat))]
     public class NpaSteinsGateOpener : ArchiveFormat
     {
-        public override string Tag { get { return "NPA-SG"; } }
+        public override string         Tag { get { return "NPA-SG"; } }
         public override string Description { get { return arcStrings.NPASteinsGateDescription; } }
-        public override uint Signature { get { return 0; } }
-        public override bool IsHierarchic { get { return true; } }
-        public override bool CanCreate { get { return true; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public NpaSteinsGateOpener ()
         {

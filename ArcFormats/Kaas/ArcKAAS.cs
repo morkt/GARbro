@@ -38,7 +38,7 @@ namespace GameRes.Formats.KAAS
         public override string Description { get { return "KAAS engine PD resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PdOpener ()
         {
@@ -103,7 +103,7 @@ namespace GameRes.Formats.KAAS
         public override string Description { get { return "KAAS engine PB resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

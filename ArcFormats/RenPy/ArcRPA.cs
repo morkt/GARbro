@@ -54,7 +54,7 @@ namespace GameRes.Formats.RenPy
         public override string Description { get { return Strings.arcStrings.RPADescription; } }
         public override uint     Signature { get { return 0x2d415052; } } // "RPA-"
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

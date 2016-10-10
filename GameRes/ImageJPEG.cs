@@ -35,9 +35,10 @@ namespace GameRes
     [Export(typeof(ImageFormat))]
     public class JpegFormat : ImageFormat
     {
-        public override string Tag { get { return "JPEG"; } }
+        public override string         Tag { get { return "JPEG"; } }
         public override string Description { get { return "JPEG image file format"; } }
-        public override uint Signature { get { return 0; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return true; } }
 
         public int Quality { get; set; }
 

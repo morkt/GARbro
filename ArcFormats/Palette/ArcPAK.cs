@@ -38,7 +38,7 @@ namespace GameRes.Formats.Palette
         public override string Description { get { return "Palette resource archive"; } }
         public override uint     Signature { get { return 0x43415005; } } // '\x05PAC'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

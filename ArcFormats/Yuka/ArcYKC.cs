@@ -46,7 +46,7 @@ namespace GameRes.Formats.Yuka
         public override string Description { get { return "Yuka engine resource archive"; } }
         public override uint     Signature { get { return 0x30434B59; } } // 'YKC0'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public YkcOpener ()
         {

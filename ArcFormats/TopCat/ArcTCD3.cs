@@ -81,7 +81,7 @@ namespace GameRes.Formats.TopCat
         public override string Description { get { return "TopCat data archive"; } }
         public override uint     Signature { get { return 0x33444354; } } // 'TCD3'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public TcdOpener ()
         {

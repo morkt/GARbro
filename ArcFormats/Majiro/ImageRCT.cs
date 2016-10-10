@@ -63,6 +63,7 @@ namespace GameRes.Formats.Majiro
         public override string         Tag { get { return "RCT"; } }
         public override string Description { get { return "Majiro game engine RGB image format"; } }
         public override uint     Signature { get { return 0x9a925a98; } }
+        public override bool      CanWrite { get { return true; } }
 
         public bool OverlayFrames = true;
         public bool ApplyMask = true;

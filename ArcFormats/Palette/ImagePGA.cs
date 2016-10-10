@@ -34,6 +34,7 @@ namespace GameRes.Formats.Palette
         public override string         Tag { get { return "PGA"; } }
         public override string Description { get { return "Palette obfuscated PNG image"; } }
         public override uint     Signature { get { return 0x50414750; } } // 'PGAP'
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

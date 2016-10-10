@@ -40,7 +40,7 @@ namespace GameRes.Formats.DDSystem
         public override string Description { get { return "DDSystem engine resource archive"; } }
         public override uint     Signature { get { return 0x32504444; } } // 'DDP2'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Ddp2Opener ()
         {
@@ -156,7 +156,7 @@ namespace GameRes.Formats.DDSystem
         public override string Description { get { return "DDSystem engine resource archive"; } }
         public override uint     Signature { get { return 0x33504444; } } // 'DDP3'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

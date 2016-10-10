@@ -47,7 +47,7 @@ namespace GameRes.Formats.AST
         public override string Description { get { return "AST script engine resource archive"; } }
         public override uint     Signature { get { return 0x32435241; } } // 'ARC2'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {

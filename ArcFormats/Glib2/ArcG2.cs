@@ -82,7 +82,7 @@ namespace GameRes.Formats.Glib2
         public override string Description { get { return "Glib2 engine resource archive"; } }
         public override uint     Signature { get { return 0x47D33310; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public G2Opener ()
         {

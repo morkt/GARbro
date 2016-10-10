@@ -65,7 +65,7 @@ namespace GameRes.Formats.Pvns
         public override string Description { get { return "PVNS engine resource archive"; } }
         public override uint     Signature { get { return 0x315A4250; } } // 'PBZ1'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public static Dictionary<string, PbzKeys> KnownSchemes = new Dictionary<string, PbzKeys>();
 

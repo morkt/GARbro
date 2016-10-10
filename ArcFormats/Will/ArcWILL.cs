@@ -52,7 +52,7 @@ namespace GameRes.Formats.Will
         public override string Description { get { return "Will Co. game engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         ArcOpener ()
         {

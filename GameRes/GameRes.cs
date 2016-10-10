@@ -76,6 +76,9 @@ namespace GameRes
         /// or zero if it could vary.</summary>
         public abstract uint Signature { get; }
 
+        /// <summary>Whether resource creation is supported by implementation.</summary>
+        public virtual bool CanWrite { get { return false; } }
+
         /// <summary>Signatures peculiar to the resource (the one above is also included here).</summary>
         public IEnumerable<uint> Signatures { get; protected set; }
 
@@ -169,8 +172,9 @@ namespace GameRes
     {
         public override string Type { get { return "archive"; } }
 
-        public virtual bool CanCreate { get { return false; } }
-
+        /// <summary>
+        /// Whether archive file system could contain subdirectories.
+        /// </summary>
         public abstract bool IsHierarchic { get; }
 
         public abstract ArcFile TryOpen (ArcView view);

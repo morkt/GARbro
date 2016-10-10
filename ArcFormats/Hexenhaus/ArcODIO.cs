@@ -37,7 +37,7 @@ namespace GameRes.Formats.Hexenhaus
         public override string Description { get { return "Hexenhaus audio archive"; } }
         public override uint     Signature { get { return 0x4F49444F; } } // 'ODIO'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public BinOpener ()
         {
@@ -79,7 +79,7 @@ namespace GameRes.Formats.Hexenhaus
             if (entry.Size < 0x2C || !arc.File.View.AsciiEqual (entry.Offset, "ONCE"))
                 return base.OpenEntry (arc, entry);
             var input = arc.File.CreateStream (entry.Offset+0x2C, entry.Size-0x2C);
-            return new EncryptedStream (input);
+            return new Ror4EncryptedStream (input);
         }
     }
 }

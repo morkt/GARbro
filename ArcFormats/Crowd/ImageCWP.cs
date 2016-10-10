@@ -38,6 +38,7 @@ namespace GameRes.Formats.Crowd
         public override string         Tag { get { return "CWP"; } }
         public override string Description { get { return "Crowd engine image format"; } }
         public override uint     Signature { get { return 0x50445743; } } // 'CWDP'
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

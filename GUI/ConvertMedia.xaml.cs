@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
 using System.Windows.Input;
+using GameRes;
 using GARbro.GUI.Strings;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
@@ -13,6 +15,7 @@ namespace GARbro.GUI
         public ConvertMedia ()
         {
             InitializeComponent ();
+            ImageConversionFormat.ItemsSource = FormatCatalog.Instance.ImageFormats.Where (f => f.CanWrite);
         }
 
         private void BrowseExec (object sender, ExecutedRoutedEventArgs e)

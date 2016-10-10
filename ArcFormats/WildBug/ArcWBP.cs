@@ -37,7 +37,7 @@ namespace GameRes.Formats.WildBug
         public override string Description { get { return "Wild Bug's engine resource archive"; } }
         public override uint     Signature { get { return 0x46435241; } } // 'ARCF'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

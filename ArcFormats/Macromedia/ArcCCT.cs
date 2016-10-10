@@ -41,7 +41,7 @@ namespace GameRes.Formats.Selen
         public override string Description { get { return "Macromedia Director resource archive"; } }
         public override uint     Signature { get { return 0x52494658; } } // 'XFIR'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public CctOpener ()
         {

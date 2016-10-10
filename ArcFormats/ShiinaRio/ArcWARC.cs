@@ -70,7 +70,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
         public override string Description { get { return "ShiinaRio engine resource archive"; } }
         public override uint     Signature { get { return 0x43524157; } } // 'WARC'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ResourceScheme Scheme
         {

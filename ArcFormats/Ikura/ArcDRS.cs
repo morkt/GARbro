@@ -42,7 +42,7 @@ namespace GameRes.Formats.Ikura
         public override string Description { get { return "Digital Romance System resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DrsOpener ()
         {
@@ -122,7 +122,7 @@ namespace GameRes.Formats.Ikura
         public override string Description { get { return "IKURA GDL resource archive"; } }
         public override uint     Signature { get { return 0x4d324d53; } } // 'SM2M'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public MpxOpener ()
         {

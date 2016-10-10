@@ -162,6 +162,7 @@ namespace GameRes.Formats.Creative
         public override string         Tag { get { return "VOC"; } }
         public override string Description { get { return "Creative Voice File"; } }
         public override uint     Signature { get { return 0x61657243; } } // 'Crea'
+        public override bool      CanWrite { get { return false; } }
 
         public override SoundInput TryOpen (Stream file)
         {

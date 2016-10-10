@@ -146,6 +146,7 @@ namespace GameRes.Formats.Softpal
         public override string         Tag { get { return "PGD/TGA"; } }
         public override string Description { get { return "Image format used by Softpal subsidiaries"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PgdTgaFormat ()
         {

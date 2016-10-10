@@ -39,7 +39,7 @@ namespace GameRes.Formats.Hexenhaus
         public override string Description { get { return "Hexenhaus resource archive"; } }
         public override uint     Signature { get { return 0x5F464149; } } // 'IAF_'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public WagOpener ()
         {
@@ -54,7 +54,7 @@ namespace GameRes.Formats.Hexenhaus
                 return null;
 
             using (var enc = file.CreateStream())
-            using (var dec = new EncryptedStream (enc))
+            using (var dec = new Ror4EncryptedStream (enc))
             using (var index = new BinaryReader (dec))
             {
                 dec.Position = 0x4A;
@@ -116,13 +116,13 @@ namespace GameRes.Formats.Hexenhaus
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new EncryptedStream (input);
+            return new Ror4EncryptedStream (input);
         }
     }
 
-    internal class EncryptedStream : ProxyStream
+    internal class Ror4EncryptedStream : InputProxyStream
     {
-        public EncryptedStream (Stream input, bool leave_open = false)
+        public Ror4EncryptedStream (Stream input, bool leave_open = false)
             : base (input, leave_open)
         {
         }
@@ -150,6 +150,7 @@ namespace GameRes.Formats.Hexenhaus
         public override string         Tag { get { return "IMGD/WAG"; } }
         public override string Description { get { return "WAG archive PNG image"; } }
         public override uint     Signature { get { return 0x44474D49; } } // 'IMGD'
+        public override bool      CanWrite { get { return false; } }
 
         public ImgdFormat ()
         {

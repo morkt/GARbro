@@ -51,7 +51,7 @@ namespace GameRes.Formats.Xuse
         public override string Description { get { return "Xuse/Eternal resource archive"; } }
         public override uint     Signature { get { return 0x40474157; } } // 'WAG@'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public WagOpener ()
         {

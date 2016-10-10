@@ -37,7 +37,7 @@ namespace GameRes.Formats.TmrHiro
         public override string Description { get { return "Tmr-Hiro ADV System resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PacOpener ()
         {

@@ -56,7 +56,7 @@ namespace GameRes.Formats.NitroPlus
         public override string Description { get { return "Nitro+ resource archive"; } }
         public override uint     Signature { get { return 0x03; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

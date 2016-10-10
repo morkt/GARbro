@@ -38,7 +38,7 @@ namespace GameRes.Formats.BlackCyc
         public override string Description { get { return "Black Cyc engine images archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

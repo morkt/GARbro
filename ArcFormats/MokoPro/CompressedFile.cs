@@ -91,6 +91,7 @@ namespace GameRes.Formats.Mokopro
         public override string         Tag { get { return "BMP/NNNN"; } }
         public override string Description { get { return "Mokopro compressed bitmap"; } }
         public override uint     Signature { get { return 0x4E4E4E4E; } } // 'NNNN'
+        public override bool      CanWrite { get { return false; } }
 
         public NNNNBmpFormat ()
         {
@@ -165,7 +166,7 @@ namespace GameRes.Formats.Mokopro
         public override string Description { get { return "Mokopro compressed file"; } }
         public override uint     Signature { get { return 0x4E4E4E4E; } } // 'NNNN'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool     CanWrite { get { return false; } }
 
         public NNNNOpener ()
         {

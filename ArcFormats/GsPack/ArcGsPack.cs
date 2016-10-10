@@ -40,7 +40,7 @@ namespace GameRes.Formats.Gs
         public override string Description { get { return "GsPack resource archive"; } }
         public override uint     Signature { get { return 0x61746144; } } // 'Data'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {
@@ -102,7 +102,7 @@ namespace GameRes.Formats.Gs
         public override string Description { get { return "GsPack resource archive"; } }
         public override uint     Signature { get { return 0x59537347; } } // 'GsSY'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DatOpener ()
         {

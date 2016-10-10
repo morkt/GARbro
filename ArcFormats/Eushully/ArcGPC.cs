@@ -34,7 +34,7 @@ namespace GameRes.Formats.Eushully
     {
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         protected ArcFile TryOpenWithIndex (ArcView file, string entry_type, string entry_ext = "")
         {

@@ -104,6 +104,7 @@ namespace GameRes
         public override string         Tag { get { return "WAV"; } }
         public override string Description { get { return "Wave audio format"; } }
         public override uint     Signature { get { return 0x46464952; } } // 'RIFF'
+        public override bool      CanWrite { get { return true; } }
 
         static readonly HashSet<ushort> EmbeddedFormats = new HashSet<ushort> {
             0x674f, 0x6751, 0x6771, // Vorbis

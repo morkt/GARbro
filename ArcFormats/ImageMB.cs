@@ -34,6 +34,7 @@ namespace GameRes.Formats
         public override string         Tag { get { return "BMP/MB"; } }
         public override string Description { get { return "Obfuscated bitmap"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

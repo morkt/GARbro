@@ -39,7 +39,7 @@ namespace GameRes.Formats.Abel
         public override string Description { get { return "ADVEngine resource archive"; } }
         public override uint     Signature { get { return 0x00637261; } } // 'arc'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {

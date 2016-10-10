@@ -39,7 +39,7 @@ namespace GameRes.Formats.G2
         public override string Description { get { return "G2 engine resource archive"; } }
         public override uint     Signature { get { return 0x58454347; } } // 'GCEX'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

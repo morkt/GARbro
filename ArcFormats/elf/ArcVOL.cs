@@ -37,7 +37,7 @@ namespace GameRes.Formats.Elf
         public override string Description { get { return "Ancient elf resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public VolOpener ()
         {

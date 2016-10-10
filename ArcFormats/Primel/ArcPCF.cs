@@ -46,7 +46,7 @@ namespace GameRes.Formats.Primel
         public override string Description { get { return "Primel ADV System resource archive"; } }
         public override uint     Signature { get { return 0x6B636150; } } // 'Pack'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

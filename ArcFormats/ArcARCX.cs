@@ -37,7 +37,7 @@ namespace GameRes.Formats.ArcX
         public override string Description { get { return "ARCX resource archive"; } }
         public override uint     Signature { get { return 0x58435241; } } // 'ARCX'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {

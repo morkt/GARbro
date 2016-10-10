@@ -39,7 +39,7 @@ namespace GameRes.Formats.BlackRainbow
         public override string Description { get { return "BlackRainbow/Melty resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

@@ -37,7 +37,7 @@ namespace GameRes.Formats.Slg
         public override string Description { get { return "SLG system resource archive"; } }
         public override uint     Signature { get { return 0x31535A53; } } // 'SZS1'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

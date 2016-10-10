@@ -49,6 +49,7 @@ namespace GameRes.Formats.BlackRainbow
         public override string         Tag { get { return "BMD"; } }
         public override string Description { get { return "Black Rainbow bitmap format"; } }
         public override uint     Signature { get { return 0x444d425fu; } } // '_BMD'
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

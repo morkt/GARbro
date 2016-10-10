@@ -48,7 +48,7 @@ namespace GameRes.Formats.Emic
         public override string Description { get { return "Emic engine resource archive"; } }
         public override uint     Signature { get { return 0x4B434150; } } // 'PACK'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PacOpener ()
         {

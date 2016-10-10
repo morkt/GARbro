@@ -38,7 +38,7 @@ namespace GameRes.Formats.BlueGale
         public override string Description { get { return "BlueGale animation format"; } }
         public override uint     Signature { get { return 0x56706D61; } } // 'ampV'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public AmvOpener ()
         {

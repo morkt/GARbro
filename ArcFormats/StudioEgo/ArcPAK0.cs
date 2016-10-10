@@ -44,7 +44,7 @@ namespace GameRes.Formats.Ego
         public override string Description { get { return "Studio e.go! resource archive"; } }
         public override uint     Signature { get { return 0x304B4150; } } // 'PAK0'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Pak0Opener ()
         {

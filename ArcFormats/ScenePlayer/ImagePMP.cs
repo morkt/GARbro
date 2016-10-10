@@ -37,6 +37,7 @@ namespace GameRes.Formats.ScenePlayer
         public override string         Tag { get { return "PMP"; } }
         public override string Description { get { return "ScenePlayer compressed bitmap format"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override void Write (Stream file, ImageData image)
         {

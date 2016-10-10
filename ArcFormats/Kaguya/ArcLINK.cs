@@ -37,7 +37,7 @@ namespace GameRes.Formats.Kaguya
         public override string Description { get { return "KaGuYa script engine resource archive"; } }
         public override uint     Signature { get { return 0x4B4E494C; } } // 'LINK'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public LinkOpener ()
         {

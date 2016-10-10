@@ -55,7 +55,7 @@ namespace GameRes.Formats.Kogado
         public override string Description { get { return arcStrings.KogadoDescription; } }
         public override uint     Signature { get { return 0x61507948; } } // 'HyPa'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public PakOpener ()
         {

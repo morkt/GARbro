@@ -38,7 +38,7 @@ namespace GameRes.Formats.AliceSoft
         public override string Description { get { return "AliceSoft System 4 resource archive"; } }
         public override uint     Signature { get { return 0x48414641; } } // 'AFAH'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

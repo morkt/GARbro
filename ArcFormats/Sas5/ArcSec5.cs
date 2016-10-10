@@ -39,7 +39,7 @@ namespace GameRes.Formats.Sas5
         public override string Description { get { return "SAS5 engine resource index file"; } }
         public override uint     Signature { get { return 0x35434553; } } // 'SEC5'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

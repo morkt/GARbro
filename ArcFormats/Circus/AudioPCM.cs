@@ -32,7 +32,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Circus
 {
     [Export(typeof(AudioFormat))]
-    public class PcmAudio : WaveAudio
+    public class PcmAudio : AudioFormat
     {
         public override string         Tag { get { return "PCM"; } }
         public override string Description { get { return "Circus PCM audio"; } }

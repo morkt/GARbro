@@ -38,7 +38,7 @@ namespace GameRes.Formats.Ffa
         public override string Description { get { return "FFA System resource archive"; } }
         public override uint     Signature { get { return 0x5954324d; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {

@@ -36,9 +36,10 @@ namespace GameRes
     [Export(typeof(ImageFormat))]
     public class PngFormat : ImageFormat
     {
-        public override string Tag { get { return "PNG"; } }
+        public override string         Tag { get { return "PNG"; } }
         public override string Description { get { return "Portable Network Graphics image"; } }
-        public override uint Signature { get { return 0x474e5089; } }
+        public override uint     Signature { get { return 0x474e5089; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageData Read (Stream file, ImageMetaData info)
         {

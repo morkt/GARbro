@@ -39,7 +39,7 @@ namespace GameRes.Formats.SuperNekoX
         public override string Description { get { return "Super NekoX engine resource archive"; } }
         public override uint     Signature { get { return 0x37637047; } } // 'Gpc7'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public GpcOpener ()
         {

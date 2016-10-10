@@ -40,7 +40,7 @@ namespace GameRes.Formats.X
         public override string Description { get { return "X[iks] resource archive"; } }
         public override uint     Signature { get { return 0x5253504E; } } // 'NPSR'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public static Dictionary<string, byte> KnownKeys = new Dictionary<string, byte>() {
             { "Shikkan ~Hazukashimerareta Karada, Oreta Kokoro~", 0x66 },

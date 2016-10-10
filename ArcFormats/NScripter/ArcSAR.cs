@@ -34,11 +34,11 @@ namespace GameRes.Formats.NScripter
     [Export(typeof(ArchiveFormat))]
     public class SarOpener : ArchiveFormat
     {
-        public override string Tag { get { return "SAR"; } }
+        public override string         Tag { get { return "SAR"; } }
         public override string Description { get { return arcStrings.NSADescription; } }
-        public override uint Signature { get { return 0; } }
-        public override bool IsHierarchic { get { return true; } }
-        public override bool CanCreate { get { return true; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

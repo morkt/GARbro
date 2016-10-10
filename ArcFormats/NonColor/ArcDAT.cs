@@ -90,7 +90,7 @@ namespace GameRes.Formats.NonColor
         public override string Description { get { return "'non color' resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DatOpener ()
         {

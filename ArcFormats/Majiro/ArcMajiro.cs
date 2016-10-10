@@ -43,11 +43,11 @@ namespace GameRes.Formats.Majiro
     [Export(typeof(ArchiveFormat))]
     public class ArcOpener : ArchiveFormat
     {
-        public override string Tag { get { return "MAJIRO"; } }
+        public override string         Tag { get { return "MAJIRO"; } }
         public override string Description { get { return "Majiro game engine resource archive"; } }
-        public override uint Signature { get { return 0x696a614d; } } // 'Maji'
-        public override bool IsHierarchic { get { return false; } }
-        public override bool CanCreate { get { return true; } }
+        public override uint     Signature { get { return 0x696a614d; } } // 'Maji'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return true; } }
 
         public ArcOpener ()
         {

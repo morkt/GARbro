@@ -39,7 +39,7 @@ namespace GameRes.Formats.Astronauts
         public override string Description { get { return "Astronauts resource archive"; } }
         public override uint     Signature { get { return 0x505847; } } // 'GXP'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         static readonly byte[] KnownKey = {
             0x40, 0x21, 0x28, 0x38, 0xA6, 0x6E, 0x43, 0xA5, 0x40, 0x21, 0x28, 0x38, 0xA6, 0x43, 0xA5, 0x64,

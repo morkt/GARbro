@@ -37,6 +37,7 @@ namespace GameRes.Formats.BlackRainbow
         public override string         Tag { get { return "BMZ"; } }
         public override string Description { get { return "Compressed bitmap format"; } }
         public override uint     Signature { get { return 0x33434c5au; } } // 'ZLC3'
+        public override bool      CanWrite { get { return true; } }
 
         public override void Write (Stream file, ImageData image)
         {

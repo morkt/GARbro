@@ -39,7 +39,7 @@ namespace GameRes.Formats.Maika
         public override string Description { get { return "MAIKA resource archive"; } }
         public override uint     Signature { get { return 0x2E324B4D; } } // 'MK2.0'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

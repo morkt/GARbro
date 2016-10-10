@@ -38,7 +38,7 @@ namespace GameRes.Formats.CandySoft
         public override string Description { get { return "Interheart/Candy Soft resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

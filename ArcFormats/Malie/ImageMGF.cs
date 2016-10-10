@@ -37,6 +37,7 @@ namespace GameRes.Formats.Malie
         public override string         Tag { get { return "MGF"; } }
         public override string Description { get { return "Malie engine image format"; } }
         public override uint     Signature { get { return 0x696C614D; } } // 'Mali'
+        public override bool      CanWrite { get { return true; } }
 
         static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
 

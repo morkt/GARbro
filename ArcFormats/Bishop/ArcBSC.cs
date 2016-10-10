@@ -38,7 +38,7 @@ namespace GameRes.Formats.Bishop
         public override string Description { get { return "Bishop composite image archive"; } }
         public override uint     Signature { get { return 0x2D535342; } } // 'BSS-'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public BscOpener ()
         {

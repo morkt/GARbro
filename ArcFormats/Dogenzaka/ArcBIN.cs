@@ -38,7 +38,7 @@ namespace GameRes.Formats.Dogenzaka
         public override string Description { get { return "Dogenzaka Lab audio archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public BinOpener ()
         {
@@ -109,7 +109,7 @@ namespace GameRes.Formats.Dogenzaka
         public override string Description { get { return "Dogenzaka Lab archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public GamedatOpener ()
         {

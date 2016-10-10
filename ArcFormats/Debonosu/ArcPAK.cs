@@ -39,7 +39,7 @@ namespace GameRes.Formats.Debonosu
         public override string Description { get { return "Debonosu Works resource archive"; } }
         public override uint     Signature { get { return 0x004B4150; } } // 'PAK'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

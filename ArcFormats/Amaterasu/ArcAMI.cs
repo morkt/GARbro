@@ -87,11 +87,11 @@ namespace GameRes.Formats.Amaterasu
     [Export(typeof(ArchiveFormat))]
     public class AmiOpener : ArchiveFormat
     {
-        public override string Tag { get { return "AMI"; } }
+        public override string         Tag { get { return "AMI"; } }
         public override string Description { get { return Strings.arcStrings.AMIDescription; } }
-        public override uint Signature { get { return 0x00494d41; } }
-        public override bool IsHierarchic { get { return false; } }
-        public override bool CanCreate { get { return true; } }
+        public override uint     Signature { get { return 0x00494D41; } } // 'AMI'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return true; } }
 
         public AmiOpener ()
         {

@@ -37,7 +37,7 @@ namespace GameRes.Formats.Softpal
         public override string Description { get { return "Archive format used by Softpal subsidiaries"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PacOpener ()
         {
@@ -118,7 +118,7 @@ namespace GameRes.Formats.Softpal
         public override string Description { get { return "Archive format used by Amuse Craft subsidiaries"; } }
         public override uint     Signature { get { return 0x20434150; } } // 'PAC '
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

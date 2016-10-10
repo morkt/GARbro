@@ -36,7 +36,7 @@ namespace GameRes.Formats.Patisserie
         public override string Description { get { return "Patisserie animation resource"; } }
         public override uint     Signature { get { return 0x04574152; } } // 'RAW\x04'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public RawOpener ()
         {

@@ -80,7 +80,7 @@ namespace GameRes.Formats.Dac
         public override string Description { get { return "DAC engine resource archive"; } }
         public override uint     Signature { get { return 0x004b5044; } } // 'DPK'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public static DpkScheme[] KnownSchemes = new DpkScheme[0];
 

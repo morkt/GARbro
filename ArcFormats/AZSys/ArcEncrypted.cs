@@ -172,7 +172,7 @@ namespace GameRes.Formats.AZSys
         public override string Description { get { return "AZ system encrypted resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme>
         {
@@ -358,7 +358,7 @@ namespace GameRes.Formats.AZSys
         public override string Description { get { return "AZ system encrypted resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcIsaacEncryptedOpener ()
         {

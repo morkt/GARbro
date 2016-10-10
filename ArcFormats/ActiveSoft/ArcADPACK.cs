@@ -38,7 +38,7 @@ namespace GameRes.Formats.AdPack
         public override string Description { get { return "A98SYS Engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {
@@ -85,7 +85,7 @@ namespace GameRes.Formats.AdPack
         public override string Description { get { return "Active Soft resource archive"; } }
         public override uint     Signature { get { return 0x41504441; } } // "ADPA"
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Pak32Opener ()
         {

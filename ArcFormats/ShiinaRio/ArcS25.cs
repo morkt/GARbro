@@ -41,7 +41,7 @@ namespace GameRes.Formats.ShiinaRio
         public override string Description { get { return "ShiinaRio engine multi-image"; } }
         public override uint     Signature { get { return 0x00353253; } } // 'S25'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

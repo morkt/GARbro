@@ -57,7 +57,7 @@ namespace GameRes.Formats.CsWare
         public override string Description { get { return "C's ware resource archive"; } }
         public override uint     Signature { get { return 0x53434350; } } // 'PCCS'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

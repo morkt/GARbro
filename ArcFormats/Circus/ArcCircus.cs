@@ -38,7 +38,7 @@ namespace GameRes.Formats.Circus
         public override string Description { get { return "Circus resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DatOpener ()
         {

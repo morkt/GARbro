@@ -39,7 +39,7 @@ namespace GameRes.Formats.Silky
         public override string Description { get { return "Silky's engine resource archive"; } }
         public override uint     Signature { get { return 0x534c4649; } } // 'IFLS'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

@@ -92,6 +92,7 @@ namespace GameRes.Formats
         public override string         Tag { get { return "MP3"; } }
         public override string Description { get { return "MPEG Layer 3 audio format"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override SoundInput TryOpen (Stream file)
         {

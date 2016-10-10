@@ -38,7 +38,7 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf video resources archive"; } }
         public override uint     Signature { get { return 0x30306D61; } } // 'am00'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public AmOpener ()
         {

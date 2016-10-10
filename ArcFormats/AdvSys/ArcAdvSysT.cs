@@ -38,7 +38,7 @@ namespace GameRes.Formats.AdvSys
         public override string Description { get { return "AdvSys_T engine resource archive"; } }
         public override uint     Signature { get { return 0x5957464D; } } // 'MFWY'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public FpkOpener ()
         {

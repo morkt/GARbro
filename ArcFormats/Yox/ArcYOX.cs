@@ -39,7 +39,7 @@ namespace GameRes.Formats.Yox
         public override string Description { get { return "YOX ADV+++ engine resource archive"; } }
         public override uint     Signature { get { return 0x584F59; } } // 'YOX'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DatOpener ()
         {

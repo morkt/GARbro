@@ -47,6 +47,7 @@ namespace GameRes.Formats.Unknown
         public override string         Tag { get { return "EGN"; } }
         public override string Description { get { return "LZSS-compressed BMP image"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

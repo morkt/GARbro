@@ -58,7 +58,7 @@ namespace GameRes.Formats.RealLive
         public override string Description { get { return "RealLive engine multi-frame image"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public G00Opener ()
         {

@@ -38,7 +38,7 @@ namespace GameRes.Formats.Crowd
         public override string Description { get { return "Crowd engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -95,7 +95,7 @@ namespace GameRes.Formats.Crowd
         public override string Description { get { return "Crowd engine audio archive"; } }
         public override uint     Signature { get { return 0x56574b50; } } // 'PKWV'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PkwOpener ()
         {

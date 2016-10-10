@@ -42,7 +42,7 @@ namespace GameRes.Formats.Ivory
         public override string Description { get { return "Ivory resource archive"; } }
         public override uint     Signature { get { return 0x204B5066; } } // 'fPK '
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

@@ -44,7 +44,7 @@ namespace GameRes.Formats.FC01
         public override string Description { get { return "F&C Co. engine resource archive"; } }
         public override uint     Signature { get { return 0x0047524D; } } // 'MRG'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public static readonly Tuple<byte[], byte[]> KnownKey = Tuple.Create (
             // Konata yori Kanata made
@@ -180,7 +180,7 @@ namespace GameRes.Formats.FC01
         public override string Description { get { return "Overture engine resource archive"; } }
         public override uint     Signature { get { return 0x0047524D; } } // 'MRG'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Mrg2Opener ()
         {

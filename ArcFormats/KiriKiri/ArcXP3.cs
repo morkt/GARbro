@@ -83,7 +83,7 @@ namespace GameRes.Formats.KiriKiri
         public override string Description { get { return arcStrings.XP3Description; } }
         public override uint     Signature { get { return 0x0d335058; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public Xp3Opener ()
         {

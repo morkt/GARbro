@@ -39,7 +39,7 @@ namespace GameRes.Formats.Eushully
         public override string Description { get { return "Eushully resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         static string[] IndexNames = new string[] { "sys4ini.bin", "sys3ini.bin" };
 

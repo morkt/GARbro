@@ -41,7 +41,7 @@ namespace GameRes.Formats.NScripter
         public override string Description { get { return arcStrings.NSADescription; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
 

@@ -39,7 +39,7 @@ namespace GameRes.Formats.Ffa
         public override string Description { get { return "FFA System resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DatOpener ()
         {
@@ -105,7 +105,7 @@ namespace GameRes.Formats.Ffa
         public override string Description { get { return "FFA System resource archive v2"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public JDatOpener ()
         {

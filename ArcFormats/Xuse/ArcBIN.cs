@@ -37,7 +37,7 @@ namespace GameRes.Formats.Xuse
         public override string Description { get { return "Xuse audio archive"; } }
         public override uint     Signature { get { return 1; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public BinOpener ()
         {

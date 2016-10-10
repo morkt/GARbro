@@ -62,7 +62,7 @@ namespace GameRes.Formats.NeXAS
         public override string Description { get { return "NeXAS engine resource archive"; } }
         public override uint     Signature { get { return 0x00434150; } } // 'PAC\000'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PacOpener ()
         {

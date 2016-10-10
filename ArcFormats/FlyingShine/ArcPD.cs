@@ -55,7 +55,7 @@ namespace GameRes.Formats.Fs
         public override string Description { get { return arcStrings.PDDescription; } }
         public override uint     Signature { get { return 0x6b636150; } } // Pack
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -227,7 +227,7 @@ namespace GameRes.Formats.Fs
         public override string Description { get { return "Flying Shine resource archive version 2"; } }
         public override uint     Signature { get { return 0x69796c46; } } // 'Flyi'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public FlyingShinePdOpener ()
         {

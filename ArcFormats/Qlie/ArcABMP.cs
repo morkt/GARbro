@@ -40,7 +40,7 @@ namespace GameRes.Formats.Qlie
         public override string Description { get { return "QLIE engine multi-frame archive"; } }
         public override uint     Signature { get { return 0x706D6261; } } // 'abmp'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public AbmpOpener ()
         {
@@ -190,7 +190,7 @@ namespace GameRes.Formats.Qlie
         public override string Description { get { return "QLIE engine multi-frame image archive"; } }
         public override uint     Signature { get { return 0x504D4241; } } // 'ABMP'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

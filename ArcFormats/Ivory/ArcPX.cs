@@ -37,7 +37,7 @@ namespace GameRes.Formats.Ivory
         public override string Description { get { return "Ivory audio archive"; } }
         public override uint     Signature { get { return 0x20585066; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

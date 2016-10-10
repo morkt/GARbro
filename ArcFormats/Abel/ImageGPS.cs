@@ -45,6 +45,7 @@ namespace GameRes.Formats.Abel
         public override string         Tag { get { return "GPS"; } }
         public override string Description { get { return "ADVEngine compressed bitmap"; } }
         public override uint     Signature { get { return 0x535047; } } // 'GPS'
+        public override bool      CanWrite { get { return false; } }
 
         public GpsFormat ()
         {

@@ -40,7 +40,7 @@ namespace GameRes.Formats.Ego
         public override string Description { get { return "Studio e.go! engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public DatOpener ()
         {

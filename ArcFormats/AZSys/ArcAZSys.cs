@@ -63,7 +63,7 @@ namespace GameRes.Formats.AZSys
         public override string Description { get { return "AZ system resource archive"; } }
         public override uint     Signature { get { return 0x1a435241; } } // 'ARC\x1a'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {

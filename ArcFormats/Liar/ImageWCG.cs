@@ -40,6 +40,7 @@ namespace GameRes.Formats.Liar
         public override string         Tag { get { return "WCG"; } }
         public override string Description { get { return "Liar-soft proprietary image format"; } }
         public override uint     Signature { get { return 0x02714757; } }
+        public override bool      CanWrite { get { return true; } }
 
         public WcgFormat ()
         {

@@ -39,7 +39,7 @@ namespace GameRes.Formats.DenSdk
         public override string Description { get { return "DenSDK resource archive"; } }
         public override uint     Signature { get { return 0x31464144; } } // 'DAF1'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Daf1Opener ()
         {
@@ -93,7 +93,7 @@ namespace GameRes.Formats.DenSdk
         public override string Description { get { return "DenSDK resource archive"; } }
         public override uint     Signature { get { return 0x32464144; } } // 'DAF2'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

@@ -38,7 +38,7 @@ namespace GameRes.Formats.Xuse
         public override string Description { get { return "Xuse resource archive"; } }
         public override uint     Signature { get { return 0x43524158; } } // 'XARC'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public XarcOpener ()
         {

@@ -94,7 +94,7 @@ namespace GameRes.Formats.Purple
         public override string Description { get { return "Purple Software resource archive"; } }
         public override uint     Signature { get { return 0x355A5043; } } // 'CPZ5'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public CpzOpener ()
         {

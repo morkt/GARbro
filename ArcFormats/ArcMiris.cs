@@ -40,7 +40,7 @@ namespace GameRes.Formats.Miris
         public override string Description { get { return "Studio Miris resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DatOpener ()
         {
@@ -93,7 +93,7 @@ namespace GameRes.Formats.Miris
         public override string Description { get { return "Studio Miris resource archive"; } }
         public override uint     Signature { get { return 0x4B4E4C47; } } // 'GLNK'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public GlnkOpener ()
         {

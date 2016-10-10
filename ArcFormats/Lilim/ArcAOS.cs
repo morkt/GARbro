@@ -44,7 +44,7 @@ namespace GameRes.Formats.Lilim
         public override string Description { get { return "LiLiM/Le.Chocolat engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         static readonly byte[] IndexLink = Enumerable.Repeat<byte> (0xff, 0x10).ToArray();
         static readonly byte[] IndexEnd  = Enumerable.Repeat<byte> (0, 0x10).ToArray();
@@ -120,7 +120,7 @@ namespace GameRes.Formats.Lilim
         public override string Description { get { return "LiLiM resource archive version 2"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Aos2Opener ()
         {

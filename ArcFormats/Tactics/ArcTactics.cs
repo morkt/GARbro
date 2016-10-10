@@ -63,7 +63,7 @@ namespace GameRes.Formats.Tactics
         public override string Description { get { return "Tactics archive file"; } }
         public override uint     Signature { get { return 0x54434154; } } // 'TACT'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {
@@ -332,7 +332,7 @@ namespace GameRes.Formats.Tactics
     public class Arc2Opener : ArcOpener
     {
         public override string         Tag { get { return "ARC/Tactics/2"; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Arc2Opener ()
         {

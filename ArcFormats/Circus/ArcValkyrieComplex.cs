@@ -50,7 +50,7 @@ namespace GameRes.Formats.Circus
         public override string Description { get { return "Valkyrie Complex resource archive"; } }
         public override uint     Signature { get { return 0x62827582; } } // 'ＶＣ'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         static readonly byte[] TrialSignature  = Encodings.cp932.GetBytes ("ＶＣ体験版");
         static readonly byte[] RetailSignature = Encodings.cp932.GetBytes ("ＶＣ製品版");
@@ -286,7 +286,7 @@ namespace GameRes.Formats.Circus
         public override string Description { get { return "Valkyrie Complex resource archive"; } }
         public override uint     Signature { get { return 1; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public VcPacOpener ()
         {

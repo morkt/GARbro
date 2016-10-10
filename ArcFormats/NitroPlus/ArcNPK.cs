@@ -86,7 +86,7 @@ namespace GameRes.Formats.NitroPlus
         public override string Description { get { return "Mware engine resource archive"; } }
         public override uint     Signature { get { return 0x324B504E; } } // 'NPK2'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         public static Dictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
 
@@ -134,14 +134,14 @@ namespace GameRes.Formats.NitroPlus
 
         List<Entry> ReadIndex (BinaryReader index, int count, long max_offset)
         {
-            var name_buffer = new byte[0x80];
+            var name_buffer = new byte[0x104];
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
                 index.ReadByte();
                 int name_length = index.ReadUInt16();
-                if (name_length > name_buffer.Length)
-                    name_buffer = new byte[name_length];
+                if (0 == name_length || name_length > name_buffer.Length)
+                    return null;
                 index.Read (name_buffer, 0, name_length);
                 var name = Encodings.cp932.GetString (name_buffer, 0, name_length);
                 var entry = FormatCatalog.Instance.Create<NpkEntry> (name);

@@ -39,7 +39,7 @@ namespace GameRes.Formats.NekoSDK
         public override string Description { get { return "NekoSDK engine resource archive"; } }
         public override uint     Signature { get { return 0x4F4B454E; } } // 'NEKOPACK'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

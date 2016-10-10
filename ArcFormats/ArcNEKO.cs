@@ -231,7 +231,7 @@ namespace GameRes.Formats.Neko
         public override string Description { get { return "NekoPack resource archive"; } }
         public override uint     Signature { get { return 0x4f4b454e; } } // "NEKO"
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Pak1Opener ()
         {
@@ -407,7 +407,7 @@ namespace GameRes.Formats.Neko
         public override string Description { get { return "NekoPack resource archive"; } }
         public override uint     Signature { get { return 0x4F4B454E; } } // "NEKO"
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Pak2Opener ()
         {

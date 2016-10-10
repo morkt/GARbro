@@ -38,7 +38,7 @@ namespace GameRes.Formats.Xuse
         public override string Description { get { return "Xuse/Eternal resource archive"; } }
         public override uint     Signature { get { return 0x4F4B494D; } } // 'MIKO'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {
@@ -125,7 +125,7 @@ namespace GameRes.Formats.Xuse
         public override string Description { get { return "Xuse/Eternal resource archive"; } }
         public override uint     Signature { get { return 0x4F544F4B; } } // 'KOTO'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public KotoriOpener ()
         {

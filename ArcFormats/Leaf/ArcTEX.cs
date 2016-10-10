@@ -37,7 +37,7 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf textures archive"; } }
         public override uint     Signature { get { return 0x20584554; } } // 'TEX '
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public TexOpener ()
         {

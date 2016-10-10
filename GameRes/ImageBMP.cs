@@ -51,6 +51,7 @@ namespace GameRes
         public override string         Tag { get { return "BMP"; } }
         public override string Description { get { return "Windows device independent bitmap"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return true; } }
 
         #pragma warning disable 649
         [ImportMany(typeof(IBmpExtension))]

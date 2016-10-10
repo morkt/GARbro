@@ -67,7 +67,7 @@ namespace GameRes.Formats.Tama
         public override string Description { get { return "TamaSoft ADV system resource archive"; } }
         public override uint     Signature { get { return 0x204B5045; } } // 'EPK '
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

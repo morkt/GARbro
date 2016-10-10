@@ -39,7 +39,7 @@ namespace GameRes.Formats.LiveMaker
         public override string Description { get { return "LiveMaker resource archive"; } }
         public override uint     Signature { get { return 0x666676; } } // 'vff'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public VffOpener ()
         {

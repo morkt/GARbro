@@ -37,7 +37,7 @@ namespace GameRes.Formats.Irrlicht
         public override string Description { get { return "Irrlicht engine audio archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PackOpener ()
         {

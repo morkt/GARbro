@@ -39,7 +39,7 @@ namespace GameRes.Formats.Eagls
         public override string Description { get { return "EAGLS engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

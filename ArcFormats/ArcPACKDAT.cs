@@ -42,7 +42,7 @@ namespace GameRes.Formats.SystemEpsylon
         public override string Description { get { return "SYSTEM-ε resource archive"; } }
         public override uint     Signature { get { return 0x4B434150; } } // "PACK"
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {

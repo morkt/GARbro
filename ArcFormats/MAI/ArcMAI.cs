@@ -39,7 +39,7 @@ namespace GameRes.Formats.MAI
         public override string Description { get { return "MAI resource archive"; } }
         public override uint     Signature { get { return 0x0a49414d; } } // 'MAI\x0a'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {

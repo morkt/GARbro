@@ -35,7 +35,7 @@ namespace GameRes.Formats.Gpk2
         public override string Description { get { return "GPK2 resource archive"; } }
         public override uint     Signature { get { return 0x324B5047; } } // 'GPK2'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public GpkOpener ()
         {

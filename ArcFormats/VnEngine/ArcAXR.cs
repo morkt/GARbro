@@ -49,7 +49,7 @@ namespace GameRes.Formats.VnEngine
         public override string Description { get { return "GEM/vnengine resource archive"; } }
         public override uint     Signature { get { return 0x65525841; } } // 'AXRe'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

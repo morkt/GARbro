@@ -35,6 +35,7 @@ namespace GameRes.Formats.Slg
         public override string         Tag { get { return "TIG"; } }
         public override string Description { get { return "SLG system encrypted PNG image"; } }
         public override uint     Signature { get { return 0x7CF3C28B; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {

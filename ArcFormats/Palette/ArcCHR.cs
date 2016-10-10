@@ -54,7 +54,7 @@ namespace GameRes.Formats.Palette
         public override string Description { get { return "Palette multi-frame PNG archive"; } }
         public override uint     Signature { get { return 0x72616863; } } // 'char'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
         
         public ChrOpener ()
         {

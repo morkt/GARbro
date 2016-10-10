@@ -44,6 +44,7 @@ namespace GameRes.Formats.Dogenzaka
         public override string         Tag { get { return "PNG/RC4"; } }
         public override string Description { get { return "RC4 encrypted PNG image"; } }
         public override uint     Signature { get { return 0xC4F7F61A; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Rc4PngFormat ()
         {

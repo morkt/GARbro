@@ -36,11 +36,11 @@ namespace GameRes.Formats.Liar
     [Export(typeof(ArchiveFormat))]
     public class XflOpener : ArchiveFormat
     {
-        public override string Tag { get { return "XFL"; } }
+        public override string         Tag { get { return "XFL"; } }
         public override string Description { get { return Strings.arcStrings.XFLDescription; } }
-        public override uint Signature { get { return 0x0001424c; } }
-        public override bool IsHierarchic { get { return false; } }
-        public override bool CanCreate { get { return true; } }
+        public override uint     Signature { get { return 0x0001424c; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

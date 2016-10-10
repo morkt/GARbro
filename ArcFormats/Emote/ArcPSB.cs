@@ -56,7 +56,7 @@ namespace GameRes.Formats.Emote
         public override string Description { get { return "E-mote engine texture container"; } }
         public override uint     Signature { get { return 0x425350; } } // 'PSB'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         static uint[] KnownKeys = new uint[] { 970396437u };
 

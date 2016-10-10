@@ -39,7 +39,7 @@ namespace GameRes.Formats.Softpal
         public override string Description { get { return "Softpal engine resource archive"; } }
         public override uint     Signature { get { return 0x53464156; } } // 'VAFS'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public VafsOpener ()
         {

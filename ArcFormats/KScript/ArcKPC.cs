@@ -36,7 +36,7 @@ namespace GameRes.Formats.KScript
         public override string Description { get { return "KScript engine resource archive"; } }
         public override uint     Signature { get { return 0x50524353; } } // 'SCRPACK1'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

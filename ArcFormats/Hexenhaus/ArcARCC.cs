@@ -37,7 +37,7 @@ namespace GameRes.Formats.Hexenhaus
         public override string Description { get { return "Hexenhaus resource archive"; } }
         public override uint     Signature { get { return 0x43435241; } } // 'ARCC'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
         {

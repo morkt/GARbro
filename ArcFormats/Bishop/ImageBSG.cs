@@ -90,7 +90,7 @@ namespace GameRes.Formats.Bishop
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new System.NotImplementedException ("xxxFormat.Write not implemented");
+            throw new System.NotImplementedException ("BsgFormat.Write not implemented");
         }
     }
 

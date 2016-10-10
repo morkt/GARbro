@@ -38,7 +38,7 @@ namespace GameRes.Formats.ISM
         public override string Description { get { return "ISM engine resource archive"; } }
         public override uint     Signature { get { return 0x204d5349; } } // 'ISM '
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

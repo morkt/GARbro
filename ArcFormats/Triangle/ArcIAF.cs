@@ -37,7 +37,7 @@ namespace GameRes.Formats.Triangle
         public override string Description { get { return "route2 engine multi-frame image"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public IafOpener ()
         {

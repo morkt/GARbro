@@ -102,7 +102,7 @@ namespace GameRes.Formats.YuRis
         public override string Description { get { return arcStrings.YPFDescription; } }
         public override uint     Signature { get { return 0x00465059; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return true; } }
+        public override bool      CanWrite { get { return true; } }
 
         static public Dictionary<string, YpfScheme> KnownSchemes = new Dictionary<string, YpfScheme>();
 

@@ -50,7 +50,7 @@ namespace GameRes.Formats.FVP
         public override string Description { get { return "Favorite View Point multi-frame image"; } }
         public override uint     Signature { get { return 0x31637A68; } } // 'HZC1'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public HzcOpener ()
         {

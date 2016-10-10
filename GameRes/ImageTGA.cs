@@ -47,9 +47,10 @@ namespace GameRes
     [Export(typeof(ImageFormat))]
     public class TgaFormat : ImageFormat
     {
-        public override string Tag { get { return "TGA"; } }
+        public override string         Tag { get { return "TGA"; } }
         public override string Description { get { return "Truevision TGA image"; } }
-        public override uint Signature { get { return 0; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageData Read (Stream stream, ImageMetaData metadata)
         {

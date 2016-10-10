@@ -12,7 +12,7 @@
         <StackPanel Orientation="Horizontal" Margin="20,10,20,0">
             <Label Content="{x:Static s:guiStrings.LabelDestinationFormat}" Target="{Binding ElementName=ImageConversionFormat}" HorizontalAlignment="Left" Padding="0,0,10,0" VerticalAlignment="Center"/>
             <ComboBox Name="ImageConversionFormat" DisplayMemberPath="Tag" Width="60" HorizontalAlignment="Left"
-                      ItemsSource="{Binding Source={x:Static g:FormatCatalog.Instance}, Path=ImageFormats, Mode=OneWay}" SelectedValuePath="Tag"
+                      ItemsSource="{Binding}" SelectedValuePath="Tag"
                       SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=appLastImageFormat, Mode=TwoWay}"/>
         </StackPanel>
         <TextBlock Text="{x:Static s:guiStrings.TextAudioConversion}" Margin="20,10,20,0"/>

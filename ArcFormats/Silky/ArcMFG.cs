@@ -38,7 +38,7 @@ namespace GameRes.Formats.Silky
         public override string Description { get { return "Silky's engine resource archive"; } }
         public override uint     Signature { get { return 0x46504c41; } } // 'ALPF'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public MfgOpener ()
         {

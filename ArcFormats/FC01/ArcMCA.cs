@@ -50,7 +50,7 @@ namespace GameRes.Formats.FC01
         public override string Description { get { return "F&C Co. multi-frame image format"; } }
         public override uint     Signature { get { return 0x2041434D; } } // 'MCA'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {

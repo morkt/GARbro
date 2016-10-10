@@ -40,7 +40,7 @@ namespace GameRes.Formats.SHSystem
         public override string Description { get { return "SH System engine resource archive"; } }
         public override uint     Signature { get { return 0x346D6948; } } // 'Him4'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Him4Opener ()
         {
@@ -141,7 +141,7 @@ namespace GameRes.Formats.SHSystem
         public override string Description { get { return "SH System engine resource archive"; } }
         public override uint     Signature { get { return 0x356D6948; } } // 'Him5'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Him5Opener ()
         {

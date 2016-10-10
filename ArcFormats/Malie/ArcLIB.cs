@@ -40,7 +40,7 @@ namespace GameRes.Formats.Malie
         public override string Description { get { return "Malie engine resource archive"; } }
         public override uint     Signature { get { return 0x0042494C; } } // 'LIB'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -130,7 +130,7 @@ namespace GameRes.Formats.Malie
         public override string Description { get { return "Malie engine encrypted archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public DatOpener ()
         {

@@ -45,7 +45,7 @@ namespace GameRes.Formats.Will
         public override string Description { get { return "Will Co. multi-frame image format"; } }
         public override uint     Signature { get { return 0x46504957u; } } // 'WIPF'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public WipOpener ()
         {

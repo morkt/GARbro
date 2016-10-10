@@ -40,7 +40,7 @@ namespace GameRes.Formats.Cherry
         public override string Description { get { return "Cherry Soft PACK resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {
@@ -129,7 +129,7 @@ namespace GameRes.Formats.Cherry
         public override string Description { get { return "Cherry Soft PACK resource archive v2"; } }
         public override uint     Signature { get { return 0x52454843; } } // 'CHER'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Pak2Opener ()
         {

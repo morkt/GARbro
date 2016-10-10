@@ -43,7 +43,7 @@ namespace GameRes.Formats.CaramelBox
         public override string Description { get { return "Caramel BOX resource archive"; } }
         public override uint     Signature { get { return 0x34435241; } } // 'ARC4'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public Arc4Opener ()
         {

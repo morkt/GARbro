@@ -37,7 +37,7 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf resource archive"; } }
         public override uint     Signature { get { return 0x43414C; } } // 'LAC'
         public override bool  IsHierarchic { get { return true; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -86,7 +86,7 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf resource archive"; } }
         public override uint     Signature { get { return 0x43414C; } } // 'LAC'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
         public PakOpener ()
         {
