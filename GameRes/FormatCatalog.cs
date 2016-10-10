@@ -214,10 +214,12 @@ namespace GameRes
         /// <returns>Game title, or null if no match was found.</returns>
         public string LookupGame (string arc_name, string pattern = "*.exe")
         {
+            string title;
+            if (m_game_map.TryGetValue (Path.GetFileName (arc_name), out title))
+                return title;
             pattern = VFS.CombinePath (VFS.GetDirectoryName (arc_name), pattern);
             foreach (var file in VFS.GetFiles (pattern).Select (e => Path.GetFileName (e.Name)))
             {
-                string title;
                 if (m_game_map.TryGetValue (file, out title))
                     return title;
             }
