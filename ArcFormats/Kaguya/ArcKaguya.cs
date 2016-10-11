@@ -42,7 +42,7 @@ namespace GameRes.Formats.Kaguya
         public override string         Tag { get { return "ARI"; } }
         public override string Description { get { return "KaGuYa script engine resource archive"; } }
         public override uint     Signature { get { return 0x314c4657; } } // 'WFL1'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public ArcOpener ()
@@ -173,7 +173,7 @@ namespace GameRes.Formats.Kaguya
             if (name_len > m_name_buf.Length)
                 m_name_buf = new byte[name_len];
             file.View.Read (offset, m_name_buf, 0, (uint)name_len);
-            return DecryptName (m_name_buf, name_len);
+            return DecryptName (m_name_buf, name_len).TrimStart ('\\');
         }
 
         string DecryptName (byte[] name_buf, int name_len)
