@@ -42,7 +42,7 @@ namespace GameRes.Formats.Kaguya
 
         public ApFormat ()
         {
-            Extensions = new string[] { "bg_", "cg_", "cgw", "sp_", "aps", "alp" };
+            Extensions = new string[] { "bg_", "cg_", "cgw", "sp_", "aps", "alp", "prs" };
         }
 
         public override ImageMetaData ReadMetaData (Stream stream)
