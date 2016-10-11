@@ -798,19 +798,9 @@ namespace GARbro.GUI
 
         private void OpenFile (string filename)
         {
-            if (filename == CurrentPath || string.IsNullOrEmpty (filename))
-                return;
             try
             {
-                if (File.Exists (filename))
-                    VFS.FullPath = new string[] { filename, "" };
-                else
-                    VFS.FullPath = new string[] { filename };
-                var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
-                PushViewModel (vm);
-                if (null != VFS.CurrentArchive)
-                    SetStatusText (VFS.CurrentArchive.Description);
-                lv_SelectItem (0);
+                OpenFileOrDir (filename);
             }
             catch (OperationCanceledException X)
             {
@@ -820,6 +810,21 @@ namespace GARbro.GUI
             {
                 PopupError (string.Format("{0}:\n{1}", filename, X.Message), guiStrings.MsgErrorOpening);
             }
+        }
+
+        private void OpenFileOrDir (string filename)
+        {
+            if (filename == CurrentPath || string.IsNullOrEmpty (filename))
+                return;
+            if (File.Exists (filename))
+                VFS.FullPath = new string[] { filename, "" };
+            else
+                VFS.FullPath = new string[] { filename };
+            var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
+            PushViewModel (vm);
+            if (null != VFS.CurrentArchive)
+                SetStatusText (VFS.CurrentArchive.Description);
+            lv_SelectItem (0);
         }
 
         private void OpenRecentExec (object control, ExecutedRoutedEventArgs e)
@@ -1335,6 +1340,36 @@ namespace GARbro.GUI
                 item.Visibility = Visibility.Collapsed;
             else
                 item.Visibility = Visibility.Visible;
+        }
+
+        private void OnDropEvent (object sender, DragEventArgs e)
+        {
+            try
+            {
+                if (!e.Data.GetDataPresent (DataFormats.FileDrop))
+                    return;
+                var files = (string[])e.Data.GetData (DataFormats.FileDrop);
+                if (!files.Any())
+                    return;
+                var filename = files.First();
+                try
+                {
+                    OpenFileOrDir (filename);
+                }
+                catch (Exception X)
+                {
+                    VFS.FullPath = new string[] { Path.GetDirectoryName (filename) };
+                    var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
+                    PushViewModel (vm);
+                    filename = Path.GetFileName (filename);
+                    lv_SelectItem (filename);
+                    SetStatusText (string.Format("{0}: {1}", filename, X.Message));
+                }
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine (X.Message, "Drop event failed");
+            }
         }
     }
 

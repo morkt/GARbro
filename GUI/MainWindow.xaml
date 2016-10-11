@@ -8,6 +8,7 @@
         Title="GARbro" MinHeight="250" ResizeMode="CanResizeWithGrip"
         Loaded="WindowLoaded"
         KeyDown="WindowKeyDown"
+        AllowDrop="True" Drop="OnDropEvent"
         Top="{Binding Source={x:Static p:Settings.Default}, Path=winTop, Mode=TwoWay}"
         Left="{Binding Source={x:Static p:Settings.Default}, Path=winLeft, Mode=TwoWay}"
         Height="{Binding Source={x:Static p:Settings.Default}, Path=winHeight, Mode=TwoWay}"
