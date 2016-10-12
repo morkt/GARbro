@@ -37,6 +37,7 @@ namespace GameRes.Formats.Circus
     internal class CrxMetaData : ImageMetaData
     {
         public int Compression;
+        public int CompressionFlags;
         public int Colors;
         public int Mode;
     }
@@ -53,6 +54,9 @@ namespace GameRes.Formats.Circus
             var header = new byte[0x14];
             if (header.Length != stream.Read (header, 0, header.Length))
                 return null;
+            int compression = LittleEndian.ToUInt16 (header, 0xC);
+            if (compression < 1 || compression > 3)
+                return null;
             int depth = LittleEndian.ToInt16 (header, 0x10);
             var info = new CrxMetaData
             {
@@ -61,12 +65,11 @@ namespace GameRes.Formats.Circus
                 OffsetX = LittleEndian.ToInt16 (header, 4),
                 OffsetY = LittleEndian.ToInt16 (header, 6),
                 BPP = 0 == depth ? 24 : 1 == depth ? 32 : 8,
-                Compression = LittleEndian.ToUInt16 (header, 0xC),
+                Compression = compression,
+                CompressionFlags = LittleEndian.ToUInt16 (header, 0xE),
                 Colors = depth,
                 Mode = LittleEndian.ToUInt16 (header, 0x12),
             };
-            if (info.Compression != 1 && info.Compression != 2)
-                return null;
             return info;
         }
 
@@ -86,13 +89,14 @@ namespace GameRes.Formats.Circus
 
         internal sealed class Reader : IDisposable
         {
-            Stream          m_input;
+            BinaryReader    m_input;
             byte[]          m_output;
             int             m_width;
             int             m_height;
             int             m_stride;
             int             m_bpp;
             int             m_compression;
+            int             m_flags;
             int             m_mode;
 
             public byte[]           Data { get { return m_output; } }
@@ -106,6 +110,7 @@ namespace GameRes.Formats.Circus
                 m_height = (int)info.Height;
                 m_bpp = info.BPP;
                 m_compression = info.Compression;
+                m_flags = info.CompressionFlags;
                 m_mode = info.Mode;
                 switch (m_bpp)
                 {
@@ -116,33 +121,49 @@ namespace GameRes.Formats.Circus
                 }
                 m_stride = (m_width * m_bpp / 8 + 3) & ~3;
                 m_output = new byte[m_height*m_stride];
-                m_input = input;
-                m_input.Position = 0x14;
+                m_input = new ArcView.Reader (input);
+                input.Position = 0x14;
                 if (8 == m_bpp)
                     ReadPalette (info.Colors);
             }
 
             private void ReadPalette (int colors)
             {
-                int palette_size = colors * 3;
+                int color_size = 0x102 == colors ? 4 : 3;
+                if (colors > 0x100)
+                {
+                    colors = 0x100;
+                }
+                int palette_size = colors * color_size;
                 var palette_data = new byte[palette_size];
                 if (palette_size != m_input.Read (palette_data, 0, palette_size))
                     throw new InvalidFormatException();
                 var palette = new Color[colors];
+                int color_pos = 0;
                 for (int i = 0; i < palette.Length; ++i)
                 {
-                    byte r = palette_data[i*3];
-                    byte g = palette_data[i*3+1];
-                    byte b = palette_data[i*3+2];
+                    byte r = palette_data[color_pos];
+                    byte g = palette_data[color_pos+1];
+                    byte b = palette_data[color_pos+2];
                     if (0xff == b && 0 == g && 0xff == r)
                         g = 0xff;
                     palette[i] = Color.FromRgb (r, g, b);
+                    color_pos += color_size;
                 }
                 Palette = new BitmapPalette (palette);
             }
 
             public void Unpack ()
             {
+                if (m_compression >= 3)
+                {
+                    int count = m_input.ReadInt32();
+                    m_input.BaseStream.Seek (count * 0x10, SeekOrigin.Current);
+                }
+                if (0 != (m_flags & 0x10))
+                {
+                    m_input.ReadInt32(); // compressed_size
+                }
                 if (1 == m_compression)
                     UnpackV1();
                 else
@@ -239,61 +260,58 @@ namespace GameRes.Formats.Circus
 
             private void UnpackV1 ()
             {
-                using (var src = new ArcView.Reader (m_input))
+                byte[] window = new byte[0x10000];
+                int flag = 0;
+                int win_pos = 0;
+                int dst = 0;
+                while (dst < m_output.Length)
                 {
-                    byte[] window = new byte[0x10000];
-                    int flag = 0;
-                    int win_pos = 0;
-                    int dst = 0;
-                    while (dst < m_output.Length)
-                    {
-                        flag >>= 1;
-                        if (0 == (flag & 0x100))
-                            flag = src.ReadByte() | 0xff00;
+                    flag >>= 1;
+                    if (0 == (flag & 0x100))
+                        flag = m_input.ReadByte() | 0xff00;
 
-                        if (0 != (flag & 1))
+                    if (0 != (flag & 1))
+                    {
+                        byte dat = m_input.ReadByte();
+                        window[win_pos++] = dat;
+                        win_pos &= 0xffff;
+                        m_output[dst++] = dat;
+                    }
+                    else
+                    {
+                        byte control = m_input.ReadByte();
+                        int count, offset;
+
+                        if (control >= 0xc0)
                         {
-                            byte dat = src.ReadByte();
-                            window[win_pos++] = dat;
-                            win_pos &= 0xffff;
-                            m_output[dst++] = dat;
+                            offset = ((control & 3) << 8) | m_input.ReadByte();
+                            count = 4 + ((control >> 2) & 0xf);
+                        }
+                        else if (0 != (control & 0x80))
+                        {
+                            offset = control & 0x1f;
+                            count = 2 + ((control >> 5) & 3);
+                            if (0 == offset)
+                                offset = m_input.ReadByte();
+                        }
+                        else if (0x7f == control)
+                        {
+                            count = 2 + m_input.ReadUInt16();
+                            offset = m_input.ReadUInt16();
                         }
                         else
                         {
-                            byte control = src.ReadByte();
-                            int count, offset;
-
-                            if (control >= 0xc0)
-                            {
-                                offset = ((control & 3) << 8) | src.ReadByte();
-                                count = 4 + ((control >> 2) & 0xf);
-                            }
-                            else if (0 != (control & 0x80))
-                            {
-                                offset = control & 0x1f;
-                                count = 2 + ((control >> 5) & 3);
-                                if (0 == offset)
-                                    offset = src.ReadByte();
-                            }
-                            else if (0x7f == control)
-                            {
-                                count = 2 + src.ReadUInt16();
-                                offset = src.ReadUInt16();
-                            }
-                            else
-                            {
-                                offset = src.ReadUInt16();
-                                count = control + 4;
-                            }
-                            offset = win_pos - offset;
-                            for (int k = 0; k < count && dst < m_output.Length; k++)
-                            {
-                                offset &= 0xffff;
-                                byte dat = window[offset++];
-                                window[win_pos++] = dat;
-                                win_pos &= 0xffff;
-                                m_output[dst++] = dat;
-                            }
+                            offset = m_input.ReadUInt16();
+                            count = control + 4;
+                        }
+                        offset = win_pos - offset;
+                        for (int k = 0; k < count && dst < m_output.Length; k++)
+                        {
+                            offset &= 0xffff;
+                            byte dat = window[offset++];
+                            window[win_pos++] = dat;
+                            win_pos &= 0xffff;
+                            m_output[dst++] = dat;
                         }
                     }
                 }
@@ -303,7 +321,7 @@ namespace GameRes.Formats.Circus
             {
                 int pixel_size = m_bpp / 8;
                 int src_stride = m_width * pixel_size;
-                using (var zlib = new ZLibStream (m_input, CompressionMode.Decompress, true))
+                using (var zlib = new ZLibStream (m_input.BaseStream, CompressionMode.Decompress, true))
                 using (var src = new BinaryReader (zlib))
                 {
                     if (m_bpp >= 24)
@@ -388,6 +406,7 @@ namespace GameRes.Formats.Circus
             {
                 if (!m_disposed)
                 {
+                    m_input.Dispose();
                     m_disposed = true;
                 }
                 GC.SuppressFinalize (this);
