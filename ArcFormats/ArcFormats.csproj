@@ -107,6 +107,9 @@
     </Compile>
     <Compile Include="DDSystem\ArcDDP.cs" />
     <Compile Include="Dogenzaka\ArcBIN.cs" />
+    <Compile Include="Eagls\WidgetEAGLS.xaml.cs">
+      <DependentUpon>WidgetEAGLS.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ExHibit\WidgetGYU.xaml.cs">
       <DependentUpon>WidgetGYU.xaml</DependentUpon>
     </Compile>
@@ -664,6 +667,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DxLib\WidgetSCR.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Eagls\WidgetEAGLS.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
