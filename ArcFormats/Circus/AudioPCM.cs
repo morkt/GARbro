@@ -40,46 +40,6 @@ namespace GameRes.Formats.Circus
 
         public override SoundInput TryOpen (Stream file)
         {
-            return new PcmInput (file);
-        }
-    }
-
-    public class PcmInput : SoundInput
-    {
-        public override string SourceFormat { get { return "raw"; } }
-
-        public override int SourceBitrate
-        {
-            get { return (int)Format.AverageBytesPerSecond * 8; }
-        }
-
-        #region IO.Stream methods
-        public override long Position
-        {
-            get { return Source.Position; }
-            set { Source.Position = value; }
-        }
-
-        public override bool CanSeek { get { return Source.CanSeek; } }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            return Source.Seek (offset, origin);
-        }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            return Source.Read (buffer, offset, count);
-        }
-
-        public override int ReadByte ()
-        {
-            return Source.ReadByte();
-        }
-        #endregion
-
-        public PcmInput (Stream file) : base (null)
-        {
             file.Position = 4;
             using (var input = new ArcView.Reader (file))
             {
@@ -89,6 +49,12 @@ namespace GameRes.Formats.Circus
                 int mode = input.ReadInt32();
                 int extra = (mode >> 8) & 0xff;
                 mode &= 0xff;
+                if (5 == mode)
+                {
+                    uint ogg_size = input.ReadUInt32();
+                    var ogg = new StreamRegion (file, 0x10, ogg_size);
+                    return new OggInput (ogg);
+                }
                 var format = new WaveFormat();
                 format.FormatTag                = input.ReadUInt16();
                 format.Channels                 = input.ReadUInt16();
@@ -96,20 +62,21 @@ namespace GameRes.Formats.Circus
                 format.AverageBytesPerSecond    = input.ReadUInt32();
                 format.BlockAlign               = input.ReadUInt16();
                 format.BitsPerSample            = input.ReadUInt16();
-                this.Format = format;
-                this.PcmSize = src_size;
+                Stream pcm;
                 if (0 == mode)
                 {
-                    this.Source = new StreamRegion (file, file.Position, src_size);
+                    pcm = new StreamRegion (file, file.Position, src_size);
                 }
                 else if (1 == mode || 3 == mode)
                 {
                     var decoder = new PcmDecoder (input, src_size, extra, (XpcmCompression)mode);
-                    this.Source = new MemoryStream (decoder.Unpack(), 0, src_size);
+                    pcm = new MemoryStream (decoder.Unpack(), 0, src_size);
                     file.Dispose();
                 }
                 else
                     throw new NotSupportedException ("Not supported Circus PCM audio compression");
+
+                return new RawPcmInput (pcm, format);
             }
         }
     }
