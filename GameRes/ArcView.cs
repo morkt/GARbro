@@ -28,6 +28,7 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Text;
+using GameRes.Utility;
 
 namespace GameRes
 {
@@ -482,17 +483,21 @@ namespace GameRes
             #endregion
         }
 
-        public class ArcStream : System.IO.Stream
+        public class ArcStream : Stream, IBinaryStream
         {
             private Frame       m_view;
             private long        m_start;
             private long        m_size;
             private long        m_position;
 
+            public string     Name { get; set; }
+            public uint  Signature { get { return ReadSignature(); } }
+            public Stream AsStream { get { return this; } }
+
             public override bool CanRead  { get { return !disposed; } }
-            public override bool CanSeek { get { return !disposed; } }
+            public override bool CanSeek  { get { return !disposed; } }
             public override bool CanWrite { get { return false; } }
-            public override long Length { get { return m_size; } }
+            public override long Length   { get { return m_size; } }
             public override long Position
             {
                 get { return m_position; }
@@ -536,6 +541,147 @@ namespace GameRes
                 return m_view.ReadUInt32 (m_start);
             }
 
+            byte[]      m_header;
+            int         m_header_size;
+
+            public CowArray<byte> ReadHeader (int size)
+            {
+                if (m_header_size < size)
+                {
+                    if (null == m_header || m_header.Length < size)
+                        Array.Resize (ref m_header, (size + 0xF) & ~0xF);
+                    long position = m_start + m_header_size;
+                    m_header_size += m_view.Read (position, m_header, m_header_size, (uint)(size - m_header_size));
+                }
+                size = Math.Min (size, m_header_size);
+                Position = size;
+                return new CowArray<byte> (m_header, 0, size);
+            }
+
+            public int PeekByte ()
+            {
+                if (m_position >= m_size)
+                    return -1;
+                return m_view.ReadByte (m_start+m_position);
+            }
+
+            public override int ReadByte ()
+            {
+                int b = PeekByte();
+                if (-1 != b)
+                    ++m_position;
+                return b;
+            }
+
+            public sbyte ReadSByte ()
+            {
+                int b = ReadByte();
+                if (-1 == b)
+                    throw new EndOfStreamException();
+                return (sbyte)b;
+            }
+
+            public short ReadInt16 ()
+            {
+                if (m_position + 2 > m_size)
+                    throw new EndOfStreamException();
+                var v = m_view.ReadInt16 (m_start+m_position);
+                m_position += 2;
+                return v;
+            }
+
+            public ushort ReadUInt16 ()
+            {
+                return (ushort)ReadInt16();
+            }
+
+            public int ReadInt24 ()
+            {
+                if (m_position + 3 > m_size)
+                    throw new EndOfStreamException();
+                int v = m_view.ReadUInt16 (m_start+m_position);
+                v |= m_view.ReadByte (m_start+m_position+2);
+                m_position += 3;
+                return v;
+            }
+
+            public int ReadInt32 ()
+            {
+                if (m_position + 4 > m_size)
+                    throw new EndOfStreamException();
+                var v = m_view.ReadInt32 (m_start+m_position);
+                m_position += 4;
+                return v;
+            }
+
+            public uint ReadUInt32 ()
+            {
+                return (uint)ReadInt32();
+            }
+
+            public long ReadInt64 ()
+            {
+                if (m_position + 8 > m_size)
+                    throw new EndOfStreamException();
+                var v = m_view.ReadInt64 (m_start+m_position);
+                m_position += 8;
+                return v;
+            }
+
+            public ulong ReadUInt64 ()
+            {
+                return (ulong)ReadInt64();
+            }
+
+            byte[] m_string_buf;
+
+            public string ReadCString (int length)
+            {
+                return ReadCString (length, Encodings.cp932);
+            }
+
+            public string ReadCString (int length, Encoding enc)
+            {
+                if (null == m_string_buf || m_string_buf.Length < length)
+                    m_string_buf = new byte[Math.Max (length, 0x20)];
+
+                length = Read (m_string_buf, 0, length);
+                return Binary.GetCString (m_string_buf, 0, length);
+            }
+
+            public string ReadCString ()
+            {
+                return ReadCString (Encodings.cp932);
+            }
+
+            public string ReadCString (Encoding enc)
+            {
+                if (null == m_string_buf)
+                    m_string_buf = new byte[0x20];
+                int size = 0;
+                for (;;)
+                {
+                    int b = ReadByte();
+                    if (-1 == b || 0 == b)
+                        break;
+                    if (m_string_buf.Length == size)
+                    {
+                        Array.Resize (ref m_string_buf, checked(size*3/2));
+                    }
+                    m_string_buf[size++] = (byte)b;
+                }
+                return enc.GetString (m_string_buf, 0, size);
+            }
+
+            public byte[] ReadBytes (int count)
+            {
+                if (m_position >= m_size)
+                    return new byte[0];
+                var bytes = m_view.ReadBytes (m_start+m_position, (uint)Math.Min (count, m_size - m_position));
+                m_position += bytes.Length;
+                return bytes;
+            }
+
             #region System.IO.Stream methods
             public override void Flush()
             {
@@ -567,15 +713,6 @@ namespace GameRes
                 int read = m_view.Read (m_start + m_position, buffer, offset, (uint)count);
                 m_position += read;
                 return read;
-            }
-
-            public override int ReadByte ()
-            {
-                if (m_position >= m_size)
-                    return -1;
-                byte b = m_view.ReadByte (m_start+m_position);
-                ++m_position;
-                return b;
             }
 
             public override void Write (byte[] buffer, int offset, int count)
