@@ -2,7 +2,7 @@
 //! \date       Fri May 15 04:26:58 2015
 //! \brief      EAGLS system compressed bitmap.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -47,17 +47,18 @@ namespace GameRes.Formats.Eagls
 
         public override ImageMetaData ReadMetaData (Stream stream)
         {
-            using (var reader = new LzssReader (stream, (int)stream.Length, 0x26)) // BMP header
+            using (var lzs = new LzssStream (stream, LzssMode.Decompress, true))
             {
-                reader.Unpack();
-                var bmp = reader.Data;
-                if (bmp[0] != 'B' || bmp[1] != 'M')
+                if (lzs.ReadByte() != 'B' || lzs.ReadByte() != 'M')
                     return null;
-                int file_size = LittleEndian.ToInt32 (bmp, 2);
-                int width = LittleEndian.ToInt32 (bmp, 0x12);
-                int height = LittleEndian.ToInt32 (bmp, 0x16);
-                int bpp = LittleEndian.ToInt16 (bmp, 0x1c);
-                int image_size = LittleEndian.ToInt32 (bmp, 0x22);
+                var bmp = new byte[0x26];
+                if (0x24 != lzs.Read (bmp, 2, 0x24))
+                    return null;
+                int file_size   = LittleEndian.ToInt32 (bmp, 2);
+                int width       = LittleEndian.ToInt32 (bmp, 0x12);
+                int height      = LittleEndian.ToInt32 (bmp, 0x16);
+                int bpp         = LittleEndian.ToInt16 (bmp, 0x1C);
+                int image_size  = LittleEndian.ToInt32 (bmp, 0x22);
                 if (0 == image_size)
                     image_size = width * height * (bpp / 8);
                 return new GrMetaData
@@ -73,20 +74,17 @@ namespace GameRes.Formats.Eagls
         public override ImageData Read (Stream stream, ImageMetaData info)
         {
             var meta = (GrMetaData)info;
-            using (var reader = new LzssReader (stream, (int)stream.Length, meta.UnpackedSize+2))
+            using (var bmp = new LzssStream (stream, LzssMode.Decompress, true))
             {
-                reader.Unpack();
                 if (32 != info.BPP)
-                    using (var bmp = new MemoryStream (reader.Data))
-                        return base.Read (bmp, info);
+                    return base.Read (bmp, info);
                 int stride = (int)info.Width*4;
-                var pixels = new byte[stride*info.Height];
-                int dst = 0;
-                int offset = 0x36;
-                for (int src = stride*((int)info.Height-1); src >= 0; src -= stride)
+                var pixels = new byte[Math.Max (0x36, stride*info.Height)];
+                bmp.Read (pixels, 0, 0x36); // skip header
+                for (int y = (int)info.Height - 1; y >= 0; --y)
                 {
-                    Buffer.BlockCopy (reader.Data, offset+src, pixels, dst, stride);
-                    dst += stride;
+                    int dst = y * stride;
+                    bmp.Read (pixels, dst, stride);
                 }
                 return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
             }
