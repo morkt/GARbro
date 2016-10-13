@@ -94,6 +94,7 @@
     <Compile Include="CaramelBox\ArcARC3.cs" />
     <Compile Include="CaramelBox\ArcARC4.cs" />
     <Compile Include="CaramelBox\ImageFCB.cs" />
+    <Compile Include="Circus\ArcCRM.cs" />
     <Compile Include="Cmvs\ArcPBZ.cs" />
     <Compile Include="Cmvs\AudioMV.cs" />
     <Compile Include="Cmvs\ImagePSB.cs" />
