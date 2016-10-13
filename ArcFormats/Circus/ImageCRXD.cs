@@ -136,46 +136,44 @@ namespace GameRes.Formats.Circus
                 if (null == base_info || base_info.BPP != info.BPP)
                     throw new InvalidFormatException ("Invalid base image");
                 using (var reader = new Reader (base_file, base_info))
+                using (var crx = OpenDiffStream (stream, meta))
+                using (var diff_reader = new Reader (crx, meta.DiffInfo))
                 {
-                    reader.Unpack();
-                    using (var crx = OpenDiffStream (stream, meta))
-                    using (var diff_reader = new Reader (crx, meta.DiffInfo))
+                    reader.Unpack (true);
+                    diff_reader.Unpack (true);
+                    var diff_rect = new Rectangle (meta.OffsetX, meta.OffsetY, (int)meta.Width, (int)meta.Height);
+                    var base_rect = new Rectangle (base_info.OffsetX, base_info.OffsetY,
+                                                   (int)base_info.Width, (int)base_info.Height);
+                    diff_rect = Rectangle.Intersect (diff_rect, base_rect);
+                    if (diff_rect.IsEmpty)
+                        throw new InvalidFormatException ("Empty diff region");
+
+                    int pixel_size = base_info.BPP / 8;
+                    int x = diff_rect.X - base_rect.X;
+                    int y = diff_rect.Y - base_rect.Y;
+                    int dst = y * reader.Stride + pixel_size * x;
+                    var image = reader.Data;
+
+                    int dx = diff_rect.X - meta.OffsetX;
+                    int dy = diff_rect.Y - meta.OffsetY;
+                    int src = dy * diff_reader.Stride + pixel_size * dx;
+                    var diff = diff_reader.Data;
+
+                    int blend_stride = diff_rect.Width * pixel_size;
+                    for (int row = 0; row < diff_rect.Height; ++row)
                     {
-                        diff_reader.Unpack();
-                        var diff_rect = new Rectangle (meta.OffsetX, meta.OffsetY, (int)meta.Width, (int)meta.Height);
-                        var base_rect = new Rectangle (base_info.OffsetX, base_info.OffsetY,
-                                                       (int)base_info.Width, (int)base_info.Height);
-                        diff_rect = Rectangle.Intersect (diff_rect, base_rect);
-                        if (diff_rect.IsEmpty)
-                            throw new InvalidFormatException ("Empty diff region");
-
-                        int pixel_size = base_info.BPP / 8;
-                        int x = diff_rect.X - base_rect.X;
-                        int y = diff_rect.Y - base_rect.Y;
-                        int dst = y * reader.Stride + pixel_size * x;
-                        var image = reader.Data;
-
-                        int dx = diff_rect.X - meta.OffsetX;
-                        int dy = diff_rect.Y - meta.OffsetY;
-                        int src = dy * diff_reader.Stride + pixel_size * dx;
-                        var diff = diff_reader.Data;
-
-                        int blend_stride = diff_rect.Width * pixel_size;
-                        for (int row = 0; row < diff_rect.Height; ++row)
+                        for (int i = 0; i < blend_stride; i += pixel_size)
                         {
-                            for (int i = 0; i < blend_stride; i += pixel_size)
-                            {
-                                image[dst+i  ] += diff[src+i];
-                                image[dst+i+1] += diff[src+i+1];
-                                image[dst+i+2] += diff[src+i+2];
-                                if (4 == pixel_size)
-                                    image[dst+i+3] -= diff[src+i+3];
-                            }
-                            dst += reader.Stride;
-                            src += diff_reader.Stride;
+                            image[dst+i  ] += diff[src+i];
+                            image[dst+i+1] += diff[src+i+1];
+                            image[dst+i+2] += diff[src+i+2];
+                            if (4 == pixel_size)
+                                image[dst+i+3] -= diff[src+i+3];
                         }
-                        return ImageData.Create (base_info, reader.Format, reader.Palette, image, reader.Stride);
+                        dst += reader.Stride;
+                        src += diff_reader.Stride;
                     }
+                    return ImageData.Create (base_info, reader.Format, reader.Palette, image, reader.Stride);
                 }
             }
         }

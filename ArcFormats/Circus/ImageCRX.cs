@@ -152,7 +152,7 @@ namespace GameRes.Formats.Circus
                 Palette = new BitmapPalette (palette);
             }
 
-            public void Unpack ()
+            public void Unpack (bool is_diff = false)
             {
                 if (m_compression >= 3)
                 {
@@ -184,8 +184,7 @@ namespace GameRes.Formats.Circus
                             int g = m_output[pixel+2];
                             int r = m_output[pixel+3];
 
-                            /*
-                            if (alpha != alpha_flip)
+                            if (!is_diff && alpha != alpha_flip)
                             {
                                 b += (w & 1) + shift;
                                 if (b < 0)
@@ -205,7 +204,7 @@ namespace GameRes.Formats.Circus
                                 else if (r > 0xff)
                                     r = 0xff;
                             }
-                            */
+
                             m_output[pixel]   = (byte)b;
                             m_output[pixel+1] = (byte)g;
                             m_output[pixel+2] = (byte)r;
