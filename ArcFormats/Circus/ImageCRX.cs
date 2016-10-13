@@ -26,7 +26,6 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Compression;
@@ -185,6 +184,7 @@ namespace GameRes.Formats.Circus
                             int g = m_output[pixel+2];
                             int r = m_output[pixel+3];
 
+                            /*
                             if (alpha != alpha_flip)
                             {
                                 b += (w & 1) + shift;
@@ -205,6 +205,7 @@ namespace GameRes.Formats.Circus
                                 else if (r > 0xff)
                                     r = 0xff;
                             }
+                            */
                             m_output[pixel]   = (byte)b;
                             m_output[pixel+1] = (byte)g;
                             m_output[pixel+2] = (byte)r;

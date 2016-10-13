@@ -25,10 +25,29 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Linq;
+using System.IO;
 
 namespace GameRes.Formats.Circus
 {
+    internal class CrmArchive : ArcFile
+    {
+        readonly IDictionary<uint, Entry> OffsetMap;
+
+        public CrmArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, IDictionary<uint, Entry> offset_map)
+            : base (arc, impl, dir)
+        {
+            OffsetMap = offset_map;
+        }
+
+        internal Stream OpenByOffset (uint offset)
+        {
+            Entry entry;
+            if (!OffsetMap.TryGetValue (offset, out entry))
+                throw new FileNotFoundException();
+            return OpenEntry (entry);
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class CrmOpener : ArchiveFormat
     {
@@ -44,6 +63,7 @@ namespace GameRes.Formats.Circus
             if (!IsSaneCount (count))
                 return null;
 
+            var offset_map = new SortedDictionary<uint, Entry>();
             int index_offset = 0x10;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
@@ -53,25 +73,26 @@ namespace GameRes.Formats.Circus
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = offset;
                 dir.Add (entry);
+                offset_map[offset] = entry;
                 index_offset += 0x20;
             }
-            using (var iterator = dir.OrderBy (e => e.Offset).GetEnumerator())
+            using (var iterator = offset_map.GetEnumerator())
             {
                 if (iterator.MoveNext())
                 {
                     for (;;)
                     {
-                        var entry = iterator.Current;
+                        var entry = iterator.Current.Value;
                         if (!iterator.MoveNext())
                         {
                             entry.Size = (uint)(file.MaxOffset - entry.Offset);
                             break;
                         }
-                        entry.Size = (uint)(iterator.Current.Offset - entry.Offset);
+                        entry.Size = (uint)(iterator.Current.Key - entry.Offset);
                     }
                 }
             }
-            return new ArcFile (file, this, dir);
+            return new CrmArchive (file, this, dir, offset_map);
         }
     }
 }
