@@ -150,10 +150,8 @@ namespace GameRes.Formats.AdvSys
             for (int y = 0; y < m_height; ++y)
             {
                 FillLine();
-                for (int src = 0; src < m_width; ++src)
-                {
-                    m_output[dst++] = m_line_buf[src];
-                }
+                Buffer.BlockCopy (m_line_buf, 0, m_output, dst, m_width);
+                dst += m_width;
             }
         }
 
