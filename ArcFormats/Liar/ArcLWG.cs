@@ -72,9 +72,11 @@ namespace GameRes.Formats.Liar
                 cur_offset += 18+name_length;
                 if (cur_offset > dir_size+24)
                     return null;
-                if (entry.CheckPlacement (data_offset + data_size))
+                if (entry.Size > 0 && entry.CheckPlacement (data_offset + data_size))
                     dir.Add (entry);
             }
+            if (0 == dir.Count)
+                return null;
             return new ArcFile (file, this, dir);
         }
     }
