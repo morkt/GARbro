@@ -68,22 +68,18 @@ namespace GameRes.Formats.Magi
                         return null;
                     var name = Encodings.cp932.GetString (name_buffer, 0, name_length);
                     var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                    entry.Offset = index.ReadUInt32() + base_offset;
-                    uint size    = index.ReadUInt32();
+
+                    entry.Offset        = index.ReadUInt32() + base_offset;
+                    entry.UnpackedSize  = index.ReadUInt32();
                     index.ReadUInt32();
-                    uint flags = index.ReadUInt32();
-                    uint packed_size = index.ReadUInt32();
-                    entry.IsPacked = flags != 0 && packed_size != 0;
+                    uint is_packed      = index.ReadUInt32();
+                    uint packed_size    = index.ReadUInt32();
+                    entry.IsPacked = is_packed != 0 && packed_size != 0;
                     if (entry.IsPacked)
-                    {
                         entry.Size = packed_size;
-                        entry.UnpackedSize = size;
-                    }
                     else
-                    {
-                        entry.Size = size;
-                        entry.UnpackedSize = size;
-                    }
+                        entry.Size = entry.UnpackedSize;
+
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
                     dir.Add (entry);
@@ -94,19 +90,11 @@ namespace GameRes.Formats.Magi
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
             var pentry = entry as PackedEntry;
-            if (null == pentry || !pentry.IsPacked)
-                return input;
-            try
-            {
-                return new ZLibStream (input, CompressionMode.Decompress);
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
-            }
+            if (null != pentry || pentry.IsPacked)
+                input = new ZLibStream (input, CompressionMode.Decompress);
+            return input;
         }
     }
 }
