@@ -73,6 +73,8 @@
     <Compile Include="Abel\ArcARC.cs" />
     <Compile Include="Abel\ImageGPS.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
+    <Compile Include="AdvSys\ArcAdvSys3.cs" />
+    <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="AliceSoft\ArcAFA.cs" />
     <Compile Include="AliceSoft\ArcALK.cs" />
     <Compile Include="AliceSoft\ImageAJP.cs" />
@@ -92,6 +94,8 @@
     <Compile Include="CaramelBox\ArcARC3.cs" />
     <Compile Include="CaramelBox\ArcARC4.cs" />
     <Compile Include="CaramelBox\ImageFCB.cs" />
+    <Compile Include="Circus\ArcCRM.cs" />
+    <Compile Include="Circus\ImageCRXD.cs" />
     <Compile Include="Cmvs\ArcPBZ.cs" />
     <Compile Include="Cmvs\AudioMV.cs" />
     <Compile Include="Cmvs\ImagePSB.cs" />
@@ -107,6 +111,9 @@
     </Compile>
     <Compile Include="DDSystem\ArcDDP.cs" />
     <Compile Include="Dogenzaka\ArcBIN.cs" />
+    <Compile Include="Eagls\WidgetEAGLS.xaml.cs">
+      <DependentUpon>WidgetEAGLS.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ExHibit\WidgetGYU.xaml.cs">
       <DependentUpon>WidgetGYU.xaml</DependentUpon>
     </Compile>
@@ -664,6 +671,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DxLib\WidgetSCR.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Eagls\WidgetEAGLS.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

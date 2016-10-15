@@ -34,6 +34,7 @@ using System.Runtime.InteropServices;
 using GameRes.Compression;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
+using GameRes.Strings;
 
 namespace GameRes.Formats.NitroPlus
 {
@@ -88,6 +89,7 @@ namespace GameRes.Formats.NitroPlus
         CHAOSHEAD, CHAOSHEADTR1, CHAOSHEADTR2, MURAMASATR, MURAMASA, SUMAGA, DJANGO, DJANGOTR,
         LAMENTO, SWEETPOOL, SUMAGASP, DEMONBANE, MURAMASAAD, AXANAEL, KIKOKUGAI, SONICOMITR2,
         SUMAGA3P, SONICOMI, LOSTX, LOSTXTRAILER, DRAMATICALMURDER, TOTONO, PHENOMENO, NEKODA,
+        HANACHIRASU
     }
 
     public class NpaOptions : ResourceOptions
@@ -137,7 +139,9 @@ namespace GameRes.Formats.NitroPlus
             var game_id = NpaTitleId.NotEncrypted;
             if (encrypted)
             {
-                enc = QueryGameEncryption();
+                enc = QueryGameEncryption (file.Name);
+                if (null == enc)
+                    throw new OperationCanceledException (garStrings.MsgUnknownEncryption);
                 game_id = enc.TitleId;
             }
 
@@ -395,10 +399,18 @@ namespace GameRes.Formats.NitroPlus
             return new GUI.CreateNPAWidget();
         }
 
-        EncryptionScheme QueryGameEncryption ()
+        EncryptionScheme QueryGameEncryption (string arc_name)
         {
-            var options = Query<NpaOptions> (arcStrings.ArcEncryptedNotice);
-            return options.Scheme;
+            EncryptionScheme scheme = null;
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title))
+                scheme = GetScheme (title);
+            if (null == scheme)
+            {
+                var options = Query<NpaOptions> (arcStrings.ArcEncryptedNotice);
+                scheme = options.Scheme;
+            }
+            return scheme;
         }
 
         public static NpaTitleId GetTitleId (string title)

@@ -78,8 +78,21 @@ namespace GARbro.GUI
         public EntryViewModel (Entry entry, int priority)
         {
             Source = entry;
-            Name = Path.GetFileName (entry.Name);
+            Name = SafeGetFileName (entry.Name);
             Priority = priority;
+        }
+
+        static char[] SeparatorCharacters = { '\\', '/', ':' };
+
+        /// <summary>
+        /// Same as Path.GetFileName, but ignores invalid charactes
+        /// </summary>
+        string SafeGetFileName (string filename)
+        {
+            var name_start = filename.LastIndexOfAny (SeparatorCharacters);
+            if (-1 == name_start)
+                return filename;
+            return filename.Substring (name_start+1);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

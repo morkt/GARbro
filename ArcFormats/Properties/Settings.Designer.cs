@@ -645,5 +645,17 @@ namespace GameRes.Formats.Properties {
                 this["PAZTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string EAGLSEncryption {
+            get {
+                return ((string)(this["EAGLSEncryption"]));
+            }
+            set {
+                this["EAGLSEncryption"] = value;
+            }
+        }
     }
 }

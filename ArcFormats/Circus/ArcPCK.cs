@@ -36,12 +36,12 @@ namespace GameRes.Formats.Circus
         public override string         Tag { get { return "PCK/CIRCUS"; } }
         public override string Description { get { return "Circus resource archive"; } }
         public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public PckOpener ()
         {
-            Extensions = new string[] { "pck" };
+            Extensions = new string[] { "pck", "dat" };
         }
 
         public override ArcFile TryOpen (ArcView file)

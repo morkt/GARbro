@@ -33,7 +33,7 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.NitroPlus
 {
-    internal class PakEntry : Entry
+    internal class PakEntry : PackedEntry
     {
         public uint Key;
     }
@@ -102,13 +102,15 @@ namespace GameRes.Formats.NitroPlus
                         return null;
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
                     var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                    entry.Offset = base_offset + header.ReadUInt32();
-                    entry.UnpackedSize = header.ReadUInt32();
-                    entry.Size = header.ReadUInt32();
-                    entry.IsPacked = header.ReadInt32() != 0;
-                    uint psize = header.ReadUInt32();
+
+                    entry.Offset        = base_offset + header.ReadUInt32();
+                    entry.UnpackedSize  = header.ReadUInt32();
+                    entry.Size          = header.ReadUInt32();
+                    entry.IsPacked      = header.ReadInt32() != 0;
+                    uint psize          = header.ReadUInt32();
                     if (entry.IsPacked)
                         entry.Size = psize;
+
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
                     dir.Add (entry);
@@ -159,21 +161,17 @@ namespace GameRes.Formats.NitroPlus
                     if (name_len != header.Read (name_buf, 0, name_len))
                         return null;
                     uint key = GetKey (name_buf, name_len);
-                    uint offset = header.ReadUInt32() ^ key;
-                    uint size = header.ReadUInt32() ^ key;
-                    uint val1 = header.ReadUInt32() ^ key;
-                    uint val2 = header.ReadUInt32() ^ key;
-                    uint val3 = header.ReadUInt32() ^ key;
-
-                    var entry = new PakEntry {
-                        Name        = Encodings.cp932.GetString (name_buf, 0, name_len),
-                        Offset      = base_offset+offset,
-                        Size        = size,
-                        Key         = key,
-                    };
+                    var name = Encodings.cp932.GetString (name_buf, 0, name_len);
+                    var entry = FormatCatalog.Instance.Create<PakEntry> (name);
+                    entry.Offset        = (header.ReadUInt32() ^ key) + base_offset;
+                    entry.UnpackedSize  = (header.ReadUInt32() ^ key);
+                    uint ignored        = (header.ReadUInt32() ^ key);
+                    entry.IsPacked      = (header.ReadUInt32() ^ key) != 0;
+                    uint packed_size    = (header.ReadUInt32() ^ key);
+                    entry.Key           = key;
+                    entry.Size          = entry.IsPacked ? packed_size : entry.UnpackedSize;
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
-                    entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                     dir.Add (entry);
                 }
                 return dir;
@@ -194,27 +192,14 @@ namespace GameRes.Formats.NitroPlus
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var pak_entry = entry as PakEntry;
-            if (pak_entry != null)
+            if (pak_entry != null && !pak_entry.IsPacked)
                 return OpenV3Entry (arc, pak_entry);
 
+            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
             var packed_entry = entry as PackedEntry;
             if (packed_entry != null && packed_entry.IsPacked)
-                return UnpackV2Entry (arc, packed_entry);
-            return arc.File.CreateStream (entry.Offset, entry.Size);
-        }
-
-        private Stream UnpackV2Entry (ArcFile arc, PackedEntry entry)
-        {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            try
-            {
-                return new ZLibStream (input, CompressionMode.Decompress);
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
-            }
+                input = new ZLibStream (input, CompressionMode.Decompress);
+            return input;
         }
 
         private Stream OpenV3Entry (ArcFile arc, PakEntry entry)
@@ -230,7 +215,7 @@ namespace GameRes.Formats.NitroPlus
                 key = Binary.RotR (key, 8);
             }
             if (enc_size == entry.Size)
-                return new MemoryStream (buf, false);
+                return new MemoryStream (buf);
             return new PrefixStream (buf, arc.File.CreateStream (entry.Offset+enc_size, entry.Size-enc_size));
         }
     }

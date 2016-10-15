@@ -27,7 +27,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
+using System.Text;
+using GameRes.Formats.Properties;
+using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Eagls
@@ -47,10 +49,8 @@ namespace GameRes.Formats.Eagls
         }
 
         internal static readonly string IndexKey = "1qaz2wsx3edc4rfv5tgb6yhn7ujm8ik,9ol.0p;/-@:^[]";
-        internal static readonly string Key = "EAGLS_SYSTEM";
-
-        // FIXME not thread-safe
-        CRuntimeRandomGenerator m_rng = new CRuntimeRandomGenerator();
+        internal static readonly byte[] EaglsKey  = Encoding.ASCII.GetBytes ("EAGLS_SYSTEM");
+        internal static readonly byte[] AdvSysKey = Encoding.ASCII.GetBytes ("ADVSYS");
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -70,6 +70,7 @@ namespace GameRes.Formats.Eagls
             bool long_offsets = 40 == entry_size;
             int name_size = long_offsets ? 0x18 : 0x14;
             long first_offset = LittleEndian.ToUInt32 (index, name_size);
+            bool has_scripts = false;
             var dir = new List<Entry>();
             while (index_offset < index.Length)
             {
@@ -79,7 +80,10 @@ namespace GameRes.Formats.Eagls
                 index_offset += name_size;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 if (name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+                {
                     entry.Type = "script";
+                    has_scripts = true;
+                }
                 if (long_offsets)
                 {
                     entry.Offset = LittleEndian.ToInt64 (index, index_offset) - first_offset;
@@ -99,32 +103,28 @@ namespace GameRes.Formats.Eagls
             if (0 == dir.Count)
                 return null;
             if (dir[0].Name.EndsWith (".gr", StringComparison.InvariantCultureIgnoreCase)) // CG archive
-                return new CgArchive (file, this, dir);
-            else
-                return new ArcFile (file, this, dir);
+            {
+                var rng = DetectEncryptionScheme (file, dir[0]);
+                return new EaglsArchive (file, this, dir, new CgEncryption (rng));
+            }
+            else if (has_scripts)
+            {
+                var enc = QueryEncryption();
+                if (enc != null)
+                    return new EaglsArchive (file, this, dir, enc);
+            }
+            return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var cg_arc = arc as CgArchive;
-            if (null != cg_arc)
-                return cg_arc.DecryptEntry (entry);
-            if (entry.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
-                return DecryptDat (arc, entry);
-            return arc.File.CreateStream (entry.Offset, entry.Size);
-        }
+            var earc = arc as EaglsArchive;
+            if (null == earc
+                || !(entry.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase) ||
+                     entry.Name.EndsWith (".gr", StringComparison.InvariantCultureIgnoreCase)))
+                return arc.File.CreateStream (entry.Offset, entry.Size);
 
-        Stream DecryptDat (ArcFile arc, Entry entry)
-        {
-            byte[] input = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            int text_offset = 3600;
-            int text_length = (int)(entry.Size - text_offset - 2);
-            m_rng.SRand ((sbyte)input[input.Length-1]);
-            for (int i = 0; i < text_length; i += 2)
-            {
-                input[text_offset + i] ^= (byte)Key[m_rng.Rand() % Key.Length];
-            }
-            return new MemoryStream (input);
+            return earc.DecryptEntry (entry);
         }
 
         byte[] DecryptIndex (ArcView idx)
@@ -134,13 +134,14 @@ namespace GameRes.Formats.Eagls
             using (var view = idx.CreateViewAccessor (0, (uint)idx.MaxOffset))
             unsafe
             {
-                m_rng.SRand (view.ReadInt32 (idx_size));
+                var rng = new CRuntimeRandomGenerator();
+                rng.SRand (view.ReadInt32 (idx_size));
                 byte* ptr = view.GetPointer (0);
                 try
                 {
                     for (int i = 0; i < idx_size; ++i)
                     {
-                        output[i] = (byte)(ptr[i] ^ IndexKey[m_rng.Rand() % IndexKey.Length]);
+                        output[i] = (byte)(ptr[i] ^ IndexKey[rng.Rand() % IndexKey.Length]);
                     }
                     return output;
                 }
@@ -150,15 +151,69 @@ namespace GameRes.Formats.Eagls
                 }
             }
         }
+
+        IRandomGenerator DetectEncryptionScheme (ArcView file, Entry first_entry)
+        {
+            int signature = (file.View.ReadInt32 (first_entry.Offset) >> 8) & 0xFFFF;
+            byte seed = file.View.ReadByte (first_entry.Offset+first_entry.Size-1);
+            IRandomGenerator[] rng_list = {
+                new LehmerRandomGenerator(),
+                new CRuntimeRandomGenerator(),
+            };
+            foreach (var rng in rng_list)
+            {
+                rng.SRand (seed);
+                rng.Rand(); // skip LZSS control byte
+                int test = signature;
+                test ^= EaglsKey[rng.Rand() % EaglsKey.Length];
+                test ^= EaglsKey[rng.Rand() % EaglsKey.Length] << 8;
+                // FIXME
+                // as key is rather short, this detection could produce false results sometimes
+                if (0x4D42 == test) // 'BM'
+                    return rng;
+            }
+            throw new UnknownEncryptionScheme();
+        }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            IEntryEncryption enc = null;
+            if (!string.IsNullOrEmpty (Settings.Default.EAGLSEncryption))
+                KnownSchemes.TryGetValue (Settings.Default.EAGLSEncryption, out enc);
+            return new EaglsOptions { Encryption = enc };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetEAGLS();
+        }
+
+        IEntryEncryption QueryEncryption ()
+        {
+            var options = Query<EaglsOptions> (arcStrings.ArcEncryptedNotice);
+            return options.Encryption;
+        }
+
+        internal static Dictionary<string, IEntryEncryption> KnownSchemes = new Dictionary<string, IEntryEncryption>
+        {
+            { "EAGLS",      new EaglsEncryption() },
+            { "AdvSys",     new AdvSysEncryption() },
+        };
     }
 
-    internal interface IRandomGenerator
+    public class EaglsOptions : ResourceOptions
+    {
+        public IEntryEncryption Encryption;
+    }
+
+    public interface IRandomGenerator
     {
         void SRand (int seed);
         int Rand ();
     }
 
-    internal class CRuntimeRandomGenerator : IRandomGenerator
+    [Serializable]
+    public class CRuntimeRandomGenerator : IRandomGenerator
     {
         uint m_seed;
 
@@ -174,7 +229,8 @@ namespace GameRes.Formats.Eagls
         }
     }
 
-    internal class LehmerRandomGenerator : IRandomGenerator
+    [Serializable]
+    public class LehmerRandomGenerator : IRandomGenerator
     {
         int m_seed;
 
@@ -197,57 +253,86 @@ namespace GameRes.Formats.Eagls
         }
     }
 
-    internal class CgArchive : ArcFile
+    public interface IEntryEncryption
     {
-        IRandomGenerator    m_rng;
+        void Decrypt (byte[] data);
+    }
 
-        public CgArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
-            : base (arc, impl, dir)
+    [Serializable]
+    public class CgEncryption : IEntryEncryption
+    {
+        readonly byte[] Key = PakOpener.EaglsKey;
+        readonly IRandomGenerator m_rng;
+
+        public CgEncryption (IRandomGenerator rng)
         {
-            try
-            {
-                m_rng = DetectEncryptionScheme();
-            }
-            catch
-            {
-                this.Dispose();
-                throw;
-            }
+            m_rng = rng;
         }
 
-        IRandomGenerator DetectEncryptionScheme ()
+        public void Decrypt (byte[] data)
         {
-            var first_entry = Dir.First();
-            int signature = (File.View.ReadInt32 (first_entry.Offset) >> 8) & 0xFFFF;
-            byte seed = File.View.ReadByte (first_entry.Offset+first_entry.Size-1);
-            IRandomGenerator[] rng_list = {
-                new LehmerRandomGenerator(),
-                new CRuntimeRandomGenerator(),
-            };
-            foreach (var rng in rng_list)
+            m_rng.SRand (data[data.Length-1]);
+            int limit = Math.Min (data.Length-1, 0x174b);
+            for (int i = 0; i < limit; ++i)
             {
-                rng.SRand (seed);
-                rng.Rand(); // skip LZSS control byte
-                int test = signature;
-                test ^= PakOpener.Key[rng.Rand() % PakOpener.Key.Length];
-                test ^= PakOpener.Key[rng.Rand() % PakOpener.Key.Length] << 8;
-                // FIXME
-                // as key is rather short, this detection could produce false results sometimes
-                if (0x4D42 == test) // 'BM'
-                    return rng;
+                data[i] ^= (byte)Key[m_rng.Rand() % Key.Length];
             }
-            throw new UnknownEncryptionScheme();
+        }
+    }
+
+    [Serializable]
+    public class EaglsEncryption : IEntryEncryption
+    {
+        readonly byte[] Key = PakOpener.EaglsKey;
+        readonly IRandomGenerator m_rng;
+
+        public EaglsEncryption ()
+        {
+            m_rng = new CRuntimeRandomGenerator();
+        }
+
+        public void Decrypt (byte[] data)
+        {
+            int text_offset = 3600;
+            int text_length = data.Length - text_offset - 2;
+            m_rng.SRand ((sbyte)data[data.Length-1]);
+            for (int i = 0; i < text_length; i += 2)
+            {
+                data[text_offset + i] ^= Key[m_rng.Rand() % Key.Length];
+            }
+        }
+    }
+
+    [Serializable]
+    public class AdvSysEncryption : IEntryEncryption
+    {
+        readonly byte[] Key = PakOpener.AdvSysKey;
+
+        public void Decrypt (byte[] data)
+        {
+            int text_offset = 136000;
+            int text_length = data.Length - text_offset;
+            for (int i = 0; i < text_length; ++i)
+            {
+                data[text_offset + i] ^= Key[i % Key.Length];
+            }
+        }
+    }
+
+    internal class EaglsArchive : ArcFile
+    {
+        readonly IEntryEncryption Encryption;
+
+        public EaglsArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, IEntryEncryption enc)
+            : base (arc, impl, dir)
+        {
+            Encryption = enc;
         }
 
         public Stream DecryptEntry (Entry entry)
         {
-            var input = File.View.ReadBytes (entry.Offset, entry.Size);
-            m_rng.SRand (input[input.Length-1]);
-            int limit = Math.Min (input.Length-1, 0x174b);
-            for (int i = 0; i < limit; ++i)
-            {
-                input[i] ^= (byte)PakOpener.Key[m_rng.Rand() % PakOpener.Key.Length];
-            }
+            byte[] input = File.View.ReadBytes (entry.Offset, entry.Size);
+            Encryption.Decrypt (input);
             return new MemoryStream (input);
         }
     }
