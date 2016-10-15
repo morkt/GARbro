@@ -115,49 +115,32 @@ namespace GameRes
     {
         public override string Type { get { return "image"; } }
 
-        public abstract ImageMetaData ReadMetaData (Stream file);
+        public abstract ImageMetaData ReadMetaData (IBinaryStream file);
 
-        public abstract ImageData Read (Stream file, ImageMetaData info);
+        public abstract ImageData Read (IBinaryStream file, ImageMetaData info);
         public abstract void Write (Stream file, ImageData bitmap);
 
-        public static ImageData Read (Stream file)
-        {
-            return Read (null, file);
-        }
+//        public static ImageData Read (Stream file)
+//        {
+//            using (var bin = new BinaryStream (file, true))
+//                return Read (null, bin);
+//        }
 
-        public static ImageData Read (string filename, Stream file)
+        public static ImageData Read (IBinaryStream file)
         {
-            bool need_dispose = false;
-            try
-            {
-                if (!file.CanSeek)
-                {
-                    var stream = new MemoryStream();
-                    file.CopyTo (stream);
-                    file = stream;
-                    need_dispose = true;
-                }
-                var format = FindFormat (file, filename);
-                if (null == format)
-                    return null;
-                file.Position = 0;
-                return format.Item1.Read (file, format.Item2);
-            }
-            finally
-            {
-                if (need_dispose)
-                    file.Dispose();
-            }
-        }
-
-        public static System.Tuple<ImageFormat, ImageMetaData> FindFormat (Stream file, string filename = null)
-        {
-            if (file.Length < 4)
+            var format = FindFormat (file);
+            if (null == format)
                 return null;
-            uint signature = FormatCatalog.ReadSignature (file);
+            file.Position = 0;
+            return format.Item1.Read (file, format.Item2);
+        }
+
+        public static System.Tuple<ImageFormat, ImageMetaData> FindFormat (IBinaryStream file)
+        {
+            uint signature = file.Signature;
             Lazy<string> ext = null;
-            if (!string.IsNullOrEmpty (filename))
-                ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant(), false);
+            if (!string.IsNullOrEmpty (file.Name))
+                ext = new Lazy<string> (() => Path.GetExtension (file.Name).TrimStart ('.').ToLowerInvariant(), false);
             for (;;)
             {
                 var range = FormatCatalog.Instance.LookupSignature<ImageFormat> (signature);
@@ -172,7 +155,7 @@ namespace GameRes
                         ImageMetaData metadata = impl.ReadMetaData (file);
                         if (null != metadata)
                         {
-                            metadata.FileName = filename;
+                            metadata.FileName = file.Name;
                             return Tuple.Create (impl, metadata);
                         }
                     }

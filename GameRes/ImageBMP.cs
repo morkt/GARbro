@@ -42,7 +42,7 @@ namespace GameRes
 
     public interface IBmpExtension
     {
-        ImageData Read (Stream file, BmpMetaData info);
+        ImageData Read (IBinaryStream file, BmpMetaData info);
     }
 
     [Export(typeof(ImageFormat))]
@@ -60,12 +60,11 @@ namespace GameRes
 
         bool EnableExtensions = true;
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var bmp_info = info as BmpMetaData;
             if (bmp_info != null && EnableExtensions)
             {
-                bool can_seek = file.CanSeek;
                 foreach (var ext in m_extensions)
                 {
                     try
@@ -78,11 +77,10 @@ namespace GameRes
                     {
                         System.Diagnostics.Trace.WriteLine (X.Message, ext.ToString());
                     }
-                    if (can_seek)
-                        file.Position = 0;
+                    file.Position = 0;
                 }
             }
-            var decoder = new BmpBitmapDecoder (file,
+            var decoder = new BmpBitmapDecoder (file.AsStream,
                 BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
             BitmapSource frame = decoder.Frames.First();
             frame.Freeze();
@@ -96,10 +94,10 @@ namespace GameRes
             encoder.Save (file);
         }
 
-        void SkipBytes (BinaryReader file, uint num)
+        void SkipBytes (IBinaryStream file, uint num)
         {
-            if (file.BaseStream.CanSeek)
-                file.BaseStream.Seek (num, SeekOrigin.Current);
+            if (file.AsStream.CanSeek)
+                file.Seek (num, SeekOrigin.Current);
             else
             {
                 for (int i = 0; i < num / 4; ++i)
@@ -109,49 +107,46 @@ namespace GameRes
             }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            int c1 = stream.ReadByte();
-            int c2 = stream.ReadByte();
+            int c1 = file.ReadByte();
+            int c2 = file.ReadByte();
             if ('B' != c1 || 'M' != c2)
                 return null;
-            using (var file = new ArcView.Reader (stream))
+            uint size = file.ReadUInt32();
+            if (size < 14+40)
             {
-                uint size = file.ReadUInt32();
-                if (size < 14+40)
-                {
-                    // some otherwise valid bitmaps have size field set to zero
-                    if (size != 0 || !stream.CanSeek)
-                        return null;
-                    size = (uint)stream.Length;
-                }
-                SkipBytes (file, 8);
-                uint header_size = file.ReadUInt32();
-                if (header_size < 40 || size-14 < header_size)
+                // some otherwise valid bitmaps have size field set to zero
+                if (size != 0 || !file.AsStream.CanSeek)
                     return null;
-                uint width = file.ReadUInt32();
-                uint height = file.ReadUInt32();
-                file.ReadInt16();
-                int bpp = file.ReadInt16();
-                return new BmpMetaData {
-                    Width = width,
-                    Height = height,
-                    OffsetX = 0,
-                    OffsetY = 0,
-                    BPP = bpp,
-                    ImageLength = size,
-                    HeaderLength = header_size + 14,
-                };
+                size = (uint)file.Length;
             }
+            SkipBytes (file, 8);
+            uint header_size = file.ReadUInt32();
+            if (header_size < 40 || size-14 < header_size)
+                return null;
+            uint width  = file.ReadUInt32();
+            uint height = file.ReadUInt32();
+            file.ReadInt16();
+            int bpp = file.ReadInt16();
+            return new BmpMetaData {
+                Width = width,
+                Height = height,
+                OffsetX = 0,
+                OffsetY = 0,
+                BPP = bpp,
+                ImageLength = size,
+                HeaderLength = header_size + 14,
+            };
         }
     }
 
     [Export(typeof(IBmpExtension))]
     public class BitmapWithAlpha : IBmpExtension
     {
-        public ImageData Read (Stream file, BmpMetaData info)
+        public ImageData Read (IBinaryStream file, BmpMetaData info)
         {
-            if (file.CanSeek)
+            if (file.AsStream.CanSeek)
             {
                 var width_x_height = info.Width * info.Height;
                 uint bmp_length = width_x_height * (uint)info.BPP/8 + info.HeaderLength;
@@ -170,7 +165,7 @@ namespace GameRes
             return null;
         }
 
-        private ImageData ReadBitmapWithAlpha (Stream file, BmpMetaData info)
+        private ImageData ReadBitmapWithAlpha (IBinaryStream file, BmpMetaData info)
         {
             file.Position = info.ImageLength;
             var alpha = new byte[info.Width*info.Height];
@@ -193,7 +188,7 @@ namespace GameRes
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, dst_stride);
         }
 
-        private ImageData ReadBitmapBGRA (Stream file, BmpMetaData info)
+        private ImageData ReadBitmapBGRA (IBinaryStream file, BmpMetaData info)
         {
             file.Position = info.HeaderLength;
             int stride = (int)info.Width * 4;

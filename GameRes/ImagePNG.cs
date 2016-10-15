@@ -41,11 +41,11 @@ namespace GameRes
         public override uint     Signature { get { return 0x474e5089; } }
         public override bool      CanWrite { get { return true; } }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var decoder = new PngBitmapDecoder (file,
+            var decoder = new PngBitmapDecoder (file.AsStream,
                 BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-            BitmapSource frame = decoder.Frames.First();
+            BitmapSource frame = decoder.Frames[0];
             frame.Freeze();
             return new ImageData (frame, info);
         }
@@ -102,10 +102,10 @@ namespace GameRes
             }
         }
 
-        void SkipBytes (BinaryReader file, uint num)
+        void SkipBytes (IBinaryStream file, uint num)
         {
-            if (file.BaseStream.CanSeek)
-                file.BaseStream.Seek (num, SeekOrigin.Current);
+            if (file.AsStream.CanSeek)
+                file.Seek (num, SeekOrigin.Current);
             else
             {
                 for (int i = 0; i < num / 4; ++i)
@@ -115,100 +115,72 @@ namespace GameRes
             }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            ImageMetaData meta = null;
-            var file = new ArcView.Reader (stream);
-            try
+            file.ReadUInt32();
+            if (file.ReadUInt32() != 0x0a1a0a0d)
+                return null;
+            uint chunk_size = Binary.BigEndian (file.ReadUInt32());
+            byte[] chunk_type = file.ReadBytes (4);
+            if (!Binary.AsciiEqual (chunk_type, "IHDR"))
+                return null;
+
+            var meta = new ImageMetaData();
+            meta.Width   = Binary.BigEndian (file.ReadUInt32());
+            meta.Height  = Binary.BigEndian (file.ReadUInt32());
+            int bpp = file.ReadByte();
+            int color_type = file.ReadByte();
+            switch (color_type)
             {
-                file.ReadUInt32();
-                if (file.ReadUInt32() != 0x0a1a0a0d)
-                    return null;
-                uint chunk_size = Binary.BigEndian (file.ReadUInt32());
-                char[] chunk_type = new char[4];
+            case 2: meta.BPP = bpp*3; break;
+            case 3: meta.BPP = 24; break;
+            case 4: meta.BPP = bpp*2; break;
+            case 6: meta.BPP = bpp*4; break;
+            default: meta.BPP = bpp; break;
+            }
+            SkipBytes (file, 7);
+
+            for (;;)
+            {
+                chunk_size = Binary.BigEndian (file.ReadUInt32());
                 file.Read (chunk_type, 0, 4);
-                if (!chunk_type.SequenceEqual ("IHDR"))
-                    return null;
-
-                meta = new ImageMetaData();
-                meta.Width   = Binary.BigEndian (file.ReadUInt32());
-                meta.Height  = Binary.BigEndian (file.ReadUInt32());
-                int bpp = file.ReadByte();
-                int color_type = file.ReadByte();
-                switch (color_type)
+                if (Binary.AsciiEqual (chunk_type, "IDAT") || Binary.AsciiEqual (chunk_type, "IEND"))
+                    break;
+                if (Binary.AsciiEqual (chunk_type, "oFFs"))
                 {
-                case 2: meta.BPP = bpp*3; break;
-                case 3: meta.BPP = 24; break;
-                case 4: meta.BPP = bpp*2; break;
-                case 6: meta.BPP = bpp*4; break;
-                default: meta.BPP = bpp; break;
-                }
-                SkipBytes (file, 7);
-
-                for (;;)
-                {
-                    chunk_size = Binary.BigEndian (file.ReadUInt32());
-                    file.Read (chunk_type, 0, 4);
-                    if (chunk_type.SequenceEqual ("IDAT") || chunk_type.SequenceEqual ("IEND"))
-                        break;
-                    if (chunk_type.SequenceEqual ("oFFs"))
+                    int x = Binary.BigEndian (file.ReadInt32());
+                    int y = Binary.BigEndian (file.ReadInt32());
+                    if (0 == file.ReadByte())
                     {
-                        int x = Binary.BigEndian (file.ReadInt32());
-                        int y = Binary.BigEndian (file.ReadInt32());
-                        if (0 == file.ReadByte())
-                        {
-                            meta.OffsetX = x;
-                            meta.OffsetY = y;
-                        }
-                        break;
+                        meta.OffsetX = x;
+                        meta.OffsetY = y;
                     }
-                    SkipBytes (file, chunk_size+4);
+                    break;
                 }
-            }
-            catch
-            {
-                meta = null;
-            }
-            finally
-            {
-                file.Dispose();
-                if (stream.CanSeek)
-                    stream.Position = 0;
+                SkipBytes (file, chunk_size+4);
             }
             return meta;
         }
 
-        public static long FindChunk (Stream stream, string chunk)
+        public static long FindChunk (IBinaryStream file, string chunk)
         {
-            long found_offset = -1;
-            var file = new ArcView.Reader (stream);
             try
             {
-                char[] buf = new char[4];
-                file.BaseStream.Position = 8;
-                while (-1 != file.PeekChar())
+                var buf = new byte[4];
+                file.Position = 8;
+                while (-1 != file.PeekByte())
                 {
-                    long chunk_offset = file.BaseStream.Position;
+                    long chunk_offset = file.Position;
                     uint chunk_size = Binary.BigEndian (file.ReadUInt32());
                     if (4 != file.Read (buf, 0, 4))
                         break;
-                    if (chunk.SequenceEqual (buf))
-                    {
-                        found_offset = chunk_offset;
-                        break;
-                    }
-                    file.BaseStream.Position += chunk_size + 4;
+                    if (Binary.AsciiEqual (buf, chunk))
+                        return chunk_offset;
+                    file.Position += chunk_size + 4;
                 }
             }
-            catch
-            {
-                // ignore errors
-            }
-            finally
-            {
-                file.Dispose();
-            }
-            return found_offset;
+            catch { /* ignore errors */ }
+            return -1L;
         }
     }
 }

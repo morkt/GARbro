@@ -46,9 +46,9 @@ namespace GameRes
             Signatures = new uint[] { 0x002a4949, 0x2a004d4d };
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var decoder = new TiffBitmapDecoder (file,
+            var decoder = new TiffBitmapDecoder (file.AsStream,
                 BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
             var frame = decoder.Frames[0];
             frame.Freeze();
@@ -62,9 +62,6 @@ namespace GameRes
             encoder.Frames.Add (BitmapFrame.Create (image.Bitmap, null, null, null));
             encoder.Save (file);
         }
-
-        private delegate uint   UInt32Reader();
-        private delegate ushort UInt16Reader();
 
         enum TIFF
         {
@@ -106,15 +103,15 @@ namespace GameRes
             Complete = Sufficient|PosX|PosY,
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             using (var file = new Parser (stream))
                 return file.ReadMetaData();
         }
 
-        public class Parser : IDisposable
+        internal sealed class Parser : IDisposable
         {
-            private BinaryReader    m_file;
+            private IBinaryStream   m_file;
             private readonly bool   m_is_bigendian;
             private readonly uint   m_first_ifd;
             private readonly uint[] m_type_size = { 0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8 };
@@ -127,11 +124,10 @@ namespace GameRes
             UInt32Reader ReadUInt32;
             UInt64Reader ReadUInt64;
 
-            public Parser (Stream file)
+            public Parser (IBinaryStream file)
             {
-                m_file = new ArcView.Reader (file);
-                uint signature = m_file.ReadUInt32();
-                m_is_bigendian = 0x2a004d4d == signature;
+                m_file = file;
+                m_is_bigendian = 0x2a004d4d == m_file.Signature;
                 if (m_is_bigendian)
                 {
                     ReadUInt16 = () => Binary.BigEndian (m_file.ReadUInt16());
@@ -152,13 +148,13 @@ namespace GameRes
                 uint ifd = m_first_ifd;
                 for (;;)
                 {
-                    m_file.BaseStream.Position = ifd;
+                    m_file.Position = ifd;
                     uint tag_count = ReadUInt16();
                     ifd += 2 + tag_count*12;
                     uint ifd_next = ReadUInt32();
                     if (0 == ifd_next)
                         break;
-                    if (ifd_next == ifd || ifd_next >= m_file.BaseStream.Length)
+                    if (ifd_next == ifd || ifd_next >= m_file.Length)
                         return -1;
                     ifd = ifd_next;
                 }
@@ -172,7 +168,7 @@ namespace GameRes
                 uint ifd = m_first_ifd;
                 while (ifd != 0 && parsed != MetaParsed.Complete)
                 {
-                    m_file.BaseStream.Position = ifd;
+                    m_file.Position = ifd;
                     uint tag_count = ReadUInt16();
                     ifd += 2;
                     for (uint i = 0; i < tag_count && parsed != MetaParsed.Complete; ++i)
@@ -208,7 +204,7 @@ namespace GameRes
                                 if (count * GetTypeSize (type) > 4)
                                 {
                                     var bpp_offset = ReadUInt32();
-                                    m_file.BaseStream.Position = bpp_offset;
+                                    m_file.Position = bpp_offset;
                                 }
                                 bpp = 0;
                                 for (uint b = 0; b < count; ++b)
@@ -224,7 +220,7 @@ namespace GameRes
                             }
                         }
                         ifd += 12;
-                        m_file.BaseStream.Position = ifd;
+                        m_file.Position = ifd;
                     }
                     uint ifd_next = ReadUInt32();
                     if (ifd_next == ifd)
@@ -254,7 +250,7 @@ namespace GameRes
             bool ReadOffsetValue (TagType type, out int value)
             {
                 if (GetTypeSize (type) > 4)
-                    m_file.BaseStream.Position = ReadUInt32();
+                    m_file.Position = ReadUInt32();
                 return ReadValue (type, out value);
             }
 
@@ -353,25 +349,9 @@ namespace GameRes
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
                 GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                    {
-                        m_file.Dispose();
-                    }
-                    m_file = null;
-                    disposed = true;
-                }
             }
             #endregion
         }

@@ -162,34 +162,21 @@ namespace GameRes
     {
         public override string Type { get { return "audio"; } }
 
-        public abstract SoundInput TryOpen (Stream file);
+        public abstract SoundInput TryOpen (IBinaryStream file);
 
         public virtual void Write (SoundInput source, Stream output)
         {
             throw new System.NotImplementedException ("AudioFormat.Write not implemenented");
         }
 
-        public static SoundInput Read (Stream file)
+        public static SoundInput Read (IBinaryStream file)
         {
-            var input = new MemoryStream();
-            file.CopyTo (input);
-            try
-            {
-                var sound = FindFormat (input);
-                if (null != sound)
-                    input = null; // input stream is owned by sound object now, don't dispose it
-                return sound;
-            }
-            finally
-            {
-                if (null != input)
-                    input.Dispose();
-            }
+            return FindFormat (file);
         }
 
-        public static SoundInput FindFormat (Stream file)
+        public static SoundInput FindFormat (IBinaryStream file)
         {
-            uint signature = FormatCatalog.ReadSignature (file);
+            uint signature = file.Signature;
             for (;;)
             {
                 var range = FormatCatalog.Instance.LookupSignature<AudioFormat> (signature);

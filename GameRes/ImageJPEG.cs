@@ -46,12 +46,12 @@ namespace GameRes
         {
             Extensions = new string[] { "jpg", "jpeg" };
             Signatures = new uint[] { 0xe0ffd8ffu, 0 };
-            Quality = 90;
+            Quality = 100;
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var decoder = new JpegBitmapDecoder (file,
+            var decoder = new JpegBitmapDecoder (file.AsStream,
                 BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
             var frame = decoder.Frames[0];
             frame.Freeze();
@@ -66,36 +66,33 @@ namespace GameRes
             encoder.Save (file);
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            if (0xff != stream.ReadByte() || 0xd8 != stream.ReadByte())
+            if (0xFF != file.ReadByte() || 0xD8 != file.ReadByte())
                 return null;
-            using (var file = new ArcView.Reader (stream))
+            while (-1 != file.PeekByte())
             {
-                while (-1 != file.PeekChar())
+                ushort marker = Binary.BigEndian (file.ReadUInt16());
+                if ((marker & 0xff00) != 0xff00)
+                    break;
+                int length = Binary.BigEndian (file.ReadUInt16());
+                if ((marker & 0x00f0) == 0xc0 && marker != 0xffc4)
                 {
-                    ushort marker = Binary.BigEndian (file.ReadUInt16());
-                    if ((marker & 0xff00) != 0xff00)
+                    if (length < 8)
                         break;
-                    int length = Binary.BigEndian (file.ReadUInt16());
-                    if ((marker & 0x00f0) == 0xc0 && marker != 0xffc4)
-                    {
-                        if (length < 8)
-                            break;
-                        int bits = file.ReadByte();
-                        uint height = Binary.BigEndian (file.ReadUInt16());
-                        uint width  = Binary.BigEndian (file.ReadUInt16());
-                        int components = file.ReadByte();
-                        return new ImageMetaData {
-                            Width = width,
-                            Height = height,
-                            BPP = bits * components,
-                        };
-                    }
-                    file.BaseStream.Seek (length-2, SeekOrigin.Current);
+                    int bits = file.ReadByte();
+                    uint height = Binary.BigEndian (file.ReadUInt16());
+                    uint width  = Binary.BigEndian (file.ReadUInt16());
+                    int components = file.ReadByte();
+                    return new ImageMetaData {
+                        Width = width,
+                        Height = height,
+                        BPP = bits * components,
+                    };
                 }
-                return null;
+                file.Seek (length-2, SeekOrigin.Current);
             }
+            return null;
         }
     }
 }

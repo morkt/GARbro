@@ -52,14 +52,11 @@ namespace GameRes
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return true; } }
 
-        public override ImageData Read (Stream stream, ImageMetaData metadata)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData metadata)
         {
-            var meta = metadata as TgaMetaData;
-            if (null == meta)
-                throw new System.ArgumentException ("TgaFormat.Read should be supplied with TgaMetaData", "metadata");
-            var reader = new Reader (stream, meta);
+            var reader = new Reader (stream, (TgaMetaData)metadata);
             var pixels = reader.Unpack();
-            return ImageData.Create (meta, reader.Format, reader.Palette, pixels, reader.Stride);
+            return ImageData.Create (metadata, reader.Format, reader.Palette, pixels, reader.Stride);
         }
 
         public override void Write (Stream stream, ImageData image)
@@ -118,65 +115,62 @@ namespace GameRes
             }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var file = new ArcView.Reader (stream))
+            short id_length     = (short)file.ReadByte();
+            short colormap_type = (short)file.ReadByte();
+            if (colormap_type > 1)
+                return null;
+            short image_type    = (short)file.ReadByte();
+            ushort colormap_first  = file.ReadUInt16();
+            ushort colormap_length = file.ReadUInt16();
+            short colormap_depth  = (short)file.ReadByte();
+            int pos_x           = file.ReadInt16();
+            int pos_y           = file.ReadInt16();
+            uint width          = file.ReadUInt16();
+            uint height         = file.ReadUInt16();
+            int bpp             = file.ReadByte();
+            if (bpp != 32 && bpp != 24 && bpp != 16 && bpp != 15 && bpp != 8)
+                return null;
+            short descriptor    = (short)file.ReadByte();
+            uint colormap_offset = (uint)(18 + id_length);
+            switch (image_type)
             {
-                short id_length     = file.ReadByte();
-                short colormap_type = file.ReadByte();
-                if (colormap_type > 1)
+            default: return null;
+            case 1:  // Uncompressed, color-mapped images.
+            case 9:  // Runlength encoded color-mapped images.
+            case 32: // Compressed color-mapped data, using Huffman, Delta, and
+                    // runlength encoding.
+            case 33: // Compressed color-mapped data, using Huffman, Delta, and
+                    // runlength encoding.  4-pass quadtree-type process.
+                if (colormap_depth != 24 && colormap_depth != 32)
                     return null;
-                short image_type    = file.ReadByte();
-                ushort colormap_first  = file.ReadUInt16();
-                ushort colormap_length = file.ReadUInt16();
-                short colormap_depth  = file.ReadByte();
-                int pos_x           = file.ReadInt16();
-                int pos_y           = file.ReadInt16();
-                uint width          = file.ReadUInt16();
-                uint height         = file.ReadUInt16();
-                int bpp             = file.ReadByte();
-                if (bpp != 32 && bpp != 24 && bpp != 16 && bpp != 15 && bpp != 8)
-                    return null;
-                short descriptor    = file.ReadByte();
-                uint colormap_offset = (uint)(18 + id_length);
-                switch (image_type)
-                {
-                default: return null;
-                case 1:  // Uncompressed, color-mapped images.
-                case 9:  // Runlength encoded color-mapped images.
-                case 32: // Compressed color-mapped data, using Huffman, Delta, and
-                        // runlength encoding.
-                case 33: // Compressed color-mapped data, using Huffman, Delta, and
-                        // runlength encoding.  4-pass quadtree-type process.
-                    if (colormap_depth != 24 && colormap_depth != 32)
-                        return null;
-                    break;
-                case 2:  // Uncompressed, RGB images.
-                case 3:  // Uncompressed, black and white images.
-                case 10: // Runlength encoded RGB images.
-                case 11: // Compressed, black and white images.
-                    break;
-                }
-                return new TgaMetaData {
-                    OffsetX = pos_x,
-                    OffsetY = pos_y,
-                    Width   = width,
-                    Height  = height,
-                    BPP     = bpp,
-                    ImageType       = image_type,
-                    ColormapType    = colormap_type,
-                    ColormapOffset  = colormap_offset,
-                    ColormapFirst   = colormap_first,
-                    ColormapLength  = colormap_length,
-                    ColormapDepth   = colormap_depth,
-                    Descriptor      = descriptor,
-                };
+                break;
+            case 2:  // Uncompressed, RGB images.
+            case 3:  // Uncompressed, black and white images.
+            case 10: // Runlength encoded RGB images.
+            case 11: // Compressed, black and white images.
+                break;
             }
+            return new TgaMetaData {
+                OffsetX = pos_x,
+                OffsetY = pos_y,
+                Width   = width,
+                Height  = height,
+                BPP     = bpp,
+                ImageType       = image_type,
+                ColormapType    = colormap_type,
+                ColormapOffset  = colormap_offset,
+                ColormapFirst   = colormap_first,
+                ColormapLength  = colormap_length,
+                ColormapDepth   = colormap_depth,
+                Descriptor      = descriptor,
+            };
         }
 
         internal class Reader
         {
-            Stream          m_input;
+            IBinaryStream   m_input;
             TgaMetaData     m_meta;
             int             m_width;
             int             m_height;
@@ -189,7 +183,7 @@ namespace GameRes
             public int            Stride { get { return m_stride; } }
             public byte[]           Data { get { return m_data; } }
 
-            public Reader (Stream stream, TgaMetaData meta)
+            public Reader (IBinaryStream stream, TgaMetaData meta)
             {
                 m_input = stream;
                 m_meta = meta;

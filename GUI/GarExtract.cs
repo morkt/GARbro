@@ -306,9 +306,9 @@ namespace GARbro.GUI
 
         void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
         {
-            using (var file = arc.OpenSeekableEntry (entry))
+            using (var file = arc.OpenBinaryEntry (entry))
             {
-                var src_format = ImageFormat.FindFormat (file, entry.Name);
+                var src_format = ImageFormat.FindFormat (file);
                 if (null == src_format)
                     throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretImage, entry.Name));
                 file.Position = 0;
@@ -318,7 +318,7 @@ namespace GARbro.GUI
                 {
                     // source format is the same as a target, copy file as is
                     using (var output = ArchiveFormat.CreateFile (outname))
-                        file.CopyTo (output);
+                        file.AsStream.CopyTo (output);
                     return;
                 }
                 ImageData image = src_format.Item1.Read (file, src_format.Item2);
@@ -364,7 +364,7 @@ namespace GARbro.GUI
 
         static void ExtractAudio (ArcFile arc, Entry entry)
         {
-            using (var file = arc.OpenEntry (entry))
+            using (var file = arc.OpenBinaryEntry (entry))
             using (var sound = AudioFormat.Read (file))
             {
                 if (null == sound)

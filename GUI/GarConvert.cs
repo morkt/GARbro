@@ -187,7 +187,7 @@ namespace GARbro.GUI
 
         void ConvertAudio (string filename)
         {
-            using (var file = File.OpenRead (filename))
+            using (var file = BinaryStream.FromFile (filename))
             using (var input = AudioFormat.Read (file))
             {
                 if (null == input)
@@ -223,9 +223,9 @@ namespace GARbro.GUI
             string target_name = Path.GetFileName (filename);
             string target_ext = m_image_format.Extensions.FirstOrDefault();
             target_name = Path.ChangeExtension (target_name, target_ext);
-            using (var file = File.OpenRead (filename))
+            using (var file = BinaryStream.FromFile (filename))
             {
-                var src_format = ImageFormat.FindFormat (file, filename);
+                var src_format = ImageFormat.FindFormat (file);
                 if (null == src_format)
                     return;
                 if (src_format.Item1 == m_image_format && m_image_format.Extensions.Any (ext => ext == source_ext))

@@ -111,17 +111,18 @@ namespace GameRes
             0x0055, // MpegLayer3
         };
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            SoundInput sound = new WaveInput (file);
+            SoundInput sound = new WaveInput (file.AsStream);
             if (EmbeddedFormats.Contains (sound.Format.FormatTag))
             {
+                var bin = new BinaryStream (sound, file.Name);
                 try
                 {
-                    var embedded = AudioFormat.Read (sound);
+                    var embedded = AudioFormat.Read (bin);
                     if (null != embedded)
                     {
-                        sound.Dispose();
+//                        sound.Dispose();
                         sound = embedded;
                     }
                 }

@@ -50,7 +50,10 @@ namespace GameRes
         /// </summary>
         Stream OpenStream (Entry entry);
 
-        Stream OpenSeekableStream (Entry entry);
+        /// <summary>
+        /// Open file for reading as seekable binary stream.
+        /// </summary>
+        IBinaryStream OpenBinaryStream (Entry entry);
 
         /// <summary>
         /// Open file for reading as memory-mapped view.
@@ -183,9 +186,10 @@ namespace GameRes
             return File.OpenRead (entry.Name);
         }
 
-        public Stream OpenSeekableStream (Entry entry)
+        public IBinaryStream OpenBinaryStream (Entry entry)
         {
-            return OpenStream (entry);
+            var input = OpenStream (entry);
+            return new BinaryStream (input, entry.Name);
         }
 
         public ArcView OpenView (Entry entry)
@@ -229,9 +233,9 @@ namespace GameRes
             return m_arc.OpenEntry (entry);
         }
 
-        public Stream OpenSeekableStream (Entry entry)
+        public IBinaryStream OpenBinaryStream (Entry entry)
         {
-            return m_arc.OpenSeekableEntry (entry);
+            return m_arc.OpenBinaryEntry (entry);
         }
 
         public ArcView OpenView (Entry entry)
@@ -706,9 +710,9 @@ namespace GameRes
             return m_vfs.Top.OpenStream (entry);
         }
 
-        public static Stream OpenSeekableStream (Entry entry)
+        public static IBinaryStream OpenBinaryStream (Entry entry)
         {
-            return m_vfs.Top.OpenSeekableStream (entry);
+            return m_vfs.Top.OpenBinaryStream (entry);
         }
 
         public static ArcView OpenView (Entry entry)
@@ -721,9 +725,9 @@ namespace GameRes
             return m_vfs.Top.OpenStream (m_vfs.Top.FindFile (filename));
         }
 
-        public static Stream OpenSeekableStream (string filename)
+        public static IBinaryStream OpenBinaryStream (string filename)
         {
-            return m_vfs.Top.OpenSeekableStream (m_vfs.Top.FindFile (filename));
+            return m_vfs.Top.OpenBinaryStream (m_vfs.Top.FindFile (filename));
         }
 
         public static ArcView OpenView (string filename)

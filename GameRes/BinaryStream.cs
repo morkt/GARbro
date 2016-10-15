@@ -32,7 +32,7 @@ using GameRes.Utility;
 
 namespace GameRes
 {
-    public interface IBinaryStream
+    public interface IBinaryStream : IDisposable
     {
         /// <summary>
         /// Name of the stream (could be name of the underlying file) or an empty string.
@@ -221,16 +221,32 @@ namespace GameRes
 
         public BinaryStream (Stream input, string name, bool leave_open = false)
         {
-            if (null == name)
-                name = "";
-            m_source = input;
-            m_should_dispose = !leave_open;
             m_buffer = new byte[0x10];
             m_buffer_pos = 0;
             m_buffer_end = 0;
             m_signature = new Lazy<uint> (ReadSignature);
             m_header_size = 0;
-            Name = name;
+            Name = name ?? "";
+            if (!input.CanSeek)
+            {
+                m_source = new MemoryStream();
+                input.CopyTo (m_source);
+                m_should_dispose = true;
+                if (!leave_open)
+                    input.Dispose();
+                m_source.Position = 0;
+            }
+            else
+            {
+                m_source = input;
+                m_should_dispose = !leave_open;
+            }
+        }
+
+        public static BinaryStream FromFile (string filename)
+        {
+            var stream = File.OpenRead (filename);
+            return new BinaryStream (stream, filename);
         }
 
         uint ReadSignature ()

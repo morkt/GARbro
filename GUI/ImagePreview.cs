@@ -188,17 +188,12 @@ namespace GARbro.GUI
             }
         }
 
-        Stream OpenPreviewStream (PreviewFile preview)
-        {
-            return VFS.OpenSeekableStream (preview.Entry);
-        }
-
         void LoadPreviewText (PreviewFile preview)
         {
             Stream file = null;
             try
             {
-                file = OpenPreviewStream (preview);
+                file = VFS.OpenBinaryStream (preview.Entry).AsStream;
                 if (!TextView.IsTextFile (file))
                 {
                     ResetPreviewPane();
@@ -230,9 +225,9 @@ namespace GARbro.GUI
         {
             try
             {
-                using (var file = OpenPreviewStream (preview))
+                using (var file = VFS.OpenBinaryStream (preview.Entry))
                 {
-                    var data = ImageFormat.Read (preview.Name, file);
+                    var data = ImageFormat.Read (file);
                     if (null != data)
                         SetPreviewImage (preview, data.Bitmap);
                     else

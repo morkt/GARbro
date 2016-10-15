@@ -924,7 +924,7 @@ namespace GARbro.GUI
             try
             {
                 SetBusyState();
-                using (var input = VFS.OpenStream (entry))
+                using (var input = VFS.OpenBinaryStream (entry))
                 {
                     FormatCatalog.Instance.LastError = null;
                     sound = AudioFormat.Read (input);
