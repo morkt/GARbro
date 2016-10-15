@@ -46,39 +46,36 @@ namespace GameRes.Formats.AliceSoft
         public override string Description { get { return "AliceSoft System incremental image"; } }
         public override uint     Signature { get { return 0x20666364; } } // 'dcf '
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var reader = new ArcView.Reader (stream))
+            stream.Seek (4, SeekOrigin.Current);
+            uint header_size = stream.ReadUInt32();
+            long data_pos = stream.Position + header_size;
+            if (stream.ReadInt32() != 1)
+                return null;
+            uint width  = stream.ReadUInt32();
+            uint height = stream.ReadUInt32();
+            int bpp = stream.ReadInt32();
+            int name_length = stream.ReadInt32();
+            if (name_length <= 0)
+                return null;
+            int shift = (name_length % 7) + 1;
+            var name_bits = stream.ReadBytes (name_length);
+            for (int i = 0; i < name_length; ++i)
             {
-                stream.Seek (4, SeekOrigin.Current);
-                uint header_size = reader.ReadUInt32();
-                long data_pos = stream.Position + header_size;
-                if (reader.ReadInt32() != 1)
-                    return null;
-                uint width  = reader.ReadUInt32();
-                uint height = reader.ReadUInt32();
-                int bpp = reader.ReadInt32();
-                int name_length = reader.ReadInt32();
-                if (name_length <= 0)
-                    return null;
-                int shift = (name_length % 7) + 1;
-                var name_bits = reader.ReadBytes (name_length);
-                for (int i = 0; i < name_length; ++i)
-                {
-                    name_bits[i] = Binary.RotByteL (name_bits[i], shift);
-                }
-                return new DcfMetaData
-                {
-                    Width = width,
-                    Height = height,
-                    BPP = bpp,
-                    BaseName = Encodings.cp932.GetString (name_bits),
-                    DataOffset = data_pos,
-                };
+                name_bits[i] = Binary.RotByteL (name_bits[i], shift);
             }
+            return new DcfMetaData
+            {
+                Width = width,
+                Height = height,
+                BPP = bpp,
+                BaseName = Encodings.cp932.GetString (name_bits),
+                DataOffset = data_pos,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new DcfReader (stream, (DcfMetaData)info))
             {
@@ -93,9 +90,9 @@ namespace GameRes.Formats.AliceSoft
         }
     }
 
-    internal class DcfReader : IDisposable
+    internal sealed class DcfReader : IDisposable
     {
-        BinaryReader        m_input;
+        IBinaryStream       m_input;
         DcfMetaData         m_info;
         byte[]              m_output;
         byte[]              m_mask = null;
@@ -111,9 +108,9 @@ namespace GameRes.Formats.AliceSoft
         public PixelFormat Format { get; private set; }
         public int         Stride { get; private set; }
 
-        public DcfReader (Stream input, DcfMetaData info)
+        public DcfReader (IBinaryStream input, DcfMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
         }
 
@@ -122,7 +119,7 @@ namespace GameRes.Formats.AliceSoft
             long next_pos = m_info.DataOffset;
             for (;;)
             {
-                m_input.BaseStream.Position = next_pos;
+                m_input.Position = next_pos;
                 uint id = m_input.ReadUInt32();
                 next_pos += 8 + m_input.ReadUInt32();
                 if (0x6C646664 == id) // 'dfdl'
@@ -131,22 +128,22 @@ namespace GameRes.Formats.AliceSoft
                     if (unpacked_size <= 0)
                         continue;
                     m_mask = new byte[unpacked_size];
-                    using (var input = new ZLibStream (m_input.BaseStream, CompressionMode.Decompress, true))
+                    using (var input = new ZLibStream (m_input.AsStream, CompressionMode.Decompress, true))
                         input.Read (m_mask, 0, unpacked_size);
                 }
                 else if (0x64676364 == id) // 'dcgd'
                     break;
             }
-            long qnt_pos = m_input.BaseStream.Position;
+            long qnt_pos = m_input.Position;
             if (m_input.ReadUInt32() != Qnt.Signature)
                 throw new InvalidFormatException();
-            m_input.BaseStream.Seek (-4, SeekOrigin.Current);
-            var qnt_info = Qnt.ReadMetaData (m_input.BaseStream) as QntMetaData;
+            m_input.Seek (-4, SeekOrigin.Current);
+            var qnt_info = Qnt.ReadMetaData (m_input) as QntMetaData;
             if (null == qnt_info)
                 throw new InvalidFormatException();
 
-            m_input.BaseStream.Position = qnt_pos + 0x44;
-            var overlay = new QntFormat.Reader (m_input.BaseStream, qnt_info);
+            m_input.Position = qnt_pos + 0x44;
+            var overlay = new QntFormat.Reader (m_input, qnt_info);
             overlay.Unpack();
             m_overlay_bpp = overlay.BPP;
             if (m_mask != null)
@@ -236,14 +233,8 @@ namespace GameRes.Formats.AliceSoft
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

@@ -44,28 +44,26 @@ namespace GameRes.Formats.Leaf
             Signatures = new uint[] { 0x1866676C, 0x2066676C, 0x0966676C };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[8];
-            if (8 != stream.Read (header, 0, 8))
-                return null;
+            var header = stream.ReadHeader (8);
             int bpp = header[3];
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt16 (header, 4),
-                Height  = LittleEndian.ToUInt16 (header, 6),
+                Width   = header.ToUInt16 (4),
+                Height  = header.ToUInt16 (6),
                 BPP     = 9 == bpp ? 8 : bpp,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             int stride = (int)info.Width * info.BPP / 8;
             var pixels = new byte[stride * (int)info.Height];
             stream.Position = 12;
             BitmapPalette palette = null;
             if (8 == info.BPP)
-                palette = ReadPalette (stream);
+                palette = ReadPalette (stream.AsStream);
             if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                 throw new EndOfStreamException();
             PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24

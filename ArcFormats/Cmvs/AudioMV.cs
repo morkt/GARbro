@@ -37,7 +37,7 @@ namespace GameRes.Formats.Pvns
         public override string Description { get { return "PVNS engine compressed audio format"; } }
         public override uint     Signature { get { return 0x53564B4D; } } // 'MKVS'
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             using (var reader = new MvReader (file))
             {
@@ -52,7 +52,7 @@ namespace GameRes.Formats.Pvns
 
     internal sealed class MvReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         WaveFormat      m_format;
         int             m_channel_size;
@@ -61,7 +61,7 @@ namespace GameRes.Formats.Pvns
         public byte[]       Data { get { return m_output; } }
         public WaveFormat Format { get { return m_format; } }
 
-        public MvReader (Stream input)
+        public MvReader (IBinaryStream input)
         {
             var header = new byte[0x12];
             input.Read (header, 0, header.Length);
@@ -72,14 +72,14 @@ namespace GameRes.Formats.Pvns
             m_format.SamplesPerSecond   = LittleEndian.ToUInt16 (header, 0xA);
             m_format.BlockAlign         = (ushort)(m_format.Channels*m_format.BitsPerSample/8);
             m_format.AverageBytesPerSecond = m_format.SamplesPerSecond*m_format.BlockAlign;
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_output = new byte[2 * m_format.Channels * m_channel_size];
             m_samples = LittleEndian.ToInt32 (header, 0xE);
         }
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 0x12;
+            m_input.Position = 0x12;
             var pre_sample1 = new int[0x400];
             var pre_sample2 = new int[0x400];
             var pre_sample3 = new int[0x140 * m_format.Channels];
@@ -180,14 +180,8 @@ namespace GameRes.Formats.Pvns
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
 

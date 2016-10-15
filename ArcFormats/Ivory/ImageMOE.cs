@@ -37,19 +37,19 @@ namespace GameRes.Formats.Ivory
         public override string Description { get { return "Ivory image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var wh = FormatCatalog.ReadSignature (stream);
+            var wh = stream.Signature;
             uint width  = wh & 0xFFFF;
             uint height = wh >> 16;
             if (0 == width || width > 800 || 0 == height || height > 600)
                 return null;
-            if (!IsValidInput (stream, width, height))
+            if (!IsValidInput (stream.AsStream, width, height))
                 return null;
             return new ImageMetaData { Width = width, Height = height, BPP = 24 };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 4;
             var pixels = new byte[3 * info.Width * info.Height];

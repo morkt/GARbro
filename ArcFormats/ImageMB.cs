@@ -36,7 +36,7 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return true; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             int c1 = stream.ReadByte();
             int c2 = stream.ReadByte();
@@ -46,17 +46,18 @@ namespace GameRes.Formats
                 return base.ReadMetaData (bmp);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var bmp = OpenAsBitmap (stream))
                 return base.Read (bmp, info);
         }
 
-        Stream OpenAsBitmap (Stream input)
+        IBinaryStream OpenAsBitmap (IBinaryStream input)
         {
             var header = new byte[2] { (byte)'B', (byte)'M' };
-            input = new StreamRegion (input, 2, true);
-            return new PrefixStream (header, input);
+            Stream stream = new StreamRegion (input.AsStream, 2, true);
+            stream = new PrefixStream (header, input);
+            return new BinaryStream (stream, input.Name);
         }
 
         public override void Write (Stream file, ImageData image)

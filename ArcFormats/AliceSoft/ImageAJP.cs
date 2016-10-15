@@ -50,7 +50,7 @@ namespace GameRes.Formats.AliceSoft
             0x5D, 0x91, 0xAE, 0x87, 0x4A, 0x56, 0x41, 0xCD, 0x83, 0xEC, 0x4C, 0x92, 0xB5, 0xCB, 0x16, 0x34
         };
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = new byte[0x18];
             stream.Position = 0xC;
@@ -68,12 +68,12 @@ namespace GameRes.Formats.AliceSoft
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (AjpMetaData)info;
             int stride = (int)meta.Width * 4;
             byte[] pixels;
-            using (var jpeg = DecryptStream (stream, meta.ImageOffset, meta.ImageSize))
+            using (var jpeg = DecryptStream (stream.AsStream, meta.ImageOffset, meta.ImageSize))
             {
                 var decoder = new JpegBitmapDecoder (jpeg,
                     BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
@@ -84,7 +84,7 @@ namespace GameRes.Formats.AliceSoft
                 pixels = new byte[stride * (int)meta.Height];
                 bitmap.CopyPixels (pixels, stride, 0);
             }
-            using (var mask = DecryptStream (stream, meta.AlphaOffset, meta.AlphaSize))
+            using (var mask = DecryptStream (stream.AsStream, meta.AlphaOffset, meta.AlphaSize))
             {
                 var alpha = ReadMask (mask);
                 int src = 0;

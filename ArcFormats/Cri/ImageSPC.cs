@@ -42,22 +42,24 @@ namespace GameRes.Formats.Cri
             Signatures = new uint[] { 0 };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            uint unpacked_size = FormatCatalog.ReadSignature (stream);
+            uint unpacked_size = stream.Signature;
             if (unpacked_size <= 0x20 || unpacked_size > 0x5000000) // ~83MB
                 return null;
-            using (var lzss = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             using (var input = new SeekableStream (lzss))
-                return base.ReadMetaData (input);
+            using (var xtx = new BinaryStream (input))
+                return base.ReadMetaData (xtx);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 4;
-            using (var lzss = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             using (var input = new SeekableStream (lzss))
-                return base.Read (input, info);
+            using (var xtx = new BinaryStream (input))
+                return base.Read (xtx, info);
         }
 
         public override void Write (Stream file, ImageData image)

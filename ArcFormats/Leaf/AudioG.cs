@@ -43,17 +43,15 @@ namespace GameRes.Formats.Leaf
             Extensions = new string[] { "g" };
         }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x1C];
-            if (header.Length != file.Read (header, 0, header.Length))
+            var header = file.ReadHeader (0x1C);
+            if (header.AsciiEqual ("OggS") || header.AsciiEqual ("RIFF"))
                 return null;
-            if (Binary.AsciiEqual (header, "OggS") || Binary.AsciiEqual (header, "RIFF"))
-                return null;
-            if (header[4] != 0 || header[5] != 2 || LittleEndian.ToInt64 (header, 6) != 0)
+            if (header[4] != 0 || header[5] != 2 || header.ToInt64 (6) != 0)
                 return null;
             file.Position = 0;
-            var input = new GStream (file);
+            var input = new GStream (file.AsStream);
             return new OggInput (new SeekableStream (input));
         }
     }

@@ -45,22 +45,21 @@ namespace GameRes.Formats.KScript
         public override string Description { get { return "KScript image format"; } }
         public override uint     Signature { get { return 0x48505247; } } // 'GRPH'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x1C];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x1C);
             byte key = (byte)(header[4] ^ header[5]);
             int data_offset = 0x14;
             int x = 0, y = 0;
             if (0 != header[0xC])
             {
-                data_offset += LittleEndian.ToInt32 (header, 0x10) / 0x10 * 0x18;
-                x = LittleEndian.ToInt32 (header, 0x14);
-                y = LittleEndian.ToInt32 (header, 0x18);
+                data_offset += header.ToInt32 (0x10) / 0x10 * 0x18;
+                x = header.ToInt32 (0x14);
+                y = header.ToInt32 (0x18);
             }
-            using (var input = new StreamRegion (stream, data_offset, true))
-            using (var png = new CryptoStream (input, new XorTransform (key), CryptoStreamMode.Read))
+            using (var input = new StreamRegion (stream.AsStream, data_offset, true))
+            using (var crypto = new CryptoStream (input, new XorTransform (key), CryptoStreamMode.Read))
+            using (var png = new BinaryStream (crypto, stream.Name))
             {
                 var info = Png.ReadMetaData (png);
                 if (null == info)
@@ -74,16 +73,17 @@ namespace GameRes.Formats.KScript
                     BPP     = info.BPP,
                     Key     = key,
                     DataOffset = data_offset,
-                    DataLength = LittleEndian.ToInt32 (header, 8),
+                    DataLength = header.ToInt32 (8),
                 };
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (KgpMetaData)info;
-            using (var input = new StreamRegion (stream, meta.DataOffset, true))
-            using (var png = new CryptoStream (input, new XorTransform (meta.Key), CryptoStreamMode.Read))
+            using (var input = new StreamRegion (stream.AsStream, meta.DataOffset, true))
+            using (var crypto = new CryptoStream (input, new XorTransform (meta.Key), CryptoStreamMode.Read))
+            using (var png = new BinaryStream (crypto, stream.Name))
                 return Png.Read (png, info);
         }
 

@@ -47,78 +47,73 @@ namespace GameRes.Formats.Ivory
         public override string Description { get { return "Ivory image format"; } }
         public override uint     Signature { get { return 0x1A444D4D; } } // 'MMD'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x18];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x18);
             var info = new MmdMetaData
             {
-                Width   = LittleEndian.ToUInt16 (header, 4),
-                Height  = LittleEndian.ToUInt16 (header, 6),
+                Width   = header.ToUInt16 (4),
+                Height  = header.ToUInt16 (6),
                 BPP     = 8,
-                Size1   = LittleEndian.ToInt32 (header, 8),
-                Size2   = LittleEndian.ToInt32 (header, 0x0C),
-                Size3   = LittleEndian.ToInt32 (header, 0x10),
-                Colors  = LittleEndian.ToInt32 (header, 0x14),
+                Size1   = header.ToInt32 (8),
+                Size2   = header.ToInt32 (0x0C),
+                Size3   = header.ToInt32 (0x10),
+                Colors  = header.ToInt32 (0x14),
             };
             if (info.Size1 <= 0 || info.Size2 <= info.Size1 || info.Size3 <= 0)
                 return null;
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream input, ImageMetaData info)
         {
             var meta = (MmdMetaData)info;
             var pixels = new byte[info.Width * info.Height];
-            stream.Position = 0x18;
-            using (var input = new ArcView.Reader (stream))
+            input.Position = 0x18;
+            var buf1 = input.ReadBytes (meta.Size1);
+            var buf2 = input.ReadBytes (meta.Size2 - meta.Size1);
+            int w = (int)info.Width / 4;
+            var line = new byte[w];
+            int mask = 0x80;
+            int b1 = 0;
+            int b2 = 0;
+            int dst = 0;
+            for (int y = (int)info.Height; y > 0; --y)
             {
-                var buf1 = input.ReadBytes (meta.Size1);
-                var buf2 = input.ReadBytes (meta.Size2 - meta.Size1);
-                int w = (int)info.Width / 4;
-                var line = new byte[w];
-                int mask = 0x80;
-                int b1 = 0;
-                int b2 = 0;
-                int dst = 0;
-                for (int y = (int)info.Height; y > 0; --y)
+                for (int x = 0; x < w; ++x)
                 {
-                    for (int x = 0; x < w; ++x)
+                    if (0 != (mask & buf1[b1]))
                     {
-                        if (0 != (mask & buf1[b1]))
+                        line[x] ^= buf2[b2++];
+                    }
+                    mask >>= 1;
+                    if (0 == mask)
+                    {
+                        mask = 0x80;
+                        ++b1;
+                    }
+                    byte p = line[x];
+                    int q = p >> 4;
+                    for (int j = 0; j < 2; ++j)
+                    {
+                        if (0 != q)
                         {
-                            line[x] ^= buf2[b2++];
+                            int offset = ShiftTable[q + 16] + (int)info.Width * ShiftTable[q];
+                            int src = dst - offset;
+                            pixels[dst++] = pixels[src];
+                            pixels[dst++] = pixels[src+1];
                         }
-                        mask >>= 1;
-                        if (0 == mask)
+                        else
                         {
-                            mask = 0x80;
-                            ++b1;
+                            input.Read (pixels, dst, 2);
+                            dst += 2;
                         }
-                        byte p = line[x];
-                        int q = p >> 4;
-                        for (int j = 0; j < 2; ++j)
-                        {
-                            if (0 != q)
-                            {
-                                int offset = ShiftTable[q + 16] + (int)info.Width * ShiftTable[q];
-                                int src = dst - offset;
-                                pixels[dst++] = pixels[src];
-                                pixels[dst++] = pixels[src+1];
-                            }
-                            else
-                            {
-                                input.Read (pixels, dst, 2);
-                                dst += 2;
-                            }
-                            q = p & 0xF;
-                        }
+                        q = p & 0xF;
                     }
                 }
             }
-            stream.Position = 0x18 + meta.Size2 + meta.Size3;
-            var palette = ReadPalette (stream, meta.Colors);
+            input.Position = 0x18 + meta.Size2 + meta.Size3;
+            var palette = ReadPalette (input.AsStream, meta.Colors);
             return ImageData.Create (info, PixelFormats.Indexed8, palette, pixels);
         }
 

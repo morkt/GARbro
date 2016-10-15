@@ -38,21 +38,21 @@ namespace GameRes.Formats.Cri
         public override string Description { get { return "CRI MiddleWare ADPCM audio"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            uint signature = FormatCatalog.ReadSignature (file);
+            uint signature = file.Signature;
             if (0x80 != (signature & 0xFFFF))
                 return null;
             uint header_size = Binary.BigEndian (signature & 0xFFFF0000);
             if (header_size < 0x10 || header_size >= file.Length)
                 return null;
-            var header = new byte[header_size];
-            if (header.Length != file.Read (header, 0, header.Length))
+            var header = file.ReadBytes (header_size);
+            if (header.Length != header_size)
                 return null;
             if (!Binary.AsciiEqual (header, header.Length-6, "(c)CRI"))
                 return null;
 
-            return new AdxInput (file, header);
+            return new AdxInput (file.AsStream, header);
         }
     }
 

@@ -41,14 +41,15 @@ namespace GameRes.Formats.Crowd
         public override string Description { get { return "ANIM encrypted image"; } }
         public override uint     Signature { get { return 0x01000000; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var key = new byte[0x10];
             stream.Position = 4;
             if (key.Length != stream.Read (key, 0, key.Length))
                 return null;
-            using (var enc = new InputProxyStream (stream, true))
-            using (var input = new CryptoStream (enc, new GaxTransform (key), CryptoStreamMode.Read))
+            using (var enc = new InputProxyStream (stream.AsStream, true))
+            using (var crypto = new CryptoStream (enc, new GaxTransform (key), CryptoStreamMode.Read))
+            using (var input = new BinaryStream (crypto, stream.Name))
             {
                 var info = Png.ReadMetaData (input);
                 if (null == info)
@@ -65,11 +66,12 @@ namespace GameRes.Formats.Crowd
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GaxMetaData)info;
-            using (var enc = new StreamRegion (stream, 0x14, true))
-            using (var input = new CryptoStream (enc, new GaxTransform (meta.Key), CryptoStreamMode.Read))
+            using (var enc = new StreamRegion (stream.AsStream, 0x14, true))
+            using (var crypto = new CryptoStream (enc, new GaxTransform (meta.Key), CryptoStreamMode.Read))
+            using (var input = new BinaryStream (crypto, stream.Name))
                 return Png.Read (input, info);
         }
 

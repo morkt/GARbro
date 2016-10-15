@@ -38,20 +38,18 @@ namespace GameRes.Formats.BaseUnit
         public override string Description { get { return "IPAC image format"; } }
         public override uint     Signature { get { return 0x32534549; } } // 'IES2'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x14);
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0x08),
-                Height  = LittleEndian.ToUInt32 (header, 0x0C),
-                BPP     = LittleEndian.ToInt32  (header, 0x10),
+                Width   = header.ToUInt32 (0x08),
+                Height  = header.ToUInt32 (0x0C),
+                BPP     = header.ToInt32  (0x10),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             if (24 == info.BPP)
             {
@@ -78,7 +76,7 @@ namespace GameRes.Formats.BaseUnit
             else if (8 == info.BPP)
             {
                 stream.Position = 0x20;
-                var palette = ReadPalette (stream);
+                var palette = ReadPalette (stream.AsStream);
                 var pixels = new byte[info.Width * info.Height];
                 if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                     throw new EndOfStreamException();

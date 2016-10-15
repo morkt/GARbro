@@ -46,41 +46,38 @@ namespace GameRes.Formats.Elf
         public override string Description { get { return "Elf GPH image format"; } }
         public override uint     Signature { get { return 0x1D485047; } } // 'GPH\x1D'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream input)
         {
-            stream.Position = 4;
-            using (var input = new ArcView.Reader (stream))
+            input.Position = 4;
+            int frame_count = input.ReadUInt16();
+            int frame_offset = input.ReadInt32();
+            if (0 == frame_count || frame_offset > input.Length)
+                return null;
+            input.Position = frame_offset;
+            int frame_length = input.ReadInt32();
+            int flags = input.ReadUInt16();
+            if (0 == (flags & 4))
+                input.Seek (0x20, SeekOrigin.Current);
+            int left = input.ReadInt16();
+            int top = input.ReadInt16();
+            int right = input.ReadInt16() + 1;
+            int bottom = input.ReadInt16() + 1;
+            left *= 2;
+            right *= 2;
+            return new GphMetaData
             {
-                int frame_count = input.ReadUInt16();
-                int frame_offset = input.ReadInt32();
-                if (0 == frame_count || frame_offset > stream.Length)
-                    return null;
-                stream.Position = frame_offset;
-                int frame_length = input.ReadInt32();
-                int flags = input.ReadUInt16();
-                if (0 == (flags & 4))
-                    stream.Seek (0x20, SeekOrigin.Current);
-                int left = input.ReadInt16();
-                int top = input.ReadInt16();
-                int right = input.ReadInt16() + 1;
-                int bottom = input.ReadInt16() + 1;
-                left *= 2;
-                right *= 2;
-                return new GphMetaData
-                {
-                    Width = (uint)(right - left),
-                    Height = (uint)(bottom - top),
-                    OffsetX = left,
-                    OffsetY = top,
-                    BPP = 4,
-                    DataOffset = frame_offset+4,
-                    DataSize = frame_length,
-                    Flags = flags,
-                };
-            }
+                Width = (uint)(right - left),
+                Height = (uint)(bottom - top),
+                OffsetX = left,
+                OffsetY = top,
+                BPP = 4,
+                DataOffset = frame_offset+4,
+                DataSize = frame_length,
+                Flags = flags,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new GphReader (stream, (GphMetaData)info))
             {
@@ -97,7 +94,7 @@ namespace GameRes.Formats.Elf
 
     internal sealed class GphReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         GphMetaData     m_info;
         byte[]          m_output;
 
@@ -106,9 +103,9 @@ namespace GameRes.Formats.Elf
         public BitmapPalette Palette { get; private set; }
         public int            Stride { get; private set; }
 
-        public GphReader (Stream input, GphMetaData info)
+        public GphReader (IBinaryStream input, GphMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             Stride = (int)m_info.Width / 2;
             m_output = new byte[Stride * (int)m_info.Height];
@@ -437,14 +434,8 @@ namespace GameRes.Formats.Elf
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

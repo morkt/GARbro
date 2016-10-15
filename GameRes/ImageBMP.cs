@@ -63,7 +63,7 @@ namespace GameRes
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var bmp_info = info as BmpMetaData;
-            if (bmp_info != null && EnableExtensions)
+            if (bmp_info != null && EnableExtensions && file.AsStream.CanSeek)
             {
                 foreach (var ext in m_extensions)
                 {

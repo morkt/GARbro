@@ -133,9 +133,7 @@ namespace GameRes
             {
                 if (!m_own_copy)
                 {
-                    m_source = ToArray();
-                    m_offset = 0;
-                    m_own_copy = true;
+                    Reclaim();
                 }
                 m_source[pos] = value;
             }
@@ -159,6 +157,13 @@ namespace GameRes
             var copy = new T[m_count];
             Array.Copy (m_source, m_offset, copy, 0, m_count);
             return copy;
+        }
+
+        internal void Reclaim ()
+        {
+            m_source = ToArray();
+            m_offset = 0;
+            m_own_copy = true;
         }
     }
 
@@ -198,6 +203,24 @@ namespace GameRes
         {
             return (long)ToUInt64 (arr, index);
         }
+
+        public static bool AsciiEqual (this CowArray<byte> arr, int index, string str)
+        {
+            arr.Reclaim();
+            return Binary.AsciiEqual (arr.ToArray(), index, str);
+        }
+
+        public static bool AsciiEqual (this CowArray<byte> arr, string str)
+        {
+            arr.Reclaim();
+            return Binary.AsciiEqual (arr.ToArray(), str);
+        }
+
+        public static string GetCString (this CowArray<byte> arr, int index, int length_limit)
+        {
+            arr.Reclaim();
+            return Binary.GetCString (arr.ToArray(), index, length_limit);
+        }
     }
 
     public class BinaryStream : Stream, IBinaryStream
@@ -224,22 +247,22 @@ namespace GameRes
             m_buffer = new byte[0x10];
             m_buffer_pos = 0;
             m_buffer_end = 0;
-            m_signature = new Lazy<uint> (ReadSignature);
             m_header_size = 0;
             Name = name ?? "";
-            if (!input.CanSeek)
+            m_source = input;
+            m_should_dispose = !leave_open;
+            if (!m_source.CanSeek)
             {
-                m_source = new MemoryStream();
-                input.CopyTo (m_source);
-                m_should_dispose = true;
-                if (!leave_open)
-                    input.Dispose();
-                m_source.Position = 0;
+                m_buffer_end = m_source.Read (m_buffer, 0, 4);
+                if (4 == m_buffer_end)
+                {
+                    uint signature = LittleEndian.ToUInt32 (m_buffer, 0);
+                    m_signature = new Lazy<uint> (() => signature);
+                }
             }
             else
             {
-                m_source = input;
-                m_should_dispose = !leave_open;
+                m_signature = new Lazy<uint> (ReadSignature);
             }
         }
 
@@ -265,6 +288,8 @@ namespace GameRes
 
         public CowArray<byte> ReadHeader (int size)
         {
+            if (!CanSeek)
+                throw new NotSupportedException ("Unseekable stream");
             if (m_header_size < size)
             {
                 if (null == m_header || m_header.Length < size)
@@ -272,7 +297,11 @@ namespace GameRes
                 Position = m_header_size;
                 m_header_size += Read (m_header, m_header_size, size - m_header_size);
             }
-            size = Math.Min (size, m_header_size);
+            if (size > m_header_size)
+            {
+                Position = m_header_size;
+                throw new EndOfStreamException();
+            }
             Position = size;
             return new CowArray<byte> (m_header, 0, size);
         }

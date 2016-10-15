@@ -37,7 +37,7 @@ namespace GameRes.Formats.BaseUnit
         public override string Description { get { return "IPAC ADPCM audio format"; } }
         public override uint     Signature { get { return 0x32545357; } } // 'WST2'
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             var adpcm_data = new byte[0x20];
             file.Position = 12;

@@ -54,14 +54,12 @@ namespace GameRes.Formats.Bruns
             Signatures = new uint[] { 0x434E4545, 0x5A4E4545 }; // 'EENC', 'EENZ'
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[8];
-            if (8 != stream.Read (header, 0, 8))
-                return null;
+            var header = stream.ReadHeader (8);
             bool compressed = 'Z' == header[3];
-            uint key = LittleEndian.ToUInt32 (header, 4) ^ EencKey;
-            Stream input = new StreamRegion (stream, 8, true);
+            uint key = header.ToUInt32 (4) ^ EencKey;
+            Stream input = new StreamRegion (stream.AsStream, 8, true);
             try
             {
                 input = new EencStream (input, key);
@@ -70,19 +68,22 @@ namespace GameRes.Formats.Bruns
                     input = new ZLibStream (input, CompressionMode.Decompress);
                     input = new SeekableStream (input);
                 }
-                var format = FindFormat (input);
-                if (null == format)
-                    return null;
-                return new EencMetaData
+                using (var bin = new BinaryStream (input, stream.Name, true))
                 {
-                    Width = format.Item2.Width,
-                    Height = format.Item2.Height,
-                    BPP = format.Item2.BPP,
-                    Key = key,
-                    Info = format.Item2,
-                    Format = format.Item1,
-                    Compressed = compressed,
-                };
+                    var format = FindFormat (bin);
+                    if (null == format)
+                        return null;
+                    return new EencMetaData
+                    {
+                        Width = format.Item2.Width,
+                        Height = format.Item2.Height,
+                        BPP = format.Item2.BPP,
+                        Key = key,
+                        Info = format.Item2,
+                        Format = format.Item1,
+                        Compressed = compressed,
+                    };
+                }
             }
             finally
             {
@@ -90,17 +91,18 @@ namespace GameRes.Formats.Bruns
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (EencMetaData)info;
             meta.Info.FileName = info.FileName;
-            Stream input = new StreamRegion (stream, 8, true);
+            Stream input = new StreamRegion (stream.AsStream, 8, true);
             try
             {
                 input = new EencStream (input, meta.Key);
                 if (meta.Compressed)
                     input = new ZLibStream (input, CompressionMode.Decompress);
-                return meta.Format.Read (input, meta.Info);
+                using (var bin = new BinaryStream (input, stream.Name, true))
+                    return meta.Format.Read (input, meta.Info);
             }
             finally
             {

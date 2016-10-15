@@ -49,23 +49,21 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int type = LittleEndian.ToUInt16 (header, 0x10);
+            var header = stream.ReadHeader (0x20);
+            int type = header.ToUInt16 (0x10);
             if (0x0C == type)
             {
-                int count = LittleEndian.ToInt32 (header, 0);
+                int count = header.ToInt32 (0);
                 if (!ArchiveFormat.IsSaneCount (count))
                     return null;
-                int block_size = LittleEndian.ToInt32 (header, 4);
+                int block_size = header.ToInt32 (4);
                 if (block_size <= 0)
                     return null;
-                int  bpp    = LittleEndian.ToUInt16 (header, 0x12);
-                uint width  = LittleEndian.ToUInt16 (header, 0x14);
-                uint height = LittleEndian.ToUInt16 (header, 0x16);
+                int  bpp    = header.ToUInt16 (0x12);
+                uint width  = header.ToUInt16 (0x14);
+                uint height = header.ToUInt16 (0x16);
                 if (bpp != 32 || 0 == width || 0 == height)
                     return null;
                 return new PxMetaData
@@ -76,34 +74,35 @@ namespace GameRes.Formats.Leaf
                     Type = type,
                     FrameCount = count,
                     BlockSize = block_size,
-                    BlocksWidth = LittleEndian.ToUInt16 (header, 0x1C),
-                    BlocksHeight = LittleEndian.ToUInt16 (header, 0x1E),
+                    BlocksWidth = header.ToUInt16 (0x1C),
+                    BlocksHeight = header.ToUInt16 (0x1E),
                 };
             }
             else if (0x80 == type || 0x90 == type)
             {
-                if (!Binary.AsciiEqual (header, 0x14, "Leaf"))
+                if (!header.AsciiEqual (0x14, "Leaf"))
                     return null;
-                int count = LittleEndian.ToInt32 (header, 4);
+                int count = header.ToInt32 (4);
                 if (!ArchiveFormat.IsSaneCount (count))
                     return null;
-                if (0x20 != stream.Read (header, 0, 0x20))
+                var header_ex = stream.ReadBytes (0x20);
+                if (0x20 != header_ex.Length)
                     return null;
-                if (0x0A != LittleEndian.ToUInt16 (header, 0x10))
+                if (0x0A != LittleEndian.ToUInt16 (header_ex, 0x10))
                     return null;
                 return new PxMetaData
                 {
-                    Width = LittleEndian.ToUInt32 (header, 0),
-                    Height = LittleEndian.ToUInt32 (header, 0),
-                    BPP = LittleEndian.ToUInt16 (header, 0x12),
-                    Type = type,
+                    Width   = LittleEndian.ToUInt32 (header_ex, 0),
+                    Height  = LittleEndian.ToUInt32 (header_ex, 0),
+                    BPP     = LittleEndian.ToUInt16 (header_ex, 0x12),
+                    Type    = type,
                     FrameCount = count,
                 };
             }
             return null;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new PxReader (stream, (PxMetaData)info))
             {
@@ -120,7 +119,7 @@ namespace GameRes.Formats.Leaf
 
     internal sealed class PxReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         PxMetaData      m_info;
         byte[]          m_output;
         int             m_pixel_size;
@@ -131,9 +130,9 @@ namespace GameRes.Formats.Leaf
         public int         Stride { get { return m_stride; } }
         public int     FrameCount { get { return m_info.FrameCount; } }
 
-        public PxReader (Stream input, PxMetaData info)
+        public PxReader (IBinaryStream input, PxMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             m_pixel_size = m_info.BPP / 8;
             m_stride = (int)m_info.Width * m_pixel_size;
@@ -156,10 +155,9 @@ namespace GameRes.Formats.Leaf
 
         void Unpack0C (int frame)
         {
-            var stream = m_input.BaseStream;
             int block_count = m_info.BlocksWidth * m_info.BlocksHeight;
             var block_table = new ushort[block_count];
-            stream.Position = 0x20 + frame * block_count * 2;
+            m_input.Position = 0x20 + frame * block_count * 2;
             for (int i = 0; i < block_count; ++i)
                 block_table[i] = m_input.ReadUInt16();
             int data_pos = 0x20 + FrameCount * block_count * 2;
@@ -174,7 +172,7 @@ namespace GameRes.Formats.Leaf
                     int block_num = block_table[current_block++];
                     if (block_num != 0)
                     {
-                        stream.Position = data_pos + (block_num - 1) * block_length;
+                        m_input.Position = data_pos + (block_num - 1) * block_length;
                         int block_width  = m_input.ReadByte() - 2;
                         int block_height = m_input.ReadByte() - 2;
                         int line_length = block_width * m_pixel_size;
@@ -182,7 +180,7 @@ namespace GameRes.Formats.Leaf
                         {
                             m_input.Read (m_output, dst, line_length);
                             dst += m_stride;
-                            stream.Seek (8, SeekOrigin.Current);
+                            m_input.Seek (8, SeekOrigin.Current);
                         }
                     }
                 }
@@ -192,7 +190,7 @@ namespace GameRes.Formats.Leaf
 
         void Unpack90 (int frame)
         {
-            m_input.BaseStream.Position = 0x40 + frame * (0x20 + m_output.Length);
+            m_input.Position = 0x40 + frame * (0x20 + m_output.Length);
             if (m_output.Length != m_input.Read (m_output, 0, m_output.Length))
                 throw new EndOfStreamException();
         }
@@ -203,14 +201,8 @@ namespace GameRes.Formats.Leaf
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

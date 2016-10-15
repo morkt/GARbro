@@ -59,7 +59,7 @@ namespace GameRes.Formats.Cyberworks
             set { KnownKeys = ((TinkAudioScheme)value).KnownKeys; }
         }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             var header = new byte[Math.Min (0xE1F, file.Length)];
             if (0x10 != file.Read (header, 0, 0x10))
@@ -89,8 +89,9 @@ namespace GameRes.Formats.Cyberworks
             if (header.Length >= file.Length)
                 input = new MemoryStream (header);
             else
-                input = new PrefixStream (header, new StreamRegion (file, file.Position));
-            var sound = OggAudio.Instance.TryOpen (input);
+                input = new PrefixStream (header, new StreamRegion (file.AsStream, file.Position));
+            var ogg = new BinaryStream (input, file.Name);
+            var sound = OggAudio.Instance.TryOpen (ogg);
             if (sound != null && header.Length >= file.Length)
                 file.Dispose();
             return sound;

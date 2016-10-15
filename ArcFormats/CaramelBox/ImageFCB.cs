@@ -43,41 +43,36 @@ namespace GameRes.Formats.CaramelBox
         public override string Description { get { return "Caramel BOX image format"; } }
         public override uint     Signature { get { return 0x31626366; } } // 'fcb1'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x10);
             return new FcbMetaData
             {
-                Width  = LittleEndian.ToUInt32 (header, 4),
-                Height = LittleEndian.ToUInt32 (header, 8),
-                Method = LittleEndian.ToInt32 (header, 12),
+                Width  = header.ToUInt32 (4),
+                Height = header.ToUInt32 (8),
+                Method = header.ToInt32 (12),
                 BPP    = 32,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (FcbMetaData)info;
             byte[] input;
             if (1 == meta.Method)
             {
                 stream.Position = 0x14;
-                using (var reader = new ArcView.Reader (stream))
-                {
-                    int unpacked_size = Binary.BigEndian (reader.ReadInt32());
-                    reader.ReadInt32(); // packed_size
-                    input = new byte[unpacked_size];
-                    using (var z = new ZLibStream (stream, CompressionMode.Decompress, true))
-                        if (unpacked_size != z.Read (input, 0, unpacked_size))
-                            throw new EndOfStreamException();
-                }
+                int unpacked_size = Binary.BigEndian (stream.ReadInt32());
+                stream.ReadInt32(); // packed_size
+                input = new byte[unpacked_size];
+                using (var z = new ZLibStream (stream.AsStream, CompressionMode.Decompress, true))
+                    if (unpacked_size != z.Read (input, 0, unpacked_size))
+                        throw new EndOfStreamException();
             }
             else if (0 == meta.Method)
             {
                 stream.Position = 0x10;
-                using (var tz = new TzCompression (stream))
+                using (var tz = new TzCompression (stream.AsStream))
                     input = tz.Unpack();
             }
             else

@@ -45,24 +45,22 @@ namespace GameRes.Formats.YellowPig
         public override string Description { get { return "Yellow Pig image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x11];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x11);
             byte type = header[0];
             if (type != 0 && type != 1)
                 return null;
             var info = new GecMetaData
             {
                 Type    = type,
-                OffsetX = LittleEndian.ToInt16 (header, 1),
-                OffsetY = LittleEndian.ToInt16 (header, 3),
-                Width   = LittleEndian.ToUInt16 (header, 5),
-                Height  = LittleEndian.ToUInt16 (header, 7),
+                OffsetX = header.ToInt16 (1),
+                OffsetY = header.ToInt16 (3),
+                Width   = header.ToUInt16 (5),
+                Height  = header.ToUInt16 (7),
                 BPP     = 0 == type ? 24 : 32,
-                AlphaOffset = LittleEndian.ToInt32 (header, 9),
-                DataOffset  = LittleEndian.ToInt32 (header, 0xD),
+                AlphaOffset = header.ToInt32 (9),
+                DataOffset  = header.ToInt32 (0xD),
             };
             if (info.OffsetX < 0 || info.OffsetY < 0 || info.Width <= 0 || info.Height <= 0
                 || info.DataOffset < 0 || info.DataOffset > stream.Length)
@@ -72,9 +70,9 @@ namespace GameRes.Formats.YellowPig
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new GecReader (stream, (GecMetaData)info);
+            var reader = new GecReader (stream.AsStream, (GecMetaData)info);
             reader.Unpack();
             return ImageData.CreateFlipped (info, reader.Format, null, reader.Data, reader.Stride);
         }

@@ -53,11 +53,11 @@ namespace GameRes.Formats.Ivory
         public override string Description { get { return "Ivory image format"; } }
         public override uint     Signature { get { return 0x20475366; } } // 'fSG '
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 8;
-            var header = new byte[0x24];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadBytes (0x24);
+            if (header.Length != 0x24)
                 return null;
             int header_size = LittleEndian.ToInt32 (header, 8);
             if (Binary.AsciiEqual (header, "cRGB"))
@@ -90,7 +90,7 @@ namespace GameRes.Formats.Ivory
                 return null;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (SgMetaData)info;
             if (SgType.cRGB == meta.Type)
@@ -107,11 +107,11 @@ namespace GameRes.Formats.Ivory
             }
         }
 
-        ImageData ReadJpeg (Stream stream, SgMetaData info)
+        ImageData ReadJpeg (IBinaryStream stream, SgMetaData info)
         {
             stream.Position = info.DataOffset;
-            var input = new byte[info.DataSize];
-            if (input.Length != stream.Read (input, 0, input.Length))
+            var input = stream.ReadBytes (info.DataSize);
+            if (input.Length != info.DataSize)
                 throw new EndOfStreamException();
             PakOpener.Decrypt (input, info.JpegKey);
             using (var img = new MemoryStream (input))
@@ -131,7 +131,7 @@ namespace GameRes.Formats.Ivory
 
     internal sealed class SgRgbReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         SgMetaData      m_info;
         int             m_width;
         int             m_height;
@@ -148,7 +148,7 @@ namespace GameRes.Formats.Ivory
         {
             if (info.Type != SgType.cRGB || !(0x18 == info.BPP || 0x20 == info.BPP))
                 throw new InvalidFormatException();
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             m_width = (int)info.Width;
             m_height = (int)info.Height;
@@ -158,7 +158,7 @@ namespace GameRes.Formats.Ivory
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = m_info.DataOffset;
+            m_input.Position = m_info.DataOffset;
             switch (m_info.RgbMode)
             {
             case 0: UnpackV0(); break;
@@ -243,11 +243,11 @@ namespace GameRes.Formats.Ivory
             var index = new int[m_height];
             for (int i = 0; i < m_height; ++i)
                 index[i] = m_input.ReadInt32();
-            var data_pos = m_input.BaseStream.Position;
+            var data_pos = m_input.Position;
             int dst = 0;
             for (int y = 0; y < m_height; ++y)
             {
-                m_input.BaseStream.Position = data_pos + index[y];
+                m_input.Position = data_pos + index[y];
                 for (int x = 0; x < m_width; )
                 {
                     int ctl = m_input.ReadByte();
@@ -282,9 +282,9 @@ namespace GameRes.Formats.Ivory
             var index = new int[m_height];
             for (int i = 0; i < m_height; ++i)
                 index[i] = m_input.ReadInt32();
-            var data_pos = m_input.BaseStream.Position;
+            var data_pos = m_input.Position;
             int dst = 0;
-            using (var bits = new LsbBitStream (m_input.BaseStream, true))
+            using (var bits = new LsbBitStream (m_input.AsStream, true))
             {
                 for (int y = 0; y < m_height; ++y)
                 {
@@ -358,14 +358,8 @@ namespace GameRes.Formats.Ivory
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

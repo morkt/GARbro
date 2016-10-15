@@ -51,11 +51,9 @@ namespace GameRes.Formats.Cri
             Signatures = new uint[] { 0x00787478, 0 };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (0x20 != stream.Read (header, 0, 0x20))
-                return null;
+            var header = stream.ReadHeader (0x20).ToArray();
             if (!Binary.AsciiEqual (header, 0, "xtx\0"))
             {
                 var header_size = LittleEndian.ToUInt32 (header, 0);
@@ -87,9 +85,9 @@ namespace GameRes.Formats.Cri
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new XtxReader (stream, (XtxMetaData)info);
+            var reader = new XtxReader (stream.AsStream, (XtxMetaData)info);
             var pixels = reader.Unpack();
             return ImageData.Create (info, reader.Format, null, pixels);
         }

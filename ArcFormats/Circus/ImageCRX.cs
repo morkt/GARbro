@@ -48,31 +48,29 @@ namespace GameRes.Formats.Circus
         public override string Description { get { return "Circus image format"; } }
         public override uint     Signature { get { return 0x47585243; } } // 'CRXG'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int compression = LittleEndian.ToUInt16 (header, 0xC);
+            var header = stream.ReadHeader (0x14);
+            int compression = header.ToUInt16 (0xC);
             if (compression < 1 || compression > 3)
                 return null;
-            int depth = LittleEndian.ToInt16 (header, 0x10);
+            int depth = header.ToInt16 (0x10);
             var info = new CrxMetaData
             {
-                Width = LittleEndian.ToUInt16 (header, 8),
-                Height = LittleEndian.ToUInt16 (header, 10),
-                OffsetX = LittleEndian.ToInt16 (header, 4),
-                OffsetY = LittleEndian.ToInt16 (header, 6),
+                Width = header.ToUInt16 (8),
+                Height = header.ToUInt16 (10),
+                OffsetX = header.ToInt16 (4),
+                OffsetY = header.ToInt16 (6),
                 BPP = 0 == depth ? 24 : 1 == depth ? 32 : 8,
                 Compression = compression,
-                CompressionFlags = LittleEndian.ToUInt16 (header, 0xE),
+                CompressionFlags = header.ToUInt16 (0xE),
                 Colors = depth,
-                Mode = LittleEndian.ToUInt16 (header, 0x12),
+                Mode = header.ToUInt16 (0x12),
             };
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new Reader (stream, (CrxMetaData)info))
             {
@@ -88,7 +86,7 @@ namespace GameRes.Formats.Circus
 
         internal sealed class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             int             m_width;
             int             m_height;
@@ -103,7 +101,7 @@ namespace GameRes.Formats.Circus
             public BitmapPalette Palette { get; private set; }
             public int            Stride { get { return m_stride; } }
 
-            public Reader (Stream input, CrxMetaData info)
+            public Reader (IBinaryStream input, CrxMetaData info)
             {
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
@@ -120,8 +118,8 @@ namespace GameRes.Formats.Circus
                 }
                 m_stride = (m_width * m_bpp / 8 + 3) & ~3;
                 m_output = new byte[m_height*m_stride];
-                m_input = new ArcView.Reader (input);
-                input.Position = 0x14;
+                m_input = input;
+                m_input.Position = 0x14;
                 if (8 == m_bpp)
                     ReadPalette (info.Colors);
             }
@@ -157,7 +155,7 @@ namespace GameRes.Formats.Circus
                 if (m_compression >= 3)
                 {
                     int count = m_input.ReadInt32();
-                    m_input.BaseStream.Seek (count * 0x10, SeekOrigin.Current);
+                    m_input.Seek (count * 0x10, SeekOrigin.Current);
                 }
                 if (0 != (m_flags & 0x10))
                 {
@@ -321,7 +319,7 @@ namespace GameRes.Formats.Circus
             {
                 int pixel_size = m_bpp / 8;
                 int src_stride = m_width * pixel_size;
-                using (var zlib = new ZLibStream (m_input.BaseStream, CompressionMode.Decompress, true))
+                using (var zlib = new ZLibStream (m_input.AsStream, CompressionMode.Decompress, true))
                 using (var src = new BinaryReader (zlib))
                 {
                     if (m_bpp >= 24)
@@ -400,16 +398,8 @@ namespace GameRes.Formats.Circus
             }
 
             #region IDisposable Members
-            bool m_disposed = false;
-
             public void Dispose ()
             {
-                if (!m_disposed)
-                {
-                    m_input.Dispose();
-                    m_disposed = true;
-                }
-                GC.SuppressFinalize (this);
             }
             #endregion
         }

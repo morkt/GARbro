@@ -49,9 +49,9 @@ namespace GameRes.Formats.Cri
 
         static readonly Tuple<uint, uint> DefaultKey = Tuple.Create (0x30DBE1ABu, 0xCC554639u);
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            return new HcaInput (file, ConversionFormat.IeeeFloat, DefaultKey);
+            return new HcaInput (file.AsStream, ConversionFormat.IeeeFloat, DefaultKey);
         }
     }
 

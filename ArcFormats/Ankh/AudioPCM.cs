@@ -42,28 +42,26 @@ namespace GameRes.Formats.Ice
             Signatures = new uint[] { 0x010001, 0x020001 };
         }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x16];
-            if (header.Length != file.Read (header, 0, header.Length))
-                return null;
-            ushort tag = LittleEndian.ToUInt16 (header, 0);
+            var header = file.ReadHeader (0x16);
+            ushort tag = header.ToUInt16 (0);
             if (tag != 1)
                 return null;
-            int extra_size = LittleEndian.ToUInt16 (header, 0x10);
+            int extra_size = header.ToUInt16 (0x10);
             if (0 != extra_size)
                 return null;
-            uint pcm_size = LittleEndian.ToUInt32 (header, 0x12);
+            uint pcm_size = header.ToUInt32 (0x12);
             if (pcm_size + 0x16 != file.Length)
                 return null;
             var format = new WaveFormat { FormatTag = tag };
-            format.Channels = LittleEndian.ToUInt16 (header, 2);
+            format.Channels = header.ToUInt16 (2);
             if (format.Channels != 1 && format.Channels != 2)
                 return null;
-            format.SamplesPerSecond     = LittleEndian.ToUInt32 (header, 4);
-            format.AverageBytesPerSecond = LittleEndian.ToUInt32 (header, 8);
-            format.BlockAlign           = LittleEndian.ToUInt16 (header, 0xC);
-            format.BitsPerSample        = LittleEndian.ToUInt16 (header, 0xE);
+            format.SamplesPerSecond     = header.ToUInt32 (4);
+            format.AverageBytesPerSecond = header.ToUInt32 (8);
+            format.BlockAlign           = header.ToUInt16 (0xC);
+            format.BitsPerSample        = header.ToUInt16 (0xE);
             if (0 == format.AverageBytesPerSecond
                 || format.SamplesPerSecond * format.BlockAlign != format.AverageBytesPerSecond)
                 return null;

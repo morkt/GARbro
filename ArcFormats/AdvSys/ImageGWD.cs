@@ -43,10 +43,10 @@ namespace GameRes.Formats.AdvSys
         public override string Description { get { return "AdvSys3 engine image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[12];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (12);
+            if (header.Length != 12)
                 return null;
             if (!Binary.AsciiEqual (header, 4, "GWD"))
                 return null;
@@ -59,7 +59,7 @@ namespace GameRes.Formats.AdvSys
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Gray8;
             byte[] image;
@@ -71,7 +71,8 @@ namespace GameRes.Formats.AdvSys
             stream.Position = 4 + meta.DataSize;
             if (24 == info.BPP && 1 == stream.ReadByte())
             {
-                using (var alpha_stream = new StreamRegion (stream, stream.Position, true))
+                using (var part = new StreamRegion (stream.AsStream, stream.Position, true))
+                using (var alpha_stream = new BinaryStream (part))
                 {
                     var alpha_info = ReadMetaData (alpha_stream) as GwdMetaData;
                     if (null != alpha_info && 8 == alpha_info.BPP
@@ -120,13 +121,13 @@ namespace GameRes.Formats.AdvSys
         public byte[] Pixels { get { return m_output; } }
         public int InputSize { get; private set; }
 
-        public GwdReader (Stream input, ImageMetaData info)
+        public GwdReader (IBinaryStream input, ImageMetaData info)
         {
             m_bpp = info.BPP;
             if (m_bpp != 8 && m_bpp != 24)
                 throw new InvalidFormatException();
 
-            m_input = new MsbBitStream (input, true);
+            m_input = new MsbBitStream (input.AsStream, true);
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_stride = m_width * m_bpp / 8;

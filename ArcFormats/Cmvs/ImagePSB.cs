@@ -45,14 +45,11 @@ namespace GameRes.Formats.Pvns
         public override string Description { get { return "PVNS engine image format"; } }
         public override uint     Signature { get { return 0x50425350; } } // 'PSBP'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x14);
             stream.Seek (-0x13, SeekOrigin.End);
-            var tail = new byte[0x13];
-            stream.Read (tail, 0, tail.Length);
+            var tail = stream.ReadBytes (0x13);
             for (int i = 4; i < 0x14; ++i)
             {
                 header[i] ^= tail[tail.Length - 3 + (i & 1)];
@@ -60,18 +57,18 @@ namespace GameRes.Formats.Pvns
             }
             return new PsbMetaData
             {
-                Width   = LittleEndian.ToUInt16 (header, 0x0E),
-                Height  = LittleEndian.ToUInt16 (header, 0x10),
-                BPP     = LittleEndian.ToUInt16 (header, 0x12),
-                Method  = LittleEndian.ToUInt16 (header, 0x0C),
-                TableOffset = LittleEndian.ToInt32 (header, 4),
-                DataOffset  = LittleEndian.ToInt32 (header, 8),
+                Width   = header.ToUInt16 (0x0E),
+                Height  = header.ToUInt16 (0x10),
+                BPP     = header.ToUInt16 (0x12),
+                Method  = header.ToUInt16 (0x0C),
+                TableOffset = header.ToInt32 (4),
+                DataOffset  = header.ToInt32 (8),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new PsbReader (stream, (PsbMetaData)info);
+            var reader = new PsbReader (stream.AsStream, (PsbMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, null, reader.Data);
         }

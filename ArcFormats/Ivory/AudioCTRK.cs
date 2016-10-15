@@ -43,7 +43,7 @@ namespace GameRes.Formats.Ivory
             Signatures = new uint[] { 0x20585066, 0x4B525463 };
         }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             var header = new byte[0x24];
             if (8 != file.Read (header, 0, 8))
@@ -77,12 +77,12 @@ namespace GameRes.Formats.Ivory
                 };
                 format.BlockAlign = (ushort)(format.BitsPerSample * format.Channels / 8);
                 format.AverageBytesPerSecond = format.SamplesPerSecond * format.BlockAlign;
-                var input = new StreamRegion (file, start_offset, data_length);
+                var input = new StreamRegion (file.AsStream, start_offset, data_length);
                 return new RawPcmInput (input, format);
             }
             else if (2 == type)
             {
-                using (var decoder = new TrkDecoder (file, header, start_offset, data_length))
+                using (var decoder = new TrkDecoder (file.AsStream, header, start_offset, data_length))
                 {
                     var pcm = decoder.Decode();
                     return new RawPcmInput (new MemoryStream (pcm), decoder.Format);

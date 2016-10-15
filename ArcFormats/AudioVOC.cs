@@ -34,30 +34,30 @@ namespace GameRes.Formats.Creative
     {
         int             m_version;
         int             m_header_size;
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         WaveFormat      m_format;
 
         public WaveFormat Format { get { return m_format; } }
 
-        public VocReader (Stream input, byte[] header)
+        public VocReader (IBinaryStream input, byte[] header)
         {
             m_header_size = LittleEndian.ToUInt16 (header, 0x14);
             if (m_header_size < 0x1A)
                 throw new InvalidFormatException();
             m_version = LittleEndian.ToUInt16 (header, 0x16);
-            m_input = new ArcView.Reader (input);
+            m_input = input;
         }
 
         public Stream ConvertToPcm ()
         {
-            m_input.BaseStream.Position = m_header_size;
+            m_input.Position = m_header_size;
             bool format_read = false;
             var pcm = new MemoryStream();
             try
             {
                 for (;;)
                 {
-                    int block_type = m_input.BaseStream.ReadByte();
+                    int block_type = m_input.ReadByte();
                     if (-1 == block_type || 0 == block_type)
                         break;
                     int block_size = m_input.ReadUInt16();
@@ -96,7 +96,7 @@ namespace GameRes.Formats.Creative
                         Copy (block_size-12, pcm);
                         break;
                     default:
-                        m_input.BaseStream.Seek (block_size, SeekOrigin.Current);
+                        m_input.Seek (block_size, SeekOrigin.Current);
                         break;
                     }
                     if (codec != -1)
@@ -144,14 +144,8 @@ namespace GameRes.Formats.Creative
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }
@@ -164,18 +158,17 @@ namespace GameRes.Formats.Creative
         public override uint     Signature { get { return 0x61657243; } } // 'Crea'
         public override bool      CanWrite { get { return false; } }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x1A];
-            if (header.Length != file.Read (header, 0, header.Length))
+            var header = file.ReadHeader (0x1A);
+            if (!header.AsciiEqual ("Creative Voice File\x1A"))
                 return null;
-            if (!Binary.AsciiEqual (header, 0, "Creative Voice File\x1A"))
-                return null;
-            using (var reader = new VocReader (file, header))
+            using (var reader = new VocReader (file, header.ToArray()))
             {
                 var pcm = reader.ConvertToPcm();
                 if (null == pcm)
                     return null;
+                file.Dispose();
                 return new RawPcmInput (pcm, reader.Format);
             }
         }

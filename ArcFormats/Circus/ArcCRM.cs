@@ -39,12 +39,12 @@ namespace GameRes.Formats.Circus
             OffsetMap = offset_map;
         }
 
-        internal Stream OpenByOffset (uint offset)
+        internal IBinaryStream OpenByOffset (uint offset)
         {
             Entry entry;
             if (!OffsetMap.TryGetValue (offset, out entry))
                 throw new FileNotFoundException();
-            return OpenEntry (entry);
+            return OpenBinaryEntry (entry);
         }
     }
 

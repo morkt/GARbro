@@ -43,27 +43,24 @@ namespace GameRes.Formats.KScript
         public override string Description { get { return "KScript grayscale image format"; } }
         public override uint     Signature { get { return 0x4D4C534B; } } // 'KSLM'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x14);
             return new KslMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0xC),
-                Height  = LittleEndian.ToUInt32 (header, 0x10),
+                Width   = header.ToUInt32 (0xC),
+                Height  = header.ToUInt32 (0x10),
                 BPP     = 8,
                 Key     = (byte)(header[4] ^ header[5]),
-                DataLength = LittleEndian.ToInt32 (header, 8),
+                DataLength = header.ToInt32 (8),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (KslMetaData)info;
-            var pixels = new byte[meta.DataLength];
             stream.Position = 0x14;
-            stream.Read (pixels, 0, pixels.Length);
+            var pixels = stream.ReadBytes (meta.DataLength);
             for (int i = 0; i < pixels.Length; ++i)
                 pixels[i] ^= meta.Key;
             return ImageData.Create (info, PixelFormats.Gray8, null, pixels);

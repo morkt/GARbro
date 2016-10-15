@@ -54,37 +54,34 @@ namespace GameRes.Formats.EmonEngine
             Extensions = new string[] { "bmp" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var reader = new ArcView.Reader (stream))
-            {
-                reader.ReadInt32();
-                var info = new EmMetaData();
-                info.LzssFrameSize = reader.ReadUInt16();
-                info.LzssInitPos = reader.ReadUInt16();
-                info.BPP = reader.ReadUInt16() & 0xFF;
-                info.Width = reader.ReadUInt16();
-                info.Height = reader.ReadUInt16();
-                info.Colors = reader.ReadUInt16();
-                info.Stride = reader.ReadInt32();
-                info.OffsetX = reader.ReadInt32();
-                info.OffsetY = reader.ReadInt32();
-                info.DataOffset = 40;
-                return info;
-            }
+            stream.ReadInt32();
+            var info = new EmMetaData();
+            info.LzssFrameSize = stream.ReadUInt16();
+            info.LzssInitPos = stream.ReadUInt16();
+            info.BPP = stream.ReadUInt16() & 0xFF;
+            info.Width = stream.ReadUInt16();
+            info.Height = stream.ReadUInt16();
+            info.Colors = stream.ReadUInt16();
+            info.Stride = stream.ReadInt32();
+            info.OffsetX = stream.ReadInt32();
+            info.OffsetY = stream.ReadInt32();
+            info.DataOffset = 40;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (EmMetaData)info;
             stream.Position = meta.DataOffset;
             BitmapPalette palette = null;
             if (meta.Colors != 0)
-                palette = ReadPalette (stream, Math.Max (meta.Colors, 3));
+                palette = ReadPalette (stream.AsStream, Math.Max (meta.Colors, 3));
             var pixels = new byte[meta.Stride * (int)info.Height];
             if (meta.LzssFrameSize != 0)
             {
-                using (var lzss = new LzssStream (stream, LzssMode.Decompress, true))
+                using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
                 {
                     lzss.Config.FrameSize = meta.LzssFrameSize;
                     lzss.Config.FrameInitPos = meta.LzssInitPos;

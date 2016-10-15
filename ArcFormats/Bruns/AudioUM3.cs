@@ -36,9 +36,9 @@ namespace GameRes.Formats
         public override string Description { get { return "UltraMarine3 audio format (Ogg/Vorbis)"; } }
         public override uint     Signature { get { return 0xAC9898B0; } } // ~'OggS'
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            return new OggInput (new Um3Stream (file));
+            return new OggInput (new Um3Stream (file.AsStream));
         }
     }
 

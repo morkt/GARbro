@@ -54,120 +54,118 @@ namespace GameRes.Formats.Aoi
             Extensions = new string[] { "agf" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x80];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int version = LittleEndian.ToInt32 (header, 4);
+            var header = stream.ReadHeader (0x80);
+            int version = header.ToInt32 (4);
             if (version != 1 && version != 2)
                 return null;
             var info = new AgfMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0x1C),
-                Height  = LittleEndian.ToUInt32 (header, 0x20),
+                Width   = header.ToUInt32 (0x1C),
+                Height  = header.ToUInt32 (0x20),
                 BPP     = 32,
                 Version = version,
             };
             if (1 == version)
             {
-                info.DataOffset = LittleEndian.ToUInt32 (header, 0x0C);
+                info.DataOffset = header.ToUInt32 (0x0C);
             }
             else
             {
-                info.DataOffset = LittleEndian.ToUInt32 (header, 0x10);
-                info.Flags = LittleEndian.ToUInt32 (header, 0x54);
-                info.BaseNameOffset = LittleEndian.ToUInt32 (header, 0x6C);
+                info.DataOffset = header.ToUInt32 (0x10);
+                info.Flags = header.ToUInt32 (0x54);
+                info.BaseNameOffset = header.ToUInt32 (0x6C);
             }
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream input, ImageMetaData info)
         {
             var meta = (AgfMetaData)info;
             var pixels = new byte[meta.Width * meta.Height * 4];
             int dst = 0;
-            stream.Position = meta.DataOffset;
-            using (var input = new BinaryReader (stream, Encoding.Unicode, true))
+            input.Position = meta.DataOffset;
+            while (dst < pixels.Length)
             {
-                while (dst < pixels.Length)
+                uint op = input.ReadUInt32();
+                int count = (int)(op >> 8);
+                switch (op & 0xFF)
                 {
-                    uint op = input.ReadUInt32();
-                    int count = (int)(op >> 8);
-                    switch (op & 0xFF)
-                    {
-                    case 1:
-                        count *= 4;
-                        input.Read (pixels, dst, count);
-                        break;
+                case 1:
+                    count *= 4;
+                    input.Read (pixels, dst, count);
+                    break;
 
-                    case 2:
-                        input.Read (pixels, dst, 4);
-                        count *= 4;
-                        Binary.CopyOverlapped (pixels, dst, dst+4, count - 4);
-                        break;
+                case 2:
+                    input.Read (pixels, dst, 4);
+                    count *= 4;
+                    Binary.CopyOverlapped (pixels, dst, dst+4, count - 4);
+                    break;
 
-                    case 3:
-                        int chunk_size = (count >> 8) * 4;
-                        count = (count & 0xFF) * chunk_size;
-                        input.Read (pixels, dst, chunk_size);
-                        Binary.CopyOverlapped (pixels, dst, dst + chunk_size, count - chunk_size);
-                        break;
+                case 3:
+                    int chunk_size = (count >> 8) * 4;
+                    count = (count & 0xFF) * chunk_size;
+                    input.Read (pixels, dst, chunk_size);
+                    Binary.CopyOverlapped (pixels, dst, dst + chunk_size, count - chunk_size);
+                    break;
 
-                    case 4:
-                        int offset = (count & 0xFFF) * 4;
-                        count = (count >> 12) * 4;
-                        Binary.CopyOverlapped (pixels, dst - offset, dst, count);
-                        break;
+                case 4:
+                    int offset = (count & 0xFFF) * 4;
+                    count = (count >> 12) * 4;
+                    Binary.CopyOverlapped (pixels, dst - offset, dst, count);
+                    break;
 
-                    case 5:
-                        count = (count >> 8) & 0xFF;
-                        input.BaseStream.Seek ((count - count / 4) * 4, SeekOrigin.Current);
-                        count *= 4;
-                        break;
+                case 5:
+                    count = (count >> 8) & 0xFF;
+                    input.BaseStream.Seek ((count - count / 4) * 4, SeekOrigin.Current);
+                    count *= 4;
+                    break;
 
-                    default:
-                        throw new InvalidFormatException();
-                    }
-                    dst += count;
+                default:
+                    throw new InvalidFormatException();
                 }
-                if (0 != (meta.Flags & 0x10) && 0 != meta.BaseNameOffset)
+                dst += count;
+            }
+            if (0 != (meta.Flags & 0x10) && 0 != meta.BaseNameOffset)
+            {
+                try
                 {
-                    try
+                    var base_name = ReadBaseName (input, meta);
+                    if (VFS.FileExists (base_name))
                     {
-                        var base_name = ReadBaseName (input, meta);
-                        if (VFS.FileExists (base_name))
+                        using (var base_file = VFS.OpenSeekableStream (base_name))
                         {
-                            using (var base_file = VFS.OpenSeekableStream (base_name))
-                            {
-                                var base_image = Read (base_name, base_file);
-                                BlendImage (meta, pixels, base_image.Bitmap);
-                            }
+                            var base_image = Read (base_name, base_file);
+                            BlendImage (meta, pixels, base_image.Bitmap);
                         }
                     }
-                    catch (Exception X)
-                    {
-                        Trace.WriteLine (string.Format ("{0}: baseline image read error: {1}",
-                                                        meta.FileName, X.Message), "[AGF]");
-                    }
+                }
+                catch (Exception X)
+                {
+                    Trace.WriteLine (string.Format ("{0}: baseline image read error: {1}",
+                                                    meta.FileName, X.Message), "[AGF]");
                 }
             }
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
 
-        string ReadBaseName (BinaryReader input, AgfMetaData info)
+        string ReadBaseName (IBinaryStream input, AgfMetaData info)
         {
             input.BaseStream.Position = info.DataOffset + info.BaseNameOffset;
-            var name = new StringBuilder();
-            for (;;)
+            using (var reader = new BinaryReader (input.AsStream, Encoding.Unicode, true))
             {
-                char c = input.ReadChar();
-                if (0 == c)
-                    break;
-                name.Append (c);
+                var name = new StringBuilder();
+                for (;;)
+                {
+                    char c = input.ReadChar();
+                    if (0 == c)
+                        break;
+                    name.Append (c);
+                }
+                var dir_name = VFS.GetDirectoryName (info.FileName);
+                return VFS.CombinePath (dir_name, name.ToString());
             }
-            var dir_name = VFS.GetDirectoryName (info.FileName);
-            return VFS.CombinePath (dir_name, name.ToString());
         }
 
         void BlendImage (AgfMetaData info, byte[] overlay, BitmapSource bitmap)
