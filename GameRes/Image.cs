@@ -120,12 +120,6 @@ namespace GameRes
         public abstract ImageData Read (IBinaryStream file, ImageMetaData info);
         public abstract void Write (Stream file, ImageData bitmap);
 
-//        public static ImageData Read (Stream file)
-//        {
-//            using (var bin = new BinaryStream (file, true))
-//                return Read (null, bin);
-//        }
-
         public static ImageData Read (IBinaryStream file)
         {
             var format = FindFormat (file);
