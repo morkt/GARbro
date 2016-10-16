@@ -37,7 +37,7 @@ namespace GameRes
         /// <summary>
         /// Name of the stream (could be name of the underlying file) or an empty string.
         /// </summary>
-        string     Name { get; get; }
+        string     Name { get; set; }
         /// <summary>
         /// First 4 bytes of the stream as a little-endian integer.
         /// </summary>

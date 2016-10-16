@@ -177,7 +177,7 @@ namespace GameRes
 
         public static bool AsciiEqual<TArray> (this TArray arr, int index, string str) where TArray : IList<byte>
         {
-            if (arr.Length-index < str.Length)
+            if (arr.Count-index < str.Length)
                 return false;
             for (int i = 0; i < str.Length; ++i)
                 if ((char)arr[index+i] != str[i])
