@@ -165,8 +165,7 @@ namespace GameRes.Formats.Sas5
 
         IarImage CombineImage (IarImage overlay, IarArchive iarc)
         {
-            using (var mem = new MemoryStream (overlay.Data))
-            using (var input = new BinaryReader (mem))
+            using (var input = new BinMemoryStream (overlay.Data))
             {
                 var dir = (List<Entry>)iarc.Dir;
                 int base_index = input.ReadInt32();
@@ -218,14 +217,13 @@ namespace GameRes.Formats.Sas5
             layers.Info.BPP = 32;
             var pixels = new byte[layers.Info.Stride * (int)layers.Info.Height];
             var output = new IarImage (layers.Info, pixels);
-            using (var mem = new MemoryStream (layers.Data))
-            using (var input = new BinaryReader (mem))
+            using (var input = new BinMemoryStream (layers.Data))
             {
                 int offset_x = 0, offset_y = 0;
                 var dir = (List<Entry>)iarc.Dir;
-                while (input.BaseStream.Position < input.BaseStream.Length)
+                while (input.Position < input.Length)
                 {
-                    int cmd = input.ReadByte();
+                    int cmd = input.ReadUInt8();
                     switch (cmd)
                     {
                     case 0x21:
@@ -416,11 +414,11 @@ namespace GameRes.Formats.Sas5
 
     internal sealed class IarDecompressor : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
 
-        public IarDecompressor (Stream input)
+        public IarDecompressor (IBinaryStream input)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
         }
 
         int m_bits = 1;
@@ -433,7 +431,7 @@ namespace GameRes.Formats.Sas5
             {
                 if (1 == GetNextBit())
                 {
-                    output[dst++] = m_input.ReadByte();
+                    output[dst++] = m_input.ReadUInt8();
                     continue;
                 }
                 int offset, count;
@@ -461,7 +459,7 @@ namespace GameRes.Formats.Sas5
                             }
                         }
                     }
-                    offset += (tmp << 8) | m_input.ReadByte();
+                    offset += (tmp << 8) | m_input.ReadUInt8();
                     if (1 == GetNextBit())
                         count = 3;
                     else if (1 == GetNextBit())
@@ -473,7 +471,7 @@ namespace GameRes.Formats.Sas5
                     else if (1 == GetNextBit())
                         count = 7 + GetNextBit();
                     else if (1 == GetNextBit())
-                        count = 17 + m_input.ReadByte();
+                        count = 17 + m_input.ReadUInt8();
                     else
                     {
                         count = GetNextBit() << 2;
@@ -490,11 +488,11 @@ namespace GameRes.Formats.Sas5
                         offset = GetNextBit() << 10;
                         offset |= GetNextBit() << 9;
                         offset |= GetNextBit() << 8;
-                        offset = (offset | m_input.ReadByte()) + 0x100;
+                        offset = (offset | m_input.ReadUInt8()) + 0x100;
                     }
                     else
                     {
-                        offset = 1 + m_input.ReadByte();
+                        offset = 1 + m_input.ReadUInt8();
                         if (0x100 == offset)
                             break;
                     }
@@ -516,14 +514,8 @@ namespace GameRes.Formats.Sas5
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

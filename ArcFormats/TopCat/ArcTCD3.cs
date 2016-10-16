@@ -259,17 +259,16 @@ namespace GameRes.Formats.TopCat
 
     internal abstract class TcdIndexReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         int             m_section_count;
 
-        public    int          Count { get; private set; }
-        protected BinaryReader Input { get { return m_input; } }
+        public    int           Count { get; private set; }
+        protected IBinaryStream Input { get { return m_input; } }
 
         protected TcdIndexReader (ArcView file, int section_count)
         {
             Count = file.View.ReadInt32 (4);
-            var input = file.CreateStream();
-            m_input = new BinaryReader (input);
+            m_input = file.CreateStream();
             m_section_count = section_count;
         }
 
@@ -284,7 +283,7 @@ namespace GameRes.Formats.TopCat
             var list = new List<Entry> (Count);
             foreach (var section in sections)
             {
-                m_input.BaseStream.Position = section.IndexOffset;
+                m_input.Position = section.IndexOffset;
                 var dir_names = m_input.ReadBytes (section.DirNamesSize);
                 if (section.DirNamesSize != dir_names.Length)
                     return null;
@@ -339,7 +338,7 @@ namespace GameRes.Formats.TopCat
             uint current_offset = 8;
             for (int i = 0; i < count; ++i)
             {
-                m_input.BaseStream.Position = current_offset;
+                m_input.Position = current_offset;
                 var section = ReadSection (i);
                 if (section != null)
                     sections.Add (section);

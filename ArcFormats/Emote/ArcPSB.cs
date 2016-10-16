@@ -124,11 +124,11 @@ namespace GameRes.Formats.Emote
     /// </summary>
     internal sealed class PsbReader : IDisposable
     {
-        BinaryReader        m_input;
+        IBinaryStream       m_input;
 
-        public PsbReader (Stream input)
+        public PsbReader (IBinaryStream input)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
         }
 
         public int      Version { get { return m_version; } }
@@ -213,7 +213,7 @@ namespace GameRes.Formats.Emote
 
         bool ReadHeader ()
         {
-            m_input.BaseStream.Position = 4;
+            m_input.Position = 4;
             m_version = m_input.ReadUInt16();
             m_flags = m_input.ReadUInt16();
             if (m_version < 3)
@@ -232,7 +232,7 @@ namespace GameRes.Formats.Emote
             m_chunk_data    = LittleEndian.ToInt32 (header, 0x18);
             m_root          = LittleEndian.ToInt32 (header, 0x1C);
 
-            int buffer_length = (int)m_input.BaseStream.Length;
+            int buffer_length = (int)m_input.Length;
             if (!(m_names           >= 0x28 && m_names < m_chunk_data
                   && m_strings      >= 0x28 && m_strings < m_chunk_data
                   && m_strings_data >= 0x28 && m_strings_data < m_chunk_data
@@ -244,7 +244,7 @@ namespace GameRes.Formats.Emote
 
             if (null == m_data || m_data.Length < m_chunk_data)
                 m_data = new byte[m_chunk_data];
-            int data_pos = (int)m_input.BaseStream.Position;
+            int data_pos = (int)m_input.Position;
             m_input.Read (m_data, data_pos, m_chunk_data-data_pos);
             if (0 != (m_flags & 2))
                 Decrypt (m_data, m_names, m_chunk_offsets-m_names);
@@ -548,14 +548,8 @@ namespace GameRes.Formats.Emote
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }
@@ -586,6 +580,7 @@ namespace GameRes.Formats.Emote
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
+            // need BinaryReader because of ReadString
             using (var reader = new BinaryReader (stream.AsStream, Encoding.UTF8, true))
             {
                 var info = new PsbTexMetaData { BPP = 32 };

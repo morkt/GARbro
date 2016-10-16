@@ -82,7 +82,8 @@ namespace GameRes.Formats.Vitamin
             stream.Position = 0x18;
             RleUnpack (stream.AsStream, meta.AlphaSize - 0x18, alpha);
             byte[] pixels;
-            using (var sbi = new StreamRegion (stream.AsStream, meta.AlphaSize, true))
+            using (var reg = new StreamRegion (stream.AsStream, meta.AlphaSize, true))
+            using (var sbi = new BinaryStream (reg, stream.Name))
             using (var reader = new SbiReader (sbi, meta.BaseInfo))
             {
                 reader.Unpack();

@@ -106,7 +106,7 @@ namespace GameRes.Formats.FC01
             var packed_entry = entry as MrgEntry;
             if (null == packed_entry || !packed_entry.IsPacked || packed_entry.Method > 3)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            Stream input;
+            IBinaryStream input;
             if (packed_entry.Method >= 2)
             {
                 if (entry.Size < 0x108)
@@ -127,7 +127,7 @@ namespace GameRes.Formats.FC01
                     return new BinMemoryStream (reader.Data, entry.Name);
                 }
             }
-            return input;
+            return input.AsStream;
         }
 
         static public void Decrypt (byte[] data, int index, int length, int key)
@@ -235,7 +235,7 @@ namespace GameRes.Formats.FC01
             var mrg_entry = entry as Mrg2Entry;
             if (null == mrg_entry || mrg_entry.Method > 3)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            Stream input;
+            IBinaryStream input;
             if (0 == mrg_entry.Method)
             {
                 var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
@@ -260,7 +260,7 @@ namespace GameRes.Formats.FC01
                     return new BinMemoryStream (reader.Data, entry.Name);
                 }
             }
-            return input;
+            return input.AsStream;
         }
 
         void Decrypt (byte[] data, int index, int length, uint checksum, uint key)
@@ -298,15 +298,15 @@ namespace GameRes.Formats.FC01
     /// </summary>
     internal sealed class MrgLzssReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         int             m_size;
 
         public byte[]        Data { get { return m_output; } }
 
-        public MrgLzssReader (Stream input, int input_length, int output_length)
+        public MrgLzssReader (IBinaryStream input, int input_length, int output_length)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_output = new byte[output_length];
             m_size = input_length;
         }
@@ -320,7 +320,7 @@ namespace GameRes.Formats.FC01
             int remaining = m_size;
             while (remaining > 0)
             {
-                int ctl = m_input.ReadByte();
+                int ctl = m_input.ReadUInt8();
                 --remaining;
                 for (int bit = 1; remaining > 0 && bit != 0x100; bit <<= 1)
                 {
@@ -328,7 +328,7 @@ namespace GameRes.Formats.FC01
                         return;
                     if (0 != (ctl & bit))
                     {
-                        byte b = m_input.ReadByte();
+                        byte b = m_input.ReadUInt8();
                         --remaining;
                         frame[frame_pos++] = b;
                         frame_pos &= frame_mask;
@@ -357,16 +357,8 @@ namespace GameRes.Formats.FC01
         }
 
         #region IDisposable Members
-        bool disposed = false;
-
         public void Dispose ()
         {
-            if (!disposed)
-            {
-                m_input.Dispose();
-                disposed = true;
-            }
-            GC.SuppressFinalize (this);
         }
         #endregion
     }

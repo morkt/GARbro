@@ -69,7 +69,7 @@ namespace GameRes.Formats.FC01
             var meta = (AcdMetaData)info;
 
             stream.Position = meta.DataOffset;
-            using (var reader = new MrgLzssReader (stream.AsStream, meta.PackedSize, meta.UnpackedSize))
+            using (var reader = new MrgLzssReader (stream, meta.PackedSize, meta.UnpackedSize))
             {
                 reader.Unpack();
                 var decoder = new AcdDecoder (reader.Data, meta);

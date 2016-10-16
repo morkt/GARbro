@@ -89,30 +89,30 @@ namespace GameRes.Formats.Terios
 
     internal sealed class PandoraCompression : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
 
         public byte[] Data { get { return m_output; } }
 
-        public PandoraCompression (Stream input, int unpacked_size)
+        public PandoraCompression (IBinaryStream input, int unpacked_size)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_output = new byte[unpacked_size];
         }
 
         public byte[] Unpack ()
         {
             int dst = 0;
-            m_output[dst++] = m_input.ReadByte();
+            m_output[dst++] = m_input.ReadUInt8();
             while (dst < m_output.Length)
             {
-                int ctl = m_input.ReadByte();
+                int ctl = m_input.ReadUInt8();
                 int count;
                 if (ctl >= 0x80)
                 {
                     if (ctl >= 0xC0)
                     {
-                        int offset = m_input.ReadByte();
+                        int offset = m_input.ReadUInt8();
                         offset += 0x101 + ((ctl & 0x3F) << 8);
                         offset = dst - offset;
                         if (offset < 0)
@@ -146,7 +146,7 @@ namespace GameRes.Formats.Terios
                         }
                         else
                         {
-                            offset = m_input.ReadByte() + 1;
+                            offset = m_input.ReadUInt8() + 1;
                         }
                         Binary.CopyOverlapped (m_output, dst - offset, dst, count);
                         dst += count;
@@ -161,7 +161,7 @@ namespace GameRes.Formats.Terios
                     }
                     if (ctl >= 0x40)
                     {
-                        count = m_input.ReadByte() + ((ctl & 0x1F) << 8) + 0x41;
+                        count = m_input.ReadUInt8() + ((ctl & 0x1F) << 8) + 0x41;
                     }
                     else
                     {
@@ -175,14 +175,8 @@ namespace GameRes.Formats.Terios
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

@@ -59,7 +59,7 @@ namespace GameRes.Formats.Tactics
             int chunk_size = stream.ReadInt32();
             if (length > 0xffffff || chunk_size <= 0 || length < chunk_size)
                 return null;
-            using (var reader = new Reader (stream.AsStream, (uint)Math.Max (0x20, chunk_size+2), chunk_size))
+            using (var reader = new Reader (stream, (uint)Math.Max (0x20, chunk_size+2), chunk_size))
             {
                 reader.Unpack();
                 var bmp = reader.Data;
@@ -80,7 +80,7 @@ namespace GameRes.Formats.Tactics
         {
             var meta = (TgfMetaData)info;
             stream.Position = 8;
-            using (var reader = new Reader (stream.AsStream, meta.BitmapSize, meta.ChunkSize))
+            using (var reader = new Reader (stream, meta.BitmapSize, meta.ChunkSize))
             {
                 reader.Unpack();
                 using (var bmp = new MemoryStream (reader.Data))
@@ -96,17 +96,17 @@ namespace GameRes.Formats.Tactics
 
         internal class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             int             m_chunk_size;
 
             public byte[] Data { get { return m_output; } }
 
-            public Reader (Stream file, uint bmp_size, int chunk_size)
+            public Reader (IBinaryStream file, uint bmp_size, int chunk_size)
             {
                 m_chunk_size = chunk_size;
                 m_output = new byte[bmp_size];
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
+                m_input = file;
             }
 
             public void Unpack ()
@@ -114,12 +114,12 @@ namespace GameRes.Formats.Tactics
                 int dst = 0;
                 while (dst < m_output.Length)
                 {
-                    int code = m_input.ReadByte();
+                    int code = m_input.ReadUInt8();
                     switch (code)
                     {
                     case 0:
                         {
-                            int count = m_input.ReadByte();
+                            int count = m_input.ReadUInt8();
                             if (dst + count > m_output.Length)
                                 count = m_output.Length - dst;
                             m_input.Read (m_output, dst, count);
@@ -128,7 +128,7 @@ namespace GameRes.Formats.Tactics
                         }
                     case 1:
                         {
-                            int count = m_input.ReadByte() * m_chunk_size;
+                            int count = m_input.ReadUInt8() * m_chunk_size;
                             if (dst + count > m_output.Length)
                                 count = m_output.Length - dst;
                             m_input.Read (m_output, dst, count);
@@ -156,22 +156,8 @@ namespace GameRes.Formats.Tactics
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
-                GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                        m_input.Dispose();
-                    disposed = true;
-                }
             }
             #endregion
         }

@@ -121,7 +121,7 @@ namespace GameRes.Formats.SHSystem
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var input = base.OpenEntry (arc, entry);
+            var input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
             var pent = entry as PackedEntry;
             if (null == pent || !pent.IsPacked)
                 return input;
@@ -198,11 +198,11 @@ namespace GameRes.Formats.SHSystem
 
     internal class ShsCompression : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
 
-        public ShsCompression (Stream input, bool leave_open = false)
+        public ShsCompression (IBinaryStream input)
         {
-            m_input = new BinaryReader (input, Encoding.UTF8, leave_open);
+            m_input = input;
         }
 
         public int Unpack (byte[] output)
@@ -211,13 +211,13 @@ namespace GameRes.Formats.SHSystem
             while (dst < output.Length)
             {
                 int count;
-                int ctl = m_input.ReadByte();
+                int ctl = m_input.ReadUInt8();
                 if (ctl < 32)
                 {
                     switch (ctl)
                     {
                     case 0x1D:
-                        count = m_input.ReadByte() + 0x1E;
+                        count = m_input.ReadUInt8() + 0x1E;
                         break;
                     case 0x1E:
                         count = Binary.BigEndian (m_input.ReadUInt16()) + 0x11E;
@@ -244,13 +244,13 @@ namespace GameRes.Formats.SHSystem
                         }
                         else
                         {
-                            offset = m_input.ReadByte();
+                            offset = m_input.ReadUInt8();
                             if (0x40 == (ctl & 0x60))
                                 count = (ctl & 0x1F) + 4;
                             else
                             {
                                 offset |= (ctl & 0x1F) << 8;
-                                ctl = m_input.ReadByte();
+                                ctl = m_input.ReadUInt8();
                                 if (0xFE == ctl)
                                     count = Binary.BigEndian (m_input.ReadUInt16()) + 0x102;
                                 else if (0xFF == ctl)
@@ -263,7 +263,7 @@ namespace GameRes.Formats.SHSystem
                     else
                     {
                         count = (ctl >> 5) & 3;
-                        offset = ((ctl & 0x1F) << 8) | m_input.ReadByte();
+                        offset = ((ctl & 0x1F) << 8) | m_input.ReadUInt8();
                     }
                     count += 3;
                     offset++;
@@ -276,14 +276,8 @@ namespace GameRes.Formats.SHSystem
         }
 
         #region IDisposable Members
-        bool m_disposed = false;
         public void Dispose ()
         {
-            if (!m_disposed)
-            {
-                m_input.Dispose();
-                m_disposed = true;
-            }
         }
         #endregion
     }

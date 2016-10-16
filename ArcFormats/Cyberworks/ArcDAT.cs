@@ -116,15 +116,14 @@ namespace GameRes.Formats.Cyberworks
             var type = new char[2];
             var dir = new List<Entry> (count);
             bool has_images = false;
-            using (var input = new MemoryStream (toc))
-            using (var index = new BinaryReader (input))
+            using (var index = new BinMemoryStream (toc, file.Name))
             {
-                while (input.Position < input.Length)
+                while (index.Position < index.Length)
                 {
                     entry_size = index.ReadInt32();
                     if (entry_size <= 0)
                         return null;
-                    var next_pos = index.BaseStream.Position + entry_size;
+                    var next_pos = index.Position + entry_size;
                     uint id = index.ReadUInt32();
                     var entry = new PackedEntry { Name = id.ToString ("D6") };
                     entry.UnpackedSize = index.ReadUInt32();
@@ -159,7 +158,7 @@ namespace GameRes.Formats.Cyberworks
                         }
                         dir.Add (entry);
                     }
-                    index.BaseStream.Position = next_pos;
+                    index.Position = next_pos;
                 }
             }
             if (0 == dir.Count)

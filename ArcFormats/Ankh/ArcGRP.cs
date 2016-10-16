@@ -208,10 +208,9 @@ namespace GameRes.Formats.Ankh
         Stream OpenTpw (ArcFile arc, PackedEntry entry)
         {
             var output = new byte[entry.UnpackedSize];
-            using (var file = arc.File.CreateStream (entry.Offset, entry.Size))
-            using (var input = new BinaryReader (file))
+            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
             {
-                file.Position = 8;
+                input.Position = 8;
                 var offsets = new int[4];
                 offsets[0] = input.ReadUInt16();
                 offsets[1] = offsets[0] * 2;
@@ -220,7 +219,7 @@ namespace GameRes.Formats.Ankh
                 int dst = 0;
                 while (dst < output.Length)
                 {
-                    byte ctl = input.ReadByte();
+                    byte ctl = input.ReadUInt8();
                     if (0 == ctl)
                         break;
                     int count;
@@ -235,7 +234,7 @@ namespace GameRes.Formats.Ankh
                             count = input.ReadUInt16();
                         else
                             count = (ctl + 0xC3) & 0xFF;
-                        byte v = input.ReadByte();
+                        byte v = input.ReadUInt8();
                         while (count --> 0)
                             output[dst++] = v;
                     }
@@ -245,8 +244,8 @@ namespace GameRes.Formats.Ankh
                             count = input.ReadUInt16();
                         else 
                             count = (ctl + 0x92) & 0xFF;
-                        byte v1 = input.ReadByte();
-                        byte v2 = input.ReadByte();
+                        byte v1 = input.ReadUInt8();
+                        byte v2 = input.ReadUInt8();
                         while (count --> 0)
                         {
                             output[dst++] = v1;
@@ -270,7 +269,7 @@ namespace GameRes.Formats.Ankh
                     else
                     {
                         count = (ctl & 0x3F) + 3;
-                        int offset = input.ReadByte();
+                        int offset = input.ReadUInt8();
                         offset = (offset & 0x3F) - offsets[offset >> 6];
                         Binary.CopyOverlapped (output, dst+offset, dst, count);
                         dst += count;
@@ -283,13 +282,13 @@ namespace GameRes.Formats.Ankh
 
     internal sealed class GrpUnpacker : IDisposable
     {
-        BinaryReader        m_input;
+        IBinaryStream       m_input;
         uint                m_bits;
         int                 m_cached_bits;
 
-        public GrpUnpacker (Stream input)
+        public GrpUnpacker (IBinaryStream input)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
         }
 
         public void UnpackHDJ (byte[] output, int dst)
@@ -361,7 +360,7 @@ namespace GameRes.Formats.Ankh
         public void UnpackS (byte[] output, int dst, int channels)
         {
             if (channels != 1)
-                m_input.BaseStream.Seek ((channels-1) * 4, SeekOrigin.Current);
+                m_input.Seek ((channels-1) * 4, SeekOrigin.Current);
             int step = channels * 2;
             for (int i = 0; i < channels; ++i)
             {
@@ -419,7 +418,7 @@ namespace GameRes.Formats.Ankh
         public void UnpackA (byte[] output, int dst, int channels)
         {
             if (channels != 1)
-                m_input.BaseStream.Seek ((channels-1) * 4, SeekOrigin.Current);
+                m_input.Seek ((channels-1) * 4, SeekOrigin.Current);
             int step = 2 * channels;
             for (int i = 0; i < channels; ++i)
             {

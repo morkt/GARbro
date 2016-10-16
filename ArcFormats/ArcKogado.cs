@@ -341,59 +341,56 @@ namespace GameRes.Formats.Kogado
 
     internal class MarielEncoder
     {
-        public void Unpack (Stream input, byte[] dest, int dest_size)
+        public void Unpack (IBinaryStream input, byte[] dest, int dest_size)
         {
             int out_pos = 0;
-            using (var reader = new BinaryReader (input, Encoding.ASCII, true))
+            uint bits = 0;
+            while (dest_size > 0)
             {
-                uint bits = 0;
-                while (dest_size > 0)
+                bool carry = 0 != (bits & 0x80000000);
+                bits <<= 1;
+                if (0 == bits)
                 {
-                    bool carry = 0 != (bits & 0x80000000);
-                    bits <<= 1;
-                    if (0 == bits)
-                    {
-                        bits = reader.ReadUInt32();
-                        carry = 0 != (bits & 0x80000000);
-                        bits = (bits << 1) | 1u;
-                    }
-                    int b = input.ReadByte();
+                    bits = input.ReadUInt32();
+                    carry = 0 != (bits & 0x80000000);
+                    bits = (bits << 1) | 1u;
+                }
+                int b = input.ReadByte();
+                if (-1 == b)
+                    break;
+                if (!carry)
+                {
+                    dest[out_pos++] = (byte)b;
+                    dest_size--;
+                    continue;
+                }
+                int offset = (b & 0x0f) + 1;
+                int count = ((b >> 4) & 0x0f) + 1;
+                if (0x0f == count)
+                {
+                    b = input.ReadByte();
                     if (-1 == b)
                         break;
-                    if (!carry)
-                    {
-                        dest[out_pos++] = (byte)b;
-                        dest_size--;
-                        continue;
-                    }
-                    int offset = (b & 0x0f) + 1;
-                    int count = ((b >> 4) & 0x0f) + 1;
-                    if (0x0f == count)
-                    {
-                        b = input.ReadByte();
-                        if (-1 == b)
-                            break;
-                        count = (byte)b;
-                    }
-                    else if (count > 0x0f)
-                    {
-                        count = reader.ReadUInt16();
-                    }
-                    if (offset >= 0x0b)
-                    {
-                        offset -= 0x0b;
-                        offset <<= 8;
-                        offset |= reader.ReadByte();
-                    }
-                    if (count > dest_size)
-                        count = dest_size;
-                    int src = out_pos - offset;
-                    if (src < 0 || src >= out_pos)
-                        break;
-                    Binary.CopyOverlapped (dest, src, out_pos, count);
-                    out_pos += count;
-                    dest_size -= count;
+                    count = (byte)b;
                 }
+                else if (count > 0x0f)
+                {
+                    count = input.ReadUInt16();
+                }
+                if (offset >= 0x0b)
+                {
+                    offset -= 0x0b;
+                    offset <<= 8;
+                    offset |= input.ReadUInt8();
+                }
+                if (count > dest_size)
+                    count = dest_size;
+                int src = out_pos - offset;
+                if (src < 0 || src >= out_pos)
+                    break;
+                Binary.CopyOverlapped (dest, src, out_pos, count);
+                out_pos += count;
+                dest_size -= count;
             }
         }
     }

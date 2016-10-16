@@ -85,7 +85,7 @@ namespace GameRes.Formats.FC01
             else
                 throw new NotSupportedException ("Not supported CLM color depth");
             int packed_size = (int)(stream.Length - stream.Position);
-            using (var reader = new MrgLzssReader (stream.AsStream, packed_size, meta.UnpackedSize))
+            using (var reader = new MrgLzssReader (stream, packed_size, meta.UnpackedSize))
             {
                 reader.Unpack();
                 return ImageData.Create (info, format, palette, reader.Data);

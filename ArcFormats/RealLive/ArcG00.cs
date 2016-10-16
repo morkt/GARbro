@@ -99,15 +99,14 @@ namespace GameRes.Formats.RealLive
             using (var input = file.CreateStream (index_offset))
                 bitmap = G00Reader.LzDecompress (input, 2, 1);
 
-            using (var input = new MemoryStream (bitmap))
-            using (var reader = new BinaryReader (input))
+            using (var input = new BinMemoryStream (bitmap))
             {
-                if (reader.ReadInt32() != count)
+                if (input.ReadInt32() != count)
                     return null;
                 for (int i = 0; i < count; ++i)
                 {
-                    dir[i].Offset = reader.ReadUInt32();
-                    dir[i].Size   = reader.ReadUInt32();
+                    dir[i].Offset = input.ReadUInt32();
+                    dir[i].Size   = input.ReadUInt32();
                 }
             }
             dir = dir.Where (e => e.Size != 0).ToList();
@@ -123,12 +122,11 @@ namespace GameRes.Formats.RealLive
                 return Stream.Null;
             var g00arc = (G00Archive)arc;
             var g00ent = (G00Entry)entry;
-            using (var input = new MemoryStream (g00arc.Bitmap))
-            using (var reader = new BinaryReader (input))
+            using (var input = new BinMemoryStream (g00arc.Bitmap))
             {
                 input.Position = g00ent.Offset;
-                int tile_type = reader.ReadUInt16();
-                int count = reader.ReadUInt16();
+                int tile_type = input.ReadUInt16();
+                int count = input.ReadUInt16();
                 if (tile_type != 1)
                     throw new InvalidFormatException();
                 input.Seek (0x70, SeekOrigin.Current);
@@ -136,11 +134,11 @@ namespace GameRes.Formats.RealLive
                 var pixels = new byte[(int)g00arc.ImageInfo.Height * dst_stride];
                 for (int i = 0; i < count; ++i)
                 {
-                    int tile_x = reader.ReadUInt16();
-                    int tile_y = reader.ReadUInt16();
-                    reader.ReadInt16();
-                    int tile_width = reader.ReadUInt16();
-                    int tile_height = reader.ReadUInt16();
+                    int tile_x = input.ReadUInt16();
+                    int tile_y = input.ReadUInt16();
+                    input.ReadInt16();
+                    int tile_width = input.ReadUInt16();
+                    int tile_height = input.ReadUInt16();
                     input.Seek (0x52, SeekOrigin.Current);
 
                     tile_x += g00ent.X;
@@ -152,7 +150,7 @@ namespace GameRes.Formats.RealLive
                     int tile_stride = tile_width * 4;
                     for (int row = 0; row < tile_height; ++row)
                     {
-                        reader.Read (pixels, dst, tile_stride);
+                        input.Read (pixels, dst, tile_stride);
                         dst += dst_stride;
                     }
                 }

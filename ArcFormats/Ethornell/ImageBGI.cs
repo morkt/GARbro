@@ -629,8 +629,7 @@ namespace GameRes.Formats.BGI
 
         public void UnpackAlpha (int offset)
         {
-            using (var data = new MemoryStream (this.Input, offset, Input.Length-offset))
-            using (var input = new BinaryReader (data))
+            using (var input = new BinMemoryStream (this.Input, offset, Input.Length-offset))
             {
                 if (1 != input.ReadInt32())
                     return;
@@ -640,7 +639,7 @@ namespace GameRes.Formats.BGI
                 {
                     ctl >>= 1;
                     if (1 == ctl)
-                        ctl = input.ReadByte() | 0x100;
+                        ctl = input.ReadUInt8() | 0x100;
 
                     if (0 != (ctl & 1))
                     {
@@ -666,7 +665,7 @@ namespace GameRes.Formats.BGI
                     }
                     else
                     {
-                        Output[dst] = input.ReadByte();
+                        Output[dst] = input.ReadUInt8();
                         dst += 4;
                     }
                 }

@@ -102,7 +102,7 @@ namespace GameRes.Formats.Will
                     palette[i] = Color.FromRgb (palette_data[i*4], palette_data[i*4+1], palette_data[i*4+2]);
                 }
             }
-            using (var reader = new Reader (file.AsStream, meta))
+            using (var reader = new Reader (file, meta))
             {
                 reader.Unpack();
                 if (24 == meta.BPP)
@@ -132,19 +132,19 @@ namespace GameRes.Formats.Will
 
         internal sealed class Reader : IDisposable
         {
-            private BinaryReader    m_input;
+            private IBinaryStream   m_input;
             private uint            m_length;
             private byte[]          m_data;
 
             public byte[] Data { get { return m_data; } }
 
-            public Reader (Stream file, WipMetaData info)
+            public Reader (IBinaryStream file, WipMetaData info)
             {
                 m_length = info.FrameSize;
 //                int stride = (int)info.Width*((info.BPP+7)/8);
                 int stride = (int)info.Width*4;
                 m_data = new byte[stride * (int)info.Height];
-                m_input = new ArcView.Reader (file);
+                m_input = file;
             }
 
             private byte[] m_window = new byte[0x1000];
@@ -159,14 +159,14 @@ namespace GameRes.Formats.Will
                     control >>= 1;
                     if (0 == (control & 0x100))
                     {
-                        control = m_input.ReadByte() | 0xFF00;
+                        control = m_input.ReadUInt8() | 0xFF00;
                         --length;
                     }
                     if (0 != (control & 1))
                     {
                         if (length < 1)
                             throw new InvalidFormatException();
-                        byte b = m_input.ReadByte();
+                        byte b = m_input.ReadUInt8();
                         --length;
                         m_data[dst++] = b;
                         m_window[window_index++] = b;
@@ -176,8 +176,8 @@ namespace GameRes.Formats.Will
                     {
                         if (length < 2)
                             throw new InvalidFormatException();
-                        int hi = m_input.ReadByte();
-                        int lo = m_input.ReadByte();
+                        int hi = m_input.ReadUInt8();
+                        int lo = m_input.ReadUInt8();
                         length -= 2;
                         int offset = hi << 4 | lo >> 4;
                         for (int count = (lo & 0xF) + 2; count > 0; --count)
@@ -192,16 +192,8 @@ namespace GameRes.Formats.Will
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                if (!disposed)
-                {
-                    m_input.Dispose();
-                    disposed = true;
-                }
-                GC.SuppressFinalize (this);
             }
             #endregion
         }

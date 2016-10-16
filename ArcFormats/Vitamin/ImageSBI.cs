@@ -72,7 +72,7 @@ namespace GameRes.Formats.Vitamin
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new SbiReader (stream.AsStream, (SbiMetaData)info))
+            using (var reader = new SbiReader (stream, (SbiMetaData)info))
             {
                 reader.Unpack();
                 return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
@@ -87,7 +87,7 @@ namespace GameRes.Formats.Vitamin
 
     internal sealed class SbiReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         SbiMetaData     m_info;
         byte[]          m_output;
         int             m_stride;
@@ -97,9 +97,9 @@ namespace GameRes.Formats.Vitamin
         public BitmapPalette Palette { get; private set; }
         public int            Stride { get { return m_stride; } }
 
-        public SbiReader (Stream input, SbiMetaData info)
+        public SbiReader (IBinaryStream input, SbiMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             m_stride = ((int)m_info.Width * m_info.BPP / 8 + 3) & ~3;
             m_output = new byte[m_stride * (int)m_info.Height];
@@ -122,7 +122,7 @@ namespace GameRes.Formats.Vitamin
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 0x20;
+            m_input.Position = 0x20;
             int input_size = m_info.InputSize - 0x20;
             if (m_info.HasPalette)
             {
@@ -146,7 +146,7 @@ namespace GameRes.Formats.Vitamin
             var buffer = new byte[0x180];
             while (input_size > 0)
             {
-                int count = m_input.ReadByte();
+                int count = m_input.ReadUInt8();
                 --input_size;
                 if (count < 0x80)
                 {
@@ -203,14 +203,8 @@ namespace GameRes.Formats.Vitamin
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

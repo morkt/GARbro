@@ -115,17 +115,17 @@ namespace GameRes.Formats.SPack
         }
     }
 
-    internal class PackedReader : IDisposable
+    internal sealed class PackedReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         uint            m_packed_size;
         byte[]          m_output;
 
         public byte[] Data { get { return m_output; } }
 
-        public PackedReader (SPackEntry entry, Stream input)
+        public PackedReader (SPackEntry entry, IBinaryStream input)
         {
-            m_input = new BinaryReader (input);
+            m_input = input;
             m_packed_size = entry.Size;
             m_output = new byte[entry.UnpackedSize];
         }
@@ -149,7 +149,7 @@ namespace GameRes.Formats.SPack
                 {
                     int copy_count, offset;
 
-                    offset = m_input.ReadByte();
+                    offset = m_input.ReadUInt8();
                     src++;
                     copy_count = offset >> 4;
                     offset &= 0x0f;
@@ -160,7 +160,7 @@ namespace GameRes.Formats.SPack
                     }
                     else if (14 == copy_count)
                     {
-                        copy_count = m_input.ReadByte();
+                        copy_count = m_input.ReadUInt8();
                         src++;
                     }
                     else
@@ -170,7 +170,7 @@ namespace GameRes.Formats.SPack
                         offset++;
                     else
                     {
-                        offset = ((offset - 10) << 8) | m_input.ReadByte();
+                        offset = ((offset - 10) << 8) | m_input.ReadUInt8();
                         src++;
                     }
 
@@ -181,7 +181,7 @@ namespace GameRes.Formats.SPack
                 }
                 else
                 {
-                    m_output[dst++] = m_input.ReadByte();
+                    m_output[dst++] = m_input.ReadUInt8();
                     src++;
                 }
                 mask >>= 1;
@@ -194,20 +194,12 @@ namespace GameRes.Formats.SPack
 
         public void Dispose ()
         {
-            Dispose (true);
-            GC.SuppressFinalize (this);
-        }
-
-        protected virtual void Dispose (bool disposing)
-        {
             if (!disposed)
             {
-                if (disposing)
-                {
-                    m_input.Dispose();
-                }
+                m_input.Dispose();
                 disposed = true;
             }
+            GC.SuppressFinalize (this);
         }
         #endregion
     }

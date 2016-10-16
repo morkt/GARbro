@@ -132,7 +132,7 @@ namespace GameRes.Formats.G2
 
     internal class GceReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         int             m_unpacked_size;
         byte[]          m_output = null;
         int             m_dst;
@@ -150,9 +150,9 @@ namespace GameRes.Formats.G2
             }
         }
 
-        public GceReader (Stream input, int unpacked_size)
+        public GceReader (IBinaryStream input, int unpacked_size)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_unpacked_size = unpacked_size;
         }
 
@@ -170,13 +170,13 @@ namespace GameRes.Formats.G2
 
                     m_input.ReadInt32();
                     int cmd_len = m_input.ReadInt32();
-                    long cmd_pos = m_input.BaseStream.Position + data_length;
+                    long cmd_pos = m_input.Position + data_length;
                     ReadControlStream (cmd_pos, cmd_len);
 
                     int next = m_dst + segment_length;
                     UnpackGce1Segment (segment_length);
                     m_dst = next;
-                    m_input.BaseStream.Position = cmd_pos + cmd_len;
+                    m_input.Position = cmd_pos + cmd_len;
                 }
                 else if (Binary.AsciiEqual (id, "GCE0"))
                 {
@@ -203,7 +203,7 @@ namespace GameRes.Formats.G2
                 while (n --> 0)
                 {
                     m_frame[frame_pos] = m_dst;
-                    byte b = m_input.ReadByte();
+                    byte b = m_input.ReadUInt8();
                     frame_pos = ((frame_pos << 8) | b) & 0xFFFF;
                     m_output[m_dst++] = b;
                 }
@@ -242,15 +242,15 @@ namespace GameRes.Formats.G2
 
         void ReadControlStream (long pos, int length)
         {
-            var data_pos = m_input.BaseStream.Position;
+            var data_pos = m_input.Position;
             if (null == m_control || m_control.Length < length)
                 m_control = new byte[length];
-            m_input.BaseStream.Position = pos;
+            m_input.Position = pos;
             if (length != m_input.Read (m_control, 0, length))
                 throw new EndOfStreamException();
             m_control_pos = 0;
             m_control_len = length;
-            m_input.BaseStream.Position = data_pos;
+            m_input.Position = data_pos;
             m_bit_pos = 8;
         }
 
@@ -268,16 +268,8 @@ namespace GameRes.Formats.G2
         }
 
         #region IDisposable Members
-        bool m_disposed = false;
         public void Dispose ()
         {
-            if (!m_disposed)
-            {
-                if (m_input != null)
-                    m_input.Dispose();
-                m_disposed = true;
-                GC.SuppressFinalize (this);
-            }
         }
         #endregion
     }

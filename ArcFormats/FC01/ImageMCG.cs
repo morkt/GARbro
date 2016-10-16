@@ -197,7 +197,7 @@ namespace GameRes.Formats.FC01
                 {
                     var copy = m_input.Clone() as byte[];
                     MrgOpener.Decrypt (copy, 0, copy.Length-1, (byte)key);
-                    using (var input = new MemoryStream (copy))
+                    using (var input = new BinMemoryStream (copy))
                     using (var lzss = new MrgLzssReader (input, m_input.Length, Stride * m_height))
                     {
                         lzss.Unpack();
@@ -211,7 +211,7 @@ namespace GameRes.Formats.FC01
                 }
             }
 #endif
-            using (var input = new MemoryStream (m_input))
+            using (var input = new BinMemoryStream (m_input))
             using (var lzss = new MrgLzssReader (input, m_input.Length, Stride * m_height))
             {
                 lzss.Unpack();

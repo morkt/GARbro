@@ -99,7 +99,7 @@ namespace GameRes.Formats.FC01
             MrgOpener.Decrypt (data, 0, data.Length, mca.Key);
             if (method > 0)
             {
-                using (var input = new MemoryStream (data))
+                using (var input = new BinMemoryStream (data))
                 using (var lzss = new MrgLzssReader (input, data.Length, unpacked_size))
                 {
                     lzss.Unpack();

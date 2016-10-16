@@ -131,12 +131,10 @@ namespace GameRes.Formats.CandySoft
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (entry.Size <= 8)
                 return input;
-            var sign = FormatCatalog.ReadSignature (input);
+            var sign = input.Signature;
             if (0x32434c5a != sign) // 'ZLC2'
-            {
-                input.Position = 0;
                 return input;
-            }
+
             using (input)
             using (var reader = new Zlc2Reader (input, (int)entry.Size))
             {
@@ -148,16 +146,16 @@ namespace GameRes.Formats.CandySoft
 
     internal class Zlc2Reader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         int             m_size;
 
         public byte[] Data { get { return m_output; } }
 
-        public Zlc2Reader (Stream input, int input_length)
+        public Zlc2Reader (IBinaryStream input, int input_length)
         {
             input.Position = 4;
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             uint output_length = m_input.ReadUInt32();
             m_output = new byte[output_length];
             m_size = input_length - 8;
@@ -169,7 +167,7 @@ namespace GameRes.Formats.CandySoft
             int dst = 0;
             while (remaining > 0 && dst < m_output.Length)
             {
-                int ctl = m_input.ReadByte();
+                int ctl = m_input.ReadUInt8();
                 remaining--;
                 for (int mask = 0x80; mask != 0 && remaining > 0 && dst < m_output.Length; mask >>= 1)
                 {
@@ -178,8 +176,8 @@ namespace GameRes.Formats.CandySoft
                         if (remaining < 2)
                             return;
 
-                        int offset = m_input.ReadByte();
-                        int count  = m_input.ReadByte();
+                        int offset = m_input.ReadUInt8();
+                        int count  = m_input.ReadUInt8();
                         offset |= (count & 0xF0) << 4;
                         count   = (count & 0x0F) + 3;
 
@@ -193,31 +191,15 @@ namespace GameRes.Formats.CandySoft
                     }
                     else
                     {
-                        m_output[dst++] = m_input.ReadByte();
+                        m_output[dst++] = m_input.ReadUInt8();
                     }
                 }
             }
         }
 
         #region IDisposable Members
-        bool disposed = false;
-
         public void Dispose ()
         {
-            Dispose (true);
-            GC.SuppressFinalize (this);
-        }
-
-        protected virtual void Dispose (bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    m_input.Dispose();
-                }
-                disposed = true;
-            }
         }
         #endregion
     }
