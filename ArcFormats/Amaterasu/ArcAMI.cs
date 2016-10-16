@@ -143,7 +143,7 @@ namespace GameRes.Formats.Amaterasu
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            var input = base.OpenEntry (arc, entry);
             var packed_entry = entry as AmiEntry;
             if (null == packed_entry || !packed_entry.IsPacked)
                 return input;
