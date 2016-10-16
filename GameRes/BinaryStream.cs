@@ -37,7 +37,7 @@ namespace GameRes
         /// <summary>
         /// Name of the stream (could be name of the underlying file) or an empty string.
         /// </summary>
-        string     Name { get; }
+        string     Name { get; get; }
         /// <summary>
         /// First 4 bytes of the stream as a little-endian integer.
         /// </summary>
@@ -115,13 +115,9 @@ namespace GameRes
         byte[]      m_header;
         int         m_header_size;
 
-        public string     Name { get; private set; }
+        public string     Name { get; set; }
         public uint  Signature { get { return m_signature.Value; } }
         public Stream AsStream { get { return this; } }
-
-//        public BinaryStream (Stream input, bool leave_open = false) : this (input, "", leave_open)
-//        {
-//        }
 
         public BinaryStream (Stream input, string name, bool leave_open = false)
         {
@@ -160,9 +156,12 @@ namespace GameRes
 
         public static IBinaryStream FromStream (Stream input, string filename)
         {
-            if (input is IBinaryStream)
-                return input as IBinaryStream;
-            return new BinaryStream (input, filename);
+            var bin = input as IBinaryStream;
+            if (null == bin)
+                bin = new BinaryStream (input, filename);
+            else
+                bin.Name = filename;
+            return bin;
         }
 
         uint ReadSignature ()
@@ -339,15 +338,16 @@ namespace GameRes
         {
             var buffer = new byte[count];
             int pos = 0;
-            int cached = m_buffer_end - m_buffer_pos;
+            int cached = Math.Min (m_buffer_end - m_buffer_pos, count);
             if (cached > 0)
             {
                 Buffer.BlockCopy (m_buffer, m_buffer_pos, buffer, 0, cached);
                 pos = cached;
-                m_buffer_end = m_buffer_pos = 0;
+                m_buffer_pos += cached;
                 count -= cached;
             }
-            pos += m_source.Read (buffer, pos, count);
+            if (count > 0)
+                pos += m_source.Read (buffer, pos, count);
             if (pos < buffer.Length)
             {
                 var copy = new byte[pos];
@@ -367,8 +367,8 @@ namespace GameRes
             get { return m_source.Position - (m_buffer_end - m_buffer_pos); }
             set
             {
-                m_source.Position = value;
                 m_buffer_end = m_buffer_pos = 0;
+                m_source.Position = value;
             }
         }
 
@@ -456,7 +456,7 @@ namespace GameRes
         int         m_position;
         uint        m_signature;
 
-        public string     Name { get; private set; }
+        public string     Name { get; set; }
         public uint  Signature { get { return m_signature; } }
         public Stream AsStream { get { return this; } }
 
