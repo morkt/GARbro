@@ -460,10 +460,10 @@ namespace GameRes
         public uint  Signature { get { return m_signature; } }
         public Stream AsStream { get { return this; } }
 
-        public BinMemoryStream (byte[] input, string name) : this (input, 0, input.Length, name)
+        public BinMemoryStream (byte[] input, string name = "") : this (input, 0, input.Length, name)
         { }
 
-        public BinMemoryStream (byte[] input, int pos, int length, string name)
+        public BinMemoryStream (byte[] input, int pos, int length, string name = "")
         {
             m_source = input;
             m_start = pos;
@@ -471,7 +471,7 @@ namespace GameRes
             Init (name);
         }
 
-        public BinMemoryStream (MemoryStream input, string name)
+        public BinMemoryStream (MemoryStream input, string name = "")
         {
             try
             {
