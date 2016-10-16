@@ -620,6 +620,7 @@ namespace GameRes
             count = Math.Min (count, m_length - m_position);
             var buffer = new byte[count];
             Buffer.BlockCopy (m_source, m_start+m_position, buffer, 0, count);
+            m_position += count;
             return buffer;
         }
 
