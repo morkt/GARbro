@@ -214,9 +214,7 @@ namespace GameRes
         public IBinaryStream OpenBinaryEntry (Entry entry)
         {
             var input = OpenSeekableEntry (entry);
-            if (input is IBinaryStream)
-                return input as IBinaryStream;
-            return new BinaryStream (input, entry.Name);
+            return BinaryStream.FromStream (input, entry.Name);
         }
 
         public ArchiveFileSystem CreateFileSystem ()
