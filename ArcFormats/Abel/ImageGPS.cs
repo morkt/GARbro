@@ -52,9 +52,9 @@ namespace GameRes.Formats.Abel
             Extensions = new string[] { "gps", "cmp" };
         }
 
-        public override ImageMetaData ReadMetaData (IBinaryStream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = stream.ReadHeader (0x29);
+            var header = file.ReadHeader (0x29);
             if (header.Length != 0x29)
                 return null;
             var gps = new GpsMetaData
@@ -66,7 +66,8 @@ namespace GameRes.Formats.Abel
                 PackedSize  = header.ToInt32 (0x15),
             };
             // read BMP header
-            using (var input = OpenGpsStream (stream, gps.Compression, 0x54))
+            using (var stream = OpenGpsStream (file, gps.Compression, 0x54))
+            using (var input = BinaryStream.FromStream (stream, file.Name))
             {
                 var bmp_info = base.ReadMetaData (input);
                 if (null == bmp_info)
@@ -76,11 +77,12 @@ namespace GameRes.Formats.Abel
             }
         }
 
-        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var gps = (GpsMetaData)info;
-            stream.Position = 0x29;
-            using (var input = OpenGpsStream (stream, gps.Compression, gps.UnpackedSize))
+            file.Position = 0x29;
+            using (var stream = OpenGpsStream (file, gps.Compression, gps.UnpackedSize))
+            using (var input = BinaryStream.FromStream (stream, file.Name))
                 return base.Read (input, info);
         }
 
@@ -89,30 +91,28 @@ namespace GameRes.Formats.Abel
             throw new System.NotImplementedException ("GpsFormat.Write not implemented");
         }
 
-        IBinaryStream OpenGpsStream (IBinaryStream input, byte compression, int unpacked_size)
+        Stream OpenGpsStream (IBinaryStream input, byte compression, int unpacked_size)
         {
-            Stream gps = null;
             if (0 == compression)
-                gps = new StreamRegion (input.AsStream, 0x29, true);
+                return new StreamRegion (input.AsStream, 0x29, true);
             else if (1 == compression)
-                gps = OpenRLEStream (input.AsStream, unpacked_size);
+                return OpenRLEStream (input.AsStream, unpacked_size);
             else if (2 == compression)
-                gps = new LzssStream (input.AsStream, LzssMode.Decompress, true);
+                return new LzssStream (input.AsStream, LzssMode.Decompress, true);
             else if (3 == compression)
             {
                 using (var lzss = new LzssStream (input.AsStream, LzssMode.Decompress, true))
-                    gps = OpenRLEStream (lzss, unpacked_size);
+                    return OpenRLEStream (lzss, unpacked_size);
             }
             else
                 throw new InvalidFormatException();
-            return new BinaryStream (gps);
         }
 
         Stream OpenRLEStream (Stream input, int output_size)
         {
             var output = new byte[output_size];
             UnpackRLE (input, output);
-            return new MemoryStream (output);
+            return new BinMemoryStream (output, "");
         }
 
         void UnpackRLE (Stream input, byte[] output)

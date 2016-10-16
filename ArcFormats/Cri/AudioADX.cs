@@ -43,7 +43,7 @@ namespace GameRes.Formats.Cri
             uint signature = file.Signature;
             if (0x80 != (signature & 0xFFFF))
                 return null;
-            uint header_size = Binary.BigEndian (signature & 0xFFFF0000);
+            int header_size = (int)Binary.BigEndian (signature & 0xFFFF0000);
             if (header_size < 0x10 || header_size >= file.Length)
                 return null;
             var header = file.ReadBytes (header_size);

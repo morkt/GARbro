@@ -140,8 +140,8 @@ namespace GameRes.Formats.Qlie
             arc.File.View.Read (entry.Offset, packed, 0, entry.Size);
             var unpacked = PackOpener.Decompress (packed);
             if (null == unpacked)
-                return new MemoryStream (packed);
-            return new MemoryStream (unpacked);
+                unpacked = packed;
+            return new BinMemoryStream (unpacked, entry.Name);
         }
 
         static protected void DetectFileType (ArcView file, Entry entry)

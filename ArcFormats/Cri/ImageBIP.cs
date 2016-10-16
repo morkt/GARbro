@@ -61,57 +61,52 @@ namespace GameRes.Formats.Cri
             throw new NotImplementedException ("BipFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream input)
         {
-            using (var input = new BinaryReader (stream, Encoding.ASCII, true))
-            {
-                int sig = input.ReadInt32();
-                if (sig != 5 && sig != 10)
-                    return null;
-                uint header_end = (uint)sig*4;
-                uint index_offset = input.ReadUInt32();
+            int sig = input.ReadInt32();
+            if (sig != 5 && sig != 10)
+                return null;
+            uint header_end = (uint)sig*4;
+            uint index_offset = input.ReadUInt32();
 
-                input.BaseStream.Position = header_end-4;
-                uint data_offset = input.ReadUInt32() + 8;
-                if (index_offset >= data_offset || index_offset < header_end)
-                    return null;
-                input.BaseStream.Position = index_offset;
-                int tile_count = input.ReadInt16();
-                int flag = input.ReadInt16();
-                if (tile_count <= 0 || 0 != flag)
-                    return null;
-                input.ReadInt32();
-                uint w = input.ReadUInt16();
-                uint h = input.ReadUInt16();
-                if (0 == w || 0 == h)
-                    return null;
-                var meta = new BipMetaData { Width = w, Height = h, BPP = 32 };
-                meta.Tiles.Capacity = tile_count;
-                for (int i = 0; i < tile_count; ++i)
-                {
-                    input.ReadInt64();
-                    var tile = new BipTile();
-                    tile.Left   = input.ReadUInt16();
-                    tile.Top    = input.ReadUInt16();
-                    tile.Width  = input.ReadUInt16();
-                    tile.Height = input.ReadUInt16();
-                    if (tile.Left + tile.Width > meta.Width)
-                        meta.Width = (uint)(tile.Left + tile.Width);
-                    if (tile.Top  + tile.Height > meta.Height)
-                        meta.Height = (uint)(tile.Top + tile.Height);
-                    input.ReadInt64();
-                    tile.Offset = input.ReadUInt32() + data_offset;
-                    meta.Tiles.Add (tile);
-                }
-                return meta;
+            input.Position = header_end-4;
+            uint data_offset = input.ReadUInt32() + 8;
+            if (index_offset >= data_offset || index_offset < header_end)
+                return null;
+            input.Position = index_offset;
+            int tile_count = input.ReadInt16();
+            int flag = input.ReadInt16();
+            if (tile_count <= 0 || 0 != flag)
+                return null;
+            input.ReadInt32();
+            uint w = input.ReadUInt16();
+            uint h = input.ReadUInt16();
+            if (0 == w || 0 == h)
+                return null;
+            var meta = new BipMetaData { Width = w, Height = h, BPP = 32 };
+            meta.Tiles.Capacity = tile_count;
+            for (int i = 0; i < tile_count; ++i)
+            {
+                input.ReadInt64();
+                var tile = new BipTile();
+                tile.Left   = input.ReadUInt16();
+                tile.Top    = input.ReadUInt16();
+                tile.Width  = input.ReadUInt16();
+                tile.Height = input.ReadUInt16();
+                if (tile.Left + tile.Width > meta.Width)
+                    meta.Width = (uint)(tile.Left + tile.Width);
+                if (tile.Top  + tile.Height > meta.Height)
+                    meta.Height = (uint)(tile.Top + tile.Height);
+                input.ReadInt64();
+                tile.Offset = input.ReadUInt32() + data_offset;
+                meta.Tiles.Add (tile);
             }
+            return meta;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as BipMetaData;
-            if (null == meta)
-                throw new ArgumentException ("BipFormat.Read should be supplied with BipMetaData", "info");
+            var meta = (BipMetaData)info;
 
             var header = new byte[0x7c];
             var bitmap = new WriteableBitmap ((int)meta.Width, (int)meta.Height,
@@ -127,7 +122,7 @@ namespace GameRes.Formats.Cri
                 int alpha = LittleEndian.ToInt32 (header, 0x68);
                 int x = LittleEndian.ToInt32 (header, 0x6c);
                 int y = LittleEndian.ToInt32 (header, 0x70);
-                using (var png = new StreamRegion (stream, stream.Position, data_size, true))
+                using (var png = new StreamRegion (stream.AsStream, stream.Position, data_size, true))
                 {
                     var decoder = new PngBitmapDecoder (png,
                         BitmapCreateOptions.None, BitmapCacheOption.OnLoad);

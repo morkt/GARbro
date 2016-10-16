@@ -150,7 +150,7 @@ namespace GameRes.Formats.Nexton
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i != data.Length; ++i)
                 data[i] ^= nxent.Key;
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         private static string ReadName (ArcView view, long offset, uint size, uint key, Encoding enc)

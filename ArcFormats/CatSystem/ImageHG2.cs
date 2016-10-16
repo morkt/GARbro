@@ -44,37 +44,34 @@ namespace GameRes.Formats.CatSystem
         public override string Description { get { return "CatSystem engine image format"; } }
         public override uint     Signature { get { return 0x322D4748; } } // 'HG-2'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 8;
-            using (var header = new ArcView.Reader (stream))
-            {
-                var info = new Hg2MetaData();
-                int type = header.ReadInt32();
-                if (0x25 == type)
-                    info.HeaderSize = 0x58;
-                else if (0x20 == type)
-                    info.HeaderSize = 0x50;
-                else
-                    return null;
-                info.Width  = header.ReadUInt32();
-                info.Height = header.ReadUInt32();
-                info.BPP    = header.ReadInt32();
-                header.BaseStream.Seek (8, SeekOrigin.Current);
-                info.DataPacked     = header.ReadInt32();
-                info.DataUnpacked   = header.ReadInt32();
-                info.CtlPacked      = header.ReadInt32();
-                info.CtlUnpacked    = header.ReadInt32();
-                header.BaseStream.Seek (8, SeekOrigin.Current);
-                info.CanvasWidth    = header.ReadUInt32();
-                info.CanvasHeight   = header.ReadUInt32();
-                info.OffsetX        = header.ReadInt32();
-                info.OffsetY        = header.ReadInt32();
-                return info;
-            }
+            var info = new Hg2MetaData();
+            int type = stream.ReadInt32();
+            if (0x25 == type)
+                info.HeaderSize = 0x58;
+            else if (0x20 == type)
+                info.HeaderSize = 0x50;
+            else
+                return null;
+            info.Width  = stream.ReadUInt32();
+            info.Height = stream.ReadUInt32();
+            info.BPP    = stream.ReadInt32();
+            stream.Seek (8, SeekOrigin.Current);
+            info.DataPacked     = stream.ReadInt32();
+            info.DataUnpacked   = stream.ReadInt32();
+            info.CtlPacked      = stream.ReadInt32();
+            info.CtlUnpacked    = stream.ReadInt32();
+            stream.Seek (8, SeekOrigin.Current);
+            info.CanvasWidth    = stream.ReadUInt32();
+            info.CanvasHeight   = stream.ReadUInt32();
+            info.OffsetX        = stream.ReadInt32();
+            info.OffsetY        = stream.ReadInt32();
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new Hg2Reader (stream, (Hg2MetaData)info))
             {
@@ -94,7 +91,7 @@ namespace GameRes.Formats.CatSystem
     {
         Hg2MetaData     m_hg2;
 
-        public Hg2Reader (Stream input, Hg2MetaData info) : base (input, info)
+        public Hg2Reader (IBinaryStream input, Hg2MetaData info) : base (input, info)
         {
             m_hg2 = info;
         }

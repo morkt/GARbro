@@ -193,7 +193,7 @@ namespace GameRes.Formats.NonColor
             for (int i = 0; i < dent.RawName.Length-1; ++i)
             for (int j = 0; j < block_length; ++j)
                 data[n++] ^= dent.RawName[i];
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         static IDictionary<ulong, Tuple<uint, int>> FileMapIndex = null;

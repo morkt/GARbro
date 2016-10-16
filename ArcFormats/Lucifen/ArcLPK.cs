@@ -182,7 +182,7 @@ namespace GameRes.Formats.Lucifen
                 if (count != 0)
                     DecryptEntry (data, count, larc.Info.Key, larc.Scheme.RotatePattern);
             }
-            input = new MemoryStream (data);
+            input = new BinMemoryStream (data, entry.Name);
             if (null != larc.Info.Prefix)
                 return new PrefixStream (larc.Info.Prefix, input);
             else

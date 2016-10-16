@@ -222,7 +222,7 @@ namespace GameRes.Formats.Zyx
             var bdf = arc as BdfArchive;
             var frame = entry as BdfFrame;
             if (null == bdf || null == frame)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+                return base.OpenEntry (arc, entry);
 
             var pixels = bdf.ReadFrame (frame);
             var header = new byte[0x12];

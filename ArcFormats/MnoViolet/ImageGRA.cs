@@ -55,45 +55,42 @@ namespace GameRes.Formats.MnoViolet
             throw new NotImplementedException ("GraFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var input = new ArcView.Reader (stream))
+            uint sign   = file.ReadUInt32();
+            uint width  = file.ReadUInt32();
+            uint height = file.ReadUInt32();
+            if (0 == width || width > 0x8000 || 0 == height || height > 0x8000)
+                return null;
+            int bpp;
+            if (0x617267 == sign) // 'gra'
+                bpp = 24;
+            else if (0x73616D == sign) // 'mas'
+                bpp = 8;
+            else if (1 == sign)
+                bpp = file.ReadInt32();
+            else
+                return null;
+            if (bpp != 32 && bpp != 24 && bpp != 8)
+                return null;
+            int packed_size = file.ReadInt32();
+            int data_size   = file.ReadInt32();
+            return new GraMetaData
             {
-                uint sign   = input.ReadUInt32();
-                uint width  = input.ReadUInt32();
-                uint height = input.ReadUInt32();
-                if (0 == width || width > 0x8000 || 0 == height || height > 0x8000)
-                    return null;
-                int bpp;
-                if (0x617267 == sign) // 'gra'
-                    bpp = 24;
-                else if (0x73616D == sign) // 'mas'
-                    bpp = 8;
-                else if (1 == sign)
-                    bpp = input.ReadInt32();
-                else
-                    return null;
-                if (bpp != 32 && bpp != 24 && bpp != 8)
-                    return null;
-                int packed_size = input.ReadInt32();
-                int data_size   = input.ReadInt32();
-                return new GraMetaData
-                {
-                    Width = width,
-                    Height = height,
-                    PackedSize = packed_size,
-                    UnpackedSize = data_size,
-                    BPP = bpp,
-                    DataOffset = stream.Position,
-                };
-            }
+                Width = width,
+                Height = height,
+                PackedSize = packed_size,
+                UnpackedSize = data_size,
+                BPP = bpp,
+                DataOffset = file.Position,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GraMetaData)info;
             stream.Position = meta.DataOffset;
-            using (var reader = new LzssReader (stream, meta.PackedSize, meta.UnpackedSize))
+            using (var reader = new LzssReader (stream.AsStream, meta.PackedSize, meta.UnpackedSize))
             {
                 reader.Unpack();
                 int stride = ((int)info.Width*info.BPP/8 + 3) & ~3;

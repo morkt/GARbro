@@ -109,7 +109,7 @@ namespace GameRes.Formats.Lilim
 
             var decoder = new HuffmanDecoder (packed, unpacked);
             decoder.Unpack();
-            return new MemoryStream (unpacked);
+            return new BinMemoryStream (unpacked, entry.Name);
         }
     }
 

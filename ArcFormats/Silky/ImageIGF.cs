@@ -46,15 +46,13 @@ namespace GameRes.Formats.Silky
         public override string Description { get { return "Silky's image format"; } }
         public override uint     Signature { get { return 0x5355455Au; } } // 'ZEUS'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            uint width  = LittleEndian.ToUInt32 (header, 4);
-            uint height = LittleEndian.ToUInt32 (header, 8);
-            int unpacked_size  = LittleEndian.ToInt32 (header, 0xC);
-            int flags = LittleEndian.ToInt32 (header, 0x10);
+            var header = stream.ReadHeader (0x14);
+            uint width  = header.ToUInt32 (4);
+            uint height = header.ToUInt32 (8);
+            int unpacked_size  = header.ToInt32 (0xC);
+            int flags = header.ToInt32 (0x10);
             int bpp = flags & 0xff;
             if (0 == bpp)
                 bpp = 32;
@@ -68,11 +66,9 @@ namespace GameRes.Formats.Silky
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as IgfMetaData;
-            if (null == meta)
-                throw new ArgumentException ("IgfFormat.Read should be supplied with IgfMetaData", "info");
+            var meta = (IgfMetaData)info as IgfMetaData;
 
             int stride = (int)info.Width*info.BPP/8;
             stream.Position = 0x14;
@@ -80,7 +76,7 @@ namespace GameRes.Formats.Silky
             if (meta.IsPacked)
             {
                 int in_size = (int)(stream.Length - 0x14);
-                using (var lzss = new LzssReader (stream, in_size, meta.UnpackedSize))
+                using (var lzss = new LzssReader (stream.AsStream, in_size, meta.UnpackedSize))
                 {
                     lzss.FrameFill = 0x20;
                     lzss.Unpack();

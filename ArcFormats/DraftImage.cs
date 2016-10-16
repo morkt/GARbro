@@ -31,11 +31,11 @@ namespace GameRes.Formats.??????
         public override string Description { get { return "?????? image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (xxxMetaData)info;
 

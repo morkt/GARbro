@@ -145,7 +145,7 @@ namespace GameRes.Formats.DxLib
             using (input)
             {
                 var data = Unpack (input);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

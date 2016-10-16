@@ -50,33 +50,30 @@ namespace GameRes.Formats.ShiinaRio
         // in current implementation, only the first frame is returned.
         // per-frame access is provided by S25Opener class.
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var input = new ArcView.Reader (stream))
-            {
-                input.ReadUInt32();
-                int count = input.ReadInt32();
-                if (count < 0 || count > 0xfffff)
-                    return null;
-                uint first_offset = 0;
-                for (int i = 0; i < count && 0 == first_offset; ++i)
-                    first_offset = input.ReadUInt32();
-                if (0 == first_offset)
-                    return null;
-                input.BaseStream.Position = first_offset;
-                var info = new S25MetaData();
-                info.Width = input.ReadUInt32();
-                info.Height = input.ReadUInt32();
-                info.OffsetX = input.ReadInt32();
-                info.OffsetY = input.ReadInt32();
-                info.FirstOffset = first_offset+0x14;
-                info.Incremental = 0 != (input.ReadUInt32() & 0x80000000u);
-                info.BPP = 32;
-                return info;
-            }
+            file.Position = 4;
+            int count = file.ReadInt32();
+            if (count < 0 || count > 0xfffff)
+                return null;
+            uint first_offset = 0;
+            for (int i = 0; i < count && 0 == first_offset; ++i)
+                first_offset = file.ReadUInt32();
+            if (0 == first_offset)
+                return null;
+            file.Position = first_offset;
+            var info = new S25MetaData();
+            info.Width = file.ReadUInt32();
+            info.Height = file.ReadUInt32();
+            info.OffsetX = file.ReadInt32();
+            info.OffsetY = file.ReadInt32();
+            info.FirstOffset = first_offset+0x14;
+            info.Incremental = 0 != (file.ReadUInt32() & 0x80000000u);
+            info.BPP = 32;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new Reader (stream, (S25MetaData)info))
             {
@@ -90,9 +87,9 @@ namespace GameRes.Formats.ShiinaRio
             throw new NotImplementedException ("S25Format.Write not implemented");
         }
 
-        internal class Reader : IDisposable
+        internal sealed class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             int             m_width;
             int             m_height;
             uint            m_origin;
@@ -101,19 +98,19 @@ namespace GameRes.Formats.ShiinaRio
 
             public byte[]   Data { get { return m_output; } }
 
-            public Reader (Stream file, S25MetaData info)
+            public Reader (IBinaryStream file, S25MetaData info)
             {
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_output = new byte[m_width * m_height * 4];
-                m_input = new ArcView.Reader (file);
+                m_input = file;
                 m_origin = info.FirstOffset;
                 m_incremental = info.Incremental;
             }
 
             public byte[] Unpack ()
             {
-                m_input.BaseStream.Position = m_origin;
+                m_input.Position = m_origin;
                 if (m_incremental)
                     return UnpackIncremental();
                 var rows = new uint[m_height];
@@ -124,7 +121,7 @@ namespace GameRes.Formats.ShiinaRio
                 for (int y = 0; y < m_height && dst < m_output.Length; ++y)
                 {
                     uint row_pos = rows[y];
-                    m_input.BaseStream.Position = row_pos;
+                    m_input.Position = row_pos;
                     int row_length = m_input.ReadUInt16();
                     row_pos += 2;
                     if (0 != (row_pos & 1))
@@ -142,7 +139,7 @@ namespace GameRes.Formats.ShiinaRio
 
             void UpdateRepeatCount (Dictionary<uint, int> rows_count)
             {
-                m_input.BaseStream.Position = 4;
+                m_input.Position = 4;
                 int count = m_input.ReadInt32();
                 var frames = new List<uint> (count);
                 for (int i = 0; i < count; ++i)
@@ -155,9 +152,9 @@ namespace GameRes.Formats.ShiinaRio
                 {
                     if (offset+0x14 == m_origin)
                         continue;
-                    m_input.BaseStream.Position = offset+4;
+                    m_input.Position = offset+4;
                     int height = m_input.ReadInt32();
-                    m_input.BaseStream.Position = offset+0x14;
+                    m_input.Position = offset+0x14;
                     for (int i = 0; i < height; ++i)
                     {
                         var row_offset = m_input.ReadUInt32();
@@ -286,7 +283,7 @@ namespace GameRes.Formats.ShiinaRio
 
             byte[] ReadLine (uint offset, int repeat)
             {
-                m_input.BaseStream.Position = offset;
+                m_input.Position = offset;
                 int row_length = m_input.ReadUInt16();
                 if (0 != (offset & 1))
                 {
@@ -355,22 +352,9 @@ namespace GameRes.Formats.ShiinaRio
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
                 GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                        m_input.Dispose();
-                    disposed = true;
-                }
             }
             #endregion
         }

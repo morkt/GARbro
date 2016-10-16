@@ -232,9 +232,9 @@ namespace GameRes
             return new ArcStream (this, offset, (uint)size);
         }
 
-        public ArcStream CreateStream (long offset, uint size)
+        public ArcStream CreateStream (long offset, uint size, string name = null)
         {
-            return new ArcStream (this, offset, size);
+            return new ArcStream (this, offset, size, name);
         }
         
         public MemoryMappedViewAccessor CreateViewAccessor (long offset, uint size)
@@ -510,27 +510,30 @@ namespace GameRes
                 m_start = 0;
                 m_size = file.MaxOffset;
                 m_position = 0;
+                Name = file.Name;
             }
 
-            public ArcStream (Frame view)
+            public ArcStream (Frame view, string name = null)
             {
                 m_view = view;
                 m_start = m_view.Offset;
                 m_size = m_view.Reserved;
                 m_position = 0;
+                Name = name ?? "";
             }
 
-            public ArcStream (ArcView file, long offset, uint size)
-                : this (new Frame (file, offset, size))
+            public ArcStream (ArcView file, long offset, uint size, string name = null)
+                : this (new Frame (file, offset, size), name)
             {
             }
 
-            public ArcStream (Frame view, long offset, uint size)
+            public ArcStream (Frame view, long offset, uint size, string name = null)
             {
                 m_view = view;
                 m_start = offset;
                 m_size = Math.Min (size, m_view.Reserve (offset, size));
                 m_position = 0;
+                Name = name ?? "";
             }
 
             /// <summary>
@@ -573,12 +576,17 @@ namespace GameRes
                 return b;
             }
 
-            public sbyte ReadSByte ()
+            public sbyte ReadInt8 ()
             {
                 int b = ReadByte();
                 if (-1 == b)
                     throw new EndOfStreamException();
                 return (sbyte)b;
+            }
+
+            public byte ReadUInt8 ()
+            {
+                return (byte)ReadInt8();
             }
 
             public short ReadInt16 ()

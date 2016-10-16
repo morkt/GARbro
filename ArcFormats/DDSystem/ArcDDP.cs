@@ -130,7 +130,7 @@ namespace GameRes.Formats.DDSystem
                 reader.Unpack (data);
                 if (data.Length > 16 && Binary.AsciiEqual (data, 0, "DDSxHXB"))
                     DecryptHxb (data);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

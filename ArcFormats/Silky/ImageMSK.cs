@@ -43,24 +43,22 @@ namespace GameRes.Formats.Silky
             Extensions = new string[] { "msk" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[12];
-            if (12 != stream.Read (header, 0, 12))
-                return null;
+            var header = stream.ReadHeader (12);
             return new ImageMetaData
             {
-                Width = LittleEndian.ToUInt16 (header, 8),
-                Height = LittleEndian.ToUInt16 (header, 10),
-                OffsetX = LittleEndian.ToInt16 (header, 4),
-                OffsetY = LittleEndian.ToInt16 (header, 6),
+                Width   = header.ToUInt16 (8),
+                Height  = header.ToUInt16 (10),
+                OffsetX = header.ToInt16 (4),
+                OffsetY = header.ToInt16 (6),
                 BPP = 8,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new RmskReader (stream, info))
+            using (var reader = new RmskReader (stream.AsStream, info))
             {
                 reader.Unpack();
                 return ImageData.CreateFlipped (info, PixelFormats.Gray8, null, reader.Data, (int)info.Width);

@@ -52,12 +52,12 @@ namespace GameRes.Formats.Silky
             throw new NotImplementedException ("GrdFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Seek (4, SeekOrigin.Current);
-            int data_size = stream.ReadByte() | stream.ReadByte() << 8 | stream.ReadByte() << 16 | stream.ReadByte() << 24;
+            int data_size = stream.ReadInt32();
             stream.Seek (4, SeekOrigin.Current);
-            using (var reader = new Reader (stream, 0x22)) // BMP header
+            using (var reader = new Reader (stream.AsStream, 0x22)) // BMP header
             {
                 reader.Unpack();
                 var bmp = reader.Data;
@@ -76,18 +76,15 @@ namespace GameRes.Formats.Silky
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as GrdMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GrdFormat.Read should be supplied with GrdMetaData", "info");
-
+            var meta = (GrdMetaData)info;
             stream.Position = 12;
-            using (var reader = new Reader (stream, meta.DataSize))
+            using (var reader = new Reader (stream.AsStream, meta.DataSize))
             {
                 reader.Unpack();
                 byte[] pixels = reader.Data;
-                using (var bmp = new MemoryStream (reader.Data, false))
+                using (var bmp = new MemoryStream (reader.Data))
                 {
                     var decoder = new BmpBitmapDecoder (bmp,
                         BitmapCreateOptions.None, BitmapCacheOption.OnLoad);

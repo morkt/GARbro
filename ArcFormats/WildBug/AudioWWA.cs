@@ -37,12 +37,10 @@ namespace GameRes.Formats.WildBug
         public override string Description { get { return "Wild Bug's compressed audio format"; } }
         public override uint     Signature { get { return 0x1A585057; } } // 'WPX'
         
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x10];
-            if (header.Length != file.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, 4, "WAV"))
+            var header = file.ReadHeader (0x10);
+            if (!header.AsciiEqual (4, "WAV"))
                 return null;
             int count = header[0xE];
             int dir_size = header[0xF];
@@ -50,22 +48,19 @@ namespace GameRes.Formats.WildBug
                 return null;
 
             file.Position = 0x10;
-            header = new byte[count * dir_size];
-            if (header.Length != file.Read (header, 0, header.Length))
-                throw new InvalidFormatException();
+            var index = file.ReadBytes (count * dir_size);
 
-            var section = WpxSection.Find (header, 0x20, count, dir_size);
+            var section = WpxSection.Find (index, 0x20, count, dir_size);
             if (null == section || section.UnpackedSize < 0x10 || section.DataFormat != 0x80)
                 throw new InvalidFormatException();
-            var fmt = new byte[section.UnpackedSize];
             file.Position = section.Offset;
-            file.Read (fmt, 0, section.UnpackedSize);
+            var fmt = file.ReadBytes (section.UnpackedSize);
 
-            section = WpxSection.Find (header, 0x21, count, dir_size);
+            section = WpxSection.Find (index, 0x21, count, dir_size);
             if (null == section)
                 throw new InvalidFormatException();
 
-            var reader = new WwaReader (file, section);
+            var reader = new WwaReader (file.AsStream, section);
             var data = reader.Unpack (section.DataFormat);
             if (null == data)
                 throw new InvalidFormatException();

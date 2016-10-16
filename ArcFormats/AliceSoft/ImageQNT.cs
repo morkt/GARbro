@@ -49,36 +49,34 @@ namespace GameRes.Formats.AliceSoft
             throw new System.NotImplementedException ("QntFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x44];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int version = LittleEndian.ToInt32 (header, 4);
+            var header = stream.ReadHeader (0x44);
+            int version = header.ToInt32 (4);
             if (version <= 0 || version > 2)
                 return null;
-            if (0x44 != LittleEndian.ToUInt32 (header, 8))
+            if (0x44 != header.ToUInt32 (8))
                 return null;
-            uint width = LittleEndian.ToUInt32 (header, 0x14);
-            uint height = LittleEndian.ToUInt32 (header, 0x18);
+            uint width = header.ToUInt32 (0x14);
+            uint height = header.ToUInt32 (0x18);
             if (0 == width || 0 == height)
                 return null;
             return new QntMetaData
             {
                 Width = width,
                 Height = height,
-                OffsetX = LittleEndian.ToInt32 (header, 0x0c),
-                OffsetY = LittleEndian.ToInt32 (header, 0x10),
-                BPP = LittleEndian.ToInt32 (header, 0x1c),
-                RGBSize = LittleEndian.ToUInt32 (header, 0x24),
-                AlphaSize = LittleEndian.ToUInt32 (header, 0x28),
+                OffsetX = header.ToInt32 (0x0c),
+                OffsetY = header.ToInt32 (0x10),
+                BPP = header.ToInt32 (0x1c),
+                RGBSize = header.ToUInt32 (0x24),
+                AlphaSize = header.ToUInt32 (0x28),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x44;
-            var reader = new Reader (stream, (QntMetaData)info);
+            var reader = new Reader (stream.AsStream, (QntMetaData)info);
             reader.Unpack();
             int stride = (int)info.Width * (reader.BPP / 8);
             PixelFormat format = 24 == reader.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;

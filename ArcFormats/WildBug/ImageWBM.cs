@@ -74,29 +74,25 @@ namespace GameRes.Formats.WildBug
         public override string Description { get { return "Wild Bug's image format"; } }
         public override uint     Signature { get { return 0x1A585057; } } // 'WPX'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            byte[] header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, 4, "BMP"))
+            var header = stream.ReadHeader (0x10);
+            if (!header.AsciiEqual (4, "BMP"))
                 return null;
             int count = header[0xE];
             int dir_size = header[0xF];
             if (1 != header[0xC] || 0 == count || 0 == dir_size)
                 return null;
-            header = new byte[count * dir_size];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            var section = WpxSection.Find (header, 0x10, count, dir_size);
+            var dir = stream.ReadBytes (count * dir_size);
+            var section = WpxSection.Find (dir, 0x10, count, dir_size);
             if (null == section)
                 return null;
             if (section.UnpackedSize < 0x10)
                 return null;
 
-            stream.Seek (section.Offset, SeekOrigin.Begin);
-            byte[] data = new byte[section.UnpackedSize];
-            if (data.Length != stream.Read (data, 0, data.Length))
+            stream.Position = section.Offset;
+            var data = stream.ReadBytes (section.UnpackedSize);
+            if (data.Length != section.UnpackedSize)
                 return null;
 
             return new WbmMetaData
@@ -106,15 +102,13 @@ namespace GameRes.Formats.WildBug
                 BPP    = data[0xC],
                 EntryCount = count,
                 EntrySize = dir_size,
-                Header = header,
+                Header = header.ToArray(),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as WbmMetaData;
-            if (null == meta)
-                throw new ArgumentException ("WbmFormat.Read should be supplied with WbmMetaData", "info");
+            var meta = (WbmMetaData)info;
 
             var section = WpxSection.Find (meta.Header, 0x11, meta.EntryCount, meta.EntrySize);
             if (null == section)
@@ -215,7 +209,7 @@ namespace GameRes.Formats.WildBug
 
     internal class WbmReader : WpxDecoder
     {
-        public WbmReader (Stream input, WpxSection section) : base (input, section)
+        public WbmReader (IBinaryStream input, WpxSection section) : base (input.AsStream, section)
         {
         }
 

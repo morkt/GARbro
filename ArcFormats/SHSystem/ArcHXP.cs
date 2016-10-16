@@ -129,7 +129,7 @@ namespace GameRes.Formats.SHSystem
             using (var reader = new ShsCompression (input))
             {
                 reader.Unpack (data);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
     }

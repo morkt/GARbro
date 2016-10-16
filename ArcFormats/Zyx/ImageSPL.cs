@@ -49,54 +49,48 @@ namespace GameRes.Formats.Zyx
         public override string Description { get { return "Zyx tiled image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var reader = new ArcView.Reader (stream))
+            int count = file.ReadInt16();
+            if (count <= 0)
+                return null;
+            var tiles = new Tile[count];
+            for (int i = 0; i < count; ++i)
             {
-                int count = reader.ReadInt16();
-                if (count <= 0)
+                var tile = new Tile();
+                tile.Left = file.ReadInt16();
+                tile.Top  = file.ReadInt16();
+                if (tile.Left < 0 || tile.Top < 0)
                     return null;
-                var tiles = new Tile[count];
-                for (int i = 0; i < count; ++i)
-                {
-                    var tile = new Tile();
-                    tile.Left = reader.ReadInt16();
-                    tile.Top  = reader.ReadInt16();
-                    if (tile.Left < 0 || tile.Top < 0)
-                        return null;
-                    tile.Right  = reader.ReadInt16();
-                    tile.Bottom = reader.ReadInt16();
-                    if (tile.Right <= tile.Left || tile.Bottom <= tile.Top)
-                        return null;
-                    tiles[i] = tile;
-                }
-                int width = reader.ReadInt16();
-                int height = reader.ReadInt16();
-                if (width <= 0 || height <= 0)
+                tile.Right  = file.ReadInt16();
+                tile.Bottom = file.ReadInt16();
+                if (tile.Right <= tile.Left || tile.Bottom <= tile.Top)
                     return null;
-                foreach (var tile in tiles)
-                {
-                    if (tile.Right > width || tile.Bottom > height)
-                        return null;
-                }
-                return new SplMetaData
-                {
-                    Width = (uint)width,
-                    Height = (uint)height,
-                    BPP = 24,
-                    Tiles = tiles,
-                    DataOffset = stream.Position,
-                };
+                tiles[i] = tile;
             }
+            int width = file.ReadInt16();
+            int height = file.ReadInt16();
+            if (width <= 0 || height <= 0)
+                return null;
+            foreach (var tile in tiles)
+            {
+                if (tile.Right > width || tile.Bottom > height)
+                    return null;
+            }
+            return new SplMetaData
+            {
+                Width = (uint)width,
+                Height = (uint)height,
+                BPP = 24,
+                Tiles = tiles,
+                DataOffset = file.Position,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as SplMetaData;
-            if (null == meta)
-                throw new System.ArgumentException ("SplFormat.Read should be supplied with SplMetaData", "info");
-
-            var reader = new SplReader (stream, meta);
+            var meta = (SplMetaData)info;
+            var reader = new SplReader (stream.AsStream, meta);
             reader.Unpack ();
             return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data);
         }

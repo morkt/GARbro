@@ -102,7 +102,7 @@ namespace GameRes.Formats.Will
             {
                 data[i] = Binary.RotByteR (data[i], 2);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 }

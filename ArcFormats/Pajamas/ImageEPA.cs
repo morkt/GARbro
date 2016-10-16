@@ -56,41 +56,35 @@ namespace GameRes.Formats.Pajamas
             throw new NotImplementedException ("EpaFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var header = new ArcView.Reader (stream))
+            var info = new EpaMetaData();
+            info.Mode = file.ReadInt32() >> 24;
+            info.ColorType = file.ReadInt32() & 0xff;
+            switch (info.ColorType)
             {
-                var info = new EpaMetaData();
-                info.Mode = header.ReadInt32() >> 24;
-                info.ColorType = header.ReadInt32() & 0xff;
-                switch (info.ColorType)
-                {
-                case 0: info.BPP = 8; break;
-                case 1: info.BPP = 24; break;
-                case 2: info.BPP = 32; break;
-                case 3: info.BPP = 15; break;
-                case 4: info.BPP = 8; break;
-                default: return null;
-                }
-                info.Width = header.ReadUInt32();
-                info.Height = header.ReadUInt32();
-                if (2 == info.Mode)
-                {
-                    info.OffsetX = header.ReadInt32();
-                    info.OffsetY = header.ReadInt32();
-                }
-                return info;
+            case 0: info.BPP = 8; break;
+            case 1: info.BPP = 24; break;
+            case 2: info.BPP = 32; break;
+            case 3: info.BPP = 15; break;
+            case 4: info.BPP = 8; break;
+            default: return null;
             }
+            info.Width = file.ReadUInt32();
+            info.Height = file.ReadUInt32();
+            if (2 == info.Mode)
+            {
+                info.OffsetX = file.ReadInt32();
+                info.OffsetY = file.ReadInt32();
+            }
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = info as EpaMetaData;
-            if (null == meta)
-                throw new ArgumentException ("EpaFormat.Read should be supplied with EpaMetaData", "info");
-
-            stream.Position = 2 == meta.Mode ? 0x18 : 0x10;
-            var reader = new Reader (stream, meta);
+            var meta = (EpaMetaData)info as EpaMetaData;
+            file.Position = 2 == meta.Mode ? 0x18 : 0x10;
+            var reader = new Reader (file.AsStream, meta);
             reader.Unpack();
             return ImageData.Create (meta, reader.Format, reader.Palette, reader.Data);
         }

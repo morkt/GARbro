@@ -90,7 +90,7 @@ namespace GameRes.Formats.Ivory
             }
             else if (3 == type)
             {
-                var input = new StreamRegion (file, start_offset, data_length);
+                var input = new StreamRegion (file.AsStream, start_offset, data_length);
                 return new OggInput (input);
             }
             else

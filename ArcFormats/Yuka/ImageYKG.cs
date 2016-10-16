@@ -52,44 +52,43 @@ namespace GameRes.Formats.Yuka
 
         static readonly byte[] PngPrefix = new byte[4] { 0x89, 'P'^0, 'N'^0, 'G'^0 };
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = new byte[0x40];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, 4, "00\0\0"))
+            var header = file.ReadHeader (0x40);
+            if (!header.AsciiEqual (4, "00\0\0"))
                 return null;
             var ykg = new YkgMetaData {
-                DataOffset = LittleEndian.ToUInt32 (header, 0x28),
-                DataSize   = LittleEndian.ToUInt32 (header, 0x2C)
+                DataOffset = header.ToUInt32 (0x28),
+                DataSize   = header.ToUInt32 (0x2C)
             };
             if (0 == ykg.DataOffset)
-                ykg.DataOffset = LittleEndian.ToUInt32 (header, 8);
+                ykg.DataOffset = header.ToUInt32 (8);
             if (ykg.DataOffset < 0x30)
                 return null;
             if (0 == ykg.DataSize)
-                ykg.DataSize = (uint)(stream.Length - ykg.DataOffset);
+                ykg.DataSize = (uint)(file.Length - ykg.DataOffset);
             ImageMetaData info = null;
-            using (var img = new StreamRegion (stream, ykg.DataOffset, ykg.DataSize, true))
+            using (var reg = new StreamRegion (file.AsStream, ykg.DataOffset, ykg.DataSize, true))
+            using (var img = new BinaryStream (reg, file.Name))
             {
-                if (4 != img.Read (header, 0, 4))
-                    return null;
-                if (Binary.AsciiEqual (header, "BM"))
+                var img_header = img.ReadHeader (4);
+                if (header.AsciiEqual ("BM"))
                 {
                     img.Position = 0;
-                    info = ImageFormat.Bmp.ReadMetaData (img);
+                    info = Bmp.ReadMetaData (img);
                     ykg.Format = YkgImage.Bmp;
                 }
-                else if (Binary.AsciiEqual (header, "\x89PNG"))
+                else if (header.AsciiEqual ("\x89PNG"))
                 {
                     img.Position = 0;
                     info = Png.ReadMetaData (img);
                     ykg.Format = YkgImage.Png;
                 }
-                else if (Binary.AsciiEqual (header, "\x89GNP"))
+                else if (header.AsciiEqual ("\x89GNP"))
                 {
-                    using (var body = new StreamRegion (stream, ykg.DataOffset+4, ykg.DataSize-4, true))
-                    using (var png = new PrefixStream (PngPrefix, body))
+                    using (var body = new StreamRegion (file.AsStream, ykg.DataOffset+4, ykg.DataSize-4, true))
+                    using (var pre = new PrefixStream (PngPrefix, body))
+                    using (var png = new BinaryStream (pre, file.Name))
                         info = Png.ReadMetaData (png);
                     ykg.Format = YkgImage.Gnp;
                 }
@@ -104,23 +103,24 @@ namespace GameRes.Formats.Yuka
             return ykg;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as YkgMetaData;
-            if (null == meta)
-                throw new ArgumentException ("YkgFormat.Read should be supplied with YkgMetaData", "info");
+            var meta = (YkgMetaData)info;
 
             switch (meta.Format)
             {
             case YkgImage.Bmp:
-                using (var bmp = new StreamRegion (stream, meta.DataOffset, meta.DataSize, true))
+                using (var reg = new StreamRegion (stream.AsStream, meta.DataOffset, meta.DataSize, true))
+                using (var bmp = new BinaryStream (reg, stream.Name))
                     return Bmp.Read (bmp, info);
             case YkgImage.Png:
-                using (var png = new StreamRegion (stream, meta.DataOffset, meta.DataSize, true))
+                using (var reg = new StreamRegion (stream.AsStream, meta.DataOffset, meta.DataSize, true))
+                using (var png = new BinaryStream (reg, stream.Name))
                     return Png.Read (png, info);
             case YkgImage.Gnp:
-                using (var body = new StreamRegion (stream, meta.DataOffset+4, meta.DataSize-4, true))
-                using (var png = new PrefixStream (PngPrefix, body))
+                using (var body = new StreamRegion (stream.AsStream, meta.DataOffset+4, meta.DataSize-4, true))
+                using (var pre = new PrefixStream (PngPrefix, body))
+                using (var png = new BinaryStream (pre, stream.Name))
                     return Png.Read (png, info);
             default:
                 throw new InvalidFormatException();

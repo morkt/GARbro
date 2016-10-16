@@ -46,11 +46,9 @@ namespace GameRes.Formats.Adobe
         public override string Description { get { return "Adobe Photoshop image format"; } }
         public override uint     Signature { get { return 0x53504238; } } // '8BPS'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[26];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (26).ToArray();
             int version = BigEndian.ToInt16 (header, 4);
             if (1 != version)
                 return null;
@@ -72,7 +70,7 @@ namespace GameRes.Formats.Adobe
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (PsdMetaData)info;
             using (var reader = new PsdReader (stream, meta))
@@ -90,7 +88,7 @@ namespace GameRes.Formats.Adobe
 
     internal class PsdReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         PsdMetaData     m_info;
         byte[]          m_output;
         int             m_channel_size;
@@ -99,10 +97,10 @@ namespace GameRes.Formats.Adobe
         public BitmapPalette Palette { get; private set; }
         public byte[]           Data { get { return m_output; } }
 
-        public PsdReader (Stream input, PsdMetaData info)
+        public PsdReader (IBinaryStream input, PsdMetaData info)
         {
             m_info = info;
-            m_input = new BinaryReader (input, Encoding.Unicode, true);
+            m_input = input;
             int bpc = m_info.BPP / m_info.Channels;
             switch (m_info.Mode)
             {
@@ -134,22 +132,22 @@ namespace GameRes.Formats.Adobe
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 0x1A;
+            m_input.Position = 0x1A;
             int color_data_length = Binary.BigEndian (m_input.ReadInt32());
-            long next_pos = m_input.BaseStream.Position + color_data_length;
+            long next_pos = m_input.Position + color_data_length;
             if (0 != color_data_length)
             {
                 if (8 == m_info.BPP)
                     ReadPalette (color_data_length);
-                m_input.BaseStream.Position = next_pos;
+                m_input.Position = next_pos;
             }
             next_pos += 4 + Binary.BigEndian (m_input.ReadInt32());
-            m_input.BaseStream.Position = next_pos; // skip Image Resources
+            m_input.Position = next_pos; // skip Image Resources
             next_pos += 4 + Binary.BigEndian (m_input.ReadInt32());
-            m_input.BaseStream.Position = next_pos; // skip Layer and Mask Information
+            m_input.Position = next_pos; // skip Layer and Mask Information
 
             int compression = Binary.BigEndian (m_input.ReadInt16());
-            int remaining = checked((int)(m_input.BaseStream.Length - m_input.BaseStream.Position));
+            int remaining = checked((int)(m_input.Length - m_input.Position));
             byte[] pixels;
             if (0 == compression)
                 pixels = m_input.ReadBytes (remaining);
@@ -212,7 +210,7 @@ namespace GameRes.Formats.Adobe
                     int n = 0;
                     while (n < line_count)
                     {
-                        int count = m_input.ReadSByte();
+                        int count = m_input.ReadInt8();
                         ++n;
                         if (count >= 0)
                         {
@@ -224,7 +222,7 @@ namespace GameRes.Formats.Adobe
                         else if (count > -128)
                         {
                             count = 1 - count;
-                            byte color = m_input.ReadByte();
+                            byte color = m_input.ReadUInt8();
                             ++n;
                             for (int i = 0; i < count; ++i)
                                 pixels[dst++] = color;
@@ -236,14 +234,8 @@ namespace GameRes.Formats.Adobe
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

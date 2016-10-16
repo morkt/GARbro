@@ -75,7 +75,7 @@ namespace GameRes.Formats.LiveMaker
             set { KnownKeys = ((GalScheme)value).KnownKeys; }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = new byte[0x30];
             if (11 != stream.Read (header, 0, 11))
@@ -110,7 +110,7 @@ namespace GameRes.Formats.LiveMaker
 
         uint? LastKey = null;
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GalMetaData)info;
             uint key = 0;
@@ -171,7 +171,7 @@ namespace GameRes.Formats.LiveMaker
 
     internal sealed class GalReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         GalMetaData     m_info;
         byte[]          m_output;
         List<Frame>     m_frames;
@@ -182,14 +182,14 @@ namespace GameRes.Formats.LiveMaker
         public BitmapPalette Palette { get; private set; }
         public int            Stride { get; private set; }
 
-        public GalReader (Stream input, GalMetaData info, uint key)
+        public GalReader (IBinaryStream input, GalMetaData info, uint key)
         {
             m_info = info;
             if (m_info.Compression < 0 || m_info.Compression > 2)
                 throw new InvalidFormatException();
             m_frames = new List<Frame> (m_info.FrameCount);
             m_key = key;
-            m_input = new ArcView.Reader (input);
+            m_input = input;
         }
 
         internal class Frame
@@ -216,11 +216,11 @@ namespace GameRes.Formats.LiveMaker
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = m_info.DataOffset;
+            m_input.Position = m_info.DataOffset;
             uint name_length = m_input.ReadUInt32();
-            m_input.BaseStream.Seek (name_length, SeekOrigin.Current);
+            m_input.Seek (name_length, SeekOrigin.Current);
             uint mask = m_input.ReadUInt32();
-            m_input.BaseStream.Seek (9, SeekOrigin.Current);
+            m_input.Seek (9, SeekOrigin.Current);
             int layer_count = m_input.ReadInt32();
             if (layer_count < 1)
                 throw new InvalidFormatException();
@@ -251,14 +251,14 @@ namespace GameRes.Formats.LiveMaker
                 m_input.ReadInt32();    // 0xFF
                 m_input.ReadByte();
                 name_length = m_input.ReadUInt32();
-                m_input.BaseStream.Seek (name_length, SeekOrigin.Current);
+                m_input.Seek (name_length, SeekOrigin.Current);
                 if (m_info.Version >= 107)
                     m_input.ReadByte();
                 var layer = new Layer();
                 int layer_size = m_input.ReadInt32();
-                long layer_end = m_input.BaseStream.Position + layer_size;
+                long layer_end = m_input.Position + layer_size;
                 layer.Pixels = UnpackLayer (frame, layer_size);
-                m_input.BaseStream.Position = layer_end;
+                m_input.Position = layer_end;
                 int alpha_size = m_input.ReadInt32();
                 if (alpha_size != 0)
                 {
@@ -271,7 +271,7 @@ namespace GameRes.Formats.LiveMaker
 
         byte[] UnpackLayer (Frame frame, int length, bool is_alpha = false)
         {
-            using (var packed = new StreamRegion (m_input.BaseStream, m_input.BaseStream.Position, length, true))
+            using (var packed = new StreamRegion (m_input.AsStream, m_input.Position, length, true))
             {
                 if (0 == m_info.Compression || 2 == m_info.Compression && is_alpha)
                     return ReadZlib (frame, packed, is_alpha);
@@ -563,14 +563,8 @@ namespace GameRes.Formats.LiveMaker
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

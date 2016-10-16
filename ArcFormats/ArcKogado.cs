@@ -159,7 +159,7 @@ namespace GameRes.Formats.Kogado
                 var unpacked = new byte[packed_entry.UnpackedSize];
                 var mariel = new MarielEncoder();
                 mariel.Unpack (input, unpacked, unpacked.Length);
-                return new MemoryStream (unpacked);
+                return new BinMemoryStream (unpacked, entry.Name);
             }
             finally
             {

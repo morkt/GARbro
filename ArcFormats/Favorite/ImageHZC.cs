@@ -47,28 +47,26 @@ namespace GameRes.Formats.FVP
         public override string Description { get { return "Favorite View Point image format"; } }
         public override uint     Signature { get { return 0x31637A68; } } // 'HZC1'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x2C];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x2C);
+            if (!header.AsciiEqual (0xC, "NVSG"))
                 return null;
-            if (!Binary.AsciiEqual (header, 0xC, "NVSG"))
-                return null;
-            int type = LittleEndian.ToUInt16 (header, 0x12);
+            int type = header.ToUInt16 (0x12);
             return new HzcMetaData
             {
-                Width   = LittleEndian.ToUInt16 (header, 0x14),
-                Height  = LittleEndian.ToUInt16 (header, 0x16),
-                OffsetX = LittleEndian.ToInt16 (header, 0x18),
-                OffsetY = LittleEndian.ToInt16 (header, 0x1A),
+                Width   = header.ToUInt16 (0x14),
+                Height  = header.ToUInt16 (0x16),
+                OffsetX = header.ToInt16 (0x18),
+                OffsetY = header.ToInt16 (0x1A),
                 BPP     = 0 == type ? 24 : type > 2 ? 8 : 32,
                 Type    = type,
-                UnpackedSize = LittleEndian.ToInt32 (header, 4),
-                HeaderSize   = LittleEndian.ToInt32 (header, 8),
+                UnpackedSize = header.ToInt32 (4),
+                HeaderSize   = header.ToInt32 (8),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (HzcMetaData)info;
             BitmapPalette palette = null;
@@ -90,7 +88,7 @@ namespace GameRes.Formats.FVP
                 }
             }
             stream.Position = 12 + meta.HeaderSize;
-            using (var z = new ZLibStream (stream, CompressionMode.Decompress, true))
+            using (var z = new ZLibStream (stream.AsStream, CompressionMode.Decompress, true))
             {
                 var pixels = new byte[stride * (int)meta.Height];
                 if (pixels.Length != z.Read (pixels, 0, pixels.Length))

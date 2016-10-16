@@ -60,9 +60,9 @@ namespace GameRes.Formats.Google
         public override string Description { get { return "Google WebP image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            if (0x46464952 != FormatCatalog.ReadSignature (stream)) // 'RIFF'
+            if (0x46464952 != stream.Signature) // 'RIFF'
                 return null;
             var header = new byte[0x10];
             if (8 != stream.Read (header, 0, 8))
@@ -141,9 +141,9 @@ namespace GameRes.Formats.Google
             return (uint)(src[offset] | src[offset+1] << 8 | src[offset+2] << 16);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new WebPDecoder (stream, (WebPMetaData)info))
+            using (var reader = new WebPDecoder (stream.AsStream, (WebPMetaData)info))
             {
                 reader.Decode();
                 return ImageData.Create (info, reader.Format, null, reader.Output);

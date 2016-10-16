@@ -49,16 +49,14 @@ namespace GameRes.Formats.Softpal
             Extensions = new string[] { "" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[8];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int bpp = LittleEndian.ToInt16 (header, 0);
+            var header = stream.ReadHeader (8);
+            int bpp = header.ToInt16 (0);
             if (1 != bpp && 3 != bpp && 4 != bpp)
                 return null;
-            uint width  = LittleEndian.ToUInt16 (header, 2);
-            uint height = LittleEndian.ToUInt16 (header, 4);
+            uint width  = header.ToUInt16 (2);
+            uint height = header.ToUInt16 (4);
             if (0 == width || 0 == height || header[6]*8 < width || header[7]*8 < height)
                 return null;
             return new PicMetaData
@@ -71,7 +69,7 @@ namespace GameRes.Formats.Softpal
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (PicMetaData)info;
             using (var reader = new PicReader (stream, meta))
@@ -89,7 +87,7 @@ namespace GameRes.Formats.Softpal
 
     internal sealed class PicReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         PicMetaData     m_info;
         byte[]          m_control;
@@ -102,9 +100,9 @@ namespace GameRes.Formats.Softpal
         readonly byte[] Values4bit = InitBlockValues (8);
         readonly byte[] Values6bit = InitBlockValues (0x20);
 
-        public PicReader (Stream input, PicMetaData info)
+        public PicReader (IBinaryStream input, PicMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             m_src_stride = m_info.BlocksWidth * m_info.BPP;
         }
@@ -122,7 +120,7 @@ namespace GameRes.Formats.Softpal
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 8;
+            m_input.Position = 8;
             m_control = m_input.ReadBytes (m_info.BlocksHeight * m_info.BlocksWidth);
             m_output = new byte[m_src_stride * m_info.BlocksHeight * 8];
             if (8 == m_info.BPP)
@@ -259,7 +257,7 @@ namespace GameRes.Formats.Softpal
                     }
                     else
                     {
-                        byte pixel = m_input.ReadByte();
+                        byte pixel = m_input.ReadUInt8();
                         DecodeBlock (ctl, pixel, block);
                     }
                     int dst = 8 * (x + 8 * y * m_info.BlocksWidth);
@@ -394,14 +392,8 @@ namespace GameRes.Formats.Softpal
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

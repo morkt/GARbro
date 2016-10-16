@@ -56,7 +56,7 @@ namespace GameRes.Formats
         {
             var header = new byte[2] { (byte)'B', (byte)'M' };
             Stream stream = new StreamRegion (input.AsStream, 2, true);
-            stream = new PrefixStream (header, input);
+            stream = new PrefixStream (header, stream);
             return new BinaryStream (stream, input.Name);
         }
 

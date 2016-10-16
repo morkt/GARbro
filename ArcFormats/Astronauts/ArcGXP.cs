@@ -86,7 +86,7 @@ namespace GameRes.Formats.Astronauts
         {
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             Decrypt (data, entry.Size);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         static void Decrypt (byte[] data, uint length)

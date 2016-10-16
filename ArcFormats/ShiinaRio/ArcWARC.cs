@@ -188,7 +188,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 if (warc.Decoder.ExtraCrypt != null)
                     warc.Decoder.ExtraCrypt.Decrypt (unpacked, 0, (uint)unpacked.Length, 0x204);
             }
-            return new MemoryStream (unpacked);
+            return new BinMemoryStream (unpacked, entry.Name);
         }
 
         delegate void UnpackMethod (byte[] input, byte[] output);

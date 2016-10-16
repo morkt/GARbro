@@ -149,17 +149,15 @@ namespace GameRes.Formats.Entis
         public override string Description { get { return "Entis rasterized image format"; } }
         public override uint     Signature { get { return 0x69746e45u; } } // 'Enti'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            byte[] header = new byte[0x40];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x40);
+            if (0x03000100 != header.ToUInt32 (8))
                 return null;
-            if (0x03000100 != LittleEndian.ToUInt32 (header, 8))
+            if (!header.AsciiEqual (0x10, "Entis Rasterized Image")
+                && !header.AsciiEqual (0x10, "Moving Entis Image"))
                 return null;
-            if (!Binary.AsciiEqual (header, 0x10, "Entis Rasterized Image")
-                && !Binary.AsciiEqual (header, 0x10, "Moving Entis Image"))
-                return null;
-            using (var reader = new EriFile (stream))
+            using (var reader = new EriFile (stream.AsStream))
             {
                 var section = reader.ReadSection();
                 if (section.Id != "Header  " || section.Length <= 0)
@@ -240,7 +238,7 @@ namespace GameRes.Formats.Entis
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var reader = ReadImageData (stream, (EriMetaData)info);
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
@@ -261,11 +259,11 @@ namespace GameRes.Formats.Entis
             return colors;
         }
 
-        internal EriReader ReadImageData (Stream stream, EriMetaData meta)
+        internal EriReader ReadImageData (IBinaryStream stream, EriMetaData meta)
         {
             stream.Position = meta.StreamPos;
             Color[] palette = null;
-            using (var input = new EriFile (stream))
+            using (var input = new EriFile (stream.AsStream))
             {
                 for (;;) // ReadSection throws an exception in case of EOF
                 {
@@ -276,13 +274,13 @@ namespace GameRes.Formats.Entis
                         break;
                     if ("Palette " == section.Id && meta.BPP <= 8 && section.Length <= 0x400)
                     {
-                        palette = ReadPalette (stream, (int)section.Length);
+                        palette = ReadPalette (stream.AsStream, (int)section.Length);
                         continue;
                     }
                     input.BaseStream.Seek (section.Length, SeekOrigin.Current);
                 }
             }
-            var reader = new EriReader (stream, meta, palette);
+            var reader = new EriReader (stream.AsStream, meta, palette);
             reader.DecodeImage();
 
             if (!string.IsNullOrEmpty (meta.Description))
@@ -298,7 +296,7 @@ namespace GameRes.Formats.Entis
                             throw new InvalidFormatException();
 
                         ref_file = VFS.CombinePath (VFS.GetDirectoryName (meta.FileName), ref_file);
-                        using (var ref_src = VFS.OpenSeekableStream (ref_file))
+                        using (var ref_src = VFS.OpenBinaryStream (ref_file))
                         {
                             var ref_info = ReadMetaData (ref_src) as EriMetaData;
                             if (null == ref_info)

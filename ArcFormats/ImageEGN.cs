@@ -49,74 +49,66 @@ namespace GameRes.Formats.Unknown
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var input = new ArcView.Reader (stream))
+            int signature = (int)~stream.Signature;
+            int mode = (signature & 0x70) >> 4; // v6
+            if (0 != (mode & 4))
+                return null;
+            int flag = signature & 0xF; // v7
+            int data_size, data_offset;
+            if (0 != (signature & 0x80))
             {
-                int signature = ~input.ReadInt32();
-                int mode = (signature & 0x70) >> 4; // v6
-                if (0 != (mode & 4))
+                data_offset = 4;
+                data_size = Binary.BigEndian (signature) & 0xFFFFFF;
+            }
+            else
+            {
+                data_offset = 8;
+                data_size = Binary.BigEndian (stream.ReadInt32());
+            }
+            if (data_size <= 0 || data_size > 0xFFFFFF) // arbitrary max BMP size
+                return null;
+            var reader = new Reader (stream, 0x36, mode, flag); // size of BMP header
+            reader.Unpack();
+            using (var bmp = new BinMemoryStream (reader.Data, stream.Name))
+            {
+                var info = base.ReadMetaData (bmp);
+                if (null == info)
                     return null;
-                int flag = signature & 0xF; // v7
-                int data_size, data_offset;
-                if (0 != (signature & 0x80))
+                return new EgnMetaData
                 {
-                    data_offset = 4;
-                    data_size = Binary.BigEndian (signature) & 0xFFFFFF;
-                }
-                else
-                {
-                    data_offset = 8;
-                    data_size = Binary.BigEndian (input.ReadInt32());
-                }
-                if (data_size <= 0 || data_size > 0xFFFFFF) // arbitrary max BMP size
-                    return null;
-                var reader = new Reader (input, 0x36, mode, flag); // size of BMP header
-                reader.Unpack();
-                using (var bmp = new MemoryStream (reader.Data))
-                {
-                    var info = base.ReadMetaData (bmp);
-                    if (null == info)
-                        return null;
-                    return new EgnMetaData
-                    {
-                        Width = info.Width,
-                        Height = info.Height,
-                        BPP = info.BPP,
-                        Mode = mode,
-                        Flag = flag,
-                        DataOffset = data_offset,
-                        UnpackedSize = data_size,
-                    };
-                }
+                    Width = info.Width,
+                    Height = info.Height,
+                    BPP = info.BPP,
+                    Mode = mode,
+                    Flag = flag,
+                    DataOffset = data_offset,
+                    UnpackedSize = data_size,
+                };
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as EgnMetaData;
-            if (null == meta)
-                throw new ArgumentException ("EgnFormat.Read should be supplied with EgnMetaData", "info");
+            var meta = (EgnMetaData)info;
             stream.Position = meta.DataOffset;
-            using (var input = new ArcView.Reader (stream))
-            {
-                var reader = new Reader (input, meta.UnpackedSize, meta.Mode, meta.Flag);
-                reader.Unpack();
-                using (var bmp = new MemoryStream (reader.Data))
-                    return base.Read (bmp, info);
-            }
+            var reader = new Reader (stream, meta.UnpackedSize, meta.Mode, meta.Flag);
+            reader.Unpack();
+            using (var bmp = new BinMemoryStream (reader.Data, stream.Name))
+                return base.Read (bmp, info);
         }
 
         internal class Reader
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             int             m_mode;
             int             m_flag;
             byte[]          m_output;
 
             public byte[] Data { get { return m_output; } }
 
-            public Reader (BinaryReader input, int output_size, int mode, int flag)
+            public Reader (IBinaryStream input, int output_size, int mode, int flag)
             {
                 m_input = input;
                 m_mode = mode;
@@ -153,12 +145,12 @@ namespace GameRes.Formats.Unknown
                     v8 >>= 1;
                     if (0 == v8)
                     {
-                        v12 = m_input.ReadByte();
+                        v12 = m_input.ReadUInt8();
                         v8 = 0x80;
                     }
                     if (0 != (v8 & v12))
                     {
-                        m_output[dst++] = m_input.ReadByte();
+                        m_output[dst++] = m_input.ReadUInt8();
                     }
                     else
                     {

@@ -43,24 +43,22 @@ namespace GameRes.Formats.Softpal
             Extensions = new string[] { "pgd" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, 0x1C, "11_C"))
+            var header = stream.ReadHeader (0x20);
+            if (!header.AsciiEqual (0x1C, "11_C"))
                 return null;
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0x0C),
-                Height  = LittleEndian.ToUInt32 (header, 0x10),
-                OffsetX = LittleEndian.ToInt32 (header, 4),
-                OffsetY = LittleEndian.ToInt32 (header, 8),
+                Width   = header.ToUInt32 (0x0C),
+                Height  = header.ToUInt32 (0x10),
+                OffsetX = header.ToInt32 (4),
+                OffsetY = header.ToInt32 (8),
                 BPP     = 32,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new PgdReader (stream, 0x20))
             {
@@ -101,29 +99,27 @@ namespace GameRes.Formats.Softpal
             Extensions = new string[] { "pgd" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x24];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, 0x18, "00_C"))
+            var header = stream.ReadHeader (0x24);
+            if (!header.AsciiEqual (0x18, "00_C"))
                 return null;
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 8),
-                Height  = LittleEndian.ToUInt32 (header, 12),
-                OffsetX = LittleEndian.ToInt32 (header, 0),
-                OffsetY = LittleEndian.ToInt32 (header, 4),
+                Width   = header.ToUInt32 (8),
+                Height  = header.ToUInt32 (12),
+                OffsetX = header.ToInt32 (0),
+                OffsetY = header.ToInt32 (4),
                 BPP     = 32,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new PgdReader (stream, 0x1C))
             {
                 var data = reader.Unpack00();
-                using (var tga = new MemoryStream (data))
+                using (var tga = new BinMemoryStream (data, stream.Name))
                 {
                     var tga_info = Tga.ReadMetaData (tga);
                     if (null == tga_info)
@@ -153,20 +149,18 @@ namespace GameRes.Formats.Softpal
             Extensions = new string[] { "pgd" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x2A];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int x = LittleEndian.ToInt32 (header, 0);
-            int y = LittleEndian.ToInt32 (header, 4);
+            var header = stream.ReadHeader (0x2A);
+            int x = header.ToInt32 (0);
+            int y = header.ToInt32 (4);
             if (Math.Abs (x) > 0x2000 || Math.Abs (y) > 0x2000)
                 return null;
-            uint width  = LittleEndian.ToUInt32 (header, 8);
-            uint height = LittleEndian.ToUInt32 (header, 12);
+            uint width  = header.ToUInt32 (8);
+            uint height = header.ToUInt32 (12);
             if (0 == width || 0 == height
-                || width != LittleEndian.ToUInt16 (header, 0x24)
-                || height != LittleEndian.ToUInt16 (header, 0x26))
+                || width != header.ToUInt16 (0x24)
+                || height != header.ToUInt16 (0x26))
                 return null;
             stream.Position = 0x18;
             var tga_info = base.ReadMetaData (stream);
@@ -177,9 +171,10 @@ namespace GameRes.Formats.Softpal
             return tga_info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var tga = new StreamRegion (stream, 0x18, true))
+            using (var mem = new StreamRegion (stream.AsStream, 0x18, true))
+            using (var tga = new BinaryStream (mem, stream.Name))
                 return base.Read (tga, info);
         }
 
@@ -206,23 +201,21 @@ namespace GameRes.Formats.Softpal
             Extensions = new string[] { "pgd" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x20);
             return new PgdGeMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0x0C),
-                Height  = LittleEndian.ToUInt32 (header, 0x10),
-                OffsetX = LittleEndian.ToInt32 (header, 4),
-                OffsetY = LittleEndian.ToInt32 (header, 8),
+                Width   = header.ToUInt32 (0x0C),
+                Height  = header.ToUInt32 (0x10),
+                OffsetX = header.ToInt32 (4),
+                OffsetY = header.ToInt32 (8),
                 BPP     = 32,
-                Method  = LittleEndian.ToUInt16 (header, 0x1C),
+                Method  = header.ToUInt16 (0x1C),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new PgdReader (stream, (PgdGeMetaData)info))
             {
@@ -255,28 +248,26 @@ namespace GameRes.Formats.Softpal
             Signatures = new uint[] { 0x33444750, 0x32444750 }; // 'PGD3', 'PGD2'
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x30];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            string base_name = Binary.GetCString (header, 0xE, 0x22);
+            var header = stream.ReadHeader (0x30);
+            string base_name = header.GetCString (0xE, 0x22);
             if (string.IsNullOrEmpty (base_name))
                 return null;
             return new PgdIncMetaData
             {
-                OffsetX = LittleEndian.ToUInt16 (header, 4),
-                OffsetY = LittleEndian.ToUInt16 (header, 6),
-                Width   = LittleEndian.ToUInt16 (header, 8),
-                Height  = LittleEndian.ToUInt16 (header, 0xA),
-                BPP     = LittleEndian.ToUInt16 (header, 0xC),
+                OffsetX = header.ToUInt16 (4),
+                OffsetY = header.ToUInt16 (6),
+                Width   = header.ToUInt16 (8),
+                Height  = header.ToUInt16 (0xA),
+                BPP     = header.ToUInt16 (0xC),
                 BaseName = base_name,
             };
         }
 
         static readonly Lazy<ImageFormat> PalFormat = new Lazy<ImageFormat> (() => FindByTag ("PGD/GE"));
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (PgdIncMetaData)info;
             string dir_name = VFS.GetDirectoryName (meta.FileName);
@@ -284,7 +275,7 @@ namespace GameRes.Formats.Softpal
             PgdGeMetaData base_info;
             byte[] image, overlay;
             PixelFormat format;
-            using (var base_file = VFS.OpenSeekableStream (name))
+            using (var base_file = VFS.OpenBinaryStream (name))
             {
                 base_info = PalFormat.Value.ReadMetaData (base_file) as PgdGeMetaData;
                 if (null == base_info)
@@ -334,7 +325,7 @@ namespace GameRes.Formats.Softpal
 
     internal sealed class PgdReader : IDisposable
     {
-        BinaryReader        m_input;
+        IBinaryStream       m_input;
         byte[]              m_output;
         int                 m_width;
         int                 m_height;
@@ -343,23 +334,23 @@ namespace GameRes.Formats.Softpal
 
         public PixelFormat Format { get; private set; }
 
-        public PgdReader (Stream input, int position)
+        public PgdReader (IBinaryStream input, int position)
         {
-            input.Position = position;
-            m_input = new ArcView.Reader (input);
+            m_input = input;
+            m_input.Position = position;
             int unpacked_size = m_input.ReadInt32();
             m_input.ReadInt32(); // packed_size
             m_output = new byte[unpacked_size];
         }
 
-        public PgdReader (Stream input, PgdGeMetaData info) : this (input, 0x20)
+        public PgdReader (IBinaryStream input, PgdGeMetaData info) : this (input, 0x20)
         {
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_method = info.Method;
         }
 
-        public PgdReader (Stream input, PgdIncMetaData info) : this (input, 0x30)
+        public PgdReader (IBinaryStream input, PgdIncMetaData info) : this (input, 0x30)
         {
             m_width = (int)info.Width;
             m_height = (int)info.Height;
@@ -589,14 +580,8 @@ namespace GameRes.Formats.Softpal
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

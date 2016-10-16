@@ -48,7 +48,7 @@ namespace GameRes.Formats.Triangle
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = new byte[0x14];
             if (12 != stream.Read (header, 0, 12))
@@ -100,7 +100,7 @@ namespace GameRes.Formats.Triangle
                 return null;
             unpacked_size &= (int)~0xC0000000;
             stream.Position = data_offset;
-            byte[] bmp = UnpackBitmap (stream, pack_type, packed_size, 0x26);
+            byte[] bmp = UnpackBitmap (stream.AsStream, pack_type, packed_size, 0x26);
             if (bmp[0] != 'B' && bmp[0] != 'C' || bmp[1] != 'M')
                 return null;
             return new IafMetaData
@@ -117,11 +117,11 @@ namespace GameRes.Formats.Triangle
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (IafMetaData)info;
             stream.Position = meta.DataOffset;
-            var bitmap = UnpackBitmap (stream, meta.PackType, meta.PackedSize, meta.UnpackedSize);
+            var bitmap = UnpackBitmap (stream.AsStream, meta.PackType, meta.PackedSize, meta.UnpackedSize);
             if ('C' == bitmap[0])
             {
                 bitmap[0] = (byte)'B';
@@ -151,7 +151,7 @@ namespace GameRes.Formats.Triangle
                     // fallback to a plain bitmap
                 }
             }
-            using (var bmp = new MemoryStream (bitmap))
+            using (var bmp = new BinMemoryStream (bitmap, stream.Name))
                 return base.Read (bmp, info);
         }
 

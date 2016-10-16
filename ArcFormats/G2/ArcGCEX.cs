@@ -125,7 +125,7 @@ namespace GameRes.Formats.G2
             using (input)
             using (var reader = new GceReader (input, (int)pentry.UnpackedSize))
             {
-                return new MemoryStream (reader.Data);
+                return new BinMemoryStream (reader.Data, entry.Name);
             }
         }
     }

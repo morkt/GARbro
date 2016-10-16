@@ -52,45 +52,43 @@ namespace GameRes.Formats.TmrHiro
             Extensions = new string[] { "grd", "" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x20);
             if (header[0] != 1 && header[0] != 2)
                 return null;
             if (header[1] != 1 && header[1] != 0xA1 && header[1] != 0xA2)
                 return null;
-            int bpp = LittleEndian.ToUInt16 (header, 6);
+            int bpp = header.ToUInt16 (6);
             if (bpp != 24 && bpp != 32)
                 return null;
-            int screen_width  = LittleEndian.ToUInt16 (header, 2);
-            int screen_height = LittleEndian.ToUInt16 (header, 4);
-            int left    = LittleEndian.ToUInt16 (header, 8);
-            int right   = LittleEndian.ToUInt16 (header, 0xA);
-            int top     = LittleEndian.ToUInt16 (header, 0xC);
-            int bottom  = LittleEndian.ToUInt16 (header, 0xE);
+            int screen_width  = header.ToUInt16 (2);
+            int screen_height = header.ToUInt16 (4);
+            int left    = header.ToUInt16 (8);
+            int right   = header.ToUInt16 (0xA);
+            int top     = header.ToUInt16 (0xC);
+            int bottom  = header.ToUInt16 (0xE);
             var info = new GrdMetaData {
-                Format      = LittleEndian.ToUInt16 (header, 0),
+                Format      = header.ToUInt16 (0),
                 Width       = (uint)(right-left),
                 Height      = (uint)(bottom-top),
                 BPP         = bpp,
                 OffsetX     = left,
                 OffsetY     = screen_height - bottom,
-                AlphaSize   = LittleEndian.ToInt32 (header, 0x10),
-                RSize       = LittleEndian.ToInt32 (header, 0x14),
-                GSize       = LittleEndian.ToInt32 (header, 0x18),
-                BSize       = LittleEndian.ToInt32 (header, 0x1C),
+                AlphaSize   = header.ToInt32 (0x10),
+                RSize       = header.ToInt32 (0x14),
+                GSize       = header.ToInt32 (0x18),
+                BSize       = header.ToInt32 (0x1C),
             };
             if (0x20 + info.AlphaSize + info.RSize + info.BSize + info.GSize != stream.Length)
                 return null;
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GrdMetaData)info;
-            var reader = new GrdReader (stream, meta);
+            var reader = new GrdReader (stream.AsStream, meta);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, null, reader.Data);
         }

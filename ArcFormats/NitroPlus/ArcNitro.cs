@@ -215,7 +215,7 @@ namespace GameRes.Formats.NitroPlus
                 key = Binary.RotR (key, 8);
             }
             if (enc_size == entry.Size)
-                return new MemoryStream (buf);
+                return new BinMemoryStream (buf, entry.Name);
             return new PrefixStream (buf, arc.File.CreateStream (entry.Offset+enc_size, entry.Size-enc_size));
         }
     }

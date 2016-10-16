@@ -94,11 +94,9 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            byte[] header = new byte[10];
-            if (header.Length != file.Read (header, 0, header.Length))
-                return null;
+            var header = file.ReadHeader (10).ToArray();
             long start_offset = SkipId3Tag (header);
             if (0 != start_offset)
             {
@@ -109,7 +107,7 @@ namespace GameRes.Formats
             if (0xff != header[0] || 0xe2 != (header[1] & 0xe6) || 0xf0 == (header[2] & 0xf0))
                 return null;
             file.Position = 0;
-            return new Mp3Input (file);
+            return new Mp3Input (file.AsStream);
         }
 
         long SkipId3Tag (byte[] buffer)

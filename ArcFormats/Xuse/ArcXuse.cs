@@ -185,7 +185,7 @@ namespace GameRes.Formats.Xuse
             {
                 data[i] ^= key[i&0xF];
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 }

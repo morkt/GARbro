@@ -83,7 +83,7 @@ namespace GameRes.Formats.BGI
                     using (var decoder = new DscDecoder (input))
                     {
                         decoder.Unpack();
-                        return new MemoryStream (decoder.Output);
+                        return new BinMemoryStream (decoder.Output, entry.Name);
                     }
                 }
                 return new ArcView.ArcStream (input, entry_offset, entry.Size);

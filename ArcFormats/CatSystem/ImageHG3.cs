@@ -25,7 +25,6 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.ComponentModel.Composition;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
@@ -48,35 +47,34 @@ namespace GameRes.Formats.CatSystem
         public override string Description { get { return "CatSystem engine image format"; } }
         public override uint     Signature { get { return 0x332d4748; } } // 'HG-3'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x4c];
-            if (0x4c != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x4c);
+            if (header.ToUInt32 (4) != 0x0c)
                 return null;
-            if (LittleEndian.ToUInt32 (header, 4) != 0x0c)
-                return null;
-            if (!Binary.AsciiEqual (header, 0x14, "stdinfo\0"))
+            if (!header.AsciiEqual (0x14, "stdinfo\0"))
                 return null;
             return new HgMetaData
             {
-                HeaderSize = LittleEndian.ToUInt32 (header, 0x1C),
-                Width = LittleEndian.ToUInt32 (header, 0x24),
-                Height = LittleEndian.ToUInt32 (header, 0x28),
-                OffsetX = LittleEndian.ToInt32 (header, 0x30),
-                OffsetY = LittleEndian.ToInt32 (header, 0x34),
-                BPP = LittleEndian.ToInt32 (header, 0x2C),
-                CanvasWidth = LittleEndian.ToUInt32 (header, 0x44),
-                CanvasHeight = LittleEndian.ToUInt32 (header, 0x48),
+                HeaderSize = header.ToUInt32 (0x1C),
+                Width = header.ToUInt32 (0x24),
+                Height = header.ToUInt32 (0x28),
+                OffsetX = header.ToInt32 (0x30),
+                OffsetY = header.ToInt32 (0x34),
+                BPP = header.ToInt32 (0x2C),
+                CanvasWidth = header.ToUInt32 (0x44),
+                CanvasHeight = header.ToUInt32 (0x48),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (HgMetaData)info;
             if (0x20 != meta.BPP)
                 throw new NotSupportedException ("Not supported HG-3 color depth");
 
-            using (var input = new StreamRegion (stream, 0x14, true))
+            using (var reg = new StreamRegion (stream.AsStream, 0x14, true))
+            using (var input = new BinaryStream (reg, stream.Name))
             using (var reader = new Hg3Reader (input, meta))
             {
                 var pixels = reader.Unpack();
@@ -95,17 +93,17 @@ namespace GameRes.Formats.CatSystem
 
     internal class HgReader : IDisposable
     {
-        private     BinaryReader    m_input;
+        private     IBinaryStream   m_input;
         protected   HgMetaData      m_info;
         protected   int             m_pixel_size;
 
-        protected   BinaryReader Input { get { return m_input; } }
-        protected   Stream InputStream { get { return m_input.BaseStream; } }
+        protected  IBinaryStream Input { get { return m_input; } }
+        protected   Stream InputStream { get { return m_input.AsStream; } }
         public      int         Stride { get; protected set; }
 
-        protected HgReader (Stream input, HgMetaData info)
+        protected HgReader (IBinaryStream input, HgMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             m_pixel_size = m_info.BPP / 8;
             Stride = (int)m_info.Width * m_pixel_size;
@@ -228,24 +226,9 @@ namespace GameRes.Formats.CatSystem
         }
 
         #region IDisposable Members
-        bool _disposed = false;
-
         public void Dispose ()
         {
-            Dispose (true);
             GC.SuppressFinalize (this);
-        }
-
-        protected virtual void Dispose (bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    m_input.Dispose();
-                }
-                _disposed = true;
-            }
         }
         #endregion
     }
@@ -254,17 +237,17 @@ namespace GameRes.Formats.CatSystem
     {
         public bool Flipped { get; private set; }
 
-        public Hg3Reader (Stream input, HgMetaData info) : base (input, info)
+        public Hg3Reader (IBinaryStream input, HgMetaData info) : base (input, info)
         {
         }
 
         public byte[] Unpack ()
         {
             InputStream.Position = m_info.HeaderSize;
-            var img_type = Input.ReadChars (8);
-            if (img_type.SequenceEqual ("img0000\0"))
+            var img_type = Input.ReadBytes (8);
+            if (Binary.AsciiEqual (img_type, "img0000\0"))
                 return UnpackImg0000();
-            else if (img_type.SequenceEqual ("img_jpg\0"))
+            else if (Binary.AsciiEqual (img_type, "img_jpg\0"))
                 return UnpackJpeg();
             else
                 throw new NotSupportedException ("Not supported HG-3 image");
@@ -309,11 +292,11 @@ namespace GameRes.Formats.CatSystem
                 src += src_pixel_size;
             }
 
-            InputStream.Position = next_section;
-            var section_header = Input.ReadChars (8);
-            if (!section_header.SequenceEqual ("img_al\0\0"))
+            Input.Position = next_section;
+            var section_header = Input.ReadBytes (8);
+            if (!Binary.AsciiEqual (section_header, "img_al\0\0"))
                 return output;
-            InputStream.Seek (8, SeekOrigin.Current);
+            Input.Seek (8, SeekOrigin.Current);
             int alpha_size = Input.ReadInt32();
             using (var alpha_in = new StreamRegion (InputStream, InputStream.Position+4, alpha_size, true))
             using (var alpha = new ZLibStream (alpha_in, CompressionMode.Decompress))

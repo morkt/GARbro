@@ -43,23 +43,21 @@ namespace GameRes.Formats.Primel
         public override string Description { get { return "Primel Adventure System image format"; } }
         public override uint     Signature { get { return 0x46434247; } } // 'GBCF'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x14);
             return new GbcMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 8),
-                Height  = LittleEndian.ToUInt32 (header, 0xC),
-                BPP     = LittleEndian.ToUInt16 (header, 0x10),
-                Flags   = LittleEndian.ToUInt16 (header, 0x12),
+                Width   = header.ToUInt32 (8),
+                Height  = header.ToUInt32 (0xC),
+                BPP     = header.ToUInt16 (0x10),
+                Flags   = header.ToUInt16 (0x12),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new GbcReader (stream, (GbcMetaData)info))
+            using (var reader = new GbcReader (stream.AsStream, (GbcMetaData)info))
             {
                 reader.Unpack();
                 return ImageData.Create (info, reader.Format, null, reader.Pixels);

@@ -38,12 +38,10 @@ namespace GameRes.Formats.VnEngine
         public override string Description { get { return "GEM/vnengine image format"; } }
         public override uint     Signature { get { return 0x57415A; } } // 'ZAW'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x40];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            uint crc = LittleEndian.ToUInt32 (header, 4);
+            var header = stream.ReadHeader (0x40).ToArray();
+            uint crc = header.ToUInt32 (4);
             LittleEndian.Pack (0u, header, 4);
             if (crc != Crc32.Compute (header, 0, header.Length))
                 return null;
@@ -52,21 +50,21 @@ namespace GameRes.Formats.VnEngine
                     : 1 == header[12] ? 24 : 8;
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0x10),
-                Height  = LittleEndian.ToUInt32 (header, 0x14),
-                OffsetX = LittleEndian.ToInt32  (header, 0x18),
-                OffsetY = LittleEndian.ToInt32  (header, 0x1C),
+                Width   = header.ToUInt32 (0x10),
+                Height  = header.ToUInt32 (0x14),
+                OffsetX = header.ToInt32  (0x18),
+                OffsetY = header.ToInt32  (0x1C),
                 BPP     = bpp,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             int pixel_size = info.BPP / 8;
             int stride = (int)info.Width * pixel_size;
             var pixels = new byte[stride * (int)info.Height];
             stream.Position = 0x40;
-            using (var input = new ZLibStream (stream, CompressionMode.Decompress, true))
+            using (var input = new ZLibStream (stream.AsStream, CompressionMode.Decompress, true))
                 input.Read (pixels, 0, pixels.Length);
             if (24 == info.BPP)
                 return ImageData.Create (info, PixelFormats.Rgb24, null, pixels, stride);

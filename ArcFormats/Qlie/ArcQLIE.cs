@@ -192,7 +192,7 @@ namespace GameRes.Formats.Qlie
             if (null == qent || null == qarc || (!qent.IsEncrypted && !qent.IsPacked))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var data = ReadEntryBytes (arc.File, qent, qarc.Hash, qarc.GameKeyData);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         private byte[] ReadEntryBytes (ArcView file, QlieEntry entry, uint hash, byte[] game_key)

@@ -70,7 +70,7 @@ namespace GameRes.Formats.Circus
             else if (header.AsciiEqual (0x20, "CRXG"))
             {
                 using (var crx_input = new StreamRegion (stream.AsStream, 0x20, true))
-                using (var crx = new BinaryStream (crx_input))
+                using (var crx = new BinaryStream (crx_input, stream.Name))
                 {
                     var diff_info = base.ReadMetaData (crx) as CrxMetaData;
                     if (null == diff_info)
@@ -90,12 +90,12 @@ namespace GameRes.Formats.Circus
             if (info != null)
             {
                 info.BaseOffset = header.ToUInt32 (8);
-                info.BaseFileName = Binary.GetCString (header, 0xC, 0x14);
+                info.BaseFileName = header.GetCString (0xC, 0x14);
             }
             return info;
         }
 
-        Stream OpenByOffset (uint offset)
+        IBinaryStream OpenByOffset (uint offset)
         {
             var vfs = VFS.Top as ArchiveFileSystem;
             if (null == vfs)
@@ -118,9 +118,9 @@ namespace GameRes.Formats.Circus
                 diff = OpenByOffset (info.DiffOffset);
                 if (null == diff)
                     throw new FileNotFoundException ("Referenced diff image not found");
-                input = new StreamRegion (diff, 0x20);
+                input = new StreamRegion (diff.AsStream, 0x20);
             }
-            return new BinaryStream (input);
+            return new BinaryStream (input, diff.Name);
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)

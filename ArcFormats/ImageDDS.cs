@@ -61,34 +61,32 @@ namespace GameRes.Formats.Microsoft
         public override string Description { get { return "Direct Draw Surface format"; } }
         public override uint     Signature { get { return 0x20534444; } } // 'DDS'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x6C];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int dwSize = LittleEndian.ToInt32 (header, 4);
+            var header = stream.ReadHeader (0x6C);
+            int dwSize = header.ToInt32 (4);
             if (dwSize < 0x7C)
                 return null;
-            var bitflags = (DdsPF)LittleEndian.ToUInt32 (header, 0x50);
+            var bitflags = (DdsPF)header.ToUInt32 (0x50);
             string four_cc = null;
             if (bitflags.HasFlag (DdsPF.FourCC))
-                four_cc = Binary.GetCString (header, 0x54, 4, Encoding.ASCII);
+                four_cc = Binary.GetCString (header.ToArray(), 0x54, 4, Encoding.ASCII);
             return new DdsMetaData
             {
-                Width  = LittleEndian.ToUInt32 (header, 0x10),
-                Height = LittleEndian.ToUInt32 (header, 0xC),
-                BPP    = LittleEndian.ToInt32 (header, 0x58),
+                Width  = header.ToUInt32 (0x10),
+                Height = header.ToUInt32 (0xC),
+                BPP    = header.ToInt32 (0x58),
                 PixelFlags = bitflags,
                 FourCC = four_cc,
-                RBitMask = LittleEndian.ToUInt32 (header, 0x5C),
-                GBitMask = LittleEndian.ToUInt32 (header, 0x60),
-                BBitMask = LittleEndian.ToUInt32 (header, 0x64),
-                ABitMask = LittleEndian.ToUInt32 (header, 0x68),
+                RBitMask = header.ToUInt32 (0x5C),
+                GBitMask = header.ToUInt32 (0x60),
+                BBitMask = header.ToUInt32 (0x64),
+                ABitMask = header.ToUInt32 (0x68),
                 DataOffset = 4 + dwSize,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (DdsMetaData)info;
             if (meta.PixelFlags.HasFlag (DdsPF.Yuv | DdsPF.Luminance))
@@ -98,7 +96,7 @@ namespace GameRes.Formats.Microsoft
             if (meta.PixelFlags.HasFlag (DdsPF.Rgb)
                 && (0 == meta.RBitMask || 0 == meta.GBitMask || 0 == meta.BBitMask))
                 throw new InvalidFormatException();
-            var pixels = ReadPixelData (stream, meta);
+            var pixels = ReadPixelData (stream.AsStream, meta);
             PixelFormat format;
             if (meta.PixelFlags.HasFlag (DdsPF.AlphaPixels) && meta.ABitMask != 0)
                 format = PixelFormats.Bgra32;

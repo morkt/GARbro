@@ -114,7 +114,7 @@ namespace GameRes.Formats.FC01
                 var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                 var reader = new MrgDecoder (data);
                 reader.Unpack();
-                input = new MemoryStream (reader.Data);
+                input = new BinMemoryStream (reader.Data, entry.Name);
             }
             else
                 input = arc.File.CreateStream (entry.Offset, entry.Size);
@@ -124,7 +124,7 @@ namespace GameRes.Formats.FC01
                 using (var reader = new MrgLzssReader (input, (int)input.Length, (int)packed_entry.UnpackedSize))
                 {
                     reader.Unpack();
-                    return new MemoryStream (reader.Data);
+                    return new BinMemoryStream (reader.Data, entry.Name);
                 }
             }
             return input;
@@ -240,14 +240,14 @@ namespace GameRes.Formats.FC01
             {
                 var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                 Decrypt (data, 0, data.Length, mrg_entry.Key, mrg_entry.ArcKey);
-                input = new MemoryStream (data);
+                input = new BinMemoryStream (data, entry.Name);
             }
             else if (mrg_entry.Method >= 2)
             {
                 var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                 var reader = new MrgDecoder (data);
                 reader.Unpack();
-                input = new MemoryStream (reader.Data);
+                input = new BinMemoryStream (reader.Data, entry.Name);
             }
             else
                 input = arc.File.CreateStream (entry.Offset, entry.Size);
@@ -257,7 +257,7 @@ namespace GameRes.Formats.FC01
                 using (var reader = new MrgLzssReader (input, (int)input.Length, (int)mrg_entry.UnpackedSize))
                 {
                     reader.Unpack();
-                    return new MemoryStream (reader.Data);
+                    return new BinMemoryStream (reader.Data, entry.Name);
                 }
             }
             return input;

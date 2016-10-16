@@ -45,9 +45,9 @@ namespace GameRes.Formats.Eagls
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var lzs = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lzs = new LzssStream (file.AsStream, LzssMode.Decompress, true))
             {
                 if (lzs.ReadByte() != 'B' || lzs.ReadByte() != 'M')
                     return null;
@@ -71,10 +71,11 @@ namespace GameRes.Formats.Eagls
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (GrMetaData)info;
-            using (var bmp = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lzs = new LzssStream (file.AsStream, LzssMode.Decompress, true))
+            using (var bmp = new BinaryStream (lzs, file.Name))
             {
                 if (32 != info.BPP)
                     return base.Read (bmp, info);

@@ -102,7 +102,7 @@ namespace GameRes.Formats.Bruns
                 if (meta.Compressed)
                     input = new ZLibStream (input, CompressionMode.Decompress);
                 using (var bin = new BinaryStream (input, stream.Name, true))
-                    return meta.Format.Read (input, meta.Info);
+                    return meta.Format.Read (bin, meta.Info);
             }
             finally
             {

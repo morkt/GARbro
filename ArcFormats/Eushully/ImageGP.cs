@@ -53,7 +53,7 @@ namespace GameRes.Formats.Eushully
             Extensions = new string[] { "gpcf" }; // made-up, real files have no extension
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             int alpha_channel = stream.ReadByte();
             int method = stream.ReadByte();
@@ -64,30 +64,28 @@ namespace GameRes.Formats.Eushully
                 || align1 < 0 || align1 > 4 || align2 < 0 || align2 > 4
                 || bpp <= 0 || !(bpp <= 16 || 24 == bpp || 32 == bpp))
                 return null;
-            using (var reader = new ArcView.Reader (stream))
+
+            int palette_size = stream.ReadInt32();
+            uint width = stream.ReadUInt16();
+            uint height = stream.ReadUInt16();
+            if (palette_size <= 0 || 0 == width || 0 == height || palette_size >= stream.Length)
+                return null;
+            if (bpp <= 8 && palette_size > 0x100)
+                return null;
+            return new GpMetaData
             {
-                int palette_size = reader.ReadInt32();
-                uint width = reader.ReadUInt16();
-                uint height = reader.ReadUInt16();
-                if (palette_size <= 0 || 0 == width || 0 == height || palette_size >= stream.Length)
-                    return null;
-                if (bpp <= 8 && palette_size > 0x100)
-                    return null;
-                return new GpMetaData
-                {
-                    Width   = width,
-                    Height  = height,
-                    BPP     = bpp,
-                    HasAlpha = alpha_channel != 0,
-                    Method  = method,
-                    ElementSize = align1,
-                    PixelsPerElement = align2,
-                    PaletteSize = palette_size,
-                };
-            }
+                Width   = width,
+                Height  = height,
+                BPP     = bpp,
+                HasAlpha = alpha_channel != 0,
+                Method  = method,
+                ElementSize = align1,
+                PixelsPerElement = align2,
+                PaletteSize = palette_size,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GpMetaData)info;
             using (var reader = new GpReader (stream, meta))
@@ -105,7 +103,7 @@ namespace GameRes.Formats.Eushully
 
     internal sealed class GpReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         GpMetaData      m_info;
         int             m_width;
         int             m_height;
@@ -115,17 +113,17 @@ namespace GameRes.Formats.Eushully
         public byte[]           Data { get; private set; }
         public int            Stride { get; private set; }
 
-        public GpReader (Stream input, GpMetaData info)
+        public GpReader (IBinaryStream input, GpMetaData info)
         {
             m_info = info;
             m_width = (int)m_info.Width;
             m_height = (int)m_info.Height;
-            m_input = new ArcView.Reader (input);
+            m_input = input;
         }
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 0xD;
+            m_input.Position = 0xD;
             switch (m_info.Method)
             {
             case 0: UnpackV0(); break;
@@ -293,8 +291,8 @@ namespace GameRes.Formats.Eushully
             int i = 3;
             while (i < Data.Length)
             {
-                byte alpha = m_input.ReadByte();
-                int count = m_input.ReadByte();
+                byte alpha = m_input.ReadUInt8();
+                int count = m_input.ReadUInt8();
                 for (int j = 0; j < count && i < Data.Length; ++j)
                 {
                     Data[i] = alpha;
@@ -305,14 +303,8 @@ namespace GameRes.Formats.Eushully
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

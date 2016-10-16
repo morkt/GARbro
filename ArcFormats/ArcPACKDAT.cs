@@ -102,7 +102,7 @@ namespace GameRes.Formats.SystemEpsylon
                     }
                 }
             }
-            return new MemoryStream (input);
+            return new BinMemoryStream (input, entry.Name);
         }
     }
 }

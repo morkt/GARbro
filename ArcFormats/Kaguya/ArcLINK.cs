@@ -82,7 +82,7 @@ namespace GameRes.Formats.Kaguya
             using (var bmr = new BmrDecoder (input))
             {
                 bmr.Unpack();
-                return new MemoryStream (bmr.Data);
+                return new BinMemoryStream (bmr.Data, entry.Name);
             }
         }
     }

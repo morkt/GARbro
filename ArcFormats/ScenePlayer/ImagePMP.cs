@@ -46,23 +46,25 @@ namespace GameRes.Formats.ScenePlayer
                 base.Write (zstream, image);
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             int first = stream.ReadByte() ^ 0x21;
             if (first != 0x78) // doesn't look like zlib stream
                 return null;
 
             stream.Position = 0;
-            using (var input = new XoredStream (stream, 0x21, true))
+            using (var input = new XoredStream (stream.AsStream, 0x21, true))
             using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
-                return base.ReadMetaData (zstream);
+            using (var bmp = new BinaryStream (zstream, stream.Name))
+                return base.ReadMetaData (bmp);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var input = new XoredStream (stream, 0x21, true))
+            using (var input = new XoredStream (stream.AsStream, 0x21, true))
             using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
-                return base.Read (zstream, info);
+            using (var bmp = new BinaryStream (zstream, stream.Name))
+                return base.Read (bmp, info);
         }
     }
 }

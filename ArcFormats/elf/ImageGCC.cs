@@ -52,34 +52,26 @@ namespace GameRes.Formats.Elf
             Signatures = new uint[] { 0x6d343252, 0x6E343252, 0x6D343247, 0x6E343247 };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[12];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-
+            var header = stream.ReadHeader (12);
             return new GccMetaData
             {
-                Width = LittleEndian.ToUInt16 (header, 8),
-                Height = LittleEndian.ToUInt16 (header, 10),
+                Width = header.ToUInt16 (8),
+                Height = header.ToUInt16 (10),
                 BPP = 'm' == header[3] ? 32 : 24,
-                OffsetX = LittleEndian.ToInt16 (header, 4),
-                OffsetY = LittleEndian.ToInt16 (header, 6),
-                Signature = LittleEndian.ToUInt32 (header, 0),
+                OffsetX = header.ToInt16 (4),
+                OffsetY = header.ToInt16 (6),
+                Signature = header.ToUInt32 (0),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as GccMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GccFormat.Read should be supplied with GccMetaData", "info");
-
-            var reader = new Reader (stream, meta);
-            {
-                reader.Unpack();
-                return ImageData.Create (info, reader.Format, null, reader.Data);
-            }
+            var meta = (GccMetaData)info;
+            var reader = new Reader (stream.AsStream, meta);
+            reader.Unpack();
+            return ImageData.Create (info, reader.Format, null, reader.Data);
         }
 
         public override void Write (Stream file, ImageData image)

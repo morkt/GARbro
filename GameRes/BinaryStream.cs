@@ -43,6 +43,7 @@ namespace GameRes
         /// </summary>
         uint  Signature { get; }
         Stream AsStream { get; }
+        bool    CanSeek { get; }
         long     Length { get; }
         long   Position { get; set; }
 
@@ -57,7 +58,8 @@ namespace GameRes
         /// <returns>Next byte, or -1 if end of stream is reached.</returns>
         int     PeekByte ();
 
-        sbyte   ReadSByte ();
+        sbyte   ReadInt8 ();
+        byte    ReadUInt8 ();
         short   ReadInt16 ();
         ushort  ReadUInt16 ();
         int     ReadInt24 ();
@@ -102,127 +104,6 @@ namespace GameRes
         byte[] ReadBytes (int count);
     }
 
-    /// <summary>
-    /// Array segment with copy-on-write semantics.
-    /// </summary>
-    public struct CowArray<T> : IReadOnlyList<T>
-    {
-        T[]             m_source;
-        int             m_offset;
-        int             m_count;
-        bool            m_own_copy;
-
-        public CowArray (T[] src) : this (src, 0, src.Length)
-        {
-        }
-
-        public CowArray (T[] src, int start, int length)
-        {
-            m_source = src;
-            m_offset = start;
-            m_count = length;
-            m_own_copy = false;
-        }
-
-        public int  Count { get { return m_count; } }
-        public int Length { get { return Count; } }
-        public T this[int pos]
-        {
-            get { return m_source[m_offset+pos]; }
-            set
-            {
-                if (!m_own_copy)
-                {
-                    Reclaim();
-                }
-                m_source[pos] = value;
-            }
-        }
-
-        public IEnumerator<T> GetEnumerator ()
-        {
-            for (int i = 0; i < m_count; ++i)
-                yield return m_source[m_offset + i];
-        }
-
-        IEnumerator IEnumerable.GetEnumerator ()
-        {
-            return GetEnumerator();
-        }
-
-        public T[] ToArray ()
-        {
-            if (m_own_copy)
-                return m_source;
-            var copy = new T[m_count];
-            Array.Copy (m_source, m_offset, copy, 0, m_count);
-            return copy;
-        }
-
-        internal void Reclaim ()
-        {
-            m_source = ToArray();
-            m_offset = 0;
-            m_own_copy = true;
-        }
-    }
-
-    public static class CowByteArray
-    {
-        public static ushort ToUInt16 (this CowArray<byte> arr, int index)
-        {
-            return (ushort)(arr[index] | arr[index+1] << 8);
-        }
-
-        public static short ToInt16 (this CowArray<byte> arr, int index)
-        {
-            return (short)(arr[index] | arr[index+1] << 8);
-        }
-
-        public static int ToInt24 (this CowArray<byte> arr, int index)
-        {
-            return arr[index] | arr[index+1] << 8 | arr[index+2] << 16;
-        }
-
-        public static uint ToUInt32 (this CowArray<byte> arr, int index)
-        {
-            return (uint)(arr[index] | arr[index+1] << 8 | arr[index+2] << 16 | arr[index+3] << 24);
-        }
-
-        public static int ToInt32 (this CowArray<byte> arr, int index)
-        {
-            return (int)ToUInt32 (arr, index);
-        }
-
-        public static ulong ToUInt64 (this CowArray<byte> arr, int index)
-        {
-            return (ulong)ToUInt32 (arr, index) | ((ulong)ToUInt32 (arr, index+4) << 32);
-        }
-
-        public static long ToInt64 (this CowArray<byte> arr, int index)
-        {
-            return (long)ToUInt64 (arr, index);
-        }
-
-        public static bool AsciiEqual (this CowArray<byte> arr, int index, string str)
-        {
-            arr.Reclaim();
-            return Binary.AsciiEqual (arr.ToArray(), index, str);
-        }
-
-        public static bool AsciiEqual (this CowArray<byte> arr, string str)
-        {
-            arr.Reclaim();
-            return Binary.AsciiEqual (arr.ToArray(), str);
-        }
-
-        public static string GetCString (this CowArray<byte> arr, int index, int length_limit)
-        {
-            arr.Reclaim();
-            return Binary.GetCString (arr.ToArray(), index, length_limit);
-        }
-    }
-
     public class BinaryStream : Stream, IBinaryStream
     {
         Stream      m_source;
@@ -238,9 +119,9 @@ namespace GameRes
         public uint  Signature { get { return m_signature.Value; } }
         public Stream AsStream { get { return this; } }
 
-        public BinaryStream (Stream input, bool leave_open = false) : this (input, "", leave_open)
-        {
-        }
+//        public BinaryStream (Stream input, bool leave_open = false) : this (input, "", leave_open)
+//        {
+//        }
 
         public BinaryStream (Stream input, string name, bool leave_open = false)
         {
@@ -266,10 +147,22 @@ namespace GameRes
             }
         }
 
-        public static BinaryStream FromFile (string filename)
+        public static IBinaryStream FromFile (string filename)
         {
             var stream = File.OpenRead (filename);
             return new BinaryStream (stream, filename);
+        }
+
+        public static IBinaryStream FromArray (byte[] data, string filename)
+        {
+            return new BinMemoryStream (data, filename);
+        }
+
+        public static IBinaryStream FromStream (Stream input, string filename)
+        {
+            if (input is IBinaryStream)
+                return input as IBinaryStream;
+            return new BinaryStream (input, filename);
         }
 
         uint ReadSignature ()
@@ -338,11 +231,16 @@ namespace GameRes
             return m_buffer[m_buffer_pos];
         }
 
-        public sbyte ReadSByte ()
+        public sbyte ReadInt8 ()
         {
             if (1 != FillBuffer (1))
                 throw new EndOfStreamException();
             return (sbyte)m_buffer[m_buffer_pos++];
+        }
+
+        public byte ReadUInt8 ()
+        {
+            return (byte)ReadInt8();
         }
 
         public short ReadInt16 ()
@@ -546,6 +444,241 @@ namespace GameRes
             }
             _disposed = true;
             base.Dispose (disposing);
+        }
+        #endregion
+    }
+
+    public class BinMemoryStream : Stream, IBinaryStream
+    {
+        byte[]      m_source;
+        int         m_start;
+        int         m_length;
+        int         m_position;
+        uint        m_signature;
+
+        public string     Name { get; private set; }
+        public uint  Signature { get { return m_signature; } }
+        public Stream AsStream { get { return this; } }
+
+        public BinMemoryStream (byte[] input, string name) : this (input, 0, input.Length, name)
+        { }
+
+        public BinMemoryStream (byte[] input, int pos, int length, string name)
+        {
+            m_source = input;
+            m_start = pos;
+            m_length = length;
+            Init (name);
+        }
+
+        public BinMemoryStream (MemoryStream input, string name)
+        {
+            try
+            {
+                m_source = input.GetBuffer();
+                if (null == m_source)
+                    m_source = new byte[0];
+            }
+            catch (UnauthorizedAccessException)
+            {
+                m_source = input.ToArray();
+            }
+            m_start = 0;
+            m_length = (int)input.Length;
+            Init (name);
+        }
+
+        void Init (string name)
+        {
+            m_position = 0;
+            Name = name ?? "";
+            if (m_length >= 4)
+                m_signature = LittleEndian.ToUInt32 (m_source, 0);
+        }
+
+        public CowArray<byte> ReadHeader (int size)
+        {
+            if (size > m_length)
+            {
+                m_position = m_length;
+                throw new EndOfStreamException();
+            }
+            m_position = size;
+            return new CowArray<byte> (m_source, m_start, size);
+        }
+
+        public int PeekByte ()
+        {
+            if (m_position >= m_length)
+                return -1;
+            return m_source[m_start+m_position];
+        }
+
+        public sbyte ReadInt8 ()
+        {
+            if (m_position >= m_length)
+                throw new EndOfStreamException();
+            return (sbyte)m_source[m_start+m_position++];
+        }
+
+        public byte ReadUInt8 ()
+        {
+            return (byte)ReadInt8();
+        }
+
+        public short ReadInt16 ()
+        {
+            if (m_length - m_position < 2)
+                throw new EndOfStreamException();
+            short v = LittleEndian.ToInt16 (m_source, m_start+m_position);
+            m_position += 2;
+            return v;
+        }
+
+        public ushort ReadUInt16 ()
+        {
+            return (ushort)ReadInt16();
+        }
+
+        public int ReadInt24 ()
+        {
+            if (m_length - m_position < 3)
+                throw new EndOfStreamException();
+            int v = LittleEndian.ToUInt16 (m_source, m_start+m_position);
+            v |= m_source[m_start+m_position+2] << 16;
+            m_position += 3;
+            return v;
+        }
+
+        public int ReadInt32 ()
+        {
+            if (m_length - m_position < 4)
+                throw new EndOfStreamException();
+            int v = LittleEndian.ToInt32 (m_source, m_start+m_position);
+            m_position += 4;
+            return v;
+        }
+
+        public uint ReadUInt32 ()
+        {
+            return (uint)ReadInt32();
+        }
+
+        public long ReadInt64 ()
+        {
+            if (m_length - m_position < 8)
+                throw new EndOfStreamException();
+            long v = LittleEndian.ToInt64 (m_source, m_start+m_position);
+            m_position += 8;
+            return v;
+        }
+
+        public ulong ReadUInt64 ()
+        {
+            return (ulong)ReadInt64();
+        }
+
+        public string ReadCString (int length)
+        {
+            return ReadCString (length, Encodings.cp932);
+        }
+
+        public string ReadCString (int length, Encoding enc)
+        {
+            length = Math.Min (length, m_length - m_position);
+            int i = Array.IndexOf<byte> (m_source, 0, m_start+m_position, length);
+            if (-1 == i)
+                i = length;
+            string s = enc.GetString (m_source, m_start+m_position, i);
+            m_position += length;
+            return s;
+        }
+
+        public string ReadCString ()
+        {
+            return ReadCString (Encodings.cp932);
+        }
+
+        public string ReadCString (Encoding enc)
+        {
+            int start = m_start+m_position;
+            int count = Array.IndexOf<byte> (m_source, 0, start, m_length-m_position);
+            if (-1 == count)
+            {
+                count = m_length - m_position;
+                m_position = m_length;
+            }
+            else
+            {
+                m_position += count + 1;
+            }
+            return enc.GetString (m_source, start, count);
+        }
+
+        public byte[] ReadBytes (int count)
+        {
+            count = Math.Min (count, m_length - m_position);
+            var buffer = new byte[count];
+            Buffer.BlockCopy (m_source, m_start+m_position, buffer, 0, count);
+            return buffer;
+        }
+
+        #region IO.Stream Members
+        public override bool CanRead  { get { return true; } }
+        public override bool CanSeek  { get { return true; } }
+        public override bool CanWrite { get { return false; } }
+        public override long Length   { get { return m_length; } }
+        public override long Position
+        {
+            get { return m_position; }
+            set { m_position = (int)Math.Max (Math.Min (m_length, value), 0); }
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            count = Math.Min (count, m_length - m_position);
+            Buffer.BlockCopy (m_source, m_start+m_position, buffer, offset, count);
+            m_position += count;
+            return count;
+        }
+
+        public override int ReadByte ()
+        {
+            if (m_position < m_length)
+                return m_source[m_start+m_position++];
+            else
+                return -1;
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            if (SeekOrigin.Begin == origin)
+                Position = offset;
+            else if (SeekOrigin.Current == origin)
+                Position = m_position + offset;
+            else
+                Position = Length + offset;
+
+            return m_position;
+        }
+
+        public override void SetLength (long length)
+        {
+            throw new NotSupportedException ("BinaryStream.SetLength method is not supported");
+        }
+
+        public override void Write (byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException ("BinaryStream.Write method is not supported");
+        }
+
+        public override void WriteByte (byte value)
+        {
+            throw new NotSupportedException ("BinaryStream.WriteByte method is not supported");
         }
         #endregion
     }

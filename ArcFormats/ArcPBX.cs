@@ -76,7 +76,7 @@ namespace GameRes.Formats.Terios
                 using (var reader = new PandoraCompression (input, unpacked_size))
                 {
                     var data = reader.Unpack();
-                    return new MemoryStream (data);
+                    return new BinMemoryStream (data, entry.Name);
                 }
             }
             catch

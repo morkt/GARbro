@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Pajamas
 {
@@ -84,10 +83,9 @@ namespace GameRes.Formats.Pajamas
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.Equals ("textdata.bin", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.EndsWith ("textdata.bin", StringComparison.InvariantCultureIgnoreCase))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             // encrypted PJADV
             if (0x95 == data[0] && 0x6B == data[1] && 0x3C == data[2]
                 && 0x9D == data[3] && 0x63 == data[4])
@@ -99,7 +97,7 @@ namespace GameRes.Formats.Pajamas
                     key += 0x5C;
                 }
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 }

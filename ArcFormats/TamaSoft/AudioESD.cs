@@ -37,21 +37,19 @@ namespace GameRes.Formats.Tama
         public override string Description { get { return "TamaSoft ADV system audio"; } }
         public override uint     Signature { get { return 0x20445345; } } // 'ESD '
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x20];
-            if (header.Length != file.Read (header, 0, header.Length))
-                return null;
+            var header = file.ReadHeader (0x20);
             var format = new WaveFormat
             {
                 FormatTag = 1,
-                Channels = LittleEndian.ToUInt16 (header, 0x10),
-                SamplesPerSecond = LittleEndian.ToUInt32 (header, 8),
-                BitsPerSample = LittleEndian.ToUInt16 (header, 0xC),
+                Channels = header.ToUInt16 (0x10),
+                SamplesPerSecond = header.ToUInt32 (8),
+                BitsPerSample = header.ToUInt16 (0xC),
             };
             format.BlockAlign = (ushort)(format.Channels * format.BitsPerSample / 8);
             format.AverageBytesPerSecond = format.SamplesPerSecond * format.BlockAlign;
-            var pcm = new StreamRegion (file, 0x20);
+            var pcm = new StreamRegion (file.AsStream, 0x20);
             return new RawPcmInput (pcm, format);
         }
     }

@@ -67,31 +67,29 @@ namespace GameRes.Formats.FC01
             set { KnownKeys = ((McgScheme)value).KnownKeys; }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            byte[] header = new byte[0x40];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x40);
             if (header[5] != '.')
                 return null;
             int version = header[4] * 100 + header[6] * 10 + header[7] - 0x14D0;
             if (version != 200 && version != 101)
                 throw new NotSupportedException ("Not supported MCG format version");
-            int header_size = LittleEndian.ToInt32 (header, 0x10);
+            int header_size = header.ToInt32 (0x10);
             if (header_size < 0x40)
                 return null;
-            int bpp = LittleEndian.ToInt32 (header, 0x24);
+            int bpp = header.ToInt32 (0x24);
             if (24 != bpp)
                 throw new NotSupportedException ("Not supported MCG image bitdepth");
             return new McgMetaData
             {
-                Width = LittleEndian.ToUInt32 (header, 0x1c),
-                Height = LittleEndian.ToUInt32 (header, 0x20),
-                OffsetX = LittleEndian.ToInt32 (header, 0x14),
-                OffsetY = LittleEndian.ToInt32 (header, 0x18),
+                Width = header.ToUInt32 (0x1c),
+                Height = header.ToUInt32 (0x20),
+                OffsetX = header.ToInt32 (0x14),
+                OffsetY = header.ToInt32 (0x18),
                 BPP = bpp,
                 DataOffset = header_size,
-                PackedSize = LittleEndian.ToInt32 (header, 0x38) - header_size,
+                PackedSize = header.ToInt32 (0x38) - header_size,
                 Version = version,
             };
         }
@@ -99,7 +97,7 @@ namespace GameRes.Formats.FC01
         // cache key value so that dialog does not pop up on every file accessed.
         byte? LastKey = null;
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (McgMetaData)info;
             byte key = Settings.Default.MCGLastKey;
@@ -113,7 +111,7 @@ namespace GameRes.Formats.FC01
                 else
                     key = LastKey.Value;
             }
-            var reader = new McgDecoder (stream, meta, key);
+            var reader = new McgDecoder (stream.AsStream, meta, key);
             reader.Unpack();
             if (reader.Key != 0)
                 LastKey = reader.Key;

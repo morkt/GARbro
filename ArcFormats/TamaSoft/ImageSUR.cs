@@ -38,24 +38,22 @@ namespace GameRes.Formats.Tama
         public override string Description { get { return "TamaSoft ADV system image"; } }
         public override uint     Signature { get { return 0x52555345; } } // 'ESUR'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x10);
             return new ImageMetaData
             {
-                Width  = LittleEndian.ToUInt32 (header, 8),
-                Height = LittleEndian.ToUInt32 (header, 12),
+                Width  = header.ToUInt32 (8),
+                Height = header.ToUInt32 (12),
                 BPP    = 32,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var pixels = new byte[info.Width * info.Height * 4];
             stream.Position = 0x20;
-            UnpackLzss (stream, pixels);
+            UnpackLzss (stream.AsStream, pixels);
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
 

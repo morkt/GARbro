@@ -122,7 +122,7 @@ namespace GameRes.Formats.TopCat
                 return OpenScript (arc, entry);
             if (entry.Name.EndsWith (".SPD", StringComparison.InvariantCultureIgnoreCase))
                 return OpenSpdc (arc, entry);
-            return arc.File.CreateStream (entry.Offset, entry.Size);
+            return base.OpenEntry (arc, entry);
         }
 
         Stream OpenSpdc (ArcFile arc, Entry entry)
@@ -187,7 +187,7 @@ namespace GameRes.Formats.TopCat
             using (var input = arc.File.CreateStream (entry.Offset+4, entry.Size-4))
                 UnpackLz (input, data);
             DecryptScript (data);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         void UnpackLz (Stream input, byte[] output)
@@ -253,7 +253,7 @@ namespace GameRes.Formats.TopCat
                 LittleEndian.Pack (crc, data, src+0x16);
                 src += page_size;
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 

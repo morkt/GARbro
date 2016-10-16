@@ -122,7 +122,7 @@ namespace GameRes.Formats.Pvns
             {
                 data = DecryptScript (data, parc.ScriptKey);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         static void Decrypt (byte[] data, byte[] key)

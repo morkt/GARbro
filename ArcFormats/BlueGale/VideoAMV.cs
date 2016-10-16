@@ -90,7 +90,7 @@ namespace GameRes.Formats.BlueGale
             LittleEndian.Pack (pent.UnpackedSize, output, 2);
             int header_size = LittleEndian.ToInt32 (output, 0xE);
             LittleEndian.Pack (header_size+0xE, output, 0xA);
-            return new MemoryStream (output);
+            return new BinMemoryStream (output, entry.Name);
         }
     }
 }

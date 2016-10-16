@@ -87,7 +87,7 @@ namespace GameRes.Formats.uGOS
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
             {
                 if (Unpack (input, output))
-                    return new MemoryStream (output);
+                    return new BinMemoryStream (output, entry.Name);
                 else
                     return base.OpenEntry (arc, entry);
             }

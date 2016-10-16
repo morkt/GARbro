@@ -44,36 +44,33 @@ namespace GameRes.Formats.TechnoBrain
         public override string Description { get { return "TechnoBrain's 'Inteligent Picture Format'"; } }
         public override uint     Signature { get { return 0; } } // 'RIFF'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             // 'RIFF' isn't included into signature to avoid auto-detection of the WAV files as IPH images.
-            if (0x46464952 != FormatCatalog.ReadSignature (stream)) // 'RIFF'
+            if (0x46464952 != file.Signature) // 'RIFF'
                 return null;
-            using (var reader = new ArcView.Reader (stream))
-            {
-                if (0x38 != reader.ReadInt32())
-                    return null;
-                var signature = reader.ReadInt32();
-                if (signature != 0x20485049 && signature != 0x00485049) // 'IPH'
-                    return null;
-                if (0x20746D66 != reader.ReadInt32()) // 'fmt '
-                    return null;
-                reader.BaseStream.Position = 0x38;
-                if (0x20706D62 != reader.ReadInt32()) // 'bmp '
-                    return null;
-                var info = new IphMetaData();
-                info.PackedSize = reader.ReadInt32();
-                info.Width  = reader.ReadUInt16();
-                info.Height = reader.ReadUInt16();
-                reader.BaseStream.Position = 0x50;
-                info.BPP = reader.ReadUInt16();
-                info.IsCompressed = 0 != reader.ReadInt16();
-                // XXX int16@[0x54] is a transparency color or 0xFFFF if image is not transparent
-                return info;
-            }
+            if (0x38 != file.ReadInt32())
+                return null;
+            var signature = file.ReadInt32();
+            if (signature != 0x20485049 && signature != 0x00485049) // 'IPH'
+                return null;
+            if (0x20746D66 != file.ReadInt32()) // 'fmt '
+                return null;
+            file.Position = 0x38;
+            if (0x20706D62 != file.ReadInt32()) // 'bmp '
+                return null;
+            var info = new IphMetaData();
+            info.PackedSize = file.ReadInt32();
+            info.Width  = file.ReadUInt16();
+            info.Height = file.ReadUInt16();
+            file.Position = 0x50;
+            info.BPP = file.ReadUInt16();
+            info.IsCompressed = 0 != file.ReadInt16();
+            // XXX int16@[0x54] is a transparency color or 0xFFFF if image is not transparent
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             if (info.BPP != 16)
                 throw new NotSupportedException ("Not supported IPH color depth");
@@ -92,7 +89,7 @@ namespace GameRes.Formats.TechnoBrain
 
     internal sealed class IphReader : IDisposable
     {
-        BinaryReader        m_input;
+        IBinaryStream       m_input;
         byte[]              m_output;
         int                 m_width;
         int                 m_height;
@@ -101,10 +98,10 @@ namespace GameRes.Formats.TechnoBrain
         public PixelFormat Format { get { return PixelFormats.Bgr555; } }
         public byte[]        Data { get { return m_output; } }
 
-        public IphReader (Stream input, IphMetaData info)
+        public IphReader (IBinaryStream input, IphMetaData info)
         {
             m_info = info;
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_output = new byte[m_width*m_height*2];
@@ -112,7 +109,7 @@ namespace GameRes.Formats.TechnoBrain
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 0x58;
+            m_input.Position = 0x58;
             if (!m_info.IsCompressed)
             {
                 m_input.Read (m_output, 0, m_output.Length);
@@ -123,14 +120,14 @@ namespace GameRes.Formats.TechnoBrain
             for (int y = 0; y < m_height; ++y)
             {
                 int row = stride * y;
-                byte ctl = m_input.ReadByte();
+                byte ctl = m_input.ReadUInt8();
                 if (ctl != 0)
                 {
                     int dst = row;
                     int pixel = 0;
                     while (dst < m_output.Length)
                     {
-                        ctl = m_input.ReadByte();
+                        ctl = m_input.ReadUInt8();
                         if (0xFF == ctl)
                             break;
                         if (0xFE == ctl)
@@ -145,7 +142,7 @@ namespace GameRes.Formats.TechnoBrain
                         }
                         else if (ctl < 0x80)
                         {
-                            byte lo = m_input.ReadByte();
+                            byte lo = m_input.ReadUInt8();
                             m_output[dst++] = lo;
                             m_output[dst++] = ctl;
                             pixel = ctl << 8 | lo;
@@ -169,13 +166,13 @@ namespace GameRes.Formats.TechnoBrain
                     m_input.Read (m_output, row, stride);
                     m_input.ReadByte();
                 }
-                ctl = m_input.ReadByte();
+                ctl = m_input.ReadUInt8();
                 if (0 != ctl)
                 {
                     int dst = 0;
                     for (;;)
                     {
-                        ctl = m_input.ReadByte();
+                        ctl = m_input.ReadUInt8();
                         if (0xFF == ctl)
                             break;
                         if (ctl >= 0x80)
@@ -209,14 +206,8 @@ namespace GameRes.Formats.TechnoBrain
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

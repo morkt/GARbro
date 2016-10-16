@@ -97,8 +97,7 @@ namespace GameRes.Formats.RealLive
             }
             byte[] bitmap;
             using (var input = file.CreateStream (index_offset))
-            using (var bin = new BinaryReader (input))
-                bitmap = G00Reader.LzDecompress (bin, 2, 1);
+                bitmap = G00Reader.LzDecompress (input, 2, 1);
 
             using (var input = new MemoryStream (bitmap))
             using (var reader = new BinaryReader (input))

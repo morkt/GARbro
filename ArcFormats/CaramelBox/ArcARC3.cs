@@ -200,7 +200,7 @@ namespace GameRes.Formats.CaramelBox
             using (input)
             {
                 var data = UnpackLze (input, a3ent.UnpackedSize);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

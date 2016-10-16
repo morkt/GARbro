@@ -37,19 +37,18 @@ namespace GameRes.Formats.WildBug
         public override string Description { get { return "Wild Bug's audio format"; } }
         public override uint     Signature { get { return 0x1A444257; } } // 'WBD'
         
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x24];
-            if (header.Length != file.Read (header, 0, header.Length))
+            var header = file.ReadHeader (0x24);
+            if (!header.AsciiEqual (4, "WAV"))
                 return null;
-            if (!Binary.AsciiEqual (header, 4, "WAV"))
+            if (header.ToInt32 (8) < 2)
                 return null;
-            if (LittleEndian.ToInt32 (header, 8) < 2)
-                return null;
-            int fmt_offset = LittleEndian.ToInt32 (header, 0x10);
-            int fmt_size   = LittleEndian.ToInt32 (header, 0x14);
-            int data_offset = LittleEndian.ToInt32 (header, 0x1C);
-            int data_size   = LittleEndian.ToInt32 (header, 0x20);
+            int fmt_offset = header.ToInt32 (0x10);
+            int fmt_size   = header.ToInt32 (0x14);
+            int data_offset = header.ToInt32 (0x1C);
+            int data_size   = header.ToInt32 (0x20);
+
             var wav_header = new byte[8+12+fmt_size+8];
             Buffer.BlockCopy (WavHeader, 0, wav_header, 0, WavHeader.Length);
             LittleEndian.Pack (wav_header.Length-8+data_size, wav_header, 4);
@@ -62,7 +61,7 @@ namespace GameRes.Formats.WildBug
             wav_header[d++]= (byte)'t';
             wav_header[d++]= (byte)'a';
             LittleEndian.Pack (data_size, wav_header, d);
-            var wav_data = new StreamRegion (file, data_offset, data_size);
+            var wav_data = new StreamRegion (file.AsStream, data_offset, data_size);
             return new WaveInput (new PrefixStream (wav_header, wav_data));
         }
 

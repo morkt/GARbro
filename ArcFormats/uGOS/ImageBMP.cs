@@ -44,22 +44,20 @@ namespace GameRes.Formats.uGOS
             Signatures = new uint[] { 0x206546, 0x186546 };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x10);
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt16 (header, 4),
-                Height  = LittleEndian.ToUInt16 (header, 6),
+                Width   = header.ToUInt16 (4),
+                Height  = header.ToUInt16 (6),
                 BPP     = header[2],
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            using (var reader = new Reader (stream, info))
+            using (var reader = new Reader (file, info))
             {
                 reader.Unpack();
                 return ImageData.CreateFlipped (info, reader.Format, null, reader.Data, reader.Stride);
@@ -73,7 +71,7 @@ namespace GameRes.Formats.uGOS
 
         internal sealed class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             int             m_width;
             int             m_height;
@@ -83,9 +81,9 @@ namespace GameRes.Formats.uGOS
             public byte[]        Data { get { return m_output; } }
             public int         Stride { get; private set; }
 
-            public Reader (Stream input, ImageMetaData info)
+            public Reader (IBinaryStream input, ImageMetaData info)
             {
-                m_input = new ArcView.Reader (input);
+                m_input = input;
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_bpp = info.BPP;
@@ -122,7 +120,7 @@ namespace GameRes.Formats.uGOS
 
             public void Unpack ()
             {
-                m_input.BaseStream.Position = 0x10;
+                m_input.Position = 0x10;
                 InitTable1();
                 InitTable2();
                 InitTable3();
@@ -183,10 +181,10 @@ namespace GameRes.Formats.uGOS
                     if (0 == v35)
                     {
 //                        v60 = (((src1[2] + ((src1[1] + (*src1 << 8)) << 8)) << 8) ^ 0x80000080u) >> byte_4CBA80[v38];
-                        uint v60 = (uint)m_input.ReadByte() << 16;
+                        uint v60 = (uint)m_input.ReadUInt8() << 16;
                         uint v38 = m_bits & 0xFF;
-                        v60 |= (uint)m_input.ReadByte () << 8;
-                        v60 |= m_input.ReadByte ();
+                        v60 |= (uint)m_input.ReadUInt8 () << 8;
+                        v60 |= m_input.ReadUInt8 ();
                         v60 <<= 8;
                         v60 = (v60 ^ 0x80000080u) >> byte_4CBA80[v38];
                         m_bits = v60;
@@ -208,7 +206,7 @@ namespace GameRes.Formats.uGOS
                     int d;
                     if (0x80 == (m_bits & 0xFF))
                     {
-                        byte n = m_input.ReadByte();
+                        byte n = m_input.ReadUInt8();
                         d = n >> 7;
                         m_bits = (uint)(n << 1 | 1);
                     }
@@ -260,7 +258,7 @@ namespace GameRes.Formats.uGOS
                 int v23 = byte_4CAD28[2 * m_bits + 1];
                 while (0 == v23)
                 {
-                    int b = m_input.ReadByte();
+                    int b = m_input.ReadUInt8();
                     v26 += byte_4CAF28[2 * b];
                     v23  = byte_4CAF28[2 * b + 1];
                 }
@@ -269,12 +267,12 @@ namespace GameRes.Formats.uGOS
                 if (v26 - v27 > 0)
                 {
                     uint v29 = (uint)(v26 - v27 - 1);
-                    int v30 = m_input.ReadByte() + (int)((v28 << v27) & 0xFFFFFF00);
+                    int v30 = m_input.ReadUInt8() + (int)((v28 << v27) & 0xFFFFFF00);
                     if ((int)v29 >= 8)
                     {
                         for (uint v31 = v29 >> 3; v31 != 0; --v31)
                         {
-                            v30 = (v30 << 8) | m_input.ReadByte();
+                            v30 = (v30 << 8) | m_input.ReadUInt8();
                         }
                         v29 -= 8 * (v29 >> 3);
                     }
@@ -305,13 +303,13 @@ namespace GameRes.Formats.uGOS
                         uint v7 = ((uint)(v5 - 9) >> 3) + 1;
                         do
                         {
-                            v6 = m_input.ReadByte() + (v6 << 8);
+                            v6 = m_input.ReadUInt8() + (v6 << 8);
                             v5 -= 8;
                             --v7;
                         }
                         while (0 != v7);
                     }
-                    m_bits = m_input.ReadByte();
+                    m_bits = m_input.ReadUInt8();
                     alpha = (uint)((v6 << v5) + (m_bits >> (8 - v5)));
                     m_bits = ((m_bits << v5) + (1u << (v5 - 1))) & 0xFFu;
                 }
@@ -326,7 +324,7 @@ namespace GameRes.Formats.uGOS
                 uint v4 = byte_4CAD28[2 * v2 + 1];
                 while (0 == v4)
                 {
-                    v2 = m_input.ReadByte();
+                    v2 = m_input.ReadUInt8();
                     i += byte_4CAF28[2 * v2];
                     v4 = byte_4CAF28[2 * v2 + 1];
                 }
@@ -345,11 +343,11 @@ namespace GameRes.Formats.uGOS
                     {
                         for (uint v8 = ((uint)(v6 - 9) >> 3) + 1; v8 != 0; --v8)
                         {
-                            v7 = (v7 << 8) | m_input.ReadByte();
+                            v7 = (v7 << 8) | m_input.ReadUInt8();
                         }
                         v6 += -8 * (int)(((uint)(v6 - 9) >> 3) + 1);
                     }
-                    m_bits = m_input.ReadByte();
+                    m_bits = m_input.ReadUInt8();
                     uint n = (v7 << v6) + (m_bits >> (8 - v6));
                     m_bits = (m_bits << v6) + (1u << (v6 - 1));
                     return (int)n - 2;
@@ -433,14 +431,8 @@ namespace GameRes.Formats.uGOS
             }
 
             #region IDisposable Members
-            bool _disposed = false;
             public void Dispose ()
             {
-                if (!_disposed)
-                {
-                    m_input.Dispose();
-                    _disposed = true;
-                }
             }
             #endregion
         }

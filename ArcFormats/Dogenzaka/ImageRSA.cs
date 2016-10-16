@@ -53,13 +53,14 @@ namespace GameRes.Formats.Dogenzaka
 
         public static readonly byte[] KnownKey = Encoding.ASCII.GetBytes ("Hlk9D28p");
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             using (var sha = SHA1.Create())
             {
                 var key = sha.ComputeHash (KnownKey).Take (16).ToArray();
-                using (var proxy = new InputProxyStream (stream, true))
-                using (var input = new CryptoStream (proxy, new Rc4Transform (key), CryptoStreamMode.Read))
+                using (var proxy = new InputProxyStream (stream.AsStream, true))
+                using (var crypto = new CryptoStream (proxy, new Rc4Transform (key), CryptoStreamMode.Read))
+                using (var input = new BinaryStream (crypto, stream.Name))
                 {
                     var info = base.ReadMetaData (input);
                     if (null == info)
@@ -77,12 +78,13 @@ namespace GameRes.Formats.Dogenzaka
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var rc4 = (Rc4PngMetaData)info;
             using (var sha = SHA1.Create())
-            using (var proxy = new InputProxyStream (stream, true))
-            using (var input = new CryptoStream (proxy, new Rc4Transform (rc4.Key), CryptoStreamMode.Read))
+            using (var proxy = new InputProxyStream (stream.AsStream, true))
+            using (var crypto = new CryptoStream (proxy, new Rc4Transform (rc4.Key), CryptoStreamMode.Read))
+            using (var input = new BinaryStream (crypto, stream.Name))
                 return base.Read (input, info);
         }
 

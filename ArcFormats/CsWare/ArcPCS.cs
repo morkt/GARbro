@@ -149,7 +149,7 @@ namespace GameRes.Formats.CsWare
                 header[i] = (byte)(pent.Key - header[i] - 1);
             }
             if (header_size == entry.Size)
-                return new MemoryStream (header);
+                return new BinMemoryStream (header, entry.Name);
             var rest = arc.File.CreateStream (entry.Offset+512, entry.Size-512);
             return new PrefixStream (header, rest);
         }

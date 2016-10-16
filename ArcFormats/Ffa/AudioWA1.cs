@@ -39,18 +39,9 @@ namespace GameRes.Formats.Ffa
         public override string Description { get { return "FFA System wave audio format"; } }
         public override uint     Signature { get { return 0; } }
 
-        private static int ReadInt32 (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            int dword = file.ReadByte();
-            dword |= file.ReadByte() << 8;
-            dword |= file.ReadByte() << 16;
-            dword |= file.ReadByte() << 24;
-            return dword;
-        }
-
-        public override SoundInput TryOpen (Stream file)
-        {
-            int packed = ReadInt32 (file);
+            int packed = file.ReadInt32();
             if (packed < 0)
                 return null;
             byte[] input;
@@ -58,10 +49,10 @@ namespace GameRes.Formats.Ffa
             {
                 if ((packed + 8) != file.Length)
                     return null;
-                int unpacked = ReadInt32 (file);
+                int unpacked = file.ReadInt32();
                 if (unpacked <= 0)
                     return null;
-                using (var reader = new LzssReader (file, packed, unpacked))
+                using (var reader = new LzssReader (file.AsStream, packed, unpacked))
                 {
                     reader.Unpack();
                     if (Binary.AsciiEqual (reader.Data, 0, "RIFF"))
@@ -75,7 +66,7 @@ namespace GameRes.Formats.Ffa
             }
             else
             {
-                if (0x46464952 != ReadInt32 (file)) // 'RIFF'
+                if (0x46464952 != file.ReadInt32()) // 'RIFF'
                     return null;
                 file.Position = 0;
                 input = new byte[file.Length];

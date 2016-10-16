@@ -45,31 +45,28 @@ namespace GameRes.Formats.Kaguya
             Extensions = new string[] { "bg_", "cg_", "cgw", "sp_", "aps", "alp", "prs" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             int A = stream.ReadByte();
             int P = stream.ReadByte();
             if ('A' != A || 'P' != P)
                 return null;
-            using (var file = new ArcView.Reader (stream))
-            {
-                var info = new ImageMetaData();
-                info.Width = file.ReadUInt32();
-                info.Height = file.ReadUInt32();
-                info.BPP = file.ReadInt16();
-                if (info.Width > 0x8000 || info.Height > 0x8000 || !(32 == info.BPP || 24 == info.BPP))
-                    return null;
-                return info;
-            }
+            var info = new ImageMetaData();
+            info.Width = stream.ReadUInt32();
+            info.Height = stream.ReadUInt32();
+            info.BPP = stream.ReadInt16();
+            if (info.Width > 0x8000 || info.Height > 0x8000 || !(32 == info.BPP || 24 == info.BPP))
+                return null;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 12;
             return ReadBitmapData (stream, info);
         }
 
-        protected ImageData ReadBitmapData (Stream stream, ImageMetaData info)
+        protected ImageData ReadBitmapData (IBinaryStream stream, ImageMetaData info)
         {
             int stride = (int)info.Width*4;
             var pixels = new byte[stride*info.Height];
@@ -126,24 +123,21 @@ namespace GameRes.Formats.Kaguya
             Extensions = new string[] { "alp" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
-            using (var file = new ArcView.Reader (stream))
-            {
-                var info = new ImageMetaData();
-                info.OffsetX = file.ReadInt32();
-                info.OffsetY = file.ReadInt32();
-                info.Width = file.ReadUInt32();
-                info.Height = file.ReadUInt32();
-                info.BPP = 32;
-                if (info.Width > 0x8000 || info.Height > 0x8000)
-                    return null;
-                return info;
-            }
+            var info = new ImageMetaData();
+            info.OffsetX = stream.ReadInt32();
+            info.OffsetY = stream.ReadInt32();
+            info.Width   = stream.ReadUInt32();
+            info.Height  = stream.ReadUInt32();
+            info.BPP = 32;
+            if (info.Width > 0x8000 || info.Height > 0x8000)
+                return null;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x18;
             var pixels = new byte[4*info.Width*info.Height];

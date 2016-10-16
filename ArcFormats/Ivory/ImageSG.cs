@@ -144,7 +144,7 @@ namespace GameRes.Formats.Ivory
         public byte[]           Data { get { return m_output; } }
         public int            Stride { get { return m_stride; } }
 
-        public SgRgbReader (Stream input, SgMetaData info)
+        public SgRgbReader (IBinaryStream input, SgMetaData info)
         {
             if (info.Type != SgType.cRGB || !(0x18 == info.BPP || 0x20 == info.BPP))
                 throw new InvalidFormatException();
@@ -189,16 +189,16 @@ namespace GameRes.Formats.Ivory
                 {
                     for (int x = 0; x < m_width; )
                     {
-                        byte ctl = m_input.ReadByte();
+                        byte ctl = m_input.ReadUInt8();
                         int count = ctl & 0x3F;
                         if (0 != (ctl & 0x40))
                         {
                             count <<= 8;
-                            count |= m_input.ReadByte();
+                            count |= m_input.ReadUInt8();
                         }
                         if (0 != (ctl & 0x80))
                         {
-                            byte v = m_input.ReadByte();
+                            byte v = m_input.ReadUInt8();
                             for (int i = 0; i < count; ++i)
                                 line[line_pos++] = v;
                         }
@@ -250,17 +250,17 @@ namespace GameRes.Formats.Ivory
                 m_input.Position = data_pos + index[y];
                 for (int x = 0; x < m_width; )
                 {
-                    int ctl = m_input.ReadByte();
+                    int ctl = m_input.ReadUInt8();
                     int count = ctl >> 2;
                     if (0 != (ctl & 2))
                     {
-                        count |= m_input.ReadByte() << 6;
+                        count |= m_input.ReadUInt8() << 6;
                     }
                     count = Math.Min (count, m_width - x);
                     x += count;
                     if (0 != (ctl & 1))
                     {
-                        byte c = m_input.ReadByte();
+                        byte c = m_input.ReadUInt8();
                         for (int i = 0; i < count; ++i)
                             m_output[dst++] = c;
                     }

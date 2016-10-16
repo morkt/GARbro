@@ -96,7 +96,7 @@ namespace GameRes.Formats.Propeller
             {
                 var bmp = new byte[(entry as PackedEntry).UnpackedSize];
                 Decompress (input, bmp);
-                return new MemoryStream (bmp);
+                return new BinMemoryStream (bmp, entry.Name);
             }
         }
 

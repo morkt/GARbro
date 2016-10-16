@@ -122,7 +122,7 @@ namespace GameRes.Formats.Ail
             {
                 byte[] data = new byte[pentry.UnpackedSize];
                 LzssUnpack (input, data);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

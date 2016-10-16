@@ -65,32 +65,27 @@ namespace GameRes.Formats.Sas5
             Extensions = new string[] { "" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x28];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, 4, "SAS5"))
+            var header = stream.ReadHeader (0x28);
+            if (!header.AsciiEqual (4, "SAS5"))
                 return null;
             return new IarMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0x08),
-                Height  = LittleEndian.ToUInt32 (header, 0x0C),
-                OffsetX = -LittleEndian.ToInt32 (header, 0x10),
-                OffsetY = -LittleEndian.ToInt32 (header, 0x14),
-                BPP     = LittleEndian.ToInt32 (header, 0x18),
-                Stride  = LittleEndian.ToInt32 (header, 0x1C),
-                PaletteSize = LittleEndian.ToInt32 (header, 0x20),
-                ImageSize = LittleEndian.ToInt32 (header, 0x24),
+                Width   = header.ToUInt32 (0x08),
+                Height  = header.ToUInt32 (0x0C),
+                OffsetX = -header.ToInt32 (0x10),
+                OffsetY = -header.ToInt32 (0x14),
+                BPP     = header.ToInt32 (0x18),
+                Stride  = header.ToInt32 (0x1C),
+                PaletteSize = header.ToInt32 (0x20),
+                ImageSize = header.ToInt32 (0x24),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as IarMetaData;
-            if (null == meta)
-                throw new ArgumentException ("IarFormat.Read should be supplied with IarMetaData", "info");
-
+            var meta = (IarMetaData)info;
             PixelFormat format;
             if (32 == meta.BPP)
                 format = PixelFormats.Bgra32;
@@ -104,9 +99,8 @@ namespace GameRes.Formats.Sas5
             stream.Position = 0x28;
             BitmapPalette palette = null;
             if (meta.PaletteSize > 0)
-                palette = ReadPalette (stream, meta.PaletteSize);
-            var pixels = new byte[meta.ImageSize];
-            stream.Read (pixels, 0, pixels.Length);
+                palette = ReadPalette (stream.AsStream, meta.PaletteSize);
+            var pixels = stream.ReadBytes (meta.ImageSize);
             return ImageData.Create (info, format, palette, pixels, meta.Stride);
         }
 

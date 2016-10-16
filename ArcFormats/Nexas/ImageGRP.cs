@@ -48,21 +48,19 @@ namespace GameRes.Formats.NeXAS
             Extensions = new string[] { "grp" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x11];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x11);
             return new GrpMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 5),
-                Height  = LittleEndian.ToUInt32 (header, 9),
-                BPP     = LittleEndian.ToUInt16 (header, 3),
-                UnpackedSize = LittleEndian.ToInt32 (header, 0xD),
+                Width   = header.ToUInt32 (5),
+                Height  = header.ToUInt32 (9),
+                BPP     = header.ToUInt16 (3),
+                UnpackedSize = header.ToInt32 (0xD),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new GrpReader (stream, (GrpMetaData)info))
             {
@@ -79,15 +77,15 @@ namespace GameRes.Formats.NeXAS
 
     internal sealed class GrpReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
 
         public byte[]        Data { get { return m_output; } }
         public PixelFormat Format { get; private set; }
 
-        public GrpReader (Stream input, GrpMetaData info)
+        public GrpReader (IBinaryStream input, GrpMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_output = new byte[info.UnpackedSize];
             if (24 == info.BPP)
                 Format = PixelFormats.Bgr24;
@@ -99,7 +97,7 @@ namespace GameRes.Formats.NeXAS
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 0x11;
+            m_input.Position = 0x11;
             int ctl_length = (m_input.ReadInt32() + 7) / 8;
             var ctl_bytes = m_input.ReadBytes (ctl_length);
             m_input.ReadInt32();
@@ -114,7 +112,7 @@ namespace GameRes.Formats.NeXAS
                         break;
                     if (0 == bit)
                     {
-                        m_output[dst++] = m_input.ReadByte();
+                        m_output[dst++] = m_input.ReadUInt8();
                     }
                     else
                     {
@@ -129,14 +127,8 @@ namespace GameRes.Formats.NeXAS
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

@@ -38,22 +38,19 @@ namespace GameRes.Formats.Megu
         public override string Description { get { return "Masys image format"; } }
         public override uint     Signature { get { return 0x00644741u; } } // 'AGd'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var file = new ArcView.Reader (stream))
-            {
-                file.ReadUInt32();
-                var info = new ImageMetaData();
-                info.Width = file.ReadUInt32();
-                info.Height = file.ReadUInt32();
-                file.BaseStream.Position = 0x38;
-                int alpha_size = file.ReadInt32();
-                info.BPP = 0 == alpha_size ? 24 : 32;
-                return info;
-            }
+            file.Position = 4;
+            var info = new ImageMetaData();
+            info.Width = file.ReadUInt32();
+            info.Height = file.ReadUInt32();
+            file.Position = 0x38;
+            int alpha_size = file.ReadInt32();
+            info.BPP = 0 == alpha_size ? 24 : 32;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var reader = new AgReader (stream, info);
             reader.Unpack();
@@ -83,54 +80,51 @@ namespace GameRes.Formats.Megu
         public byte[] Data { get { return m_output; } }
         public PixelFormat Format { get; private set; }
 
-        public AgReader (Stream stream, ImageMetaData info)
+        public AgReader (IBinaryStream input, ImageMetaData info)
         {
             m_width = (int)info.Width;
             m_height = (int)info.Height;
-            stream.Position = 0x0c;
-            using (var input = new ArcView.Reader (stream))
+            input.Position = 0x0c;
+            uint offset1 = input.ReadUInt32();
+            int  size1   = input.ReadInt32();
+            uint offset2 = input.ReadUInt32();
+            int  size2   = input.ReadInt32();
+            uint offset3 = input.ReadUInt32();
+            int  size3   = input.ReadInt32();
+            uint offset4 = input.ReadUInt32();
+            int  size4   = input.ReadInt32();
+            uint offset5 = input.ReadUInt32();
+            int  size5   = input.ReadInt32();
+            uint offset6 = input.ReadUInt32();
+            int  size6   = input.ReadInt32();
+            input.Read (m_first, 0, 3);
+            if (size1 != 0)
+                in1 = ReadSection (input, offset1, size1);
+            if (size2 != 0)
+                in2 = ReadSection (input, offset2, size2);
+            if (size3 != 0)
+                in3 = ReadSection (input, offset3, size3);
+            if (size4 != 0)
+                in4 = ReadSection (input, offset4, size4);
+            if (size5 != 0)
+                in5 = ReadSection (input, offset5, size5);
+            if (size6 != 0)
             {
-                uint offset1 = input.ReadUInt32();
-                int  size1   = input.ReadInt32();
-                uint offset2 = input.ReadUInt32();
-                int  size2   = input.ReadInt32();
-                uint offset3 = input.ReadUInt32();
-                int  size3   = input.ReadInt32();
-                uint offset4 = input.ReadUInt32();
-                int  size4   = input.ReadInt32();
-                uint offset5 = input.ReadUInt32();
-                int  size5   = input.ReadInt32();
-                uint offset6 = input.ReadUInt32();
-                int  size6   = input.ReadInt32();
-                input.Read (m_first, 0, 3);
-                if (size1 != 0)
-                    in1 = ReadSection (stream, offset1, size1);
-                if (size2 != 0)
-                    in2 = ReadSection (stream, offset2, size2);
-                if (size3 != 0)
-                    in3 = ReadSection (stream, offset3, size3);
-                if (size4 != 0)
-                    in4 = ReadSection (stream, offset4, size4);
-                if (size5 != 0)
-                    in5 = ReadSection (stream, offset5, size5);
-                if (size6 != 0)
-                {
-                    input.BaseStream.Position = offset6;
-                    m_alpha = new byte[m_height*m_width];
-                    RleDecode (input, m_alpha);
-                    Format = PixelFormats.Bgra32;
-                    m_pixel_size = 4;
-                }
-                else
-                {
-                    Format = PixelFormats.Bgr24;
-                    m_pixel_size = 3;
-                }
-                m_output = new byte[m_width*m_height*m_pixel_size];
+                input.Position = offset6;
+                m_alpha = new byte[m_height*m_width];
+                RleDecode (input, m_alpha);
+                Format = PixelFormats.Bgra32;
+                m_pixel_size = 4;
             }
+            else
+            {
+                Format = PixelFormats.Bgr24;
+                m_pixel_size = 3;
+            }
+            m_output = new byte[m_width*m_height*m_pixel_size];
         }
 
-        static private byte[] ReadSection (Stream input, long offset, int size)
+        static private byte[] ReadSection (IBinaryStream input, long offset, int size)
         {
             input.Position = offset;
             var buf = new byte[size + 4];
@@ -362,13 +356,13 @@ namespace GameRes.Formats.Megu
             }
         }
 
-        private static void RleDecode (BinaryReader src, byte[] dst_buf)
+        private static void RleDecode (IBinaryStream src, byte[] dst_buf)
         {
             int remaining = dst_buf.Length;
             int dst = 0;
             while (remaining > 0)
             {
-                byte v = src.ReadByte();
+                byte v = src.ReadUInt8();
                 int count;
                 if (0 != (v & 0x80))
                 {

@@ -157,16 +157,16 @@ namespace GameRes.Formats.Hexenhaus
             Extensions = new string[] { "png" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             ImageMetaData info;
-            using (var png = new StreamRegion (stream, 0x10, true))
+            using (var input = new StreamRegion (stream.AsStream, 0x10, true))
+            using (var png = new BinaryStream (input, stream.Name))
                 info = base.ReadMetaData (png);
             if (null == info)
                 return null;
             stream.Seek (-14, SeekOrigin.End);
-            var cntr = new byte[12];
-            stream.Read (cntr, 0, 12);
+            var cntr = stream.ReadBytes (12);
             if (Binary.AsciiEqual (cntr, "CNTR"))
             {
                 info.OffsetX = LittleEndian.ToInt32 (cntr, 4);
@@ -175,9 +175,10 @@ namespace GameRes.Formats.Hexenhaus
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var png = new StreamRegion (stream, 0x10, true))
+            using (var input = new StreamRegion (stream.AsStream, 0x10, true))
+            using (var png = new BinaryStream (input, stream.Name))
                 return base.Read (png, info);
         }
 

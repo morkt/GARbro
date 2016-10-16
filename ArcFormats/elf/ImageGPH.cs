@@ -119,12 +119,12 @@ namespace GameRes.Formats.Elf
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = m_info.DataOffset+2;
+            m_input.Position = m_info.DataOffset+2;
             if (0 == (m_info.Flags & 4))
                 ReadPalette();
             else
                 SetDefaultPalette();
-            m_input.BaseStream.Seek (8, SeekOrigin.Current);
+            m_input.Seek (8, SeekOrigin.Current);
 
             int stride = Stride;
             if (stride <= 0x10)
@@ -379,7 +379,7 @@ namespace GameRes.Formats.Elf
         void ReadNext ()
         {
             bits &= 0xFF00;
-            int b = m_input.BaseStream.ReadByte();
+            int b = m_input.ReadByte();
             if (-1 != b)
                 bits |= b;
         }

@@ -50,41 +50,39 @@ namespace GameRes.Formats.RealLive
         public override string Description { get { return "RealLive engine audio format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x28];
-            if (header.Length != file.Read (header, 0, header.Length))
-                return null;
-            ushort channels = LittleEndian.ToUInt16 (header, 0);
+            var header = file.ReadHeader (0x28);
+            ushort channels = header.ToUInt16 (0);
             if (0 == channels || channels > 2)
                 return null;
-            ushort bps = LittleEndian.ToUInt16 (header, 2);
+            ushort bps = header.ToUInt16 (2);
             if (bps != 8 && bps != 16)
                 return null;
             var info = new NwaMetaData
             {
-                Compression         = LittleEndian.ToInt32 (header, 8),
-                RunLengthEncoded    = 0 != LittleEndian.ToInt32 (header, 0xC),
-                BlockCount          = LittleEndian.ToInt32 (header, 0x10),
-                PcmSize             = LittleEndian.ToInt32 (header, 0x14),
-                PackedSize          = LittleEndian.ToInt32 (header, 0x18),
-                SampleCount         = LittleEndian.ToInt32 (header, 0x1C),
-                BlockSize           = LittleEndian.ToInt32 (header, 0x20),
-                FinalBlockSize      = LittleEndian.ToInt32 (header, 0x24),
+                Compression         = header.ToInt32 (8),
+                RunLengthEncoded    = 0 != header.ToInt32 (0xC),
+                BlockCount          = header.ToInt32 (0x10),
+                PcmSize             = header.ToInt32 (0x14),
+                PackedSize          = header.ToInt32 (0x18),
+                SampleCount         = header.ToInt32 (0x1C),
+                BlockSize           = header.ToInt32 (0x20),
+                FinalBlockSize      = header.ToInt32 (0x24),
             };
             if (info.PcmSize <= 0)
                 return null;
             info.Format.FormatTag = 1;
             info.Format.Channels = channels;
             info.Format.BitsPerSample = bps;
-            info.Format.SamplesPerSecond = LittleEndian.ToUInt32 (header, 4);
+            info.Format.SamplesPerSecond = header.ToUInt32 (4);
             info.Format.BlockAlign = (ushort)(channels * bps/8);
             info.Format.AverageBytesPerSecond = info.Format.BlockAlign * info.Format.SamplesPerSecond;
             if (-1 == info.Compression)
             {
                 if (info.PcmSize > file.Length - 0x2C)
                     return null;
-                return new RawPcmInput (new StreamRegion (file, 0x2C, info.PcmSize), info.Format);
+                return new RawPcmInput (new StreamRegion (file.AsStream, 0x2C, info.PcmSize), info.Format);
             }
             if (info.Compression > 5)
                 return null;
@@ -103,7 +101,7 @@ namespace GameRes.Formats.RealLive
 
     internal sealed class NwaDecoder : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         NwaMetaData     m_info;
         short[]         m_sample;
@@ -112,20 +110,20 @@ namespace GameRes.Formats.RealLive
         public byte[] Output { get { return m_output; } }
 
 
-        public NwaDecoder (Stream input, NwaMetaData info)
+        public NwaDecoder (IBinaryStream input, NwaMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             m_output = new byte[m_info.PcmSize];
             m_sample = new short[2];
-            m_bits = new LsbBitStream (input, true);
+            m_bits = new LsbBitStream (input.AsStream, true);
         }
 
         int m_dst;
 
         public void Decode ()
         {
-            m_input.BaseStream.Position = 0x2C;
+            m_input.Position = 0x2C;
             var offsets = new uint[m_info.BlockCount];
             for (int i = 0; i < offsets.Length; ++i)
                 offsets[i] = m_input.ReadUInt32();
@@ -133,10 +131,10 @@ namespace GameRes.Formats.RealLive
             m_dst = 0;
             for (int i = 0; i < offsets.Length-1; ++i)
             {
-                m_input.BaseStream.Position = offsets[i];
+                m_input.Position = offsets[i];
                 DecodeBlock (m_info.BlockSize);
             }
-            m_input.BaseStream.Position = offsets[offsets.Length-1];
+            m_input.Position = offsets[offsets.Length-1];
             if (m_info.FinalBlockSize > 0)
                 DecodeBlock (m_info.FinalBlockSize);
             else
@@ -149,7 +147,7 @@ namespace GameRes.Formats.RealLive
             for (int c = 0; c < channel_count; ++c)
             {
                 if (8 == m_info.Format.BitsPerSample)
-                    m_sample[c] = m_input.ReadByte();
+                    m_sample[c] = m_input.ReadUInt8();
                 else
                     m_sample[c] = m_input.ReadInt16();
             }
@@ -237,15 +235,8 @@ namespace GameRes.Formats.RealLive
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_bits.Dispose();
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

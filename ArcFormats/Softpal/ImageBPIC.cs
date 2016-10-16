@@ -37,23 +37,21 @@ namespace GameRes.Formats.Softpal
         public override string Description { get { return "Softpal engine image format"; } }
         public override uint     Signature { get { return 0x43495042; } } // 'BPIC'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int pixel_size = LittleEndian.ToInt32 (header, 12);
+            var header = stream.ReadHeader (0x10);
+            int pixel_size = header.ToInt32 (12);
             if (pixel_size != 4 && pixel_size != 3 && pixel_size != 1)
                 return null;
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt32(header, 4),
-                Height  = LittleEndian.ToUInt32(header, 8),
+                Width   = header.ToUInt32 (4),
+                Height  = header.ToUInt32 (8),
                 BPP     = pixel_size * 8,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x10;
             int pixel_size = info.BPP/8;

@@ -33,7 +33,7 @@ namespace GameRes.Formats.NekoSDK
     [Export(typeof(IBmpExtension))]
     public class AlpBitmap : IBmpExtension
     {
-        public ImageData Read (Stream file, BmpMetaData info)
+        public ImageData Read (IBinaryStream file, BmpMetaData info)
         {
             if (info.BPP != 24 && info.BPP != 32 || !file.CanSeek)
                 return null;

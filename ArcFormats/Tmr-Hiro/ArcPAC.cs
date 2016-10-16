@@ -136,7 +136,7 @@ namespace GameRes.Formats.TmrHiro
                     ++pos;
                 }
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 }

@@ -54,16 +54,14 @@ namespace GameRes.Formats.Cherry
             Extensions = new string[] { "grp" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x18];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            uint width  = LittleEndian.ToUInt32 (header, 0);
-            uint height = LittleEndian.ToUInt32 (header, 4);
-            int bpp = LittleEndian.ToInt32 (header, 8);
-            int packed_size = LittleEndian.ToInt32 (header, 0x0C);
-            int unpacked_size = LittleEndian.ToInt32 (header, 0x10);
+            var header = stream.ReadHeader (0x18);
+            uint width  = header.ToUInt32 (0);
+            uint height = header.ToUInt32 (4);
+            int bpp = header.ToInt32 (8);
+            int packed_size = header.ToInt32 (0x0C);
+            int unpacked_size = header.ToInt32 (0x10);
             if (0 == width || 0 == height || width > 0x7fff || height > 0x7fff
                 || (bpp != 24 && bpp != 8)
                 || unpacked_size <= 0 || packed_size < 0)
@@ -75,16 +73,16 @@ namespace GameRes.Formats.Cherry
                 BPP = bpp,
                 PackedSize = packed_size,
                 UnpackedSize = unpacked_size,
-                Offset = LittleEndian.ToInt32 (header, 0x14),
+                Offset = header.ToInt32 (0x14),
                 HeaderSize = 0x18,
                 AlphaChannel = false,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (GrpMetaData)info;
-            var reader = new GrpReader (stream, meta);
+            var reader = new GrpReader (file.AsStream, meta);
             return reader.CreateImage();
         }
 
@@ -101,18 +99,16 @@ namespace GameRes.Formats.Cherry
         public override string Description { get { return "Cherry Soft compressed image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x28];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x28);
+            if (0xFFFF != header.ToInt32 (8))
                 return null;
-            if (0xFFFF != LittleEndian.ToInt32 (header, 8))
-                return null;
-            int packed_size = LittleEndian.ToInt32 (header, 0);
-            int unpacked_size = LittleEndian.ToInt32 (header, 4);
-            uint width  = LittleEndian.ToUInt32 (header, 0x10);
-            uint height = LittleEndian.ToUInt32 (header, 0x14);
-            int bpp = LittleEndian.ToInt32 (header, 0x18);
+            int packed_size = header.ToInt32 (0);
+            int unpacked_size = header.ToInt32 (4);
+            uint width  = header.ToUInt32 (0x10);
+            uint height = header.ToUInt32 (0x14);
+            int bpp = header.ToInt32 (0x18);
             if (0 == width || 0 == height || width > 0x7fff || height > 0x7fff
                 || (bpp != 32 && bpp != 24 && bpp != 8)
                 || unpacked_size <= 0 || packed_size < 0)
@@ -126,7 +122,7 @@ namespace GameRes.Formats.Cherry
                 UnpackedSize = unpacked_size,
                 Offset = 0xFFFF,
                 HeaderSize = 0x28,
-                AlphaChannel = LittleEndian.ToInt32 (header, 0x24) != 0,
+                AlphaChannel = header.ToInt32 (0x24) != 0,
             };
         }
     }

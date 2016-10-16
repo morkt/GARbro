@@ -42,17 +42,15 @@ namespace GameRes.Formats.Entis
         public override string Description { get { return "Entis engine compressed audio format"; } }
         public override uint     Signature { get { return 0x69746e45u; } } // 'Enti'
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            byte[] header = new byte[0x40];
-            if (header.Length != file.Read (header, 0, header.Length))
+            var header = file.ReadHeader (0x40);
+            if (0x03000100 != header.ToUInt32 (8))
                 return null;
-            if (0x03000100 != LittleEndian.ToUInt32 (header, 8))
-                return null;
-            if (!Binary.AsciiEqual (header, 0x10, "Music Interleaved"))
+            if (!header.AsciiEqual (0x10, "Music Interleaved"))
                 return null;
 
-            return new MioInput (file);
+            return new MioInput (file.AsStream);
         }
     }
 

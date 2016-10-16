@@ -101,7 +101,7 @@ namespace GameRes.Formats.AliceSoft
             for (int i = 0; i < prefix.Length; ++i)
                 prefix[i] ^= AffKey[i & 0xF];
             if (data_size <= 0x40)
-                return new MemoryStream (prefix);
+                return new BinMemoryStream (prefix, entry.Name);
             var rest = arc.File.CreateStream (entry.Offset+0x10+encrypted_length, data_size-encrypted_length);
             return new PrefixStream (prefix, rest);
         }

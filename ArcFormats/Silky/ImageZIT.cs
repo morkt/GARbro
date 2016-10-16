@@ -49,22 +49,20 @@ namespace GameRes.Formats.Silky
             Signatures = new uint[] { 0x1803545A, 0x2084545A, 0x8803545A };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x10);
             return new ZitMetaData
             {
-                Type = LittleEndian.ToUInt16 (header, 2),
-                Width = LittleEndian.ToUInt16 (header, 8),
-                Height = LittleEndian.ToUInt16 (header, 10),
+                Type = header.ToUInt16 (2),
+                Width = header.ToUInt16 (8),
+                Height = header.ToUInt16 (10),
                 BPP = 32,
-                Colors = LittleEndian.ToUInt16 (header, 4),
+                Colors = header.ToUInt16 (4),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new ZitReader (stream, (ZitMetaData)info))
             {
@@ -81,7 +79,7 @@ namespace GameRes.Formats.Silky
 
     internal class ZitReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         int             m_width;
         int             m_height;
@@ -90,9 +88,9 @@ namespace GameRes.Formats.Silky
 
         public byte[] Data { get { return m_output; } }
 
-        public ZitReader (Stream input, ZitMetaData info)
+        public ZitReader (IBinaryStream input, ZitMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_type = info.Type;
@@ -102,7 +100,7 @@ namespace GameRes.Formats.Silky
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 0x10;
+            m_input.Position = 0x10;
             switch (m_type)
             {
             case 0x1803: Unpack1(); break;
@@ -118,9 +116,9 @@ namespace GameRes.Formats.Silky
             int dst = 0;
             while (dst < m_output.Length)
             {
-                byte b = m_input.ReadByte();
-                byte g = m_input.ReadByte();
-                byte r = m_input.ReadByte();
+                byte b = m_input.ReadUInt8();
+                byte g = m_input.ReadUInt8();
+                byte r = m_input.ReadUInt8();
                 if (b != 0 || g != 0xFF || r != 0)
                 {
                     m_output[dst++] = b;
@@ -167,14 +165,8 @@ namespace GameRes.Formats.Silky
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

@@ -93,15 +93,14 @@ namespace GameRes.Formats.Yuka
                 || !entry.Name.EndsWith (".yks", StringComparison.InvariantCultureIgnoreCase)
                 || !arc.File.View.AsciiEqual (entry.Offset, "YKS001")
                 || 1 != arc.File.View.ReadUInt16 (entry.Offset+6))
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+                return base.OpenEntry (arc, entry);
             // decrypt script contents
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             uint text_offset = LittleEndian.ToUInt32 (data, 0x20);
             for (uint i = text_offset; i < data.Length; ++i)
                 data[i] ^= 0xAA;
             data[6] = 0;
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,

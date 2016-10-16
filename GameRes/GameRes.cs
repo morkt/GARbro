@@ -194,7 +194,7 @@ namespace GameRes
         /// </summary>
         public virtual Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            return arc.File.CreateStream (entry.Offset, entry.Size);
+            return arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
         }
 
         /// <summary>

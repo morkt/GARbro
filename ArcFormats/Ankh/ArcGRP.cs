@@ -178,7 +178,7 @@ namespace GameRes.Formats.Ankh
             {
                 var unpacked = new byte[entry.UnpackedSize];
                 reader.UnpackHDJ (unpacked, 0);
-                return new MemoryStream (unpacked);
+                return new BinMemoryStream (unpacked, entry.Name);
             }
         }
 
@@ -201,7 +201,7 @@ namespace GameRes.Formats.Ankh
                     reader.UnpackA (unpacked, header_size, channels);
                 else
                     reader.UnpackS (unpacked, header_size, channels);
-                return new MemoryStream (unpacked);
+                return new BinMemoryStream (unpacked, entry.Name);
             }
         }
 
@@ -276,7 +276,7 @@ namespace GameRes.Formats.Ankh
                         dst += count;
                     }
                 }
-                return new MemoryStream (output);
+                return new BinMemoryStream (output, entry.Name);
             }
         }
     }

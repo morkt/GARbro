@@ -36,7 +36,7 @@ namespace GameRes.Formats.ShiinaRio
         public override string Description { get { return "ShiinaRio audio format (Ogg/Vorbis)"; } }
         public override uint     Signature { get { return 0x0056474f; } } // 'OGV'
         
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             file.Position = 0xc;
             var header = new byte[8];
@@ -51,7 +51,7 @@ namespace GameRes.Formats.ShiinaRio
             if (!Binary.AsciiEqual (header, 0, "data"))
                 return null;
 
-            var input = new StreamRegion (file, file.Position);
+            var input = new StreamRegion (file.AsStream, file.Position);
             return new OggInput (input);
             // input is left undisposed in case of exception.
         }

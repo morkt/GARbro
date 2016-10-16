@@ -45,22 +45,20 @@ namespace GameRes.Formats.Seraphim
         public override string Description { get { return "Seraphim engine image format"; } }
         public override uint     Signature { get { return 0x4643; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (0x10 != stream.Read (header, 0, 0x10))
-                return null;
-            int packed_size = LittleEndian.ToInt32 (header, 12);
+            var header = stream.ReadHeader (0x10);
+            int packed_size = header.ToInt32 (12);
             if (packed_size <= 0 || packed_size > stream.Length-0x10)
                 return null;
-            uint width  = LittleEndian.ToUInt16 (header, 8);
-            uint height = LittleEndian.ToUInt16 (header, 10);
+            uint width  = header.ToUInt16 (8);
+            uint height = header.ToUInt16 (10);
             if (0 == width || 0 == height)
                 return null;
             return new SeraphMetaData
             {
-                OffsetX = LittleEndian.ToInt16 (header, 4),
-                OffsetY = LittleEndian.ToInt16 (header, 6),
+                OffsetX = header.ToInt16 (4),
+                OffsetY = header.ToInt16 (6),
                 Width   = width,
                 Height  = height,
                 BPP     = 24,
@@ -68,13 +66,10 @@ namespace GameRes.Formats.Seraphim
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as SeraphMetaData;
-            if (null == meta)
-                throw new ArgumentException ("SeraphCfImage.Read should be supplied with SeraphMetaData", "info");
-
-            var reader = new SeraphReader (stream, meta);
+            var meta = (SeraphMetaData)info;
+            var reader = new SeraphReader (stream.AsStream, meta);
             reader.UnpackCf();
             return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data);
         }
@@ -91,20 +86,17 @@ namespace GameRes.Formats.Seraphim
         public override string         Tag { get { return "CT"; } }
         public override uint     Signature { get { return 0x5443; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var info = base.ReadMetaData (stream);
             info.BPP = 32;
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as SeraphMetaData;
-            if (null == meta)
-                throw new ArgumentException ("SeraphCtImage.Read should be supplied with SeraphMetaData", "info");
-
-            var reader = new SeraphReader (stream, meta);
+            var meta = (SeraphMetaData)info;
+            var reader = new SeraphReader (stream.AsStream, meta);
             reader.UnpackCt();
             return ImageData.Create (info, reader.Format, null, reader.Data);
         }
@@ -122,25 +114,23 @@ namespace GameRes.Formats.Seraphim
         public override string Description { get { return "Seraphim engine image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            if ('C' != stream.ReadByte() || 'B' != stream.ReadByte())
+            var header = stream.ReadHeader (0x10);
+            if ('C' != header[0] || 'B' != header[1])
                 return null;
-            var header = new byte[0x10];
-            if (0xE != stream.Read (header, 2, 0xE))
-                return null;
-            int colors = LittleEndian.ToUInt16 (header, 2);
-            int packed_size = LittleEndian.ToInt32 (header, 12);
+            int colors = header.ToUInt16 (2);
+            int packed_size = header.ToInt32 (12);
             if (packed_size <= 0 || packed_size > stream.Length-0x10)
                 return null;
-            uint width  = LittleEndian.ToUInt16 (header, 8);
-            uint height = LittleEndian.ToUInt16 (header, 10);
+            uint width  = header.ToUInt16 (8);
+            uint height = header.ToUInt16 (10);
             if (0 == width || 0 == height)
                 return null;
             return new SeraphMetaData
             {
-                OffsetX = LittleEndian.ToInt16 (header, 4),
-                OffsetY = LittleEndian.ToInt16 (header, 6),
+                OffsetX = header.ToInt16 (4),
+                OffsetY = header.ToInt16 (6),
                 Width   = width,
                 Height  = height,
                 BPP     = 8,
@@ -149,13 +139,10 @@ namespace GameRes.Formats.Seraphim
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as SeraphMetaData;
-            if (null == meta)
-                throw new ArgumentException ("SeraphCbImage.Read should be supplied with SeraphMetaData", "info");
-
-            var reader = new SeraphReader (stream, meta, 1);
+            var meta = (SeraphMetaData)info;
+            var reader = new SeraphReader (stream.AsStream, meta, 1);
             reader.UnpackCb();
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data);
         }

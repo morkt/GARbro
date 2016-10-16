@@ -38,27 +38,29 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0x44445A53u; } } // 'SZDD'
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 0x0e;
-            using (var lz = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lz = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 lz.Config.FrameSize = 0x1000;
                 lz.Config.FrameFill = 0x20;
                 lz.Config.FrameInitPos = 0x1000 - 0x10;
-                return base.ReadMetaData (lz);
+                using (var bmp = new BinaryStream (lz, stream.Name))
+                    return base.ReadMetaData (bmp);
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x0e;
-            using (var lz = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lz = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 lz.Config.FrameSize = 0x1000;
                 lz.Config.FrameFill = 0x20;
                 lz.Config.FrameInitPos = 0x1000 - 0x10;
-                return base.Read (lz, info);
+                using (var bmp = new BinaryStream (lz, stream.Name))
+                    return base.Read (bmp, info);
             }
         }
 

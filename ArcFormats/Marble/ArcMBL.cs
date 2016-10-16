@@ -184,7 +184,7 @@ namespace GameRes.Formats.Marble
                     data[i] ^= marc.Key[i % marc.Key.Length];
                 }
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         public override ResourceOptions GetDefaultOptions ()

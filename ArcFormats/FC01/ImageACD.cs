@@ -45,20 +45,18 @@ namespace GameRes.Formats.FC01
         public override string Description { get { return "F&C Co. image format"; } }
         public override uint     Signature { get { return 0x20444341; } } // 'ACD'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x1c];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int header_size = LittleEndian.ToInt32 (header, 8);
-            if (!Binary.AsciiEqual (header, 4, "1.00") || header_size < 0x1c)
+            var header = stream.ReadHeader (0x1c);
+            int header_size = header.ToInt32 (8);
+            if (!header.AsciiEqual (4, "1.00") || header_size < 0x1c)
                 throw new NotSupportedException ("Not supported ACD image version");
-            int packed_size = LittleEndian.ToInt32 (header, 0x0C);
-            int unpacked_size = LittleEndian.ToInt32 (header, 0x10);
+            int packed_size = header.ToInt32 (0x0C);
+            int unpacked_size = header.ToInt32 (0x10);
             return new AcdMetaData
             {
-                Width = LittleEndian.ToUInt32 (header, 0x14),
-                Height = LittleEndian.ToUInt32 (header, 0x18),
+                Width = header.ToUInt32 (0x14),
+                Height = header.ToUInt32 (0x18),
                 BPP = 24,
                 DataOffset = header_size,
                 PackedSize = packed_size,
@@ -66,14 +64,12 @@ namespace GameRes.Formats.FC01
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as AcdMetaData;
-            if (null == meta)
-                throw new ArgumentException ("AcdFormat.Read should be supplied with AcdMetaData", "info");
+            var meta = (AcdMetaData)info;
 
             stream.Position = meta.DataOffset;
-            using (var reader = new MrgLzssReader (stream, meta.PackedSize, meta.UnpackedSize))
+            using (var reader = new MrgLzssReader (stream.AsStream, meta.PackedSize, meta.UnpackedSize))
             {
                 reader.Unpack();
                 var decoder = new AcdDecoder (reader.Data, meta);

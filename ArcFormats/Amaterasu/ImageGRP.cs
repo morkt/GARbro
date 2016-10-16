@@ -40,23 +40,19 @@ namespace GameRes.Formats.Amaterasu
         public override uint     Signature { get { return 0x00505247; } } // 'GRP'
         public override bool      CanWrite { get { return true; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var file = new BinaryReader (stream, Encoding.ASCII, true))
-            {
-                if (file.ReadUInt32() != Signature)
-                    return null;
-                var meta = new ImageMetaData();
-                meta.OffsetX = file.ReadInt16();
-                meta.OffsetY = file.ReadInt16();
-                meta.Width   = file.ReadUInt16();
-                meta.Height  = file.ReadUInt16();
-                meta.BPP     = 32;
-                return meta;
-            }
+            file.Position = 4;
+            var meta = new ImageMetaData();
+            meta.OffsetX = file.ReadInt16();
+            meta.OffsetY = file.ReadInt16();
+            meta.Width   = file.ReadUInt16();
+            meta.Height  = file.ReadUInt16();
+            meta.BPP     = 32;
+            return meta;
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             int width = (int)info.Width;
             int height = (int)info.Height;

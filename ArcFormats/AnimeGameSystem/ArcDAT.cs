@@ -92,7 +92,7 @@ namespace GameRes.Formats.Ags
                 data[i] ^= key;
                 key += earc.Key.Increment;
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         public static readonly EncryptionScheme DefaultScheme = new EncryptionScheme {

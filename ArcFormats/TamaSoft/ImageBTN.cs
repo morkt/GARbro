@@ -25,7 +25,6 @@
 
 using System.ComponentModel.Composition;
 using System.IO;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Tama
 {
@@ -41,14 +40,13 @@ namespace GameRes.Formats.Tama
         public override string Description { get { return "TamaSoft ADV system button image"; } }
         public override uint     Signature { get { return 0x4E544245; } } // 'EBTN'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[8];
-            if (header.Length != stream.Read (header, 0, 8))
-                return null;
-            int count = LittleEndian.ToInt32 (header, 4);
+            stream.Position = 4;
+            int count = stream.ReadInt32();
             int offset = 0x30 + count * 4;
-            using (var input = new StreamRegion (stream, offset, true))
+            using (var data = new StreamRegion (stream.AsStream, offset, true))
+            using (var input = new BinaryStream (data, stream.Name))
             {
                 var info = base.ReadMetaData (input);
                 if (null == info)
@@ -63,10 +61,11 @@ namespace GameRes.Formats.Tama
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (BtnMetaData)info;
-            using (var input = new StreamRegion (stream, meta.SurOffset, true))
+            using (var data = new StreamRegion (stream.AsStream, meta.SurOffset, true))
+            using (var input = new BinaryStream (data, stream.Name))
                 return base.Read (input, info);
         }
 

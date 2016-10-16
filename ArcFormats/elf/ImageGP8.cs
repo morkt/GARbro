@@ -39,16 +39,14 @@ namespace GameRes.Formats.Elf
         public override string Description { get { return "Ai5 engine indexed image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            if (stream.Length <= 0x408)
+            if (file.Length <= 0x408)
                 return null;
-            var header = new byte[8];
-            stream.Read (header, 0, 8);
-            if (0 != LittleEndian.ToInt32 (header, 0))
+            if (0 != file.ReadInt32())
                 return null;
-            int w = LittleEndian.ToInt16 (header, 4);
-            int h = LittleEndian.ToInt16 (header, 6);
+            int w = file.ReadInt16();
+            int h = file.ReadInt16();
             if (w <= 0 || w > 0x1000 || h <= 0 || h > 0x1000)
                 return null;
             return new ImageMetaData {
@@ -58,12 +56,12 @@ namespace GameRes.Formats.Elf
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 8;
-            var palette = ReadPalette (stream);
+            var palette = ReadPalette (stream.AsStream);
             var pixels = new byte[info.Width * info.Height];
-            using (var reader = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var reader = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 if (pixels.Length != reader.Read (pixels, 0, pixels.Length))
                     throw new InvalidFormatException();
@@ -103,32 +101,29 @@ namespace GameRes.Formats.Elf
             Extensions = new string[] { "msk" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream input)
         {
-            using (var input = new ArcView.Reader (stream))
-            {
-                int x = input.ReadInt16();
-                int y = input.ReadInt16();
-                int w = input.ReadInt16();
-                int h = input.ReadInt16();
-                if (w <= 0 || w > 0x1000 || h <= 0 || h > 0x1000
-                    || x < 0 || x > 0x800 || y < 0 || y > 0x800)
-                    return null;
-                return new ImageMetaData {
-                    Width = (uint)w,
-                    Height = (uint)h,
-                    OffsetX = x,
-                    OffsetY = y,
-                    BPP = 8,
-                };
-            }
+            int x = input.ReadInt16();
+            int y = input.ReadInt16();
+            int w = input.ReadInt16();
+            int h = input.ReadInt16();
+            if (w <= 0 || w > 0x1000 || h <= 0 || h > 0x1000
+                || x < 0 || x > 0x800 || y < 0 || y > 0x800)
+                return null;
+            return new ImageMetaData {
+                Width = (uint)w,
+                Height = (uint)h,
+                OffsetX = x,
+                OffsetY = y,
+                BPP = 8,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 8;
             var pixels = new byte[info.Width * info.Height];
-            using (var reader = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var reader = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 if (pixels.Length != reader.Read (pixels, 0, pixels.Length))
                     throw new InvalidFormatException();

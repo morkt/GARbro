@@ -58,9 +58,9 @@ namespace GameRes.Formats.Ikura
             }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            uint signature = ~FormatCatalog.ReadSignature (stream);
+            uint signature = ~stream.Signature;
             int bpp;
             switch (signature)
             {
@@ -69,19 +69,16 @@ namespace GameRes.Formats.Ikura
             case 0x48474948: bpp = 16; break;
             default: return null;
             }
-            using (var input = new BinaryReader (stream, Encoding.ASCII, true))
-            {
-                uint width = input.ReadUInt16();
-                uint height = input.ReadUInt16();
-                return new ImageMetaData {
-                    Width  = width,
-                    Height = height,
-                    BPP    = bpp,
-                };
-            }
+            uint width = stream.ReadUInt16();
+            uint height = stream.ReadUInt16();
+            return new ImageMetaData {
+                Width  = width,
+                Height = height,
+                BPP    = bpp,
+            };
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             file.Position = 8;
             PixelFormat format;
@@ -91,7 +88,7 @@ namespace GameRes.Formats.Ikura
                 format = PixelFormats.Bgr565;
 
             int stride = ((int)info.Width * info.BPP / 8 + 3) & ~3;
-            var pixel_data = DecodeStream (file, stride*(int)info.Height);
+            var pixel_data = DecodeStream (file.AsStream, stride*(int)info.Height);
             if (null == pixel_data)
                 throw new InvalidFormatException();
             return ImageData.Create (info, format, null, pixel_data, stride);
@@ -414,28 +411,25 @@ namespace GameRes.Formats.Ikura
         public override string Description { get { return "Digital Romance System indexed image format"; } }
         public override uint     Signature { get { return ~0x47363532u; } } // '256G'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var input = new ArcView.Reader (stream))
+            file.Position = 4;
+            var info = new GgdMetaData { BPP = 8 };
+            info.HeaderSize = file.ReadUInt32();
+            info.Width = file.ReadUInt32();
+            int height = file.ReadInt32();
+            if (height < 0)
             {
-                input.ReadUInt32();
-                var info = new GgdMetaData { BPP = 8 };
-                info.HeaderSize = input.ReadUInt32();
-                info.Width = input.ReadUInt32();
-                int height = input.ReadInt32();
-                if (height < 0)
-                {
-                    height = -height;
-                    info.Flipped = true;
-                }
-                info.Height = (uint)height;
-                input.ReadInt64();
-                info.BitmapSize = input.ReadUInt32();
-                return info;
+                height = -height;
+                info.Flipped = true;
             }
+            info.Height = (uint)height;
+            file.ReadInt64();
+            info.BitmapSize = file.ReadUInt32();
+            return info;
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (GgdMetaData)info;
             file.Position = meta.HeaderSize + 4;
@@ -449,7 +443,7 @@ namespace GameRes.Formats.Ikura
             }
             file.Seek (4, SeekOrigin.Current);
             int input_size = (int)(file.Length - file.Position);
-            using (var reader = new LzssReader (file, input_size, (int)meta.BitmapSize))
+            using (var reader = new LzssReader (file.AsStream, input_size, (int)meta.BitmapSize))
             {
                 reader.Unpack();
                 var palette = new BitmapPalette (colors);
@@ -488,153 +482,146 @@ namespace GameRes.Formats.Ikura
             throw new NotImplementedException ("GgaFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[24];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, "GGA00000"))
+            var header = stream.ReadHeader (24);
+            if (!header.AsciiEqual ("GGA00000"))
                 return null;
             return new GgaMetaData {
-                Width  = LittleEndian.ToUInt16 (header, 8),
-                Height = LittleEndian.ToUInt16 (header, 10),
+                Width  = header.ToUInt16 (8),
+                Height = header.ToUInt16 (10),
                 BPP    = header[14],
                 Flags  = header[15],
-                HeaderSize = LittleEndian.ToUInt32 (header, 16),
-                CompSize = LittleEndian.ToUInt32 (header, 20)
+                HeaderSize = header.ToUInt32 (16),
+                CompSize = header.ToUInt32 (20)
             };
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = info as GgaMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GgaFormat.Read should be supplied with GgaMetaData", "info");
+            var meta = (GgaMetaData)info;
             file.Position = meta.HeaderSize;
             var pixel_data = DecodeStream (file, meta);
             PixelFormat format = 0 == (meta.Flags & 1) ? PixelFormats.Bgr32 : PixelFormats.Bgra32;
             return ImageData.Create (info, format, null, pixel_data);
         }
 
-        byte[] DecodeStream (Stream file, GgaMetaData meta)
+        byte[] DecodeStream (IBinaryStream input, GgaMetaData meta)
         {
             int dst = 0;
             var output = new byte[meta.Width*meta.Height*4];
-            using (var input = new BinaryReader (file, Encoding.ASCII, true))
+            var end_pos = input.Position + meta.CompSize;
+            while (input.Position < end_pos)
             {
-                var end_pos = input.BaseStream.Position + meta.CompSize;
-                while (input.BaseStream.Position < end_pos)
+                int code = input.ReadByte();
+                switch (code)
                 {
-                    int code = input.ReadByte();
-                    switch (code)
+                case 0:
                     {
-                    case 0:
-                        {
-                            int src = dst - 4;
-                            int count = input.ReadByte() * 4;
-                            Binary.CopyOverlapped (output, src, dst, count);
-                            dst += count;
-                            break;
-                        }
-                    case 1:
-                        {
-                            int src = dst - 4;
-                            int count = input.ReadUInt16() * 4;
-                            Binary.CopyOverlapped (output, src, dst, count);
-                            dst += count;
-                            break;
-                        }
-                    case 2:
-                        {
-                            int l = input.ReadByte();
-                            int src = dst - (l << 2);
-                            System.Buffer.BlockCopy (output, src, output, dst, 4);
-                            dst += 4;
-                            break;
-                        }
-                    case 3:
-                        {
-                            int l = input.ReadUInt16();
-                            int src = dst - (l << 2);
-                            System.Buffer.BlockCopy (output, src, output, dst, 4);
-                            dst += 4;
-                            break;
-                        }
-                    case 4:
-                        {
-                            int l = input.ReadByte();
-                            int src = dst - (l << 2);
-                            int count = input.ReadByte() * 4;
-                            Binary.CopyOverlapped (output, src, dst, count);
-                            dst += count;
-                            break;
-                        }
-                    case 5:
-                        {
-                            int l = input.ReadByte();
-                            int src = dst - (l << 2);
-                            int count = input.ReadUInt16() * 4;
-                            Binary.CopyOverlapped (output, src, dst, count);
-                            dst += count;
-                            break;
-                        }
-                    case 6:
-                        {
-                            int l = input.ReadUInt16();
-                            int src = dst - (l << 2);
-                            int count = input.ReadByte() * 4;
-                            Binary.CopyOverlapped (output, src, dst, count);
-                            dst += count;
-                            break;
-                        }
-                    case 7:
-                        {
-                            int l = input.ReadUInt16();
-                            int src = dst - (l << 2);
-                            int count = input.ReadUInt16() * 4;
-                            Binary.CopyOverlapped (output, src, dst, count);
-                            dst += count;
-                            break;
-                        }
-                    case 8:
-                        {
-                            System.Buffer.BlockCopy (output, dst-4, output, dst, 4);
-                            dst += 4;
-                            break;
-                        }
-                    case 9:
-                        {
-                            int src = dst - (int)meta.Width * 4;
-                            System.Buffer.BlockCopy (output, src, output, dst, 4);
-                            dst += 4;
-                            break;
-                        }
-                    case 0x0a:
-                        {
-                            int src = dst - ((int)meta.Width * 4 + 4);
-                            System.Buffer.BlockCopy (output, src, output, dst, 4);
-                            dst += 4;
-                            break;
-                        }
-                    case 0x0b:
-                        {
-                            int src = dst - ((int)meta.Width * 4 - 4);
-                            System.Buffer.BlockCopy (output, src, output, dst, 4);
-                            dst += 4;
-                            break;
-                        }
-                    default:
-                        {
-                            int count = (code-11)*4;
-                            if (count != input.Read (output, dst, count))
-                                throw new InvalidFormatException ("Unexpected end of input");
-                            dst += count;
-                            break;
-                        }
+                        int src = dst - 4;
+                        int count = input.ReadByte() * 4;
+                        Binary.CopyOverlapped (output, src, dst, count);
+                        dst += count;
+                        break;
+                    }
+                case 1:
+                    {
+                        int src = dst - 4;
+                        int count = input.ReadUInt16() * 4;
+                        Binary.CopyOverlapped (output, src, dst, count);
+                        dst += count;
+                        break;
+                    }
+                case 2:
+                    {
+                        int l = input.ReadByte();
+                        int src = dst - (l << 2);
+                        System.Buffer.BlockCopy (output, src, output, dst, 4);
+                        dst += 4;
+                        break;
+                    }
+                case 3:
+                    {
+                        int l = input.ReadUInt16();
+                        int src = dst - (l << 2);
+                        System.Buffer.BlockCopy (output, src, output, dst, 4);
+                        dst += 4;
+                        break;
+                    }
+                case 4:
+                    {
+                        int l = input.ReadByte();
+                        int src = dst - (l << 2);
+                        int count = input.ReadByte() * 4;
+                        Binary.CopyOverlapped (output, src, dst, count);
+                        dst += count;
+                        break;
+                    }
+                case 5:
+                    {
+                        int l = input.ReadByte();
+                        int src = dst - (l << 2);
+                        int count = input.ReadUInt16() * 4;
+                        Binary.CopyOverlapped (output, src, dst, count);
+                        dst += count;
+                        break;
+                    }
+                case 6:
+                    {
+                        int l = input.ReadUInt16();
+                        int src = dst - (l << 2);
+                        int count = input.ReadByte() * 4;
+                        Binary.CopyOverlapped (output, src, dst, count);
+                        dst += count;
+                        break;
+                    }
+                case 7:
+                    {
+                        int l = input.ReadUInt16();
+                        int src = dst - (l << 2);
+                        int count = input.ReadUInt16() * 4;
+                        Binary.CopyOverlapped (output, src, dst, count);
+                        dst += count;
+                        break;
+                    }
+                case 8:
+                    {
+                        System.Buffer.BlockCopy (output, dst-4, output, dst, 4);
+                        dst += 4;
+                        break;
+                    }
+                case 9:
+                    {
+                        int src = dst - (int)meta.Width * 4;
+                        System.Buffer.BlockCopy (output, src, output, dst, 4);
+                        dst += 4;
+                        break;
+                    }
+                case 0x0a:
+                    {
+                        int src = dst - ((int)meta.Width * 4 + 4);
+                        System.Buffer.BlockCopy (output, src, output, dst, 4);
+                        dst += 4;
+                        break;
+                    }
+                case 0x0b:
+                    {
+                        int src = dst - ((int)meta.Width * 4 - 4);
+                        System.Buffer.BlockCopy (output, src, output, dst, 4);
+                        dst += 4;
+                        break;
+                    }
+                default:
+                    {
+                        int count = (code-11)*4;
+                        if (count != input.Read (output, dst, count))
+                            throw new InvalidFormatException ("Unexpected end of input");
+                        dst += count;
+                        break;
                     }
                 }
-                return output;
             }
+            return output;
         }
     }
 }

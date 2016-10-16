@@ -75,37 +75,34 @@ namespace GameRes.Formats.SuperNekoX
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var pent = entry as PackedEntry;
-            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
+            IBinaryStream input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
             if (null != pent && pent.IsPacked)
             {
-                Stream unpacked;
+                IBinaryStream unpacked;
                 using (input)
                 {
                     var data = new byte[pent.UnpackedSize];
-                    UnpackEntry (input, data);
-                    unpacked = new MemoryStream (data);
+                    UnpackEntry (input.AsStream, data);
+                    unpacked = new BinMemoryStream (data, entry.Name);
                 }
                 input = unpacked;
             }
             if (input.Length > 4 && input.Length < 0x10000)
             {
-                using (var reader = new ArcView.Reader (input))
+                int unpacked_size = input.ReadUInt16();
+                int packed_size = input.ReadUInt16();
+                if (packed_size == input.Length-4)
                 {
-                    int unpacked_size = reader.ReadUInt16();
-                    int packed_size = reader.ReadUInt16();
-                    if (packed_size == input.Length-4)
+                    using (input)
                     {
-                        using (input)
-                        {
-                            var data = new byte[unpacked_size];
-                            UnpackLz77 (input, data);
-                            return new MemoryStream (data);
-                        }
+                        var data = new byte[unpacked_size];
+                        UnpackLz77 (input.AsStream, data);
+                        return new BinMemoryStream (data, entry.Name);
                     }
-                    input.Position = 0;
                 }
+                input.Position = 0;
             }
-            return input;
+            return input.AsStream;
         }
 
         void DetectFileTypes (ArcView file, List<Entry> dir)

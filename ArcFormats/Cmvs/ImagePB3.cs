@@ -47,33 +47,30 @@ namespace GameRes.Formats.Purple
         public override string Description { get { return "Purple Software image format"; } }
         public override uint     Signature { get { return 0x42334250; } } // 'PB3B'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
-            using (var reader = new ArcView.Reader (stream))
+            int input_size = stream.ReadInt32();
+            stream.Position = 0x18;
+            int t2 = stream.ReadInt32();
+            int t1 = stream.ReadUInt16();
+            uint width = stream.ReadUInt16();
+            uint height = stream.ReadUInt16();
+            int bpp = stream.ReadUInt16();
+            return new Pb3MetaData
             {
-                int input_size = reader.ReadInt32();
-                stream.Position = 0x18;
-                int t2 = reader.ReadInt32();
-                int t1 = reader.ReadUInt16();
-                uint width = reader.ReadUInt16();
-                uint height = reader.ReadUInt16();
-                int bpp = reader.ReadUInt16();
-                return new Pb3MetaData
-                {
-                    Width       = width,
-                    Height      = height,
-                    BPP         = bpp,
-                    Type        = t1,
-                    SubType     = t2,
-                    InputSize   = input_size,
-                };
-            }
+                Width       = width,
+                Height      = height,
+                BPP         = bpp,
+                Type        = t1,
+                SubType     = t2,
+                InputSize   = input_size,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new Pb3Reader (stream, (Pb3MetaData)info);
+            var reader = new Pb3Reader (stream.AsStream, (Pb3MetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, null, reader.Data);
         }
@@ -350,9 +347,9 @@ namespace GameRes.Formats.Purple
             if (name.Equals (m_info.FileName, StringComparison.InvariantCultureIgnoreCase))
                 throw new InvalidFormatException();
             // two files referencing each other still could create infinite recursion
-            using (var base_file = VFS.OpenSeekableStream (name))
+            using (var base_file = VFS.OpenBinaryStream (name))
             {
-                var image_data = ImageFormat.Read (name, base_file);
+                var image_data = ImageFormat.Read (base_file);
                 int stride = image_data.Bitmap.PixelWidth * 4;
                 var pixels = new byte[stride * image_data.Bitmap.PixelHeight];
                 image_data.Bitmap.CopyPixels (pixels, stride, 0);

@@ -123,7 +123,7 @@ namespace GameRes.Formats.Will
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             DecodeScript (data);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         private static void DecodeScript (byte[] data)

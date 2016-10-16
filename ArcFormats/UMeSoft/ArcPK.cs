@@ -94,7 +94,7 @@ namespace GameRes.Formats.UMeSoft
                 var data = LzUnpack (input, output_size);
                 for (int i = 0; i < data.Length; ++i)
                     data[i] ^= 0x42;
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

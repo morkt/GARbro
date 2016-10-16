@@ -48,52 +48,46 @@ namespace GameRes.Formats.Qlie
             Extensions = new string[] { "png" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            stream.Position = 8;
-            using (var header = new ArcView.Reader (stream))
-            {
-                var info = new DpngMetaData { BPP = 32 };
-                info.TileCount = header.ReadInt32();
-                if (info.TileCount <= 0)
-                    return null;
-                info.Width     = header.ReadUInt32();
-                info.Height    = header.ReadUInt32();
-                return info;
-            }
+            file.Position = 8;
+            var info = new DpngMetaData { BPP = 32 };
+            info.TileCount = file.ReadInt32();
+            if (info.TileCount <= 0)
+                return null;
+            info.Width     = file.ReadUInt32();
+            info.Height    = file.ReadUInt32();
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (DpngMetaData)info;
             var bitmap = new WriteableBitmap ((int)info.Width, (int)info.Height,
                 ImageData.DefaultDpiX, ImageData.DefaultDpiY, PixelFormats.Pbgra32, null);
             long next_tile = 0x14;
-            using (var dpng = new ArcView.Reader (stream))
+            for (int i = 0; i < meta.TileCount; ++i)
             {
-                for (int i = 0; i < meta.TileCount; ++i)
+                stream.Position = next_tile;
+                int x = stream.ReadInt32();
+                int y = stream.ReadInt32();
+                int width = stream.ReadInt32();
+                int height = stream.ReadInt32();
+                uint size = stream.ReadUInt32();
+                stream.Seek (8, SeekOrigin.Current);
+                next_tile = stream.Position + size;
+                if (0 == size)
+                    continue;
+                using (var png = new StreamRegion (stream.AsStream, stream.Position, size, true))
                 {
-                    stream.Position = next_tile;
-                    int x = dpng.ReadInt32();
-                    int y = dpng.ReadInt32();
-                    int width = dpng.ReadInt32();
-                    int height = dpng.ReadInt32();
-                    uint size = dpng.ReadUInt32();
-                    stream.Seek (8, SeekOrigin.Current);
-                    next_tile = stream.Position + size;
-                    if (0 == size)
-                        continue;
-                    using (var png = new StreamRegion (stream, stream.Position, size, true))
-                    {
-                        var decoder = new PngBitmapDecoder (png,
-                            BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                        var frame = new FormatConvertedBitmap (decoder.Frames[0], PixelFormats.Pbgra32, null, 0);
-                        int stride = frame.PixelWidth * 4;
-                        var pixels = new byte[stride * frame.PixelHeight];
-                        frame.CopyPixels (pixels, stride, 0);
-                        var rect = new Int32Rect (0, 0, frame.PixelWidth, frame.PixelHeight);
-                        bitmap.WritePixels (rect, pixels, stride, x, y);
-                    }
+                    var decoder = new PngBitmapDecoder (png,
+                        BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                    var frame = new FormatConvertedBitmap (decoder.Frames[0], PixelFormats.Pbgra32, null, 0);
+                    int stride = frame.PixelWidth * 4;
+                    var pixels = new byte[stride * frame.PixelHeight];
+                    frame.CopyPixels (pixels, stride, 0);
+                    var rect = new Int32Rect (0, 0, frame.PixelWidth, frame.PixelHeight);
+                    bitmap.WritePixels (rect, pixels, stride, x, y);
                 }
             }
             bitmap.Freeze();

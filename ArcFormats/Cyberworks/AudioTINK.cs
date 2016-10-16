@@ -90,9 +90,8 @@ namespace GameRes.Formats.Cyberworks
                 input = new MemoryStream (header);
             else
                 input = new PrefixStream (header, new StreamRegion (file.AsStream, file.Position));
-            var ogg = new BinaryStream (input, file.Name);
-            var sound = OggAudio.Instance.TryOpen (ogg);
-            if (sound != null && header.Length >= file.Length)
+            var sound = new OggInput (input);
+            if (header.Length >= file.Length)
                 file.Dispose();
             return sound;
         }

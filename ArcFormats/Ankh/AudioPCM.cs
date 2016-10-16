@@ -65,7 +65,7 @@ namespace GameRes.Formats.Ice
             if (0 == format.AverageBytesPerSecond
                 || format.SamplesPerSecond * format.BlockAlign != format.AverageBytesPerSecond)
                 return null;
-            var pcm = new StreamRegion (file, 0x16, pcm_size);
+            var pcm = new StreamRegion (file.AsStream, 0x16, pcm_size);
             return new RawPcmInput (pcm, format);
         }
     }

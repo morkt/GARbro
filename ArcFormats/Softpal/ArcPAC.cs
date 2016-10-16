@@ -107,7 +107,7 @@ namespace GameRes.Formats.Softpal
                     }
                 }
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 

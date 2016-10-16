@@ -55,21 +55,21 @@ namespace GameRes.Formats.BlackRainbow
             }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = new byte[8];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            using (var zstream = new ZLibStream (stream, CompressionMode.Decompress, true))
-                return base.ReadMetaData (zstream);
+            var header = file.ReadHeader (8);
+            using (var zstream = new ZLibStream (file.AsStream, CompressionMode.Decompress, true))
+            using (var bmp = new BinaryStream (zstream, file.Name))
+                return base.ReadMetaData (bmp);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            stream.Seek (8, SeekOrigin.Current);
-            using (var zstream = new ZLibStream (stream, CompressionMode.Decompress, true))
+            file.Seek (8, SeekOrigin.Current);
+            using (var zstream = new ZLibStream (file.AsStream, CompressionMode.Decompress, true))
             using (var input = new SeekableStream (zstream))
-                return base.Read (input, info);
+            using (var bmp = new BinaryStream (input, file.Name))
+                return base.Read (bmp, info);
         }
     }
 }

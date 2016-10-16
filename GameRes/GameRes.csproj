@@ -67,6 +67,7 @@
     <Compile Include="Audio.cs" />
     <Compile Include="AudioWAV.cs" />
     <Compile Include="BinaryStream.cs" />
+    <Compile Include="ByteArray.cs" />
     <Compile Include="Checksum.cs" />
     <Compile Include="FileSystem.cs" />
     <Compile Include="FormatCatalog.cs" />

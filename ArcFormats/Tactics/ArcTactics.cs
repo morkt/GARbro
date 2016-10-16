@@ -87,9 +87,9 @@ namespace GameRes.Formats.Tactics
             var tarc = arc as TacticsArcFile;
             var tent = (PackedEntry)entry;
             if (null == tarc || null == tarc.Password && !tent.IsPacked)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+                return base.OpenEntry (arc, entry);
             if (null == tarc.Password)
-                return new LzssStream (arc.File.CreateStream (entry.Offset, entry.Size));
+                return new LzssStream (base.OpenEntry (arc, entry));
 
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             int p = 0;
@@ -102,9 +102,9 @@ namespace GameRes.Formats.Tactics
             if (tarc.CustomLzss && tent.IsPacked)
             {
                 data = UnpackCustomLzss (data);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
-            Stream input = new MemoryStream (data);
+            Stream input = new BinMemoryStream (data, entry.Name);
             if (tent.IsPacked)
                 input = new LzssStream (input);
             return input;

@@ -56,53 +56,50 @@ namespace GameRes.Formats.Lucifen
             throw new NotImplementedException ("ElgFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            stream.Seek (3, SeekOrigin.Current);
-            using (var input = new ArcView.Reader (stream))
+            file.Position = 3;
+            int bpp = file.ReadByte();
+            int x = 0;
+            int y = 0;
+            int type = bpp;
+            int header_size = 8;
+            if (2 == type)
             {
-                int bpp = input.ReadByte();
-                int x = 0;
-                int y = 0;
-                int type = bpp;
-                int header_size = 8;
-                if (2 == type)
-                {
-                    bpp = input.ReadByte();
-                    header_size = 13;
-                }
-                else if (1 == type)
-                {
-                    bpp = input.ReadByte();
-                    x = input.ReadInt16();
-                    y = input.ReadInt16();
-                    header_size = 13;
-                }
-                else
-                    type = 0;
-                if (8 != bpp && 24 != bpp && 32 != bpp)
-                    return null;
-                uint w = input.ReadUInt16();
-                uint h = input.ReadUInt16();
-                if (2 == type)
-                {
-                    x = input.ReadInt16();
-                    y = input.ReadInt16();
-                }
-                return new ElgMetaData
-                {
-                    Width = w,
-                    Height = h,
-                    OffsetX = x,
-                    OffsetY = y,
-                    BPP = bpp,
-                    Type = type,
-                    HeaderSize = header_size,
-                };
+                bpp = file.ReadByte();
+                header_size = 13;
             }
+            else if (1 == type)
+            {
+                bpp = file.ReadByte();
+                x = file.ReadInt16();
+                y = file.ReadInt16();
+                header_size = 13;
+            }
+            else
+                type = 0;
+            if (8 != bpp && 24 != bpp && 32 != bpp)
+                return null;
+            uint w = file.ReadUInt16();
+            uint h = file.ReadUInt16();
+            if (2 == type)
+            {
+                x = file.ReadInt16();
+                y = file.ReadInt16();
+            }
+            return new ElgMetaData
+            {
+                Width = w,
+                Height = h,
+                OffsetX = x,
+                OffsetY = y,
+                BPP = bpp,
+                Type = type,
+                HeaderSize = header_size,
+            };
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (ElgMetaData)info;
             file.Position = meta.HeaderSize;
@@ -119,33 +116,33 @@ namespace GameRes.Formats.Lucifen
             int             m_height;
             int             m_bpp;
             int             m_type;
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
 
             public PixelFormat    Format { get; private set; }
             public BitmapPalette Palette { get; private set; }
             public byte[]           Data { get { return m_output; } }
 
-            public Reader (Stream stream, ElgMetaData info)
+            public Reader (IBinaryStream stream, ElgMetaData info)
             {
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_bpp = info.BPP;
                 m_type = info.Type;
                 m_output = new byte[m_width*m_height*m_bpp/8];
-                m_input = new ArcView.Reader (stream);
+                m_input = stream;
             }
 
             public void Unpack ()
             {
                 if (2 == m_type)
                 {
-                    while (0 != m_input.ReadByte())
+                    while (0 != m_input.ReadUInt8())
                     {
                         int size = m_input.ReadInt32();
                         if (size < 4)
                             throw new InvalidFormatException();
-                        m_input.BaseStream.Seek (size-4, SeekOrigin.Current);
+                        m_input.Seek (size-4, SeekOrigin.Current);
                     }
                 }
                 if (8 == m_bpp)
@@ -182,7 +179,7 @@ namespace GameRes.Formats.Lucifen
                 int dst = 0;
                 for (;;)
                 {
-                    byte flags = m_input.ReadByte();
+                    byte flags = m_input.ReadUInt8();
                     if (0xff == flags || dst >= output.Length)
                         break;
                     int count, pos;
@@ -190,7 +187,7 @@ namespace GameRes.Formats.Lucifen
                     if (0 == (flags & 0xc0))
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 33;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 33;
                         else
                             count = (flags & 0x1f) + 1;
 
@@ -200,11 +197,11 @@ namespace GameRes.Formats.Lucifen
                     else if ((flags & 0xc0) == 0x40)
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 35;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 35;
                         else
                             count = (flags & 0x1f) + 3;			
 
-                        byte v = m_input.ReadByte();
+                        byte v = m_input.ReadUInt8();
                         for (int i = 0; i < count; ++i)
                             output[dst++] = v;
                     }
@@ -215,21 +212,21 @@ namespace GameRes.Formats.Lucifen
                             if (0 == (flags & 0x30))
                             {
                                 count = (flags & 0xf) + 2;
-                                pos = m_input.ReadByte() + 2;
+                                pos = m_input.ReadUInt8() + 2;
                             }
                             else if ((flags & 0x30) == 0x10)
                             {
-                                pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 3;
-                                count = m_input.ReadByte() + 4;
+                                pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 3;
+                                count = m_input.ReadUInt8() + 4;
                             }
                             else if ((flags & 0x30) == 0x20)
                             {
-                                pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 3;
+                                pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 3;
                                 count = 3;
                             }
                             else
                             {
-                                pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 3;
+                                pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 3;
                                 count = 4;
                             }
                         }
@@ -255,7 +252,7 @@ namespace GameRes.Formats.Lucifen
                 int dst = 0;
                 for (;;)
                 {
-                    byte flags = m_input.ReadByte();
+                    byte flags = m_input.ReadUInt8();
                     if (0xff == flags || dst >= m_output.Length)
                         break;
                     int count, pos, src;
@@ -263,28 +260,28 @@ namespace GameRes.Formats.Lucifen
                     if (0 == (flags & 0xc0))
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 33;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 33;
                         else
                             count = (flags & 0x1f) + 1;
 
                         for (int i = 0; i < count; ++i)
                         {
-                            m_output[dst++] = m_input.ReadByte();
-                            m_output[dst++] = m_input.ReadByte();
-                            m_output[dst++] = m_input.ReadByte();
+                            m_output[dst++] = m_input.ReadUInt8();
+                            m_output[dst++] = m_input.ReadUInt8();
+                            m_output[dst++] = m_input.ReadUInt8();
                             m_output[dst++] = 0xff;
                         }
                     }
                     else if ((flags & 0xc0) == 0x40)
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 34;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 34;
                         else
                             count = (flags & 0x1f) + 2;
 
-                        byte b = m_input.ReadByte();
-                        byte g = m_input.ReadByte();
-                        byte r = m_input.ReadByte();
+                        byte b = m_input.ReadUInt8();
+                        byte g = m_input.ReadUInt8();
+                        byte r = m_input.ReadUInt8();
                         for (int i = 0; i < count; ++i)
                         {
                             m_output[dst++] = b;
@@ -298,23 +295,23 @@ namespace GameRes.Formats.Lucifen
                         if (0 == (flags & 0x30))
                         {
                             count = (flags & 0xf) + 1;
-                            pos = m_input.ReadByte() + 2;
+                            pos = m_input.ReadUInt8() + 2;
                         }
                         else if ((flags & 0x30) == 0x10)
                         {
-                            pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 2;
-                            count = m_input.ReadByte() + 1;
+                            pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 2;
+                            count = m_input.ReadUInt8() + 1;
                         }
                         else if ((flags & 0x30) == 0x20)
                         {
-                            byte tmp = m_input.ReadByte();
-                            pos = ((((flags & 0xf) << 8) + tmp) << 8) + m_input.ReadByte() + 4098;
-                            count = m_input.ReadByte() + 1;
+                            byte tmp = m_input.ReadUInt8();
+                            pos = ((((flags & 0xf) << 8) + tmp) << 8) + m_input.ReadUInt8() + 4098;
+                            count = m_input.ReadUInt8() + 1;
                         }
                         else
                         {
                             if (0 != (flags & 8))
-                                pos = ((flags & 0x7) << 8) + m_input.ReadByte() + 10;
+                                pos = ((flags & 0x7) << 8) + m_input.ReadUInt8() + 10;
                             else
                                 pos = (flags & 0x7) + 2;
                             count = 1;
@@ -332,22 +329,22 @@ namespace GameRes.Formats.Lucifen
                         {
                             if (0 == (flags & 0xc))
                             {
-                                y = ((flags & 0x3) << 8) + m_input.ReadByte() + 16;
+                                y = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 16;
                                 x = 0;
                             }
                             else if ((flags & 0xc) == 0x4)
                             {
-                                y = ((flags & 0x3) << 8) + m_input.ReadByte() + 16;
+                                y = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 16;
                                 x = -1;
                             }
                             else if ((flags & 0xc) == 0x8)
                             {
-                                y = ((flags & 0x3) << 8) + m_input.ReadByte() + 16;
+                                y = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 16;
                                 x = 1;
                             }
                             else
                             {
-                                pos = ((flags & 0x3) << 8) + m_input.ReadByte() + 2058;
+                                pos = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 2058;
                                 src = dst - 4 * pos;
                                 Buffer.BlockCopy (m_output, src, m_output, dst, 4);
                                 dst += 4;
@@ -381,7 +378,7 @@ namespace GameRes.Formats.Lucifen
                 int dst = 3;
                 for (;;)
                 {
-                    byte flags = m_input.ReadByte();
+                    byte flags = m_input.ReadUInt8();
                     if (0xff == flags || dst >= m_output.Length)
                         break;
 
@@ -390,24 +387,24 @@ namespace GameRes.Formats.Lucifen
                     if (0 == (flags & 0xc0))
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 33;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 33;
                         else
                             count = (flags & 0x1f) + 1;
 
                         for (int i = 0; i < count; ++i)
                         {
-                            m_output[dst] = m_input.ReadByte();
+                            m_output[dst] = m_input.ReadUInt8();
                             dst += 4;
                         }
                     }
                     else if (0x40 == (flags & 0xc0))
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 35;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 35;
                         else
                             count = (flags & 0x1f) + 3;
 
-                        byte a = m_input.ReadByte();
+                        byte a = m_input.ReadUInt8();
                         for (int i = 0; i < count; ++i)
                         {
                             m_output[dst] = a;
@@ -421,21 +418,21 @@ namespace GameRes.Formats.Lucifen
                             if (0 == (flags & 0x30))
                             {
                                 count = (flags & 0xf) + 2;
-                                pos = m_input.ReadByte() + 2;
+                                pos = m_input.ReadUInt8() + 2;
                             }
                             else if (0x10 == (flags & 0x30))
                             {
-                                pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 3;
-                                count = m_input.ReadByte() + 4;
+                                pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 3;
+                                count = m_input.ReadUInt8() + 4;
                             }
                             else if ((flags & 0x30) == 0x20)
                             {
-                                pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 3;
+                                pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 3;
                                 count = 3;
                             }
                             else
                             {
-                                pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 3;
+                                pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 3;
                                 count = 4;
                             }
                         }
@@ -466,34 +463,34 @@ namespace GameRes.Formats.Lucifen
                 int dst = 0;
                 for (;;)
                 {
-                    byte flags = m_input.ReadByte();
+                    byte flags = m_input.ReadUInt8();
                     if (0xff == flags || dst >= m_output.Length)
                         break;
                     int count, pos, src;
                     if (0 == (flags & 0xc0))
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 33;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 33;
                         else
                             count = (flags & 0x1f) + 1;
 
                         for (int i = 0; i < count; ++i)
                         {
-                            m_output[dst++] = m_input.ReadByte();
-                            m_output[dst++] = m_input.ReadByte();
-                            m_output[dst++] = m_input.ReadByte();
+                            m_output[dst++] = m_input.ReadUInt8();
+                            m_output[dst++] = m_input.ReadUInt8();
+                            m_output[dst++] = m_input.ReadUInt8();
                         }
                     }
                     else if ((flags & 0xc0) == 0x40)
                     {
                         if (0 != (flags & 0x20))
-                            count = ((flags & 0x1f) << 8) + m_input.ReadByte() + 34;
+                            count = ((flags & 0x1f) << 8) + m_input.ReadUInt8() + 34;
                         else
                             count = (flags & 0x1f) + 2;			
 
-                        byte b = m_input.ReadByte();
-                        byte g = m_input.ReadByte();
-                        byte r = m_input.ReadByte();
+                        byte b = m_input.ReadUInt8();
+                        byte g = m_input.ReadUInt8();
+                        byte r = m_input.ReadUInt8();
                         for (int i = 0; i < count; ++i)
                         {
                             m_output[dst++] = b;
@@ -506,23 +503,23 @@ namespace GameRes.Formats.Lucifen
                         if (0 == (flags & 0x30))
                         {
                             count = (flags & 0xf) + 1;
-                            pos = m_input.ReadByte() + 2;
+                            pos = m_input.ReadUInt8() + 2;
                         }
                         else if ((flags & 0x30) == 0x10)
                         {
-                            pos = ((flags & 0xf) << 8) + m_input.ReadByte() + 2;
-                            count = m_input.ReadByte() + 1;
+                            pos = ((flags & 0xf) << 8) + m_input.ReadUInt8() + 2;
+                            count = m_input.ReadUInt8() + 1;
                         }
                         else if ((flags & 0x30) == 0x20)
                         {
-                            byte tmp = m_input.ReadByte();
-                            pos = ((((flags & 0xf) << 8) + tmp) << 8) + m_input.ReadByte() + 4098;
-                            count = m_input.ReadByte() + 1;
+                            byte tmp = m_input.ReadUInt8();
+                            pos = ((((flags & 0xf) << 8) + tmp) << 8) + m_input.ReadUInt8() + 4098;
+                            count = m_input.ReadUInt8() + 1;
                         }
                         else
                         {
                             if (0 != (flags & 8))
-                                pos = ((flags & 0x7) << 8) + m_input.ReadByte() + 10;
+                                pos = ((flags & 0x7) << 8) + m_input.ReadUInt8() + 10;
                             else
                                 pos = (flags & 0x7) + 2;
                             count = 1;
@@ -540,22 +537,22 @@ namespace GameRes.Formats.Lucifen
                         {
                             if (0 == (flags & 0xc))
                             {
-                                y = ((flags & 0x3) << 8) + m_input.ReadByte() + 16;
+                                y = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 16;
                                 x = 0;
                             }
                             else if ((flags & 0xc) == 0x4)
                             {
-                                y = ((flags & 0x3) << 8) + m_input.ReadByte() + 16;
+                                y = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 16;
                                 x = -1;
                             }
                             else if ((flags & 0xc) == 0x8)
                             {
-                                y = ((flags & 0x3) << 8) + m_input.ReadByte() + 16;
+                                y = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 16;
                                 x = 1;
                             }
                             else
                             {
-                                pos = ((flags & 0x3) << 8) + m_input.ReadByte() + 2058;
+                                pos = ((flags & 0x3) << 8) + m_input.ReadUInt8() + 2058;
                                 src = dst - 3 * pos;
                                 m_output[dst++] = m_output[src++];
                                 m_output[dst++] = m_output[src++];
@@ -587,22 +584,9 @@ namespace GameRes.Formats.Lucifen
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
                 GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                        m_input.Dispose();
-                    disposed = true;
-                }
             }
             #endregion
         }

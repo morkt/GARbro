@@ -46,39 +46,36 @@ namespace GameRes.Formats.RealLive
         public override string Description { get { return "RealLive engine image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            int type = stream.ReadByte();
+            int type = file.ReadByte();
             if (type > 2)
                 return null;
-            using (var reader = new ArcView.Reader (stream))
+            uint width  = file.ReadUInt16();
+            uint height = file.ReadUInt16();
+            if (0 == width || width > 0x8000 || 0 == height || height > 0x8000)
+                return null;
+            if (2 == type)
             {
-                uint width  = reader.ReadUInt16();
-                uint height = reader.ReadUInt16();
-                if (0 == width || width > 0x8000 || 0 == height || height > 0x8000)
+                int count = file.ReadInt32();
+                if (count <= 0 || count > 0x100)
                     return null;
-                if (2 == type)
-                {
-                    int count = reader.ReadInt32();
-                    if (count <= 0 || count > 0x100)
-                        return null;
-                }
-                else
-                {
-                    uint length = reader.ReadUInt32();
-                    if (length + 5 != stream.Length)
-                        return null;
-                }
-                return new G00MetaData {
-                    Width  = width,
-                    Height = height,
-                    BPP    = 1 == type ? 8 : 24,
-                    Type   = type,
-                };
             }
+            else
+            {
+                uint length = file.ReadUInt32();
+                if (length + 5 != file.Length)
+                    return null;
+            }
+            return new G00MetaData {
+                Width  = width,
+                Height = height,
+                BPP    = 1 == type ? 8 : 24,
+                Type   = type,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new G00Reader (stream, (G00MetaData)info))
             {
@@ -103,7 +100,7 @@ namespace GameRes.Formats.RealLive
 
     internal sealed class G00Reader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         int             m_width;
         int             m_height;
@@ -113,17 +110,17 @@ namespace GameRes.Formats.RealLive
         public PixelFormat    Format { get; private set; }
         public BitmapPalette Palette { get; private set; }
 
-        public G00Reader (Stream input, G00MetaData info)
+        public G00Reader (IBinaryStream input, G00MetaData info)
         {
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_type = info.Type;
-            m_input = new ArcView.Reader (input);
+            m_input = input;
         }
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = 5;
+            m_input.Position = 5;
             if (0 == m_type)
                 UnpackV0();
             else if (1 == m_type)
@@ -165,7 +162,7 @@ namespace GameRes.Formats.RealLive
                 tile.X = m_input.ReadInt32();
                 tile.Y = m_input.ReadInt32();
                 tiles.Add (tile);
-                m_input.BaseStream.Seek (0x10, SeekOrigin.Current);
+                m_input.Seek (0x10, SeekOrigin.Current);
             }
             using (var input = new MemoryStream (LzDecompress (m_input, 2, 1)))
             using (var reader = new BinaryReader (input))
@@ -211,7 +208,7 @@ namespace GameRes.Formats.RealLive
             }
         }
 
-        public static byte[] LzDecompress (BinaryReader input, int min_count, int bytes_pp)
+        public static byte[] LzDecompress (IBinaryStream input, int min_count, int bytes_pp)
         {
             int packed_size = input.ReadInt32() - 8;
             int output_size = input.ReadInt32();
@@ -223,7 +220,7 @@ namespace GameRes.Formats.RealLive
                 bits >>= 1;
                 if (1 == bits)
                 {
-                    bits = input.ReadByte() | 0x100;
+                    bits = input.ReadUInt8() | 0x100;
                     --packed_size;
                 }
                 if (0 != (bits & 1))
@@ -250,14 +247,8 @@ namespace GameRes.Formats.RealLive
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

@@ -45,20 +45,18 @@ namespace GameRes.Formats.Banana
         public override string Description { get { return "BANANA Shu-Shu image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x24];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x24);
+            if (0 != header.ToInt32 (0x10) || 0 != header.ToInt32 (0x14))
                 return null;
-            if (0 != LittleEndian.ToInt32 (header, 0x10) || 0 != LittleEndian.ToInt32 (header, 0x14))
-                return null;
-            int left = LittleEndian.ToInt32 (header, 0);
-            int top  = LittleEndian.ToInt32 (header, 4);
-            int right = LittleEndian.ToInt32 (header, 8);
-            int bottom = LittleEndian.ToInt32 (header, 0xC);
-            int back_width = LittleEndian.ToInt32 (header, 0x18);
-            int back_height = LittleEndian.ToInt32 (header, 0x1C);
-            uint alpha_channel = LittleEndian.ToUInt32 (header, 0x20);
+            int left = header.ToInt32 (0);
+            int top  = header.ToInt32 (4);
+            int right = header.ToInt32 (8);
+            int bottom = header.ToInt32 (0xC);
+            int back_width = header.ToInt32 (0x18);
+            int back_height = header.ToInt32 (0x1C);
+            uint alpha_channel = header.ToUInt32 (0x20);
             int width = right - left;
             int height = bottom - top;
             if (left >= back_width || top >= back_height
@@ -78,12 +76,12 @@ namespace GameRes.Formats.Banana
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             int stride = (int)info.Width * 3;
             var pixels = new byte[stride * (int)info.Height];
             stream.Position = 0x24;
-            using (var lz = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lz = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 if (pixels.Length != lz.Read (pixels, 0, pixels.Length))
                     throw new InvalidFormatException();
@@ -104,7 +102,7 @@ namespace GameRes.Formats.Banana
 
             stream.Position = 0x24 + meta.AlphaOffset;
             var alpha = new byte[meta.BackWidth*meta.BackHeight];
-            using (var lz = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var lz = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 if (alpha.Length != lz.Read (alpha, 0, alpha.Length))
                     throw new InvalidFormatException();

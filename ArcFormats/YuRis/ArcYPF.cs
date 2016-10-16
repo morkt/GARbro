@@ -138,7 +138,7 @@ namespace GameRes.Formats.YuRis
         {
             var packed_entry = entry as PackedEntry;
             var ypf = arc as YpfArchive;
-            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
+            Stream input = base.OpenEntry (arc, entry);
             if (null != packed_entry && packed_entry.IsPacked)
                 input = new ZLibStream (input, CompressionMode.Decompress);
             uint unpacked_size = null == packed_entry ? entry.Size : packed_entry.UnpackedSize;
@@ -151,7 +151,7 @@ namespace GameRes.Formats.YuRis
                 input.Read (data, 0, data.Length);
                 if (Binary.AsciiEqual (data, 0, "YSTB"))
                     DecryptYstb (data, ypf.ScriptKey);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

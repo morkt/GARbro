@@ -37,11 +37,9 @@ namespace GameRes.Formats.ShiinaRio
         public override string Description { get { return "ShiinaRio compressed audio format"; } }
         public override uint     Signature { get { return 0x444150; } } // 'PAD'
         
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var wav_header = new byte[0x2c];
-            if (0x2c != file.Read (wav_header, 0, 0x2c))
-                return null;
+            var wav_header = file.ReadHeader (0x2c).ToArray();
             int pcm_size = LittleEndian.ToInt32 (wav_header, 0x28);
             int channels = LittleEndian.ToUInt16 (wav_header, 0x16);
             wav_header[0] = (byte)'R';
@@ -50,7 +48,7 @@ namespace GameRes.Formats.ShiinaRio
             wav_header[3] = (byte)'F';
             LittleEndian.Pack (pcm_size+0x24, wav_header, 4);
 
-            var decoder = new PadDecoder (file, pcm_size, channels);
+            var decoder = new PadDecoder (file.AsStream, pcm_size, channels);
             decoder.Unpack();
             var data = new MemoryStream (decoder.Data, 0, pcm_size);
             var wav = new PrefixStream (wav_header, data);

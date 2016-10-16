@@ -115,7 +115,7 @@ namespace GameRes.Formats.Mg
                 data = DecryptBlock (data, mgarc.Key);
                 if (entry.Name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase))
                     return DecompressStream (data);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

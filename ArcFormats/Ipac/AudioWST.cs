@@ -68,7 +68,7 @@ namespace GameRes.Formats.BaseUnit
                     wav.Write (adpcm_data, 0, adpcm_data.Length);
                     wav.Write (0x61746164); // 'data'
                     wav.Write (data_length);
-                    file.CopyTo (wav_file);
+                    file.AsStream.CopyTo (wav_file);
                 }
                 wav_file.Position = 0;
                 var sound = new WaveInput (wav_file);

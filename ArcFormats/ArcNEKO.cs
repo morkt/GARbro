@@ -50,7 +50,7 @@ namespace GameRes.Formats.Neko
         /// <summary>
         /// Read a directory record from archive index.
         /// </summary>
-        DirRecord ReadDir (BinaryReader input);
+        DirRecord ReadDir (IBinaryStream input);
         /// <summary>
         /// Returns offset of an entry that immediately follows specified one.
         /// </summary>
@@ -65,15 +65,14 @@ namespace GameRes.Formats.Neko
 
     internal sealed class IndexReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         int             m_index_size;
         long            m_max_offset;
         INekoFormat     m_format;
 
         public IndexReader (ArcView file, INekoFormat enc, byte[] index, int index_size)
         {
-            var input = new MemoryStream (index, 0, index_size);
-            m_input = new BinaryReader (input);
+            m_input = new BinMemoryStream (index, 0, index_size, file.Name);
             m_index_size = index_size;
             m_max_offset = file.MaxOffset;
             m_format = enc;
@@ -85,7 +84,7 @@ namespace GameRes.Formats.Neko
             var files_map = GetNamesMap (KnownFileNames);
 
             var dir = new List<Entry>();
-            while (m_input.BaseStream.Position < m_index_size)
+            while (m_input.Position < m_index_size)
             {
                 var dir_info = m_format.ReadDir (m_input);
                 string dir_name;
@@ -273,7 +272,7 @@ namespace GameRes.Formats.Neko
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             int length;
             var data = ReadBlock (arc.File.View, pak.Decoder, entry.Offset, out length);
-            return new MemoryStream (data, 0, length);
+            return new BinMemoryStream (data, 0, length, entry.Name);
         }
 
         static uint HashFromString (uint seed, byte[] str, int offset, int length)
@@ -358,7 +357,7 @@ namespace GameRes.Formats.Neko
             return hash;
         }
 
-        public DirRecord ReadDir (BinaryReader input)
+        public DirRecord ReadDir (IBinaryStream input)
         {
             return new DirRecord {
                 Hash      = input.ReadUInt32(),
@@ -468,7 +467,7 @@ namespace GameRes.Formats.Neko
                 data = new byte[aligned_size];
             arc.File.View.Read (entry.Offset+12, data, 0, (uint)size);
             narc.Decoder.Decrypt (key, data, 0, aligned_size);
-            return new MemoryStream (data, 0, size);
+            return new BinMemoryStream (data, 0, size, entry.Name);
         }
     }
 
@@ -506,7 +505,7 @@ namespace GameRes.Formats.Neko
             return hash;
         }
 
-        public DirRecord ReadDir (BinaryReader input)
+        public DirRecord ReadDir (IBinaryStream input)
         {
             uint hash = input.ReadUInt32();
             int count = input.ReadInt32();

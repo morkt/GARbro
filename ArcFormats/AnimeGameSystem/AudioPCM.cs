@@ -41,12 +41,12 @@ namespace GameRes.Formats.Ags
             Extensions = new string[] { "pcm" };
         }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            uint signature = FormatCatalog.ReadSignature (file) & 0xF0FFFFFF;
+            uint signature = file.Signature & 0xF0FFFFFF;
             if (0x564157 != signature) // 'WAV'
                 return null;
-            return new PcmInput (file);
+            return new PcmInput (file.AsStream);
         }
     }
 

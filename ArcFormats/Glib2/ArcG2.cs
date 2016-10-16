@@ -193,7 +193,7 @@ namespace GameRes.Formats.Glib2
                 current_decoder = (current_decoder + 1) & 3;
                 offset += current_chunk_size;
             }
-            return new MemoryStream (output);
+            return new BinMemoryStream (output, entry.Name);
         }
     }
 

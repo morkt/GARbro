@@ -266,23 +266,23 @@ namespace GameRes.Formats.Circus
                 {
                     flag >>= 1;
                     if (0 == (flag & 0x100))
-                        flag = m_input.ReadByte() | 0xff00;
+                        flag = m_input.ReadUInt8() | 0xff00;
 
                     if (0 != (flag & 1))
                     {
-                        byte dat = m_input.ReadByte();
+                        byte dat = m_input.ReadUInt8();
                         window[win_pos++] = dat;
                         win_pos &= 0xffff;
                         m_output[dst++] = dat;
                     }
                     else
                     {
-                        byte control = m_input.ReadByte();
+                        byte control = m_input.ReadUInt8();
                         int count, offset;
 
                         if (control >= 0xc0)
                         {
-                            offset = ((control & 3) << 8) | m_input.ReadByte();
+                            offset = ((control & 3) << 8) | m_input.ReadUInt8();
                             count = 4 + ((control >> 2) & 0xf);
                         }
                         else if (0 != (control & 0x80))
@@ -290,7 +290,7 @@ namespace GameRes.Formats.Circus
                             offset = control & 0x1f;
                             count = 2 + ((control >> 5) & 3);
                             if (0 == offset)
-                                offset = m_input.ReadByte();
+                                offset = m_input.ReadUInt8();
                         }
                         else if (0x7f == control)
                         {

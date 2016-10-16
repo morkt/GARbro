@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System.Collections.Generic;
 using System.Text;
 
 namespace GameRes.Utility
@@ -145,22 +146,22 @@ namespace GameRes.Utility
 
     public static class BigEndian
     {
-        public static ushort ToUInt16 (byte[] value, int index)
+        public static ushort ToUInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (ushort)(value[index] << 8 | value[index+1]);
         }
 
-        public static short ToInt16 (byte[] value, int index)
+        public static short ToInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (short)(value[index] << 8 | value[index+1]);
         }
 
-        public static uint ToUInt32 (byte[] value, int index)
+        public static uint ToUInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (uint)(value[index] << 24 | value[index+1] << 16 | value[index+2] << 8 | value[index+3]);
         }
 
-        public static int ToInt32 (byte[] value, int index)
+        public static int ToInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (int)ToUInt32 (value, index);
         }
@@ -178,7 +179,7 @@ namespace GameRes.Utility
             return (short)(value[index] | value[index+1] << 8);
         }
 
-        public static uint ToUInt32 (byte[] value, int index)
+        public static uint ToUInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (uint)(value[index] | value[index+1] << 8 | value[index+2] << 16 | value[index+3] << 24);
         }

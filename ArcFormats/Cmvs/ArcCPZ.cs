@@ -279,7 +279,7 @@ namespace GameRes.Formats.Purple
                 data = UnpackPs2 (data);
             else if (data.Length > 0x40 && Binary.AsciiEqual (data, 0, "PB3B"))
                 DecryptPb3 (data);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         void DecryptIndexStage1 (byte[] data, uint key, CmvsScheme scheme)

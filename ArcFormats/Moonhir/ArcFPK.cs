@@ -132,7 +132,7 @@ namespace GameRes.Formats.MoonhirGames
                 var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                 Decrypt (data, 0, data.Length, farc.Key);
                 int length = LittleEndian.ToInt32 (data, data.Length-8);
-                input = new MemoryStream (data, 0, length);
+                input = new BinMemoryStream (data, 0, length, entry.Name);
                 header = data;
             }
             if (!Binary.AsciiEqual (header, "FBX\x01"))
@@ -143,7 +143,7 @@ namespace GameRes.Formats.MoonhirGames
                 int unpacked_size = LittleEndian.ToInt32 (header, 0xC);
                 input.Position = header[7];
                 var unpacked = UnpackFbx (input, packed_size, unpacked_size);
-                return new MemoryStream (unpacked);
+                return new BinMemoryStream (unpacked, entry.Name);
             }
         }
 

@@ -49,36 +49,34 @@ namespace GameRes.Formats.Bishop
         public override string Description { get { return "Bishop image format"; } }
         public override uint     Signature { get { return 0x2D535342; } } // 'BSS-'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x60];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x60);
             int base_offset = 0;
-            if (Binary.AsciiEqual (header, 0, "BSS-Composition\0"))
+            if (header.AsciiEqual ("BSS-Composition\0"))
                 base_offset = 0x20;
-            if (!Binary.AsciiEqual (header, base_offset, "BSS-Graphics\0"))
+            if (!header.AsciiEqual (base_offset, "BSS-Graphics\0"))
                 return null;
             int type = header[base_offset+0x30];
             if (type > 2)
                 return null;
             return new BsgMetaData
             {
-                Width       = LittleEndian.ToUInt16 (header, base_offset+0x16),
-                Height      = LittleEndian.ToUInt16 (header, base_offset+0x18),
-                OffsetX     = LittleEndian.ToInt16 (header, base_offset+0x20),
-                OffsetY     = LittleEndian.ToInt16 (header, base_offset+0x22),
-                UnpackedSize = LittleEndian.ToInt32 (header, base_offset+0x12),
+                Width       = header.ToUInt16 (base_offset+0x16),
+                Height      = header.ToUInt16 (base_offset+0x18),
+                OffsetX     = header.ToInt16 (base_offset+0x20),
+                OffsetY     = header.ToInt16 (base_offset+0x22),
+                UnpackedSize = header.ToInt32 (base_offset+0x12),
                 BPP = 2 == type ? 8 : 32,
                 ColorMode   = type,
                 CompressionMode = header[base_offset+0x31],
-                DataOffset  = LittleEndian.ToInt32 (header, base_offset+0x32)+base_offset,
-                DataSize    = LittleEndian.ToInt32 (header, base_offset+0x36),
-                PaletteOffset = LittleEndian.ToInt32 (header, base_offset+0x3A)+base_offset,
+                DataOffset  = header.ToInt32 (base_offset+0x32)+base_offset,
+                DataSize    = header.ToInt32 (base_offset+0x36),
+                PaletteOffset = header.ToInt32 (base_offset+0x3A)+base_offset,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (BsgMetaData)info;
             using (var reader = new BsgReader (stream, meta))
@@ -96,7 +94,7 @@ namespace GameRes.Formats.Bishop
 
     internal sealed class BsgReader : IDisposable
     {
-        BinaryReader        m_input;
+        IBinaryStream       m_input;
         BsgMetaData         m_info;
         byte[]              m_output;
 
@@ -105,13 +103,13 @@ namespace GameRes.Formats.Bishop
         public BitmapPalette Palette { get; private set; }
         public int            Stride { get; private set; }
 
-        public BsgReader (Stream input, BsgMetaData info)
+        public BsgReader (IBinaryStream input, BsgMetaData info)
         {
             m_info = info;
             if (m_info.CompressionMode > 2)
                 throw new NotSupportedException ("Not supported BSS Graphics compression");
 
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_output = new byte[m_info.UnpackedSize];
             switch (m_info.ColorMode)
             {
@@ -133,7 +131,7 @@ namespace GameRes.Formats.Bishop
 
         public void Unpack ()
         {
-            m_input.BaseStream.Position = m_info.DataOffset;
+            m_input.Position = m_info.DataOffset;
             if (0 == m_info.CompressionMode)
             {
                 if (1 == m_info.ColorMode)
@@ -179,13 +177,13 @@ namespace GameRes.Formats.Bishop
             int remaining = m_input.ReadInt32();
             while (remaining > 0)
             {
-                int count = m_input.ReadSByte();
+                int count = m_input.ReadInt8();
                 --remaining;
                 if (count >= 0)
                 {
                     for (int i = 0; i <= count; ++i)
                     {
-                        m_output[dst] = m_input.ReadByte();
+                        m_output[dst] = m_input.ReadUInt8();
                         --remaining;
                         dst += pixel_size;
                     }
@@ -193,7 +191,7 @@ namespace GameRes.Formats.Bishop
                 else
                 {
                     count = 1 - count;
-                    byte repeat = m_input.ReadByte();
+                    byte repeat = m_input.ReadUInt8();
                     --remaining;
                     for (int i = 0; i < count; ++i)
                     {
@@ -207,20 +205,20 @@ namespace GameRes.Formats.Bishop
         void UnpackLz (int plane, int pixel_size)
         {
             int dst = plane;
-            byte control = m_input.ReadByte();
+            byte control = m_input.ReadUInt8();
             int remaining = m_input.ReadInt32() - 5;
             while (remaining > 0)
             {
-                byte c = m_input.ReadByte();
+                byte c = m_input.ReadUInt8();
                 --remaining;
 
                 if (c == control)
                 {
-                    int offset = m_input.ReadByte();
+                    int offset = m_input.ReadUInt8();
                     --remaining;
                     if (offset != control)
                     {
-                        int count = m_input.ReadByte();
+                        int count = m_input.ReadUInt8();
                         --remaining;
 
                         if (offset > control)
@@ -245,7 +243,7 @@ namespace GameRes.Formats.Bishop
 
         BitmapPalette ReadPalette ()
         {
-            m_input.BaseStream.Position = m_info.PaletteOffset;
+            m_input.Position = m_info.PaletteOffset;
             var palette_data = new byte[0x400];
             if (palette_data.Length != m_input.Read (palette_data, 0, palette_data.Length))
                 throw new InvalidFormatException();
@@ -259,14 +257,8 @@ namespace GameRes.Formats.Bishop
         }
 
         #region IDisposable Members
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

@@ -118,7 +118,7 @@ namespace GameRes.Formats.Aoi
 
                 case 5:
                     count = (count >> 8) & 0xFF;
-                    input.BaseStream.Seek ((count - count / 4) * 4, SeekOrigin.Current);
+                    input.Seek ((count - count / 4) * 4, SeekOrigin.Current);
                     count *= 4;
                     break;
 
@@ -134,9 +134,9 @@ namespace GameRes.Formats.Aoi
                     var base_name = ReadBaseName (input, meta);
                     if (VFS.FileExists (base_name))
                     {
-                        using (var base_file = VFS.OpenSeekableStream (base_name))
+                        using (var base_file = VFS.OpenBinaryStream (base_name))
                         {
-                            var base_image = Read (base_name, base_file);
+                            var base_image = Read (base_file);
                             BlendImage (meta, pixels, base_image.Bitmap);
                         }
                     }
@@ -152,13 +152,13 @@ namespace GameRes.Formats.Aoi
 
         string ReadBaseName (IBinaryStream input, AgfMetaData info)
         {
-            input.BaseStream.Position = info.DataOffset + info.BaseNameOffset;
+            input.Position = info.DataOffset + info.BaseNameOffset;
             using (var reader = new BinaryReader (input.AsStream, Encoding.Unicode, true))
             {
                 var name = new StringBuilder();
                 for (;;)
                 {
-                    char c = input.ReadChar();
+                    char c = reader.ReadChar();
                     if (0 == c)
                         break;
                     name.Append (c);

@@ -36,13 +36,13 @@ namespace GameRes.Formats.Palette
         public override uint     Signature { get { return 0x50414750; } } // 'PGAP'
         public override bool      CanWrite { get { return true; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             using (var png = DeobfuscateStream (stream))
                 return base.ReadMetaData (png);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var png = DeobfuscateStream (stream))
                 return base.Read (png, info);
@@ -66,15 +66,16 @@ namespace GameRes.Formats.Palette
         public static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
         public static readonly byte[] PngFooter = { 0, 0, 0, 0, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82 };
 
-        Stream DeobfuscateStream (Stream stream)
+        IBinaryStream DeobfuscateStream (IBinaryStream stream)
         {
             var png_header = new byte[0x10];
             stream.Read (png_header, 5, 11);
             System.Buffer.BlockCopy (PngHeader, 0, png_header, 0, 8);
             for (int i = 0; i < 8; ++i)
                 png_header[i+8] ^= (byte)"PGAECODE"[i];
-            var png_body = new StreamRegion (stream, 11, true);
-            return new PrefixStream (png_header, png_body);
+            var png_body = new StreamRegion (stream.AsStream, 11, true);
+            var pre = new PrefixStream (png_header, png_body);
+            return new BinaryStream (pre, stream.Name);
         }
     }
 }

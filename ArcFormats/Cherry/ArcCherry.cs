@@ -110,7 +110,7 @@ namespace GameRes.Formats.Cherry
             {
                 data[text_offset+i] ^= (byte)i;
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 
@@ -209,7 +209,7 @@ namespace GameRes.Formats.Cherry
                 }
                 Decrypt (data, 0x18, (int)(data.Length - 0x18));
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 }

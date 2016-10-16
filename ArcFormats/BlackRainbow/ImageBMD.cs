@@ -51,31 +51,25 @@ namespace GameRes.Formats.BlackRainbow
         public override uint     Signature { get { return 0x444d425fu; } } // '_BMD'
         public override bool      CanWrite { get { return true; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-
+            var header = stream.ReadHeader (0x14);
             return new BmdMetaData
             {
-                Width = LittleEndian.ToUInt32 (header, 8),
-                Height = LittleEndian.ToUInt32 (header, 12),
+                Width = header.ToUInt32 (8),
+                Height = header.ToUInt32 (12),
                 BPP = 32,
-                PackedSize = LittleEndian.ToUInt32 (header, 4),
-                Flag = LittleEndian.ToInt32 (header, 0x10),
+                PackedSize = header.ToUInt32 (4),
+                Flag = header.ToInt32 (0x10),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as BmdMetaData;
-            if (null == meta)
-                throw new ArgumentException ("BmdFormat.Read should be supplied with BmdMetaData", "info");
-
+            var meta = (BmdMetaData)info;
             stream.Position = 0x14;
             int image_size = (int)(meta.Width*meta.Height*4);
-            using (var reader = new LzssReader (stream, (int)meta.PackedSize, image_size))
+            using (var reader = new LzssReader (stream.AsStream, (int)meta.PackedSize, image_size))
             {
                 PixelFormat format = meta.Flag != 0 ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
                 reader.Unpack();

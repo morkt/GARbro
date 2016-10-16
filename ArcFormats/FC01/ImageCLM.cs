@@ -45,20 +45,18 @@ namespace GameRes.Formats.FC01
         public override string Description { get { return "F&C Co. image format"; } }
         public override uint     Signature { get { return 0x204D4C43; } } // 'CLM'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x40];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x40);
+            if (!header.AsciiEqual (4, "1.00"))
                 return null;
-            if (!Binary.AsciiEqual (header, 4, "1.00"))
-                return null;
-            uint data_offset = LittleEndian.ToUInt32 (header, 0x10);
+            uint data_offset = header.ToUInt32 (0x10);
             if (data_offset < 0x40)
                 return null;
-            uint width  = LittleEndian.ToUInt32 (header, 0x1C);
-            uint height = LittleEndian.ToUInt32 (header, 0x20);
-            int bpp = LittleEndian.ToInt32 (header, 0x24);
-            int unpacked_size = LittleEndian.ToInt32 (header, 0x28);
+            uint width  = header.ToUInt32 (0x1C);
+            uint height = header.ToUInt32 (0x20);
+            int bpp = header.ToInt32 (0x24);
+            int unpacked_size = header.ToInt32 (0x28);
             return new ClmMetaData
             {
                 Width   = width,
@@ -69,7 +67,7 @@ namespace GameRes.Formats.FC01
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (ClmMetaData)info;
             stream.Position = meta.DataOffset;
@@ -78,7 +76,7 @@ namespace GameRes.Formats.FC01
             if (8 == meta.BPP)
             {
                 format = PixelFormats.Indexed8;
-                palette = ReadPalette (stream);
+                palette = ReadPalette (stream.AsStream);
             }
             else if (24 == meta.BPP)
                 format = PixelFormats.Bgr24;
@@ -87,7 +85,7 @@ namespace GameRes.Formats.FC01
             else
                 throw new NotSupportedException ("Not supported CLM color depth");
             int packed_size = (int)(stream.Length - stream.Position);
-            using (var reader = new MrgLzssReader (stream, packed_size, meta.UnpackedSize))
+            using (var reader = new MrgLzssReader (stream.AsStream, packed_size, meta.UnpackedSize))
             {
                 reader.Unpack();
                 return ImageData.Create (info, format, palette, reader.Data);

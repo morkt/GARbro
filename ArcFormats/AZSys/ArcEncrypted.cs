@@ -248,7 +248,7 @@ namespace GameRes.Formats.AZSys
                 Buffer.BlockCopy (data, 0, header, 0, 0x10);
                 return new PrefixStream (header, asb);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         uint ReadSysenvSeed (ArcView file, IEnumerable<Entry> dir, uint key)

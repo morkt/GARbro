@@ -38,33 +38,30 @@ namespace GameRes.Formats.Elf
         public override string Description { get { return "Ai5 engine RGB image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream input)
         {
-            using (var input = new ArcView.Reader (stream))
-            {
-                int x = input.ReadInt16();
-                int y = input.ReadInt16();
-                int w = input.ReadInt16();
-                int h = input.ReadInt16();
-                if (w <= 0 || w > 0x1000 || h <= 0 || h > 0x1000
-                    || x < 0 || x > 0x800 || y < 0 || y > 0x800)
-                    return null;
-                return new ImageMetaData {
-                    Width = (uint)w,
-                    Height = (uint)h,
-                    OffsetX = x,
-                    OffsetY = y,
-                    BPP = 24,
-                };
-            }
+            int x = input.ReadInt16();
+            int y = input.ReadInt16();
+            int w = input.ReadInt16();
+            int h = input.ReadInt16();
+            if (w <= 0 || w > 0x1000 || h <= 0 || h > 0x1000
+                || x < 0 || x > 0x800 || y < 0 || y > 0x800)
+                return null;
+            return new ImageMetaData {
+                Width = (uint)w,
+                Height = (uint)h,
+                OffsetX = x,
+                OffsetY = y,
+                BPP = 24,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 8;
             int stride = (((int)info.Width * 3 + 3) & -4);
             var pixels = new byte[stride * (int)info.Height];
-            using (var reader = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var reader = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 if (pixels.Length != reader.Read (pixels, 0, pixels.Length))
                     throw new InvalidFormatException();

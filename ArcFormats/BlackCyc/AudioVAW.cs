@@ -44,7 +44,7 @@ namespace GameRes.Formats.BlackCyc
             Extensions = new string[] { "vaw", "wgq" };
         }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             var header = ResourceHeader.Read (file);
             if (null == header)
@@ -76,8 +76,8 @@ namespace GameRes.Formats.BlackCyc
             }
             else
                 return null;
-            var input = new StreamRegion (file, offset, file.Length-offset);
-            return format.TryOpen (input);
+            var input = new StreamRegion (file.AsStream, offset, file.Length-offset);
+            return format.TryOpen (new BinaryStream (input, file.Name));
         }
 
         public override void Write (SoundInput source, Stream output)
@@ -85,7 +85,7 @@ namespace GameRes.Formats.BlackCyc
             throw new System.NotImplementedException ("EdimFormat.Write not implemenented");
         }
 
-        SoundInput Unpack (Stream input)
+        SoundInput Unpack (IBinaryStream input)
         {
             input.Position = 0x40;
             var header = new byte[0x24];
@@ -106,7 +106,7 @@ namespace GameRes.Formats.BlackCyc
             {
                 pcm.Write (header, 0, header_size);
                 using (var output = new BinaryWriter (pcm, Encoding.Default, true))
-                using (var bits = new LsbBitStream (input, true))
+                using (var bits = new LsbBitStream (input.AsStream, true))
                 {
                     int written = 0;
                     short sample = 0;
@@ -128,7 +128,7 @@ namespace GameRes.Formats.BlackCyc
                     }
                 }
                 pcm.Position = 0;
-                var sound = Wav.TryOpen (pcm);
+                var sound = Wav.TryOpen (new BinMemoryStream (pcm, input.Name));
                 if (sound != null)
                     input.Dispose();
                 else

@@ -188,7 +188,7 @@ namespace GameRes.Formats.Aoi
             {
                 data[i] ^= KeyFromOffset (offset++);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         static byte KeyFromOffset (uint offset)

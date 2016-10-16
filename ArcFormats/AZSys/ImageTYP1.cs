@@ -45,46 +45,38 @@ namespace GameRes.Formats.AZSys
         public override string Description { get { return "AZ system image format"; } }
         public override uint     Signature { get { return 0x31505954; } } // 'TYP1'
 
-        public Typ1Format ()
-        {
-            Extensions = new string[] { "cpb" };
-        }
-
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
             int bpp = stream.ReadByte();
             bool has_palette = stream.ReadByte() != 0;
-            using (var input = new ArcView.Reader (stream))
+            var info = new Typ1MetaData { BPP = bpp };
+            info.Width  = stream.ReadUInt16();
+            info.Height = stream.ReadUInt16();
+            uint packed_size = stream.ReadUInt32();
+            uint palette_size = 8 == bpp ? 0x400u : 0u;
+            if (packed_size+palette_size+0xE == stream.Length)
             {
-                var info = new Typ1MetaData { BPP = bpp };
-                info.Width  = input.ReadUInt16();
-                info.Height = input.ReadUInt16();
-                uint packed_size = input.ReadUInt32();
-                uint palette_size = 8 == bpp ? 0x400u : 0u;
-                if (packed_size+palette_size+0xE == stream.Length)
-                {
-                    info.SeparateChannels = false;
-                    info.HasPalette = palette_size > 0;
-                    info.PackedSize = packed_size;
-                }
-                else
-                {
-                    info.SeparateChannels = true;
-                    info.HasPalette = has_palette;
-                    info.Channel[0] = input.ReadUInt32();
-                    info.Channel[1] = input.ReadUInt32();
-                    info.Channel[2] = input.ReadUInt32();
-                    info.Channel[3] = input.ReadUInt32();
-                }
-                return info;
+                info.SeparateChannels = false;
+                info.HasPalette = palette_size > 0;
+                info.PackedSize = packed_size;
             }
+            else
+            {
+                info.SeparateChannels = true;
+                info.HasPalette = has_palette;
+                info.Channel[0] = stream.ReadUInt32();
+                info.Channel[1] = stream.ReadUInt32();
+                info.Channel[2] = stream.ReadUInt32();
+                info.Channel[3] = stream.ReadUInt32();
+            }
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (Typ1MetaData)info;
-            var reader = new Reader (stream, meta);
+            var reader = new Reader (stream.AsStream, meta);
             reader.Unpack();
             return ImageData.Create (meta, reader.Format, reader.Palette, reader.Data);
         }

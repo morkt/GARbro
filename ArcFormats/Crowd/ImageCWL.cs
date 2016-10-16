@@ -43,23 +43,21 @@ namespace GameRes.Formats.Crowd
 
         static readonly byte[] SignatureText = Encoding.ASCII.GetBytes ("cwd format  - version 1.00 -");
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x38];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x38);
             if (!header.Take (SignatureText.Length).SequenceEqual (SignatureText))
                 return null;
             uint key = header[0x34] + 0x259Au;
             return new ImageMetaData
             {
-                Width  = LittleEndian.ToUInt32 (header, 0x2c) + key,
-                Height = LittleEndian.ToUInt32 (header, 0x30) + key,
+                Width  = header.ToUInt32 (0x2c) + key,
+                Height = header.ToUInt32 (0x30) + key,
                 BPP    = 15,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x38;
             int size = (int)info.Width * (int)info.Height * 2;
@@ -82,36 +80,34 @@ namespace GameRes.Formats.Crowd
         public override string Description { get { return "LZ-compressed Crowd bitmap"; } }
         public override uint     Signature { get { return 0x44445A53u; } } // 'SZDD'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 0x0e;
-            using (var lz = new LzssReader (stream, 100, 0x38)) // extract CWD header
+            using (var lz = new LzssReader (stream.AsStream, 100, 0x38)) // extract CWD header
             {
                 lz.FrameSize = 0x1000;
                 lz.FrameFill = 0x20;
                 lz.FrameInitPos = 0x1000 - 0x10;
                 lz.Unpack();
-                using (var cwd = new MemoryStream (lz.Data))
+                using (var cwd = new BinMemoryStream (lz.Data, stream.Name))
                     return base.ReadMetaData (cwd);
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            if (stream.Length > int.MaxValue)
+            if (file.Length > int.MaxValue)
                 throw new FileSizeException();
-            var header = new byte[14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                throw new InvalidFormatException();
-            int data_length = LittleEndian.ToInt32 (header, 10);
-            int input_length = (int)(stream.Length-stream.Position);
-            using (var lz = new LzssReader (stream, input_length, data_length))
+            var header = file.ReadHeader (14);
+            int data_length = header.ToInt32 (10);
+            int input_length = (int)(file.Length-file.Position);
+            using (var lz = new LzssReader (file.AsStream, input_length, data_length))
             {
                 lz.FrameSize = 0x1000;
                 lz.FrameFill = 0x20;
                 lz.FrameInitPos = 0x1000 - 0x10;
                 lz.Unpack();
-                using (var cwd = new MemoryStream (lz.Data))
+                using (var cwd = new BinMemoryStream (lz.Data, file.Name))
                     return base.Read (cwd, info);
             }
         }

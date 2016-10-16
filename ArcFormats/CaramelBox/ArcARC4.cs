@@ -130,7 +130,7 @@ namespace GameRes.Formats.CaramelBox
                 return input;
             using (input)
             using (var tz = new TzCompression (input))
-                return new MemoryStream (tz.Unpack());
+                return new BinMemoryStream (tz.Unpack(), entry.Name);
         }
 
         static int ReadInt24 (byte[] data, int pos)

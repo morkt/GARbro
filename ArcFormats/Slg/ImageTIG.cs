@@ -37,17 +37,19 @@ namespace GameRes.Formats.Slg
         public override uint     Signature { get { return 0x7CF3C28B; } }
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var proxy = new ProxyStream (stream, true))
-            using (var input = new CryptoStream (proxy, new TigTransform(), CryptoStreamMode.Read))
+            using (var proxy = new ProxyStream (stream.AsStream, true))
+            using (var crypt = new CryptoStream (proxy, new TigTransform(), CryptoStreamMode.Read))
+            using (var input = new BinaryStream (crypt, stream.Name))
                 return base.ReadMetaData (input);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var proxy = new ProxyStream (stream, true))
-            using (var input = new CryptoStream (proxy, new TigTransform(), CryptoStreamMode.Read))
+            using (var proxy = new ProxyStream (stream.AsStream, true))
+            using (var crypt = new CryptoStream (proxy, new TigTransform(), CryptoStreamMode.Read))
+            using (var input = new BinaryStream (crypt, stream.Name))
                 return base.Read (input, info);
         }
 
@@ -59,7 +61,7 @@ namespace GameRes.Formats.Slg
 
     internal sealed class TigTransform : ICryptoTransform
     {
-        const int BlockSize = 256;
+        const int BlockSize = 1;
         uint m_key;
 
         public bool          CanReuseTransform { get { return true; } }

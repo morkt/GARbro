@@ -162,7 +162,7 @@ namespace GameRes.Formats.DxLib
                 var offset = scr_arc.Encryption.StartOffset;
                 scr_arc.Encryption.Decrypt (data, offset, data.Length-offset);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         public override ResourceOptions GetDefaultOptions ()

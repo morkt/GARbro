@@ -43,34 +43,31 @@ namespace GameRes.Formats.Nags
         public override string Description { get { return "NAGS engine image format"; } }
         public override uint     Signature { get { return 0x2050474E; } } // 'NGP '
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            stream.Position = 0x12;
-            using (var reader = new ArcView.Reader (stream))
+            file.Position = 0x12;
+            int packed_size = file.ReadInt32();
+            uint width      = file.ReadUInt32();
+            uint height     = file.ReadUInt32();
+            int bpp         = file.ReadUInt16() * 8;
+            file.Position = 0x100;
+            int unpacked_size = file.ReadInt32();
+            if (packed_size <= 0 || unpacked_size <= 0)
+                return null;
+            return new NgpMetaData
             {
-                int packed_size = reader.ReadInt32();
-                uint width      = reader.ReadUInt32();
-                uint height     = reader.ReadUInt32();
-                int bpp         = reader.ReadUInt16() * 8;
-                reader.BaseStream.Position = 0x100;
-                int unpacked_size = reader.ReadInt32();
-                if (packed_size <= 0 || unpacked_size <= 0)
-                    return null;
-                return new NgpMetaData
-                {
-                    Width = width,
-                    Height = height,
-                    BPP = bpp,
-                    PackedSize = packed_size,
-                    UnpackedSize = unpacked_size,
-                };
-            }
+                Width = width,
+                Height = height,
+                BPP = bpp,
+                PackedSize = packed_size,
+                UnpackedSize = unpacked_size,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (NgpMetaData)info;
-            using (var input = new StreamRegion (stream, 0x104, meta.PackedSize, true))
+            using (var input = new StreamRegion (stream.AsStream, 0x104, meta.PackedSize, true))
             using (var z = new ZLibStream (input, CompressionMode.Decompress))
             {
                 var pixels = new byte[meta.UnpackedSize];

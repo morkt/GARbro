@@ -54,36 +54,33 @@ namespace GameRes.Formats.Gs
             Extensions = new string[] { "pic" }; // made-up
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var input = new ArcView.Reader (stream))
+            file.Position = 4;
+            var info = new PicMetaData();
+            info.PackedSize = file.ReadUInt32();
+            info.UnpackedSize = file.ReadUInt32();
+            info.HeaderSize = file.ReadUInt32();
+            if (info.HeaderSize >= file.Length || info.PackedSize + info.HeaderSize > file.Length)
+                return null;
+            file.ReadUInt32();
+            info.Width = file.ReadUInt32();
+            info.Height = file.ReadUInt32();
+            info.BPP = file.ReadInt32();
+            if (info.HeaderSize >= 0x2C)
             {
-                var info = new PicMetaData();
-                input.ReadUInt32();
-                info.PackedSize = input.ReadUInt32();
-                info.UnpackedSize = input.ReadUInt32();
-                info.HeaderSize = input.ReadUInt32();
-                if (info.HeaderSize >= stream.Length || info.PackedSize + info.HeaderSize > stream.Length)
-                    return null;
-                input.ReadUInt32();
-                info.Width = input.ReadUInt32();
-                info.Height = input.ReadUInt32();
-                info.BPP = input.ReadInt32();
-                if (info.HeaderSize >= 0x2C)
-                {
-                    input.ReadInt32();
-                    info.OffsetX = input.ReadInt32();
-                    info.OffsetY = input.ReadInt32();
-                }
-                return info;
+                file.ReadInt32();
+                info.OffsetX = file.ReadInt32();
+                info.OffsetY = file.ReadInt32();
             }
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (PicMetaData)info;
-            stream.Position = meta.HeaderSize;
-            using (var input = new LzssStream (stream, LzssMode.Decompress, true))
+            file.Position = meta.HeaderSize;
+            using (var input = new LzssStream (file.AsStream, LzssMode.Decompress, true))
             {
                 BitmapPalette palette = null;
                 PixelFormat format;

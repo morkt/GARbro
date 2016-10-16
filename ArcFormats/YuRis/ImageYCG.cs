@@ -48,27 +48,25 @@ namespace GameRes.Formats.YuRis
         public override string Description { get { return "YU-RIS compressed image format"; } }
         public override uint     Signature { get { return 0x474359; } } // 'YCG'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x38];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x38);
             return new YcgMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 4),
-                Height  = LittleEndian.ToUInt32 (header, 8),
-                BPP     = LittleEndian.ToInt32 (header, 12),
-                CompressionMethod   = LittleEndian.ToInt32 (header, 0x10),
-                UnpackedSize1       = LittleEndian.ToInt32 (header, 0x20),
-                CompressedSize1     = LittleEndian.ToInt32 (header, 0x24),
-                UnpackedSize2       = LittleEndian.ToInt32 (header, 0x30),
-                CompressedSize2     = LittleEndian.ToInt32 (header, 0x34),
+                Width   = header.ToUInt32 (4),
+                Height  = header.ToUInt32 (8),
+                BPP     = header.ToInt32 (12),
+                CompressionMethod   = header.ToInt32 (0x10),
+                UnpackedSize1       = header.ToInt32 (0x20),
+                CompressedSize1     = header.ToInt32 (0x24),
+                UnpackedSize2       = header.ToInt32 (0x30),
+                CompressedSize2     = header.ToInt32 (0x34),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new YcgReader (stream, (YcgMetaData)info);
+            var reader = new YcgReader (stream.AsStream, (YcgMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, null, reader.Data);
         }

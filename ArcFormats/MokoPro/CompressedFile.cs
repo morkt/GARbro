@@ -98,12 +98,13 @@ namespace GameRes.Formats.Mokopro
             Extensions = new string[0];
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var moko = new MokoCrypt (stream);
+            var moko = new MokoCrypt (stream.AsStream);
             using (var lzss = moko.UnpackStream())
+            using (var bmp = new BinaryStream (lzss, stream.Name))
             {
-                var info = base.ReadMetaData (lzss);
+                var info = base.ReadMetaData (bmp);
                 if (null == info)
                     return null;
                 return new NNNNMetaData
@@ -117,11 +118,12 @@ namespace GameRes.Formats.Mokopro
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (NNNNMetaData)info;
             using (var lzss = meta.Input.UnpackStream())
-                return base.Read (lzss, meta.BmpInfo);
+            using (var bmp = new BinaryStream (lzss, stream.Name))
+                return base.Read (bmp, meta.BmpInfo);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -142,9 +144,9 @@ namespace GameRes.Formats.Mokopro
             Extensions = new string[0];
         }
 
-        public override SoundInput TryOpen (Stream stream)
+        public override SoundInput TryOpen (IBinaryStream stream)
         {
-            var moko = new MokoCrypt (stream);
+            var moko = new MokoCrypt (stream.AsStream);
             var ogg = moko.UnpackBytes();
             var output = new MemoryStream (ogg);
             try

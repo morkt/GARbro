@@ -38,46 +38,43 @@ namespace GameRes.Formats.Circus
         public override string Description { get { return "Circus PCM audio"; } }
         public override uint     Signature { get { return 0x4d435058; } } // 'XPCM'
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             file.Position = 4;
-            using (var input = new ArcView.Reader (file))
+            int src_size = file.ReadInt32();
+            if (src_size <= 0)
+                throw new InvalidFormatException();
+            int mode = file.ReadInt32();
+            int extra = (mode >> 8) & 0xff;
+            mode &= 0xff;
+            if (5 == mode)
             {
-                int src_size = input.ReadInt32();
-                if (src_size <= 0)
-                    throw new InvalidFormatException();
-                int mode = input.ReadInt32();
-                int extra = (mode >> 8) & 0xff;
-                mode &= 0xff;
-                if (5 == mode)
-                {
-                    uint ogg_size = input.ReadUInt32();
-                    var ogg = new StreamRegion (file, 0x10, ogg_size);
-                    return new OggInput (ogg);
-                }
-                var format = new WaveFormat();
-                format.FormatTag                = input.ReadUInt16();
-                format.Channels                 = input.ReadUInt16();
-                format.SamplesPerSecond         = input.ReadUInt32();
-                format.AverageBytesPerSecond    = input.ReadUInt32();
-                format.BlockAlign               = input.ReadUInt16();
-                format.BitsPerSample            = input.ReadUInt16();
-                Stream pcm;
-                if (0 == mode)
-                {
-                    pcm = new StreamRegion (file, file.Position, src_size);
-                }
-                else if (1 == mode || 3 == mode)
-                {
-                    var decoder = new PcmDecoder (input, src_size, extra, (XpcmCompression)mode);
-                    pcm = new MemoryStream (decoder.Unpack(), 0, src_size);
-                    file.Dispose();
-                }
-                else
-                    throw new NotSupportedException ("Not supported Circus PCM audio compression");
-
-                return new RawPcmInput (pcm, format);
+                uint ogg_size = file.ReadUInt32();
+                var ogg = new StreamRegion (file.AsStream, 0x10, ogg_size);
+                return new OggInput (ogg);
             }
+            var format = new WaveFormat();
+            format.FormatTag                = file.ReadUInt16();
+            format.Channels                 = file.ReadUInt16();
+            format.SamplesPerSecond         = file.ReadUInt32();
+            format.AverageBytesPerSecond    = file.ReadUInt32();
+            format.BlockAlign               = file.ReadUInt16();
+            format.BitsPerSample            = file.ReadUInt16();
+            Stream pcm;
+            if (0 == mode)
+            {
+                pcm = new StreamRegion (file.AsStream, file.Position, src_size);
+            }
+            else if (1 == mode || 3 == mode)
+            {
+                var decoder = new PcmDecoder (file, src_size, extra, (XpcmCompression)mode);
+                pcm = new MemoryStream (decoder.Unpack(), 0, src_size);
+                file.Dispose();
+            }
+            else
+                throw new NotSupportedException ("Not supported Circus PCM audio compression");
+
+            return new RawPcmInput (pcm, format);
         }
     }
 
@@ -97,7 +94,7 @@ namespace GameRes.Formats.Circus
 
         public byte[] Data { get { return m_pcm_data; } }
 
-        public PcmDecoder (BinaryReader input, int pcm_size, int extra, XpcmCompression mode)
+        public PcmDecoder (IBinaryStream input, int pcm_size, int extra, XpcmCompression mode)
         {
             if (extra < 0 || extra > 3)
                 throw new InvalidFormatException();
@@ -114,7 +111,7 @@ namespace GameRes.Formats.Circus
             }
             else if (XpcmCompression.Zlib == mode)
             {
-                using (var z = new ZLibStream (input.BaseStream, CompressionMode.Decompress, true))
+                using (var z = new ZLibStream (input.AsStream, CompressionMode.Decompress, true))
                     z.Read (m_encoded, 0, m_encoded.Length);
             }
             else

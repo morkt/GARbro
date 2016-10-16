@@ -62,11 +62,9 @@ namespace GameRes.Formats.TopCat
             Signatures = new uint[] { 0x43445053, 0x38445053 }; // 'SPD8'
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x14).ToArray();
             unsafe
             {
                 fixed (byte* raw = header)
@@ -88,13 +86,13 @@ namespace GameRes.Formats.TopCat
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (SpdMetaData)info;
             if (Compression.Jpeg == meta.Method)
-                return ReadJpeg (stream, meta);
+                return ReadJpeg (stream.AsStream, meta);
 
-            using (var reader = new SpdReader (stream, meta))
+            using (var reader = new SpdReader (stream.AsStream, meta))
             {
                 reader.Unpack();
                 return ImageData.Create (info, reader.Format, null, reader.Data);

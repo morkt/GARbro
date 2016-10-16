@@ -69,29 +69,26 @@ namespace GameRes.Formats.ExHibit
             set { KnownKeys = ((GyuMap)value).KnownKeys; }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var reader = new ArcView.Reader (stream))
+            stream.Position = 4;
+            return new GyuMetaData
             {
-                reader.ReadInt32();
-                return new GyuMetaData
-                {
-                    Flags   = reader.ReadUInt16(),
-                    CompressionMode = reader.ReadUInt16(),
-                    Key     = reader.ReadUInt32(),
-                    BPP     = reader.ReadInt32(),
-                    Width   = reader.ReadUInt32(),
-                    Height  = reader.ReadUInt32(),
-                    DataSize    = reader.ReadInt32(),
-                    AlphaSize   = reader.ReadInt32(),
-                    PaletteSize = reader.ReadInt32(),
-                };
-            }
+                Flags   = stream.ReadUInt16(),
+                CompressionMode = stream.ReadUInt16(),
+                Key     = stream.ReadUInt32(),
+                BPP     = stream.ReadInt32(),
+                Width   = stream.ReadUInt32(),
+                Height  = stream.ReadUInt32(),
+                DataSize    = stream.ReadInt32(),
+                AlphaSize   = stream.ReadInt32(),
+                PaletteSize = stream.ReadInt32(),
+            };
         }
 
         IDictionary<int, uint> CurrentMap = null;
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GyuMetaData)info;
             if (0 == meta.Key)
@@ -111,7 +108,7 @@ namespace GameRes.Formats.ExHibit
                     throw new UnknownEncryptionScheme ("Unknown image encryption key");
                 }
             }
-            var reader = new GyuReader (stream, meta);
+            var reader = new GyuReader (stream.AsStream, meta);
             reader.Unpack();
             return ImageData.CreateFlipped (meta, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }

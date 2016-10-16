@@ -36,11 +36,10 @@ namespace GameRes.Formats.RealLive
         public override string Description { get { return "RealLive engine obfuscated OGG audio"; } }
         public override uint     Signature { get { return 0x6A5E5E76; } } // 'OggS' ^ 0x39
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            Stream input = new CryptoStream (file, new XorTransform (0x39), CryptoStreamMode.Read);
-            input = new SeekableStream (input);
-            return OggAudio.Instance.TryOpen (input);
+            var input = new XoredStream (file.AsStream, 0x39);
+            return new OggInput (input);
         }
     }
 }

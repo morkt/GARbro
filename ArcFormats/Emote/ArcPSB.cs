@@ -583,10 +583,10 @@ namespace GameRes.Formats.Emote
             Extensions = new string[0];
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
-            using (var reader = new BinaryReader (stream, Encoding.UTF8, true))
+            using (var reader = new BinaryReader (stream.AsStream, Encoding.UTF8, true))
             {
                 var info = new PsbTexMetaData { BPP = 32 };
                 info.DataOffset = reader.ReadInt32();
@@ -599,14 +599,14 @@ namespace GameRes.Formats.Emote
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (PsbTexMetaData)info;
             var pixels = new byte[meta.Width * meta.Height * 4];
             if ("RGBA8" == meta.TexType)
-                ReadRgba8 (stream, meta, pixels);
+                ReadRgba8 (stream.AsStream, meta, pixels);
             else if ("RGBA4444" == meta.TexType)
-                ReadRgba4444 (stream, meta, pixels);
+                ReadRgba4444 (stream.AsStream, meta, pixels);
             else
                 throw new NotImplementedException (string.Format ("PSB texture format '{0}' not implemented", meta.TexType));
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);

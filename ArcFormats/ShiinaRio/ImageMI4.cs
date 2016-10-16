@@ -37,23 +37,20 @@ namespace GameRes.Formats.ShiinaRio
         public override string Description { get { return "ShiinaRio image format"; } }
         public override uint     Signature { get { return 0x3449414D; } } // 'MAI4'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            stream.Seek (8, SeekOrigin.Current);
-            using (var input = new ArcView.Reader (stream))
+            file.Position = 8;
+            uint width  = file.ReadUInt32();
+            uint height = file.ReadUInt32();
+            return new ImageMetaData
             {
-                uint width  = input.ReadUInt32();
-                uint height = input.ReadUInt32();
-                return new ImageMetaData
-                {
-                    Width = width,
-                    Height = height,
-                    BPP = 24,
-                };
-            }
+                Width = width,
+                Height = height,
+                BPP = 24,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x10;
             using (var reader = new Reader (stream, (int)info.Width, (int)info.Height))
@@ -70,15 +67,15 @@ namespace GameRes.Formats.ShiinaRio
 
         internal sealed class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             int             m_stride;
 
             public byte[] Data { get { return m_output; } }
 
-            public Reader (Stream file, int width, int height)
+            public Reader (IBinaryStream file, int width, int height)
             {
-                m_input = new ArcView.Reader (file);
+                m_input = file;
                 m_stride = width * 3;
                 m_output = new byte[m_stride*height];
             }
@@ -125,9 +122,9 @@ namespace GameRes.Formats.ShiinaRio
                     {
                         if (GetBit() != 0)
                         {
-                            b = m_input.ReadByte();
-                            g = m_input.ReadByte();
-                            r = m_input.ReadByte();
+                            b = m_input.ReadUInt8();
+                            g = m_input.ReadUInt8();
+                            r = m_input.ReadUInt8();
                         }
                         else if (GetBit() != 0)
                         {
@@ -203,14 +200,8 @@ namespace GameRes.Formats.ShiinaRio
             }
 
             #region IDisposable Members
-            bool disposed = false;
             public void Dispose ()
             {
-                if (!disposed)
-                {
-                    m_input.Dispose ();
-                    disposed = true;
-                }
                 GC.SuppressFinalize (this);
             }
             #endregion

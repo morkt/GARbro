@@ -333,7 +333,7 @@ namespace GameRes.Formats.Eagls
         {
             byte[] input = File.View.ReadBytes (entry.Offset, entry.Size);
             Encryption.Decrypt (input);
-            return new MemoryStream (input);
+            return new BinMemoryStream (input, entry.Name);
         }
     }
 }

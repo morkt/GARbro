@@ -43,48 +43,40 @@ namespace GameRes.Formats.BlueGale
         public override string Description { get { return "BlueGale compressed image format"; } }
         public override uint     Signature { get { return 0x5F706D61; } } // 'amp_'
 
-        public ZbmFormat ()
-        {
-            Extensions = new string[] { "zbm" };
-        }
-
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
-            using (var reader = new ArcView.Reader (stream))
+            int version = stream.ReadInt16();
+            if (version != 1)
+                return null;
+            int unpacked_size = stream.ReadInt32();
+            int data_offset = stream.ReadInt32();
+            if (unpacked_size < 0x36 || data_offset < stream.Position)
+                return null;
+            var header = new byte[0x20];
+            stream.Position = data_offset;
+            Unpack (stream.AsStream, header);
+            Decrypt (header);
+            if ('B' != header[0] || 'M' != header[1])
+                return null;
+            return new ZbmMetaData
             {
-                int version = reader.ReadInt16();
-                if (version != 1)
-                    return null;
-                int unpacked_size = reader.ReadInt32();
-                int data_offset = reader.ReadInt32();
-                if (unpacked_size < 0x36 || data_offset < stream.Position)
-                    return null;
-                var header = new byte[0x20];
-                stream.Position = data_offset;
-                Unpack (stream, header);
-                Decrypt (header);
-                if ('B' != header[0] || 'M' != header[1])
-                    return null;
-                return new ZbmMetaData
-                {
-                    Width = LittleEndian.ToUInt32 (header, 0x12),
-                    Height = LittleEndian.ToUInt32 (header, 0x16),
-                    BPP = LittleEndian.ToInt16 (header, 0x1C),
-                    UnpackedSize = unpacked_size,
-                    DataOffset = data_offset,
-                };
-            }
+                Width = LittleEndian.ToUInt32 (header, 0x12),
+                Height = LittleEndian.ToUInt32 (header, 0x16),
+                BPP = LittleEndian.ToInt16 (header, 0x1C),
+                UnpackedSize = unpacked_size,
+                DataOffset = data_offset,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (ZbmMetaData)info;
             var data = new byte[meta.UnpackedSize];
             stream.Position = meta.DataOffset;
-            Unpack (stream, data);
+            Unpack (stream.AsStream, data);
             Decrypt (data);
-            using (var bmp = new MemoryStream (data))
+            using (var bmp = new BinMemoryStream (data, stream.Name))
                 return Bmp.Read (bmp, info);
         }
 

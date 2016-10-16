@@ -51,7 +51,7 @@ namespace GameRes.Formats.Eushully
             Signatures = new uint[] { 0x46474341, 0 };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = new byte[0x20];
             if (0x18 != stream.Read (header, 0, 0x18))
@@ -64,7 +64,7 @@ namespace GameRes.Formats.Eushully
                 return null;
             int unpacked_size = LittleEndian.ToInt32 (header, 0x10);
             int packed_size = LittleEndian.ToInt32 (header, 0x14);
-            using (var unpacked = AgfReader.OpenSection (stream, unpacked_size, packed_size))
+            using (var unpacked = AgfReader.OpenSection (stream.AsStream, unpacked_size, packed_size))
             using (var reader = new BinaryReader (unpacked))
             {
                 if (0x20 != reader.Read (header, 0, 0x20))
@@ -101,7 +101,7 @@ namespace GameRes.Formats.Eushully
             return palette;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new AgfReader (stream, (AgfMetaData)info))
             {
@@ -118,7 +118,7 @@ namespace GameRes.Formats.Eushully
 
     internal sealed class AgfReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         int             m_width;
         int             m_height;
@@ -129,9 +129,9 @@ namespace GameRes.Formats.Eushully
         public PixelFormat    Format { get; private set; }
         public byte[]           Data { get { return m_output; } }
 
-        public AgfReader (Stream input, AgfMetaData info)
+        public AgfReader (IBinaryStream input, AgfMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_bpp = info.BPP;
             m_source_bpp = info.SourceBPP;
             input.Position = info.DataOffset;
@@ -155,15 +155,15 @@ namespace GameRes.Formats.Eushully
             m_input.ReadInt32();
             int data_size = m_input.ReadInt32();
             int packed_size = m_input.ReadInt32();
-            var data_pos = m_input.BaseStream.Position;
+            var data_pos = m_input.Position;
             var bmp_data = new byte[data_size];
-            using (var unpacked = OpenSection (m_input.BaseStream, data_size, packed_size))
+            using (var unpacked = OpenSection (m_input.AsStream, data_size, packed_size))
                 if (data_size != unpacked.Read (bmp_data, 0, data_size))
                     throw new EndOfStreamException();
             byte[] alpha = null;
             if (32 == m_bpp)
             {
-                m_input.BaseStream.Position = data_pos + packed_size;
+                m_input.Position = data_pos + packed_size;
                 alpha = ReadAlphaChannel();
                 if (null == alpha)
                     m_bpp = 24;
@@ -231,21 +231,15 @@ namespace GameRes.Formats.Eushully
             if (m_width*m_height != unpacked_size)
                 return null;
             var alpha = new byte[unpacked_size];
-            using (var unpacked = OpenSection (m_input.BaseStream, unpacked_size, packed_size))
+            using (var unpacked = OpenSection (m_input.AsStream, unpacked_size, packed_size))
                 if (unpacked_size != unpacked.Read (alpha, 0, unpacked_size))
                     return null;
             return alpha;
         }
 
         #region IDisposable methods
-        bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
         }
         #endregion
     }

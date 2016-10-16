@@ -78,7 +78,7 @@ namespace GameRes.Formats.Silky
             {
                 lzss.FrameFill = 0x20;
                 lzss.Unpack();
-                return new MemoryStream (lzss.Data);
+                return new BinMemoryStream (lzss.Data, entry.Name);
             }
         }
     }

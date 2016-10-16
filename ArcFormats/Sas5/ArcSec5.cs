@@ -73,7 +73,7 @@ namespace GameRes.Formats.Sas5
             var code = new byte[entry.Size];
             arc.File.View.Read (entry.Offset, code, 0, entry.Size);
             DecryptCodeSection (code);
-            return new MemoryStream (code);
+            return new BinMemoryStream (code, entry.Name);
         }
 
         static void DecryptCodeSection (byte[] code)

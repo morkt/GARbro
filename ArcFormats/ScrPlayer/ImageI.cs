@@ -43,22 +43,20 @@ namespace GameRes.Formats.ScrPlayer
             Extensions = new string[] { "i" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x20);
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt16 (header, 0xC),
-                Height  = LittleEndian.ToUInt16 (header, 0xE),
-                BPP     = LittleEndian.ToUInt16 (header, 0x10),
+                Width   = header.ToUInt16 (0xC),
+                Height  = header.ToUInt16 (0xE),
+                BPP     = header.ToUInt16 (0x10),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new Img2Reader (stream, info))
+            using (var reader = new Img2Reader (stream.AsStream, info))
             {
                 reader.Unpack();
                 return ImageData.Create (info, reader.Format, null, reader.Data);

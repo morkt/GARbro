@@ -38,30 +38,28 @@ namespace GameRes.Formats.KiriKiri
             Signatures = new uint[] { 0x30474c54, 0x35474c54, 0x36474c54, 0x35474cAB };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x26];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x26);
             int offset = 0xf;
-            if (!Binary.AsciiEqual (header, "TLG0.0\x00sds\x1a"))
+            if (!header.AsciiEqual ("TLG0.0\x00sds\x1a"))
                 offset = 0;
             int version;
-            if (!Binary.AsciiEqual (header, offset+6, "\x00raw\x1a"))
+            if (!header.AsciiEqual (offset+6, "\x00raw\x1a"))
                 return null;
             if (0xAB == header[offset])
                 header[offset] = (byte)'T';
-            if (Binary.AsciiEqual (header, offset, "TLG6.0"))
+            if (header.AsciiEqual (offset, "TLG6.0"))
                 version = 6;
-            else if (Binary.AsciiEqual (header, offset, "TLG5.0"))
+            else if (header.AsciiEqual (offset, "TLG5.0"))
                 version = 5;
-            else if (Binary.AsciiEqual (header, offset, "XXXYYY"))
+            else if (header.AsciiEqual (offset, "XXXYYY"))
             {
                 version = 5;
                 header[offset+0x0C] ^= 0xAB;
                 header[offset+0x10] ^= 0xAC;
             }
-            else if (Binary.AsciiEqual (header, offset, "XXXZZZ"))
+            else if (header.AsciiEqual (offset, "XXXZZZ"))
             {
                 version = 6;
                 header[offset+0x0F] ^= 0xAB;
@@ -84,44 +82,40 @@ namespace GameRes.Formats.KiriKiri
                     return null;
                 offset += 12;
             }
-            uint width  = LittleEndian.ToUInt32 (header, offset);
-            uint height = LittleEndian.ToUInt32 (header, offset+4);
-            return new TlgMetaData {
-                Width   = width,
-                Height  = height,
+            return new TlgMetaData
+            {
+                Width   = header.ToUInt32 (offset),
+                Height  = header.ToUInt32 (offset+4),
                 BPP     = colors*8,
                 Version     = version,
                 DataOffset  = offset+8,
             };
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (TlgMetaData)info;
             file.Position = meta.DataOffset;
 
-            using (var src = new ArcView.Reader (file))
-            {
-                var image = ReadTlg (src, meta);
+            var image = ReadTlg (file, meta);
 
-                int tail_size = (int)Math.Min (file.Length - file.Position, 512);
-                if (tail_size > 8)
+            int tail_size = (int)Math.Min (file.Length - file.Position, 512);
+            if (tail_size > 8)
+            {
+                var tail = file.ReadBytes (tail_size);
+                try
                 {
-                    var tail = src.ReadBytes (tail_size);
-                    try
-                    {
-                        var blended_image = ApplyTags (image, meta, tail);
-                        if (null != blended_image)
-                            return blended_image;
-                    }
-                    catch (Exception X)
-                    {
-                        Trace.WriteLine (X.Message, "[TlgFormat.Read]");
-                    }
+                    var blended_image = ApplyTags (image, meta, tail);
+                    if (null != blended_image)
+                        return blended_image;
                 }
-                PixelFormat format = 32 == meta.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
-                return ImageData.Create (meta, format, null, image, (int)meta.Width * 4);
+                catch (Exception X)
+                {
+                    Trace.WriteLine (X.Message, "[TlgFormat.Read]");
+                }
             }
+            PixelFormat format = 32 == meta.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+            return ImageData.Create (meta, format, null, image, (int)meta.Width * 4);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -129,7 +123,7 @@ namespace GameRes.Formats.KiriKiri
             throw new NotImplementedException ("TlgFormat.Write not implemented");
         }
 
-        byte[] ReadTlg (BinaryReader src, TlgMetaData info)
+        byte[] ReadTlg (IBinaryStream src, TlgMetaData info)
         {
             if (6 == info.Version)
                 return ReadV6 (src, info);
@@ -163,15 +157,14 @@ namespace GameRes.Formats.KiriKiri
 
             TlgMetaData base_info;
             byte[] base_image;
-            using (var base_file = VFS.OpenSeekableStream (base_name))
-            using (var base_src = new BinaryReader (base_file))
+            using (var base_file = VFS.OpenBinaryStream (base_name))
             {
                 base_info = ReadMetaData (base_file) as TlgMetaData;
                 if (null == base_info)
                     return null;
                 base_info.FileName = base_name;
                 base_file.Position = base_info.DataOffset;
-                base_image = ReadTlg (base_src, base_info);
+                base_image = ReadTlg (base_file, base_info);
             }
             var pixels = BlendImage (base_image, base_info, image, meta);
             PixelFormat format = 32 == base_info.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
@@ -226,7 +219,7 @@ namespace GameRes.Formats.KiriKiri
         const int TVP_TLG6_LeadingZeroTable_BITS = 12;
         const int TVP_TLG6_LeadingZeroTable_SIZE = (1<<TVP_TLG6_LeadingZeroTable_BITS);
 
-        byte[] ReadV6 (BinaryReader src, TlgMetaData info)
+        byte[] ReadV6 (IBinaryStream src, TlgMetaData info)
         {
             int width = (int)info.Width;
             int height = (int)info.Height;
@@ -374,7 +367,7 @@ namespace GameRes.Formats.KiriKiri
             return pixels;
         }
 
-        byte[] ReadV5 (BinaryReader src, TlgMetaData info)
+        byte[] ReadV5 (IBinaryStream src, TlgMetaData info)
         {
             int width = (int)info.Width;
             int height = (int)info.Height;
@@ -383,7 +376,7 @@ namespace GameRes.Formats.KiriKiri
             int blockcount = (height - 1) / blockheight + 1;
 
             // skip block size section
-            src.BaseStream.Seek (blockcount * 4, SeekOrigin.Current);
+            src.Seek (blockcount * 4, SeekOrigin.Current);
 
             int stride = width * 4;
             var image_bits = new byte[height * stride];
@@ -403,7 +396,7 @@ namespace GameRes.Formats.KiriKiri
                 // read file and decompress
                 for (int c = 0; c < colors; c++)
                 {
-                    byte mark = src.ReadByte();
+                    byte mark = src.ReadUInt8();
                     int size;
                     size = src.ReadInt32();
                     if (mark == 0)

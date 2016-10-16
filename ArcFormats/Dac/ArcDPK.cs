@@ -157,7 +157,7 @@ namespace GameRes.Formats.Dac
             var data = new byte[entry.Size];
             arc.File.View.Read (entry.Offset, data, 0, entry.Size);
             DecryptEntry (data, parc.Key1, parc.Key2, pentry);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         private void DecryptIndex (byte[] buf, int base_offset, int length, byte last)

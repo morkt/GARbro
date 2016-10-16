@@ -58,49 +58,40 @@ namespace GameRes.Formats.Silky
             throw new NotImplementedException ("MfgFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var file = new ArcView.Reader (stream))
+            file.Position = 3;
+            byte id = file.ReadUInt8();
+            uint data_size = file.ReadUInt32();
+            uint width = file.ReadUInt32();
+            uint height = file.ReadUInt32();
+            uint stride = file.ReadUInt32();
+            if (stride < width)
+                throw new NotSupportedException();
+            if (stride*height != data_size)
+                return null;
+            return new MfgMetaData
             {
-                stream.Seek (3, SeekOrigin.Current);
-                byte id = file.ReadByte();
-                uint data_size = file.ReadUInt32();
-                uint width = file.ReadUInt32();
-                uint height = file.ReadUInt32();
-                uint stride = file.ReadUInt32();
-                if (stride < width)
-                    throw new NotSupportedException();
-                if (stride*height != data_size)
-                    return null;
-                return new MfgMetaData
-                {
-                    Width = width,
-                    Height = height,
-                    BPP = (int)(stride*8/width),
-                    Type = id,
-                    Stride = (int)stride,
-                };
-            }
+                Width = width,
+                Height = height,
+                BPP = (int)(stride*8/width),
+                Type = id,
+                Stride = (int)stride,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = info as MfgMetaData;
-            if (null == meta)
-                throw new ArgumentException ("MfgFormat.Read should be supplied with MfgMetaData", "info");
-
-            stream.Position = 0x14;
+            var meta = (MfgMetaData)info;
+            file.Position = 0x14;
             if ('_' != meta.Type)
-                using (var file = new ArcView.Reader (stream))
+                for (uint i = 0; i < meta.Height; ++i)
                 {
-                    for (uint i = 0; i < meta.Height; ++i)
-                    {
-                        uint n = file.ReadUInt32();
-                        file.BaseStream.Seek (n*8, SeekOrigin.Current);
-                    }
+                    uint n = file.ReadUInt32();
+                    file.Seek (n*8, SeekOrigin.Current);
                 }
             byte[] pixels = new byte[meta.Stride*info.Height];
-            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+            if (pixels.Length != file.Read (pixels, 0, pixels.Length))
                 throw new InvalidFormatException ("Unexpected end of file");
             PixelFormat format;
             if (24 == meta.BPP)

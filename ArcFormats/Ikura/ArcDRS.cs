@@ -213,7 +213,7 @@ namespace GameRes.Formats.Ikura
                 byte key = data[6];
                 ApplyTransformation (data, 8, x => x ^ key);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         public override ResourceOptions GetDefaultOptions ()

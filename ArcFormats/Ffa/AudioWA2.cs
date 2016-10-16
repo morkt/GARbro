@@ -36,7 +36,7 @@ namespace GameRes.Formats.Ffa
         public override string Description { get { return "FFA System PCM audio format"; } }
         public override uint     Signature { get { return 0x4D435041; } } // 'APCM'
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             return new Wa2Input (file);
         }
@@ -51,27 +51,25 @@ namespace GameRes.Formats.Ffa
             get { return (int)Format.AverageBytesPerSecond * 8; }
         }
 
-        public Wa2Input (Stream file) : base (null)
+        public Wa2Input (IBinaryStream file) : base (null)
         {
-            var header = new byte[0x2C];
-            if (header.Length != file.Read (header, 0, header.Length))
-                throw new EndOfStreamException();
-            if (!Binary.AsciiEqual (header, 8, "WAVEfmt "))
+            var header = file.ReadHeader (0x2C);
+            if (!header.AsciiEqual (8, "WAVEfmt "))
                 throw new InvalidFormatException();
 
             var format = new WaveFormat();
-            format.FormatTag                = LittleEndian.ToUInt16 (header, 0x14);
-            format.Channels                 = LittleEndian.ToUInt16 (header, 0x16);
-            format.SamplesPerSecond         = LittleEndian.ToUInt32 (header, 0x18);
-            format.AverageBytesPerSecond    = LittleEndian.ToUInt32 (header, 0x1C);
-            format.BlockAlign               = LittleEndian.ToUInt16 (header, 0x20);
-            format.BitsPerSample            = LittleEndian.ToUInt16 (header, 0x22);
+            format.FormatTag                = header.ToUInt16 (0x14);
+            format.Channels                 = header.ToUInt16 (0x16);
+            format.SamplesPerSecond         = header.ToUInt32 (0x18);
+            format.AverageBytesPerSecond    = header.ToUInt32 (0x1C);
+            format.BlockAlign               = header.ToUInt16 (0x20);
+            format.BitsPerSample            = header.ToUInt16 (0x22);
             format.ExtraSize                = 0;
             this.Format = format;
 
-            uint pcm_size = LittleEndian.ToUInt32 (header, 0x28);
+            uint pcm_size = header.ToUInt32 (0x28);
             var pcm = new byte[pcm_size];
-            Decode (file, pcm);
+            Decode (file.AsStream, pcm);
             Source = new MemoryStream (pcm);
             this.PcmSize = pcm_size;
             file.Dispose();

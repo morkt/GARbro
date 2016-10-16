@@ -107,17 +107,15 @@ namespace GameRes.Formats.AdPack
             throw new NotImplementedException ("EdtFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x22];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x22);
+            if (!header.AsciiEqual (".TRUE\x8d\x5d\x8c\xcb\x00"))
                 return null;
-            if (!Binary.AsciiEqual (header, ".TRUE\x8d\x5d\x8c\xcb\x00"))
-                return null;
-            uint width  = LittleEndian.ToUInt16 (header, 0x0e);
-            uint height = LittleEndian.ToUInt16 (header, 0x10);
-            uint comp_size  = LittleEndian.ToUInt32 (header, 0x1a);
-            uint extra_size = LittleEndian.ToUInt32 (header, 0x1e);
+            uint width  = header.ToUInt16 (0x0e);
+            uint height = header.ToUInt16 (0x10);
+            uint comp_size  = header.ToUInt32 (0x1a);
+            uint extra_size = header.ToUInt32 (0x1e);
             if (extra_size % 3 != 0 || 0 == extra_size)
                 return null;
 
@@ -131,21 +129,18 @@ namespace GameRes.Formats.AdPack
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as EdtMetaData;
-            if (null == meta)
-                throw new ArgumentException ("EdtFormat.Read should be supplied with EdtMetaData", "info");
-
+            var meta = (EdtMetaData)info;
             stream.Position = 0x22;
-            using (var reader = new Reader (stream, meta))
+            using (var reader = new Reader (stream.AsStream, meta))
             {
                 reader.Unpack();
                 return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data, (int)meta.Width*3);
             }
         }
 
-        internal class Reader : BitReader, IDisposable
+        internal sealed class Reader : BitReader, IDisposable
         {
             MemoryStream    m_packed;
             MemoryStream    m_extra;
@@ -244,24 +239,15 @@ namespace GameRes.Formats.AdPack
 
             #region IDisposable Members
             bool disposed = false;
-
             public void Dispose ()
-            {
-                Dispose (true);
-                GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
             {
                 if (!disposed)
                 {
-                    if (disposing)
-                    {
-                        m_packed.Dispose();
-                        m_extra.Dispose();
-                    }
+                    m_packed.Dispose();
+                    m_extra.Dispose();
                     disposed = true;
                 }
+                GC.SuppressFinalize (this);
             }
             #endregion
         }
@@ -284,17 +270,15 @@ namespace GameRes.Formats.AdPack
             throw new NotImplementedException ("Ed8Format.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x1a];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x1A);
+            if (!header.AsciiEqual (".8Bit\x8d\x5d\x8c\xcb\x00"))
                 return null;
-            if (!Binary.AsciiEqual (header, ".8Bit\x8d\x5d\x8c\xcb\x00"))
-                return null;
-            uint width  = LittleEndian.ToUInt16 (header, 0x0e);
-            uint height = LittleEndian.ToUInt16 (header, 0x10);
-            uint palette_size = LittleEndian.ToUInt32 (header, 0x12);
-            uint comp_size  = LittleEndian.ToUInt32 (header, 0x16);
+            uint width  = header.ToUInt16 (0x0e);
+            uint height = header.ToUInt16 (0x10);
+            uint palette_size = header.ToUInt32 (0x12);
+            uint comp_size  = header.ToUInt32 (0x16);
             if (palette_size > 0x100)
                 return null;
 
@@ -308,14 +292,11 @@ namespace GameRes.Formats.AdPack
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as Ed8MetaData;
-            if (null == meta)
-                throw new ArgumentException ("Ed8Format.Read should be supplied with Ed8MetaData", "info");
-
+            var meta = (Ed8MetaData)info;
             stream.Position = 0x1a;
-            var reader = new Reader (stream, meta);
+            var reader = new Reader (stream.AsStream, meta);
             reader.Unpack();
             var palette = new BitmapPalette (reader.Palette);
             return ImageData.Create (info, PixelFormats.Indexed8, palette, reader.Data, (int)info.Width);

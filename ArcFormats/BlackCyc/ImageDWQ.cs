@@ -43,11 +43,9 @@ namespace GameRes.Formats.BlackCyc
         public int PackType { get; private set; }
         public bool   AType { get; private set; }
 
-        public static ResourceHeader Read (Stream file)
+        public static ResourceHeader Read (IBinaryStream file)
         {
-            var header = new byte[0x40];
-            if (0x40 != file.Read (header, 0, 0x40))
-                return null;
+            var header = file.ReadHeader (0x40).ToArray();
 
             var header_string = Encoding.ASCII.GetString (header, 0x30, 0x10);
             var match = PackTypeRe.Match (header_string);
@@ -88,9 +86,9 @@ namespace GameRes.Formats.BlackCyc
             };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = ResourceHeader.Read (stream);
+            var header = ResourceHeader.Read (file);
             if (null == header)
                 return null;
             if (Binary.AsciiEqual (header.Bytes, "IF PACKTYPE=="))
@@ -99,7 +97,8 @@ namespace GameRes.Formats.BlackCyc
                     !Binary.AsciiEqual (header.Bytes, 0x2C, "BMP ") ||
                     header.PackType != 0 && header.PackType != 1)
                     return null;
-                using (var bmp = new StreamRegion (stream, 0x40, true))
+                using (var reg = new StreamRegion (file.AsStream, 0x40, true))
+                using (var bmp = new BinaryStream (reg, file.Name))
                 {
                     var info = Bmp.ReadMetaData (bmp);
                     if (null == info)
@@ -110,7 +109,7 @@ namespace GameRes.Formats.BlackCyc
                         Height = info.Height,
                         BPP    = info.BPP,
                         BaseType = "BMP",
-                        PackedSize = (int)(stream.Length-0x40),
+                        PackedSize = (int)(file.Length-0x40),
                         PackType = header.PackType,
                         HasAlpha = header.AType,
                     };
@@ -122,7 +121,7 @@ namespace GameRes.Formats.BlackCyc
             case 0: // BMP
             case 5: // JPEG
             case 8: // PNG
-                packed_size = (int)(stream.Length-0x40);
+                packed_size = (int)(file.Length-0x40);
                 break;
 
             case 2: // BMP+MASK
@@ -146,12 +145,13 @@ namespace GameRes.Formats.BlackCyc
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (DwqMetaData)info;
 
             BitmapSource bitmap = null;
-            using (var input = new StreamRegion (stream, 0x40, meta.PackedSize, true))
+            using (var sreg = new StreamRegion (stream.AsStream, 0x40, meta.PackedSize, true))
+            using (var input = new BinaryStream (sreg, stream.Name))
             {
                 switch (meta.PackType)
                 {
@@ -192,7 +192,7 @@ namespace GameRes.Formats.BlackCyc
                 int mask_offset = 0x40+meta.PackedSize;
                 if (mask_offset != stream.Length)
                 {
-                    using (var mask = new StreamRegion (stream, mask_offset, true))
+                    using (var mask = new StreamRegion (stream.AsStream, mask_offset, true))
                     {
                         var reader = new DwqBmpReader (mask, meta);
                         if (8 == reader.Format.BitsPerPixel) // mask should be represented as 8bpp bitmap
@@ -238,17 +238,15 @@ namespace GameRes.Formats.BlackCyc
                         PixelFormats.Bgra32, null, pixels, stride);
         }
 
-        private BitmapSource ReadFuckedUpBmpImage (Stream file, ImageMetaData info)
+        private BitmapSource ReadFuckedUpBmpImage (IBinaryStream file, ImageMetaData info)
         {
-            var header = new byte[0x36];
-            if (header.Length != file.Read (header, 0, header.Length))
-                throw new InvalidFormatException();
-            int w = LittleEndian.ToInt32 (header, 0x12);
-            int h = LittleEndian.ToInt32 (header, 0x16);
+            var header = file.ReadHeader (0x36);
+            int w = header.ToInt32 (0x12);
+            int h = header.ToInt32 (0x16);
             if (w != info.Width || h != info.Height)
                 throw new InvalidFormatException();
 
-            int bpp = LittleEndian.ToUInt16 (header, 0x1c);
+            int bpp = header.ToUInt16 (0x1c);
             PixelFormat format;
             switch (bpp)
             {
@@ -261,8 +259,8 @@ namespace GameRes.Formats.BlackCyc
             BitmapPalette palette = null;
             if (8 == bpp)
             {
-                int colors = Math.Min (LittleEndian.ToInt32 (header, 0x2E), 0x100);
-                palette = DwqBmpReader.ReadPalette (file, colors);
+                int colors = Math.Min (header.ToInt32 (0x2E), 0x100);
+                palette = DwqBmpReader.ReadPalette (file.AsStream, colors);
             }
             int pixel_size = bpp / 8;
             int stride = ((int)info.Width * pixel_size + 3) & ~3;

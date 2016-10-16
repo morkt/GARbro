@@ -51,29 +51,26 @@ namespace GameRes.Formats.BGI
             throw new System.NotImplementedException ("BgiFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var input = new ArcView.Reader (stream))
+            int width  = stream.ReadInt16();
+            int height = stream.ReadInt16();
+            if (width <= 0 || height <= 0)
+                return null;
+            int bpp = stream.ReadInt32();
+            if (24 != bpp && 32 != bpp && 8 != bpp)
+                return null;
+            if (0 != stream.ReadInt64())
+                return null;
+            return new ImageMetaData
             {
-                int width  = input.ReadInt16();
-                int height = input.ReadInt16();
-                if (width <= 0 || height <= 0)
-                    return null;
-                int bpp = input.ReadInt32();
-                if (24 != bpp && 32 != bpp && 8 != bpp)
-                    return null;
-                if (0 != input.ReadInt64())
-                    return null;
-                return new ImageMetaData
-                {
-                    Width = (uint)width,
-                    Height = (uint)height,
-                    BPP = bpp,
-                };
-            }
+                Width = (uint)width,
+                Height = (uint)height,
+                BPP = bpp,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             PixelFormat format;
             if (24 == info.BPP)
@@ -119,33 +116,29 @@ namespace GameRes.Formats.BGI
             throw new System.NotImplementedException ("BgiFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x30];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, "CompressedBG___"))
+            var header = stream.ReadHeader (0x30);
+            if (!header.AsciiEqual ("CompressedBG___"))
                 return null;
             return new CbgMetaData
             {
-                Width  = LittleEndian.ToUInt16 (header, 0x10),
-                Height = LittleEndian.ToUInt16 (header, 0x12),
-                BPP = LittleEndian.ToInt32 (header, 0x14),
-                IntermediateLength = LittleEndian.ToInt32 (header, 0x20),
-                Key = LittleEndian.ToUInt32 (header, 0x24),
-                EncLength = LittleEndian.ToInt32 (header, 0x28),
+                Width  = header.ToUInt16 (0x10),
+                Height = header.ToUInt16 (0x12),
+                BPP = header.ToInt32 (0x14),
+                IntermediateLength = header.ToInt32 (0x20),
+                Key = header.ToUInt32 (0x24),
+                EncLength = header.ToInt32 (0x28),
                 CheckSum = header[0x2C],
                 CheckXor = header[0x2D],
-                Version = LittleEndian.ToUInt16 (header, 0x2E),
+                Version = header.ToUInt16 (0x2E),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as CbgMetaData;
-            if (null == meta)
-                throw new ArgumentException ("CompressedBGFormat.Read should be supplied with CbgMetaData", "info");
-            using (var reader = new CbgReader (stream, meta))
+            var meta = (CbgMetaData)info as CbgMetaData;
+            using (var reader = new CbgReader (stream.AsStream, meta))
             {
                 reader.Unpack();
                 return ImageData.Create (meta, reader.Format, null, reader.Data, reader.Stride);

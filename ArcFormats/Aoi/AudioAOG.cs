@@ -36,14 +36,12 @@ namespace GameRes.Formats.Aoi
         public override string Description { get { return "Aoi engine audio format"; } }
         public override uint     Signature { get { return 0x4F696F41; } } // 'AoiO'
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x30];
-            if (header.Length != file.Read (header, 0, header.Length))
+            var header = file.ReadHeader (0x30);
+            if (!header.AsciiEqual (0, "AoiOgg") || !header.AsciiEqual (0x2C, "OggS"))
                 return null;
-            if (!Binary.AsciiEqual (header, 0, "AoiOgg") || !Binary.AsciiEqual (header, 0x2C, "OggS"))
-                return null;
-            var ogg = new StreamRegion (file, 0x2C);
+            var ogg = new StreamRegion (file.AsStream, 0x2C);
             return new OggInput (ogg);
         }
     }

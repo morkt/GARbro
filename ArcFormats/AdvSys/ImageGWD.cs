@@ -48,7 +48,7 @@ namespace GameRes.Formats.AdvSys
             var header = stream.ReadHeader (12);
             if (header.Length != 12)
                 return null;
-            if (!Binary.AsciiEqual (header, 4, "GWD"))
+            if (!header.AsciiEqual (4, "GWD"))
                 return null;
             return new GwdMetaData
             {
@@ -72,7 +72,7 @@ namespace GameRes.Formats.AdvSys
             if (24 == info.BPP && 1 == stream.ReadByte())
             {
                 using (var part = new StreamRegion (stream.AsStream, stream.Position, true))
-                using (var alpha_stream = new BinaryStream (part))
+                using (var alpha_stream = new BinaryStream (part, stream.Name))
                 {
                     var alpha_info = ReadMetaData (alpha_stream) as GwdMetaData;
                     if (null != alpha_info && 8 == alpha_info.BPP

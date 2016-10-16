@@ -42,8 +42,8 @@ namespace GameRes.Formats.Majiro
         public int  Version;
         public bool IsEncrypted;
         public uint DataOffset;
-        public uint DataSize;
-        public uint AddSize;
+        public int  DataSize;
+        public int  AddSize;
     }
 
     internal class RctOptions : ResourceOptions
@@ -76,7 +76,7 @@ namespace GameRes.Formats.Majiro
             set { KnownKeys = ((RctScheme)value).KnownKeys; }
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
             int id = stream.ReadByte();
@@ -93,38 +93,35 @@ namespace GameRes.Formats.Majiro
             if (version != 0 && version != 1)
                 return null;
 
-            using (var reader = new BinaryReader (stream, Encoding.ASCII, true))
+            uint width = stream.ReadUInt32();
+            uint height = stream.ReadUInt32();
+            int data_size = stream.ReadInt32();
+            int additional_size = 0;
+            if (1 == version)
             {
-                uint width = reader.ReadUInt32();
-                uint height = reader.ReadUInt32();
-                uint data_size = reader.ReadUInt32();
-                uint additional_size = 0;
-                if (1 == version)
-                {
-                    additional_size = reader.ReadUInt16();
-                }
-                if (width > 0x8000 || height > 0x8000)
-                    return null;
-
-                return new RctMetaData
-                {
-                    Width   = width,
-                    Height  = height,
-                    OffsetX = 0,
-                    OffsetY = 0,
-                    BPP     = 24,
-                    Version = version,
-                    IsEncrypted = is_encrypted,
-                    DataOffset = (uint)stream.Position,
-                    DataSize = data_size,
-                    AddSize = additional_size,
-                };
+                additional_size = stream.ReadUInt16();
             }
+            if (width > 0x8000 || height > 0x8000)
+                return null;
+
+            return new RctMetaData
+            {
+                Width   = width,
+                Height  = height,
+                OffsetX = 0,
+                OffsetY = 0,
+                BPP     = 24,
+                Version = version,
+                IsEncrypted = is_encrypted,
+                DataOffset = (uint)stream.Position,
+                DataSize = data_size,
+                AddSize = additional_size,
+            };
         }
 
         byte[] Key = null;
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (RctMetaData)info;
 
@@ -155,9 +152,9 @@ namespace GameRes.Formats.Majiro
 
         ImageData ApplyMaskToImage (RctMetaData info, byte[] image, string mask_name)
         {
-            using (var mask_file = VFS.OpenSeekableStream (mask_name))
+            using (var mask_file = VFS.OpenBinaryStream (mask_name))
             {
-                var format = FindFormat (mask_file, mask_name);
+                var format = FindFormat (mask_file);
                 if (null == format || !(format.Item1 is Rc8Format)
                     || info.Width != format.Item2.Width || info.Height != format.Item2.Height)
                     throw new InvalidFormatException();
@@ -198,7 +195,7 @@ namespace GameRes.Formats.Majiro
             return overlay;
         }
 
-        byte[] ReadPixelsData (Stream file, RctMetaData meta)
+        byte[] ReadPixelsData (IBinaryStream file, RctMetaData meta)
         {
             file.Position = meta.DataOffset + meta.AddSize;
             if (meta.IsEncrypted)
@@ -219,11 +216,11 @@ namespace GameRes.Formats.Majiro
             }
         }
 
-        byte[] ReadBaseImage (Stream file, RctMetaData meta)
+        byte[] ReadBaseImage (IBinaryStream file, RctMetaData meta)
         {
             file.Position = meta.DataOffset;
-            byte[] name_bin = new byte[meta.AddSize];
-            if (name_bin.Length != file.Read (name_bin, 0, name_bin.Length))
+            byte[] name_bin = file.ReadBytes (meta.AddSize);
+            if (name_bin.Length != meta.AddSize)
                 throw new EndOfStreamException();
             try
             {
@@ -232,7 +229,7 @@ namespace GameRes.Formats.Majiro
                 name = VFS.CombinePath (dir_name, name);
                 if (VFS.FileExists (name))
                 {
-                    using (var base_file = VFS.OpenSeekableStream (name))
+                    using (var base_file = VFS.OpenBinaryStream (name))
                     {
                         var base_info = ReadMetaData (base_file) as RctMetaData;
                         if (null != base_info && 0 == base_info.AddSize
@@ -248,7 +245,7 @@ namespace GameRes.Formats.Majiro
             return null;
         }
 
-        Stream OpenEncryptedStream (Stream file, uint data_size)
+        IBinaryStream OpenEncryptedStream (IBinaryStream file, int data_size)
         {
             if (null == Key)
             {
@@ -257,15 +254,15 @@ namespace GameRes.Formats.Majiro
                     throw new UnknownEncryptionScheme();
                 Key = InitDecryptionKey (password);
             }
-            byte[] data = new byte[data_size];
-            if (data.Length != file.Read (data, 0, data.Length))
+            byte[] data = file.ReadBytes (data_size);
+            if (data.Length != data_size)
                 throw new EndOfStreamException();
 
             for (int i = 0; i < data.Length; ++i)
             {
                 data[i] ^= Key[i & 0x3FF];
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, file.Name);
         }
 
         private byte[] InitDecryptionKey (string password)
@@ -517,19 +514,19 @@ namespace GameRes.Formats.Majiro
             #endregion
         }
 
-        internal class Reader : IDisposable
+        internal sealed class Reader : IDisposable
         {
-            private BinaryReader    m_input;
+            private IBinaryStream   m_input;
             private uint            m_width;
             private byte[]          m_data;
 
             public byte[] Data { get { return m_data; } }
 
-            public Reader (Stream file, RctMetaData info)
+            public Reader (IBinaryStream file, RctMetaData info)
             {
                 m_width = info.Width;
                 m_data = new byte[m_width * info.Height * 3];
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
+                m_input = file;
             }
 
             internal static readonly sbyte[] ShiftTable = new sbyte[] {
@@ -588,24 +585,9 @@ namespace GameRes.Formats.Majiro
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
                 GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                        m_input.Dispose();
-                    m_input = null;
-                    m_data = null;
-                    disposed = true;
-                }
             }
             #endregion
         }
@@ -618,7 +600,7 @@ namespace GameRes.Formats.Majiro
         public override string Description { get { return "Majiro game engine indexed image format"; } }
         public override uint Signature { get { return 0x9a925a98; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
             int id = stream.ReadByte();
@@ -634,24 +616,21 @@ namespace GameRes.Formats.Majiro
             if (version != 0)
                 return null;
 
-            using (var reader = new BinaryReader (stream, Encoding.ASCII, true))
+            uint width = stream.ReadUInt32();
+            uint height = stream.ReadUInt32();
+            if (width > 0x8000 || height > 0x8000)
+                return null;
+            return new ImageMetaData
             {
-                uint width = reader.ReadUInt32();
-                uint height = reader.ReadUInt32();
-                if (width > 0x8000 || height > 0x8000)
-                    return null;
-                return new ImageMetaData
-                {
-                    Width   = width,
-                    Height  = height,
-                    OffsetX = 0,
-                    OffsetY = 0,
-                    BPP     = 8,
-                };
-            }
+                Width   = width,
+                Height  = height,
+                OffsetX = 0,
+                OffsetY = 0,
+                BPP     = 8,
+            };
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             using (var reader = new Reader (file, info))
             {
@@ -666,9 +645,9 @@ namespace GameRes.Formats.Majiro
             throw new NotImplementedException ("Rc8Format.Write is not implemented.");
         }
 
-        internal class Reader : IDisposable
+        internal sealed class Reader : IDisposable
         {
-            private BinaryReader    m_input;
+            private IBinaryStream   m_input;
             private uint            m_width;
             private Color[]         m_palette;
             private byte[]          m_data;
@@ -676,7 +655,7 @@ namespace GameRes.Formats.Majiro
             public Color[] Palette { get { return m_palette; } }
             public byte[]     Data { get { return m_data; } }
 
-            public Reader (Stream file, ImageMetaData info)
+            public Reader (IBinaryStream file, ImageMetaData info)
             {
                 m_width = info.Width;
                 file.Position = 0x14;
@@ -689,7 +668,7 @@ namespace GameRes.Formats.Majiro
                     m_palette[i] = Color.FromRgb (palette_data[i*3], palette_data[i*3+1], palette_data[i*3+2]);
                 }
                 m_data = new byte[m_width * info.Height];
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
+                m_input = file;
             }
 
             private static readonly sbyte[] ShiftTable = new sbyte[] {
@@ -746,24 +725,8 @@ namespace GameRes.Formats.Majiro
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
-                GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                        m_input.Dispose();
-                    m_input = null;
-                    m_data = null;
-                    disposed = true;
-                }
             }
             #endregion
         }

@@ -67,8 +67,8 @@ namespace GameRes.Formats.Creative
                     switch (block_type)
                     {
                     case 1:
-                        freq = m_input.ReadByte();
-                        codec = m_input.ReadByte();
+                        freq = m_input.ReadUInt8();
+                        codec = m_input.ReadUInt8();
                         Copy (block_size-2, pcm);
                         m_format.Channels = 1;
                         m_format.SamplesPerSecond = 1000000u / (256u - freq);
@@ -80,16 +80,16 @@ namespace GameRes.Formats.Creative
                         break;
                     case 8:
                         freq = m_input.ReadUInt16();
-                        codec = m_input.ReadByte();
-                        m_format.Channels = (ushort)(m_input.ReadByte()+1);
+                        codec = m_input.ReadUInt8();
+                        m_format.Channels = (ushort)(m_input.ReadUInt8()+1);
                         m_format.SamplesPerSecond = 256000000u / (Format.Channels * (65536u - freq));
                         m_format.BitsPerSample = 8;
                         format_read = true;
                         break;
                     case 9:
                         m_format.SamplesPerSecond = m_input.ReadUInt32();
-                        m_format.BitsPerSample = m_input.ReadByte();
-                        m_format.Channels = (ushort)(m_input.ReadByte()+1);
+                        m_format.BitsPerSample = m_input.ReadUInt8();
+                        m_format.Channels = (ushort)(m_input.ReadUInt8()+1);
                         codec = m_input.ReadUInt16();
                         format_read = true;
                         m_input.ReadInt32();

@@ -102,7 +102,7 @@ namespace GameRes.Formats.Abel
             {
                 data[i] = (byte)(0xFF - data[i]);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         Stream OpenCmpEntry (ArcFile arc, Entry entry)

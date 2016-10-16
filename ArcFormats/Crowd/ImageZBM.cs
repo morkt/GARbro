@@ -39,10 +39,10 @@ namespace GameRes.Formats.Crowd
         public override uint     Signature { get { return 0x44445A53u; } } // 'SZDD'
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 0x0e;
-            using (var lz = new LzssReader (stream, 100, 54)) // extract BMP header
+            using (var lz = new LzssReader (stream.AsStream, 100, 54)) // extract BMP header
             {
                 lz.FrameSize = 0x1000;
                 lz.FrameFill = 0x20;
@@ -51,21 +51,19 @@ namespace GameRes.Formats.Crowd
                 var header = lz.Data;
                 for (int i = 0; i < 54; ++i)
                     header[i] ^= 0xff;
-                using (var bmp = new MemoryStream (header))
+                using (var bmp = new BinMemoryStream (header, stream.Name))
                     return base.ReadMetaData (bmp);
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             if (stream.Length > int.MaxValue)
                 throw new FileSizeException();
-            var header = new byte[14];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                throw new InvalidFormatException();
-            int data_length = LittleEndian.ToInt32 (header, 10);
+            var header = stream.ReadHeader (14);
+            int data_length = header.ToInt32 (10);
             int input_length = (int)(stream.Length-stream.Position);
-            using (var lz = new LzssReader (stream, input_length, data_length))
+            using (var lz = new LzssReader (stream.AsStream, input_length, data_length))
             {
                 lz.FrameSize = 0x1000;
                 lz.FrameFill = 0x20;
@@ -75,7 +73,7 @@ namespace GameRes.Formats.Crowd
                 int count = Math.Min (100, data.Length);
                 for (int i = 0; i < count; ++i)
                     data[i] ^= 0xff;
-                using (var bmp = new MemoryStream (data))
+                using (var bmp = new BinMemoryStream (data, stream.Name))
                     return base.Read (bmp, info);
             }
         }

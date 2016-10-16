@@ -53,11 +53,9 @@ namespace GameRes.Formats.Marble
             throw new NotImplementedException ("PrsFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x10);
             if (header[0] != 'Y' || header[1] != 'B')
                 return null;
             int bpp = header[3];
@@ -66,15 +64,15 @@ namespace GameRes.Formats.Marble
 
             return new PrsMetaData
             {
-                Width = LittleEndian.ToUInt16 (header, 12),
-                Height = LittleEndian.ToUInt16 (header, 14),
+                Width = header.ToUInt16 (12),
+                Height = header.ToUInt16 (14),
                 BPP = 8 * bpp,
                 Flag = header[2],
-                PackedSize = LittleEndian.ToUInt32 (header, 4),
+                PackedSize = header.ToUInt32 (4),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new Reader (stream, (PrsMetaData)info))
             {
@@ -85,7 +83,7 @@ namespace GameRes.Formats.Marble
 
         internal class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             uint            m_size;
             byte            m_flag;
@@ -95,9 +93,9 @@ namespace GameRes.Formats.Marble
             public PixelFormat Format { get; private set; }
             public int         Stride { get; private set; }
 
-            public Reader (Stream file, PrsMetaData info)
+            public Reader (IBinaryStream file, PrsMetaData info)
             {
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
+                m_input = file;
                 m_size = info.PackedSize;
                 m_flag = info.Flag;
                 m_depth = info.BPP / 8;
@@ -123,7 +121,7 @@ namespace GameRes.Formats.Marble
 
             public void Unpack ()
             {
-                m_input.BaseStream.Position = 0x10;
+                m_input.Position = 0x10;
                 int dst = 0;
                 int remaining = (int)m_size;
                 int bit = 0;
@@ -133,7 +131,7 @@ namespace GameRes.Formats.Marble
                     bit >>= 1;
                     if (0 == bit)
                     {
-                        ctl = m_input.ReadByte();
+                        ctl = m_input.ReadUInt8();
                         --remaining;
                         bit = 0x80;
                     }
@@ -141,11 +139,11 @@ namespace GameRes.Formats.Marble
                         break;
                     if (0 == (ctl & bit))
                     {
-                        m_output[dst++] = m_input.ReadByte();
+                        m_output[dst++] = m_input.ReadUInt8();
                         --remaining;
                         continue;
                     }
-                    int b = m_input.ReadByte();
+                    int b = m_input.ReadUInt8();
                     --remaining;
                     int length = 0;
                     int shift = 0;
@@ -154,14 +152,14 @@ namespace GameRes.Formats.Marble
                     {
                         if (remaining <= 0)
                             break;
-                        shift = m_input.ReadByte();
+                        shift = m_input.ReadUInt8();
                         --remaining;
                         shift |= (b & 0x3f) << 8;
                         if (0 != (b & 0x40))
                         {
                             if (remaining <= 0)
                                 break;
-                            int offset = m_input.ReadByte();
+                            int offset = m_input.ReadUInt8();
                             --remaining;
                             length = LengthTable[offset];
                         }

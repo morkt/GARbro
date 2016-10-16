@@ -58,12 +58,12 @@ namespace GameRes.Formats.MAI
             throw new NotImplementedException ("CmFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             if ('C' != stream.ReadByte() || 'M' != stream.ReadByte())
                 return null;
-            var header = new byte[0x1e];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadBytes (0x1e);
+            if (header.Length != 0x1e)
                 return null;
             if (1 != header[0x0c])
                 return null;
@@ -83,9 +83,9 @@ namespace GameRes.Formats.MAI
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new Reader (stream, (CmMetaData)info);
+            var reader = new Reader (stream.AsStream, (CmMetaData)info);
             reader.Unpack();
             return ImageData.CreateFlipped (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }
@@ -166,7 +166,7 @@ namespace GameRes.Formats.MAI
             throw new NotImplementedException ("AmFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             if ('A' != stream.ReadByte() || 'M' != stream.ReadByte())
                 return null;
@@ -197,9 +197,9 @@ namespace GameRes.Formats.MAI
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new Reader (stream, (AmMetaData)info);
+            var reader = new Reader (stream.AsStream, (AmMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data);
         }
@@ -300,40 +300,37 @@ namespace GameRes.Formats.MAI
             throw new NotImplementedException ("MaskFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var input = new ArcView.Reader (stream))
-            {
-                uint size = input.ReadUInt32();
-                if (size != stream.Length)
-                    return null;
-                uint width = input.ReadUInt32();
-                uint height = input.ReadUInt32();
-                int compressed = input.ReadInt32();
-                if (compressed > 1 || 0 == compressed && (width*height + 0x410) != size)
-                    return null;
-                return new CmMetaData {
-                    Width = width,
-                    Height = height,
-                    BPP = 8,
-                    IsCompressed = 1 == compressed,
-                    DataOffset = 0x10,
-                    DataLength = size,
-                };
-            }
+            uint size = file.ReadUInt32();
+            if (size != file.Length)
+                return null;
+            uint width = file.ReadUInt32();
+            uint height = file.ReadUInt32();
+            int compressed = file.ReadInt32();
+            if (compressed > 1 || 0 == compressed && (width*height + 0x410) != size)
+                return null;
+            return new CmMetaData {
+                Width = width,
+                Height = height,
+                BPP = 8,
+                IsCompressed = 1 == compressed,
+                DataOffset = 0x10,
+                DataLength = size,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (CmMetaData)info;
             stream.Position = meta.DataOffset;
-            var palette = RleDecoder.ReadPalette (stream, 0x100, 4);
+            var palette = RleDecoder.ReadPalette (stream.AsStream, 0x100, 4);
 
             var pixels = new byte[info.Width*info.Height];
             if (meta.IsCompressed)
             {
                 int packed_size = (int)(stream.Length - meta.DataOffset);
-                RleDecoder.Unpack (stream, packed_size, pixels, 1);
+                RleDecoder.Unpack (stream.AsStream, packed_size, pixels, 1);
             }
             else if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                 throw new InvalidFormatException();

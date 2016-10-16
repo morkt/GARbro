@@ -117,7 +117,7 @@ namespace GameRes.Formats.Circus
             {
                 data = UnpackCps (data);
             }
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         byte[] UnpackCps (byte[] input)

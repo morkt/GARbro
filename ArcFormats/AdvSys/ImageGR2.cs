@@ -38,20 +38,18 @@ namespace GameRes.Formats.AdvSys
         public override string Description { get { return "AdvSys engine image format"; } }
         public override uint     Signature { get { return 0x5F325247; } } // 'GR2_'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[16];
-            if (16 != stream.Read (header, 0, 16))
-                return null;
+            var header = stream.ReadHeader (0x10);
             return new ImageMetaData
             {
-                Width  = LittleEndian.ToUInt16 (header, 4),
-                Height = LittleEndian.ToUInt16 (header, 6),
-                BPP    = LittleEndian.ToInt16 (header, 12) * 8
+                Width  = header.ToUInt16 (4),
+                Height = header.ToUInt16 (6),
+                BPP    = header.ToInt16 (12) * 8
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x10;
             int stride = ((int)info.Width * info.BPP/8 + 3) & ~3;
@@ -92,18 +90,16 @@ namespace GameRes.Formats.AdvSys
             Extensions = new string[] { "gr2" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[20];
-            if (20 != stream.Read (header, 0, 20))
+            var header = stream.ReadHeader (20);
+            if (!header.AsciiEqual ("*Pola*  "))
                 return null;
-            if (!Binary.AsciiEqual (header, "*Pola*  "))
-                return null;
-            int unpacked_size = LittleEndian.ToInt32 (header, 8);
+            int unpacked_size = header.ToInt32 (8);
             using (var reader = new PolaReader (stream, 64))
             {
                 reader.Unpack();
-                using (var temp = new MemoryStream (reader.Data))
+                using (var temp = BinaryStream.FromArray (reader.Data, stream.Name))
                 {
                     var info = base.ReadMetaData (temp);
                     if (null == info)
@@ -119,17 +115,14 @@ namespace GameRes.Formats.AdvSys
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as PolaMetaData;
-            if (null == meta)
-                throw new ArgumentException ("PolaFormat.Read should be supplied with PolaMetaData", "info");
-
+            var meta = (PolaMetaData)info;
             stream.Position = 0x14;
             using (var reader = new PolaReader (stream, meta.UnpackedSize))
             {
                 reader.Unpack();
-                using (var temp = new MemoryStream (reader.Data))
+                using (var temp = BinaryStream.FromArray (reader.Data, stream.Name))
                     return base.Read (temp, info);
             }
         }
@@ -142,14 +135,14 @@ namespace GameRes.Formats.AdvSys
 
     internal sealed class PolaReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
 
         public byte[] Data { get { return m_output; } }
 
-        public PolaReader (Stream input, int unpacked_size)
+        public PolaReader (IBinaryStream input, int unpacked_size)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_output = new byte[unpacked_size+2];
         }
 
@@ -161,14 +154,14 @@ namespace GameRes.Formats.AdvSys
             {
                 if (0 != NextBit())
                 {
-                    m_output[dst++] = m_input.ReadByte();
+                    m_output[dst++] = m_input.ReadUInt8();
                     continue;
                 }
                 int offset, count = 0;
 
                 if (0 != NextBit())
                 {
-                    offset = m_input.ReadByte() - 256;
+                    offset = m_input.ReadUInt8() - 256;
 
                     if (0 == NextBit())
                     {
@@ -228,7 +221,7 @@ namespace GameRes.Formats.AdvSys
                     }
                     else
                     {
-                        count = m_input.ReadByte() + 17;
+                        count = m_input.ReadUInt8() + 17;
                     }
                     if (dst + count > m_output.Length)
                         count = m_output.Length - dst;
@@ -237,7 +230,7 @@ namespace GameRes.Formats.AdvSys
                 }
                 else
                 {
-                    offset = m_input.ReadByte() - 256;
+                    offset = m_input.ReadUInt8() - 256;
                     if (0 == NextBit())
                     {
                         if (offset != -1)
@@ -280,14 +273,8 @@ namespace GameRes.Formats.AdvSys
         }
 
         #region IDisposable Members
-        bool m_disposed = false;
         public void Dispose ()
         {
-            if (!m_disposed)
-            {
-                m_input.Dispose();
-                m_disposed = true;
-            }
         }
         #endregion
     }

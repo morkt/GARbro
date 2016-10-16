@@ -75,7 +75,7 @@ namespace GameRes.Formats.Ego
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             DecryptScript (method, data);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         unsafe void DecryptScript (uint method, byte[] script)

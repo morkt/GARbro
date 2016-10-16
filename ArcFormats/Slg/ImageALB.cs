@@ -47,24 +47,23 @@ namespace GameRes.Formats.Slg
 
         static readonly Lazy<ImageFormat> Dds = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("DDS"));
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (0x10 != stream.Read (header, 0, 0x10))
-                return null;
-            int unpacked_size = LittleEndian.ToInt32 (header, 8);
+            var header = stream.ReadHeader (0x10);
+            int unpacked_size = header.ToInt32 (8);
             using (var alb = new AlbStream (stream, unpacked_size))
-            using (var file = new SeekableStream (alb))
+            using (var s = new SeekableStream (alb))
+            using (var file = new BinaryStream (s, stream.Name))
             {
-                uint signature = FormatCatalog.ReadSignature (file);
-                file.Position = 0;
+                uint signature = file.Signature;
                 ImageFormat format;
-                if (ImageFormat.Png.Signature == signature)
+                if (Png.Signature == signature)
                     format = ImageFormat.Png;
                 else if (Dds.Value.Signature == signature)
                     format = Dds.Value;
                 else
                     format = ImageFormat.Jpeg;
+                file.Position = 0;
                 var info = format.ReadMetaData (file);
                 if (null == info)
                     return null;
@@ -82,12 +81,13 @@ namespace GameRes.Formats.Slg
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (AlbMetaData)info;
             stream.Position = 0x10;
             using (var alb = new AlbStream (stream, meta.UnpackedSize))
-            using (var file = new SeekableStream (alb))
+            using (var s = new SeekableStream (alb))
+            using (var file = new BinaryStream (s, stream.Name))
                 return meta.Format.Read (file, meta.Info);
         }
 
@@ -99,7 +99,7 @@ namespace GameRes.Formats.Slg
 
     internal class AlbStream : Stream
     {
-        BinaryReader        m_input;
+        IBinaryStream       m_input;
         int                 m_unpacked_size;
         IEnumerator<int>    m_iterator;
         byte[]              m_output;
@@ -110,9 +110,9 @@ namespace GameRes.Formats.Slg
         public override bool CanSeek  { get { return false; } }
         public override bool CanWrite { get { return false; } }
 
-        public AlbStream (Stream source, int unpacked_size)
+        public AlbStream (IBinaryStream source, int unpacked_size)
         {
-            m_input = new ArcView.Reader (source);
+            m_input = source;
             m_unpacked_size = unpacked_size;
             m_iterator = ReadSeq();
         }
@@ -132,7 +132,7 @@ namespace GameRes.Formats.Slg
         IEnumerator<int> ReadSeq ()
         {
             var stack = new byte[256];
-            while (m_input.PeekChar() != -1)
+            while (m_input.PeekByte() != -1)
             {
                 int packed_size = UnpackDict();
                 int src = 0;
@@ -146,7 +146,7 @@ namespace GameRes.Formats.Slg
                     }
                     else if (src < packed_size)
                     {
-                        s = m_input.ReadByte();
+                        s = m_input.ReadUInt8();
                         src++;
                     }
                     else
@@ -175,16 +175,16 @@ namespace GameRes.Formats.Slg
                 throw new InvalidFormatException();
             int table_size = m_input.ReadUInt16();
             int packed_size = m_input.ReadUInt16();
-            bool is_packed = m_input.ReadByte() != 0;
-            byte marker = m_input.ReadByte();
+            bool is_packed = m_input.ReadUInt8() != 0;
+            byte marker = m_input.ReadUInt8();
             if (is_packed)
             {
                 for (int i = 0; i < 256; )
                 {
-                    byte b = m_input.ReadByte();
+                    byte b = m_input.ReadUInt8();
                     if (marker == b)
                     {
-                        int count = m_input.ReadByte();
+                        int count = m_input.ReadUInt8();
                         for (int j = 0; j < count; ++j)
                         {
                             m_dict[i,0] = (byte)i;
@@ -195,7 +195,7 @@ namespace GameRes.Formats.Slg
                     else
                     {
                         m_dict[i,0] = b;
-                        m_dict[i,1] = m_input.ReadByte();
+                        m_dict[i,1] = m_input.ReadUInt8();
                         ++i;
                     }
                 }
@@ -204,8 +204,8 @@ namespace GameRes.Formats.Slg
             {
                 for (int i = 0; i < 256; ++i)
                 {
-                    m_dict[i,0] = m_input.ReadByte();
-                    m_dict[i,1] = m_input.ReadByte();
+                    m_dict[i,0] = m_input.ReadUInt8();
+                    m_dict[i,1] = m_input.ReadUInt8();
                 }
             }
             return packed_size;
@@ -252,7 +252,6 @@ namespace GameRes.Formats.Slg
             {
                 if (disposing)
                 {
-                    m_input.Dispose();
                     m_iterator.Dispose();
                 }
                 _alb_disposed = true;

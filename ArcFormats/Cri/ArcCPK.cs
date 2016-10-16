@@ -104,7 +104,7 @@ namespace GameRes.Formats.Cri
             }
             Array.Reverse (output, (int)prefix_size, unpacked_size);
             arc.File.View.Read (entry.Offset+0x10+packed_size, output, 0, prefix_size);
-            return new MemoryStream (output);
+            return new BinMemoryStream (output, entry.Name);
         }
 
         void DetectFileTypes (ArcView file, List<Entry> dir)

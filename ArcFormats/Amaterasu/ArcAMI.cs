@@ -272,7 +272,7 @@ namespace GameRes.Formats.Amaterasu
         uint WriteAmiEntry (PackedEntry entry, Stream output)
         {
             uint packed_size = 0;
-            using (var input = File.OpenRead (entry.Name))
+            using (var input = VFS.OpenBinaryStream (entry))
             {
                 long file_size = input.Length;
                 if (file_size > uint.MaxValue)
@@ -284,7 +284,7 @@ namespace GameRes.Formats.Amaterasu
                 }
                 else
                 {
-                    input.CopyTo (output);
+                    input.AsStream.CopyTo (output);
                 }
             }
             return packed_size;
@@ -293,19 +293,19 @@ namespace GameRes.Formats.Amaterasu
         static Lazy<GrpFormat> s_grp_format = new Lazy<GrpFormat> (() => 
             FormatCatalog.Instance.ImageFormats.OfType<GrpFormat>().FirstOrDefault());
 
-        uint WriteImageEntry (PackedEntry entry, Stream input, Stream output)
+        uint WriteImageEntry (PackedEntry entry, IBinaryStream input, Stream output)
         {
             var grp = s_grp_format.Value;
             if (null == grp) // probably never happens
                 throw new FileFormatException ("GRP image encoder not available");
-            bool is_grp = grp.Signature == FormatCatalog.ReadSignature (input);
+            bool is_grp = grp.Signature == input.Signature;
             input.Position = 0;
             var start = output.Position;
             using (var zstream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true))
             {
                 if (is_grp)
                 {
-                    input.CopyTo (zstream);
+                    input.AsStream.CopyTo (zstream);
                 }
                 else
                 {

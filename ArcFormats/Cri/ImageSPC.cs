@@ -49,7 +49,7 @@ namespace GameRes.Formats.Cri
                 return null;
             using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             using (var input = new SeekableStream (lzss))
-            using (var xtx = new BinaryStream (input))
+            using (var xtx = new BinaryStream (input, stream.Name))
                 return base.ReadMetaData (xtx);
         }
 
@@ -58,7 +58,7 @@ namespace GameRes.Formats.Cri
             stream.Position = 4;
             using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             using (var input = new SeekableStream (lzss))
-            using (var xtx = new BinaryStream (input))
+            using (var xtx = new BinaryStream (input, stream.Name))
                 return base.Read (xtx, info);
         }
 

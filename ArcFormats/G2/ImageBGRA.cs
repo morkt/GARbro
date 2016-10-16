@@ -42,25 +42,23 @@ namespace GameRes.Formats.G2
             Extensions = new string[] { "argb", "arg" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            uint bitmap = LittleEndian.ToUInt32 (header, 4);
+            stream.Position = 4;
+            uint bitmap = stream.ReadUInt32();
             if (0x08080808 != bitmap)
                 return null;
             return new ImageMetaData
             {
-                Width = LittleEndian.ToUInt32 (header, 8),
-                Height = LittleEndian.ToUInt32 (header, 12),
+                Width = stream.ReadUInt32(),
+                Height = stream.ReadUInt32(),
                 BPP = 32,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            stream.Seek (0x10, SeekOrigin.Current);
+            stream.Position = 0x10;
             var pixels = new byte[info.Width*info.Height*4];
             if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                 throw new EndOfStreamException();

@@ -54,51 +54,48 @@ namespace GameRes.Formats.AZSys
             throw new System.NotImplementedException ("CpbFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            stream.Seek (4, SeekOrigin.Current);
-            int type = stream.ReadByte();
-            int bpp = stream.ReadByte();
+            file.Position = 4;
+            int type = file.ReadByte();
+            int bpp = file.ReadByte();
             if (24 != bpp && 32 != bpp)
                 throw new NotSupportedException ("Not supported CPB image format");
-            using (var input = new ArcView.Reader (stream))
+            int version = file.ReadInt16();
+            if (1 != version && 0 != version)
+                throw new NotSupportedException ("Not supported CPB image version");
+            var info = new CpbMetaData {
+                Type = type,
+                Version = version,
+                BPP = bpp,
+            };
+            if (1 == version)
             {
-                int version = input.ReadInt16 ();
-                if (1 != version && 0 != version)
-                    throw new NotSupportedException ("Not supported CPB image version");
-                var info = new CpbMetaData {
-                    Type = type,
-                    Version = version,
-                    BPP = bpp,
-                };
-                if (1 == version)
-                {
-                    input.ReadUInt32();
-                    info.Width  = input.ReadUInt16();
-                    info.Height = input.ReadUInt16();
-                    info.Channel[0] = input.ReadUInt32();
-                    info.Channel[1] = input.ReadUInt32();
-                    info.Channel[2] = input.ReadUInt32();
-                    info.Channel[3] = input.ReadUInt32();
-                }
-                else
-                {
-                    info.Width  = input.ReadUInt16();
-                    info.Height = input.ReadUInt16();
-                    input.ReadUInt32();
-                    info.Channel[0] = input.ReadUInt32();
-                    info.Channel[1] = input.ReadUInt32();
-                    info.Channel[2] = input.ReadUInt32();
-                    info.Channel[3] = input.ReadUInt32();
-                }
-                info.DataOffset = (uint)stream.Position;
-                return info;
+                file.ReadUInt32();
+                info.Width  = file.ReadUInt16();
+                info.Height = file.ReadUInt16();
+                info.Channel[0] = file.ReadUInt32();
+                info.Channel[1] = file.ReadUInt32();
+                info.Channel[2] = file.ReadUInt32();
+                info.Channel[3] = file.ReadUInt32();
             }
+            else
+            {
+                info.Width  = file.ReadUInt16();
+                info.Height = file.ReadUInt16();
+                file.ReadUInt32();
+                info.Channel[0] = file.ReadUInt32();
+                info.Channel[1] = file.ReadUInt32();
+                info.Channel[2] = file.ReadUInt32();
+                info.Channel[3] = file.ReadUInt32();
+            }
+            info.DataOffset = (uint)file.Position;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new Reader (stream, (CpbMetaData)info);
+            var reader = new Reader (stream.AsStream, (CpbMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, reader.Palette, reader.Data);
         }

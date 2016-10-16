@@ -154,7 +154,7 @@ namespace GameRes.Formats.Lilim
 
     internal sealed class AbmReader : IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         AbmImageData    m_info;
         int             m_bpp;
@@ -162,15 +162,14 @@ namespace GameRes.Formats.Lilim
         public byte[] Data { get { return m_output; } }
         public int     BPP { get { return m_bpp; } }
 
-        public AbmReader (Stream file, AbmImageData info)
+        public AbmReader (IBinaryStream file, AbmImageData info)
         {
             m_info = info;
             if (2 == m_info.Mode)
             {
                 m_bpp = 32;
                 file.Position = m_info.BaseOffset;
-                using (var base_frame = new ArcView.Reader (file))
-                    m_output = UnpackV2 (base_frame);
+                m_output = UnpackV2 (file);
             }
             else if (1 == m_info.Mode || 32 == m_info.Mode || 24 == m_info.Mode)
             {
@@ -185,24 +184,18 @@ namespace GameRes.Formats.Lilim
                 if (1 == m_info.Mode)
                 {
                     if (total_length != file.Read (m_output, 0, (total_length)))
-                        throw new EndOfStreamException();
+                        throw new EndOfStreamException ();
                 }
+                else if (24 == m_bpp)
+                    UnpackStream24 (file, m_output, total_length);
                 else
-                {
-                    using (var base_frame = new ArcView.Reader (file))
-                    {
-                        if (24 == m_bpp)
-                            UnpackStream24 (base_frame, m_output, total_length);
-                        else
-                            UnpackStream32 (base_frame, m_output, total_length);
-                    }
-                }
+                    UnpackStream32 (file, m_output, total_length);
             }
             else
                 throw new NotImplementedException();
             if (0 != m_info.FrameOffset)
             {
-                m_input = new ArcView.Reader (file);
+                m_input = file;
             }
         }
 
@@ -216,7 +209,7 @@ namespace GameRes.Formats.Lilim
             if (null == m_input)
                 return m_output;
 
-            m_input.BaseStream.Position = m_info.FrameOffset;
+            m_input.Position = m_info.FrameOffset;
             if (1 == m_info.Mode)
                 return UnpackStream24 (m_input, m_output, m_output.Length);
             if (2 == m_info.Mode)
@@ -228,7 +221,7 @@ namespace GameRes.Formats.Lilim
             throw new NotImplementedException();
         }
 
-        byte[] UnpackV2 (BinaryReader input)
+        byte[] UnpackV2 (IBinaryStream input)
         {
             frame_x = input.ReadInt32();
             frame_y = input.ReadInt32();
@@ -242,22 +235,22 @@ namespace GameRes.Formats.Lilim
             return UnpackStream32 (input, output, total_length);
         }
 
-        byte[] UnpackStream24 (BinaryReader input, byte[] output, int total_length)
+        byte[] UnpackStream24 (IBinaryStream input, byte[] output, int total_length)
         {
             int dst = 0;
             while (dst < total_length)
             {
-                int v = input.ReadByte();
+                int v = input.ReadUInt8();
                 if (0 == v)
                 {
-                    int count = input.ReadByte();
+                    int count = input.ReadUInt8();
                     if (0 == count)
                         continue;
                     dst += count;
                 }
                 else if (0xff == v)
                 {
-                    int count = input.ReadByte();
+                    int count = input.ReadUInt8();
                     if (0 == count)
                         continue;
                     count = Math.Min (count, total_length-dst);
@@ -266,22 +259,22 @@ namespace GameRes.Formats.Lilim
                 }
                 else
                 {
-                    output[dst++] = input.ReadByte();
+                    output[dst++] = input.ReadUInt8();
                 }
             }
             return output;
         }
 
-        byte[] UnpackStream32 (BinaryReader input, byte[] output, int total_length)
+        byte[] UnpackStream32 (IBinaryStream input, byte[] output, int total_length)
         {
             int dst = 0;
             int component = 0;
             while (dst < total_length)
             {
-                byte v = input.ReadByte();
+                byte v = input.ReadUInt8();
                 if (0 == v)
                 {
-                    int count = input.ReadByte();
+                    int count = input.ReadUInt8();
                     if (0 == count)
                         continue;
                     for (int i = 0; i < count; ++i)
@@ -296,12 +289,12 @@ namespace GameRes.Formats.Lilim
                 }
                 else if (0xff == v)
                 {
-                    int count = input.ReadByte();
+                    int count = input.ReadUInt8();
                     if (0 == count)
                         continue;
                     for (int i = 0; i < count && dst < total_length; ++i)
                     {
-                        output[dst++] = input.ReadByte();
+                        output[dst++] = input.ReadUInt8();
                         if (++component == 3)
                         {
                             output[dst++] = 0xff;
@@ -311,7 +304,7 @@ namespace GameRes.Formats.Lilim
                 }
                 else
                 {
-                    output[dst++] = input.ReadByte();
+                    output[dst++] = input.ReadUInt8();
                     if (++component == 3)
                     {
                         output[dst++] = v;
@@ -341,16 +334,9 @@ namespace GameRes.Formats.Lilim
         }
 
         #region IDisposable Members
-        bool m_disposed = false;
         public void Dispose ()
         {
-            if (!m_disposed)
-            {
-                if (m_input != null)
-                    m_input.Dispose();
-                m_disposed = true;
-                GC.SuppressFinalize (this);
-            }
+            GC.SuppressFinalize (this);
         }
         #endregion
     }

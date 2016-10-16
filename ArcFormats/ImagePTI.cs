@@ -37,16 +37,16 @@ namespace GameRes.Formats.Misc
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = ReadHeader (stream);
             if (null == header)
                 return null;
-            using (var bmp = new MemoryStream (header))
+            using (var bmp = new BinMemoryStream (header, stream.Name))
                 return base.ReadMetaData (bmp);
         }
 
-        byte[] ReadHeader (Stream stream)
+        byte[] ReadHeader (IBinaryStream stream)
         {
             var header = new byte[0x36];
             if (0x10 != stream.Read (header, 0, 0x10)
@@ -58,7 +58,7 @@ namespace GameRes.Formats.Misc
             return header;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             uint length = (uint)(stream.Length - 0x38);
             var image = new byte[length+0x38];
@@ -71,7 +71,7 @@ namespace GameRes.Formats.Misc
                 length += 2;
             }
             LittleEndian.Pack (length+0x36, image, 2);
-            using (var bmp = new MemoryStream (image))
+            using (var bmp = new BinMemoryStream (image, stream.Name))
                 return base.Read (bmp, info);
         }
 

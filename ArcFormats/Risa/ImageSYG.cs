@@ -42,22 +42,20 @@ namespace GameRes.Formats.WestVision
         public override string Description { get { return "Risa game platform system image"; } }
         public override uint     Signature { get { return 0x47595324; } } // '$SYG'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            uint alpha_offset = LittleEndian.ToUInt32 (header, 0x1C);
+            var header = stream.ReadHeader (0x20);
+            uint alpha_offset = header.ToUInt32 (0x1C);
             return new SygMetaData
             {
-                Width  = LittleEndian.ToUInt32 (header, 0x10),
-                Height = LittleEndian.ToUInt32 (header, 0x14),
+                Width  = header.ToUInt32 (0x10),
+                Height = header.ToUInt32 (0x14),
                 BPP = 0 == alpha_offset ? 24 : 32,
                 AlphaOffset = alpha_offset,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (SygMetaData)info;
             int pixel_count = (int)meta.Width * (int)meta.Height;

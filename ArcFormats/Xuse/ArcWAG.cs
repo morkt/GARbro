@@ -82,7 +82,7 @@ namespace GameRes.Formats.Xuse
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             Decrypt ((uint)entry.Offset, warc.Key, data);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         static private byte[] GenerateKey (byte[] keyword)

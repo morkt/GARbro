@@ -55,7 +55,7 @@ namespace GameRes.Formats.KAAS
             throw new NotImplementedException ("PicFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             int mode = stream.ReadByte();
             switch (mode)
@@ -66,8 +66,8 @@ namespace GameRes.Formats.KAAS
                 return null;
             }
             int key = stream.ReadByte();
-            var header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadBytes (0x10);
+            if (header.Length != 0x10)
                 return null;
             uint width  = LittleEndian.ToUInt16 (header, 0);
             uint height = LittleEndian.ToUInt16 (header, 2);
@@ -92,17 +92,13 @@ namespace GameRes.Formats.KAAS
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as PicMetaData;
-            if (null == meta)
-                throw new ArgumentException ("PicFormat.Read should be supplied with PicMetaData", "info");
-
             stream.Position = 0x12;
-            using (var reader = new Reader (stream, meta))
+            using (var reader = new Reader (stream.AsStream, (PicMetaData)info))
             {
                 reader.Unpack();
-                return ImageData.Create (meta, PixelFormats.Bgr24, null, reader.Data, (int)meta.Width*3);
+                return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, (int)info.Width*3);
             }
         }
 

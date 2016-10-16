@@ -53,16 +53,13 @@ namespace GameRes.Formats.Tactics
             throw new NotImplementedException ("TgfFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[8];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            uint length = LittleEndian.ToUInt32 (header, 0);
-            int chunk_size = LittleEndian.ToInt32 (header, 4);
+            uint length = stream.ReadUInt32();
+            int chunk_size = stream.ReadInt32();
             if (length > 0xffffff || chunk_size <= 0 || length < chunk_size)
                 return null;
-            using (var reader = new Reader (stream, (uint)Math.Max (0x20, chunk_size+2), chunk_size))
+            using (var reader = new Reader (stream.AsStream, (uint)Math.Max (0x20, chunk_size+2), chunk_size))
             {
                 reader.Unpack();
                 var bmp = reader.Data;
@@ -79,14 +76,11 @@ namespace GameRes.Formats.Tactics
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as TgfMetaData;
-            if (null == meta)
-                throw new ArgumentException ("TgfFormat.Read should be supplied with TgfMetaData", "info");
-
+            var meta = (TgfMetaData)info;
             stream.Position = 8;
-            using (var reader = new Reader (stream, meta.BitmapSize, meta.ChunkSize))
+            using (var reader = new Reader (stream.AsStream, meta.BitmapSize, meta.ChunkSize))
             {
                 reader.Unpack();
                 using (var bmp = new MemoryStream (reader.Data))

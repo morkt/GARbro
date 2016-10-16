@@ -40,17 +40,17 @@ namespace GameRes.Formats.Selen
         public override string Description { get { return "Selen RLE-compressed bitmap"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             if (stream.Length > 0xffffff)
                 return null;
-            var scanner = new BitdScanner (stream);
+            var scanner = new BitdScanner (stream.AsStream);
             return scanner.GetInfo();
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var reader = new BitdReader (stream, info);
+            var reader = new BitdReader (stream.AsStream, info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, null, reader.Data);
         }

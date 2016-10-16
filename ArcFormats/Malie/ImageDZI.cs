@@ -56,12 +56,13 @@ namespace GameRes.Formats.Malie
 
         static readonly Regex pair_re = new Regex (@"^(\d+),(\d+)");
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var tex = VFS.FindFile (VFS.CombinePath (VFS.Top.CurrentDirectory, "tex"));
+            var dir = VFS.GetDirectoryName (file.Name);
+            var tex = VFS.FindFile (VFS.CombinePath (dir, "tex"));
             if (!(tex is SubDirEntry))
                 return null;
-            using (var reader = new StreamReader (stream, Encoding.UTF8, false, 2048, true))
+            using (var reader = new StreamReader (file.AsStream, Encoding.UTF8, false, 2048, true))
             {
                 reader.ReadLine(); // skip signature
                 string line = reader.ReadLine();
@@ -98,12 +99,12 @@ namespace GameRes.Formats.Malie
                         if (null == line)
                             return null;
                         line = line.TrimEnd();
-                        foreach (var file in line.Split (','))
+                        foreach (var filename in line.Split (','))
                         {
-                            if (!string.IsNullOrEmpty (file))
+                            if (!string.IsNullOrEmpty (filename))
                             {
-                                var filename = VFS.CombinePath (tex.Name, file);
-                                tiles.Add (new DziTile { X = x, Y = y, FileName = filename });
+                                var fullname = VFS.CombinePath (tex.Name, filename);
+                                tiles.Add (new DziTile { X = x, Y = y, FileName = fullname });
                             }
                             x += 256;
                         }
@@ -121,7 +122,7 @@ namespace GameRes.Formats.Malie
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (DziMetaData)info;
             PixelFormat format = PixelFormats.Bgra32;
@@ -135,9 +136,9 @@ namespace GameRes.Formats.Malie
                 var image_entry = VFS.GetFiles (tile.FileName + ".*").FirstOrDefault();
                 if (null == image_entry)
                     throw new FileNotFoundException ("Tile not found", tile.FileName);
-                using (var input = VFS.OpenStream (image_entry))
+                using (var input = VFS.OpenBinaryStream (image_entry))
                 {
-                    var image = Read (image_entry.Name, input);
+                    var image = Read (input);
                     if (null == image)
                         throw new FileFormatException ("Unknown DZI tile format");
                     var converted = image.Bitmap;

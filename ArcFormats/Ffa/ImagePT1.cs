@@ -59,40 +59,37 @@ namespace GameRes.Formats.Ffa
             throw new NotImplementedException ("Pt1Format.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var input = new ArcView.Reader (stream))
-            {
-                int type = input.ReadInt32();
-                if (type < 0 || type > 3)
-                    return null;
-                if (-1 != input.ReadInt32())
-                    return null;
-                int x = input.ReadInt32();
-                int y = input.ReadInt32();
-                uint width = input.ReadUInt32();
-                uint height = input.ReadUInt32();
-                uint comp_size = input.ReadUInt32();
-                uint uncomp_size = input.ReadUInt32();
-                if (uncomp_size != width*height*3u)
-                    return null;
-                return new Pt1MetaData {
-                    Width = width,
-                    Height = height,
-                    OffsetX = x,
-                    OffsetY = y,
-                    BPP = 3 == type ? 32 : 24,
-                    Type = type,
-                    PackedSize = comp_size,
-                    UnpackedSize = uncomp_size
-                };
-            }
+            int type = file.ReadInt32();
+            if (type < 0 || type > 3)
+                return null;
+            if (-1 != file.ReadInt32())
+                return null;
+            int x = file.ReadInt32();
+            int y = file.ReadInt32();
+            uint width = file.ReadUInt32();
+            uint height = file.ReadUInt32();
+            uint comp_size = file.ReadUInt32();
+            uint uncomp_size = file.ReadUInt32();
+            if (uncomp_size != width*height*3u)
+                return null;
+            return new Pt1MetaData {
+                Width = width,
+                Height = height,
+                OffsetX = x,
+                OffsetY = y,
+                BPP = 3 == type ? 32 : 24,
+                Type = type,
+                PackedSize = comp_size,
+                UnpackedSize = uncomp_size
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (Pt1MetaData)info;
-            var reader = new Reader (stream, meta);
+            var reader = new Reader (stream.AsStream, meta);
             reader.Unpack();
             return ImageData.Create (meta, reader.Format, null, reader.Data);
         }

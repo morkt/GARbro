@@ -123,7 +123,7 @@ namespace GameRes.Formats.Actgs
                 arc.File.View.Read (entry.Offset, data, 0, entry.Size);
                 Decrypt (data, 1, data.Length-1, actarc.Key);
                 data[0] = (byte)'N';
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
             if (arc.File.View.AsciiEqual (entry.Offset, "PAK "))
             {
@@ -136,7 +136,7 @@ namespace GameRes.Formats.Actgs
             arc.File.View.Read (entry.Offset, header, 0, length);
             Decrypt (header, 0, (int)length, actarc.Key);
             if (entry.Size <= 0x20)
-                return new MemoryStream (header);
+                return new BinMemoryStream (header, entry.Name);
             var rest = arc.File.CreateStream (entry.Offset+0x20, entry.Size-0x20);
             return new PrefixStream (header, rest);
         }

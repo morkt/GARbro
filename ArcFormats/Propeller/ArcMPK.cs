@@ -81,7 +81,7 @@ namespace GameRes.Formats.Propeller
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i < data.Length; ++i)
                 data[i] ^= 0x88;
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
     }
 }

@@ -45,60 +45,57 @@ namespace GameRes.Formats.Propeller
         public override string Description { get { return "Propeller image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var reader = new ArcView.Reader (stream))
+            int count = stream.ReadInt16();
+            if (count <= 0 || count >= 0x100)
+                return null;
+            int offset;
+            if (count > 1)
             {
-                int count = reader.ReadInt16();
-                if (count <= 0 || count >= 0x100)
+                offset = stream.ReadInt32();
+                if (offset != 2 + count * 4)
                     return null;
-                int offset;
-                if (count > 1)
+            }
+            else
+                offset = 2;
+            stream.Position = offset;
+            int unpacked_size = stream.ReadInt32();
+            int packed_size = stream.ReadInt32();
+            offset += 8;
+            if (offset + packed_size > stream.Length)
+                return null;
+            byte[] header = new byte[0x36];
+            if (0x36 != MgrOpener.Decompress (stream.AsStream, header)
+                || header[0] != 'B' || header[1] != 'M')
+                return null;
+            using (var bmp = new BinMemoryStream (header, stream.Name))
+            {
+                var info = Bmp.ReadMetaData (bmp);
+                if (null == info)
+                    return null;
+                return new MgrMetaData
                 {
-                    offset = reader.ReadInt32();
-                    if (offset != 2 + count * 4)
-                        return null;
-                }
-                else
-                    offset = 2;
-                stream.Position = offset;
-                int unpacked_size = reader.ReadInt32();
-                int packed_size = reader.ReadInt32();
-                offset += 8;
-                if (offset + packed_size > stream.Length)
-                    return null;
-                byte[] header = new byte[0x36];
-                if (0x36 != MgrOpener.Decompress (stream, header)
-                    || header[0] != 'B' || header[1] != 'M')
-                    return null;
-                using (var bmp = new MemoryStream (header))
-                {
-                    var info = Bmp.ReadMetaData (bmp);
-                    if (null == info)
-                        return null;
-                    return new MgrMetaData
-                    {
-                        Width = info.Width,
-                        Height = info.Height,
-                        BPP = info.BPP,
-                        Offset = offset,
-                        PackedSize = packed_size,
-                        UnpackedSize = unpacked_size,
-                    };
-                }
+                    Width = info.Width,
+                    Height = info.Height,
+                    BPP = info.BPP,
+                    Offset = offset,
+                    PackedSize = packed_size,
+                    UnpackedSize = unpacked_size,
+                };
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (MgrMetaData)info;
             stream.Position = meta.Offset;
             var data = new byte[meta.UnpackedSize];
-            if (data.Length != MgrOpener.Decompress (stream, data))
+            if (data.Length != MgrOpener.Decompress (stream.AsStream, data))
                 throw new InvalidFormatException();
             if (meta.BPP != 32)
             {
-                using (var bmp = new MemoryStream (data))
+                using (var bmp = new BinMemoryStream (data, stream.Name))
                     return Bmp.Read (bmp, info);
             }
             // special case for 32bpp bitmaps with alpha-channel

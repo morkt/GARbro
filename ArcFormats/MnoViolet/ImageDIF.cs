@@ -67,23 +67,22 @@ namespace GameRes.Formats.MnoViolet
             Extensions = new string[] { "dif" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x7C];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            var base_name = Binary.GetCString (header, 4, 100);
+            var header = stream.ReadHeader (0x7C);
+            var base_name = header.GetCString (4, 100);
             if (string.IsNullOrEmpty (base_name))
                 return null;
             var files = VFS.GetFiles (base_name+".*");
             if (!files.Any())
                 throw new FileNotFoundException (string.Format ("Base image '{0}' not found", base_name));
             var base_entry = files.First();
-            using (var input = VFS.OpenSeekableStream (base_entry))
+            if (base_entry.Name.Equals (stream.Name, StringComparison.InvariantCultureIgnoreCase))
+                throw new InvalidFormatException ("DIF image references itself");
+            using (var input = VFS.OpenBinaryStream (base_entry))
             {
-                // ReadMetaData isn't supplied with a filename being processed, so infinite recursion can't be
-                // prevented here unless we save state in a static member.
-                var format = ImageFormat.FindFormat (input, base_entry.Name);
+                // infinite recursion still possible in case of two files referencing each other.
+                var format = ImageFormat.FindFormat (input);
                 if (null == format)
                     throw new InvalidFormatException (string.Format ("Unable to interpret base image '{0}'", base_name));
                 format.Item2.FileName = base_entry.Name;
@@ -95,27 +94,27 @@ namespace GameRes.Formats.MnoViolet
                     BaseEntry = base_entry,
                     BaseFormat = format.Item1,
                     BaseInfo = format.Item2,
-                    PackedIndexSize = LittleEndian.ToInt32 (header, 0x68),
-                    IndexSize = LittleEndian.ToInt32 (header, 0x6C),
-                    PackedDiffSize = LittleEndian.ToInt32 (header, 0x70),
-                    DiffDataSize = LittleEndian.ToInt32 (header, 0x74),
-                    DiffCount = LittleEndian.ToInt32 (header, 0x78),
+                    PackedIndexSize = header.ToInt32 (0x68),
+                    IndexSize = header.ToInt32 (0x6C),
+                    PackedDiffSize = header.ToInt32 (0x70),
+                    DiffDataSize = header.ToInt32 (0x74),
+                    DiffCount = header.ToInt32 (0x78),
                 };
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (DifMetaData)info;
             BitmapSource base_bitmap;
-            using (var input = VFS.OpenSeekableStream (meta.BaseEntry))
+            using (var input = VFS.OpenBinaryStream (meta.BaseEntry))
             {
                 var image = meta.BaseFormat.Read (input, meta.BaseInfo);
                 base_bitmap = image.Bitmap;
             }
             stream.Position = 0x7C;
             var index = new byte[meta.IndexSize];
-            using (var input = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var input = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
                 if (index.Length != input.Read (index, 0, index.Length))
                     throw new EndOfStreamException();
 
@@ -134,7 +133,7 @@ namespace GameRes.Formats.MnoViolet
             }
 
             stream.Position = 0x7C + meta.PackedIndexSize;
-            using (var diff = new LzssStream (stream, LzssMode.Decompress, true))
+            using (var diff = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             {
                 int index_src = 0;
                 for (int i = 0; i < meta.DiffCount; ++i)

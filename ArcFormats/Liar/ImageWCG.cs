@@ -47,25 +47,22 @@ namespace GameRes.Formats.Liar
             Signatures = new uint[] { 0x02714757, 0xF2714757 };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            if (0x57 != stream.ReadByte() || 0x47 != stream.ReadByte())
+            if (0x57 != file.ReadByte() || 0x47 != file.ReadByte())
                 return null;
-            using (var file = new BinaryReader (stream, Encoding.ASCII, true))
-            {
-                uint flags = file.ReadUInt16();
-                if (1 != (flags & 0x0f) || 0x20 != file.ReadByte() || 0 != file.ReadByte())
-                    return null;
-                var meta = new ImageMetaData();
-                file.BaseStream.Position = 8;
-                meta.Width  = file.ReadUInt32();
-                meta.Height = file.ReadUInt32();
-                meta.BPP = 32;
-                return meta;
-            }
+            uint flags = file.ReadUInt16();
+            if (1 != (flags & 0x0f) || 0x20 != file.ReadByte() || 0 != file.ReadByte())
+                return null;
+            var meta = new ImageMetaData();
+            file.Position = 8;
+            meta.Width  = file.ReadUInt32();
+            meta.Height = file.ReadUInt32();
+            meta.BPP = 32;
+            return meta;
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             using (var reader = new Reader (file, info.Width * info.Height))
             {
@@ -102,10 +99,10 @@ namespace GameRes.Formats.Liar
             }
         }
 
-        internal class Reader : IDisposable
+        internal sealed class Reader : IDisposable
         {
             private byte[]          m_data;
-            private BinaryReader    m_input;
+            private IBinaryStream   m_input;
             private MsbBitStream    m_bits;
             private uint            m_input_size;
             private ushort[]        m_index;
@@ -121,12 +118,12 @@ namespace GameRes.Formats.Liar
 
             public byte[] Data { get { return m_data; } }
 
-            public Reader (Stream file, uint pixel_size)
+            public Reader (IBinaryStream file, uint pixel_size)
             {
                 m_data = new byte[pixel_size*4];
                 m_input_size = (uint)file.Length;
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
-                m_bits = new MsbBitStream (file, true);
+                m_input = file;
+                m_bits = new MsbBitStream (file.AsStream, true);
             }
 
             public void Unpack ()
@@ -147,7 +144,7 @@ namespace GameRes.Formats.Liar
                 if (m_src_size < 12)
                     throw new InvalidFormatException ("Invalid file size");
                 m_src_size -= 12;
-                m_input.BaseStream.Position = m_next_ptr;
+                m_input.Position = m_next_ptr;
                 int unpacked_size = m_input.ReadInt32();
                 uint data_size = m_input.ReadUInt32();
                 uint index_size = m_input.ReadUInt16(); // 8
@@ -172,7 +169,7 @@ namespace GameRes.Formats.Liar
 
             void ReadIndex (uint index_size)
             {
-                m_input.BaseStream.Position = m_src+12;
+                m_input.Position = m_src+12;
                 m_index = new ushort[index_size];
                 for (int i = 0; i < index_size; ++i)
                     m_index[i] = m_input.ReadUInt16();
@@ -181,7 +178,7 @@ namespace GameRes.Formats.Liar
             bool DecodeStream (uint data_pos, uint index_size)
             {
                 ReadIndex (index_size);
-                m_input.BaseStream.Position = data_pos;
+                m_input.Position = data_pos;
                 m_bits.Reset();
 
                 bool small_index = index_size < 0x1002;
@@ -235,23 +232,12 @@ namespace GameRes.Formats.Liar
 
             public void Dispose ()
             {
-                Dispose (true);
-                GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
                 if (!disposed)
                 {
-                    if (disposing)
-                    {
-                        m_input.Dispose();
-                        m_bits.Dispose();
-                    }
-                    m_data = null;
-                    m_index = null;
+                    m_bits.Dispose();
                     disposed = true;
                 }
+                GC.SuppressFinalize (this);
             }
             #endregion
         }

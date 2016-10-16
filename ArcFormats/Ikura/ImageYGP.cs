@@ -45,50 +45,44 @@ namespace GameRes.Formats.Ikura
         public override string Description { get { return "Ikura GDL image format"; } }
         public override uint     Signature { get { return 0x504759; } } // 'YGP'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
-            using (var reader = new ArcView.Reader (stream))
+            int mask_pos = stream.ReadUInt16();         // 04
+            byte type = stream.ReadUInt8();             // 06
+            if (type != 1 && type != 2)
+                return null;
+            var info = new YgpMetaData { Type = type, BPP = 32 };
+            info.Flags = stream.ReadUInt8();            // 07
+            int header_size = stream.ReadInt32();       // 08
+            stream.Position = header_size;
+            info.DataSize = stream.ReadInt32();         // XX+00
+            info.Width = stream.ReadUInt16();           // XX+04
+            info.Height = stream.ReadUInt16();          // XX+06
+            info.DataOffset = header_size+8;
+            if (0 != (info.Flags & 4))
             {
-                int mask_pos = reader.ReadUInt16();         // 04
-                byte type = reader.ReadByte();              // 06
-                if (type != 1 && type != 2)
-                    return null;
-                var info = new YgpMetaData { Type = type, BPP = 32 };
-                info.Flags = reader.ReadByte();             // 07
-                int header_size = reader.ReadInt32();       // 08
-                stream.Position = header_size;
-                info.DataSize = reader.ReadInt32();         // XX+00
-                info.Width = reader.ReadUInt16();           // XX+04
-                info.Height = reader.ReadUInt16();          // XX+06
-                info.DataOffset = header_size+8;
-                if (0 != (info.Flags & 4))
-                {
-                    stream.Position = 0x14;
-                    info.OffsetX = reader.ReadInt16();
-                    info.OffsetY = reader.ReadInt16();
-                }
-                return info;
+                stream.Position = 0x14;
+                info.OffsetX = stream.ReadInt16();
+                info.OffsetY = stream.ReadInt16();
             }
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (YgpMetaData)info;
             stream.Position = meta.DataOffset;
             int stride = (int)meta.Width * 4;
             var pixels = new byte[stride * (int)meta.Height];
             if (0 != (meta.Flags & 1))
-            {
-                using (var reader = new ArcView.Reader (stream))
-                    Unpack (reader, meta.DataSize, pixels);
-            }
+                Unpack (stream, meta.DataSize, pixels);
             else
                 stream.Read (pixels, 0, pixels.Length);
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
 
-        void Unpack (BinaryReader input, int input_size, byte[] output)
+        void Unpack (IBinaryStream input, int input_size, byte[] output)
         {
             int dst = 0;
             while (input_size > 0)

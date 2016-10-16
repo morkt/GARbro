@@ -38,14 +38,12 @@ namespace GameRes.Formats.Interheart
         public override string Description { get { return "Interheart image format"; } }
         public override uint     Signature { get { return 0x4B474347; } } // 'GCGK'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            byte[] header = new byte[12];
-            if (12 != stream.Read (header, 0, 12))
-                return null;
-            uint width = LittleEndian.ToUInt16 (header, 4);
-            uint height = LittleEndian.ToUInt16 (header, 6);
-            int packed_size = LittleEndian.ToInt32 (header, 8);
+            stream.Position = 4;
+            uint width = stream.ReadUInt16();
+            uint height = stream.ReadUInt16();
+            int packed_size = stream.ReadInt32();
             if (packed_size <= 0)
                 return null;
             return new ImageMetaData
@@ -56,47 +54,44 @@ namespace GameRes.Formats.Interheart
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream input, ImageMetaData info)
         {
             byte[] pixels = new byte[info.Width*info.Height*4];
-            using (var input = new ArcView.Reader (stream))
-            {
-                input.BaseStream.Position = 12;
-                uint[] offset_table = new uint[info.Height];
-                for (uint i = 0; i < info.Height; ++i)
-                    offset_table[i] = input.ReadUInt32();
+            input.Position = 12;
+            uint[] offset_table = new uint[info.Height];
+            for (uint i = 0; i < info.Height; ++i)
+                offset_table[i] = input.ReadUInt32();
 
-                long base_offset = input.BaseStream.Position;
-                int dst = 0;
-                foreach (var offset in offset_table)
+            long base_offset = input.Position;
+            int dst = 0;
+            foreach (var offset in offset_table)
+            {
+                input.Position = base_offset + offset;
+                for (int x = 0; x < info.Width; )
                 {
-                    input.BaseStream.Position = base_offset + offset;
-                    for (int x = 0; x < info.Width; )
+                    byte alpha = input.ReadUInt8();
+                    int count = input.ReadUInt8();
+                    if (0 == count)
+                        count = 0x100;
+                    if (0 == alpha)
                     {
-                        byte alpha = input.ReadByte();
-                        int count = input.ReadByte();
-                        if (0 == count)
-                            count = 0x100;
-                        if (0 == alpha)
-                        {
-                            dst += count * 4;
-                        }
-                        else
-                        {
-                            for (int n = 0; n < count; ++n)
-                            {
-                                pixels[dst+3] = alpha;
-                                pixels[dst+2] = input.ReadByte();
-                                pixels[dst+1] = input.ReadByte();
-                                pixels[dst]   = input.ReadByte();
-                                dst += 4;
-                            }
-                        }
-                        x += count;
+                        dst += count * 4;
                     }
+                    else
+                    {
+                        for (int n = 0; n < count; ++n)
+                        {
+                            pixels[dst+3] = alpha;
+                            pixels[dst+2] = input.ReadUInt8();
+                            pixels[dst+1] = input.ReadUInt8();
+                            pixels[dst]   = input.ReadUInt8();
+                            dst += 4;
+                        }
+                    }
+                    x += count;
                 }
-                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
             }
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
 
         public override void Write (Stream file, ImageData image)

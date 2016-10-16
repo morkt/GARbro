@@ -141,7 +141,7 @@ namespace GameRes.Formats.CandySoft
             using (var reader = new Zlc2Reader (input, (int)entry.Size))
             {
                 reader.Unpack();
-                return new MemoryStream (reader.Data);
+                return new BinMemoryStream (reader.Data, entry.Name);
             }
         }
     }

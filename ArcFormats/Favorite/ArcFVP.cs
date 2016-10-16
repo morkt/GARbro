@@ -80,7 +80,7 @@ namespace GameRes.Formats.FVP
             using (var decoder = new LzwDecoder (input, unpacked_size))
             {
                 decoder.Unpack();
-                return new MemoryStream (decoder.Output);
+                return new BinMemoryStream (decoder.Output, entry.Name);
             }
         }
     }

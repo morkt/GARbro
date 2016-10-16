@@ -37,20 +37,18 @@ namespace GameRes.Formats.Ego
         public override string Description { get { return "Studio e.go! bitmap format"; } }
         public override uint     Signature { get { return 0x49544E41; } } // 'ANTI'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x18];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x18);
             return new ImageMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0xC),
-                Height  = LittleEndian.ToUInt32 (header, 0x10),
+                Width   = header.ToUInt32 (0xC),
+                Height  = header.ToUInt32 (0x10),
                 BPP     = 32,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var pixels = new byte[info.Width*info.Height*4];
             stream.Position = 0x18;

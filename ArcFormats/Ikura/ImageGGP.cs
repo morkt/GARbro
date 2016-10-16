@@ -45,22 +45,21 @@ namespace GameRes.Formats.Ikura
         public override uint     Signature { get { return 0x46504747u; } } // 'GGPF'
         public override bool      CanWrite { get { return false; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x24];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            if (!Binary.AsciiEqual (header, 0, "GGPFAIKE"))
+            var header = stream.ReadHeader (0x24);
+            if (!header.AsciiEqual ("GGPFAIKE"))
                 return null;
             var info = new GgpMetaData
             {
-                Offset = LittleEndian.ToUInt32 (header, 0x14),
-                Length = LittleEndian.ToUInt32 (header, 0x18),
+                Offset = header.ToUInt32 (0x14),
+                Length = header.ToUInt32 (0x18),
             };
             for (int i = 0; i < 8; ++i)
                 info.Key[i] = (byte)(header[i] ^ header[i+0xC]);
             stream.Position = info.Offset;
-            using (var png = new EncryptedStream (stream, info.Key, true))
+            using (var enc = new EncryptedStream (stream.AsStream, info.Key, true))
+            using (var png = new BinaryStream (enc, stream.Name))
             {
                 var png_info = base.ReadMetaData (png);
                 info.Width   = png_info.Width;
@@ -72,13 +71,12 @@ namespace GameRes.Formats.Ikura
             }
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = info as GgpMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GgpFormat.Read should be supplied with GgpMetaData", "info");
-            using (var input = new StreamRegion (file, meta.Offset, meta.Length, true))
-            using (var png = new EncryptedStream (input, meta.Key, true))
+            var meta = (GgpMetaData)info;
+            using (var input = new StreamRegion (file.AsStream, meta.Offset, meta.Length, true))
+            using (var enc = new EncryptedStream (input, meta.Key))
+            using (var png = new BinaryStream (enc, file.Name))
                 return base.Read (png, info);
         }
 

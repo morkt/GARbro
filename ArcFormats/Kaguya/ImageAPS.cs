@@ -49,39 +49,36 @@ namespace GameRes.Formats.Kaguya
             Extensions = new string[] { "aps", "parts" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
             if (stream.ReadByte() != '3')
                 return null;
             var rect = new Rectangle (0, 0, 0, 0);
-            using (var reader = new ArcView.Reader (stream))
+            int count = stream.ReadInt32();
+            for (int i = 0; i < count; ++i)
             {
-                int count = reader.ReadInt32();
-                for (int i = 0; i < count; ++i)
+                stream.ReadInt32();
+                int name_length = stream.ReadByte();
+                stream.Seek (name_length, SeekOrigin.Current);
+                int x = stream.ReadInt32();
+                int y = stream.ReadInt32();
+                int w = stream.ReadInt32() - x;
+                int h = stream.ReadInt32() - y;
+                if (name_length > 0)
                 {
-                    reader.ReadInt32();
-                    int name_length = reader.ReadByte();
-                    reader.BaseStream.Seek (name_length, SeekOrigin.Current);
-                    int x = reader.ReadInt32();
-                    int y = reader.ReadInt32();
-                    int w = reader.ReadInt32() - x;
-                    int h = reader.ReadInt32() - y;
-                    if (name_length > 0)
-                    {
-                        var part_rect = new Rectangle (x, y, w, h);
-                        rect = Rectangle.Union (rect, part_rect);
-                    }
-                    reader.BaseStream.Seek (12, SeekOrigin.Current);
+                    var part_rect = new Rectangle (x, y, w, h);
+                    rect = Rectangle.Union (rect, part_rect);
                 }
-                uint data_size = reader.ReadUInt32();
-                if (data_size > stream.Length-stream.Position)
-                    return null;
-                return ReadCompressionMetaData (reader, rect);
+                stream.Seek (12, SeekOrigin.Current);
             }
+            uint data_size = stream.ReadUInt32();
+            if (data_size > stream.Length-stream.Position)
+                return null;
+            return ReadCompressionMetaData (stream, rect);
         }
 
-        internal ApsMetaData ReadCompressionMetaData (BinaryReader reader, Rectangle rect)
+        internal ApsMetaData ReadCompressionMetaData (IBinaryStream reader, Rectangle rect)
         {
             int compression = reader.ReadInt16();
             var info = new ApsMetaData
@@ -102,18 +99,18 @@ namespace GameRes.Formats.Kaguya
             }
             else
                 return null;
-            info.DataOffset = (uint)reader.BaseStream.Position;
+            info.DataOffset = (uint)reader.Position;
             return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (ApsMetaData)info;
             stream.Position = meta.DataOffset;
             byte[] image_data;
             if (meta.IsPacked)
             {
-                using (var reader = new LzReader (stream, meta.PackedSize, meta.UnpackedSize))
+                using (var reader = new LzReader (stream.AsStream, meta.PackedSize, meta.UnpackedSize))
                 {
                     reader.Unpack();
                     image_data = reader.Data;
@@ -121,10 +118,9 @@ namespace GameRes.Formats.Kaguya
             }
             else
             {
-                using (var reader = new ArcView.Reader (stream))
-                    image_data = reader.ReadBytes ((int)meta.UnpackedSize);
+                image_data = stream.ReadBytes ((int)meta.UnpackedSize);
             }
-            using (var unpacked = new MemoryStream (image_data))
+            using (var unpacked = BinaryStream.FromArray (image_data, stream.Name))
             {
                 var ap_info = base.ReadMetaData (unpacked);
                 if (null == ap_info)
@@ -151,40 +147,37 @@ namespace GameRes.Formats.Kaguya
             Extensions = new string[] { "aps", "parts" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            using (var reader = new ArcView.Reader (stream))
+            int name_count = stream.ReadInt16();
+            if (name_count <= 0 || name_count > 1000)
+                return null;
+            for (int i = 0; i < name_count; ++i)
             {
-                int name_count = reader.ReadInt16();
-                if (name_count <= 0 || name_count > 1000)
+                int name_length = stream.ReadInt32();
+                if (name_length <= 0 || name_length > 260)
                     return null;
-                for (int i = 0; i < name_count; ++i)
-                {
-                    int name_length = reader.ReadInt32();
-                    if (name_length <= 0 || name_length > 260)
-                        return null;
-                    stream.Seek (name_length, SeekOrigin.Current);
-                }
-                int tile_count = reader.ReadInt16();
-                if (tile_count <= 0 || tile_count > 1000)
-                    return null;
-                var rect = new Rectangle (0, 0, 0, 0);
-                for (int i = 0; i < tile_count; ++i)
-                {
-                    int name_length = reader.ReadInt32();
-                    if (name_length <= 0 || name_length > 260)
-                        return null;
-                    stream.Seek (name_length+0xC, SeekOrigin.Current);
-                    int x = reader.ReadInt32();
-                    int y = reader.ReadInt32();
-                    int w = reader.ReadInt32() - x;
-                    int h = reader.ReadInt32() - y;
-                    var part_rect = new Rectangle (x, y, w, h);
-                    rect = Rectangle.Union (rect, part_rect);
-                    stream.Seek (0x28, SeekOrigin.Current);
-                }
-                return ReadCompressionMetaData (reader, rect);
+                stream.Seek (name_length, SeekOrigin.Current);
             }
+            int tile_count = stream.ReadInt16();
+            if (tile_count <= 0 || tile_count > 1000)
+                return null;
+            var rect = new Rectangle (0, 0, 0, 0);
+            for (int i = 0; i < tile_count; ++i)
+            {
+                int name_length = stream.ReadInt32();
+                if (name_length <= 0 || name_length > 260)
+                    return null;
+                stream.Seek (name_length+0xC, SeekOrigin.Current);
+                int x = stream.ReadInt32();
+                int y = stream.ReadInt32();
+                int w = stream.ReadInt32() - x;
+                int h = stream.ReadInt32() - y;
+                var part_rect = new Rectangle (x, y, w, h);
+                rect = Rectangle.Union (rect, part_rect);
+                stream.Seek (0x28, SeekOrigin.Current);
+            }
+            return ReadCompressionMetaData (stream, rect);
         }
 
         public override void Write (Stream file, ImageData image)

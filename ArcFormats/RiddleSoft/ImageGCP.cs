@@ -53,16 +53,14 @@ namespace GameRes.Formats.Riddle
             throw new NotImplementedException ("GcpFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[12];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            int data_size = LittleEndian.ToInt32 (header, 4);
-            int pack_size = LittleEndian.ToInt32 (header, 8);
+            var header = stream.ReadHeader (12);
+            int data_size = header.ToInt32 (4);
+            int pack_size = header.ToInt32 (8);
             if (data_size < 54)
                 return null;
-            var reader = new CmpReader (stream, pack_size, 0x22); // BMP header
+            var reader = new CmpReader (stream.AsStream, pack_size, 0x22); // BMP header
             reader.Unpack();
             var bmp = reader.Data;
             if (bmp[0] != 'B' || bmp[1] != 'M')
@@ -80,16 +78,13 @@ namespace GameRes.Formats.Riddle
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as GcpMetaData;
-            if (null == meta)
-                throw new ArgumentException ("GcpFormat.Read should be supplied with GcpMetaData", "info");
-
+            var meta = (GcpMetaData)info;
             stream.Position = 12;
-            var reader = new CmpReader (stream, meta.PackedSize, meta.DataSize);
+            var reader = new CmpReader (stream.AsStream, meta.PackedSize, meta.DataSize);
             reader.Unpack();
-            using (var bmp = new MemoryStream (reader.Data, false))
+            using (var bmp = new MemoryStream (reader.Data))
             {
                 var decoder = new BmpBitmapDecoder (bmp,
                     BitmapCreateOptions.None, BitmapCacheOption.OnLoad);

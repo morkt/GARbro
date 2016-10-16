@@ -31,7 +31,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Softpal
 {
     [Export(typeof(AudioFormat))]
-    public class BgmAudio : OggAudio
+    public class BgmAudio : AudioFormat
     {
         public override string         Tag { get { return "BGM/SOFTPAL"; } }
         public override string Description { get { return "Softpal BGM format (Ogg/Vorbis)"; } }
@@ -42,14 +42,12 @@ namespace GameRes.Formats.Softpal
             Extensions = new string[] { "ogg" };
         }
         
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[0x10]; // header contains music loop timing
-            if (0x10 != file.Read (header, 0, 0x10))
+            var header = file.ReadHeader (0x10); // header contains music loop timing
+            if (!header.AsciiEqual (0xC, "OggS"))
                 return null;
-            if (!Binary.AsciiEqual (header, 0xC, "OggS"))
-                return null;
-            var input = new StreamRegion (file, 12);
+            var input = new StreamRegion (file.AsStream, 12);
             return new OggInput (input);
             // input is [intentionally] left undisposed in case of exception.
         }

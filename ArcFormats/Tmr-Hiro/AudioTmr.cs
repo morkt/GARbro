@@ -44,15 +44,15 @@ namespace GameRes.Formats.TmrHiro
             Extensions = new string[] { "" };
         }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
             if (file.ReadByte() != 0x44)
                 return null;
             file.Position = 4;
             if (file.ReadByte() != 0)
                 return null;
-            int length = ReadInt32 (file);
-            if (-1 == length || length != file.Length - 9)
+            int length = file.ReadInt32();
+            if (length != file.Length - 9)
                 return null;
             var format = new WaveFormat
             {
@@ -63,17 +63,8 @@ namespace GameRes.Formats.TmrHiro
                 BlockAlign               = 4,
                 AverageBytesPerSecond    = 44100*4,
             };
-            var pcm = new StreamRegion (file, 9, length);
+            var pcm = new StreamRegion (file.AsStream, 9, length);
             return new RawPcmInput (pcm, format);
-        }
-
-        private static int ReadInt32 (Stream file)
-        {
-            int dword = file.ReadByte();
-            dword |= file.ReadByte() << 8;
-            dword |= file.ReadByte() << 16;
-            dword |= file.ReadByte() << 24;
-            return dword;
         }
     }
 }

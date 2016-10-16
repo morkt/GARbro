@@ -43,28 +43,22 @@ namespace GameRes.Formats.Dac
         public override string Description { get { return "DAC engine image format"; } }
         public override uint     Signature { get { return 0x00434744; } } // 'DGC'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var input = new ArcView.Reader (stream))
-            {
-                input.ReadInt32();
-                var info = new DgcMetaData();
-                info.Flags  = input.ReadUInt32();
-                info.Width  = input.ReadUInt16();
-                info.Height = input.ReadUInt16();
-                if (info.Width > 0x7fff || info.Height > 0x7fff)
-                    return null;
-                info.BPP    = 0 == (info.Flags & Reader.FlagAlphaChannel) ? 24 : 32;
-                return info;
-            }
+            file.Position = 4;
+            var info = new DgcMetaData();
+            info.Flags  = file.ReadUInt32();
+            info.Width  = file.ReadUInt16();
+            info.Height = file.ReadUInt16();
+            if (info.Width > 0x7fff || info.Height > 0x7fff)
+                return null;
+            info.BPP    = 0 == (info.Flags & Reader.FlagAlphaChannel) ? 24 : 32;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = info as DgcMetaData;
-            if (null == meta)
-                throw new ArgumentException ("DgcFormat.Read should be supplied with DgcMetaData", "info");
-
+            var meta = (DgcMetaData)info;
             stream.Position = 12;
             using (var reader = new Reader (stream, meta))
             {
@@ -80,7 +74,7 @@ namespace GameRes.Formats.Dac
 
         internal class Reader : IDataUnpacker, IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             readonly int    m_width;
             readonly int    m_height;
@@ -96,11 +90,11 @@ namespace GameRes.Formats.Dac
             public byte[]        Data { get { return m_output; } }
             public PixelFormat Format { get; private set; }
 
-            public Reader (Stream input, DgcMetaData info)
+            public Reader (IBinaryStream input, DgcMetaData info)
             {
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
-                m_input = new ArcView.Reader (input);
+                m_input = input;
                 m_use_dict  = 0 != (info.Flags & FlagUseDictionary);
                 m_has_alpha = 0 != (info.Flags & FlagAlphaChannel);
                 m_max_dict_size = (int)(info.Flags & 0xffffff);
@@ -162,7 +156,7 @@ namespace GameRes.Formats.Dac
                                 if (dict_len > 256)
                                     i = m_input.ReadUInt16();
                                 else
-                                    i = m_input.ReadByte();
+                                    i = m_input.ReadUInt8();
                                 i *= 3;
                                 m_output[dst]   = dict[i];
                                 m_output[dst+1] = dict[i+1];
@@ -178,7 +172,7 @@ namespace GameRes.Formats.Dac
             {
                 var dict = new byte[m_max_dict_size * 3];
 
-                int dict_len = m_input.ReadByte() + 1;
+                int dict_len = m_input.ReadUInt8() + 1;
                 m_input.Read (dict, 0, dict_len * 3);
 
                 for (int y = 0; y < m_height; y++)
@@ -198,7 +192,7 @@ namespace GameRes.Formats.Dac
                     {
                         for (int x = 0; x < m_width; x++)
                         {
-                            int i = 3 * m_input.ReadByte();
+                            int i = 3 * m_input.ReadUInt8();
                             m_output[dst]   = dict[i];
                             m_output[dst+1] = dict[i+1];
                             m_output[dst+2] = dict[i+2];
@@ -260,7 +254,7 @@ namespace GameRes.Formats.Dac
                     {
                         for (int x = 0; x < m_width; x++)
                         {
-                            m_output[dst] = m_input.ReadByte();
+                            m_output[dst] = m_input.ReadUInt8();
                             dst += m_pixel_size;
                         }
                     }
@@ -290,7 +284,7 @@ namespace GameRes.Formats.Dac
                             int index = 0;
                             if (0 != (ctl & 0x2000))
                             {
-                                index = m_input.ReadByte();
+                                index = m_input.ReadUInt8();
                                 --length;
                             }
                             else
@@ -314,7 +308,7 @@ namespace GameRes.Formats.Dac
                                 int index = 0;
                                 if (0 != (ctl & 0x2000))
                                 {
-                                    index = m_input.ReadByte();
+                                    index = m_input.ReadUInt8();
                                     --length;
                                 }
                                 else
@@ -337,11 +331,11 @@ namespace GameRes.Formats.Dac
             {
                 while (length > 0)
                 {
-                    byte ctl = m_input.ReadByte();
+                    byte ctl = m_input.ReadUInt8();
                     --length;
                     if (0 != ctl)
                     {
-                        int index = 3 * m_input.ReadByte();
+                        int index = 3 * m_input.ReadUInt8();
                         --length;
                         while (0 != ctl--)
                         {
@@ -353,13 +347,13 @@ namespace GameRes.Formats.Dac
                     }
                     else
                     {
-                        ctl = m_input.ReadByte();
+                        ctl = m_input.ReadUInt8();
                         --length;
                         if (0 == (ctl & 0x80))
                         {
                             for (int count = ctl + 2; 0 != count; --count)
                             {
-                                int src = 3 * m_input.ReadByte();
+                                int src = 3 * m_input.ReadUInt8();
                                 --length;
                                 m_output[dst]   = dict[src];
                                 m_output[dst+1] = dict[src+1];
@@ -369,7 +363,7 @@ namespace GameRes.Formats.Dac
                         }
                         else
                         {
-                            int offset = (short)((ctl << 8) | m_input.ReadByte());
+                            int offset = (short)((ctl << 8) | m_input.ReadUInt8());
                             --length;
                             int count = (offset & 0x3F) + 4;
                             offset >>= 6;
@@ -386,11 +380,11 @@ namespace GameRes.Formats.Dac
             {
                 while (length > 0)
                 {
-                    byte ctl = m_input.ReadByte();
+                    byte ctl = m_input.ReadUInt8();
                     --length;
                     if (0 != ctl)
                     {
-                        byte alpha = m_input.ReadByte();
+                        byte alpha = m_input.ReadUInt8();
                         --length;
                         while (0 != ctl--)
                         {
@@ -400,7 +394,7 @@ namespace GameRes.Formats.Dac
                     }
                     else
                     {
-                        ctl = m_input.ReadByte();
+                        ctl = m_input.ReadUInt8();
                         --length;
                         if (0 == (ctl & 0x80))
                         {
@@ -408,13 +402,13 @@ namespace GameRes.Formats.Dac
                             length -= count;
                             while (0 != count--)
                             {
-                                m_output[dst] = m_input.ReadByte();
+                                m_output[dst] = m_input.ReadUInt8();
                                 dst += m_pixel_size;
                             }
                         }
                         else
                         {
-                            int offset = (short)((ctl << 8) | m_input.ReadByte());
+                            int offset = (short)((ctl << 8) | m_input.ReadUInt8());
                             --length;
                             int count = (offset & 0x3F) + 4;
                             offset >>= 6;
@@ -479,24 +473,9 @@ namespace GameRes.Formats.Dac
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
                 GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                    {
-                        m_input.Dispose();
-                    }
-                    disposed = true;
-                }
             }
             #endregion
         }

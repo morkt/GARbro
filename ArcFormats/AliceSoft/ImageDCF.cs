@@ -137,13 +137,15 @@ namespace GameRes.Formats.AliceSoft
             long qnt_pos = m_input.Position;
             if (m_input.ReadUInt32() != Qnt.Signature)
                 throw new InvalidFormatException();
-            m_input.Seek (-4, SeekOrigin.Current);
-            var qnt_info = Qnt.ReadMetaData (m_input) as QntMetaData;
+            QntMetaData qnt_info;
+            using (var reg = new StreamRegion (m_input.AsStream, qnt_pos, true))
+            using (var qnt = new BinaryStream (reg, m_input.Name))
+                qnt_info = Qnt.ReadMetaData (qnt) as QntMetaData;
             if (null == qnt_info)
                 throw new InvalidFormatException();
 
             m_input.Position = qnt_pos + 0x44;
-            var overlay = new QntFormat.Reader (m_input, qnt_info);
+            var overlay = new QntFormat.Reader (m_input.AsStream, qnt_info);
             overlay.Unpack();
             m_overlay_bpp = overlay.BPP;
             if (m_mask != null)
@@ -213,13 +215,13 @@ namespace GameRes.Formats.AliceSoft
                 string dir_name = VFS.GetDirectoryName (m_info.FileName);
                 string base_name = Path.ChangeExtension (m_info.BaseName, "qnt");
                 base_name = VFS.CombinePath (dir_name, base_name);
-                using (var base_file = VFS.OpenSeekableStream (base_name))
+                using (var base_file = VFS.OpenBinaryStream (base_name))
                 {
                     var base_info = Qnt.ReadMetaData (base_file) as QntMetaData;
                     if (null != base_info && m_info.Width == base_info.Width && m_info.Height == base_info.Height)
                     {
                         base_info.FileName = base_name;
-                        var reader = new QntFormat.Reader (base_file, base_info);
+                        var reader = new QntFormat.Reader (base_file.AsStream, base_info);
                         reader.Unpack();
                         m_base_bpp = reader.BPP;
                         m_base = reader.Data;

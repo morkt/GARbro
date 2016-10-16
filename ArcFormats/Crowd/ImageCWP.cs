@@ -40,50 +40,47 @@ namespace GameRes.Formats.Crowd
         public override uint     Signature { get { return 0x50445743; } } // 'CWDP'
         public override bool      CanWrite { get { return true; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream input)
         {
-            using (var input = new ArcView.Reader (stream))
+            input.Position = 4;
+            uint width  = Binary.BigEndian (input.ReadUInt32());
+            uint height = Binary.BigEndian (input.ReadUInt32());
+            if (0 == width || 0 == height)
+                return null;
+            int bpp = input.ReadByte();
+            int color_type = input.ReadByte();
+            switch (color_type)
             {
-                input.ReadInt32();
-                uint width  = Binary.BigEndian (input.ReadUInt32());
-                uint height = Binary.BigEndian (input.ReadUInt32());
-                if (0 == width || 0 == height)
-                    return null;
-                int bpp = input.ReadByte();
-                int color_type = input.ReadByte();
-                switch (color_type)
-                {
-                case 2: bpp *= 3; break;
-                case 4: bpp *= 2; break;
-                case 6: bpp *= 4; break;
-                case 3:
-                case 0: break;
-                default: return null;
-                }
-                return new ImageMetaData
-                {
-                    Width = width,
-                    Height = height,
-                    BPP = bpp,
-                };
+            case 2: bpp *= 3; break;
+            case 4: bpp *= 2; break;
+            case 6: bpp *= 4; break;
+            case 3:
+            case 0: break;
+            default: return null;
             }
+            return new ImageMetaData
+            {
+                Width = width,
+                Height = height,
+                BPP = bpp,
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var header = new byte[0x15];
-            using (var mem = new MemoryStream((int)(0x14 + stream.Length + 12)))
+            using (var mem = new MemoryStream((int)(0x14 + file.Length + 12)))
             using (var png = new BinaryWriter (mem))
             {
                 png.Write (0x474E5089u); // png header
                 png.Write (0x0A1A0A0Du);
                 png.Write (0x0D000000u);
                 png.Write (0x52444849u); // 'IHDR'
-                stream.Position = 4;
-                stream.Read (header, 0, header.Length);
+                file.Position = 4;
+                file.Read (header, 0, header.Length);
                 png.Write (header, 0, header.Length);
                 png.Write (0x54414449u); // 'IDAT'
-                stream.CopyTo (mem);
+                file.AsStream.CopyTo (mem);
                 header[1] = 0;
                 header[2] = 0;
                 header[3] = 0;
@@ -149,7 +146,9 @@ namespace GameRes.Formats.Crowd
                     png.Read (header, 0, header.Length);
                     cwp.Write (0x50445743u); // 'CWDP'
                     cwp.Write (header, 0, header.Length);
-                    var idat = PngFormat.FindChunk (png, "IDAT");
+                    long idat;
+                    using (var bin = new BinMemoryStream (png, ""))
+                        idat = PngFormat.FindChunk (bin, "IDAT");
                     if (-1 == idat)
                         throw new InvalidFormatException ("CWP conversion failed");
                     png.Position = idat;

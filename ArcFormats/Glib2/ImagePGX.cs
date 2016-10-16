@@ -58,34 +58,32 @@ namespace GameRes.Formats.Glib2
 
         static readonly InfoReader InfoCache = new InfoReader();
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x18];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x18);
             return new PgxMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 8),
-                Height  = LittleEndian.ToUInt32 (header, 12),
-                BPP     = (LittleEndian.ToInt16 (header, 0x10) & 1) == 0 ? 24 : 32,
-                PackedSize = LittleEndian.ToInt32 (header, 0x14),
-                Flags   = LittleEndian.ToUInt16 (header, 0x12),
+                Width   = header.ToUInt32 (8),
+                Height  = header.ToUInt32 (12),
+                BPP     = (header.ToInt16 (0x10) & 1) == 0 ? 24 : 32,
+                PackedSize = header.ToInt32 (0x14),
+                Flags   = header.ToUInt16 (0x12),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (PgxMetaData)info;
             stream.Position = 0x20;
             if (0 != (meta.Flags & 0x1000))
             {
-                ReadGms (stream);
+                ReadGms (stream.AsStream);
             }
             PixelFormat format = 32 == meta.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             int stride = (int)meta.Width * 4;
             var pixels = new byte[stride * (int)meta.Height];
 //            stream.Seek (-meta.PackedSize, SeekOrigin.End);
-            LzssUnpack (stream, pixels);
+            LzssUnpack (stream.AsStream, pixels);
             var layer = InfoCache.GetInfo (info.FileName);
             if (null != layer && null != layer.Rect)
             {

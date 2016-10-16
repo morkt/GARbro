@@ -43,24 +43,22 @@ namespace GameRes.Formats.Emic
             Signatures = new uint[] { 0x1050574D, 0x4C594554 }; // 'TEYL'
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = new byte[12];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            file.Position = 4;
             return new ImageMetaData
             {
-                Width  = LittleEndian.ToUInt32 (header, 4),
-                Height = LittleEndian.ToUInt32 (header, 8),
+                Width  = file.ReadUInt32(),
+                Height = file.ReadUInt32(),
                 BPP = 32,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var pixels = new byte[info.Width*info.Height*4];
-            stream.Position = 12;
-            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+            file.Position = 12;
+            if (pixels.Length != file.Read (pixels, 0, pixels.Length))
                 throw new EndOfStreamException();
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }

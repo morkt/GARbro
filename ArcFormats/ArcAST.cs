@@ -125,14 +125,14 @@ namespace GameRes.Formats.AST
                     var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                     for (int i = 0; i < data.Length; ++i)
                         data[i] ^= 0xff;
-                    return new MemoryStream (data);
+                    return new BinMemoryStream (data, entry.Name);
                 }
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             }
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
             {
                 var data = UnpackLzss (input, pent.Size, pent.UnpackedSize);
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
         }
 

@@ -49,17 +49,16 @@ namespace GameRes.Formats.Vitamin
             Extensions = new string[] { "mfc" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x18];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x18);
 
             if (header[4] != 1 || header[5] != 0 || header[6] != 1 || header[7] != 4)
                 return null;
 
-            int alpha_size = LittleEndian.ToInt32 (header, 12);
-            using (var sbi = new StreamRegion (stream, alpha_size, true))
+            int alpha_size = header.ToInt32 (12);
+            using (var reg = new StreamRegion (stream.AsStream, alpha_size, true))
+            using (var sbi = new BinaryStream (reg, stream.Name))
             {
                 var info = base.ReadMetaData (sbi) as SbiMetaData;
                 if (null == info)
@@ -75,15 +74,15 @@ namespace GameRes.Formats.Vitamin
             }
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (MfcMetaData)info;
             // XXX implemented like in reference code, width is expected to be even.
             var alpha = new byte[info.Width * info.Height / 2];
             stream.Position = 0x18;
-            RleUnpack (stream, meta.AlphaSize - 0x18, alpha);
+            RleUnpack (stream.AsStream, meta.AlphaSize - 0x18, alpha);
             byte[] pixels;
-            using (var sbi = new StreamRegion (stream, meta.AlphaSize, true))
+            using (var sbi = new StreamRegion (stream.AsStream, meta.AlphaSize, true))
             using (var reader = new SbiReader (sbi, meta.BaseInfo))
             {
                 reader.Unpack();

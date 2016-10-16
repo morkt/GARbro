@@ -41,18 +41,16 @@ namespace GameRes.Formats.BGI
             Extensions = new string[] { "" };
         }
         
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = new byte[8];
-            if (8 != file.Read (header, 0, 8))
+            var header = file.ReadHeader (8);
+            if (!header.AsciiEqual (4, "bw  "))
                 return null;
-            if (!Binary.AsciiEqual (header, 4, "bw  "))
-                return null;
-            uint offset = LittleEndian.ToUInt32 (header, 0);
+            uint offset = header.ToUInt32 (0);
             if (offset >= file.Length)
                 return null;
 
-            var input = new StreamRegion (file, offset);
+            var input = new StreamRegion (file.AsStream, offset);
             return new OggInput (input);
             // input is left undisposed in case of exception.
         }

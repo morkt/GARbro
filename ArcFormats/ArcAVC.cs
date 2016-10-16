@@ -91,7 +91,7 @@ namespace GameRes.Formats.AVC
             int base_offset = (int)(entry.Offset-arcf.HeaderOffset);
             for (int i = 0; i < data.Length; ++i)
                 data[i] ^= arcf.Key[((base_offset+i)&7)];
-            return new MemoryStream (data, false);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         internal class AdvReader

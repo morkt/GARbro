@@ -38,28 +38,26 @@ namespace GameRes.Formats.Lilim
         public override string Description { get { return "LiLiM/Le.Chocolat compressed bitmap"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x46];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x46);
             if ('B' != header[0] || 'M' != header[1])
                 return null;
             int type = (sbyte)header[0x1C];
             uint frame_offset;
             if (1 == type || 2 == type)
             {
-                int count = LittleEndian.ToUInt16 (header, 0x3A);
+                int count = header.ToUInt16 (0x3A);
                 if (count > 0xFF)
                     return null;
-                frame_offset = LittleEndian.ToUInt32 (header, 0x42);
+                frame_offset = header.ToUInt32 (0x42);
             }
             else if (32 == type || 24 == type)
             {
-                uint unpacked_size = LittleEndian.ToUInt32 (header, 2);
+                uint unpacked_size = header.ToUInt32 (2);
                 if (0 == unpacked_size || unpacked_size == stream.Length) // probably an ordinary bmp file
                     return null;
-                frame_offset = LittleEndian.ToUInt32 (header, 0xA);
+                frame_offset = header.ToUInt32 (0xA);
             }
             else
                 return null;
@@ -67,15 +65,15 @@ namespace GameRes.Formats.Lilim
                 return null;
             return new AbmImageData
             {
-                Width = LittleEndian.ToUInt32 (header, 0x12),
-                Height = LittleEndian.ToUInt32 (header, 0x16),
+                Width = header.ToUInt32 (0x12),
+                Height = header.ToUInt32 (0x16),
                 BPP = 24,
                 Mode = type,
                 BaseOffset = frame_offset,
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new AbmReader (stream, (AbmImageData)info))
             {

@@ -51,36 +51,32 @@ namespace GameRes.Formats.Will
             Extensions = new string[] { "wip", "msk", "mos" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var file = new BinaryReader (stream, Encoding.ASCII, true))
+            file.Position = 4;
+            int frames  = file.ReadUInt16();
+            int bpp     = file.ReadUInt16();
+            uint width  = file.ReadUInt32();
+            uint height = file.ReadUInt32();
+            int x = file.ReadInt32();
+            int y = file.ReadInt32();
+            file.ReadInt32(); // 0
+            uint frame_size = file.ReadUInt32();
+            if (24 != bpp && 8 != bpp)
             {
-                if (Signature != file.ReadUInt32())
-                    return null;
-                int frames = file.ReadUInt16();
-                int bpp    = file.ReadUInt16();
-                uint width = file.ReadUInt32();
-                uint height = file.ReadUInt32();
-                int x = file.ReadInt32();
-                int y = file.ReadInt32();
-                file.ReadUInt32(); // 0
-                uint frame_size = file.ReadUInt32();
-                if (24 != bpp && 8 != bpp)
-                {
-                    Trace.WriteLine ("unsupported bpp", "WipFormat");
-                    return null;
-                }
-                return new WipMetaData
-                {
-                    Width   = width,
-                    Height  = height,
-                    OffsetX = x,
-                    OffsetY = y,
-                    BPP     = bpp,
-                    FrameCount  = frames,
-                    FrameSize   = frame_size,
-                };
+                Trace.WriteLine ("unsupported bpp", "WipFormat");
+                return null;
             }
+            return new WipMetaData
+            {
+                Width   = width,
+                Height  = height,
+                OffsetX = x,
+                OffsetY = y,
+                BPP     = bpp,
+                FrameCount  = frames,
+                FrameSize   = frame_size,
+            };
         }
 
         public override void Write (Stream file, ImageData image)
@@ -88,7 +84,7 @@ namespace GameRes.Formats.Will
             throw new NotImplementedException ("WipFormat.Write not implemented");
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (WipMetaData)info;
             if (meta.FrameCount > 1)
@@ -106,7 +102,7 @@ namespace GameRes.Formats.Will
                     palette[i] = Color.FromRgb (palette_data[i*4], palette_data[i*4+1], palette_data[i*4+2]);
                 }
             }
-            using (var reader = new Reader (file, meta))
+            using (var reader = new Reader (file.AsStream, meta))
             {
                 reader.Unpack();
                 if (24 == meta.BPP)
@@ -134,7 +130,7 @@ namespace GameRes.Formats.Will
             }
         }
 
-        internal class Reader : IDisposable
+        internal sealed class Reader : IDisposable
         {
             private BinaryReader    m_input;
             private uint            m_length;
@@ -200,20 +196,12 @@ namespace GameRes.Formats.Will
 
             public void Dispose ()
             {
-                Dispose (true);
-                GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
                 if (!disposed)
                 {
-                    if (disposing)
-                        m_input.Dispose();
-                    m_input = null;
-                    m_data = null;
+                    m_input.Dispose();
                     disposed = true;
                 }
+                GC.SuppressFinalize (this);
             }
             #endregion
         }

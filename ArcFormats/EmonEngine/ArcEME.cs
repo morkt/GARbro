@@ -128,7 +128,7 @@ namespace GameRes.Formats.EmonEngine
                     lzss.Config.FrameInitPos = entry.LzssInitPos;
                     lzss.Read (data, part1_size, unpacked_size);
                 }
-                return new MemoryStream (data);
+                return new BinMemoryStream (data, entry.Name);
             }
             else
             {

@@ -208,7 +208,7 @@ namespace GameRes.Formats.CatSystem
         {
             byte[] data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             arc.Encryption.Decipher (data, data.Length/8*8);
-            return new MemoryStream (data);
+            return new BinMemoryStream (data, entry.Name);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)

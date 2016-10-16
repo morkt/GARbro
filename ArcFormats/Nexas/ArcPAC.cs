@@ -194,7 +194,7 @@ namespace GameRes.Formats.NeXAS
                     var packed = new byte[entry.Size];
                     input.Read (packed, 0, packed.Length);
                     var unpacked = HuffmanDecode (packed, (int)pent.UnpackedSize);
-                    return new MemoryStream (unpacked, 0, (int)pent.UnpackedSize);
+                    return new BinMemoryStream (unpacked, 0, (int)pent.UnpackedSize, entry.Name);
                 }
             case Compression.Deflate:
             default:

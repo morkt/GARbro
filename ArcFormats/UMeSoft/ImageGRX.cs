@@ -45,25 +45,27 @@ namespace GameRes.Formats.UMeSoft
         public override string Description { get { return "U-Me Soft image format"; } }
         public override uint     Signature { get { return 0x1A585247; } } // 'GRX'
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            byte[] header = new byte[0x10];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
-            return new GrxMetaData
-            {
-                Width   = LittleEndian.ToUInt16 (header, 8),
-                Height  = LittleEndian.ToUInt16 (header, 10),
-                BPP     = LittleEndian.ToUInt16 (header, 6),
-                IsPacked = 0 != header[4],
-                HasAlpha = 0 != header[5],
-                AlphaOffset = LittleEndian.ToInt32 (header, 12),
-            };
+            file.Position = 4;
+            return ReadInfo (file);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        internal GrxMetaData ReadInfo (IBinaryStream file)
         {
-            var reader = new Reader (stream, (GrxMetaData)info);
+            var info = new GrxMetaData();
+            info.IsPacked   = file.ReadByte() != 0;
+            info.HasAlpha   = file.ReadByte() != 0;
+            info.BPP        = file.ReadUInt16();
+            info.Width      = file.ReadUInt16();
+            info.Height     = file.ReadUInt16();
+            info.AlphaOffset = file.ReadInt32();
+            return info;
+        }
+
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
+        {
+            var reader = new Reader (file.AsStream, (GrxMetaData)info);
             reader.Unpack();
             return ImageData.Create (info, reader.Format, null, reader.Data, reader.Stride);
         }
@@ -292,38 +294,36 @@ namespace GameRes.Formats.UMeSoft
             Extensions = new string[] { "grx" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var reader = new ArcView.Reader (stream))
+            file.Position = 4;
+            int offset = file.ReadInt32();
+            if (offset <= 8)
+                return null;
+            file.Position = offset;
+            uint signature = file.ReadUInt32();
+            if (signature != base.Signature)
+                return null;
+            var info = ReadInfo (file);
+            return new SgxMetaData
             {
-                stream.Seek (4, SeekOrigin.Current);
-                int offset = reader.ReadInt32();
-                if (offset <= 8)
-                    return null;
-                stream.Position = offset;
-                uint signature = reader.ReadUInt32();
-                if (signature != base.Signature)
-                    return null;
-                stream.Seek (-4, SeekOrigin.Current);
-                var info = base.ReadMetaData (stream) as GrxMetaData;
-                if (null == info)
-                    return null;
-                return new SgxMetaData
-                {
-                    Width   = info.Width,
-                    Height  = info.Height,
-                    BPP     = info.BPP,
-                    GrxOffset = offset,
-                    GrxInfo = info
-                };
-            }
+                Width   = info.Width,
+                Height  = info.Height,
+                BPP     = info.BPP,
+                GrxOffset = offset,
+                GrxInfo = info
+            };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (SgxMetaData)info;
-            using (var grx = new StreamRegion (stream, meta.GrxOffset, true))
-                return base.Read (grx, meta.GrxInfo);
+            using (var grx = new StreamRegion (stream.AsStream, meta.GrxOffset, true))
+            {
+                var reader = new Reader (grx, (GrxMetaData)meta.GrxInfo);
+                reader.Unpack();
+                return ImageData.Create (info, reader.Format, null, reader.Data, reader.Stride);
+            }
         }
     }
 }

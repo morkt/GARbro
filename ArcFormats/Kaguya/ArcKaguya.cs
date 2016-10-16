@@ -70,7 +70,7 @@ namespace GameRes.Formats.Kaguya
             using (var reader = new LzReader (input, entry.Size, packed_entry.UnpackedSize))
             {
                 reader.Unpack();
-                return new MemoryStream (reader.Data);
+                return new BinMemoryStream (reader.Data, entry.Name);
             }
         }
     }

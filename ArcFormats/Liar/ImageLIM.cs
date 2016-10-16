@@ -43,25 +43,22 @@ namespace GameRes.Formats.Liar
         public override string Description { get { return "Liar-soft image format"; } }
         public override uint     Signature { get { return 0; } }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            if (0x4C != stream.ReadByte() || 0x4D != stream.ReadByte())
+            if (0x4C != file.ReadByte() || 0x4D != file.ReadByte())
                 return null;
-            using (var file = new ArcView.Reader (stream))
-            {
-                int flag = file.ReadUInt16();
-                if ((flag & 0xF) != 2 && (flag & 0xF) != 3)
-                    return null;
-                int bpp = 0x10 == file.ReadUInt16() ? 16 : 32;
-                var meta = new LimMetaData { BPP = bpp, Flags = flag };
-                file.ReadUInt16();
-                meta.Width  = file.ReadUInt32();
-                meta.Height = file.ReadUInt32();
-                return meta;
-            }
+            int flag = file.ReadUInt16();
+            if ((flag & 0xF) != 2 && (flag & 0xF) != 3)
+                return null;
+            int bpp = 0x10 == file.ReadUInt16() ? 16 : 32;
+            var meta = new LimMetaData { BPP = bpp, Flags = flag };
+            file.ReadUInt16();
+            meta.Width  = file.ReadUInt32();
+            meta.Height = file.ReadUInt32();
+            return meta;
         }
 
-        public override ImageData Read (Stream file, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             using (var reader = new Reader (file, (LimMetaData)info))
             {
@@ -77,7 +74,7 @@ namespace GameRes.Formats.Liar
 
         internal class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             byte[]          m_index;
             byte[]          m_image;
@@ -89,9 +86,9 @@ namespace GameRes.Formats.Liar
             public byte[]        Data { get { return m_image; } }
             public PixelFormat Format { get; private set; }
 
-            public Reader (Stream file, LimMetaData info)
+            public Reader (IBinaryStream file, LimMetaData info)
             {
-                m_input = new ArcView.Reader (file);
+                m_input = file;
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
                 m_bpp = info.BPP;
@@ -111,7 +108,7 @@ namespace GameRes.Formats.Liar
 
             public void Unpack ()
             {
-                m_input.BaseStream.Position = 0x10;
+                m_input.Position = 0x10;
                 if (32 == m_bpp)
                 {
                     Unpack32bpp();
@@ -348,21 +345,8 @@ namespace GameRes.Formats.Liar
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
-                GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                        m_input.Dispose();
-                }
             }
             #endregion
         }

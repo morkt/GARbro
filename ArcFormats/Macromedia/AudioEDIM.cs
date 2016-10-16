@@ -42,10 +42,11 @@ namespace GameRes.Formats.Selen
             Signatures = new uint[] { 0x40010000, 0x64010000 };
         }
         
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            uint offset = 4 + Binary.BigEndian (FormatCatalog.ReadSignature (file));
-            return base.TryOpen (new StreamRegion (file, offset));
+            uint offset = 4 + Binary.BigEndian (file.Signature);
+            var mp3 = new StreamRegion (file.AsStream, offset);
+            return base.TryOpen (new BinaryStream (mp3, file.Name));
         }
 
         public override void Write (SoundInput source, Stream output)

@@ -28,10 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Ags
@@ -196,40 +193,37 @@ namespace GameRes.Formats.Ags
             throw new System.NotImplementedException ("CgFormat.Write not implemented");
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            int sig = stream.ReadByte();
+            int sig = file.ReadByte();
             if (sig >= 0x20)
                 return null;
-            using (var input = new ArcView.Reader (stream))
+            int width  = file.ReadInt16();
+            int height = file.ReadInt16();
+            if (width <= 0 || height <= 0 || width > 4096 || height > 4096)
+                return null;
+            var meta = new CgMetaData
             {
-                int width  = input.ReadInt16();
-                int height = input.ReadInt16();
-                if (width <= 0 || height <= 0 || width > 4096 || height > 4096)
+                Width = (uint)width,
+                Height = (uint)height,
+                BPP = 24,
+                Type = sig,
+            };
+            if (0 != (sig & 7))
+            {
+                meta.OffsetX = file.ReadInt16();
+                meta.OffsetY = file.ReadInt16();
+                meta.Right   = file.ReadInt16();
+                meta.Bottom  = file.ReadInt16();
+                if (meta.OffsetX > meta.Right || meta.OffsetY > meta.Bottom ||
+                    meta.Right > width || meta.Bottom > height ||
+                    meta.OffsetX < 0 || meta.OffsetY < 0)
                     return null;
-                var meta = new CgMetaData
-                {
-                    Width = (uint)width,
-                    Height = (uint)height,
-                    BPP = 24,
-                    Type = sig,
-                };
-                if (0 != (sig & 7))
-                {
-                    meta.OffsetX = input.ReadInt16();
-                    meta.OffsetY = input.ReadInt16();
-                    meta.Right   = input.ReadInt16();
-                    meta.Bottom  = input.ReadInt16();
-                    if (meta.OffsetX > meta.Right || meta.OffsetY > meta.Bottom ||
-                        meta.Right > width || meta.Bottom > height ||
-                        meta.OffsetX < 0 || meta.OffsetY < 0)
-                        return null;
-                }
-                return meta;
             }
+            return meta;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (CgMetaData)info;
             using (var reader = new Reader (stream, meta))
@@ -239,9 +233,9 @@ namespace GameRes.Formats.Ags
             }
         }
 
-        internal class Reader : IDisposable
+        internal sealed class Reader : IDisposable
         {
-            BinaryReader    m_input;
+            IBinaryStream   m_input;
             byte[]          m_output;
             int             m_type;
             int             m_width;
@@ -253,7 +247,7 @@ namespace GameRes.Formats.Ags
 
             public byte[] Data { get { return m_output; } }
 
-            public Reader (Stream file, CgMetaData info, byte[] base_image = null)
+            public Reader (IBinaryStream file, CgMetaData info, byte[] base_image = null)
             {
                 m_type = info.Type;
                 m_width = (int)info.Width;
@@ -263,13 +257,13 @@ namespace GameRes.Formats.Ags
                 m_right = info.Right == 0 ? m_width : info.Right;
                 m_bottom = info.Bottom == 0 ? m_height : info.Bottom;
                 m_output = base_image ?? new byte[3*m_width*m_height];
-                m_input = new BinaryReader (file, Encoding.ASCII, true);
+                m_input = file;
                 ShiftTable = InitShiftTable();
 
                 if (0 != (info.Type & 7))
-                    file.Position = 13;
+                    m_input.Position = 13;
                 else
-                    file.Position = 5;
+                    m_input.Position = 5;
             }
 
             static readonly short[] ShiftX = new short[] { // 409b6c
@@ -307,7 +301,7 @@ namespace GameRes.Formats.Ags
                     int dst = left;
                     while (dst != right)
                     {
-                        byte v9 = m_input.ReadByte();
+                        byte v9 = m_input.ReadUInt8();
                         if (0 != (v9 & 0x80))
                         {
                             if (0 != (v9 & 0x40))
@@ -318,10 +312,10 @@ namespace GameRes.Formats.Ags
                             }
                             else
                             {
-                                byte v15 = m_input.ReadByte();
+                                byte v15 = m_input.ReadUInt8();
                                 m_output[dst] = (byte)(((v9 << 1) + (v15 & 1)) << 1);
                                 m_output[dst + 1] = (byte)(v15 & 0xfe);
-                                m_output[dst + 2] = m_input.ReadByte();
+                                m_output[dst + 2] = m_input.ReadUInt8();
                             }
                             dst += 3;
                             continue;
@@ -330,13 +324,13 @@ namespace GameRes.Formats.Ags
                         int count = v9 & 0xF;
                         if (0 == count)
                         {
-                            count = (int)m_input.ReadByte() + 15;
+                            count = (int)m_input.ReadUInt8() + 15;
                             if (270 == count)
                             {
                                 int v12;
                                 do
                                 {
-                                    v12 = m_input.ReadByte();
+                                    v12 = m_input.ReadUInt8();
                                     count += v12;
                                 }
                                 while (v12 == 0xff);
@@ -364,7 +358,7 @@ namespace GameRes.Formats.Ags
                     int dst = left;
                     while (dst != right)
                     {
-                        byte v13 = m_input.ReadByte();
+                        byte v13 = m_input.ReadUInt8();
                         if (0 != (v13 & 0x80))
                         {
                             int color = 3 * (v13 & 0x7F);
@@ -378,13 +372,13 @@ namespace GameRes.Formats.Ags
                         int count = v13 & 0xF;
                         if (0 == count)
                         {
-                            count = m_input.ReadByte() + 15;
+                            count = m_input.ReadUInt8() + 15;
                             if (270 == count)
                             {
                                 int v16;
                                 do
                                 {
-                                    v16 = m_input.ReadByte();
+                                    v16 = m_input.ReadUInt8();
                                     count += v16;
                                 }
                                 while (v16 == 0xff);
@@ -403,24 +397,9 @@ namespace GameRes.Formats.Ags
             }
 
             #region IDisposable Members
-            bool disposed = false;
-
             public void Dispose ()
             {
-                Dispose (true);
                 GC.SuppressFinalize (this);
-            }
-
-            protected virtual void Dispose (bool disposing)
-            {
-                if (!disposed)
-                {
-                    if (disposing)
-                    {
-                        m_input.Dispose();
-                    }
-                    disposed = true;
-                }
             }
             #endregion
         }

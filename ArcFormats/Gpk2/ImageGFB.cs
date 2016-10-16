@@ -29,7 +29,6 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Compression;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Gpk2
 {
@@ -47,37 +46,35 @@ namespace GameRes.Formats.Gpk2
         public override string Description { get { return "GPK2 image format"; } }
         public override uint     Signature { get { return 0x20424647; } } // 'GFB '
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x40];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x40);
             return new GfbMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0x1C),
-                Height  = LittleEndian.ToUInt32 (header, 0x20),
-                BPP     = LittleEndian.ToUInt16 (header, 0x26),
-                PackedSize = LittleEndian.ToInt32 (header,0x0C),
-                UnpackedSize = LittleEndian.ToInt32 (header,0x10),
-                DataOffset = LittleEndian.ToInt32 (header,0x14),
+                Width   = header.ToUInt32 (0x1C),
+                Height  = header.ToUInt32 (0x20),
+                BPP     = header.ToUInt16 (0x26),
+                PackedSize = header.ToInt32 (0x0C),
+                UnpackedSize = header.ToInt32 (0x10),
+                DataOffset = header.ToInt32 (0x14),
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GfbMetaData)info;
             BitmapPalette palette = null;
             if (8 == meta.BPP && meta.DataOffset != 0x40)
             {
                 stream.Position = 0x40;
-                palette = ReadPalette (stream, meta.DataOffset - 0x40);
+                palette = ReadPalette (stream.AsStream, meta.DataOffset - 0x40);
             }
 
             stream.Position = meta.DataOffset;
             byte[] pixels = new byte[meta.UnpackedSize];
             if (0 != meta.PackedSize)
             {
-                using (var lzss = new LzssStream (stream, LzssMode.Decompress, true))
+                using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
                     lzss.Read (pixels, 0, pixels.Length);
             }
             else

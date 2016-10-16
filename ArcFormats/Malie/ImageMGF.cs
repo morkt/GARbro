@@ -41,25 +41,25 @@ namespace GameRes.Formats.Malie
 
         static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[8];
-            if (8 != stream.Read (header, 0, 8))
-                return null;
+            var header = stream.ReadHeader (8).ToArray();
             if (!Binary.AsciiEqual (header, "MalieGF"))
                 return null;
             Buffer.BlockCopy (PngHeader, 0, header, 0, 8);
 
-            using (var data = new StreamRegion (stream, 8, stream.Length - 8, true))
-            using (var png = new PrefixStream (header, data))
+            using (var data = new StreamRegion (stream.AsStream, 8, true))
+            using (var pre = new PrefixStream (header, data))
+            using (var png = new BinaryStream (pre, stream.Name))
                 return base.ReadMetaData (png);
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var header = PngHeader.Clone() as byte[];
-            using (var data = new StreamRegion (stream, 8, stream.Length - 8, true))
-            using (var png = new PrefixStream (header, data))
+            using (var data = new StreamRegion (stream.AsStream, 8, true))
+            using (var pre = new PrefixStream (header, data))
+            using (var png = new BinaryStream (pre, stream.Name))
                 return base.Read (png, info);
         }
 

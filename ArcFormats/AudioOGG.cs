@@ -131,9 +131,9 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0x5367674f; } } // 'OggS'
         public override bool      CanWrite { get { return false; } }
 
-        public override SoundInput TryOpen (Stream file)
+        public override SoundInput TryOpen (IBinaryStream file)
         {
-            return new OggInput (file);
+            return new OggInput (file.AsStream);
         }
 
         public static AudioFormat Instance { get { return s_OggFormat.Value; } }

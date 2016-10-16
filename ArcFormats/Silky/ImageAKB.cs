@@ -46,30 +46,27 @@ namespace GameRes.Formats.Silky
         public override string Description { get { return "AI6WIN engine image format"; } }
         public override uint     Signature { get { return 0x20424B41; } } // 'AKB '
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            using (var reader = new ArcView.Reader (stream))
-            {
-                reader.ReadInt32();
-                var info = new AkbMetaData();
-                info.Width = reader.ReadUInt16();
-                info.Height = reader.ReadUInt16();
-                int flags = reader.ReadInt32() & 0xFFFF;
-                info.BPP = 0 == flags ? 32 : 24;
-                info.Background = reader.ReadBytes (4);
-                info.OffsetX = reader.ReadInt32();
-                info.OffsetY = reader.ReadInt32();
-                info.InnerWidth = reader.ReadInt32() - info.OffsetX;
-                info.InnerHeight = reader.ReadInt32() - info.OffsetY;
-                if (info.InnerWidth > info.Width || info.InnerHeight > info.Height)
-                    return null;
-                return info;
-            }
+            file.ReadInt32();
+            var info = new AkbMetaData();
+            info.Width = file.ReadUInt16();
+            info.Height = file.ReadUInt16();
+            int flags = file.ReadInt32() & 0xFFFF;
+            info.BPP = 0 == flags ? 32 : 24;
+            info.Background = file.ReadBytes (4);
+            info.OffsetX = file.ReadInt32();
+            info.OffsetY = file.ReadInt32();
+            info.InnerWidth = file.ReadInt32() - info.OffsetX;
+            info.InnerHeight = file.ReadInt32() - info.OffsetY;
+            if (info.InnerWidth > info.Width || info.InnerHeight > info.Height)
+                return null;
+            return info;
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var reader = new AkbReader (stream, (AkbMetaData)info);
+            var reader = new AkbReader (file.AsStream, (AkbMetaData)info);
             var image = reader.Unpack();
             return ImageData.Create (info, reader.Format, null, image, reader.Stride);
         }

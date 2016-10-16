@@ -51,11 +51,9 @@ namespace GameRes.Formats.Vitamin
             Extensions = new string[] { "cmp" };
         }
 
-        public override ImageMetaData ReadMetaData (Stream stream)
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x20];
-            if (header.Length != stream.Read (header, 0, header.Length))
-                return null;
+            var header = stream.ReadHeader (0x20);
             if (header[4] != 1 || header[5] != 0)
                 return null;
             int bpp = header[6];
@@ -63,18 +61,18 @@ namespace GameRes.Formats.Vitamin
                 return null;
             return new SbiMetaData
             {
-                Width   = LittleEndian.ToUInt16 (header, 7),
-                Height  = LittleEndian.ToUInt16 (header, 9),
+                Width   = header.ToUInt16 (7),
+                Height  = header.ToUInt16 (9),
                 BPP     = bpp,
-                InputSize = LittleEndian.ToInt32 (header, 0xB),
+                InputSize = header.ToInt32 (0xB),
                 IsPacked = 0 != header[0x10],
                 HasPalette = 8 == bpp && 0 == header[0xF],
             };
         }
 
-        public override ImageData Read (Stream stream, ImageMetaData info)
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new SbiReader (stream, (SbiMetaData)info))
+            using (var reader = new SbiReader (stream.AsStream, (SbiMetaData)info))
             {
                 reader.Unpack();
                 return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
