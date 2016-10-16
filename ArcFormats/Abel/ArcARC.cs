@@ -109,7 +109,7 @@ namespace GameRes.Formats.Abel
         {
             uint offset = arc.File.View.ReadUInt32 (entry.Offset+8);
             if (offset >= entry.Size)
-                return base.OpenEntry  (arc, entry);
+                return base.OpenEntry (arc, entry);
             return arc.File.CreateStream (entry.Offset+offset, entry.Size-offset);
         }
     }

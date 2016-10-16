@@ -63,12 +63,7 @@ namespace GameRes.Utility
 
         public static bool AsciiEqual (byte[] name1, int offset, string name2)
         {
-            if (name1.Length-offset < name2.Length)
-                return false;
-            for (int i = 0; i < name2.Length; ++i)
-                if ((char)name1[offset+i] != name2[i])
-                    return false;
-            return true;
+            return name1.AsciiEqual (offset, name2);
         }
 
         public static void CopyOverlapped (byte[] data, int src, int dst, int count)
@@ -169,12 +164,12 @@ namespace GameRes.Utility
 
     public static class LittleEndian
     {
-        public static ushort ToUInt16 (byte[] value, int index)
+        public static ushort ToUInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (ushort)(value[index] | value[index+1] << 8);
         }
 
-        public static short ToInt16 (byte[] value, int index)
+        public static short ToInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (short)(value[index] | value[index+1] << 8);
         }
@@ -184,17 +179,17 @@ namespace GameRes.Utility
             return (uint)(value[index] | value[index+1] << 8 | value[index+2] << 16 | value[index+3] << 24);
         }
 
-        public static int ToInt32 (byte[] value, int index)
+        public static int ToInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (int)ToUInt32 (value, index);
         }
 
-        public static ulong ToUInt64 (byte[] value, int index)
+        public static ulong ToUInt64<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (ulong)ToUInt32 (value, index) | ((ulong)ToUInt32 (value, index+4) << 32);
         }
 
-        public static long ToInt64 (byte[] value, int index)
+        public static long ToInt64<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (long)ToUInt64 (value, index);
         }
