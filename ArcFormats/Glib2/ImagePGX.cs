@@ -77,13 +77,13 @@ namespace GameRes.Formats.Glib2
             stream.Position = 0x20;
             if (0 != (meta.Flags & 0x1000))
             {
-                ReadGms (stream.AsStream);
+                ReadGms (stream);
             }
             PixelFormat format = 32 == meta.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             int stride = (int)meta.Width * 4;
             var pixels = new byte[stride * (int)meta.Height];
 //            stream.Seek (-meta.PackedSize, SeekOrigin.End);
-            LzssUnpack (stream.AsStream, pixels);
+            LzssUnpack (stream, pixels);
             var layer = InfoCache.GetInfo (info.FileName);
             if (null != layer && null != layer.Rect)
             {
@@ -93,7 +93,7 @@ namespace GameRes.Formats.Glib2
             return ImageData.Create (info, format, null, pixels);
         }
 
-        void ReadGms (Stream input)
+        void ReadGms (IBinaryStream input)
         {
             var header = new byte[0x10];
             if (0x10 != input.Read (header, 0, 0x10))
@@ -123,42 +123,39 @@ namespace GameRes.Formats.Glib2
             throw new System.NotImplementedException ("PgxFormat.Write not implemented");
         }
 
-        static void LzssUnpack (Stream input, byte[] output)
+        static void LzssUnpack (IBinaryStream input, byte[] output)
         {
             var frame = new byte[0x1000];
             int frame_pos = 0xFEE;
-            using (var lz = new ArcView.Reader (input))
+            int dst = 0;
+            int bits = 1;
+            while (dst < output.Length)
             {
-                int dst = 0;
-                int bits = 1;
-                while (dst < output.Length)
-                {
-                    if (1 == bits)
-                        bits = lz.ReadByte() | 0x100;
+                if (1 == bits)
+                    bits = input.ReadUInt8() | 0x100;
 
-                    if (0 != (bits & 1))
+                if (0 != (bits & 1))
+                {
+                    byte b = input.ReadUInt8();
+                    output[dst++] = b;
+                    frame[frame_pos++] = b;
+                    frame_pos &= 0xFFF;
+                }
+                else
+                {
+                    byte lo = input.ReadUInt8();
+                    byte hi = input.ReadUInt8();
+                    int offset = (hi & 0xF0) << 4 | lo;
+                    int count = Math.Min ((~hi & 0xF) + 3, output.Length-dst);
+                    for (int i = 0; i < count; ++i)
                     {
-                        byte b = lz.ReadByte();
+                        byte b = frame[offset++ & 0xFFF];
                         output[dst++] = b;
                         frame[frame_pos++] = b;
                         frame_pos &= 0xFFF;
                     }
-                    else
-                    {
-                        byte lo = lz.ReadByte();
-                        byte hi = lz.ReadByte();
-                        int offset = (hi & 0xF0) << 4 | lo;
-                        int count = Math.Min ((~hi & 0xF) + 3, output.Length-dst);
-                        for (int i = 0; i < count; ++i)
-                        {
-                            byte b = frame[offset++ & 0xFFF];
-                            output[dst++] = b;
-                            frame[frame_pos++] = b;
-                            frame_pos &= 0xFFF;
-                        }
-                    }
-                    bits >>= 1;
                 }
+                bits >>= 1;
             }
         }
     }

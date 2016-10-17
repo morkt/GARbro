@@ -97,18 +97,15 @@ namespace GameRes.Formats.Kaguya
 
         public byte[] Data { get { return m_output; } }
 
-        public BmrDecoder (Stream input)
+        public BmrDecoder (IBinaryStream input)
         {
             input.Position = 3;
-            using (var header = new ArcView.Reader (input))
-            {
-                m_step = header.ReadByte();
-                m_final_size = header.ReadInt32();
-                m_key = header.ReadInt32();
-                int unpacked_size = header.ReadInt32();
-                m_output = new byte[unpacked_size];
-                m_input = new MsbBitStream (input, true);
-            }
+            m_step = input.ReadUInt8();
+            m_final_size = input.ReadInt32();
+            m_key = input.ReadInt32();
+            int unpacked_size = input.ReadInt32();
+            m_output = new byte[unpacked_size];
+            m_input = new MsbBitStream (input.AsStream, true);
         }
 
         public void Unpack ()

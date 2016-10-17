@@ -108,14 +108,13 @@ namespace GameRes.Formats.SuperNekoX
         void DetectFileTypes (ArcView file, List<Entry> dir)
         {
             using (var input = file.CreateStream())
-            using (var reader = new ArcView.Reader (input))
             {
                 var buffer = new byte[0x10];
                 foreach (PackedEntry entry in dir)
                 {
                     input.Position = entry.Offset;
-                    uint packed_size = reader.ReadUInt32();
-                    entry.UnpackedSize = reader.ReadUInt32();
+                    uint packed_size = input.ReadUInt32();
+                    entry.UnpackedSize = input.ReadUInt32();
                     entry.Offset += 8;
                     if (0 == packed_size)
                     {
@@ -135,7 +134,7 @@ namespace GameRes.Formats.SuperNekoX
                         signature = LittleEndian.ToUInt32 (buffer, 0);
                     }
                     else
-                        signature = reader.ReadUInt32();
+                        signature = input.ReadUInt32();
                     IResource res;
                     if (0x020000 == signature || 0x0A0000 == signature)
                         res = ImageFormat.Tga;

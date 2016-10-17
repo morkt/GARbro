@@ -82,18 +82,18 @@ namespace GameRes.Formats.Ffa
             if (!entry.Name.EndsWith (".so4", StringComparison.InvariantCultureIgnoreCase) &&
                 !entry.Name.EndsWith (".so5", StringComparison.InvariantCultureIgnoreCase))
                 return input;
-            using (var header = new ArcView.Reader (input))
+            int packed = input.ReadInt32();
+            int unpacked = input.ReadInt32();
+            if (packed+8 != entry.Size || packed <= 0 || unpacked <= 0)
             {
-                int packed = header.ReadInt32();
-                int unpacked = header.ReadInt32();
-                if (packed+8 != entry.Size || packed <= 0 || unpacked <= 0)
-                    return input;
-                using (input)
-                using (var reader = new LzssReader (input, packed, unpacked))
-                {
-                    reader.Unpack();
-                    return new BinMemoryStream (reader.Data, entry.Name);
-                }
+                input.Position = 0;
+                return input;
+            }
+            using (input)
+            using (var reader = new LzssReader (input, packed, unpacked))
+            {
+                reader.Unpack();
+                return new BinMemoryStream (reader.Data, entry.Name);
             }
         }
     }

@@ -54,7 +54,6 @@ namespace GameRes.Formats.Kiss
 
             var dir = new List<Entry> (count);
             using (var input = file.CreateStream())
-            using (var reader = new ArcView.Reader (input))
             {
                 long prev_offset = 4;
                 input.Position = 4;
@@ -64,7 +63,7 @@ namespace GameRes.Formats.Kiss
                     if (string.IsNullOrWhiteSpace (name))
                         return null;
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
-                    entry.Offset = reader.ReadInt64();
+                    entry.Offset = input.ReadInt64();
                     if (entry.Offset < prev_offset || entry.Offset > file.MaxOffset)
                         return null;
                     dir.Add (entry);
