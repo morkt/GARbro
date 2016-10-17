@@ -171,11 +171,6 @@ namespace GameRes
 
         public static SoundInput Read (IBinaryStream file)
         {
-            return FindFormat (file);
-        }
-
-        public static SoundInput FindFormat (IBinaryStream file)
-        {
             uint signature = file.Signature;
             for (;;)
             {
