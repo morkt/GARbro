@@ -924,7 +924,8 @@ namespace GARbro.GUI
             try
             {
                 SetBusyState();
-                using (var input = VFS.OpenBinaryStream (entry))
+                var input = VFS.OpenBinaryStream (entry);
+                try
                 {
                     FormatCatalog.Instance.LastError = null;
                     sound = AudioFormat.Read (input);
@@ -945,10 +946,16 @@ namespace GARbro.GUI
                     AudioDevice.Init (CurrentAudio);
                     AudioDevice.PlaybackStopped += OnPlaybackStopped;
                     AudioDevice.Play();
+                    input = null;
                     var fmt = CurrentAudio.WaveFormat;
                     SetResourceText (string.Format (guiStrings.MsgPlaying, entry.Name,
                                                     fmt.SampleRate, sound.SourceBitrate / 1000,
                                                     CurrentAudio.TotalTime.ToString ("m':'ss")));
+                }
+                finally
+                {
+                    if (input != null)
+                        input.Dispose();
                 }
             }
             catch (Exception X)
