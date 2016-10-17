@@ -662,13 +662,15 @@ namespace GameRes
                     return;
                 var desired = value.ToArray();
                 int desired_vfs_count = desired.Length;
-                var arc_iterator = m_vfs.ArcStack.Reverse().GetEnumerator();
                 int i = 0;
-                while (i < desired_vfs_count - 1 && arc_iterator.MoveNext())
+                using (var arc_iterator = m_vfs.ArcStack.Reverse().GetEnumerator())
                 {
-                    if (arc_iterator.Current != desired[i])
-                        break;
-                    ++i;
+                    while (i < desired_vfs_count - 1 && arc_iterator.MoveNext())
+                    {
+                        if (arc_iterator.Current != desired[i])
+                            break;
+                        ++i;
+                    }
                 }
                 while (Count > i+1)
                     m_vfs.Pop();
