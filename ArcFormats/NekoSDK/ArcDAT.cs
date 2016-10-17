@@ -48,6 +48,8 @@ namespace GameRes.Formats.NekoSDK
 
         public override ArcFile TryOpen (ArcView file)
         {
+            if (file.MaxOffset < 0x8C)
+                return null;
             uint first_offset = file.View.ReadUInt32 (0x88) ^ 0xCACACAu;
             if (first_offset <= 0 || first_offset >= file.MaxOffset)
                 return null;
