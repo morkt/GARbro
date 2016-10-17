@@ -556,7 +556,11 @@ namespace GameRes
                     long position = m_start + m_header_size;
                     m_header_size += m_view.Read (position, m_header, m_header_size, (uint)(size - m_header_size));
                 }
-                size = Math.Min (size, m_header_size);
+                if (size > m_header_size)
+                {
+                    Position = m_header_size;
+                    throw new EndOfStreamException();
+                }
                 Position = size;
                 return new CowArray<byte> (m_header, 0, size);
             }
