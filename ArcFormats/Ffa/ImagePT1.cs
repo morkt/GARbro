@@ -38,8 +38,8 @@ namespace GameRes.Formats.Ffa
     internal class Pt1MetaData : ImageMetaData
     {
         public int Type;
-        public uint PackedSize;
-        public uint UnpackedSize;
+        public int PackedSize;
+        public int UnpackedSize;
     }
 
     [Export(typeof(ImageFormat))]
@@ -70,8 +70,8 @@ namespace GameRes.Formats.Ffa
             int y = file.ReadInt32();
             uint width = file.ReadUInt32();
             uint height = file.ReadUInt32();
-            uint comp_size = file.ReadUInt32();
-            uint uncomp_size = file.ReadUInt32();
+            int comp_size = file.ReadInt32();
+            int uncomp_size = file.ReadInt32();
             if (uncomp_size != width*height*3u)
                 return null;
             return new Pt1MetaData {
@@ -88,10 +88,9 @@ namespace GameRes.Formats.Ffa
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = (Pt1MetaData)info;
-            var reader = new Reader (stream.AsStream, meta);
+            var reader = new Reader (stream, (Pt1MetaData)info);
             reader.Unpack();
-            return ImageData.Create (meta, reader.Format, null, reader.Data);
+            return ImageData.Create (info, reader.Format, null, reader.Data);
         }
 
         internal class Reader
@@ -107,12 +106,12 @@ namespace GameRes.Formats.Ffa
             public PixelFormat Format { get; private set; }
             public byte[]        Data { get { return m_output; } }
 
-            public Reader (Stream input, Pt1MetaData info)
+            public Reader (IBinaryStream input, Pt1MetaData info)
             {
                 m_type = info.Type;
                 m_input = new byte[info.PackedSize+8];
                 input.Position = 0x20;
-                if ((int)info.PackedSize != input.Read (m_input, 0, (int)info.PackedSize))
+                if (info.PackedSize != input.Read (m_input, 0, info.PackedSize))
                     throw new InvalidFormatException ("Unexpected end of file");
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
@@ -121,13 +120,10 @@ namespace GameRes.Formats.Ffa
                 if (3 == m_type)
                 {
                     Format = PixelFormats.Bgra32;
-                    using (var reader = new ArcView.Reader (input))
-                    {
-                        int packed_size = reader.ReadInt32();
-                        m_alpha_packed = new byte[packed_size];
-                        if (packed_size != input.Read (m_alpha_packed, 0, packed_size))
-                            throw new EndOfStreamException();
-                    }
+                    int packed_size = input.ReadInt32();
+                    m_alpha_packed = input.ReadBytes (packed_size);
+                    if (m_alpha_packed.Length != packed_size)
+                        throw new EndOfStreamException();
                 }
                 else
                 {
