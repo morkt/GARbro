@@ -93,7 +93,7 @@ namespace GameRes.Formats.Leaf
                 return new PxMetaData
                 {
                     Width   = LittleEndian.ToUInt32 (header_ex, 0),
-                    Height  = LittleEndian.ToUInt32 (header_ex, 0),
+                    Height  = LittleEndian.ToUInt32 (header_ex, 4),
                     BPP     = LittleEndian.ToUInt16 (header_ex, 0x12),
                     Type    = type,
                     FrameCount = count,
