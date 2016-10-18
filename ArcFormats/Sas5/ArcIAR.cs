@@ -175,6 +175,7 @@ namespace GameRes.Formats.Sas5
                 int diff_count  = input.ReadInt32();
 
                 var overlay_info = overlay.Info;
+                int pixel_size = overlay_info.BPP / 8;
                 var base_image = new IarImage (iarc, dir[base_index]);
                 byte[] output = base_image.Data;
                 if (overlay_info.Height != base_image.Info.Height || overlay_info.Stride != base_image.Info.Stride)
@@ -184,13 +185,16 @@ namespace GameRes.Formats.Sas5
                     byte[] src = base_image.Data;
                     output = new byte[overlay_info.Height * overlay_info.Stride];
                     int dst_pos = 0;
+                    if (base_image.Info.OffsetY < overlay_info.OffsetY)
+                        dst_pos += (-base_image.Info.OffsetY + overlay_info.OffsetY) * overlay_info.Stride;
+                    if (base_image.Info.OffsetX < overlay_info.OffsetX)
+                        dst_pos += (-base_image.Info.OffsetX + overlay_info.OffsetX) * pixel_size;
                     for (int y = 0; y < src_height; ++y)
                     {
                         Buffer.BlockCopy (src, y * base_image.Info.Stride, output, dst_pos, src_stride);
                         dst_pos += overlay_info.Stride;
                     }
                 }
-                int pixel_size = overlay_info.BPP / 8;
                 int dst = diff_y * overlay_info.Stride;
                 for (int i = 0; i < diff_count; ++i)
                 {
