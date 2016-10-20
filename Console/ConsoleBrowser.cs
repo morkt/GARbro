@@ -85,29 +85,32 @@ namespace GARbro
                     return;
                 }
             }
-            m_arc_name = args[argn];
-            var arc = ArcFile.TryOpen (m_arc_name);
-            if (null == arc)
+            foreach (var file in VFS.GetFiles (args[argn]))
             {
-                Console.Error.WriteLine ("{0}: unknown format", m_arc_name);
-                return;
-            }
-            using (arc)
-            {
-                if (args.Length > argn+1)
+                m_arc_name = file.Name;
+                var arc = ArcFile.TryOpen (m_arc_name);
+                if (null == arc)
                 {
-                    for (int i = argn+1; i < args.Length; ++i)
-                        ExtractFile (arc, args[i]);
+                    Console.Error.WriteLine ("{0}: unknown format", m_arc_name);
+                    continue;
                 }
-                else if (args[0].Equals ("-x"))
+                using (arc)
                 {
-                    ExtractAll (arc);
-                }
-                else
-                {
-                    foreach (var entry in arc.Dir.OrderBy (e => e.Offset))
+                    if (args.Length > argn+1)
                     {
-                        Console.WriteLine ("{0,9} [{2:X8}] {1}", entry.Size, entry.Name, entry.Offset);
+                        for (int i = argn+1; i < args.Length; ++i)
+                            ExtractFile (arc, args[i]);
+                    }
+                    else if (args[0].Equals ("-x"))
+                    {
+                        ExtractAll (arc);
+                    }
+                    else
+                    {
+                        foreach (var entry in arc.Dir.OrderBy (e => e.Offset))
+                        {
+                            Console.WriteLine ("{0,9} [{2:X8}] {1}", entry.Size, entry.Name, entry.Offset);
+                        }
                     }
                 }
             }
