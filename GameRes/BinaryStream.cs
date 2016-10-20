@@ -232,14 +232,14 @@ namespace GameRes
 
         public sbyte ReadInt8 ()
         {
-            if (1 != FillBuffer (1))
-                throw new EndOfStreamException();
-            return (sbyte)m_buffer[m_buffer_pos++];
+            return (sbyte)ReadUInt8();
         }
 
         public byte ReadUInt8 ()
         {
-            return (byte)ReadInt8();
+            if (1 != FillBuffer (1))
+                throw new EndOfStreamException();
+            return m_buffer[m_buffer_pos++];
         }
 
         public short ReadInt16 ()
@@ -516,14 +516,14 @@ namespace GameRes
 
         public sbyte ReadInt8 ()
         {
-            if (m_position >= m_length)
-                throw new EndOfStreamException();
-            return (sbyte)m_source[m_start+m_position++];
+            return (sbyte)ReadInt8();
         }
 
         public byte ReadUInt8 ()
         {
-            return (byte)ReadInt8();
+            if (m_position >= m_length)
+                throw new EndOfStreamException();
+            return m_source[m_start+m_position++];
         }
 
         public short ReadInt16 ()
