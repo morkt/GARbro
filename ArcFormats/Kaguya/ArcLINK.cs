@@ -1,4 +1,4 @@
-//! \file       ArcLINK.cs
+﻿//! \file       ArcLINK.cs
 //! \date       Fri Jan 22 18:44:56 2016
 //! \brief      KaGuYa archive format.
 //
@@ -27,9 +27,26 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Text;
 
 namespace GameRes.Formats.Kaguya
 {
+    internal class LinkEntry : PackedEntry
+    {
+        public bool IsEncrypted;
+    }
+
+    internal class LinkArchive : ArcFile
+    {
+        public readonly LinkEncryption Encryption;
+
+        public LinkArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, LinkEncryption enc)
+            : base (arc, impl, dir)
+        {
+            Encryption = enc;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class LinkOpener : ArchiveFormat
     {
@@ -47,43 +64,201 @@ namespace GameRes.Formats.Kaguya
         public override ArcFile TryOpen (ArcView file)
         {
             int version = file.View.ReadByte (4) - '0';
-            if (version != 3)
+            if (version < 3 || version > 6)
                 return null;
 
-            long current_offset = 8;
-            var dir = new List<Entry>();
-            while (current_offset+4 < file.MaxOffset)
+            using (var reader = LinkReader.Create (file, version))
             {
-                uint size = file.View.ReadUInt32 (current_offset);
-                if (0 == size)
-                    break;
-                if (size < 0x10)
+                var dir = reader.ReadIndex();
+                if (null == dir)
                     return null;
-                bool is_compressed = file.View.ReadInt32 (current_offset+4) != 0;
-                uint name_length = file.View.ReadByte (current_offset+0xD);
-                var name = file.View.ReadString (current_offset+0x10, name_length);
-                current_offset += 0x10 + name_length;
-                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                entry.Offset = current_offset;
-                entry.Size   = size - (0x10 + name_length);
-                entry.IsPacked = is_compressed && file.View.AsciiEqual (current_offset, "BMR");
-                dir.Add (entry);
-                current_offset += entry.Size;
+
+                if (reader.HasEncrypted)
+                {
+                    var enc = reader.GetEncryption();
+                    if (enc != null)
+                        return new LinkArchive (file, this, dir, enc);
+                }
+                return new ArcFile (file, this, dir);
             }
-            return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var pent = entry as PackedEntry;
-            if (null == pent || !pent.IsPacked)
+            var lent = entry as LinkEntry;
+            if (null == lent || (!lent.IsPacked && !lent.IsEncrypted))
                 return base.OpenEntry (arc, entry);
+            if (lent.IsEncrypted)
+            {
+                var larc = arc as LinkArchive;
+                if (null == larc)
+                    return base.OpenEntry (arc, entry);
+                return larc.Encryption.DecryptEntry (larc, lent);
+            }
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
             using (var bmr = new BmrDecoder (input))
             {
                 bmr.Unpack();
                 return new BinMemoryStream (bmr.Data, entry.Name);
             }
+        }
+    }
+
+    internal class LinkReader : IDisposable
+    {
+        IBinaryStream   m_input;
+        readonly long   m_max_offset;
+        bool            m_has_encrypted;
+
+        protected LinkReader (ArcView file)
+        {
+            m_input = file.CreateStream();
+            m_max_offset = file.MaxOffset;
+            m_has_encrypted = false;
+        }
+
+        public IBinaryStream Input { get { return m_input; } }
+        public bool   HasEncrypted { get { return m_has_encrypted; } }
+
+        public static LinkReader Create (ArcView file, int version)
+        {
+            if (version < 4)
+                return new LinkReader (file);
+            else if (version < 6)
+                return new Link4Reader (file);
+            else
+                return new Link6Reader (file);
+        }
+
+        protected virtual long GetDataOffset ()
+        {
+            return 8;
+        }
+
+        protected virtual string ReadName ()
+        {
+            int name_length = m_input.ReadUInt8();
+            Skip (2);
+            return m_input.ReadCString (name_length);
+        }
+
+        public List<Entry> ReadIndex ()
+        {
+            m_input.Position = GetDataOffset();
+
+            var header = new byte[4];
+            var dir = new List<Entry>();
+            while (m_input.Position + 4 < m_max_offset)
+            {
+                long base_offset = m_input.Position;
+                uint size = m_input.ReadUInt32();
+                if (0 == size)
+                    break;
+                if (size < 0x10)
+                    return null;
+                int flags = m_input.ReadUInt16 ();
+                bool is_compressed = (flags & 3) != 0;
+                Skip (7);
+                var name = ReadName();
+                if (string.IsNullOrEmpty (name))
+                    return null;
+                var entry = FormatCatalog.Instance.Create<LinkEntry> (name);
+                entry.Offset = m_input.Position;
+                entry.Size   = size - (uint)(entry.Offset - base_offset);
+                if (is_compressed)
+                {
+                    m_input.Read (header, 0, 4);
+                    if (header.AsciiEqual ("BMR"))
+                    {
+                        entry.IsPacked = true;
+                        entry.UnpackedSize = m_input.ReadUInt32();
+                    }
+                }
+                entry.IsEncrypted = (flags & 4) != 0;
+                m_has_encrypted = m_has_encrypted || entry.IsEncrypted;
+                dir.Add (entry);
+                m_input.Position = entry.Offset + entry.Size;
+            }
+            return dir;
+        }
+
+        public virtual LinkEncryption GetEncryption ()
+        {
+            var params_dir = VFS.GetDirectoryName (m_input.Name);
+            var params_dat = VFS.CombinePath (params_dir, "params.dat");
+            if (!VFS.FileExists (params_dat))
+                return null;
+
+            using (var input = VFS.OpenBinaryStream (params_dat))
+            {
+                var param = ParamsDeserializer.Create (input);
+                var key = param.GetKey();
+                if (null == key)
+                    return null;
+                return new LinkEncryption (key);
+            }
+        }
+
+        protected void Skip (int amount)
+        {
+            m_input.Seek (amount, SeekOrigin.Current);
+        }
+
+        #region IDisposable Members
+        public void Dispose ()
+        {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        bool _disposed = false;
+        protected virtual void Dispose (bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                    m_input.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
+    }
+
+    internal class Link4Reader : LinkReader
+    {
+        public Link4Reader (ArcView file) : base (file)
+        {
+        }
+
+        protected override long GetDataOffset ()
+        {
+            return 0xA;
+        }
+    }
+
+    internal class Link6Reader : LinkReader
+    {
+        public Link6Reader (ArcView file) : base (file)
+        {
+        }
+
+        protected override long GetDataOffset ()
+        {
+            Input.Position = 7;
+            return 8 + Input.ReadUInt8();
+        }
+
+        byte[] name_buffer = new byte[0x100];
+
+        protected override string ReadName ()
+        {
+            int name_length = Input.ReadUInt16();
+            if (name_length > 0x400)
+                throw new InvalidFormatException();
+            if (name_length > name_buffer.Length)
+                name_buffer = new byte[name_length];
+            Input.Read (name_buffer, 0, name_length);
+            return Encoding.Unicode.GetString (name_buffer, 0, name_length);
         }
     }
 
@@ -112,39 +287,39 @@ namespace GameRes.Formats.Kaguya
         {
             m_input.Input.Position = 0x14;
             UnpackHuffman();
-            DescrambleOutput();
+            UndoMoveToFront();
             m_output = Decode (m_output, m_key);
             if (m_step != 0)
-                m_output = DecompressRLE();
+                m_output = DecompressRLE (m_output);
         }
 
-        byte[] DecompressRLE ()
+        byte[] DecompressRLE (byte[] input)
         {
             var result = new byte[m_final_size];
             int src = 0;
             for (int i = 0; i < m_step; ++i)
             {
-                byte v1 = m_output[src++];
+                byte v1 = input[src++];
                 result[i] = v1;
                 int dst = i + m_step;
                 while (dst < result.Length)
                 {
-                    byte v2 = m_output[src++];
+                    byte v2 = input[src++];
                     result[dst] = v2;
                     dst += m_step;
                     if (v2 == v1)
                     {
-                        int count = m_output[src++];
+                        int count = input[src++];
                         if (0 != (count & 0x80))
-                            count = m_output[src++] + ((count & 0x7F) << 8) + 128;
-                        while (count --> 0)
+                            count = input[src++] + ((count & 0x7F) << 8) + 128;
+                        while (count --> 0 && dst < result.Length)
                         {
                             result[dst] = v2;
                             dst += m_step;
                         }
-                        if (dst < m_output.Length)
+                        if (dst < result.Length)
                         {
-                            v2 = m_output[src++];
+                            v2 = input[src++];
                             result[dst] = v2;
                             dst += m_step;
                         }
@@ -156,20 +331,20 @@ namespace GameRes.Formats.Kaguya
         }
 
 
-        void DescrambleOutput ()
+        void UndoMoveToFront ()
         {
-            var scramble = new byte[256];
+            var dict = new byte[256];
             for (int i = 0; i < 256; ++i)
-                scramble[i] = (byte)i;
+                dict[i] = (byte)i;
             for (int i = 0; i < m_output.Length; ++i)
             {
                 byte v = m_output[i];
-                m_output[i] = scramble[v];
+                m_output[i] = dict[v];
                 for (int j = v; j > 0; --j)
                 {
-                    scramble[j] = scramble[j-1];
+                    dict[j] = dict[j-1];
                 }
-                scramble[0] = m_output[i];
+                dict[0] = m_output[i];
             }
         }
 
@@ -188,8 +363,7 @@ namespace GameRes.Formats.Kaguya
             for (int i = input.Length-1; i >= 0; --i)
             {
                 int v = input[i];
-                int freq = freq_table[v] - 1;
-                freq_table[v] = freq;
+                int freq = --freq_table[v];
                 distrib_table[freq] = i;
             }
             int pos = key;
@@ -250,5 +424,241 @@ namespace GameRes.Formats.Kaguya
             }
         }
         #endregion
+    }
+
+    internal class ParamsDeserializer
+    {
+        protected IBinaryStream     m_input;
+        protected string            m_title;
+
+        protected ParamsDeserializer (IBinaryStream input)
+        {
+            m_input = input;
+        }
+
+        public static ParamsDeserializer Create (IBinaryStream input)
+        {
+            var header = input.ReadHeader (0x11);
+            if (!header.AsciiEqual ("[SCR-PARAMS]"))
+                return null;
+            if (header.AsciiEqual (12, "v02"))
+                return new ParamsDeserializer (input);
+            else if (header.AsciiEqual (12, "v05.6"))
+                return new ParamsV5Deserializer (input);
+            return null;
+        }
+
+        public virtual byte[] GetKey ()
+        {
+            // 毎日がＭ！
+            m_input.Position = 0x17;
+            SkipChunk();
+            m_title = ReadString();
+            m_input.ReadCString();
+            SkipString();
+            SkipString();
+            m_input.ReadByte();
+            SkipString();
+            SkipString();
+            SkipDict();
+
+            m_input.ReadByte();
+            int count = m_input.ReadUInt8();
+            for (int i = 0; i < count; ++i)
+            {
+                m_input.ReadByte();
+                SkipChunk();
+                for (int j = 0; j < 2; ++j)
+                {
+                    int n = m_input.ReadUInt8();
+                    for (int k = 0; k < n; ++k)
+                        SkipChunk();
+                }
+            }
+            SkipDict();
+            count = m_input.ReadUInt8();
+            for (int i = 0; i < count; ++i)
+            {
+                SkipChunk();
+                for (int j = 0; j < 2; ++j)
+                {
+                    int n = m_input.ReadUInt8();
+                    for (int k = 0; k < n; ++k)
+                        SkipChunk();
+                }
+            }
+            return ReadKey();
+        }
+
+        protected byte[] ReadKey ()
+        {
+            int key_length = m_input.ReadInt32();
+            return m_input.ReadBytes (key_length);
+        }
+
+        protected virtual string ReadString ()
+        {
+            int length = m_input.ReadUInt8();
+            return m_input.ReadCString (length);
+        }
+
+        protected virtual void SkipString ()
+        {
+            SkipChunk();
+        }
+
+        protected void Skip (int amount)
+        {
+            m_input.Seek (amount, SeekOrigin.Current);
+        }
+
+        protected void SkipChunk ()
+        {
+            Skip (m_input.ReadUInt8());
+        }
+
+        protected void SkipDict ()
+        {
+            int count = m_input.ReadUInt8();
+            for (int i = 0; i < count; ++i)
+            {
+                SkipString();
+                SkipString();
+            }
+        }
+    }
+
+    internal class ParamsV5Deserializer : ParamsDeserializer
+    {
+        public ParamsV5Deserializer (IBinaryStream input) : base (input)
+        {
+        }
+
+        public override byte[] GetKey ()
+        {
+            // ハラミタマ
+            m_input.Position = 0x1B;
+            SkipChunk();
+            m_title = ReadString();
+            SkipString();
+            SkipString();
+            m_input.ReadByte();
+            SkipString();
+            SkipString();
+            SkipDict();
+
+            Skip (0x11);
+            for (int i = 0; i < 3; ++i)
+            {
+                if (0 != m_input.ReadUInt8())
+                    SkipTree();
+            }
+            Skip (m_input.ReadInt32() * 0xC);
+            return ReadKey();
+        }
+
+        protected override void SkipString ()
+        {
+            int length = m_input.ReadUInt16();
+            Skip (length);
+        }
+
+        byte[] name_buffer = new byte[0x100];
+
+        protected override string ReadString ()
+        {
+            int length = m_input.ReadUInt16();
+            if (length > name_buffer.Length)
+                name_buffer = new byte[length];
+            m_input.Read (name_buffer, 0, length);
+            return Encoding.Unicode.GetString (name_buffer, 0, length);
+        }
+
+        protected void SkipTree ()
+        {
+            SkipString();
+            int count = m_input.ReadInt32();
+            while (count --> 0)
+            {
+                SkipString();
+                SkipString();
+            }
+            count = m_input.ReadInt32();
+            while (count --> 0)
+                SkipTree();
+        }
+    }
+
+    internal class LinkEncryption
+    {
+        byte[]   m_key;
+        Tuple<string, Decryptor>[] m_type_table;
+
+        delegate Stream Decryptor (LinkArchive arc, LinkEntry entry);
+
+        public LinkEncryption (byte[] key)
+        {
+            if (null == key || 0 == key.Length)
+                throw new ArgumentException ("Invalid encryption key");
+            m_key = key;
+            m_type_table = new []
+            {
+                new Tuple<string, Decryptor> ("BM",     (a, e) => DecryptImage (a, e, 0x36)),
+                new Tuple<string, Decryptor> ("AP-2",   (a, e) => DecryptImage (a, e, 0x18)),
+                new Tuple<string, Decryptor> ("AP-3",   (a, e) => DecryptImage (a, e, 0x18)),
+                new Tuple<string, Decryptor> ("AP",     (a, e) => DecryptImage (a, e, 0xC)),
+                new Tuple<string, Decryptor> ("AN00",   (a, e) => DecryptAn00 (a, e)),
+            };
+        }
+
+        public Stream DecryptEntry (LinkArchive arc, LinkEntry entry)
+        {
+            var header = arc.File.View.ReadBytes (entry.Offset, 4);
+            foreach (var type in m_type_table)
+            {
+                if (header.AsciiEqual (type.Item1))
+                    return type.Item2 (arc, entry);
+            }
+            return arc.File.CreateStream (entry.Offset, entry.Size);
+        }
+
+        Stream DecryptImage (LinkArchive arc, LinkEntry entry, uint data_offset)
+        {
+            var header = arc.File.View.ReadBytes (entry.Offset, data_offset);
+            Stream body = arc.File.CreateStream (entry.Offset+data_offset, entry.Size-data_offset);
+            body = new ByteStringEncryptedStream (body, m_key);
+            return new PrefixStream (header, body);
+        }
+
+        Stream DecryptAn00 (LinkArchive arc, LinkEntry entry)
+        {
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            int frame_offset = 0x18 + data.ToUInt16 (0x14) * 4;
+            int count = data.ToUInt16 (frame_offset);
+            frame_offset += 10;
+            for (int i = 0; i < count; ++i)
+            {
+                int w = data.ToInt32 (frame_offset);
+                int h = data.ToInt32 (frame_offset+4);
+                int size = 4 * w * h;
+                frame_offset += 8;
+                DecryptData (data, frame_offset, size);
+                frame_offset += size + 8;
+            }
+            return new BinMemoryStream (data, entry.Name);
+        }
+
+        void DecryptData (byte[] data, int index, int length)
+        {
+            while (length > 0)
+            {
+                int count = Math.Min (length, m_key.Length);
+                for (int i = 0; i < count; ++i)
+                {
+                    data[index++] ^= m_key[i];
+                }
+                length -= count;
+            }
+        }
     }
 }

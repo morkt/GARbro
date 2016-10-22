@@ -112,6 +112,47 @@ namespace GameRes.Formats.Kaguya
     }
 
     [Export(typeof(ImageFormat))]
+    public class Ap0Format : ImageFormat
+    {
+        public override string         Tag { get { return "AP-0"; } }
+        public override string Description { get { return "KaGuYa script engine image format"; } }
+        public override uint     Signature { get { return 0x302D5041; } } // 'AP-0'
+
+        public Ap0Format ()
+        {
+            Extensions = new string[] { "alp" };
+        }
+
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
+        {
+            var header = stream.ReadHeader (12);
+            var info = new ImageMetaData
+            {
+                Width   = header.ToUInt32 (4),
+                Height  = header.ToUInt32 (8),
+                BPP     = 8,
+            };
+            if (info.Width > 0x8000 || info.Height > 0x8000)
+                return null;
+            return info;
+        }
+
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
+        {
+            stream.Position = 0xC;
+            var pixels = new byte[info.Width*info.Height];
+            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+                throw new EndOfStreamException();
+            return ImageData.CreateFlipped (info, PixelFormats.Gray8, null, pixels, (int)info.Width);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("Ap0Format.Write not implemented");
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
     public class Ap2Format : ImageFormat
     {
         public override string         Tag { get { return "AP-2"; } }
