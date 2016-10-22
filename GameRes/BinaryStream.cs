@@ -131,11 +131,8 @@ namespace GameRes
             if (!m_source.CanSeek)
             {
                 m_buffer_end = m_source.Read (m_buffer, 0, 4);
-                if (4 == m_buffer_end)
-                {
-                    uint signature = LittleEndian.ToUInt32 (m_buffer, 0);
-                    m_signature = new Lazy<uint> (() => signature);
-                }
+                uint signature = LittleEndian.ToUInt32 (m_buffer, 0);
+                m_signature = new Lazy<uint> (() => signature);
             }
             else
             {
@@ -516,7 +513,7 @@ namespace GameRes
 
         public sbyte ReadInt8 ()
         {
-            return (sbyte)ReadInt8();
+            return (sbyte)ReadUInt8();
         }
 
         public byte ReadUInt8 ()
