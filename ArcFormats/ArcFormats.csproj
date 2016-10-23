@@ -129,6 +129,7 @@
     <Compile Include="Ivory\ImageMMD.cs" />
     <Compile Include="Ivory\ImageMOE.cs" />
     <Compile Include="Ivory\ImageSG.cs" />
+    <Compile Include="Kaguya\ArcLIN2.cs" />
     <Compile Include="Kiss\ArcARC.cs" />
     <Compile Include="KScript\ArcKPC.cs" />
     <Compile Include="KScript\ImageKGP.cs" />

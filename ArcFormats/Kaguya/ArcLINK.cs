@@ -50,7 +50,7 @@ namespace GameRes.Formats.Kaguya
     [Export(typeof(ArchiveFormat))]
     public class LinkOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "LINK/KAGUYA"; } }
+        public override string         Tag { get { return "ARC/LINK"; } }
         public override string Description { get { return "KaGuYa script engine resource archive"; } }
         public override uint     Signature { get { return 0x4B4E494C; } } // 'LINK'
         public override bool  IsHierarchic { get { return false; } }
