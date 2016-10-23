@@ -115,7 +115,7 @@ namespace GameRes.Formats.Kaguya
     public class Ap0Format : ImageFormat
     {
         public override string         Tag { get { return "AP-0"; } }
-        public override string Description { get { return "KaGuYa script engine image format"; } }
+        public override string Description { get { return "KaGuYa script engine grayscale image format"; } }
         public override uint     Signature { get { return 0x302D5041; } } // 'AP-0'
 
         public Ap0Format ()
@@ -190,6 +190,53 @@ namespace GameRes.Formats.Kaguya
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("Ap2Format.Write not implemented");
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class Ap3Format : ImageFormat
+    {
+        public override string         Tag { get { return "AP-3"; } }
+        public override string Description { get { return "KaGuYa script engine image format"; } }
+        public override uint     Signature { get { return 0x332D5041; } } // 'AP-3'
+
+        public Ap3Format ()
+        {
+            Extensions = new string[] { "alp" };
+        }
+
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
+        {
+            stream.Position = 4;
+            var info = new ImageMetaData();
+            info.OffsetX = stream.ReadInt32();
+            info.OffsetY = stream.ReadInt32();
+            info.Width   = stream.ReadUInt32();
+            info.Height  = stream.ReadUInt32();
+            if (info.Width > 0x8000 || info.Height > 0x8000)
+                return null;
+            info.BPP     = stream.ReadInt32();
+            if (info.BPP != 8 && info.BPP != 24 && info.BPP != 32)
+                return null;
+            return info;
+        }
+
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
+        {
+            stream.Position = 0x18;
+            int stride = info.BPP/8 * (int)info.Width;
+            var pixels = new byte[stride * (int)info.Height];
+            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+                throw new EndOfStreamException();
+            PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24
+                               : 32 == info.BPP ? PixelFormats.Bgra32
+                               : PixelFormats.Gray8;
+            return ImageData.CreateFlipped (info, format, null, pixels, stride);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("Ap3Format.Write not implemented");
         }
     }
 }
