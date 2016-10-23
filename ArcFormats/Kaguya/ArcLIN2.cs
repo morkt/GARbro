@@ -98,7 +98,7 @@ namespace GameRes.Formats.Kaguya
             int dst = 0;
             int ctl = 0;
             int bit = 0;
-            int prev_count = 0x100;
+            int prev_count = -1;
             while (dst < output.Length)
             {
                 bit >>= 1;
