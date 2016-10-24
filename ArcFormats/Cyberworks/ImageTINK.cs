@@ -210,7 +210,7 @@ namespace GameRes.Formats.Cyberworks
                 if (has_alpha || (bit & rgb_map[bit_src]) != 0)
                 {
                     m_input.Read (m_output, dst, 3);
-                    if (has_alpha)
+                    if (has_alpha && alpha_src < alpha.Length)
                     {
                         m_output[dst+3] = alpha[alpha_src];
                         alpha_src += 3;
