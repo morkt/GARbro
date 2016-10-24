@@ -107,12 +107,13 @@ namespace GameRes.Formats.NonColor
             if (!IsSaneCount (count))
                 return null;
 
-            var scheme = QueryScheme();
+            var scheme = QueryScheme (file.Name);
             if (null == scheme)
                 return null;
             var file_map = ReadFilenameMap (scheme);
 
             uint index_offset = 4;
+            int skipped = 0;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
@@ -135,7 +136,8 @@ namespace GameRes.Formats.NonColor
                 }
                 else
                 {
-                    System.Diagnostics.Trace.WriteLine ("Unknown hash", hash.ToString ("X8"));
+//                    System.Diagnostics.Trace.WriteLine ("Unknown hash", hash.ToString ("X8"));
+                    ++skipped;
                     continue;
                 }
                 if (flags != 2)
@@ -160,6 +162,8 @@ namespace GameRes.Formats.NonColor
                     return null;
                 dir.Add (entry);
             }
+            if (skipped != 0)
+                System.Diagnostics.Trace.WriteLine (string.Format ("Missing {0} names", skipped));
             return new ArcDatArchive (file, this, dir, scheme.Hash);
         }
 
@@ -259,8 +263,11 @@ namespace GameRes.Formats.NonColor
             set { KnownSchemes = ((ArcDatScheme)value).KnownSchemes; }
         }
 
-        Scheme QueryScheme ()
+        Scheme QueryScheme (string arc_name)
         {
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title) && KnownSchemes.ContainsKey (title))
+                return KnownSchemes[title];
             var options = Query<ArcDatOptions> (arcStrings.ArcEncryptedNotice);
             Scheme scheme;
             if (string.IsNullOrEmpty (options.Scheme) || !KnownSchemes.TryGetValue (options.Scheme, out scheme))
