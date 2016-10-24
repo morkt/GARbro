@@ -203,13 +203,11 @@ namespace GameRes.Formats.Cyberworks
                 entry_size = pent.UnpackedSize;
             }
             var barc = arc as BellArchive;
-            if (null == barc)
+            if (null == barc || entry.Type != "image" || entry_size < 5)
                 return input;
             try
             {
-                if ("image" == entry.Type && entry_size > 5)
-                    return DecryptImage (input, entry_size, barc.Scheme);
-                return input;
+                return DecryptImage (input, entry_size, barc.Scheme);
             }
             catch
             {
@@ -218,7 +216,7 @@ namespace GameRes.Formats.Cyberworks
             }
         }
 
-        Stream DecryptImage (Stream input, uint entry_size, AImageScheme scheme)
+        protected virtual Stream DecryptImage (Stream input, uint entry_size, AImageScheme scheme)
         {
             byte[] header = null;
             byte type = (byte)input.ReadByte();
@@ -274,7 +272,7 @@ namespace GameRes.Formats.Cyberworks
             return v;
         }
 
-        AImageScheme QueryScheme (string arc_name)
+        internal AImageScheme QueryScheme (string arc_name)
         {
             var title = FormatCatalog.Instance.LookupGame (arc_name);
             if (!string.IsNullOrEmpty (title) && KnownSchemes.ContainsKey (title))
@@ -334,5 +332,149 @@ namespace GameRes.Formats.Cyberworks
     public class BellOptions : ResourceOptions
     {
         public AImageScheme Scheme;
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class OldDatOpener : DatOpener
+    {
+        public override string         Tag { get { return "ARC/Csystem"; } }
+        public override string Description { get { return "TinkerBell resource archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public OldDatOpener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
+
+        static readonly Regex s_arcname_re = new Regex (@"^Arc0(?<num>\d)\..*$", RegexOptions.IgnoreCase);
+
+        static readonly IDictionary<int, int> s_arcmap = new Dictionary<int, int>
+        {
+            { 2, 0 }, { 3, 1 }, { 5, 4 } 
+        };
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            var arc_name = Path.GetFileName (file.Name);
+            var match = s_arcname_re.Match (arc_name);
+            if (!match.Success)
+                return null;
+            int num = match.Groups["num"].Value[0] - '0';
+            int index_num;
+            if (!s_arcmap.TryGetValue (num, out index_num))
+                return null;
+
+            var toc_name_builder = new StringBuilder (arc_name);
+            var num_pos = match.Groups["num"].Index;
+            toc_name_builder.Remove (num_pos, match.Groups["num"].Length);
+            toc_name_builder.Insert (num_pos, index_num);
+
+            var toc_name = toc_name_builder.ToString();
+            toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), toc_name);
+            var toc = ReadToc (toc_name);
+            if (null == toc)
+                return null;
+
+            bool has_images = false;
+            var dir = new List<Entry>();
+            using (var toc_stream = new MemoryStream (toc))
+            using (var index = new StreamReader (toc_stream))
+            {
+                string line;
+                while ((line = index.ReadLine()) != null)
+                {
+                    var fields = line.Split (',');
+                    if (fields.Length != 5)
+                        return null;
+                    var name = Path.ChangeExtension (fields[0], fields[4]);
+                    string type = "";
+                    if ("b" == fields[4])
+                    {
+                        type = "image";
+                        has_images = true;
+                    }
+                    else if ("k" == fields[4] || "j" == fields[4])
+                        type = "audio";
+                    var entry = new PackedEntry
+                    {
+                        Name = name,
+                        Type = type,
+                        Offset       = UInt32.Parse (fields[3]),
+                        Size         = UInt32.Parse (fields[2]),
+                        UnpackedSize = UInt32.Parse (fields[1]),
+                    };
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    entry.IsPacked = entry.UnpackedSize != entry.Size;
+                    dir.Add (entry);
+                }
+            }
+            if (0 == dir.Count)
+                return null;
+            if (!has_images)
+                return new ArcFile (file, this, dir);
+            var scheme = QueryScheme (file.Name);
+            return new BellArchive (file, this, dir, scheme);
+        }
+
+        protected override Stream DecryptImage (Stream input, uint entry_size, AImageScheme scheme)
+        {
+            int id = input.ReadByte();
+            if (id == scheme.Value2)
+            {
+                using (var reader = new AImageReader (input, scheme))
+                {
+                    reader.Unpack();
+                    return TgaStream.Create (reader.Info, reader.Data, scheme.Flipped);
+                }
+            }
+            if (input.CanSeek)
+            {
+                input.Position = 0;
+            }
+            else
+            {
+                var header = new byte[1] { (byte)id };
+                input = new PrefixStream (header, input);
+            }
+            return input;
+        }
+
+        byte[] ReadToc (string toc_name)
+        {
+            using (var toc_view = VFS.OpenView (toc_name))
+            {
+                if (toc_view.MaxOffset <= 8)
+                    return null;
+                int unpacked_size = DecodeDecimal (toc_view, 0);
+                if (unpacked_size <= 4 || unpacked_size > 0x1000000)
+                    return null;
+                int packed_size = DecodeDecimal (toc_view, 4);
+                if (packed_size > toc_view.MaxOffset - 8)
+                    return null;
+                using (var toc_s = toc_view.CreateStream (8, (uint)packed_size))
+                using (var lzss = new LzssStream (toc_s))
+                {
+                    var toc = new byte[unpacked_size];
+                    if (toc.Length != lzss.Read (toc, 0, toc.Length))
+                        return null;
+                    return toc;
+                }
+            }
+        }
+
+        int DecodeDecimal (ArcView file, long offset)
+        {
+            int v = 0;
+            for (int rank = 1000; rank != 0; rank /= 10)
+            {
+                int b = file.View.ReadByte (offset++);
+                if (b != 0xFF)
+                    v += (b ^ 0x7F) * rank;
+            }
+            return v;
+        }
     }
 }
