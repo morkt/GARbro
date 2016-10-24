@@ -301,6 +301,7 @@
     <Compile Include="TamaSoft\AudioESD.cs" />
     <Compile Include="TamaSoft\ImageBTN.cs" />
     <Compile Include="TamaSoft\ImageSUR.cs" />
+    <Compile Include="Taskforce\ArcDAT.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
     <Compile Include="DxLib\ArcDX.cs" />
     <Compile Include="ArcMiris.cs" />
