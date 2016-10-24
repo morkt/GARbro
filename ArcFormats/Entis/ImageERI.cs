@@ -300,7 +300,7 @@ namespace GameRes.Formats.Entis
                         {
                             var ref_info = ReadMetaData (ref_src) as EriMetaData;
                             if (null == ref_info)
-                                throw new FileNotFoundException ("Referenced image not found");
+                                throw new FileNotFoundException ("Referenced image not found", ref_file);
                             ref_info.FileName = ref_file;
                             var ref_reader = ReadImageData (ref_src, ref_info);
                             AddImageBuffer (meta, reader.Data, ref_info, ref_reader.Data);

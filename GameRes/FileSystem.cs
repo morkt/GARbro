@@ -303,7 +303,7 @@ namespace GameRes
         {
             Entry entry = null;
             if (!m_dir.TryGetValue (filename, out entry))
-                throw new FileNotFoundException();
+                throw new FileNotFoundException ("Unable to find the specified file.", filename);
             return entry;
         }
 
@@ -373,7 +373,7 @@ namespace GameRes
             var dir_name = filename + PathDelimiter;
             if (m_dir.Keys.Any (n => n.StartsWith (dir_name)))
                 return new SubDirEntry (filename);
-            throw new FileNotFoundException();
+            throw new FileNotFoundException ("Unable to find the specified file.", filename);
         }
 
         static readonly Regex path_re = new Regex (@"\G[/\\]?([^/\\]+)([/\\])");
@@ -678,7 +678,7 @@ namespace GameRes
                 {
                     var entry = m_vfs.Top.FindFile (desired[Count-1]);
                     if (entry is SubDirEntry)
-                        throw new FileNotFoundException();
+                        throw new FileNotFoundException ("Unable to find the specified file.", desired[Count-1]);
                     m_vfs.ChDir (entry);
                 }
                 m_vfs.Top.CurrentDirectory = desired.Last();

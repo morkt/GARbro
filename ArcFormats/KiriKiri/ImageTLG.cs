@@ -109,6 +109,10 @@ namespace GameRes.Formats.KiriKiri
                     if (null != blended_image)
                         return blended_image;
                 }
+                catch (FileNotFoundException X)
+                {
+                    Trace.WriteLine (string.Format ("{0}: {1}", X.Message, X.FileName), "[TlgFormat.Read]");
+                }
                 catch (Exception X)
                 {
                     Trace.WriteLine (X.Message, "[TlgFormat.Read]");
