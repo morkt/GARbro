@@ -85,6 +85,7 @@ namespace GARbro
                     return;
                 }
             }
+            DeserializeGameData();
             foreach (var file in VFS.GetFiles (args[argn]))
             {
                 m_arc_name = file.Name;
@@ -113,6 +114,20 @@ namespace GARbro
                         }
                     }
                 }
+            }
+        }
+
+        void DeserializeGameData ()
+        {
+            string scheme_file = Path.Combine (FormatCatalog.Instance.DataDirectory, "Formats.dat");
+            try
+            {
+                using (var file = File.OpenRead (scheme_file))
+                    FormatCatalog.Instance.DeserializeScheme (file);
+            }
+            catch (Exception X)
+            {
+                Console.Error.WriteLine ("Scheme deserialization failed: {0}", X.Message);
             }
         }
 
