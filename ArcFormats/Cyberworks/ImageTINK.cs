@@ -26,6 +26,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 
 namespace GameRes.Formats.Cyberworks
 {
@@ -42,19 +43,41 @@ namespace GameRes.Formats.Cyberworks
         Ignored         = Field1,
     }
 
-    internal sealed class AImageReader : IDisposable
+    internal sealed class AImageReader : IImageDecoder
     {
-        public readonly ImageMetaData Info = new ImageMetaData();
+        readonly ImageMetaData m_info = new ImageMetaData();
 
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         AImageScheme    m_scheme;
+        ImageData       m_image;
+
+        public Stream       Input { get { m_input.Position = 0; return m_input.AsStream; } }
+        public ImageMetaData Info { get { return m_info; } }
+        public ImageFormat Format { get { return null; } }
+
+        public ImageData Image
+        {
+            get
+            {
+                if (null == m_image)
+                {
+                    Unpack();
+                    int stride = (int)Info.Width * Info.BPP / 8;
+                    if (m_scheme.Flipped)
+                        m_image = ImageData.CreateFlipped (Info, GetPixelFormat(), null, Data, stride);
+                    else
+                        m_image = ImageData.Create (Info, GetPixelFormat(), null, Data, stride);
+                }
+                return m_image;
+            }
+        }
 
         public byte[] Data { get { return m_output; } }
 
-        public AImageReader (Stream input, AImageScheme scheme)
+        public AImageReader (IBinaryStream input, AImageScheme scheme)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_scheme = scheme;
         }
 
@@ -231,14 +254,14 @@ namespace GameRes.Formats.Cyberworks
 
         int GetInt ()
         {
-            byte a = m_input.ReadByte();
+            byte a = m_input.ReadUInt8();
             if (a == m_scheme.Value3)
                 a = 0;
             int d = 0;
             int c = 0;
             for (;;)
             {
-                byte a1 = m_input.ReadByte();
+                byte a1 = m_input.ReadUInt8();
                 if (a1 == m_scheme.Value2)
                     break;
                 if (a1 != m_scheme.Value1)
@@ -251,6 +274,17 @@ namespace GameRes.Formats.Cyberworks
                 }
             }
             return a + (c + d * m_scheme.Value1) * m_scheme.Value1;
+        }
+
+        PixelFormat GetPixelFormat ()
+        {
+            switch (Info.BPP)
+            {
+            case 8:  return PixelFormats.Gray8;
+            case 24: return PixelFormats.Bgr24;
+            case 32: return PixelFormats.Bgra32;
+            default: throw new InvalidFormatException();
+            }
         }
 
         #region IDisposable Members

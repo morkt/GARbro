@@ -194,20 +194,24 @@ namespace GameRes.Formats.Cyberworks
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            uint entry_size = entry.Size;
-            Stream input = arc.File.CreateStream (entry.Offset, entry_size);
+            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
             var pent = entry as PackedEntry;
             if (null != pent && pent.IsPacked)
             {
                 input = new LzssStream (input);
-                entry_size = pent.UnpackedSize;
             }
+            return input;
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
             var barc = arc as BellArchive;
-            if (null == barc || entry.Type != "image" || entry_size < 5)
-                return input;
+            if (null == barc || entry.Size < 5)
+                return base.OpenImage (arc, entry);
+            var input = arc.OpenBinaryEntry (entry);
             try
             {
-                return DecryptImage (input, entry_size, barc.Scheme);
+                return DecryptImage (input, barc.Scheme);
             }
             catch
             {
@@ -216,47 +220,27 @@ namespace GameRes.Formats.Cyberworks
             }
         }
 
-        protected virtual Stream DecryptImage (Stream input, uint entry_size, AImageScheme scheme)
+        protected virtual IImageDecoder DecryptImage (IBinaryStream input, AImageScheme scheme)
         {
-            byte[] header = null;
-            byte type = (byte)input.ReadByte();
+            int type = input.ReadByte();
             if ('c' == type || 'b' == type)
             {
-                header = new byte[5];
-                header[0] = type;
-                input.Read (header, 1, 4);
-                uint img_size = BigEndian.ToUInt32 (header, 1);
-                if (entry_size - 5 == img_size)
+                uint img_size = Binary.BigEndian (input.ReadUInt32());
+                if (input.Length - 5 == img_size)
                 {
-                    if (input.CanSeek)
-                        input = new StreamRegion (input, 5, img_size);
-                    return input;
+                    input = BinaryStream.FromStream (new StreamRegion (input.AsStream, 5, img_size), input.Name);
                 }
             }
-            else if (scheme != null && 'a' == type && entry_size > 21)
+            else if (scheme != null && 'a' == type && input.Length > 21)
             {
                 int id = input.ReadByte();
                 if (id == scheme.Value2)
                 {
-                    using (var reader = new AImageReader (input, scheme))
-                    {
-                        reader.Unpack();
-                        return TgaStream.Create (reader.Info, reader.Data, scheme.Flipped);
-                    }
+                    return new AImageReader (input, scheme);
                 }
-                header = new byte[2] { type, (byte)id };
             }
-            if (input.CanSeek)
-            {
-                input.Position = 0;
-            }
-            else
-            {
-                if (null == header)
-                    header = new byte[1] { type };
-                input = new PrefixStream (header, input);
-            }
-            return input;
+            input.Position = 0;
+            return new ImageStreamDecoder (input);
         }
 
         uint DecodeDecimal (ArcView file, long offset)
@@ -419,27 +403,13 @@ namespace GameRes.Formats.Cyberworks
             return new BellArchive (file, this, dir, scheme);
         }
 
-        protected override Stream DecryptImage (Stream input, uint entry_size, AImageScheme scheme)
+        protected override IImageDecoder DecryptImage (IBinaryStream input, AImageScheme scheme)
         {
             int id = input.ReadByte();
             if (id == scheme.Value2)
-            {
-                using (var reader = new AImageReader (input, scheme))
-                {
-                    reader.Unpack();
-                    return TgaStream.Create (reader.Info, reader.Data, scheme.Flipped);
-                }
-            }
-            if (input.CanSeek)
-            {
-                input.Position = 0;
-            }
-            else
-            {
-                var header = new byte[1] { (byte)id };
-                input = new PrefixStream (header, input);
-            }
-            return input;
+                return new AImageReader (input, scheme);
+            input.Position = 0;
+            return new ImageStreamDecoder (input);
         }
 
         byte[] ReadToc (string toc_name)
