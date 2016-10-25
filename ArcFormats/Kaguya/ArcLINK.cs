@@ -192,10 +192,7 @@ namespace GameRes.Formats.Kaguya
             using (var input = VFS.OpenBinaryStream (params_dat))
             {
                 var param = ParamsDeserializer.Create (input);
-                var key = param.GetKey();
-                if (null == key)
-                    return null;
-                return new LinkEncryption (key);
+                return param.GetEncryption();
             }
         }
 
@@ -426,7 +423,7 @@ namespace GameRes.Formats.Kaguya
         #endregion
     }
 
-    internal class ParamsDeserializer
+    internal abstract class ParamsDeserializer
     {
         protected IBinaryStream     m_input;
         protected string            m_title;
@@ -442,53 +439,18 @@ namespace GameRes.Formats.Kaguya
             if (!header.AsciiEqual ("[SCR-PARAMS]"))
                 return null;
             if (header.AsciiEqual (12, "v02"))
-                return new ParamsDeserializer (input);
+                return new ParamsV2Deserializer (input);
             else if (header.AsciiEqual (12, "v05.6"))
                 return new ParamsV5Deserializer (input);
             return null;
         }
 
-        public virtual byte[] GetKey ()
+        public virtual LinkEncryption GetEncryption ()
         {
-            // 毎日がＭ！
-            m_input.Position = 0x17;
-            SkipChunk();
-            m_title = ReadString();
-            m_input.ReadCString();
-            SkipString();
-            SkipString();
-            m_input.ReadByte();
-            SkipString();
-            SkipString();
-            SkipDict();
-
-            m_input.ReadByte();
-            int count = m_input.ReadUInt8();
-            for (int i = 0; i < count; ++i)
-            {
-                m_input.ReadByte();
-                SkipChunk();
-                for (int j = 0; j < 2; ++j)
-                {
-                    int n = m_input.ReadUInt8();
-                    for (int k = 0; k < n; ++k)
-                        SkipChunk();
-                }
-            }
-            SkipDict();
-            count = m_input.ReadUInt8();
-            for (int i = 0; i < count; ++i)
-            {
-                SkipChunk();
-                for (int j = 0; j < 2; ++j)
-                {
-                    int n = m_input.ReadUInt8();
-                    for (int k = 0; k < n; ++k)
-                        SkipChunk();
-                }
-            }
-            return ReadKey();
+            return new LinkEncryption (GetKey());
         }
+
+        public abstract byte[] GetKey ();
 
         protected byte[] ReadKey ()
         {
@@ -517,6 +479,13 @@ namespace GameRes.Formats.Kaguya
             Skip (m_input.ReadUInt8());
         }
 
+        protected void SkipArray ()
+        {
+            int count = m_input.ReadUInt8();
+            for (int i = 0; i < count; ++i)
+                SkipChunk();
+        }
+
         protected void SkipDict ()
         {
             int count = m_input.ReadUInt8();
@@ -524,6 +493,70 @@ namespace GameRes.Formats.Kaguya
             {
                 SkipString();
                 SkipString();
+            }
+        }
+    }
+
+    internal class ParamsV2Deserializer : ParamsDeserializer
+    {
+        public ParamsV2Deserializer (IBinaryStream input) : base (input)
+        {
+        }
+
+        public override LinkEncryption GetEncryption ()
+        {
+            var key = GetKey();
+            return new LinkEncryption (key, m_title != "幼なじみと甘～くエッチに過ごす方法");
+        }
+
+        public override byte[] GetKey ()
+        {
+            m_input.Position = 0x17;
+            SkipChunk();
+            m_title = ReadString();
+            m_input.ReadCString();
+            SkipString();
+            SkipString();
+            m_input.ReadByte();
+            SkipString();
+            SkipString();
+            SkipDict();
+            m_input.ReadByte();
+
+            if ("幼なじみと甘～くエッチに過ごす方法" == m_title)
+            {
+                int count = m_input.ReadUInt8();
+                for (int i = 0; i < count; ++i)
+                {
+                    m_input.ReadByte();
+                    SkipChunk();
+                    SkipArray();
+                    SkipChunk();
+                }
+                SkipArray();
+                SkipArray();
+                m_input.ReadInt32();
+                return m_input.ReadBytes (240000);
+            }
+            else // 毎日がＭ！
+            {
+                int count = m_input.ReadUInt8();
+                for (int i = 0; i < count; ++i)
+                {
+                    m_input.ReadByte();
+                    SkipChunk();
+                    SkipArray();
+                    SkipArray();
+                }
+                SkipDict();
+                count = m_input.ReadUInt8();
+                for (int i = 0; i < count; ++i)
+                {
+                    SkipChunk();
+                    SkipArray();
+                    SkipArray();
+                }
+                return ReadKey();
             }
         }
     }
@@ -596,19 +629,21 @@ namespace GameRes.Formats.Kaguya
 
         delegate Stream Decryptor (LinkArchive arc, LinkEntry entry);
 
-        public LinkEncryption (byte[] key)
+        public LinkEncryption (byte[] key, bool anm_encrypted = true)
         {
             if (null == key || 0 == key.Length)
                 throw new ArgumentException ("Invalid encryption key");
             m_key = key;
-            m_type_table = new []
+            var table = new List<Tuple<string, Decryptor>>
             {
                 new Tuple<string, Decryptor> ("BM",     (a, e) => DecryptImage (a, e, 0x36)),
                 new Tuple<string, Decryptor> ("AP-2",   (a, e) => DecryptImage (a, e, 0x18)),
                 new Tuple<string, Decryptor> ("AP-3",   (a, e) => DecryptImage (a, e, 0x18)),
                 new Tuple<string, Decryptor> ("AP",     (a, e) => DecryptImage (a, e, 0xC)),
-                new Tuple<string, Decryptor> ("AN00",   (a, e) => DecryptAn00 (a, e)),
             };
+            if (anm_encrypted)
+                table.Add (new Tuple<string, Decryptor> ("AN00", (a, e) => DecryptAn00 (a, e)));
+            m_type_table = table.ToArray();
         }
 
         public Stream DecryptEntry (LinkArchive arc, LinkEntry entry)
