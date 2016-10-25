@@ -306,30 +306,34 @@ namespace GARbro.GUI
 
         void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
         {
-            using (var file = arc.OpenBinaryEntry (entry))
+            try
             {
-                var src_format = ImageFormat.FindFormat (file);
-                if (null == src_format)
-                    throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretImage, entry.Name));
-                file.Position = 0;
-                string target_ext = target_format.Extensions.FirstOrDefault() ?? "";
-                string outname = FindUniqueFileName (entry.Name, target_ext);
-                if (src_format.Item1 == target_format)
+                using (var decoder = arc.OpenImage (entry))
                 {
-                    // source format is the same as a target, copy file as is
-                    using (var output = ArchiveFormat.CreateFile (outname))
-                        file.AsStream.CopyTo (output);
-                    return;
+                    var src_format = decoder.Format; // could be null
+                    string target_ext = target_format.Extensions.FirstOrDefault() ?? "";
+                    string outname = FindUniqueFileName (entry.Name, target_ext);
+                    if (src_format == target_format)
+                    {
+                        // source format is the same as a target, copy file as is
+                        using (var output = ArchiveFormat.CreateFile (outname))
+                            decoder.Input.CopyTo (output);
+                        return;
+                    }
+                    ImageData image = decoder.Image;
+                    if (m_adjust_image_offset)
+                    {
+                        image = AdjustImageOffset (image);
+                    }
+                    using (var outfile = ArchiveFormat.CreateFile (outname))
+                    {
+                        target_format.Write (outfile, image);
+                    }
                 }
-                ImageData image = src_format.Item1.Read (file, src_format.Item2);
-                if (m_adjust_image_offset)
-                {
-                    image = AdjustImageOffset (image);
-                }
-                using (var outfile = ArchiveFormat.CreateFile (outname))
-                {
-                    target_format.Write (outfile, image);
-                }
+            }
+            catch
+            {
+                throw new InvalidFormatException (string.Format ("{1}: {0}", guiStrings.MsgUnableInterpretImage, entry.Name));
             }
         }
 

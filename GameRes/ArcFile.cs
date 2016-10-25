@@ -217,6 +217,11 @@ namespace GameRes
             return BinaryStream.FromStream (input, entry.Name);
         }
 
+        public IImageDecoder OpenImage (Entry entry)
+        {
+            return m_interface.OpenImage (this, entry);
+        }
+
         public ArchiveFileSystem CreateFileSystem ()
         {
             if (m_interface.IsHierarchic)

@@ -225,13 +225,9 @@ namespace GARbro.GUI
         {
             try
             {
-                using (var file = VFS.OpenBinaryStream (preview.Entry))
+                using (var data = VFS.OpenImage (preview.Entry))
                 {
-                    var data = ImageFormat.Read (file);
-                    if (null != data)
-                        SetPreviewImage (preview, data.Bitmap);
-                    else
-                        Trace.WriteLine ("Cannot parse image format", preview.Name);
+                    SetPreviewImage (preview, data.Image.Bitmap);
                 }
             }
             catch (Exception X)

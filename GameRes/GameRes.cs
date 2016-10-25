@@ -198,6 +198,15 @@ namespace GameRes
         }
 
         /// <summary>
+        /// Open <paramref name="entry"> as image. Throws InvalidFormatException if entry is not an image.
+        /// </summary>
+        public virtual IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var input = arc.OpenBinaryEntry (entry);
+            return new ImageStreamDecoder (input);
+        }
+
+        /// <summary>
         /// Create file corresponding to <paramref name="entry"/> in current directory and open it
         /// for writing. Overwrites existing file, if any.
         /// </summary>

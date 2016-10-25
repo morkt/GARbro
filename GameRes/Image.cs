@@ -186,4 +186,70 @@ namespace GameRes
         public static ImageFormat  Bmp { get { return s_BmpFormat.Value; } }
         public static ImageFormat  Tga { get { return s_TgaFormat.Value; } }
     }
+
+    public interface IImageDecoder : IDisposable
+    {
+        Stream       Input { get; }
+
+        /// <summary>
+        /// Underlying image format or null if image is not represented by any format.
+        /// </summary>
+        ImageFormat Format { get; }
+
+        /// <summary>
+        /// Image parameters.
+        /// </summary>
+        ImageMetaData Info { get; }
+
+        /// <summary>
+        /// Decoded image data.
+        /// </summary>
+        ImageData    Image { get; }
+    }
+
+    public sealed class ImageStreamDecoder : IImageDecoder
+    {
+        IBinaryStream       m_file;
+        ImageFormat         m_format;
+        ImageMetaData       m_info;
+        ImageData           m_image;
+
+        public Stream Input { get { m_file.Position = 0; return m_file.AsStream; } }
+
+        public ImageFormat Format { get { return m_format; } }
+        public ImageMetaData Info { get { return m_info; } }
+
+        public ImageData Image
+        {
+            get
+            {
+                if (null == m_image)
+                {
+                    m_file.Position = 0;
+                    m_image = m_format.Read (m_file, m_info);
+                }
+                return m_image;
+            }
+        }
+
+        public ImageStreamDecoder (IBinaryStream file)
+        {
+            m_file = file;
+            var format = ImageFormat.FindFormat (file);
+            if (null == format)
+                throw new InvalidFormatException();
+            m_format = format.Item1;
+            m_info = format.Item2;
+        }
+
+        bool m_disposed = false;
+        public void Dispose ()
+        {
+            if (!m_disposed)
+            {
+                m_file.Dispose();
+                m_disposed = true;
+            }
+        }
+    }
 }

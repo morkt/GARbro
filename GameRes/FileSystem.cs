@@ -722,6 +722,17 @@ namespace GameRes
             return m_vfs.Top.OpenView (entry);
         }
 
+        public static IImageDecoder OpenImage (Entry entry)
+        {
+            var fs = m_vfs.Top;
+            var arc_fs = fs as ArchiveFileSystem;
+            if (arc_fs != null)
+                return arc_fs.Source.OpenImage (entry);
+
+            var input = fs.OpenBinaryStream (entry);
+            return new ImageStreamDecoder (input);
+        }
+
         public static Stream OpenStream (string filename)
         {
             return m_vfs.Top.OpenStream (m_vfs.Top.FindFile (filename));
