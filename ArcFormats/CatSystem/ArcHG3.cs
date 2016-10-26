@@ -55,7 +55,7 @@ namespace GameRes.Formats.CatSystem
                 {
                     var entry = new Entry
                     {
-                        Name = string.Format ("{0}#{1:D4}.tga", base_name, i),
+                        Name = string.Format ("{0}#{1:D4}", base_name, i),
                         Type = "image",
                         Offset = offset + 8,
                         Size = section_size - 8,
@@ -70,9 +70,8 @@ namespace GameRes.Formats.CatSystem
             return new ArcFile (file, this, dir);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            // emulate TGA image
             var offset = entry.Offset+8;
             var info = new HgMetaData
             {
@@ -85,12 +84,8 @@ namespace GameRes.Formats.CatSystem
                 CanvasWidth = arc.File.View.ReadUInt32 (offset+0x1C),
                 CanvasHeight = arc.File.View.ReadUInt32 (offset+0x20),
             };
-            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
-            using (var reader = new Hg3Reader (input, info))
-            {
-                var pixels = reader.Unpack();
-                return TgaStream.Create (info, pixels, reader.Flipped);
-            }
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new Hg3Reader (input, info);
         }
     }
 }

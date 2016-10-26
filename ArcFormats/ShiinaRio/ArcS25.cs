@@ -59,7 +59,7 @@ namespace GameRes.Formats.ShiinaRio
                 {
                     var entry = new Entry
                     {
-                        Name = string.Format ("{0}@{1:D4}.tga", base_name, i),
+                        Name = string.Format ("{0}@{1:D4}", base_name, i),
                         Type = "image",
                         Offset = offset,
                     };
@@ -79,9 +79,8 @@ namespace GameRes.Formats.ShiinaRio
             return new ArcFile (file, this, dir);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            // emulate TGA image
             var offset = entry.Offset;
             var info = new S25MetaData
             {
@@ -93,11 +92,8 @@ namespace GameRes.Formats.ShiinaRio
                 FirstOffset = (uint)(offset + 0x14),
                 Incremental = 0 != (arc.File.View.ReadUInt32 (offset+0x10) & 0x80000000u),
             };
-            using (var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset))
-            using (var reader = new S25Format.Reader (input, info))
-            {
-                return TgaStream.Create (info, reader.Unpack());
-            }
+            var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset);
+            return new S25Format.Reader (input, info);
         }
     }
 }

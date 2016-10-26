@@ -74,11 +74,7 @@ namespace GameRes.Formats.CatSystem
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new Hg2Reader (stream, (Hg2MetaData)info))
-            {
-                var pixels = reader.Unpack();
-                var format = 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
-                return ImageData.CreateFlipped (info, format, null, pixels, reader.Stride);
-            }
+                return reader.Image;
         }
 
         public override void Write (Stream file, ImageData image)
@@ -90,6 +86,20 @@ namespace GameRes.Formats.CatSystem
     internal sealed class Hg2Reader : HgReader
     {
         Hg2MetaData     m_hg2;
+
+        public override ImageData Image
+        {
+            get
+            {
+                if (null == m_image)
+                {
+                    var pixels = Unpack();
+                    var format = 24 == m_hg2.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+                    m_image = ImageData.CreateFlipped (m_hg2, format, null, pixels, Stride);
+                }
+                return m_image;
+            }
+        }
 
         public Hg2Reader (IBinaryStream input, Hg2MetaData info) : base (input, info)
         {

@@ -77,11 +77,7 @@ namespace GameRes.Formats.CatSystem
             using (var input = new BinaryStream (reg, stream.Name))
             using (var reader = new Hg3Reader (input, meta))
             {
-                var pixels = reader.Unpack();
-                if (reader.Flipped)
-                    return ImageData.CreateFlipped (info, PixelFormats.Bgra32, null, pixels, reader.Stride);
-                else
-                    return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, reader.Stride);
+                return reader.Image;
             }
         }
 
@@ -91,15 +87,18 @@ namespace GameRes.Formats.CatSystem
         }
     }
 
-    internal class HgReader : IDisposable
+    internal class HgReader : IImageDecoder
     {
-        private     IBinaryStream   m_input;
+        protected   IBinaryStream   m_input;
         protected   HgMetaData      m_info;
         protected   int             m_pixel_size;
+        protected   ImageData       m_image;
 
-        protected  IBinaryStream Input { get { return m_input; } }
-        protected   Stream InputStream { get { return m_input.AsStream; } }
+        public      Stream       Input { get { return m_input.AsStream; } }
         public      int         Stride { get; protected set; }
+        public      ImageFormat Format { get { return null; } }
+        public      ImageMetaData Info { get { return m_info; } }
+        public virtual ImageData Image { get { throw new NotImplementedException(); } }
 
         protected HgReader (IBinaryStream input, HgMetaData info)
         {
@@ -113,12 +112,12 @@ namespace GameRes.Formats.CatSystem
         {
             var ctl_offset = data_offset + data_packed;
             var data = new byte[data_unpacked];
-            using (var z = new StreamRegion (InputStream, data_offset, data_packed, true))
+            using (var z = new StreamRegion (Input, data_offset, data_packed, true))
             using (var data_in = new ZLibStream (z, CompressionMode.Decompress))
                 if (data.Length != data_in.Read (data, 0, data.Length))
                     throw new EndOfStreamException();
 
-            using (var z = new StreamRegion (InputStream, ctl_offset, ctl_packed, true))
+            using (var z = new StreamRegion (Input, ctl_offset, ctl_packed, true))
             using (var ctl_in = new ZLibStream (z, CompressionMode.Decompress))
             using (var bits = new LsbBitStream (ctl_in))
             {
@@ -237,14 +236,30 @@ namespace GameRes.Formats.CatSystem
     {
         public bool Flipped { get; private set; }
 
+        public override ImageData Image
+        {
+            get
+            {
+                if (null == m_image)
+                {
+                    var pixels = Unpack();
+                    if (Flipped)
+                        m_image = ImageData.CreateFlipped (Info, PixelFormats.Bgra32, null, pixels, Stride);
+                    else
+                        m_image = ImageData.Create (Info, PixelFormats.Bgra32, null, pixels, Stride);
+                }
+                return m_image;
+            }
+        }
+
         public Hg3Reader (IBinaryStream input, HgMetaData info) : base (input, info)
         {
         }
 
         public byte[] Unpack ()
         {
-            InputStream.Position = m_info.HeaderSize;
-            var img_type = Input.ReadBytes (8);
+            Input.Position = m_info.HeaderSize;
+            var img_type = m_input.ReadBytes (8);
             if (Binary.AsciiEqual (img_type, "img0000\0"))
                 return UnpackImg0000();
             else if (Binary.AsciiEqual (img_type, "img_jpg\0"))
@@ -256,21 +271,21 @@ namespace GameRes.Formats.CatSystem
         byte[] UnpackImg0000 ()
         {
             Flipped = true;
-            InputStream.Position = m_info.HeaderSize+0x18;
-            int packed_data_size = Input.ReadInt32();
-            int data_size = Input.ReadInt32();
-            int packed_ctl_size = Input.ReadInt32();
-            int ctl_size = Input.ReadInt32();
+            Input.Position = m_info.HeaderSize+0x18;
+            int packed_data_size = m_input.ReadInt32();
+            int data_size = m_input.ReadInt32();
+            int packed_ctl_size = m_input.ReadInt32();
+            int ctl_size = m_input.ReadInt32();
             return UnpackStream (m_info.HeaderSize+0x28, packed_data_size, data_size, packed_ctl_size, ctl_size);
         }
 
         byte[] UnpackJpeg ()
         {
             Flipped = false;
-            Input.ReadInt32();
-            var jpeg_size = Input.ReadInt32();
-            long next_section = InputStream.Position + jpeg_size;
-            var decoder = new JpegBitmapDecoder (InputStream,
+            m_input.ReadInt32();
+            var jpeg_size = m_input.ReadInt32();
+            long next_section = Input.Position + jpeg_size;
+            var decoder = new JpegBitmapDecoder (Input,
                 BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
             var frame = decoder.Frames[0];
             if (frame.Format.BitsPerPixel < 24)
@@ -292,13 +307,13 @@ namespace GameRes.Formats.CatSystem
                 src += src_pixel_size;
             }
 
-            Input.Position = next_section;
-            var section_header = Input.ReadBytes (8);
+            m_input.Position = next_section;
+            var section_header = m_input.ReadBytes (8);
             if (!Binary.AsciiEqual (section_header, "img_al\0\0"))
                 return output;
-            Input.Seek (8, SeekOrigin.Current);
-            int alpha_size = Input.ReadInt32();
-            using (var alpha_in = new StreamRegion (InputStream, InputStream.Position+4, alpha_size, true))
+            m_input.Seek (8, SeekOrigin.Current);
+            int alpha_size = m_input.ReadInt32();
+            using (var alpha_in = new StreamRegion (Input, Input.Position+4, alpha_size, true))
             using (var alpha = new ZLibStream (alpha_in, CompressionMode.Decompress))
             {
                 for (int i = 3; i < output.Length; i += 4)

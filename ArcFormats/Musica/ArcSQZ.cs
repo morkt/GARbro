@@ -69,7 +69,7 @@ namespace GameRes.Formats.Musica
             for (int i = 0; i < count; ++i)
             {
                 var entry = new Entry {
-                    Name = string.Format ("{0}#{1:D4}.tga", base_name, i),
+                    Name = string.Format ("{0}#{1:D4}", base_name, i),
                     Type = "image",
                     Offset = file.View.ReadUInt32 (index_offset),
                     Size   = file.View.ReadUInt32 (index_offset+4),
@@ -82,15 +82,51 @@ namespace GameRes.Formats.Musica
             return new SqzArchive (file, this, dir, info);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var sqarc = (SqzArchive)arc;
-            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
-            using (var zs = new ZLibStream (input, CompressionMode.Decompress))
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            var zs = new ZLibStream (input, CompressionMode.Decompress);
+            return new SqzReader (zs, sqarc.Info);
+        }
+
+        internal sealed class SqzReader : IImageDecoder
+        {
+            Stream          m_input;
+            ImageMetaData   m_info;
+            ImageData       m_image;
+
+            public Stream       Input { get { return m_input; } }
+            public ImageFormat Format { get { return null; } }
+            public ImageMetaData Info { get { return m_info; } }
+            public ImageData    Image
             {
-                var pixels = new byte[sqarc.Info.Width * sqarc.Info.Height * 4];
-                zs.Read (pixels, 0, pixels.Length);
-                return TgaStream.Create (sqarc.Info, pixels);
+                get
+                {
+                    if (null == m_image)
+                    {
+                        var pixels = new byte[m_info.Width * m_info.Height * 4];
+                        m_input.Read (pixels, 0, pixels.Length);
+                        m_image = ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels);
+                    }
+                    return m_image;
+                }
+            }
+
+            public SqzReader (Stream input, ImageMetaData info)
+            {
+                m_input = input;
+                m_info = info;
+            }
+
+            bool m_disposed = false;
+            public void Dispose ()
+            {
+                if (!m_disposed)
+                {
+                    m_input.Dispose();
+                    m_disposed = true;
+                }
             }
         }
     }

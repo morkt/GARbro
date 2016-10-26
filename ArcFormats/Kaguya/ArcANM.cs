@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 
 namespace GameRes.Formats.Kaguya
 {
@@ -79,7 +80,7 @@ namespace GameRes.Formats.Kaguya
                 uint height = file.View.ReadUInt32 (current_offset+12);
                 var entry = new Entry
                 {
-                    Name = string.Format ("{0}#{1:D2}.tga", base_name, i),
+                    Name = string.Format ("{0}#{1:D2}", base_name, i),
                     Type = "image",
                     Offset = current_offset,
                     Size = 0x10 + 4*width*height,
@@ -90,22 +91,34 @@ namespace GameRes.Formats.Kaguya
             return new AnmArchive (file, this, dir, base_info);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var base_info = ((AnmArchive)arc).ImageInfo;
-            // emulate TGA image
-            var offset = entry.Offset;
-            var info = new ImageMetaData
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new An00Decoder (input, base_info);
+        }
+    }
+
+    internal class An00Decoder : BinaryImageDecoder
+    {
+        public An00Decoder (IBinaryStream input, ImageMetaData base_info) : base (input)
+        {
+            Info = new ImageMetaData
             {
-                OffsetX     = base_info.OffsetX + arc.File.View.ReadInt32 (offset),
-                OffsetY     = base_info.OffsetY + arc.File.View.ReadInt32 (offset+4),
-                Width       = arc.File.View.ReadUInt32 (offset+8),
-                Height      = arc.File.View.ReadUInt32 (offset+12),
-                BPP         = 32,
+                OffsetX = base_info.OffsetX + m_input.ReadInt32(),
+                OffsetY = base_info.OffsetY + m_input.ReadInt32(),
+                Width   = m_input.ReadUInt32(),
+                Height  = m_input.ReadUInt32(),
+                BPP     = 32,
             };
-            offset += 0x10;
-            var pixels = arc.File.View.ReadBytes (offset, 4*info.Width*info.Height);
-            return TgaStream.Create (info, pixels, true);
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = 0x10;
+            int stride = 4*(int)Info.Width;
+            var pixels = m_input.ReadBytes (stride*(int)Info.Height);
+            return ImageData.CreateFlipped (Info, PixelFormats.Bgra32, null, pixels, stride);
         }
     }
 
@@ -163,7 +176,7 @@ namespace GameRes.Formats.Kaguya
                 uint depth  = file.View.ReadUInt32 (current_offset+0x10);
                 var entry = new Entry
                 {
-                    Name = string.Format ("{0}#{1:D2}.tga", base_name, i),
+                    Name = string.Format ("{0}#{1:D2}", base_name, i),
                     Type = "image",
                     Offset = current_offset,
                     Size = 0x14 + depth*width*height,
@@ -174,22 +187,45 @@ namespace GameRes.Formats.Kaguya
             return new AnmArchive (file, this, dir, base_info);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var base_info = ((AnmArchive)arc).ImageInfo;
-            // emulate TGA image
-            var offset = entry.Offset;
-            var info = new ImageMetaData
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new An20Decoder (input, base_info);
+        }
+    }
+
+    internal class An20Decoder : BinaryImageDecoder
+    {
+        public An20Decoder (IBinaryStream input, ImageMetaData base_info) : base (input)
+        {
+            Info = new ImageMetaData
             {
-                OffsetX     = base_info.OffsetX + arc.File.View.ReadInt32 (offset),
-                OffsetY     = base_info.OffsetY + arc.File.View.ReadInt32 (offset+4),
-                Width       = arc.File.View.ReadUInt32 (offset+8),
-                Height      = arc.File.View.ReadUInt32 (offset+0xC),
-                BPP         = arc.File.View.ReadInt32 (offset+0x10) * 8,
+                OffsetX     = base_info.OffsetX + m_input.ReadInt32(),
+                OffsetY     = base_info.OffsetY + m_input.ReadInt32(),
+                Width       = m_input.ReadUInt32(),
+                Height      = m_input.ReadUInt32(),
+                BPP         = m_input.ReadInt32() * 8,
             };
-            offset += 0x14;
-            var pixels = arc.File.View.ReadBytes (offset, (uint)info.BPP/8*info.Width*info.Height);
-            return TgaStream.Create (info, pixels, true);
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = 0x14;
+            int stride = info.BPP/8*(int)Info.Width;
+            var pixels = m_input.ReadBytes (stride*(int)info.Height);
+            return ImageData.CreateFlipped (Info, GetFormat(), null, pixels, stride);
+        }
+
+        PixelFormat GetFormat ()
+        {
+            switch (Info.BPP)
+            {
+            case  8: return PixelFormats.Gray8;
+            case 24: return PixelFormats.Bgr24;
+            case 32: return PixelFormats.Bgra32;
+            default: throw new InvalidFormatException();
+            }
         }
     }
 }

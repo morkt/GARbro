@@ -76,10 +76,7 @@ namespace GameRes.Formats.ShiinaRio
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new Reader (stream, (S25MetaData)info))
-            {
-                var pixels = reader.Unpack();
-                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
-            }
+                return reader.Image;
         }
 
         public override void Write (Stream file, ImageData image)
@@ -87,7 +84,7 @@ namespace GameRes.Formats.ShiinaRio
             throw new NotImplementedException ("S25Format.Write not implemented");
         }
 
-        internal sealed class Reader : IDisposable
+        internal sealed class Reader : IImageDecoder
         {
             IBinaryStream   m_input;
             int             m_width;
@@ -95,6 +92,25 @@ namespace GameRes.Formats.ShiinaRio
             uint            m_origin;
             byte[]          m_output;
             bool            m_incremental;
+            ImageMetaData   m_info;
+            ImageData       m_image;
+
+            public Stream       Input { get { m_input.Position = 0; return m_input.AsStream; } }
+            public ImageMetaData Info { get { return m_info; } }
+            public ImageFormat Format { get { return null; } }
+
+            public ImageData Image
+            {
+                get
+                {
+                    if (null == m_image)
+                    {
+                        var pixels = Unpack();
+                        m_image = ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels);
+                    }
+                    return m_image;
+                }
+            }
 
             public byte[]   Data { get { return m_output; } }
 
@@ -106,6 +122,7 @@ namespace GameRes.Formats.ShiinaRio
                 m_input = file;
                 m_origin = info.FirstOffset;
                 m_incremental = info.Incremental;
+                m_info = info;
             }
 
             public byte[] Unpack ()
