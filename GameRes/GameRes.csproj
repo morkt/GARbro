@@ -74,6 +74,7 @@
     <Compile Include="GameRes.cs" />
     <Compile Include="Image.cs" />
     <Compile Include="ImageBMP.cs" />
+    <Compile Include="ImageDecoder.cs" />
     <Compile Include="ImageJPEG.cs" />
     <Compile Include="ImagePNG.cs" />
     <Compile Include="ImageTGA.cs" />
