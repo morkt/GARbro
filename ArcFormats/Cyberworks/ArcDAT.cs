@@ -240,7 +240,7 @@ namespace GameRes.Formats.Cyberworks
                 }
             }
             input.Position = 0;
-            return new ImageStreamDecoder (input);
+            return new ImageFormatDecoder (input);
         }
 
         uint DecodeDecimal (ArcView file, long offset)
@@ -409,7 +409,7 @@ namespace GameRes.Formats.Cyberworks
             if (id == scheme.Value2)
                 return new AImageReader (input, scheme);
             input.Position = 0;
-            return new ImageStreamDecoder (input);
+            return new ImageFormatDecoder (input);
         }
 
         byte[] ReadToc (string toc_name)

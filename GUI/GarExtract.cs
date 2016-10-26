@@ -310,14 +310,14 @@ namespace GARbro.GUI
             {
                 using (var decoder = arc.OpenImage (entry))
                 {
-                    var src_format = decoder.Format; // could be null
+                    var src_format = decoder.SourceFormat; // could be null
                     string target_ext = target_format.Extensions.FirstOrDefault() ?? "";
                     string outname = FindUniqueFileName (entry.Name, target_ext);
                     if (src_format == target_format)
                     {
                         // source format is the same as a target, copy file as is
                         using (var output = ArchiveFormat.CreateFile (outname))
-                            decoder.Input.CopyTo (output);
+                            decoder.Source.CopyTo (output);
                         return;
                     }
                     ImageData image = decoder.Image;

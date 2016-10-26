@@ -203,7 +203,7 @@ namespace GameRes
         public virtual IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var input = arc.OpenBinaryEntry (entry);
-            return new ImageStreamDecoder (input);
+            return new ImageFormatDecoder (input);
         }
 
         /// <summary>

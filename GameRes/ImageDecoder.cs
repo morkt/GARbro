@@ -30,12 +30,12 @@ namespace GameRes
 {
     public interface IImageDecoder : IDisposable
     {
-        Stream       Input { get; }
+        Stream Source { get; }
 
         /// <summary>
         /// Underlying image format or null if image is not represented by any format.
         /// </summary>
-        ImageFormat Format { get; }
+        ImageFormat SourceFormat { get; }
 
         /// <summary>
         /// Image parameters.
@@ -48,15 +48,14 @@ namespace GameRes
         ImageData    Image { get; }
     }
 
-    public sealed class ImageStreamDecoder : IImageDecoder
+    public sealed class ImageFormatDecoder : IImageDecoder
     {
         IBinaryStream       m_file;
         ImageData           m_image;
 
-        public Stream Input { get { m_file.Position = 0; return m_file.AsStream; } }
-
-        public ImageFormat Format { get; private set; }
-        public ImageMetaData Info { get; private set; }
+        public Stream            Source { get { m_file.Position = 0; return m_file.AsStream; } }
+        public ImageFormat SourceFormat { get; private set; }
+        public ImageMetaData       Info { get; private set; }
 
         public ImageData Image
         {
@@ -65,19 +64,19 @@ namespace GameRes
                 if (null == m_image)
                 {
                     m_file.Position = 0;
-                    m_image = Format.Read (m_file, Info);
+                    m_image = SourceFormat.Read (m_file, Info);
                 }
                 return m_image;
             }
         }
 
-        public ImageStreamDecoder (IBinaryStream file)
+        public ImageFormatDecoder (IBinaryStream file)
         {
             m_file = file;
             var format = ImageFormat.FindFormat (file);
             if (null == format)
                 throw new InvalidFormatException();
-            Format = format.Item1;
+            SourceFormat = format.Item1;
             Info = format.Item2;
         }
 
@@ -97,10 +96,10 @@ namespace GameRes
         protected IBinaryStream   m_input;
         protected ImageData       m_image;
 
-        public Stream       Input { get { m_input.Position = 0; return m_input.AsStream; } }
-        public ImageFormat Format { get { return null; } }
-        public ImageMetaData Info { get; protected set; }
-        public ImageData    Image
+        public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get; protected set; }
+        public ImageData Image
         {
             get
             {

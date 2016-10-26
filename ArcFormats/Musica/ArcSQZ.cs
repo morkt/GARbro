@@ -26,6 +26,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 using GameRes.Compression;
 
 namespace GameRes.Formats.Musica
@@ -96,10 +97,10 @@ namespace GameRes.Formats.Musica
             ImageMetaData   m_info;
             ImageData       m_image;
 
-            public Stream       Input { get { return m_input; } }
-            public ImageFormat Format { get { return null; } }
-            public ImageMetaData Info { get { return m_info; } }
-            public ImageData    Image
+            public Stream            Source { get { return m_input; } }
+            public ImageFormat SourceFormat { get { return null; } }
+            public ImageMetaData       Info { get { return m_info; } }
+            public ImageData Image
             {
                 get
                 {

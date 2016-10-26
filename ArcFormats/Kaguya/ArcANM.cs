@@ -212,8 +212,8 @@ namespace GameRes.Formats.Kaguya
         protected override ImageData GetImageData ()
         {
             m_input.Position = 0x14;
-            int stride = info.BPP/8*(int)Info.Width;
-            var pixels = m_input.ReadBytes (stride*(int)info.Height);
+            int stride = Info.BPP/8*(int)Info.Width;
+            var pixels = m_input.ReadBytes (stride*(int)Info.Height);
             return ImageData.CreateFlipped (Info, GetFormat(), null, pixels, stride);
         }
 

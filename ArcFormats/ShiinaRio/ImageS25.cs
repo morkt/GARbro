@@ -95,9 +95,9 @@ namespace GameRes.Formats.ShiinaRio
             ImageMetaData   m_info;
             ImageData       m_image;
 
-            public Stream       Input { get { m_input.Position = 0; return m_input.AsStream; } }
-            public ImageMetaData Info { get { return m_info; } }
-            public ImageFormat Format { get { return null; } }
+            public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
+            public ImageFormat SourceFormat { get { return null; } }
+            public ImageMetaData       Info { get { return m_info; } }
 
             public ImageData Image
             {
