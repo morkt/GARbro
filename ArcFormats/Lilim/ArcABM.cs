@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Lilim
@@ -92,7 +93,7 @@ namespace GameRes.Formats.Lilim
             for (int i = 0; i < count; ++i)
             {
                 var entry = new AbmEntry {
-                    Name = string.Format ("{0}#{1:D4}.tga", base_name, i),
+                    Name = string.Format ("{0}#{1:D4}", base_name, i),
                     Type = "image",
                     Offset = next_offset,
                     Index = i,
@@ -123,12 +124,12 @@ namespace GameRes.Formats.Lilim
             return new AbmArchive (file, this, dir, image_info);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var abm = arc as AbmArchive;
             var frame = entry as AbmEntry;
             if (null == abm || null == frame)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+                return base.OpenImage (arc, entry);
 
             var frame_info = abm.FrameInfo;
             if (frame.Index != 0)
@@ -136,40 +137,45 @@ namespace GameRes.Formats.Lilim
                 frame_info = frame_info.Clone();
                 frame_info.FrameOffset = (uint)frame.Offset;
             }
-            using (var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset))
-            using (var reader = new AbmReader (input, frame_info))
-            {
-                // emulate TGA image
-                var header = new byte[0x12];
-                header[2] = 2;
-                LittleEndian.Pack ((ushort)frame_info.Width,  header, 0xC);
-                LittleEndian.Pack ((ushort)frame_info.Height, header, 0xE);
-                header[0x10] = (byte)reader.BPP;
-                header[0x11] = 0x20;
-                var pixels = reader.Unpack();
-                return new PrefixStream (header, new MemoryStream (pixels));
-            }
+            var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset);
+            return new AbmReader (input, frame_info);
         }
     }
 
-    internal sealed class AbmReader : IDisposable
+    internal sealed class AbmReader : IImageDecoder
     {
         IBinaryStream   m_input;
         byte[]          m_output;
         AbmImageData    m_info;
+        ImageData       m_image;
         int             m_bpp;
 
-        public byte[] Data { get { return m_output; } }
-        public int     BPP { get { return m_bpp; } }
+        public Stream            Source { get { return m_input.AsStream; } }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get { return m_info; } }
+        public ImageData          Image
+        {
+            get
+            {
+                if (null == m_image)
+                    m_image = ReadImage();
+                return m_image;
+            }
+        }
 
         public AbmReader (IBinaryStream file, AbmImageData info)
         {
             m_info = info;
+            m_input = file;
+        }
+
+        ImageData ReadImage ()
+        {
             if (2 == m_info.Mode)
             {
                 m_bpp = 32;
-                file.Position = m_info.BaseOffset;
-                m_output = UnpackV2 (file);
+                m_input.Position = m_info.BaseOffset;
+                m_output = UnpackV2 (m_input);
             }
             else if (1 == m_info.Mode || 32 == m_info.Mode || 24 == m_info.Mode)
             {
@@ -180,23 +186,23 @@ namespace GameRes.Formats.Lilim
 
                 int total_length = (int)(m_info.Width * m_info.Height * m_bpp / 8);
                 m_output = new byte[total_length];
-                file.Position = m_info.BaseOffset;
+                m_input.Position = m_info.BaseOffset;
                 if (1 == m_info.Mode)
                 {
-                    if (total_length != file.Read (m_output, 0, (total_length)))
+                    if (total_length != m_input.Read (m_output, 0, (total_length)))
                         throw new EndOfStreamException ();
                 }
                 else if (24 == m_bpp)
-                    UnpackStream24 (file, m_output, total_length);
+                    UnpackStream24 (m_input, m_output, total_length);
                 else
-                    UnpackStream32 (file, m_output, total_length);
+                    UnpackStream32 (m_input, m_output, total_length);
             }
             else
                 throw new NotImplementedException();
             if (0 != m_info.FrameOffset)
-            {
-                m_input = file;
-            }
+                m_output = Unpack();
+            PixelFormat format = 24 == m_bpp ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+            return ImageData.Create (m_info, format, null, m_output);
         }
 
         int frame_x;
@@ -204,11 +210,8 @@ namespace GameRes.Formats.Lilim
         int frame_w;
         int frame_h;
 
-        public byte[] Unpack ()
+        byte[] Unpack ()
         {
-            if (null == m_input)
-                return m_output;
-
             m_input.Position = m_info.FrameOffset;
             if (1 == m_info.Mode)
                 return UnpackStream24 (m_input, m_output, m_output.Length);
@@ -334,8 +337,14 @@ namespace GameRes.Formats.Lilim
         }
 
         #region IDisposable Members
+        bool m_disposed = false;
         public void Dispose ()
         {
+            if (!m_disposed)
+            {
+                m_input.Dispose();
+                m_disposed = true;
+            }
             GC.SuppressFinalize (this);
         }
         #endregion

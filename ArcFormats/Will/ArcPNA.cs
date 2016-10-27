@@ -68,7 +68,7 @@ namespace GameRes.Formats.Will
                         BPP     = 32,
                     };
                     var entry = new PnaEntry {
-                        Name    = string.Format ("{0}#{1:D3}.tga", base_name, i),
+                        Name    = string.Format ("{0}#{1:D3}", base_name, i),
                         Size    = size,
                         Offset  = current_offset,
                         Info    = imginfo,
@@ -83,14 +83,47 @@ namespace GameRes.Formats.Will
             return new ArcFile (file, this, dir);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            var pent = entry as PnaEntry;
-            if (null == pent)
-                return base.OpenEntry (arc, entry);
-            ImageData image;
-            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
-                image = ImageFormat.Read (input);
+            var pent = (PnaEntry)entry;
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new PnaDecoder (input, pent.Info);
+        }
+    }
+
+    internal sealed class PnaDecoder : IImageDecoder
+    {
+        IBinaryStream       m_input;
+        ImageMetaData       m_info;
+        ImageData           m_image;
+
+        public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get { return m_info; } }
+        public ImageData Image
+        {
+            get
+            {
+                if (null == m_image)
+                {
+                    var pixels = ReadPixels();
+                    m_image = ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels);
+                }
+                return m_image;
+            }
+        }
+
+        public PnaDecoder (IBinaryStream input, ImageMetaData info)
+        {
+            m_input = input;
+            m_info = info;
+        }
+
+        byte[] ReadPixels ()
+        {
+            var image = ImageFormat.Read (m_input);
+            if (null == image)
+                throw new InvalidFormatException();
             var bitmap = image.Bitmap;
             if (bitmap.Format.BitsPerPixel != 32)
             {
@@ -111,7 +144,17 @@ namespace GameRes.Formats.Will
                     pixels[i+2] = (byte)(pixels[i+2] * 0xFF / alpha);
                 }
             }
-            return TgaStream.Create (pent.Info, pixels);
+            return pixels;
+        }
+
+        bool m_disposed = false;
+        public void Dispose ()
+        {
+            if (!m_disposed)
+            {
+                m_input.Dispose();
+                m_disposed = true;
+            }
         }
     }
 }

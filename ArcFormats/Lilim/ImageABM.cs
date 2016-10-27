@@ -76,11 +76,7 @@ namespace GameRes.Formats.Lilim
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var reader = new AbmReader (stream, (AbmImageData)info))
-            {
-                var pixels = reader.Unpack();
-                PixelFormat format = 32 == reader.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr24;
-                return ImageData.Create (info, format, null, pixels);
-            }
+                return reader.Image;
         }
 
         public override void Write (Stream file, ImageData image)
