@@ -80,6 +80,13 @@ namespace GameRes
             Info = format.Item2;
         }
 
+        public ImageFormatDecoder (IBinaryStream file, ImageFormat format, ImageMetaData info)
+        {
+            m_file = file;
+            SourceFormat = format;
+            Info = info;
+        }
+
         bool m_disposed = false;
         public void Dispose ()
         {
@@ -112,6 +119,12 @@ namespace GameRes
         protected BinaryImageDecoder (IBinaryStream input)
         {
             m_input = input;
+        }
+
+        protected BinaryImageDecoder (IBinaryStream input, ImageMetaData info)
+        {
+            m_input = input;
+            Info = info;
         }
 
         protected abstract ImageData GetImageData ();
