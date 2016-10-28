@@ -80,4 +80,13 @@ namespace GameRes.Formats.Nekopunch
             return new LzssStream (input);
         }
     }
+
+    /// <summary>
+    /// Link DOW extension to WaveAudio format.
+    /// </summary>
+    [Export(typeof(AudioFormat))]
+    public class DowAudio : WaveAudio
+    {
+        public override string         Tag { get { return "DOW"; } }
+    }
 }
