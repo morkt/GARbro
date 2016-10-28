@@ -233,9 +233,10 @@ namespace GameRes.Formats.Ags
             }
         }
 
-        internal sealed class Reader : IDisposable
+        internal sealed class Reader : IImageDecoder
         {
             IBinaryStream   m_input;
+            ImageData       m_image;
             byte[]          m_output;
             int             m_type;
             int             m_width;
@@ -245,6 +246,21 @@ namespace GameRes.Formats.Ags
             int             m_right;
             int             m_bottom;
 
+            public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
+            public ImageFormat SourceFormat { get { return null; } }
+            public ImageMetaData       Info { get; private set; }
+            public ImageData Image
+            {
+                get
+                {
+                    if (null == m_image)
+                    {
+                        Unpack();
+                        m_image = ImageData.Create (Info, PixelFormats.Bgr24, null, m_output, m_width*3);
+                    }
+                    return m_image;
+                }
+            }
             public byte[] Data { get { return m_output; } }
 
             public Reader (IBinaryStream file, CgMetaData info, byte[] base_image = null)
@@ -258,6 +274,7 @@ namespace GameRes.Formats.Ags
                 m_bottom = info.Bottom == 0 ? m_height : info.Bottom;
                 m_output = base_image ?? new byte[3*m_width*m_height];
                 m_input = file;
+                Info = info;
                 ShiftTable = InitShiftTable();
 
                 if (0 != (info.Type & 7))
