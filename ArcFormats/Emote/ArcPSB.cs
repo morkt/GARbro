@@ -41,6 +41,8 @@ namespace GameRes.Formats.Emote
         public int      Height;
         public int      TruncatedWidth;
         public int      TruncatedHeight;
+        public int      OffsetX;
+        public int      OffsetY;
     }
 
     [Serializable]
@@ -62,7 +64,7 @@ namespace GameRes.Formats.Emote
 
         public PsbOpener ()
         {
-            Extensions = new string[] { "psb" };
+            Extensions = new string[] { "psb", "pimg" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -77,39 +79,57 @@ namespace GameRes.Formats.Emote
                         var dir = reader.GetTextures();
                         if (null == dir || 0 == dir.Count)
                             return null;
-                        else
-                            return new ArcFile (file, this, dir);
+                        return new ArcFile (file, this, dir);
                     }
                     if (!reader.IsEncrypted)
                         break;
+                }
+                if (reader.ParseNonEncrypted())
+                {
+                    var dir = reader.GetLayers();
+                    if (null == dir)
+                        return null;
+                    return new ArcFile (file, this, dir);
                 }
                 return null;
             }
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            var tex = entry as TexEntry;
-            if (null == tex)
-                return base.OpenEntry (arc, entry);
-
-            byte[] header;
-            using (var mem = new MemoryStream())
-            using (var writer = new BinaryWriter (mem))
+            var tex = (TexEntry)entry;
+            if ("TLG" == tex.TexType)
+                return OpenTlg (arc, tex);
+            var info = new PsbTexMetaData
             {
-                writer.Write ((uint)0x81C3D2D1); // 'PSB' ^ 0x81818181
-                writer.Write ((int)0);
-                writer.Write (tex.Width);
-                writer.Write (tex.Height);
-                writer.Write (tex.TruncatedWidth);
-                writer.Write (tex.TruncatedHeight);
-                writer.Write (tex.TexType);
-                writer.BaseStream.Position = 4;
-                writer.Write ((int)writer.BaseStream.Length);
-                header = mem.ToArray();
-            }
+                FullWidth   = tex.Width,
+                FullHeight  = tex.Height,
+                Width       = (uint)tex.TruncatedWidth,
+                Height      = (uint)tex.TruncatedHeight,
+                TexType     = tex.TexType,
+                BPP = 32
+            };
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new PrefixStream (header, input);
+            return new PsbTextureDecoder (input, info);
+        }
+
+        IImageDecoder OpenTlg (ArcFile arc, TexEntry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            try
+            {
+                var info = TlgFormat.ReadMetaData (input);
+                if (null == info)
+                    throw new InvalidFormatException();
+                info.OffsetX = entry.OffsetX;
+                info.OffsetY = entry.OffsetY;
+                return new ImageFormatDecoder (input, TlgFormat, info);
+            }
+            catch
+            {
+                input.Dispose();
+                throw;
+            }
         }
 
         public override ResourceScheme Scheme
@@ -117,6 +137,10 @@ namespace GameRes.Formats.Emote
             get { return new PsbScheme { KnownKeys = KnownKeys }; }
             set { KnownKeys = ((PsbScheme)value).KnownKeys; }
         }
+
+        ImageFormat TlgFormat { get { return s_TlgFormat.Value; } }
+
+        static Lazy<ImageFormat> s_TlgFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("TLG"));
     }
 
     /// <summary>
@@ -149,6 +173,11 @@ namespace GameRes.Formats.Emote
         uint[] m_key = new uint[6];
         Dictionary<int, string> m_name_map;
 
+        public bool ParseNonEncrypted ()
+        {
+            return Parse (false);
+        }
+
         public bool Parse (uint key)
         {
             m_key[0] = 0x075BCD15;
@@ -158,7 +187,12 @@ namespace GameRes.Formats.Emote
             m_key[4] = 0;
             m_key[5] = 0;
 
-            if (!ReadHeader())
+            return Parse (true);
+        }
+
+        bool Parse (bool encrypted)
+        {
+            if (!ReadHeader (encrypted))
                 return false;
             if (Version < 2)
                 throw new NotSupportedException ("Not supported PSB version");
@@ -167,6 +201,36 @@ namespace GameRes.Formats.Emote
             var dict = GetDict (m_root); // returns all metadata in a single dictionary
 #endif
             return true;
+        }
+
+        public List<Entry> GetLayers ()
+        {
+            var layers = GetRootKey<IList> ("layers");
+            if (null == layers || 0 == layers.Count)
+                return null;
+            var dir = new List<Entry> (layers.Count);
+            foreach (IDictionary layer in layers)
+            {
+                var name = layer["layer_id"].ToString() + ".tlg";
+                var layer_data = GetRootKey<EmChunk> (name);
+                if (null == layer_data)
+                    continue;
+                var entry = new TexEntry {
+                    Name        = name,
+                    Type        = "image",
+                    Offset      = DataOffset + layer_data.Offset,
+                    Size        = (uint)layer_data.Length,
+                    TexType     = "TLG",
+                    OffsetX     = Convert.ToInt32 (layer["left"]),
+                    OffsetY     = Convert.ToInt32 (layer["top"]),
+                    Width       = Convert.ToInt32 (layer["width"]),
+                    Height      = Convert.ToInt32 (layer["height"]),
+                };
+                dir.Add (entry);
+            }
+            if (0 == dir.Count)
+                return null;
+            return dir;
         }
 
         public List<Entry> GetTextures ()
@@ -211,17 +275,16 @@ namespace GameRes.Formats.Emote
         int m_root;
         byte[] m_data;
 
-        bool ReadHeader ()
+        bool ReadHeader (bool encrypted)
         {
             m_input.Position = 4;
             m_version = m_input.ReadUInt16();
             m_flags = m_input.ReadUInt16();
-            if (m_version < 3)
+            if (encrypted && m_version < 3)
                 m_flags = 2;
 
-            var header = new byte[0x20];
-            m_input.Read (header, 0, header.Length);
-            if (0 != (m_flags & 1))
+            var header = m_input.ReadBytes (0x20);
+            if (encrypted && 0 != (m_flags & 1))
                 Decrypt (header, 0, 0x20);
 
             m_names         = LittleEndian.ToInt32 (header, 0x04);
@@ -246,7 +309,7 @@ namespace GameRes.Formats.Emote
                 m_data = new byte[m_chunk_data];
             int data_pos = (int)m_input.Position;
             m_input.Read (m_data, data_pos, m_chunk_data-data_pos);
-            if (0 != (m_flags & 2))
+            if (encrypted && 0 != (m_flags & 2))
                 Decrypt (m_data, m_names, m_chunk_offsets-m_names);
             // root object is a dictionary
             return 0x21 == m_data[m_root];
@@ -559,79 +622,58 @@ namespace GameRes.Formats.Emote
         public string   TexType;
         public int      FullWidth;
         public int      FullHeight;
-        public int      DataOffset;
     }
 
     /// <summary>
     /// Artificial format representing PSB texture.
     /// </summary>
-    [Export(typeof(ImageFormat))]
-    internal class PsbTextureFormat : ImageFormat
+    internal sealed class PsbTextureDecoder : BinaryImageDecoder
     {
-        public override string         Tag { get { return "PSB/TEXTURE"; } }
-        public override string Description { get { return "PSB texture format"; } }
-        public override uint     Signature { get { return 0x81C3D2D1; } } // 'PSB' ^ 0x81818181
+        PsbTexMetaData      m_info;
 
-        public PsbTextureFormat ()
+        public PsbTextureDecoder (IBinaryStream input, PsbTexMetaData info) : base (input, info)
         {
-            Extensions = new string[0];
+            m_input = input;
+            m_info = info;
         }
 
-        public override ImageMetaData ReadMetaData (IBinaryStream stream)
+        protected override ImageData GetImageData ()
         {
-            stream.Position = 4;
-            // need BinaryReader because of ReadString
-            using (var reader = new BinaryReader (stream.AsStream, Encoding.UTF8, true))
-            {
-                var info = new PsbTexMetaData { BPP = 32 };
-                info.DataOffset = reader.ReadInt32();
-                info.FullWidth = reader.ReadInt32();
-                info.FullHeight = reader.ReadInt32();
-                info.Width = reader.ReadUInt32();
-                info.Height = reader.ReadUInt32();
-                info.TexType = reader.ReadString();
-                return info;
-            }
-        }
-
-        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
-        {
-            var meta = (PsbTexMetaData)info;
-            var pixels = new byte[meta.Width * meta.Height * 4];
-            if ("RGBA8" == meta.TexType)
-                ReadRgba8 (stream.AsStream, meta, pixels);
-            else if ("RGBA4444" == meta.TexType)
-                ReadRgba4444 (stream.AsStream, meta, pixels);
+            var pixels = new byte[m_info.Width * m_info.Height * 4];
+            if ("RGBA8" == m_info.TexType)
+                ReadRgba8 (pixels);
+            else if ("RGBA4444" == m_info.TexType)
+                ReadRgba4444 (pixels);
             else
-                throw new NotImplementedException (string.Format ("PSB texture format '{0}' not implemented", meta.TexType));
-            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
+                throw new NotImplementedException (string.Format ("PSB texture format '{0}' not implemented", m_info.TexType));
+            return ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels);
         }
 
-        void ReadRgba8 (Stream input, PsbTexMetaData meta, byte[] output)
+        void ReadRgba8 (byte[] output)
         {
-            int dst_stride = (int)meta.Width * 4;
-            long next_row = meta.DataOffset;
-            int src_stride = meta.FullWidth * 4;
+            int dst_stride = (int)m_info.Width * 4;
+            long next_row = 0;
+            int src_stride = m_info.FullWidth * 4;
             int dst = 0;
-            for (uint i = 0; i < meta.Height; ++i)
+            for (uint i = 0; i < m_info.Height; ++i)
             {
-                input.Position = next_row;
-                input.Read (output, dst, dst_stride);
+                m_input.Position = next_row;
+                m_input.Read (output, dst, dst_stride);
                 dst += dst_stride;
                 next_row += src_stride;
             }
         }
 
-        void ReadRgba4444 (Stream input, PsbTexMetaData meta, byte[] output)
+        void ReadRgba4444 (byte[] output)
         {
-            int dst_stride = (int)meta.Width * 4;
-            int src_stride = meta.FullWidth * 2;
+            int dst_stride = (int)m_info.Width * 4;
+            int src_stride = m_info.FullWidth * 2;
             int dst = 0;
             var row = new byte[src_stride];
-            input.Position = meta.DataOffset;
-            for (uint i = 0; i < meta.Height; ++i)
+            m_input.Position = 0;
+            for (uint i = 0; i < m_info.Height; ++i)
             {
-                input.Read (row, 0, src_stride);
+                m_input.Read (row, 0, src_stride);
                 int src = 0;
                 for (int x = 0; x < dst_stride; x += 4)
                 {
@@ -643,11 +685,6 @@ namespace GameRes.Formats.Emote
                     output[dst++] = (byte)((p & 0xF000u) * 0xFFu / 0xF000u);
                 }
             }
-        }
-
-        public override void Write (Stream file, ImageData image)
-        {
-            throw new NotSupportedException ("PsbTextureFormat.Write not supported");
         }
     }
 }
