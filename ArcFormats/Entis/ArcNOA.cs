@@ -2,7 +2,7 @@
 //! \date       Thu Apr 23 15:57:17 2015
 //! \brief      Entis GLS engine archives implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -95,21 +95,7 @@ namespace GameRes.Formats.Entis
             if (!reader.HasEncrypted)
                 return new ArcFile (file, this, reader.Dir);
 
-            var options = Query<NoaOptions> (arcStrings.ArcEncryptedNotice);
-            string password = null;
-            if (!string.IsNullOrEmpty (options.PassPhrase))
-            {
-                password = options.PassPhrase;
-            }
-            else if (!string.IsNullOrEmpty (options.Scheme))
-            {
-                Dictionary<string, string> filemap;
-                if (KnownKeys.TryGetValue (options.Scheme, out filemap))
-                {
-                    var filename = Path.GetFileName (file.Name).ToLowerInvariant();
-                    filemap.TryGetValue (filename, out password);
-                }
-            }
+            var password = GetArcPassword (file.Name);
             if (string.IsNullOrEmpty (password))
                 return new ArcFile (file, this, reader.Dir);
             return new NoaArchive (file, this, reader.Dir, password);
@@ -145,6 +131,31 @@ namespace GameRes.Formats.Entis
             Trace.WriteLine (string.Format ("{0}: encryption scheme 0x{1:x8} not implemented",
                                             nent.Name, nent.Encryption));
             return input;
+        }
+
+        string GetArcPassword (string arc_name)
+        {
+            var title = FormatCatalog.Instance.LookupGame (arc_name, @"..\*.exe");
+            if (string.IsNullOrEmpty (title) || !KnownKeys.ContainsKey (title))
+            {
+                var options = Query<NoaOptions> (arcStrings.ArcEncryptedNotice);
+                if (!string.IsNullOrEmpty (options.PassPhrase))
+                {
+                    return options.PassPhrase;
+                }
+                title = options.Scheme;
+            }
+            string password = null;
+            if (!string.IsNullOrEmpty (title))
+            {
+                Dictionary<string, string> filemap;
+                if (KnownKeys.TryGetValue (title, out filemap))
+                {
+                    var filename = Path.GetFileName (arc_name).ToLowerInvariant();
+                    filemap.TryGetValue (filename, out password);
+                }
+            }
+            return password;
         }
 
         Stream DecodeNemesis (Stream input)
