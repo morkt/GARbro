@@ -386,7 +386,7 @@ namespace GameRes.Formats.Emote
                 foreach (var item in lookup)
                 {
                     int first = GetArrayElem (nm1, item.Key);
-                    for (int i = 0; i < 256; ++i)
+                    for (int i = 0; i < 256 && i + first < nm2.Count; ++i)
                     {
                         if (GetArrayElem (nm2, i + first) == item.Key)
                         {
