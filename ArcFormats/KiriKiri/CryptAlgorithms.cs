@@ -822,4 +822,31 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, values, pos, count);
         }
     }
+
+    [Serializable]
+    public class SmileCrypt : ICrypt
+    {
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            uint hash = entry.Hash ^ 0xD0F0BA7B;
+            byte key = (byte)(hash ^ (hash >> 8) ^ (hash >> 16) ^ (hash >> 24));
+            if (0 == key)
+                key = 0x5E;
+            if (0 == offset && count > 0)
+            {
+                if (0 == (hash & 0xFF))
+                    hash = 0x7B;
+                values[pos] ^= (byte)hash;
+            }
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            Decrypt (entry, offset, values, pos, count);
+        }
+    }
 }

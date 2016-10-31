@@ -152,7 +152,9 @@ namespace GameRes.Formats.KiriKiri
                     if (entry_size < 0)
                         return null;
                     dir_offset += 12 + entry_size;
-                    if (0x6E666E68 == entry_signature || 0x46696C65 == entry_signature) // "hnfn" || "eliF"
+                    if (0x6E666E68 == entry_signature       // "hnfn"
+                        || 0x6C696D73 == entry_signature    // "smil"
+                        || 0x46696C65 == entry_signature)   // "eliF"
                     {
                         uint hash = header.ReadUInt32();
                         int name_size = header.ReadInt16();
