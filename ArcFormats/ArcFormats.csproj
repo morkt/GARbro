@@ -117,6 +117,7 @@
     <Compile Include="Eagls\WidgetEAGLS.xaml.cs">
       <DependentUpon>WidgetEAGLS.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EntExec\ArcCAB.cs" />
     <Compile Include="ExHibit\WidgetGYU.xaml.cs">
       <DependentUpon>WidgetGYU.xaml</DependentUpon>
     </Compile>
