@@ -90,6 +90,7 @@
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcARCX.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="rUGP\ArcRIO.cs" />
     <Compile Include="Astronauts\ArcGXP.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
     <Compile Include="BlackRainbow\ArcPAK.cs" />
@@ -228,6 +229,7 @@
     <Compile Include="RealLive\AudioOWP.cs" />
     <Compile Include="RealLive\ImageG00.cs" />
     <Compile Include="RealLive\ImagePDT.cs" />
+    <Compile Include="rUGP\ImageRIP.cs" />
     <Compile Include="ScrPlayer\ArcPAK.cs" />
     <Compile Include="ScrPlayer\ImageI.cs" />
     <Compile Include="ShiinaRio\WarcEncryption.cs" />
