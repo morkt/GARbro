@@ -43,6 +43,8 @@ namespace GameRes.Formats.Rugp
         public override string Description { get { return "rUGP compressed image format"; } }
         public override uint     Signature { get { return 0; } }
 
+        // signature set to 0 because all serialized rUGP objects have same signature.
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             if (file.Signature != CRioArchive.ObjectSignature)
@@ -84,31 +86,34 @@ namespace GameRes.Formats.Rugp
         int      Version;
         int      m_width;
         int      m_height;
+        int      m_x;
+        int      m_y;
+        int      m_w;
+        int      m_h;
         byte[]   CompressInfo;
-        byte[]   field_30;
-        int      field_38;
-        int      field_3C;
+        int      m_flags;
         CObject  field_4C;
         byte[]   m_pixels;
 
         public PixelFormat Format { get; private set; }
         public byte[]      Pixels { get { return m_pixels; } }
-        public bool      HasAlpha { get { return ((field_38 & 0xFF) - 2) == 1; } }
+        public bool      HasAlpha { get { return ((m_flags & 0xFF) - 2) == 1; } }
 
         public override void Deserialize (CRioArchive arc)
         {
             Version = arc.ReadInt32();
             m_width = arc.ReadUInt16();
             m_height = arc.ReadUInt16();
-            field_30 = arc.ReadBytes (4);
-            arc.ReadUInt16();
-            arc.ReadUInt16();
-            field_38 = arc.ReadInt32();
+            m_x = arc.ReadUInt16();
+            m_y = arc.ReadUInt16();
+            m_w = arc.ReadUInt16();
+            m_h = arc.ReadUInt16();
+            m_flags = arc.ReadInt32();
             CompressInfo = arc.ReadBytes (7);
             if (arc.GetObjectSchema() >= 2)
                 field_4C = arc.ReadRioReference ("CSbm");
             int size = arc.ReadInt32();
-            field_3C = arc.ReadInt32();
+            arc.ReadInt32(); // field_3C
             var data = arc.ReadBytes (size);
             m_pixels = Uncompress (data);
             Format = HasAlpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
@@ -148,50 +153,31 @@ namespace GameRes.Formats.Rugp
                     int x = 0;
                     while (x < m_width)
                     {
-                        int count = 1;
-                        while (input.GetNextBit() > 0)
-                        {
-                            count <<= 1;
-                            count |= input.GetNextBit();
-                        }
+                        int count = GetInt (input);
                         x += count;
                         do
                         {
                             if (input.GetNextBit() > 0)
                             {
                                 rgb = LittleEndian.ToInt32 (output, dst - stride);
-                                rgb_ = rgb;
                                 if (rgb != 0)
                                 {
                                     rgb -= baseline;
-                                    rgb_ = rgb;
                                 }
+                                rgb_ = rgb;
                             }
                             else
                             {
                                 int r = 0, g = 0, b = 0;
                                 if (input.GetNextBit() > 0)
                                 {
-                                    g = 1;
-                                    bool sign = input.GetNextBit() > 0;
-                                    while (input.GetNextBit() > 0)
-                                    {
-                                        g <<= 1;
-                                        g |= input.GetNextBit();
-                                    }
-                                    if (sign)
-                                        g = -g;
+                                    g = GetSigned (input);
                                 }
                                 int b_inc = 0;
                                 if (input.GetNextBit() > 0)
                                 {
-                                    int v = 1;
                                     bool sign = input.GetNextBit() > 0;
-                                    while (input.GetNextBit() > 0)
-                                    {
-                                        v <<= 1;
-                                        v |= input.GetNextBit();
-                                    }
+                                    int v = GetInt (input);
                                     b_inc = tblQuantTransfer[q, v];
                                     if (sign)
                                         b_inc = -b_inc;
@@ -199,13 +185,8 @@ namespace GameRes.Formats.Rugp
                                 int r_inc = 0;
                                 if (input.GetNextBit() > 0)
                                 {
-                                    int v = 1;
                                     bool sign = input.GetNextBit() > 0;
-                                    while (input.GetNextBit() > 0)
-                                    {
-                                        v <<= 1;
-                                        v |= input.GetNextBit();
-                                    }
+                                    int v = GetInt (input);
                                     r_inc = tblQuantTransfer[q, v];
                                     if (sign)
                                         r_inc = -r_inc;
@@ -215,21 +196,21 @@ namespace GameRes.Formats.Rugp
                                     gg >>= 1;
                                 if (CompressInfo[3] != 0)
                                 {
-                                    int c1 = (0xFF >> b_shift) & (rgb_ >> b_shift);
-                                    int c2 = (0xFF >> b_shift) - c1;
+                                    int c1 = (0xFF >> b_shift) & (int)((uint)rgb_ >> b_shift);
                                     c1 = -c1;
                                     if (gg >= c1)
                                     {
+                                        int c2 = (0xFF >> b_shift) + c1;
                                         c1 = c2;
                                         if (gg <= c2)
                                             c1 = gg;
                                     }
                                     b = c1 + b_inc;
-                                    c1 = (0xFF0000 >> r_shift) & (rgb_ >> r_shift);
-                                    c2 = (0xFF0000 >> r_shift) - c1;
+                                    c1 = (0xFF0000 >> r_shift) & (int)((uint)rgb_ >> r_shift);
                                     c1 = -c1;
                                     if (gg >= c1)
                                     {
+                                        int c2 = (0xFF0000 >> r_shift) + c1;
                                         c1 = c2;
                                         if (gg <= c2)
                                             c1 = gg;
@@ -254,12 +235,7 @@ namespace GameRes.Formats.Rugp
                         if (x >= m_width)
                             break;
 
-                        count = 1;
-                        while (input.GetNextBit() > 0)
-                        {
-                            count <<= 1;
-                            count |= input.GetNextBit();
-                        }
+                        count = GetInt (input);
                         x += count;
                         while (count --> 0)
                         {
@@ -273,7 +249,140 @@ namespace GameRes.Formats.Rugp
 
         void UncompressRgba (IBitStream input, byte[] output)
         {
-            throw new NotImplementedException();
+            int stride = 4 * m_width;
+            int q = CompressInfo[0];
+            int b_bits = CompressInfo[4];
+            int g_bits = CompressInfo[5];
+            int r_bits = CompressInfo[6];
+            int b_shift = 8 - b_bits;
+            int g_shift = 16 - g_bits;
+            int r_shift = 24 - r_bits;
+            int dst_pos = m_y * stride + m_x * 4;
+            int baseline = 0xFF >> b_bits | (0xFF >> g_bits | (0xFF >> r_bits << 8)) << 8;
+            var line_buf = new int[m_w];
+            for (int y = 0; y < m_h; ++y)
+            {
+                int alpha = 0;
+                int rgb = 0;
+                int repeat_count = 0;
+                bool repeat = true;
+                int dst = dst_pos + y * stride;
+                int x = 0;
+                int chunk_size = 0;
+                while (x < m_w)
+                {
+                    if (0 == chunk_size)
+                    {
+                        int alpha_inc = 0;
+                        if (input.GetNextBit() > 0)
+                        {
+                            alpha_inc = GetSigned (input);
+                        }
+                        alpha += alpha_inc;
+                        if (0 == alpha || 31 == alpha)
+                        {
+                            chunk_size = GetInt (input);
+                        }
+                    }
+                    if (alpha != 0)
+                    {
+                        if (31 == alpha)
+                            --chunk_size;
+                        if (0 == repeat_count)
+                        {
+                            repeat_count = GetInt (input);
+                            repeat = !repeat;
+                        }
+                        --repeat_count;
+                        if (!repeat)
+                        {
+                            if (input.GetNextBit() > 0)
+                            {
+                                rgb = line_buf[x];
+                            }
+                            else
+                            {
+                                int g = 0;
+                                if (input.GetNextBit() > 0)
+                                {
+                                    g = GetSigned (input);
+                                }
+                                int b_inc = 0;
+                                if (input.GetNextBit() > 0)
+                                {
+                                    bool sign = input.GetNextBit() > 0;
+                                    int v = GetInt (input);
+                                    b_inc = tblQuantTransfer[q, v];
+                                    if (sign)
+                                        b_inc = -b_inc;
+                                }
+                                int r_inc = 0;
+                                if (input.GetNextBit() > 0)
+                                {
+                                    bool sign = input.GetNextBit() > 0;
+                                    int v = GetInt (input);
+                                    r_inc = tblQuantTransfer[q, v];
+                                    if (sign)
+                                        r_inc = -r_inc;
+                                }
+                                int c1 = (0xFF >> b_shift) & (int)((uint)rgb >> b_shift);
+                                c1 = -c1;
+                                if (g >= c1)
+                                {
+                                    int c2 = (0xFF >> b_shift) + c1;
+                                    c1 = g;
+                                    if (g > c2)
+                                        c1 = c2;
+                                }
+                                int b = c1 + b_inc;
+                                c1 = (0xFF0000 >> r_shift) & (int)((uint)rgb >> r_shift);
+                                c1 = -c1;
+                                if (g >= c1)
+                                {
+                                    int c2 = (0xFF0000 >> r_shift) + c1;
+                                    c1 = g;
+                                    if (g > c2)
+                                        c1 = c2;
+                                }
+                                int r = c1 + r_inc;
+                                rgb += (b << b_shift) + (r << r_shift) + (g << g_shift);
+                            }
+                        }
+                        uint pixel = (uint)(baseline + rgb);
+                        if (31 == alpha)
+                            pixel |= 0xFF000000u;
+                        else
+                            pixel |= (uint)(alpha << 27);
+                        LittleEndian.Pack (pixel, output, dst);
+                        dst += 4;
+                        line_buf[x++] = rgb;
+                    }
+                    else
+                    {
+                        dst += 4 * chunk_size;
+                        x += chunk_size;
+                        chunk_size = 0;
+                    }
+                }
+            }
+        }
+
+        static int GetInt (IBitStream input)
+        {
+            int n = 1;
+            while (input.GetNextBit() > 0)
+            {
+                n <<= 1;
+                n |= input.GetNextBit();
+            }
+            return n;
+        }
+
+        static int GetSigned (IBitStream input)
+        {
+            bool sign = input.GetNextBit() > 0;
+            int n = GetInt (input);
+            return sign ? -n : n;
         }
 
         static readonly byte[,] tblQuantTransfer = {
