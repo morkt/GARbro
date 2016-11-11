@@ -31,17 +31,23 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Rugp
 {
-    internal class Rio007MetaData : ImageMetaData
+    internal class RioMetaData : ImageMetaData
     {
         public uint ObjectOffset;
+        public CRip Rip;
     }
 
     [Export(typeof(ImageFormat))]
-    public class Rip007Format : ImageFormat
+    public class RipFormat : ImageFormat
     {
         public override string         Tag { get { return "RIP"; } }
         public override string Description { get { return "rUGP compressed image format"; } }
         public override uint     Signature { get { return 0; } }
+
+        public RipFormat ()
+        {
+            Extensions = new string[] { "rip", "sia" };
+        }
 
         // signature set to 0 because all serialized rUGP objects have same signature.
 
@@ -52,51 +58,163 @@ namespace GameRes.Formats.Rugp
             var rio = new CRioArchive (file);
             uint signature;
             var class_ref = rio.LoadRioTypeCore (out signature);
-            if (class_ref != "CRip007")
-                return null;
             uint object_pos = (uint)file.Position;
-            file.ReadInt32();
-            return new Rio007MetaData
+            CRip img;
+            if ("CRip007" == class_ref)
+            {
+                img = new CRip007();
+                file.ReadInt32();
+            }
+            else if ("CRip" == class_ref)
+            {
+                img = new CRip();
+                file.Seek (12, SeekOrigin.Current);
+            }
+            else
+                return null;
+            return new RioMetaData
             {
                 Width   = file.ReadUInt16(),
                 Height  = file.ReadUInt16(),
                 BPP     = 32,
                 ObjectOffset = object_pos,
+                Rip     = img,
             };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = (Rio007MetaData)info;
+            var meta = (RioMetaData)info;
             file.Position = meta.ObjectOffset;
             var arc = new CRioArchive (file);
-            var img = new CRip007();
+            var img = meta.Rip;
             img.Deserialize (arc);
             return ImageData.Create (info, img.Format, null, img.Pixels);
         }
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new System.NotImplementedException ("Rip007Format.Write not implemented");
+            throw new System.NotImplementedException ("RipFormat.Write not implemented");
         }
     }
 
-    internal class CRip007 : CObject
+    internal class CRip : CObject
     {
-        int      Version;
-        int      m_width;
-        int      m_height;
-        int      m_x;
-        int      m_y;
-        int      m_w;
-        int      m_h;
-        byte[]   CompressInfo;
-        int      m_flags;
-        CObject  field_4C;
-        byte[]   m_pixels;
+        protected int   Version;
+        protected int   m_width;
+        protected int   m_height;
+        protected int   m_x;
+        protected int   m_y;
+        protected int   m_w;
+        protected int   m_h;
+        protected int   m_flags;   // field_30
+        protected byte[] m_pixels;
 
-        public PixelFormat Format { get; private set; }
+        public PixelFormat Format { get; protected set; }
         public byte[]      Pixels { get { return m_pixels; } }
+
+        public override void Deserialize (CRioArchive arc)
+        {
+            Version = arc.ReadInt32();
+            m_x = arc.ReadUInt16();
+            m_y = arc.ReadUInt16();
+            m_w = arc.ReadUInt16();
+            m_h = arc.ReadUInt16();
+            m_width = arc.ReadUInt16();
+            m_height = arc.ReadUInt16();
+            m_flags = arc.ReadInt32();
+            int size = arc.ReadInt32();
+            arc.ReadInt32();
+            var data = arc.ReadBytes (size);
+            m_pixels = Uncompress (data);
+        }
+
+        byte[] Uncompress (byte[] data)
+        {
+            byte[] pixels = null;
+            switch (m_flags & 0xFF)
+            {
+            case 1:
+                return UncompressSia (data);
+            case 2:
+                Format = PixelFormats.Bgr32;
+                pixels = new byte[4 * m_width * m_height];
+                switch ((m_flags >> 8) & 0xFF)
+                {
+                case 1: UncompressRgb1 (data, pixels); break;
+                case 2: UncompressRgb2 (data, pixels); break;
+                case 3: UncompressRgb3 (data, pixels); break;
+                }
+                break;
+            case 3:
+                if (2 == ((m_flags >> 8) & 0xFF))
+                {
+                    Format = PixelFormats.Bgra32;
+                    pixels = new byte[4 * m_width * m_height];
+                    UncompressRgba (data, pixels);
+                }
+                break;
+            }
+            if (null == pixels)
+                throw new InvalidFormatException();
+            return pixels;
+        }
+
+        byte[] UncompressSia (byte[] input)
+        {
+            var output = new byte[m_width * m_height];
+            Format = PixelFormats.Gray8;
+            int src = 0;
+            int stride = m_width;
+            for (int y = 0; y < m_height; ++y)
+            {
+                byte color = 0;
+                int width = m_width;
+                int dst = y * stride;
+                while (width > 0)
+                {
+                    int count = input[src++];
+                    if (count > 0)
+                    {
+                        width -= count;
+                        for (int i = 0; i < count; ++i)
+                            output[dst++] = color;
+                    }
+                    if (width > 0 && src < input.Length)
+                    {
+                        color = input[src++];
+                    }
+                }
+            }
+            return output;
+        }
+
+        void UncompressRgb1 (byte[] input, byte[] output)
+        {
+            throw new NotImplementedException();
+        }
+
+        void UncompressRgb2 (byte[] input, byte[] output)
+        {
+            throw new NotImplementedException();
+        }
+
+        void UncompressRgb3 (byte[] input, byte[] output)
+        {
+            throw new NotImplementedException();
+        }
+
+        void UncompressRgba (byte[] input, byte[] output)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    internal class CRip007 : CRip
+    {
+        byte[]   CompressInfo;
+        CObject  field_4C;
+
         public bool      HasAlpha { get { return ((m_flags & 0xFF) - 2) == 1; } }
 
         public override void Deserialize (CRioArchive arc)
