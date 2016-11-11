@@ -230,6 +230,7 @@
     <Compile Include="RealLive\ImageG00.cs" />
     <Compile Include="RealLive\ImagePDT.cs" />
     <Compile Include="rUGP\ImageRIP.cs" />
+    <Compile Include="rUGP\ImageS5I.cs" />
     <Compile Include="ScrPlayer\ArcPAK.cs" />
     <Compile Include="ScrPlayer\ImageI.cs" />
     <Compile Include="ShiinaRio\WarcEncryption.cs" />
