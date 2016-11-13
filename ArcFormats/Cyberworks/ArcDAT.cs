@@ -103,6 +103,8 @@ namespace GameRes.Formats.Cyberworks
 
             var toc_name = toc_name_builder.ToString();
             toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), toc_name);
+            if (!VFS.FileExists (toc_name))
+                return null;
             var toc = ReadToc (toc_name);
             if (null == toc)
                 return null;
