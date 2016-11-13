@@ -368,14 +368,10 @@
     <value>尝试猜测</value>
   </data>
   <data name="AGSMightBeEncrypted" xml:space="preserve">
-    <value>Archive contents might be encrypted,
-choose appropriate encryption scheme.</value>
-    <comment>translation pending</comment>
+    <value>压缩文件可能被加密，选择适当的加密方案。</value>
   </data>
   <data name="XP3EncryptedNotice" xml:space="preserve">
-    <value>Archive content could be encrypted.
-Choose appropriate encryption scheme.</value>
-    <comment>translation pending</comment>
+    <value>压缩文件可能被加密，选择适当的加密方案。</value>
   </data>
   <data name="GALChoose" xml:space="preserve">
     <value>请选择游戏名称或输入密钥</value>
