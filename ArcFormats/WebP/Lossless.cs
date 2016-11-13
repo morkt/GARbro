@@ -1614,7 +1614,7 @@ namespace GameRes.Formats.Google
         {
             ulong          val_;        // pre-fetched bits
             byte[]         buf_;        // input byte buffer
-            uint           len_;        // buffer length
+            uint           end_pos_;        // buffer length
             uint           pos_;        // byte position in buf_
             int            bit_pos_;    // current bit-reading position in val_
             bool           eos_;        // true if a bit was read past the end of buffer
@@ -1632,11 +1632,11 @@ namespace GameRes.Formats.Google
             /// Returns true if there was an attempt at reading bit past the end of
             /// the buffer. Doesn't set br->eos_ flag.
             /// </summary>
-            private bool IsEndOfStream { get { return eos_ || ((pos_ == len_) && (bit_pos_ > LBITS)); } }
+            private bool IsEndOfStream { get { return eos_ || ((pos_ == end_pos_) && (bit_pos_ > LBITS)); } }
 
             public void Init (byte[] input, int start, uint length)
             {
-                len_ = length;
+                end_pos_ = (uint)start + length;
                 val_ = 0;
                 bit_pos_ = 0;
                 eos_ = false;
@@ -1665,7 +1665,7 @@ namespace GameRes.Formats.Google
             {
                 other.val_ = val_;
                 other.buf_ = buf_;
-                other.len_ = len_;
+                other.end_pos_ = end_pos_;
                 other.pos_ = pos_;
                 other.bit_pos_ = bit_pos_;
                 other.eos_ = eos_;
@@ -1677,9 +1677,9 @@ namespace GameRes.Formats.Google
             public void SetBuffer (byte[] buffer, uint length)
             {
                 buf_ = buffer;
-                len_ = length;
-                // pos_ > len_ should be considered a param error.
-                eos_ = (pos_ > len_) || IsEndOfStream;
+                end_pos_ = length;
+                // pos_ > end_pos_ should be considered a param error.
+                eos_ = (pos_ > end_pos_) || IsEndOfStream;
             }
 
             /// <summary>
@@ -1742,7 +1742,7 @@ namespace GameRes.Formats.Google
 
             void DoFillBitWindow ()
             {
-                if (pos_ + sizeof(ulong) < len_)
+                if (pos_ + sizeof(ulong) < end_pos_)
                 {
                     val_ >>= WBITS;
                     bit_pos_ -= WBITS;
@@ -1755,7 +1755,7 @@ namespace GameRes.Formats.Google
 
             void ShiftBytes ()
             {
-                while (bit_pos_ >= 8 && pos_ < len_)
+                while (bit_pos_ >= 8 && pos_ < end_pos_)
                 {
                     val_ >>= 8;
                     val_ |= ((ulong)buf_[pos_]) << (LBITS - 8);

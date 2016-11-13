@@ -64,11 +64,9 @@ namespace GameRes.Formats.Google
         {
             if (0x46464952 != stream.Signature) // 'RIFF'
                 return null;
+            if (!stream.ReadHeader (12).AsciiEqual (8, "WEBP"))
+                return null;
             var header = new byte[0x10];
-            if (8 != stream.Read (header, 0, 8))
-                return null;
-            if (!Binary.AsciiEqual (header, 4, "WEBP"))
-                return null;
             bool found_vp8x = false;
             var info = new WebPMetaData();
             int chunk_size;
