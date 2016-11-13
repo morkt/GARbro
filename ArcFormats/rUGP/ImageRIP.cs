@@ -58,28 +58,14 @@ namespace GameRes.Formats.Rugp
             var rio = new CRioArchive (file);
             uint signature;
             var class_ref = rio.LoadRioTypeCore (out signature);
-            uint object_pos = (uint)file.Position;
             CRip img;
             if ("CRip007" == class_ref)
-            {
                 img = new CRip007();
-                file.ReadInt32();
-            }
             else if ("CRip" == class_ref)
-            {
                 img = new CRip();
-                file.Seek (12, SeekOrigin.Current);
-            }
             else
                 return null;
-            return new RioMetaData
-            {
-                Width   = file.ReadUInt16(),
-                Height  = file.ReadUInt16(),
-                BPP     = 32,
-                ObjectOffset = object_pos,
-                Rip     = img,
-            };
+            return img.ReadMetaData (rio);
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -127,6 +113,30 @@ namespace GameRes.Formats.Rugp
             arc.ReadInt32();
             var data = arc.ReadBytes (size);
             m_pixels = Uncompress (data);
+        }
+
+        public virtual ImageMetaData ReadMetaData (CRioArchive arc)
+        {
+            uint object_pos = (uint)arc.Input.Position;
+            arc.ReadInt32();
+            int x = arc.ReadUInt16();
+            int y = arc.ReadUInt16();
+            arc.ReadInt32();
+            uint w = arc.ReadUInt16();
+            uint h = arc.ReadUInt16();
+            int flags = arc.ReadInt32() & 0xFF;
+            if (flags < 1 || flags > 3)
+                return null;
+            return new RioMetaData
+            {
+                OffsetX = x,
+                OffsetY = y,
+                Width = w,
+                Height = h,
+                BPP = 1 == flags ? 8 : 2 == flags ? 24 : 32,
+                ObjectOffset = object_pos,
+                Rip = this,
+            };
         }
 
         byte[] Uncompress (byte[] data)
@@ -235,6 +245,22 @@ namespace GameRes.Formats.Rugp
             var data = arc.ReadBytes (size);
             m_pixels = Uncompress (data);
             Format = HasAlpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
+        }
+
+        public override ImageMetaData ReadMetaData (CRioArchive arc)
+        {
+            uint object_pos = (uint)arc.Input.Position;
+            arc.ReadInt32();
+            uint w = arc.ReadUInt16();
+            uint h = arc.ReadUInt16();
+            return new RioMetaData
+            {
+                Width = w,
+                Height = h,
+                BPP = 32,
+                ObjectOffset = object_pos,
+                Rip = this,
+            };
         }
 
         byte[] Uncompress (byte[] data)
