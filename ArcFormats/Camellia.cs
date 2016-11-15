@@ -33,6 +33,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
 using System;
+using System.Text;
+using GameRes.Utility;
 
 namespace GameRes.Cryptography
 {
@@ -43,6 +45,93 @@ namespace GameRes.Cryptography
         public Camellia (uint[] key)
         {
             m_key = key;
+        }
+
+        public Camellia (byte[] key)
+        {
+            m_key = GenerateKey (key);
+        }
+
+        public static uint[] GenerateKey (string passphrase)
+        {
+            int length = Math.Min (passphrase.Length, 16);
+            var key = new byte[16];
+            Encoding.UTF8.GetBytes (passphrase, 0, length, key, 0);
+            return GenerateKey (key);
+        }
+
+        static uint[] GenerateKey (byte[] key)
+        {
+            if (key.Length != 16)
+                throw new ApplicationException ("[Camellia] Invalid key length.");
+            uint s0, s1, s2, s3;
+            var k = new uint[52];
+            k[48] = s0 = BigEndian.ToUInt32 (key, 0);
+            k[49] = s1 = BigEndian.ToUInt32 (key, 4);
+            k[50] = s2 = BigEndian.ToUInt32 (key, 8);
+            k[51] = s3 = BigEndian.ToUInt32 (key, 12);
+
+            /* Use the Feistel routine to scramble the key material */
+            Feistel (s0, s1, ref s2, ref s3, 0);
+            Feistel (s2, s3, ref s0, ref s1, 2);
+
+            s0 ^= k[48]; s1 ^= k[49]; s2 ^= k[50]; s3 ^= k[51];
+            Feistel (s0, s1, ref s2, ref s3, 4);
+            Feistel (s2, s3, ref s0, ref s1, 6);
+
+            /* Fill the keyTable. Requires many block rotations. */
+            k[44] = s0; k[45] = s1; k[46] = s2; k[47] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 15);	/* KA <<< 15 */
+            k[36] = s0; k[37] = s1; k[38] = s2; k[39] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 15);	/* KA <<< 30 */
+            k[32] = s0; k[33] = s1; k[34] = s2; k[35] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 15);	/* KA <<< 45 */
+            k[24] = s0; k[25] = s1;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 15);	/* KA <<< 60 */
+            k[20] = s0; k[21] = s1; k[22] = s2; k[23] = s3;
+            RotLeft128 (ref s1, ref s2, ref s3, ref s0, 2);	    /* KA <<< 94 */
+            k[ 8] = s1; k[ 9] = s2; k[10] = s3; k[11] = s0;
+            RotLeft128 (ref s1, ref s2, ref s3, ref s0, 17);	/* KA <<<111 */
+            k[ 0] = s1; k[ 1] = s2; k[ 2] = s3; k[ 3] = s0;
+
+            s0 = k[48]; s1 = k[49]; s2 = k[50]; s3 = k[51];
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 15);	/* KL <<< 15 */
+            k[40] = s0; k[41] = s1; k[42] = s2; k[43] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 30);	/* KL <<< 45 */
+            k[28] = s0; k[29] = s1; k[30] = s2; k[31] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 15);	/* KL <<< 60 */
+            k[26] = s2; k[27] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 17);	/* KL <<< 77 */
+            k[16] = s0; k[17] = s1; k[18] = s2; k[19] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 17);	/* KL <<< 94 */
+            k[12] = s0; k[13] = s1; k[14] = s2; k[15] = s3;
+            RotLeft128 (ref s0, ref s1, ref s2, ref s3, 17);	/* KL <<<111 */
+            k[ 4] = s0; k[ 5] = s1; k[ 6] = s2; k[ 7] = s3;
+
+            return k;
+        }
+
+        static void Feistel (uint s0, uint s1, ref uint s2, ref uint s3, int k)
+        {
+            uint t0 = s0 ^ SIGMA[k];
+            uint t1 = s1 ^ SIGMA[k+1];
+            uint t2 = SBOX1_1110[t1 & 0xFF] ^ SBOX4_4404[(t1 >> 8) & 0xFF];
+            uint t3 = SBOX4_4404[t0 & 0xFF] ^ SBOX3_3033[(t0 >> 8) & 0xFF]
+                    ^ SBOX2_0222[(t0 >> 16) & 0xFF] ^ SBOX1_1110[t0 >> 24];
+            t2 ^= t3;
+            t3  = Binary.RotR (t3, 8);
+            t2 ^= SBOX3_3033[(t1 >> 16) & 0xFF] ^ SBOX2_0222[t1 >> 24];
+            s3 ^= t3 ^ t2;
+            s2 ^= t2;
+        }
+
+        static void RotLeft128 (ref uint s0, ref uint s1, ref uint s2, ref uint s3, int n)
+        {
+            uint t0 = s0 >> (32 - n);
+            s0 = s0 << n | s1 >> (32 - n);
+            s1 = s1 << n | s2 >> (32 - n);
+            s2 = s2 << n | s3 >> (32 - n);
+            s3 = s3 << n | t0;
         }
 
         public uint[] Key
@@ -312,6 +401,11 @@ namespace GameRes.Cryptography
             0x98980098, 0x6A6A006A, 0x46460046, 0xBABA00BA, 0x25250025, 0x42420042, 0xA2A200A2, 0xFAFA00FA,
             0x07070007, 0x55550055, 0xEEEE00EE, 0x0A0A000A, 0x49490049, 0x68680068, 0x38380038, 0xA4A400A4,
             0x28280028, 0x7B7B007B, 0xC9C900C9, 0xC1C100C1, 0xE3E300E3, 0xF4F400F4, 0xC7C700C7, 0x9E9E009E,
+        };
+
+        static readonly uint[] SIGMA = {
+            0xA09E667F, 0x3BCC908B, 0xB67AE858, 0x4CAA73B2, 0xC6EF372F, 0xE94F82BE,
+            0x54FF53A5, 0xF1D36F1C, 0x10E527FA, 0xDE682D1D, 0xB05688C2, 0xB3E6C1FD
         };
     }
 }
