@@ -120,7 +120,7 @@ namespace GameRes.Formats.MoonhirGames
             byte[] header;
             if (null == farc || null == fent || !fent.IsEncrypted)
             {
-                if (fent.IsEncrypted)
+                if (fent != null && fent.IsEncrypted)
                     throw new UnknownEncryptionScheme();
                 input = arc.File.CreateStream (entry.Offset, entry.Size);
                 header = new byte[0x10];
