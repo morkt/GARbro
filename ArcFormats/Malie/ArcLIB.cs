@@ -118,9 +118,28 @@ namespace GameRes.Formats.Malie
     }
 
     [Serializable]
-    public class LibScheme : ResourceScheme
+    public class LibScheme
     {
-        public Dictionary<string, uint[]> KnownKeys;
+        public uint     DataAlign;
+        public uint[]   Key;
+
+        public LibScheme (uint[] key)
+        {
+            DataAlign = 0x1000;
+            Key = key;
+        }
+
+        public LibScheme (uint align, uint[] key)
+        {
+            DataAlign = align;
+            Key = key;
+        }
+    }
+
+    [Serializable]
+    public class MalieScheme : ResourceScheme
+    {
+        public Dictionary<string, LibScheme> KnownSchemes;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -142,15 +161,15 @@ namespace GameRes.Formats.Malie
             if (file.MaxOffset <= 0x10)
                 return null;
             var header = new byte[0x10];
-            foreach (var key in KnownKeys.Values)
+            foreach (var scheme in KnownSchemes.Values)
             {
-                var encryption = new Camellia (key);
+                var encryption = new Camellia (scheme.Key);
                 ReadEncrypted (file.View, encryption, 0, header, 0, 0x10);
                 LibIndexReader reader;
                 if (Binary.AsciiEqual (header, 0, "LIBP"))
-                    reader = new LibPReader (file, encryption, header);
+                    reader = new LibPReader (file, encryption, header, scheme);
                 else if (Binary.AsciiEqual (header, 0, "LIBU"))
-                    reader = new LibUReader (file, encryption, header);
+                    reader = new LibUReader (file, encryption, header, scheme);
                 else
                     continue;
                 using (reader)
@@ -209,11 +228,14 @@ namespace GameRes.Formats.Malie
         {
             byte[]        m_index;
             long          m_base_offset;
+            uint          m_data_align;
             uint[]        m_offset_table;
 
-            public LibPReader (ArcView file, Camellia encryption, byte[] header) : base (file, encryption, header)
+            public LibPReader (ArcView file, Camellia encryption, byte[] header, LibScheme scheme)
+                : base (file, encryption, header)
             {
                 m_base_offset = 0;
+                m_data_align = scheme.DataAlign - 1;
             }
 
             public override List<Entry> ReadIndex ()
@@ -236,7 +258,7 @@ namespace GameRes.Formats.Malie
                 Buffer.BlockCopy (offsets, 0, m_offset_table, 0, offsets.Length);
 
                 m_base_offset += offsets.Length;
-                m_base_offset = (m_base_offset + 0xFFF) & ~0xFFF;
+                m_base_offset = (m_base_offset + m_data_align) & ~m_data_align;
 
                 m_dir.Capacity = offset_count;
                 ReadDir ("", 0, 1);
@@ -276,7 +298,8 @@ namespace GameRes.Formats.Malie
         {
             BinaryReader    m_input;
 
-            public LibUReader (ArcView file, Camellia encryption, byte[] header) : base (file, encryption, header)
+            public LibUReader (ArcView file, Camellia encryption, byte[] header, LibScheme scheme)
+                : base (file, encryption, header)
             {
                 var input = new EncryptedStream (file, encryption);
                 m_input = new BinaryReader (input, Encoding.Unicode);
@@ -380,12 +403,12 @@ namespace GameRes.Formats.Malie
             return Math.Min (length, read-offset_pad);
         }
 
-        public static Dictionary<string, uint[]> KnownKeys = new Dictionary<string, uint[]>();
+        public static Dictionary<string, LibScheme> KnownSchemes = new Dictionary<string, LibScheme>();
 
         public override ResourceScheme Scheme
         {
-            get { return new LibScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((LibScheme)value).KnownKeys; }
+            get { return new MalieScheme { KnownSchemes = KnownSchemes }; }
+            set { KnownSchemes = ((MalieScheme)value).KnownSchemes; }
         }
     }
 
