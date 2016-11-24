@@ -123,16 +123,22 @@ namespace GameRes.Formats.Malie
         public uint     DataAlign;
         public uint[]   Key;
 
-        public LibScheme (uint[] key)
+        public LibScheme (uint[] key) : this (0x1000, key)
         {
-            DataAlign = 0x1000;
-            Key = key;
         }
 
         public LibScheme (uint align, uint[] key)
         {
             DataAlign = align;
             Key = key;
+        }
+
+        public LibScheme (string key) : this (Camellia.GenerateKey (key))
+        {
+        }
+
+        public LibScheme (uint align, string key) : this (align, Camellia.GenerateKey (key))
+        {
         }
     }
 
