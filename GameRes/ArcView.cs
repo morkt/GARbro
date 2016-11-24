@@ -40,6 +40,7 @@ namespace GameRes
         {
             var encoding = enc.Clone() as Encoding;
             encoding.EncoderFallback = EncoderFallback.ExceptionFallback;
+            encoding.DecoderFallback = DecoderFallback.ExceptionFallback;
             return encoding;
         }
     }
