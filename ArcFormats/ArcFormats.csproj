@@ -91,6 +91,11 @@
     <Compile Include="ArcARCX.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="BlackRainbow\ArcDX.cs" />
+    <Compile Include="NSystem\ArcFJSYS.cs" />
+    <Compile Include="NSystem\ImageMGD.cs" />
+    <Compile Include="NSystem\WidgetMSD.xaml.cs">
+      <DependentUpon>WidgetMSD.xaml</DependentUpon>
+    </Compile>
     <Compile Include="rUGP\ArcRIO.cs" />
     <Compile Include="Astronauts\ArcGXP.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
@@ -731,6 +736,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="NScripter\WidgetNSA.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NSystem\WidgetMSD.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -189,6 +189,16 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Archive contains encrypted scripts.
+        ///Choose encryption scheme or enter a passphrase..
+        /// </summary>
+        public static string FJSYSNotice {
+            get {
+                return ResourceManager.GetString("FJSYSNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose title or enter a key.
         /// </summary>
         public static string GALChoose {

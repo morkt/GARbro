@@ -657,5 +657,17 @@ namespace GameRes.Formats.Properties {
                 this["EAGLSEncryption"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string FJSYSPassword {
+            get {
+                return ((string)(this["FJSYSPassword"]));
+            }
+            set {
+                this["FJSYSPassword"] = value;
+            }
+        }
     }
 }

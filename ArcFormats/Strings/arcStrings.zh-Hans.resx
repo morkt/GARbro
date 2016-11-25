@@ -380,4 +380,8 @@
     <value>图像已加密。
 请选择正确的加密方式。</value>
   </data>
+  <data name="FJSYSNotice" xml:space="preserve">
+    <value>压缩文件包含已加密的脚本。
+请选择加密方式或输入密码。</value>
+  </data>
 </root>

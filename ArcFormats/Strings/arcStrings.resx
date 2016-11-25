@@ -382,4 +382,8 @@ Choose appropriate encryption scheme.</value>
     <value>Image is encrypted.
 Choose appropriate encryption scheme.</value>
   </data>
+  <data name="FJSYSNotice" xml:space="preserve">
+    <value>Archive contains encrypted scripts.
+Choose encryption scheme or enter a passphrase.</value>
+  </data>
 </root>

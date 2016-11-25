@@ -158,6 +158,10 @@
   <data name="DPKKeys" xml:space="preserve">
     <value>Ключи шифрования</value>
   </data>
+  <data name="FJSYSNotice" xml:space="preserve">
+    <value>Архив содержит зашифрованные скрипты.
+Выберите способ шифрования или введите текстовый пароль.</value>
+  </data>
   <data name="GALChoose" xml:space="preserve">
     <value>Выберите наименование или введите ключ</value>
   </data>
