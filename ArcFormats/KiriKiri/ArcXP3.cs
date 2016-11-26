@@ -32,6 +32,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Diagnostics;
 using GameRes.Compression;
 using GameRes.Utility;
@@ -140,10 +141,10 @@ namespace GameRes.Formats.KiriKiri
 
             var crypt_algorithm = new Lazy<ICrypt> (() => QueryCryptAlgorithm (file), false);
 
-            var filename_map = new Dictionary<uint, string>();
             var dir = new List<Entry>();
             dir_offset = 0;
             using (var header = new BinaryReader (header_stream, Encoding.Unicode))
+            using (var filename_map = new FilenameMap())
             {
                 while (-1 != header.PeekChar())
                 {
@@ -161,7 +162,8 @@ namespace GameRes.Formats.KiriKiri
                         entry_size -= 6;
                         if (name_size * 2 <= entry_size)
                         {
-                            filename_map[hash] = new string (header.ReadChars (name_size));
+                            var filename = new string (header.ReadChars (name_size));
+                            filename_map.Add (hash, filename);
                         }
                     }
                     else if (0x656C6946 == entry_signature) // "File"
@@ -204,17 +206,15 @@ namespace GameRes.Formats.KiriKiri
                                 else
                                     entry.Cipher = NoCryptAlgorithm;
 
-                                string name = null;
-                                if (0 == filename_map.Count || !filename_map.TryGetValue (entry.Hash, out name))
+                                var name = new string (header.ReadChars (name_size));
+                                if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
                                 {
-                                    name = new string (header.ReadChars (name_size));
-                                    if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
-                                    {
-                                        goto NextEntry;
-                                    }
+                                    goto NextEntry;
                                 }
+                                if (filename_map.Count > 0)
+                                    name = filename_map.Get (entry.Hash, name);
                                 entry.Name = name;
-                                entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                                entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
                                 entry.IsEncrypted = !(entry.Cipher is NoCrypt)
                                     && !(entry.Cipher.StartupTjsNotEncrypted && "startup.tjs" == name);
                                 break;
@@ -895,5 +895,56 @@ NextEntry:
             }
         }
         #endregion
+    }
+
+    /// <summary>
+    /// Class that maps file hashes to filenames.
+    /// </summary>
+    internal sealed class FilenameMap : IDisposable
+    {
+        Dictionary<uint, string>    m_hash_map = new Dictionary<uint, string>();
+        Dictionary<string, string>  m_md5_map = new Dictionary<string, string>();
+        MD5             m_md5 = MD5.Create();
+        StringBuilder   m_md5_str = new StringBuilder();
+
+        public int Count { get { return m_md5_map.Count; } }
+
+        public void Add (uint hash, string filename)
+        {
+            if (!m_hash_map.ContainsKey (hash))
+                m_hash_map[hash] = filename;
+
+            m_md5_map[GetMd5Hash (filename)] = filename;
+        }
+
+        public string Get (uint hash, string md5)
+        {
+            string filename;
+            if (m_md5_map.TryGetValue (md5, out filename))
+                return filename;
+            if (m_hash_map.TryGetValue (hash, out filename))
+                return filename;
+            return md5;
+        }
+
+        string GetMd5Hash (string text)
+        {
+            var text_bytes = Encoding.Unicode.GetBytes (text.ToLowerInvariant());
+            var md5 = m_md5.ComputeHash (text_bytes);
+            m_md5_str.Clear();
+            for (int i = 0; i < md5.Length; ++i)
+                m_md5_str.AppendFormat ("{0:x2}", md5[i]);
+            return m_md5_str.ToString();
+        }
+
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_md5.Dispose();
+                _disposed = true;
+            }
+        }
     }
 }
