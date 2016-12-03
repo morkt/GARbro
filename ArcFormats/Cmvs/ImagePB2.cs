@@ -145,43 +145,45 @@ namespace GameRes.Formats.Purple
                 int block_src = 0;
                 bit_src = ctl_offset + 12;
                 int src = ctl_offset + m_input.ToInt32 (ctl_offset) + 12;
-                int dst = c;
-                for (int y = 0, lBlockY = 0; lBlockY < h_block_count; y += block_size, lBlockY++)
+                int dst_block = c;
+                for (int block_y = 0; block_y < h_block_count; block_y++)
                 {
-                    int dst_origin = dst;
-                    int max_height = Math.Min (height - y, block_size);
-                    for (int x = 0, lBlockX = 0; lBlockX < w_block_count; x += block_size, lBlockX++)
+                    int y = block_y * block_size;
+                    int dst_row = dst_block;
+                    int block_height = Math.Min (height - y, block_size);
+                    for (int block_x = 0; block_x < w_block_count; block_x++)
                     {
+                        int x = block_x * block_size;
                         if (0 == bit_mask)
                         {
                             bit_src++;
                             bit_mask = 0x80;
                         }
-                        int dst3 = dst_origin;
-                        int max_width = Math.Min (width - x, block_size);
+                        int dst_pixel = dst_row;
+                        int block_width = Math.Min (width - x, block_size);
                         if (0 != (bit_mask & m_input[bit_src]))
                         {
                             byte b = m_input[src++];
-                            for (int i = 0 ; i < max_height; i++)
+                            for (int i = 0 ; i < block_height; i++)
                             {
-                                for (int j = 0 ; j < max_width; j++)
-                                    m_output[dst3 + j * pixel_size] = b;
-                                dst3 += m_stride;
+                                for (int j = 0 ; j < block_width; j++)
+                                    m_output[dst_pixel + j * pixel_size] = b;
+                                dst_pixel += m_stride;
                             }
                         }
                         else
                         {
-                            for (int i = 0 ; i < max_height; i++)
+                            for (int i = 0 ; i < block_height; i++)
                             {
-                                for (int j = 0 ; j < max_width; j++)
-                                    m_output[dst3 + j * pixel_size] = block_data[block_src++];
-                                dst3 += m_stride;
+                                for (int j = 0 ; j < block_width; j++)
+                                    m_output[dst_pixel + j * pixel_size] = block_data[block_src++];
+                                dst_pixel += m_stride;
                             }
                         }
-                        dst_origin += block_size * pixel_size;
+                        dst_row += block_size * pixel_size;
                         bit_mask >>= 1;
                     }
-                    dst += m_stride * block_size;
+                    dst_block += m_stride * block_size;
                 }
                 ctl_offset += m_input.ToInt32 (m_offset1 + c * 4);
                 data_offset += m_input.ToInt32 (m_offset2 + c * 4);
@@ -191,7 +193,6 @@ namespace GameRes.Formats.Purple
         void UnpackV6 ()
         {
             int channel_size = (int)m_info.Width * (int)m_info.Height;
-            m_output = new byte[4 * channel_size];
             int src = Array.IndexOf<byte> (m_input, 0, 0x24);
             src = (src + 3) & ~3;
             byte[][] channels = new byte[4][];
@@ -204,20 +205,17 @@ namespace GameRes.Formats.Purple
                 LzssResetFrame();
                 LzssUnpack (bit_src, data_src, channels[i], channel_size);
             }
+            m_output = new byte[4 * channel_size];
             int dst = 0;
             for (int i = 0; i < channel_size; ++i)
             {
-                m_output[dst  ] = channels[0][i];
-                m_output[dst+1] = channels[1][i];
-                m_output[dst+2] = channels[2][i];
-                m_output[dst+3] = channels[3][i];
-
-                byte d1 = (byte)(m_output[dst+2] ^ m_output[dst+3]);
-                byte d2 = (byte)(m_output[dst+1] ^ d1);
-                m_output[dst+2]  = d1;
-                m_output[dst+1]  = d2;
-                m_output[dst  ] ^= d2;
-                dst += 4;
+                byte r = (byte)(channels[2][i] ^ channels[3][i]);
+                byte g = (byte)(channels[1][i] ^ r);
+                byte b = (byte)(channels[0][i] ^ g);
+                m_output[dst++] = b;
+                m_output[dst++] = g;
+                m_output[dst++] = r;
+                m_output[dst++] = channels[3][i];
             }
         }
     }
