@@ -49,8 +49,8 @@ namespace GameRes.Formats.Purple
             int count = (int)(file.View.ReadUInt32 (4) ^ 0xE47C59F3);
             if (!IsSaneCount (count))
                 return null;
-	        uint index_size = file.View.ReadUInt32 (8) ^ 0x3F71DE2Au;
-	        uint key = file.View.ReadUInt32 (0x10) ^ 0x40DE832Cu;
+            uint index_size = file.View.ReadUInt32 (8) ^ 0x3F71DE2Au;
+            uint key = file.View.ReadUInt32 (0x10) ^ 0x40DE832Cu;
             var index = file.View.ReadBytes (0x14, index_size);
             DecryptData (index, key);
             long base_offset = 0x14 + index_size;
