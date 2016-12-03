@@ -44,9 +44,9 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Google
 {
-    internal sealed class WebPDecoder : IDisposable
+    internal sealed class WebPDecoder
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         byte[]          m_alpha_data;   // compressed alpha data (if present)
         byte[]          m_alpha_plane;  // output. Persistent, contains the whole data.
@@ -60,16 +60,16 @@ namespace GameRes.Formats.Google
         public byte[]       Cache { get { return m_cache; } }
         public byte[]  AlphaPlane { get { return m_alpha_plane; } }
 
-        public WebPDecoder (Stream input, WebPMetaData info)
+        public WebPDecoder (IBinaryStream input, WebPMetaData info)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_info = info;
             m_stride = (int)info.Width * 4;
             m_output = new byte[m_stride * (int)info.Height];
             m_io = new VP8Io();
             if (0 != m_info.AlphaOffset)
             {
-                m_input.BaseStream.Position = m_info.AlphaOffset;
+                m_input.Position = m_info.AlphaOffset;
                 m_alpha_data = m_input.ReadBytes (m_info.AlphaSize);
                 m_alpha_plane = new byte[info.Width * info.Height];
                 Format = PixelFormats.Bgra32;
@@ -94,7 +94,7 @@ namespace GameRes.Formats.Google
 
         public void Decode ()
         {
-            m_input.BaseStream.Position = m_info.DataOffset;
+            m_input.Position = m_info.DataOffset;
             if (m_info.IsLossless)
             {
                 m_io.opaque = m_output;
@@ -110,14 +110,6 @@ namespace GameRes.Formats.Google
                 InitFrame();
                 ParseFrame();
             }
-        }
-
-        int ReadInt24 ()
-        {
-            int v = m_input.ReadByte();
-            v |= m_input.ReadByte() << 8;
-            v |= m_input.ReadByte() << 16;
-            return v;
         }
 
         internal class FrameHeader
@@ -230,7 +222,7 @@ namespace GameRes.Formats.Google
         {
             int chunk_size = m_info.DataSize;
 
-            int bits = ReadInt24();
+            int bits = m_input.ReadInt24();
             chunk_size -= 3;
             m_frame_header.KeyFrame     = 0 == (bits & 1);
             m_frame_header.Profile      = (bits >> 1) & 7;
@@ -372,26 +364,26 @@ namespace GameRes.Formats.Google
 
         bool ParsePartitions (BitReader br, int size)
         {
-            long part_end = m_input.BaseStream.Position + size;
+            long part_end = m_input.Position + size;
             int size_left = size;
             m_num_parts = 1 << br.GetBits (2);
             int last_part = m_num_parts - 1;
             if (size < 3 * last_part)
                 return false;
-            long part_start = m_input.BaseStream.Position + last_part * 3;
+            long part_start = m_input.Position + last_part * 3;
             size_left -= last_part * 3;
             for (int p = 0; p < last_part; ++p)
             {
-                int psize = ReadInt24();
-                var sz_pos = m_input.BaseStream.Position;
+                int psize = m_input.ReadInt24();
+                var sz_pos = m_input.Position;
                 if (psize > size_left) psize = size_left;
-                m_input.BaseStream.Position = part_start;
+                m_input.Position = part_start;
                 m_parts[p] = new BitReader (m_input, psize);
                 part_start += psize;
                 size_left -= psize;
-                m_input.BaseStream.Position = sz_pos;
+                m_input.Position = sz_pos;
             }
-            m_input.BaseStream.Position = part_start;
+            m_input.Position = part_start;
             m_parts[last_part] = new BitReader (m_input, size_left);
             return part_start < part_end;
         }
@@ -2063,12 +2055,12 @@ namespace GameRes.Formats.Google
 
             public bool Eof { get { return m_eof; } }
 
-            public BitReader (BinaryReader input, int length)
+            public BitReader (IBinaryStream input, int length)
             {
                 Init (input, length);
             }
 
-            public void Init (BinaryReader input, int length)
+            public void Init (IBinaryStream input, int length)
             {
                 if (null == m_buf || m_buf.Length < length)
                     m_buf = new byte[length];
@@ -2284,19 +2276,6 @@ namespace GameRes.Formats.Google
                 is_alpha_decoded_ = alph_dec_.DecodeComplete;
             return ok;
         }
-
-        #region IDisposable Members
-        bool _disposed = false;
-        public void Dispose ()
-        {
-            if (!_disposed)
-            {
-                m_input.Dispose();
-                _disposed = true;
-            }
-            GC.SuppressFinalize (this);
-        }
-        #endregion
 
         static readonly byte[,,,] CoeffsProba0 = new byte[,,,] {
             { { { 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 },

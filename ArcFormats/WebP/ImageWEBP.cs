@@ -86,8 +86,8 @@ namespace GameRes.Formats.Google
                     if (chunk_size != stream.Read (header, 0, chunk_size))
                         return null;
                     info.Flags = (WebPFeature)LittleEndian.ToUInt32 (header, 0);
-                    info.Width  = 1 + GetUInt24 (header, 4);
-                    info.Height = 1 + GetUInt24 (header, 7);
+                    info.Width  = 1 + (uint)header.ToInt24 (4);
+                    info.Height = 1 + (uint)header.ToInt24 (7);
                     if ((long)info.Width * info.Height >= (1L << 32))
                         return null;
                     continue;
@@ -96,7 +96,7 @@ namespace GameRes.Formats.Google
                 {
                     info.IsLossless = header[3] == 'L';
                     info.DataOffset = stream.Position;
-                    info.DataSize = chunk_size;
+                    info.DataSize = aligned_size;
                     if (!found_vp8x)
                     {
                         if (chunk_size < 10 || 10 != stream.Read (header, 0, 10))
@@ -134,18 +134,11 @@ namespace GameRes.Formats.Google
             return info;
         }
 
-        static uint GetUInt24 (byte[] src, int offset)
-        {
-            return (uint)(src[offset] | src[offset+1] << 8 | src[offset+2] << 16);
-        }
-
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new WebPDecoder (stream.AsStream, (WebPMetaData)info))
-            {
-                reader.Decode();
-                return ImageData.Create (info, reader.Format, null, reader.Output);
-            }
+            var reader = new WebPDecoder (stream, (WebPMetaData)info);
+            reader.Decode();
+            return ImageData.Create (info, reader.Format, null, reader.Output);
         }
 
         public override void Write (Stream file, ImageData image)

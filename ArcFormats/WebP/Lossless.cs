@@ -599,7 +599,7 @@ namespace GameRes.Formats.Google
             br_.Init (data, data_i, (uint)data_size);
         }
 
-        public void Init (BinaryReader input, int length, VP8Io io)
+        public void Init (IBinaryStream input, int length, VP8Io io)
         { 
             io_ = io;
             br_.Init (input, (uint)length);
@@ -1614,7 +1614,7 @@ namespace GameRes.Formats.Google
         {
             ulong          val_;        // pre-fetched bits
             byte[]         buf_;        // input byte buffer
-            uint           end_pos_;        // buffer length
+            uint           end_pos_;    // buffer length
             uint           pos_;        // byte position in buf_
             int            bit_pos_;    // current bit-reading position in val_
             bool           eos_;        // true if a bit was read past the end of buffer
@@ -1653,7 +1653,7 @@ namespace GameRes.Formats.Google
                 buf_ = input;
             }
 
-            public void Init (BinaryReader input, uint length)
+            public void Init (IBinaryStream input, uint length)
             {
                 var buf = input.ReadBytes ((int)length);
                 if (buf.Length != length)
