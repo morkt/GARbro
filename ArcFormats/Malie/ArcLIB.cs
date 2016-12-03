@@ -234,7 +234,7 @@ namespace GameRes.Formats.Malie
         {
             byte[]        m_index;
             long          m_base_offset;
-            uint          m_data_align;
+            long          m_data_align;
             uint[]        m_offset_table;
 
             public LibPReader (ArcView file, Camellia encryption, byte[] header, LibScheme scheme)
