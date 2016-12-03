@@ -28,7 +28,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Utility;
 
-namespace GameRes.Formats.Pvns
+namespace GameRes.Formats.Purple
 {
     [Export(typeof(AudioFormat))]
     public class MvAudio : AudioFormat
@@ -39,7 +39,7 @@ namespace GameRes.Formats.Pvns
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
-            using (var reader = new MvReader (file))
+            using (var reader = new MvDecoder (file))
             {
                 reader.Unpack();
                 var input = new MemoryStream (reader.Data);
@@ -50,36 +50,98 @@ namespace GameRes.Formats.Pvns
         }
     }
 
-    internal sealed class MvReader : IDisposable
+    internal class MvDecoderBase : IDisposable
     {
-        IBinaryStream   m_input;
-        byte[]          m_output;
-        WaveFormat      m_format;
-        int             m_channel_size;
-        int             m_samples;
+        private IBinaryStream   m_input;
+        private int             m_bits;
+        private int             m_bits_count = 0;
+
+        protected WaveFormat    m_format;
+        protected byte[]        m_output;
+        protected int           m_channel_size;
 
         public byte[]       Data { get { return m_output; } }
         public WaveFormat Format { get { return m_format; } }
 
-        public MvReader (IBinaryStream input)
+        protected MvDecoderBase (IBinaryStream input)
         {
-            var header = new byte[0x12];
-            input.Read (header, 0, header.Length);
-            m_channel_size = LittleEndian.ToInt32 (header, 4);
+            m_input = input;
+        }
+
+        internal void SetPosition (long pos)
+        {
+            m_input.Position = pos;
+            m_bits_count = 0;
+        }
+
+        internal int GetBits (int count)
+        {
+            int v = 0;
+            while (count --> 0)
+            {
+                if (0 == m_bits_count)
+                {
+                    m_bits = m_input.ReadInt32();
+                    m_bits_count = 32;
+                }
+                v = (v << 1) | (m_bits & 1);
+                m_bits >>= 1;
+                --m_bits_count;
+            }
+            return v;
+        }
+
+        internal int GetCount ()
+        {
+            int n = 0;
+            while (GetBits (1) > 0)
+                ++n;
+            return n;
+        }
+
+        internal static short Clamp (int sample)
+        {
+            if (sample > 0x7FFF)
+                return 0x7FFF;
+            else if (sample < -0x7FFF)
+                return -0x7FFF;
+            else
+                return (short)sample;
+        }
+
+        #region IDisposable Members
+        public void Dispose ()
+        {
+            Dispose (true);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+        }
+        #endregion
+    }
+
+    internal sealed class MvDecoder : MvDecoderBase
+    {
+        int             m_samples;
+
+        public MvDecoder (IBinaryStream input) : base (input)
+        {
+            var header = input.ReadHeader (0x12);
+            m_channel_size = header.ToInt32 (4);
             m_format.FormatTag          = 1;
             m_format.BitsPerSample      = 16;
             m_format.Channels           = header[0xC];
-            m_format.SamplesPerSecond   = LittleEndian.ToUInt16 (header, 0xA);
+            m_format.SamplesPerSecond   = header.ToUInt16 (0xA);
             m_format.BlockAlign         = (ushort)(m_format.Channels*m_format.BitsPerSample/8);
-            m_format.AverageBytesPerSecond = m_format.SamplesPerSecond*m_format.BlockAlign;
-            m_input = input;
-            m_output = new byte[2 * m_format.Channels * m_channel_size];
-            m_samples = LittleEndian.ToInt32 (header, 0xE);
+            m_format.AverageBytesPerSecond = m_format.BlockAlign * m_format.SamplesPerSecond;
+            m_output = new byte[m_format.BlockAlign * m_channel_size];
+            m_samples = header.ToInt32 (0xE);
         }
 
         public void Unpack ()
         {
-            m_input.Position = 0x12;
+            SetPosition (0x12);
             var pre_sample1 = new int[0x400];
             var pre_sample2 = new int[0x400];
             var pre_sample3 = new int[0x140 * m_format.Channels];
@@ -95,11 +157,7 @@ namespace GameRes.Formats.Pvns
                         pre_sample1[j] = 0;
                     for (int j = 0; j < count; ++j)
                     {
-                        int bit_count = 0;
-                        while (0 != GetBits (1))
-                        {
-                            ++bit_count;
-                        }
+                        int bit_count = GetCount();
                         if (bit_count != 0)
                         {
                             int coef = GetBits (bit_count);
@@ -147,45 +205,15 @@ namespace GameRes.Formats.Pvns
                     }
                     for (int j = 0; j < 0x140; ++j)
                     {
-                        int sample = pre_sample3[j] >> 1;
-                        if (sample > 0x7FFF)
-                            sample = 0x7FFF;
-                        else if (sample < -0x7FFF)
-                            sample = -0x7FFF;
-                        LittleEndian.Pack ((short)sample, m_output, dst);
+                        short sample = Clamp (pre_sample3[j] >> 1);
+                        LittleEndian.Pack (sample, m_output, dst);
                         dst += 2; // ??? shouldn't channel interleaving be taken into account?
                     }
                 }
             }
         }
 
-        int m_bits;
-        int m_bits_count = 0;
-
-        int GetBits (int count)
-        {
-            int v = 0;
-            while (count --> 0)
-            {
-                if (0 == m_bits_count)
-                {
-                    m_bits = m_input.ReadInt32();
-                    m_bits_count = 32;
-                }
-                v = (v << 1) | (m_bits & 1);
-                m_bits >>= 1;
-                --m_bits_count;
-            }
-            return v;
-        }
-
-        #region IDisposable Members
-        public void Dispose ()
-        {
-        }
-        #endregion
-
-        static MvReader ()
+        static MvDecoder ()
         {
             var table = new uint[0x400];
             Array.Copy (SampleTable, 0, table, 0x192, SampleTable.Length);
@@ -233,7 +261,7 @@ namespace GameRes.Formats.Pvns
             0x07D2F200, 0x9A0BEA00, 0x8C1F4A00, 0x22092C00, 0xD5107C00, 0x8A20AC00, 0xDDBFC000, 0x07CE7800,
         };
 
-        static readonly short[] Coef1Table = {
+        internal static readonly short[] Coef1Table = {
             724, -724, -724, 724, 724, -724, -724, 724, 724, -724, -724, 724, 724, -724, -724, 724,
             724, -724, -724, 724, 724, -724, -724, 724, 724, -724, -724, 724, 724, -724, -724, 724,
             687, -822, -526, 925, 344, -993, -150, 1022, -50, -1012, 248, 964, -437, -878, 609, 758,
