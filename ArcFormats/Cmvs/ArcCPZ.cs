@@ -91,7 +91,7 @@ namespace GameRes.Formats.Purple
     public class CpzOpener : ArchiveFormat
     {
         public override string         Tag { get { return "CPZ"; } }
-        public override string Description { get { return "Purple Software resource archive"; } }
+        public override string Description { get { return "CMVS engine resource archive"; } }
         public override uint     Signature { get { return 0x355A5043; } } // 'CPZ5'
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
@@ -397,6 +397,11 @@ namespace GameRes.Formats.Purple
         byte[] UnpackPs2 (byte[] data)
         {
             DecryptPs2 (data);
+            return UnpackLzss (data);
+        }
+
+        internal static byte[] UnpackLzss (byte[] data)
+        {
             byte[] frame = new byte[0x800];
             int frame_pos = 0x7DF;
             int unpacked_size = LittleEndian.ToInt32 (data, 0x28);
