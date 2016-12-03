@@ -33,11 +33,15 @@ using System.Collections.Generic;
 
 namespace GameRes.Formats.Purple
 {
-    internal class Pb3MetaData : ImageMetaData
+    internal class PbMetaData : ImageMetaData
     {
         public int  Type;
-        public int  SubType;
         public int  InputSize;
+    }
+
+    internal class Pb3MetaData : PbMetaData
+    {
+        public int  SubType;
     }
 
     [Export(typeof(ImageFormat))]
@@ -81,23 +85,119 @@ namespace GameRes.Formats.Purple
         }
     }
 
-    internal sealed class Pb3Reader
+    internal class PbReaderBase
     {
-        byte[]          m_input;
-        Pb3MetaData     m_info;
-        int             m_channels;
-        int             m_stride;
-        byte[]          m_output;
-        byte[]          m_lzss_frame;
+        protected PbMetaData    m_info;
+        protected byte[]        m_input;
+        protected byte[]        m_output;
+        protected byte[]        m_lzss_frame = new byte[0x800];
+        protected int           m_stride;
 
-        public PixelFormat Format { get; private set; }
+        protected PbReaderBase (PbMetaData info)
+        {
+            m_info = info;
+        }
+
+        public PixelFormat Format { get; protected set; }
         public byte[]        Data { get { return m_output; } }
 
-        public Pb3Reader (Stream input, Pb3MetaData info)
+        internal void LzssResetFrame ()
+        {
+            for (int i = 0; i < 0x7DE; ++i)
+                m_lzss_frame[i] = 0;
+        }
+
+        internal void LzssUnpack (int bit_src, int data_src, byte[] output, int output_size)
+        {
+            int dst = 0;
+            int bit_mask = 0x80;
+            int frame_offset = 0x7DE;
+            while (dst < output_size)
+            {
+                if (0 == bit_mask)
+                {
+                    bit_mask = 0x80;
+                    ++bit_src;
+                }
+                if (0 != (bit_mask & m_input[bit_src]))
+                {
+                    int v = LittleEndian.ToUInt16 (m_input, data_src);
+                    data_src += 2;
+                    int count = (v & 0x1F) + 3;
+                    int offset = v >> 5;
+                    for (int i = 0; i < count; ++i)
+                    {
+                        byte b = m_lzss_frame[(i + offset) & 0x7FF];
+                        output[dst++] = b;
+                        m_lzss_frame[frame_offset++] = b;
+                        frame_offset &= 0x7FF;
+                    }
+                }
+                else
+                {
+                    byte b = m_input[data_src++];
+                    output[dst++] = b;
+                    m_lzss_frame[frame_offset++] = b;
+                    frame_offset &= 0x7FF;
+                }
+                bit_mask >>= 1;
+            }
+        }
+
+        internal void UnpackJbp (int jbp_pos, int alpha_pos)
+        {
+            var jbp = new JbpReader (m_input, jbp_pos);
+            m_output = jbp.Unpack();
+            if (m_stride != jbp.Stride)
+            {
+                int src_stride = jbp.Stride;
+                int src = src_stride;
+                int dst = m_stride;
+                for (uint y = 1; y < m_info.Height; ++y)
+                {
+                    Buffer.BlockCopy (m_output, src, m_output, dst, m_stride);
+                    src += src_stride;
+                    dst += m_stride;
+                }
+            }
+            if (32 == m_info.BPP && alpha_pos > 0)
+            {
+                int dst = 3;
+                int output_end = m_stride * (int)m_info.Height;
+                while (dst < output_end)
+                {
+                    byte alpha = m_input[alpha_pos++];
+                    if (0 != alpha && 0xFF != alpha)
+                    {
+                        m_output[dst] = alpha;
+                        dst += 4;
+                    } 
+                    else
+                    {
+                        int count = m_input[alpha_pos++];
+                        while (count --> 0)
+                        {
+                            m_output[dst] = alpha;
+                            dst += 4;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Format = PixelFormats.Bgr32;
+            }
+        }
+    }
+
+    internal sealed class Pb3Reader : PbReaderBase
+    {
+        int             m_channels;
+
+        public Pb3Reader (Stream input, Pb3MetaData info) : base (info)
         {
             if (info.Type == 1 && info.SubType != 0x10)
                 throw new NotSupportedException();
-            m_info = info;
             if (3 == m_info.Type || 2 == m_info.Type)
                 m_input = new byte[input.Length];
             else
@@ -106,7 +206,6 @@ namespace GameRes.Formats.Purple
                 throw new EndOfStreamException();
             m_channels = m_info.BPP / 8;
             m_stride = 4 * (int)m_info.Width;
-            m_lzss_frame = new byte[0x800];
             Format = m_channels < 4 ? PixelFormats.Bgr32 : PixelFormats.Bgra32;
             // output array created by unpack methods as needed.
         }
@@ -121,7 +220,7 @@ namespace GameRes.Formats.Purple
             case 8:
             case 6: UnpackV6(); break;
             case 2:
-            case 3: UnpackV3(); break;
+            case 3: UnpackJbp (0x34, m_input.ToInt32 (0x2C)); break;
             case 4:
             case 7: throw new NotSupportedException(string.Format ("PB3 v{0} images not supported", m_info.Type));
             }
@@ -160,8 +259,7 @@ namespace GameRes.Formats.Purple
                     channel_offset += LittleEndian.ToInt32 (m_input, data2 + 4*i);
                 int data_src = data2 + channel_offset;
 
-                for (int i = 0; i < 0x7DE; ++i)
-                    m_lzss_frame[i] = 0;
+                LzssResetFrame();
                 LzssUnpack (bit_src, data_src, plane, channel_size);
 
                 if (0 == y_blocks || 0 == x_blocks)
@@ -222,52 +320,6 @@ namespace GameRes.Formats.Purple
             }
         }
 
-        void UnpackV3 ()
-        {
-            var jbp = new JbpReader (m_input, 0x34);
-            m_output = jbp.Unpack();
-            if (m_stride != jbp.Stride)
-            {
-                int src_stride = jbp.Stride;
-                int src = src_stride;
-                int dst = m_stride;
-                for (uint y = 1; y < m_info.Height; ++y)
-                {
-                    Buffer.BlockCopy (m_output, src, m_output, dst, m_stride);
-                    src += src_stride;
-                    dst += m_stride;
-                }
-            }
-            int alpha_pos = LittleEndian.ToInt32 (m_input, 0x2C);
-            if (32 == m_info.BPP && alpha_pos > 0)
-            {
-                int dst = 3;
-                int output_end = m_stride * (int)m_info.Height;
-                while (dst < output_end)
-                {
-                    byte alpha = m_input[alpha_pos++];
-                    if (0 != alpha && 0xFF != alpha)
-                    {
-                        m_output[dst] = alpha;
-                        dst += 4;
-                    } 
-                    else
-                    {
-                        int count = m_input[alpha_pos++];
-                        while (count --> 0)
-                        {
-                            m_output[dst] = alpha;
-                            dst += 4;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                Format = PixelFormats.Bgr32;
-            }
-        }
-
         void UnpackV5 ()
         {
             m_output = new byte[m_stride * (int)m_info.Height];
@@ -275,8 +327,7 @@ namespace GameRes.Formats.Purple
             {
                 int bit_src  = 0x54 + LittleEndian.ToInt32 (m_input, 8 * i + 0x34);
                 int data_src = 0x54 + LittleEndian.ToInt32 (m_input, 8 * i + 0x38);
-                for (int j = 0; j < 0x7DE; ++j)
-                    m_lzss_frame[j] = 0;
+                LzssResetFrame();
                 int frame_offset = 0x7DE;
                 byte accum = 0;
                 int bit_mask = 128;
@@ -354,43 +405,6 @@ namespace GameRes.Formats.Purple
                 var pixels = new byte[stride * image_data.Bitmap.PixelHeight];
                 image_data.Bitmap.CopyPixels (pixels, stride, 0);
                 return pixels;
-            }
-        }
-
-        void LzssUnpack (int bit_src, int data_src, byte[] output, int output_size)
-        {
-            int dst = 0;
-            int bit_mask = 0x80;
-            int frame_offset = 0x7DE;
-            while (dst < output_size)
-            {
-                if (0 == bit_mask)
-                {
-                    bit_mask = 0x80;
-                    ++bit_src;
-                }
-                if (0 != (bit_mask & m_input[bit_src]))
-                {
-                    int v = LittleEndian.ToUInt16 (m_input, data_src);
-                    data_src += 2;
-                    int count = (v & 0x1F) + 3;
-                    int offset = v >> 5;
-                    for (int i = 0; i < count; ++i)
-                    {
-                        byte b = m_lzss_frame[(i + offset) & 0x7FF];
-                        output[dst++] = b;
-                        m_lzss_frame[frame_offset++] = b;
-                        frame_offset &= 0x7FF;
-                    }
-                }
-                else
-                {
-                    byte b = m_input[data_src++];
-                    output[dst++] = b;
-                    m_lzss_frame[frame_offset++] = b;
-                    frame_offset &= 0x7FF;
-                }
-                bit_mask >>= 1;
             }
         }
 
