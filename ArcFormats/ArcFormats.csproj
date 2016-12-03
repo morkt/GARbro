@@ -92,6 +92,7 @@
     <Compile Include="ArcCG.cs" />
     <Compile Include="BlackRainbow\ArcDX.cs" />
     <Compile Include="Cmvs\ArcCPZ2.cs" />
+    <Compile Include="Cmvs\AudioMV2.cs" />
     <Compile Include="Cmvs\ImageMSK.cs" />
     <Compile Include="Cmvs\ImagePB2.cs" />
     <Compile Include="NSystem\ArcFJSYS.cs" />
