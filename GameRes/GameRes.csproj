@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArcFile.cs" />
+    <Compile Include="ArchiveFormat.cs" />
     <Compile Include="ArcView.cs" />
     <Compile Include="Audio.cs" />
     <Compile Include="AudioWAV.cs" />

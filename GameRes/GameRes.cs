@@ -159,107 +159,6 @@ namespace GameRes
     {
     }
 
-    public enum ArchiveOperation
-    {
-        Abort,
-        Skip,
-        Continue,
-    }
-
-    public delegate ArchiveOperation EntryCallback (int num, Entry entry, string description);
-
-    public abstract class ArchiveFormat : IResource
-    {
-        public override string Type { get { return "archive"; } }
-
-        /// <summary>
-        /// Whether archive file system could contain subdirectories.
-        /// </summary>
-        public abstract bool IsHierarchic { get; }
-
-        public abstract ArcFile TryOpen (ArcView view);
-
-        /// <summary>
-        /// Extract file referenced by <paramref name="entry"/> into current directory.
-        /// </summary>
-        public void Extract (ArcFile file, Entry entry)
-        {
-            using (var input = OpenEntry (file, entry))
-            using (var output = CreateFile (entry.Name))
-                input.CopyTo (output);
-        }
-
-        /// <summary>
-        /// Open file referenced by <paramref name="entry"/> as Stream.
-        /// </summary>
-        public virtual Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            return arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
-        }
-
-        /// <summary>
-        /// Open <paramref name="entry"> as image. Throws InvalidFormatException if entry is not an image.
-        /// </summary>
-        public virtual IImageDecoder OpenImage (ArcFile arc, Entry entry)
-        {
-            var input = arc.OpenBinaryEntry (entry);
-            return new ImageFormatDecoder (input);
-        }
-
-        /// <summary>
-        /// Create file corresponding to <paramref name="entry"/> in current directory and open it
-        /// for writing. Overwrites existing file, if any.
-        /// </summary>
-        static public Stream CreateFile (string filename)
-        {
-            filename = CreatePath (filename);
-            if (File.Exists (filename))
-            {
-                // query somehow whether to overwrite existing file or not.
-            }
-            return File.Create (filename);
-        }
-
-        static public string CreatePath (string filename)
-        {
-            string dir = Path.GetDirectoryName (filename);
-            if (!string.IsNullOrEmpty (dir)) // check for malformed filenames
-            {
-                string root = Path.GetPathRoot (dir);
-                if (!string.IsNullOrEmpty (root))
-                {
-                    dir = dir.Substring (root.Length); // strip root
-                }
-                string cwd = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar;
-                dir = Path.GetFullPath (dir);
-                filename = Path.GetFileName (filename);
-                // check whether filename would reside within current directory
-                if (dir.StartsWith (cwd, StringComparison.OrdinalIgnoreCase))
-                {
-                    // path looks legit, create it
-                    Directory.CreateDirectory (dir);
-                    filename = Path.Combine (dir, filename);
-                }
-            }
-            return filename;
-        }
-
-        /// <summary>
-        /// Create resource within stream <paramref name="file"/> containing entries from the
-        /// supplied <paramref name="list"/> and applying necessary <paramref name="options"/>.
-        /// </summary>
-        public virtual void Create (Stream file, IEnumerable<Entry> list, ResourceOptions options = null,
-                                    EntryCallback callback = null)
-        {
-            throw new NotImplementedException ("ArchiveFormat.Create is not implemented");
-        }
-
-        public static bool IsSaneCount (int count)
-        {
-            return count > 0 && count < 0x20000;
-        }
-    }
-
     public delegate void ParametersRequestEventHandler (object sender, ParametersRequestEventArgs e);
 
     public class ParametersRequestEventArgs : EventArgs
@@ -278,12 +177,6 @@ namespace GameRes
         /// Archive-specific options set by InputWidget.
         /// </summary>
         public ResourceOptions Options { get; set; }
-    }
-
-    public class OverwriteEventArgs : EventArgs
-    {
-        public string Filename { get; set; }
-        public bool  Overwrite { get; set; }
     }
 
     public class InvalidFormatException : FileFormatException
