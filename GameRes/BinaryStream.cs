@@ -155,7 +155,16 @@ namespace GameRes
         {
             var bin = input as IBinaryStream;
             if (null == bin)
-                bin = new BinaryStream (input, filename);
+            {
+                var mem_stream = input as MemoryStream;
+                if (mem_stream != null)
+                {
+                    bin = new BinMemoryStream (mem_stream, filename);
+                    mem_stream.Dispose();
+                }
+                else
+                    bin = new BinaryStream (input, filename);
+            }
             else
                 bin.Name = filename;
             return bin;
@@ -202,7 +211,7 @@ namespace GameRes
                 return count;
             if (m_buffer_pos + count > m_buffer.Length)
             {
-                if (cached + count > m_buffer.Length)
+                if (count > m_buffer.Length)
                 {
                     var copy = new byte[(count + 0xF) & ~0xF];
                     if (cached > 0)
@@ -257,8 +266,7 @@ namespace GameRes
         {
             if (3 != FillBuffer (3))
                 throw new EndOfStreamException();
-            int v = LittleEndian.ToUInt16 (m_buffer, m_buffer_pos);
-            v |= m_buffer[m_buffer_pos+2] << 16;
+            int v = m_buffer.ToInt24 (m_buffer_pos);
             m_buffer_pos += 3;
             return v;
         }
@@ -490,7 +498,7 @@ namespace GameRes
             m_position = 0;
             Name = name ?? "";
             if (m_length >= 4)
-                m_signature = LittleEndian.ToUInt32 (m_source, 0);
+                m_signature = LittleEndian.ToUInt32 (m_source, m_start);
         }
 
         public CowArray<byte> ReadHeader (int size)
@@ -541,8 +549,7 @@ namespace GameRes
         {
             if (m_length - m_position < 3)
                 throw new EndOfStreamException();
-            int v = LittleEndian.ToUInt16 (m_source, m_start+m_position);
-            v |= m_source[m_start+m_position+2] << 16;
+            int v = m_source.ToInt24 (m_start+m_position);
             m_position += 3;
             return v;
         }
@@ -583,10 +590,11 @@ namespace GameRes
         public string ReadCString (int length, Encoding enc)
         {
             length = Math.Min (length, m_length - m_position);
-            int i = Array.IndexOf<byte> (m_source, 0, m_start+m_position, length);
+            int start = m_start+m_position;
+            int i = Array.IndexOf<byte> (m_source, 0, start, length);
             if (-1 == i)
-                i = length;
-            string s = enc.GetString (m_source, m_start+m_position, i);
+                i = start+length;
+            string s = enc.GetString (m_source, start, i-start);
             m_position += length;
             return s;
         }
@@ -599,14 +607,16 @@ namespace GameRes
         public string ReadCString (Encoding enc)
         {
             int start = m_start+m_position;
-            int count = Array.IndexOf<byte> (m_source, 0, start, m_length-m_position);
-            if (-1 == count)
+            int eos_pos = Array.IndexOf<byte> (m_source, 0, start, m_length-m_position);
+            int count;
+            if (-1 == eos_pos)
             {
                 count = m_length - m_position;
                 m_position = m_length;
             }
             else
             {
+                count = eos_pos - start;
                 m_position += count + 1;
             }
             return enc.GetString (m_source, start, count);
