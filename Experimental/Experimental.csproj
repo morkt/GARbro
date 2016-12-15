@@ -35,6 +35,14 @@
     <BaseAddress>16777216</BaseAddress>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Concentus, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Concentus.1.1.3\lib\portable-net45+win+wpa81+wp80\Concentus.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Concentus.Oggfile, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Concentus.OggFile.1.0.0\lib\portable-net45+win+wpa81+wp80\Concentus.Oggfile.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -52,6 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CellWorks\ArcDB.cs" />
+    <Compile Include="Opus\AudioOPUS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebP\ImageWEBP.cs" />
   </ItemGroup>
