@@ -450,16 +450,16 @@
     <Compile Include="Vitamin\ImageSBI.cs" />
     <Compile Include="VnEngine\ArcAXR.cs" />
     <Compile Include="VnEngine\ImageZAW.cs" />
-    <Compile Include="WebP\Alpha.cs" />
-    <Compile Include="WebP\Decoder.cs">
+    <None Include="WebP\Alpha.cs" />
+    <None Include="WebP\Decoder.cs">
       <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="WebP\Filters.cs" />
-    <Compile Include="WebP\Huffman.cs" />
-    <Compile Include="WebP\ImageWEBP.cs">
+    </None>
+    <None Include="WebP\Filters.cs" />
+    <None Include="WebP\Huffman.cs" />
+    <None Include="WebP\ImageWEBP.cs">
       <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="WebP\Lossless.cs" />
+    </None>
+    <None Include="WebP\Lossless.cs" />
     <Compile Include="Risa\ImageSYG.cs" />
     <Compile Include="Will\ArcPNA.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
