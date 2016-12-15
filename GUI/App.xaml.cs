@@ -48,8 +48,6 @@ namespace GARbro.GUI
 
         void ApplicationStartup (object sender, StartupEventArgs e)
         {
-            UpgradeSettings();
-
             string exe_dir = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
 #if DEBUG
             Trace.Listeners.Add (new TextWriterTraceListener (Path.Combine (exe_dir, "trace.log")));
@@ -62,6 +60,7 @@ namespace GARbro.GUI
                                  "GARbro.GUI.App");
                 Trace.WriteLine (args.Exception.StackTrace, "Stack trace");
             };
+            UpgradeSettings();
             try
             {
                 if (0 != e.Args.Length)
