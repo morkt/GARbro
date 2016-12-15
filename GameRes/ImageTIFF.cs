@@ -140,7 +140,7 @@ namespace GameRes
                     ReadUInt32 = () => m_file.ReadUInt32();
                     ReadUInt64 = () => m_file.ReadUInt64();
                 }
-                m_first_ifd = ReadUInt32();
+                m_first_ifd = file.ReadHeader (8).ToUInt32 (4);
             }
 
             public long FindLastIFD ()
