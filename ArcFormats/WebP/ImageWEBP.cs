@@ -68,7 +68,7 @@ namespace GameRes.Formats.Google
                 return null;
             var header = new byte[0x10];
             bool found_vp8x = false;
-            var info = new WebPMetaData();
+            var info = new WebPMetaData { BPP = 32 };
             int chunk_size;
             for (;;)
             {
