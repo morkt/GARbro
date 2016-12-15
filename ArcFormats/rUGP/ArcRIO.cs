@@ -67,13 +67,14 @@ namespace GameRes.Formats.Rugp
                 reader.DeserializeRelic();
                 var nodes = reader.Arc.LoadArray.OfType<COceanNode>();
                 var types = nodes.Select (n => n.ClassName).Distinct();
-                var dir = nodes.Where (n => SupportedClasses.ContainsKey (n.ClassName))
-                    .Select (n => new Entry {
-                        Name    = n.Name,
-                        Type    = SupportedClasses[n.ClassName],
-                        Offset  = n.Offset,
-                        Size    = n.Size
-                    });
+                var dir = from node in nodes
+                          where SupportedClasses.ContainsKey (node.ClassName)
+                          select new Entry {
+                            Name    = node.Name,
+                            Type    = SupportedClasses[node.ClassName],
+                            Offset  = node.Offset,
+                            Size    = node.Size
+                          };
                 if (!dir.Any())
                     return null;
                 return new ArcFile (file, this, dir.ToList());
