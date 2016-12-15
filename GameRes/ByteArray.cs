@@ -70,12 +70,15 @@ namespace GameRes
 
         public int IndexOf (T item)
         {
-            return Array.IndexOf<T> (m_source, item, m_offset, m_count);
+            int i = Array.IndexOf<T> (m_source, item, m_offset, m_count);
+            if (-1 == i)
+                return i;
+            return i - m_offset;
         }
 
         public bool Contains (T item)
         {
-            return IndexOf (item) != -1;
+            return Array.IndexOf<T> (m_source, item, m_offset, m_count) != -1;
         }
 
         public void CopyTo (T[] arr, int dst)
