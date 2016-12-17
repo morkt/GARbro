@@ -2,7 +2,7 @@
 //! \date       Mon Jul 07 06:39:45 2014
 //! \brief      TIFF image implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2016 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -29,6 +29,7 @@ using System.Text;
 using System.ComponentModel.Composition;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
+using System.Collections.Generic;
 
 namespace GameRes
 {
@@ -165,10 +166,12 @@ namespace GameRes
             {
                 MetaParsed parsed = MetaParsed.None;
                 int width = 0, height = 0, bpp = 0, pos_x = 0, pos_y = 0;
+                var seen_ifd = new HashSet<uint>();
                 uint ifd = m_first_ifd;
-                while (ifd != 0 && parsed != MetaParsed.Complete)
+                while (ifd != 0 && parsed != MetaParsed.Complete && !seen_ifd.Contains (ifd))
                 {
                     m_file.Position = ifd;
+                    seen_ifd.Add (ifd);
                     uint tag_count = ReadUInt16();
                     ifd += 2;
                     for (uint i = 0; i < tag_count && parsed != MetaParsed.Complete; ++i)
@@ -222,10 +225,7 @@ namespace GameRes
                         ifd += 12;
                         m_file.Position = ifd;
                     }
-                    uint ifd_next = ReadUInt32();
-                    if (ifd_next == ifd)
-                        break;
-                    ifd = ifd_next;
+                    ifd = ReadUInt32();
                 }
                 if (MetaParsed.Sufficient == (parsed & MetaParsed.Sufficient))
                     return new ImageMetaData() {
@@ -327,7 +327,7 @@ namespace GameRes
                     value = 0;
                     return false;
                 }
-                if (m_is_bigendian)
+                if (m_is_bigendian ^ !BitConverter.IsLittleEndian)
                     Array.Reverse (convert_buffer);
                 value = (int)BitConverter.ToSingle (convert_buffer, 0);
                 return true;
@@ -341,7 +341,7 @@ namespace GameRes
                     value = 0;
                     return false;
                 }
-                if (m_is_bigendian)
+                if (m_is_bigendian ^ !BitConverter.IsLittleEndian)
                     Array.Reverse (convert_buffer);
                 long bits = BitConverter.ToInt64 (convert_buffer, 0);
                 value = (int)BitConverter.Int64BitsToDouble (bits);
