@@ -49,12 +49,13 @@ namespace GameRes.Formats.TechnoBrain
             // 'RIFF' isn't included into signature to avoid auto-detection of the WAV files as IPH images.
             if (0x46464952 != file.Signature) // 'RIFF'
                 return null;
-            if (0x38 != file.ReadInt32())
+            var header = file.ReadHeader (0x10);
+            if (0x38 != header.ToInt32 (4))
                 return null;
-            var signature = file.ReadInt32();
+            var signature = header.ToInt32 (8);
             if (signature != 0x20485049 && signature != 0x00485049) // 'IPH'
                 return null;
-            if (0x20746D66 != file.ReadInt32()) // 'fmt '
+            if (0x20746D66 != header.ToInt32 (12)) // 'fmt '
                 return null;
             file.Position = 0x38;
             if (0x20706D62 != file.ReadInt32()) // 'bmp '
