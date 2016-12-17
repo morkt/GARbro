@@ -89,7 +89,7 @@ namespace GARbro
             foreach (var file in VFS.GetFiles (args[argn]))
             {
                 m_arc_name = file.Name;
-                var arc = ArcFile.TryOpen (m_arc_name);
+                var arc = ArcFile.TryOpen (file);
                 if (null == arc)
                 {
                     Console.Error.WriteLine ("{0}: unknown format", m_arc_name);
