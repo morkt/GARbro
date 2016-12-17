@@ -53,6 +53,7 @@ namespace GameRes.Formats.Aoi
         public override bool      CanWrite { get { return false; } }
 
         static readonly Dictionary<int, byte> VersionKeyMap = new Dictionary<int, byte> {
+            {  4, 0xAD },
             {  5, 0xAD },
             {  6, 0xB4 },
             {  7, 0xB4 },
@@ -73,6 +74,8 @@ namespace GameRes.Formats.Aoi
                 version = 6;
             else if (file.View.AsciiEqual (4, "OX5 "))
                 version = 5;
+            else if (file.View.AsciiEqual (4, "OX4 "))
+                version = 4;
             else
                 return null;
             int count = file.View.ReadInt32 (8);
