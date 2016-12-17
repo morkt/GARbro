@@ -778,7 +778,16 @@ namespace GameRes
             m_ptr = m_view.GetPointer (offset);
         }
 
-        public byte* Value { get { return m_ptr; } }
+        public byte* Value
+        {
+            get
+            {
+                if (!_disposed)
+                    return m_ptr;
+                else
+                    throw new ObjectDisposedException ("Access to disposed ViewPointer object failed.");
+            }
+        }
 
         #region IDisposable Members
         bool _disposed = false;
