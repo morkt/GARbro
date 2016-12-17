@@ -131,37 +131,23 @@ namespace GameRes
 
         public static System.Tuple<ImageFormat, ImageMetaData> FindFormat (IBinaryStream file)
         {
-            uint signature = file.Signature;
-            Lazy<string> ext = null;
-            if (!string.IsNullOrEmpty (file.Name))
-                ext = new Lazy<string> (() => Path.GetExtension (file.Name).TrimStart ('.').ToLowerInvariant(), false);
-            for (;;)
+            foreach (var impl in FormatCatalog.Instance.FindFormats<ImageFormat> (file.Name, file.Signature))
             {
-                var range = FormatCatalog.Instance.LookupSignature<ImageFormat> (signature);
-                // check formats that match filename extension first
-                if (ext != null && range.Skip(1).Any())
-                    range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
-                foreach (var impl in range)
+                try
                 {
-                    try
+                    file.Position = 0;
+                    ImageMetaData metadata = impl.ReadMetaData (file);
+                    if (null != metadata)
                     {
-                        file.Position = 0;
-                        ImageMetaData metadata = impl.ReadMetaData (file);
-                        if (null != metadata)
-                        {
-                            metadata.FileName = file.Name;
-                            return Tuple.Create (impl, metadata);
-                        }
+                        metadata.FileName = file.Name;
+                        return Tuple.Create (impl, metadata);
                     }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch { }
                 }
-                if (0 == signature)
-                    break;
-                signature = 0;
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch { }
             }
             return null;
         }

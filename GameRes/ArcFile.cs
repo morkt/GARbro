@@ -71,48 +71,32 @@ namespace GameRes
         {
             if (entry.Size < 4)
                 return null;
-            var filename = entry.Name;
-            var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant(), false);
             var file = VFS.OpenView (entry);
             try
             {
                 uint signature = file.View.ReadUInt32 (0);
-                var tried = Enumerable.Empty<ArchiveFormat>();
-                for (;;)
+                foreach (var impl in FormatCatalog.Instance.FindFormats<ArchiveFormat> (entry.Name, signature))
                 {
-                    var range = FormatCatalog.Instance.LookupSignature<ArchiveFormat> (signature);
-                    if (tried.Any())
-                        range = range.Except (tried);
-                    // check formats that match filename extension first
-                    if (range.Skip(1).Any()) // if range.Count() > 1
-                        range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
-                    foreach (var impl in range)
+                    try
                     {
-                        try
+                        var arc = impl.TryOpen (file);
+                        if (null != arc)
                         {
-                            var arc = impl.TryOpen (file);
-                            if (null != arc)
-                            {
-                                file = null; // file ownership passed to ArcFile
-                                return arc;
-                            }
-                        }
-                        catch (OperationCanceledException X)
-                        {
-                            FormatCatalog.Instance.LastError = X;
-                            return null;
-                        }
-                        catch (Exception X)
-                        {
-                            // ignore failed open attmepts
-                            Trace.WriteLine (string.Format ("[{0}] {1}: {2}", impl.Tag, filename, X.Message));
-                            FormatCatalog.Instance.LastError = X;
+                            file = null; // file ownership passed to ArcFile
+                            return arc;
                         }
                     }
-                    if (0 == signature)
-                        break;
-                    signature = 0;
-                    tried = range;
+                    catch (OperationCanceledException X)
+                    {
+                        FormatCatalog.Instance.LastError = X;
+                        return null;
+                    }
+                    catch (Exception X)
+                    {
+                        // ignore failed open attmepts
+                        Trace.WriteLine (string.Format ("[{0}] {1}: {2}", impl.Tag, entry.Name, X.Message));
+                        FormatCatalog.Instance.LastError = X;
+                    }
                 }
             }
             finally

@@ -164,6 +164,32 @@ namespace GameRes
         }
 
         /// <summary>
+        /// Enumerate resources matching specified <paramref name="signature"/> and filename extension.
+        /// </summary>
+        internal IEnumerable<ResourceType> FindFormats<ResourceType> (string filename, uint signature) where ResourceType : IResource
+        {
+            var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant(), false);
+            var tried = Enumerable.Empty<ResourceType>();
+            for (;;)
+            {
+                var range = LookupSignature<ResourceType> (signature);
+                if (tried.Any())
+                    range = range.Except (tried);
+                // check formats that match filename extension first
+                if (range.Skip (1).Any()) // if range.Count() > 1
+                    range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
+                foreach (var impl in range)
+                {
+                    yield return impl;
+                }
+                if (0 == signature)
+                    break;
+                signature = 0;
+                tried = range;
+            }
+        }
+
+        /// <summary>
         /// Create GameRes.Entry corresponding to <paramref name="filename"/> extension.
         /// <exception cref="System.ArgumentException">May be thrown if filename contains invalid
         /// characters.</exception>

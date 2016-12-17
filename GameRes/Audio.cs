@@ -171,27 +171,23 @@ namespace GameRes
 
         public static SoundInput Read (IBinaryStream file)
         {
-            uint signature = file.Signature;
-            for (;;)
+            foreach (var impl in FormatCatalog.Instance.FindFormats<AudioFormat> (file.Name, file.Signature))
             {
-                var range = FormatCatalog.Instance.LookupSignature<AudioFormat> (signature);
-                foreach (var impl in range)
+                try
                 {
-                    try
-                    {
-                        file.Position = 0;
-                        SoundInput sound = impl.TryOpen (file);
-                        if (null != sound)
-                            return sound;
-                    }
-                    catch (System.Exception X)
-                    {
-                        FormatCatalog.Instance.LastError = X;
-                    }
+                    file.Position = 0;
+                    SoundInput sound = impl.TryOpen (file);
+                    if (null != sound)
+                        return sound;
                 }
-                if (0 == signature)
-                    break;
-                signature = 0;
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (System.Exception X)
+                {
+                    FormatCatalog.Instance.LastError = X;
+                }
             }
             return null;
         }
