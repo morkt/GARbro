@@ -113,6 +113,10 @@ namespace GameRes
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
+            var header = file.ReadHeader (12);
+            if (!header.AsciiEqual (8, "WAVE"))
+                return null;
+            file.Position = 0;
             SoundInput sound = new WaveInput (file.AsStream);
             if (EmbeddedFormats.Contains (sound.Format.FormatTag))
             {
@@ -122,7 +126,6 @@ namespace GameRes
                     var embedded = AudioFormat.Read (bin);
                     if (null != embedded)
                     {
-//                        sound.Dispose();
                         sound = embedded;
                     }
                 }
