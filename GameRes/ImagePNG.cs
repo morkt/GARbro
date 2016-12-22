@@ -104,7 +104,7 @@ namespace GameRes
 
         void SkipBytes (IBinaryStream file, uint num)
         {
-            if (file.AsStream.CanSeek)
+            if (file.CanSeek)
                 file.Seek (num, SeekOrigin.Current);
             else
             {
