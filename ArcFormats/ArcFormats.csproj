@@ -91,6 +91,8 @@
     <Compile Include="ArcARCX.cs" />
     <Compile Include="ArcCG.cs" />
     <Compile Include="BlackRainbow\ArcDX.cs" />
+    <Compile Include="Cadath\ArcKAR.cs" />
+    <Compile Include="Cadath\ImageKGF.cs" />
     <Compile Include="Cmvs\ArcCPZ2.cs" />
     <Compile Include="Cmvs\AudioMV2.cs" />
     <Compile Include="Cmvs\ImageMSK.cs" />
