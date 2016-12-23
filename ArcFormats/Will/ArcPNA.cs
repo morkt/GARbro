@@ -91,32 +91,16 @@ namespace GameRes.Formats.Will
         }
     }
 
-    internal sealed class PnaDecoder : IImageDecoder
+    internal sealed class PnaDecoder : BinaryImageDecoder
     {
-        IBinaryStream       m_input;
-        ImageMetaData       m_info;
-        ImageData           m_image;
-
-        public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
-        public ImageFormat SourceFormat { get { return null; } }
-        public ImageMetaData       Info { get { return m_info; } }
-        public ImageData Image
+        public PnaDecoder (IBinaryStream input, ImageMetaData info) : base (input, info)
         {
-            get
-            {
-                if (null == m_image)
-                {
-                    var pixels = ReadPixels();
-                    m_image = ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels);
-                }
-                return m_image;
-            }
         }
 
-        public PnaDecoder (IBinaryStream input, ImageMetaData info)
+        protected override ImageData GetImageData ()
         {
-            m_input = input;
-            m_info = info;
+            var pixels = ReadPixels();
+            return ImageData.Create (Info, PixelFormats.Bgra32, null, pixels);
         }
 
         byte[] ReadPixels ()
@@ -145,16 +129,6 @@ namespace GameRes.Formats.Will
                 }
             }
             return pixels;
-        }
-
-        bool m_disposed = false;
-        public void Dispose ()
-        {
-            if (!m_disposed)
-            {
-                m_input.Dispose();
-                m_disposed = true;
-            }
         }
     }
 }
