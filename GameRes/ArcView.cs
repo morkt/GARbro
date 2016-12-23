@@ -108,9 +108,10 @@ namespace GameRes
             return ptr;
         }
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32.dll", SetLastError = false)]
         internal static extern void GetSystemInfo (ref SYSTEM_INFO lpSystemInfo);
 
+        [StructLayout (LayoutKind.Sequential)]
         internal struct SYSTEM_INFO
         {
             internal int dwOemId;
@@ -354,17 +355,18 @@ namespace GameRes
                 int total = (int)Math.Min (Reserve (offset, count), count);
                 if (buf.Length - buf_offset < total)
                     throw new ArgumentException ("Buffer offset and length are out of bounds.");
-
-                unsafe
-                {
-                    byte* ptr = m_view.GetPointer (m_offset);
-                    try {
-                        Marshal.Copy ((IntPtr)(ptr+(offset-m_offset)), buf, buf_offset, total);
-                    } finally {
-                        m_view.SafeMemoryMappedViewHandle.ReleasePointer();
-                    }
-                }
+                UnsafeCopy (offset, buf, buf_offset, total);
                 return total;
+            }
+
+            private unsafe void UnsafeCopy (long offset, byte[] buf, int buf_offset, int count)
+            {
+                byte* ptr = m_view.GetPointer (m_offset);
+                try {
+                    Marshal.Copy ((IntPtr)(ptr+(offset-m_offset)), buf, buf_offset, count);
+                } finally {
+                    m_view.SafeMemoryMappedViewHandle.ReleasePointer();
+                }
             }
 
             /// <summary>
@@ -375,7 +377,8 @@ namespace GameRes
             {
                 count = Math.Min (count, Reserve (offset, count));
                 var data = new byte[count];
-                Read (offset, data, 0, count);
+                if (count != 0)
+                    UnsafeCopy (offset, data, 0, data.Length);
                 return data;
             }
 
