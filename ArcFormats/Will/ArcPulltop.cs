@@ -111,9 +111,6 @@ namespace GameRes.Formats.Will
                                      EntryCallback callback)
         {
             int file_count = list.Count();
-            if (null != callback)
-                callback (file_count+1, null, null);
-            int callback_count = 0;
             var names = new List<byte[]> (file_count);
             int index_size = 0;
             foreach (var entry in list)
@@ -122,6 +119,7 @@ namespace GameRes.Formats.Will
                 names.Add (utf16_name);
                 index_size += 8 + utf16_name.Length + 2;
             }
+            int callback_count = 0;
             uint current_offset = 0;
             output.Position = 8 + index_size;
             foreach (var entry in list)
