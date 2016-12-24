@@ -101,7 +101,7 @@ namespace GameRes.Formats.NitroPlus
             int count = file.View.ReadInt32 (0x18);
             if (!IsSaneCount (count))
                 return null;
-            var key = QueryEncryption();
+            var key = QueryEncryption (file.Name);
             if (null == key)
                 return null;
             var aes = Aes.Create();
@@ -213,10 +213,18 @@ namespace GameRes.Formats.NitroPlus
             return new GUI.WidgetNPK();
         }
 
-        byte[] QueryEncryption ()
+        byte[] QueryEncryption (string arc_name)
         {
-            var options = Query<Npk2Options> (arcStrings.ArcEncryptedNotice);
-            return options.Key;
+            byte[] key = null;
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title))
+                key = GetKey (title);
+            if (null == key)
+            {
+                var options = Query<Npk2Options> (arcStrings.ArcEncryptedNotice);
+                key = options.Key;
+            }
+            return key;
         }
 
         byte[] GetKey (string title)
@@ -230,6 +238,7 @@ namespace GameRes.Formats.NitroPlus
         class NpkStoredEntry : PackedEntry
         {
             public byte[]   RawName;
+            public byte[]   CheckSum;
             public int      SegmentCount;
             public uint     AlignedSize;
         }
@@ -249,7 +258,7 @@ namespace GameRes.Formats.NitroPlus
                 var npk_entry = new NpkStoredEntry
                 {
                     Name = entry.Name,
-                    RawName = enc.GetBytes (entry.Name),
+                    RawName = enc.GetBytes (entry.Name.Replace ('\\', '/')),
                     SegmentCount = 0 == entry.Size ? 0 : 1,
                 };
                 dir.Add (npk_entry);
@@ -287,16 +296,15 @@ namespace GameRes.Formats.NitroPlus
                 using (var index_stream = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write))
                 using (var index = new BinaryWriter (index_stream))
                 {
-                    var fill = new byte[0x20];
                     if (null != callback)
                         callback (callback_count++, null, arcStrings.MsgWritingIndex);
                     foreach (var entry in dir)
                     {
-                        index.Write ((byte)0);
+                        index.Write ((byte)1); // 0 -> segmentation enabled, 1 -> no segmentation
                         index.Write ((short)entry.RawName.Length);
                         index.Write (entry.RawName);
                         index.Write (entry.UnpackedSize);
-                        index.Write (fill);
+                        index.Write (entry.CheckSum);
                         index.Write (entry.SegmentCount);
                         if (entry.SegmentCount > 0)
                         {
@@ -329,6 +337,7 @@ namespace GameRes.Formats.NitroPlus
             entry.UnpackedSize = (uint)file.Length;
             if (entry.Size > 0)
             {
+                using (var sha256 = SHA256.Create())
                 using (var proxy = new ProxyStream (archive, true))
                 {
                     var encryptor = aes.CreateEncryptor();
@@ -337,10 +346,20 @@ namespace GameRes.Formats.NitroPlus
                     output = measure;
                     if (ShouldCompress (entry.Name))
                         output = new DeflateStream (output, CompressionLevel.Optimal);
+                    var checksum = new CryptoStream (output, sha256, CryptoStreamMode.Write);
+                    output = checksum;
                     using (output)
+                    {
                         file.CopyTo (output);
+                        checksum.FlushFinalBlock();
+                        entry.CheckSum = sha256.Hash;
+                    }
                     entry.Size = (uint)measure.Count;
                 }
+            }
+            else
+            {
+                entry.CheckSum = EmptyFileHash;
             }
             entry.AlignedSize = (uint)(archive.Position - entry.Offset);
         }
@@ -351,6 +370,14 @@ namespace GameRes.Formats.NitroPlus
                      filename.EndsWith (".jpg", StringComparison.InvariantCultureIgnoreCase) ||
                      filename.EndsWith (".ogg", StringComparison.InvariantCultureIgnoreCase) ||
                      filename.EndsWith (".mpg", StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        static readonly byte[] EmptyFileHash = GetDefaultHash();
+
+        static byte[] GetDefaultHash ()
+        {
+            using (var sha256 = SHA256.Create())
+                return sha256.ComputeHash (new byte[0]);
         }
     }
 
