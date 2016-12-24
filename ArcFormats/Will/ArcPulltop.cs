@@ -28,7 +28,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Text;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.Will
 {
@@ -39,7 +41,7 @@ namespace GameRes.Formats.Will
         public override string Description { get { return "Will Co. game engine resource archive v2"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override bool      CanWrite { get { return true; } }
 
         public Arc2Opener ()
         {
@@ -103,6 +105,75 @@ namespace GameRes.Formats.Will
                 data[i] = Binary.RotByteR (data[i], 2);
             }
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
+                                     EntryCallback callback)
+        {
+            int file_count = list.Count();
+            if (null != callback)
+                callback (file_count+1, null, null);
+            int callback_count = 0;
+            var names = new List<byte[]> (file_count);
+            int index_size = 0;
+            foreach (var entry in list)
+            {
+                var utf16_name = Encoding.Unicode.GetBytes (Path.GetFileName (entry.Name));
+                names.Add (utf16_name);
+                index_size += 8 + utf16_name.Length + 2;
+            }
+            uint current_offset = 0;
+            output.Position = 8 + index_size;
+            foreach (var entry in list)
+            {
+                if (null != callback)
+                    callback (callback_count++, entry, arcStrings.MsgAddingFile);
+                entry.Offset = current_offset;
+                using (var input = File.OpenRead (entry.Name))
+                {
+                    var size = input.Length;
+                    if (size > uint.MaxValue || current_offset + size > uint.MaxValue)
+                        throw new FileSizeException();
+                    if (entry.Name.EndsWith (".ws2", StringComparison.InvariantCultureIgnoreCase))
+                        CopyScript (input, output);
+                    else
+                        input.CopyTo (output);
+                    current_offset += (uint)size;
+                    entry.Size = (uint)size;
+                }
+            }
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+            output.Position = 0;
+            using (var writer = new BinaryWriter (output, Encoding.Unicode, true))
+            {
+                writer.Write (file_count);
+                writer.Write (index_size);
+                int i = 0;
+                foreach (var entry in list)
+                {
+                    writer.Write (entry.Size);
+                    writer.Write ((uint)entry.Offset);
+                    writer.Write (names[i++]);
+                    writer.Write ((short)0);
+                }
+            }
+        }
+
+        void CopyScript (Stream input, Stream output)
+        {
+            var buffer = new byte[81920];
+            for (;;)
+            {
+                int read = input.Read (buffer, 0, buffer.Length);
+                if (0 == read)
+                    break;
+                for (int i = 0; i < read; ++i)
+                {
+                    buffer[i] = Binary.RotByteL (buffer[i], 2);
+                }
+                output.Write (buffer, 0, read);
+            }
         }
     }
 }
