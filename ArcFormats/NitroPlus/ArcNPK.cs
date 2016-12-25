@@ -90,6 +90,8 @@ namespace GameRes.Formats.NitroPlus
 
         public static Dictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
 
+        const uint DefaultSegmentSize = 0x10000;
+
         public override ResourceScheme Scheme
         {
             get { return new Npk2Scheme { KnownKeys = KnownKeys }; }
@@ -235,12 +237,11 @@ namespace GameRes.Formats.NitroPlus
             return key;
         }
 
-        class NpkStoredEntry : PackedEntry
+        class NpkStoredEntry : NpkEntry
         {
             public byte[]   RawName;
             public byte[]   CheckSum;
-            public int      SegmentCount;
-            public uint     AlignedSize;
+            public bool     IsSolid;
         }
 
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
@@ -255,15 +256,19 @@ namespace GameRes.Formats.NitroPlus
             var dir = new List<NpkStoredEntry>();
             foreach (var entry in list)
             {
+                var ext = Path.GetExtension (entry.Name).ToLowerInvariant();
                 var npk_entry = new NpkStoredEntry
                 {
                     Name = entry.Name,
                     RawName = enc.GetBytes (entry.Name.Replace ('\\', '/')),
-                    SegmentCount = 0 == entry.Size ? 0 : 1,
+                    IsSolid = SolidFiles.Contains (ext),
+                    IsPacked = !DisableCompression.Contains (ext),
                 };
+                int segment_count = 1;
+                if (!npk_entry.IsSolid)
+                    segment_count = (int)(((long)entry.Size + DefaultSegmentSize-1) / DefaultSegmentSize);
+                index_length += 3 + npk_entry.RawName.Length + 0x28 + segment_count * 0x14;
                 dir.Add (npk_entry);
-
-                index_length += 3 + npk_entry.RawName.Length + 0x28 + npk_entry.SegmentCount * 0x14;
             }
             index_length = (index_length + 0xF) & ~0xF;
 
@@ -300,18 +305,18 @@ namespace GameRes.Formats.NitroPlus
                         callback (callback_count++, null, arcStrings.MsgWritingIndex);
                     foreach (var entry in dir)
                     {
-                        index.Write ((byte)1); // 0 -> segmentation enabled, 1 -> no segmentation
+                        index.Write (entry.IsSolid); // 0 -> segmentation enabled, 1 -> no segmentation
                         index.Write ((short)entry.RawName.Length);
                         index.Write (entry.RawName);
                         index.Write (entry.UnpackedSize);
                         index.Write (entry.CheckSum);
-                        index.Write (entry.SegmentCount);
-                        if (entry.SegmentCount > 0)
+                        index.Write (entry.Segments.Count);
+                        foreach (var segment in entry.Segments)
                         {
-                            index.Write (entry.Offset);
-                            index.Write (entry.AlignedSize);
-                            index.Write (entry.Size);
-                            index.Write (entry.UnpackedSize);
+                            index.Write (segment.Offset);
+                            index.Write (segment.AlignedSize);
+                            index.Write (segment.Size);
+                            index.Write (segment.UnpackedSize);
                         }
                     }
                 }
@@ -332,46 +337,71 @@ namespace GameRes.Formats.NitroPlus
         {
             if (file.Length > uint.MaxValue)
                 throw new FileSizeException();
+            long input_size = file.Length;
             entry.Offset = archive.Position;
-            entry.Size = (uint)file.Length;
-            entry.UnpackedSize = (uint)file.Length;
-            if (entry.Size > 0)
-            {
-                using (var sha256 = SHA256.Create())
-                using (var proxy = new ProxyStream (archive, true))
-                {
-                    var encryptor = aes.CreateEncryptor();
-                    Stream output = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write);
-                    var measure = new CountedStream (output);
-                    output = measure;
-                    if (ShouldCompress (entry.Name))
-                        output = new DeflateStream (output, CompressionLevel.Optimal);
-                    var checksum = new CryptoStream (output, sha256, CryptoStreamMode.Write);
-                    output = checksum;
-                    using (output)
-                    {
-                        file.CopyTo (output);
-                        checksum.FlushFinalBlock();
-                        entry.CheckSum = sha256.Hash;
-                    }
-                    entry.Size = (uint)measure.Count;
-                }
-            }
-            else
+            entry.Size = entry.UnpackedSize = (uint)input_size;
+            if (0 == entry.Size)
             {
                 entry.CheckSum = EmptyFileHash;
+                return;
             }
-            entry.AlignedSize = (uint)(archive.Position - entry.Offset);
+
+            uint segment_size = DefaultSegmentSize;
+            byte[] buffer = null;
+            if (!entry.IsSolid)
+                buffer = new byte[segment_size];
+            else
+                segment_size = (uint)input_size;
+            entry.Segments.Clear();
+            using (var sha256 = SHA256.Create())
+            using (var checksum_stream = new CryptoStream (Stream.Null, sha256, CryptoStreamMode.Write))
+            {
+                long remaining = input_size;
+                while (remaining > 0)
+                {
+                    int chunk_size = (int)Math.Min (remaining, segment_size);
+                    var segment = new NpkSegment
+                    {
+                        Offset = archive.Position,
+                        UnpackedSize = (uint)chunk_size,
+                    };
+                    using (var proxy = new ProxyStream (archive, true))
+                    using (var encryptor = aes.CreateEncryptor())
+                    {
+                        Stream output = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write);
+                        var measure = new CountedStream (output);
+                        output = measure;
+                        if (entry.IsPacked)
+                            output = new DeflateStream (output, CompressionLevel.Optimal);
+                        using (output)
+                        {
+                            if (remaining == chunk_size)
+                            {
+                                var pos = file.Position;
+                                file.CopyTo (output);
+                                file.Position = pos;
+                                file.CopyTo (checksum_stream);
+                            }
+                            else
+                            {
+                                chunk_size = file.Read (buffer, 0, chunk_size);
+                                output.Write (buffer, 0, chunk_size);
+                                checksum_stream.Write (buffer, 0, chunk_size);
+                            }
+                        }
+                        segment.Size = (uint)measure.Count;
+                        segment.AlignedSize = (uint)(archive.Position - segment.Offset);
+                        entry.Segments.Add (segment);
+                    }
+                    remaining -= chunk_size;
+                }
+                checksum_stream.FlushFinalBlock();
+                entry.CheckSum = sha256.Hash;
+            }
         }
 
-        bool ShouldCompress (string filename)
-        {
-            return !(filename.EndsWith (".png", StringComparison.InvariantCultureIgnoreCase) ||
-                     filename.EndsWith (".jpg", StringComparison.InvariantCultureIgnoreCase) ||
-                     filename.EndsWith (".ogg", StringComparison.InvariantCultureIgnoreCase) ||
-                     filename.EndsWith (".mpg", StringComparison.InvariantCultureIgnoreCase));
-        }
-
+        static readonly HashSet<string> SolidFiles = new HashSet<string> { ".png", ".jpg" };
+        static readonly HashSet<string> DisableCompression = new HashSet<string> { ".png", ".jpg", ".ogg" };
         static readonly byte[] EmptyFileHash = GetDefaultHash();
 
         static byte[] GetDefaultHash ()
