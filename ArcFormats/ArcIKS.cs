@@ -80,7 +80,7 @@ namespace GameRes.Formats.X
         {
             byte key = KnownKeys.First().Value;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new CryptoStream (input, new XorTransform (key), CryptoStreamMode.Read);
+            return new XoredStream (input, key);
         }
     }
 }

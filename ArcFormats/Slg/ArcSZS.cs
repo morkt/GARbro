@@ -70,7 +70,7 @@ namespace GameRes.Formats.Slg
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new CryptoStream (input, new XorTransform (0x90), CryptoStreamMode.Read);
+            return new XoredStream (input, 0x90);
         }
     }
 }

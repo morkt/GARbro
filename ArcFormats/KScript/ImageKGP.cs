@@ -58,7 +58,7 @@ namespace GameRes.Formats.KScript
                 y = header.ToInt32 (0x18);
             }
             using (var input = new StreamRegion (stream.AsStream, data_offset, true))
-            using (var crypto = new CryptoStream (input, new XorTransform (key), CryptoStreamMode.Read))
+            using (var crypto = new XoredStream (input, key))
             using (var png = new BinaryStream (crypto, stream.Name))
             {
                 var info = Png.ReadMetaData (png);
@@ -82,7 +82,7 @@ namespace GameRes.Formats.KScript
         {
             var meta = (KgpMetaData)info;
             using (var input = new StreamRegion (stream.AsStream, meta.DataOffset, true))
-            using (var crypto = new CryptoStream (input, new XorTransform (meta.Key), CryptoStreamMode.Read))
+            using (var crypto = new XoredStream (input, meta.Key))
             using (var png = new BinaryStream (crypto, stream.Name))
                 return Png.Read (png, info);
         }

@@ -140,7 +140,7 @@ namespace GameRes.Formats.Aoi
             var barc = arc as BoxArchive;
             if (null == barc)
                 return input;
-            return new CryptoStream (input, new XorTransform (barc.Key), CryptoStreamMode.Read);
+            return new XoredStream (input, barc.Key);
         }
     }
 
