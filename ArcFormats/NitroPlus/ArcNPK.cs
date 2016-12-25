@@ -237,13 +237,6 @@ namespace GameRes.Formats.NitroPlus
             return key;
         }
 
-        class NpkStoredEntry : NpkEntry
-        {
-            public byte[]   RawName;
-            public byte[]   CheckSum;
-            public bool     IsSolid;
-        }
-
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
                                      EntryCallback callback)
         {
@@ -285,8 +278,8 @@ namespace GameRes.Formats.NitroPlus
                     if (null != callback)
                         callback (callback_count++, entry, arcStrings.MsgAddingFile);
 
-                    using (var file = File.OpenRead (entry.Name))
-                        CopyFile (file, entry, output, aes);
+                    using (var writer = new NpkWriter (entry, output, aes))
+                        writer.Write (DefaultSegmentSize);
                 }
                 output.Position = 0;
                 var buffer = new byte[] { (byte)'N', (byte)'P', (byte)'K', (byte)'2', 1, 0, 0, 0 };
@@ -333,81 +326,152 @@ namespace GameRes.Formats.NitroPlus
             }
         }
 
-        void CopyFile (FileStream file, NpkStoredEntry entry, Stream archive, Aes aes)
+        static readonly HashSet<string> SolidFiles = new HashSet<string> { ".png", ".jpg" };
+        static readonly HashSet<string> DisableCompression = new HashSet<string> { ".png", ".jpg", ".ogg" };
+    }
+
+    internal class NpkStoredEntry : NpkEntry
+    {
+        public byte[]   RawName;
+        public byte[]   CheckSum;
+        public bool     IsSolid;
+    }
+
+    internal sealed class NpkWriter : IDisposable
+    {
+        NpkStoredEntry  m_entry;
+        FileStream      m_input;
+        Stream          m_archive;
+        CryptoStream    m_checksum_stream;
+        Aes             m_aes;
+        long            m_remaining;
+        byte[]          m_buffer;
+
+        public NpkWriter (NpkStoredEntry entry, Stream archive, Aes aes)
         {
-            if (file.Length > uint.MaxValue)
+            m_input = File.OpenRead (entry.Name);
+            m_archive = archive;
+            m_entry = entry;
+            m_aes = aes;
+            m_buffer = null;
+        }
+
+        static readonly byte[] EmptyFileHash = GetDefaultHash();
+
+        public void Write (uint segment_size)
+        {
+            long input_size = m_input.Length;
+            if (input_size > uint.MaxValue)
                 throw new FileSizeException();
-            long input_size = file.Length;
-            entry.Offset = archive.Position;
-            entry.Size = entry.UnpackedSize = (uint)input_size;
-            if (0 == entry.Size)
+            m_entry.Offset = m_archive.Position;
+            m_entry.Size = m_entry.UnpackedSize = (uint)input_size;
+            if (0 == m_entry.Size)
             {
-                entry.CheckSum = EmptyFileHash;
+                m_entry.CheckSum = EmptyFileHash;
                 return;
             }
-
-            uint segment_size = DefaultSegmentSize;
-            byte[] buffer = null;
-            if (!entry.IsSolid)
-                buffer = new byte[segment_size];
-            else
+            if (!m_entry.IsSolid)
+                m_buffer = new byte[segment_size];
+            else if (input_size > segment_size)
                 segment_size = (uint)input_size;
-            entry.Segments.Clear();
+
             using (var sha256 = SHA256.Create())
-            using (var checksum_stream = new CryptoStream (Stream.Null, sha256, CryptoStreamMode.Write))
+            using (m_checksum_stream = new CryptoStream (Stream.Null, sha256, CryptoStreamMode.Write))
             {
-                long remaining = input_size;
-                while (remaining > 0)
+                m_remaining = input_size;
+                int segment_count = (int)((input_size + segment_size - 1) / segment_size);
+                m_entry.Segments.Clear();
+                m_entry.Segments.Capacity = segment_count;
+                for (int i = 0; i < segment_count; ++i)
                 {
-                    int chunk_size = (int)Math.Min (remaining, segment_size);
-                    var segment = new NpkSegment
+                    int chunk_size = (int)Math.Min (m_remaining, segment_size);
+                    var file_pos = m_input.Position;
+                    var segment = WriteSegment (chunk_size, m_entry.IsPacked);
+                    if (m_entry.IsPacked && !segment.IsCompressed)
                     {
-                        Offset = archive.Position,
-                        UnpackedSize = (uint)chunk_size,
-                    };
-                    using (var proxy = new ProxyStream (archive, true))
-                    using (var encryptor = aes.CreateEncryptor())
-                    {
-                        Stream output = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write);
-                        var measure = new CountedStream (output);
-                        output = measure;
-                        if (entry.IsPacked)
-                            output = new DeflateStream (output, CompressionLevel.Optimal);
-                        using (output)
-                        {
-                            if (remaining == chunk_size)
-                            {
-                                var pos = file.Position;
-                                file.CopyTo (output);
-                                file.Position = pos;
-                                file.CopyTo (checksum_stream);
-                            }
-                            else
-                            {
-                                chunk_size = file.Read (buffer, 0, chunk_size);
-                                output.Write (buffer, 0, chunk_size);
-                                checksum_stream.Write (buffer, 0, chunk_size);
-                            }
-                        }
-                        segment.Size = (uint)measure.Count;
-                        segment.AlignedSize = (uint)(archive.Position - segment.Offset);
-                        entry.Segments.Add (segment);
+                        // compressed segment is larger than uncompressed, rewrite
+                        m_input.Position = file_pos;
+                        m_archive.Position = segment.Offset;
+                        RewriteSegment (segment, chunk_size);
+                        m_archive.SetLength (m_archive.Position);
                     }
-                    remaining -= chunk_size;
+                    m_entry.Segments.Add (segment);
+                    m_remaining -= segment.UnpackedSize;
                 }
-                checksum_stream.FlushFinalBlock();
-                entry.CheckSum = sha256.Hash;
+                m_checksum_stream.FlushFinalBlock();
+                m_entry.CheckSum = sha256.Hash;
             }
         }
 
-        static readonly HashSet<string> SolidFiles = new HashSet<string> { ".png", ".jpg" };
-        static readonly HashSet<string> DisableCompression = new HashSet<string> { ".png", ".jpg", ".ogg" };
-        static readonly byte[] EmptyFileHash = GetDefaultHash();
+        NpkSegment WriteSegment (int chunk_size, bool compress)
+        {
+            var segment = new NpkSegment { Offset = m_archive.Position };
+            using (var proxy = new ProxyStream (m_archive, true))
+            using (var encryptor = m_aes.CreateEncryptor())
+            {
+                Stream output = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write);
+                var measure = new CountedStream (output);
+                output = measure;
+                if (compress)
+                    output = new DeflateStream (output, CompressionLevel.Optimal);
+                using (output)
+                {
+                    if (m_remaining == chunk_size)
+                    {
+                        var file_pos = m_input.Position;
+                        m_input.CopyTo (output);
+                        m_input.Position = file_pos;
+                        m_input.CopyTo (m_checksum_stream);
+                    }
+                    else
+                    {
+                        chunk_size = m_input.Read (m_buffer, 0, chunk_size);
+                        output.Write (m_buffer, 0, chunk_size);
+                        m_checksum_stream.Write (m_buffer, 0, chunk_size);
+                    }
+                }
+                segment.UnpackedSize = (uint)chunk_size;
+                segment.Size = (uint)measure.Count;
+                segment.AlignedSize = (uint)(m_archive.Position - segment.Offset);
+                return segment;
+            }
+        }
+
+        void RewriteSegment (NpkSegment segment, int chunk_size)
+        {
+            using (var proxy = new ProxyStream (m_archive, true))
+            using (var encryptor = m_aes.CreateEncryptor())
+            using (var output = new CryptoStream (proxy, encryptor, CryptoStreamMode.Write))
+            {
+                if (m_remaining == chunk_size)
+                {
+                    m_input.CopyTo (output);
+                }
+                else
+                {
+                    chunk_size = m_input.Read (m_buffer, 0, chunk_size);
+                    output.Write (m_buffer, 0, chunk_size);
+                }
+            }
+            segment.UnpackedSize = segment.Size = (uint)chunk_size;
+            segment.AlignedSize = (uint)(m_archive.Position - segment.Offset);
+        }
 
         static byte[] GetDefaultHash ()
         {
             using (var sha256 = SHA256.Create())
                 return sha256.ComputeHash (new byte[0]);
+        }
+
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_input.Dispose();
+                _disposed = true;
+            }
+            GC.SuppressFinalize (this);
         }
     }
 
