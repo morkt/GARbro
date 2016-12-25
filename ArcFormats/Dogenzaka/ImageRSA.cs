@@ -59,7 +59,7 @@ namespace GameRes.Formats.Dogenzaka
             {
                 var key = sha.ComputeHash (KnownKey).Take (16).ToArray();
                 using (var proxy = new InputProxyStream (stream.AsStream, true))
-                using (var crypto = new CryptoStream (proxy, new Rc4Transform (key), CryptoStreamMode.Read))
+                using (var crypto = new InputCryptoStream (proxy, new Rc4Transform (key)))
                 using (var input = new BinaryStream (crypto, stream.Name))
                 {
                     var info = base.ReadMetaData (input);
@@ -83,7 +83,7 @@ namespace GameRes.Formats.Dogenzaka
             var rc4 = (Rc4PngMetaData)info;
             using (var sha = SHA1.Create())
             using (var proxy = new InputProxyStream (stream.AsStream, true))
-            using (var crypto = new CryptoStream (proxy, new Rc4Transform (rc4.Key), CryptoStreamMode.Read))
+            using (var crypto = new InputCryptoStream (proxy, new Rc4Transform (rc4.Key)))
             using (var input = new BinaryStream (crypto, stream.Name))
                 return base.Read (input, info);
         }
