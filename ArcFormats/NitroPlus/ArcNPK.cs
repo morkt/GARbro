@@ -385,9 +385,10 @@ namespace GameRes.Formats.NitroPlus
                 for (int i = 0; i < segment_count; ++i)
                 {
                     int chunk_size = (int)Math.Min (m_remaining, segment_size);
+                    bool should_compress = m_entry.IsPacked && chunk_size > 2;
                     var file_pos = m_input.Position;
-                    var segment = WriteSegment (chunk_size, m_entry.IsPacked);
-                    if (m_entry.IsPacked && !segment.IsCompressed)
+                    var segment = WriteSegment (chunk_size, should_compress);
+                    if (should_compress && !segment.IsCompressed)
                     {
                         // compressed segment is larger than uncompressed, rewrite
                         m_input.Position = file_pos;
