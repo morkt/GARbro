@@ -69,37 +69,97 @@ namespace GameRes.Formats.FVP
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (HzcMetaData)info;
-            BitmapPalette palette = null;
-            int stride = (int)meta.Width * meta.BPP / 8;
-            PixelFormat format;
-            switch (meta.Type)
-            {
-            default: throw new NotSupportedException();
-            case 0: format = PixelFormats.Bgr24; break;
-            case 1:
-            case 2: format = PixelFormats.Bgra32; break;
-            case 3: format = PixelFormats.Gray8; break;
-            case 4:
-                {
-                    format = PixelFormats.Indexed8;
-                    var colors = new Color[2] { Color.FromRgb (0,0,0), Color.FromRgb (0xFF,0xFF,0xFF) };
-                    palette = new BitmapPalette (colors);
-                    break;
-                }
-            }
             stream.Position = 12 + meta.HeaderSize;
-            using (var z = new ZLibStream (stream.AsStream, CompressionMode.Decompress, true))
-            {
-                var pixels = new byte[stride * (int)meta.Height];
-                if (pixels.Length != z.Read (pixels, 0, pixels.Length))
-                    throw new EndOfStreamException();
-                return ImageData.Create (info, format, palette, pixels, stride);
-            }
+            using (var decoder = new HzcDecoder (stream, meta, true))
+                return decoder.Image;
         }
 
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("HzcFormat.Write not implemented");
+        }
+    }
+
+    internal sealed class HzcDecoder : IImageDecoder
+    {
+        HzcMetaData     m_info;
+        ImageData       m_image;
+        int             m_stride;
+        long            m_frame_offset;
+        int             m_frame_size;
+
+        public Stream            Source { get; private set; }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get { return m_info; } }
+        public PixelFormat       Format { get; private set; }
+        public BitmapPalette    Palette { get; private set; }
+        public ImageData Image
+        {
+            get
+            {
+                if (null == m_image)
+                {
+                    var pixels = ReadPixels();
+                    m_image = ImageData.Create (Info, Format, Palette, pixels, m_stride);
+                }
+                return m_image;
+            }
+        }
+
+        public HzcDecoder (IBinaryStream input, HzcMetaData info, Entry entry) : this (input, info)
+        {
+            m_frame_offset = entry.Offset;
+            m_frame_size = (int)entry.Size;
+        }
+
+        public HzcDecoder (IBinaryStream input, HzcMetaData info, bool leave_open = false)
+        {
+            m_info = info;
+            m_stride = (int)m_info.Width * m_info.BPP / 8;
+            switch (m_info.Type)
+            {
+            default: throw new NotSupportedException();
+            case 0: Format = PixelFormats.Bgr24; break;
+            case 1:
+            case 2: Format = PixelFormats.Bgra32; break;
+            case 3: Format = PixelFormats.Gray8; break;
+            case 4:
+                {
+                    Format = PixelFormats.Indexed8;
+                    var colors = new Color[2] { Color.FromRgb (0,0,0), Color.FromRgb (0xFF,0xFF,0xFF) };
+                    Palette = new BitmapPalette (colors);
+                    break;
+                }
+            }
+            Source = new ZLibStream (input.AsStream, CompressionMode.Decompress, leave_open);
+            m_frame_offset = 0;
+            m_frame_size = m_stride * (int)Info.Height;
+        }
+
+        byte[] ReadPixels ()
+        {
+            var pixels = new byte[m_frame_size];
+            long offset = 0;
+            for (;;)
+            {
+                if (pixels.Length != Source.Read (pixels, 0, pixels.Length))
+                    throw new EndOfStreamException();
+                if (offset >= m_frame_offset)
+                    break;
+                offset += m_frame_size;
+            }
+            return pixels;
+        }
+
+        bool m_disposed = false;
+        public void Dispose ()
+        {
+            if (!m_disposed)
+            {
+                Source.Dispose();
+                m_disposed = true;
+            }
+            GC.SuppressFinalize (this);
         }
     }
 }

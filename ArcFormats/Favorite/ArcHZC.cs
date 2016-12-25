@@ -78,10 +78,10 @@ namespace GameRes.Formats.FVP
             for (int i = 0; i < count; ++i)
             {
                 var entry = new Entry {
-                    Name = string.Format ("{0}#{1:D3}.tga", base_name, i),
+                    Name = string.Format ("{0}#{1:D3}", base_name, i),
                     Type = "image",
                     Offset = frame_size * i,
-                    Size = 0x12 + (uint)frame_size,
+                    Size = (uint)frame_size,
                 };
                 dir.Add (entry);
             }
@@ -94,24 +94,33 @@ namespace GameRes.Formats.FVP
             using (var input = arc.File.CreateStream (0xC+hzc.ImageInfo.HeaderSize))
             using (var z = new ZLibStream (input, CompressionMode.Decompress))
             {
-                uint frame_size = entry.Size - 0x12;
+                uint frame_size = entry.Size;
                 var pixels = new byte[frame_size];
                 uint offset = 0;
                 for (;;)
                 {
                     if (pixels.Length != z.Read (pixels, 0, pixels.Length))
-                        break;
+                        throw new EndOfStreamException();
                     if (offset >= entry.Offset)
                         break;
                     offset += frame_size;
                 }
-                if (4 == hzc.ImageInfo.Type)
-                {
-                    for (int i = 0; i < pixels.Length; ++i)
-                        if (1 == pixels[i])
-                            pixels[i] = 0xFF;
-                }
-                return TgaStream.Create (hzc.ImageInfo, pixels);
+                return new BinMemoryStream (pixels, entry.Name);
+            }
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var hzc = (HzcArchive)arc;
+            var input = arc.File.CreateStream (0xC+hzc.ImageInfo.HeaderSize);
+            try
+            {
+                return new HzcDecoder (input, hzc.ImageInfo, entry);
+            }
+            catch
+            {
+                input.Dispose();
+                throw;
             }
         }
     }

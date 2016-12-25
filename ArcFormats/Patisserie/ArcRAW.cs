@@ -26,6 +26,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 
 namespace GameRes.Formats.Patisserie
 {
@@ -55,7 +56,7 @@ namespace GameRes.Formats.Patisserie
             while (current_offset < end)
             {
                 var entry = new Entry {
-                    Name = string.Format ("{0:D4}.tga", i++),
+                    Name = string.Format ("{0:D4}", i++),
                     Type = "image",
                     Offset = current_offset,
                 };
@@ -70,7 +71,7 @@ namespace GameRes.Formats.Patisserie
             return new ArcFile (file, this, dir);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var info = new ImageMetaData
             {
@@ -81,7 +82,25 @@ namespace GameRes.Formats.Patisserie
                 BPP = 32,
             };
             var pixels = arc.File.View.ReadBytes (entry.Offset+0x14, entry.Size-0x14);
-            return TgaStream.Create (info, pixels);
+            return new RawDecoder (info, pixels);
+        }
+    }
+
+    internal sealed class RawDecoder : IImageDecoder
+    {
+        public Stream            Source { get { return null; } }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get; private set; }
+        public ImageData          Image { get; private set; }
+
+        public RawDecoder (ImageMetaData info, byte[] pixels)
+        {
+            Info = info;
+            Image = ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
+        }
+
+        public void Dispose ()
+        {
         }
     }
 }

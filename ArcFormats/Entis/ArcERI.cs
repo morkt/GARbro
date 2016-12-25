@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Entis
@@ -92,7 +93,7 @@ namespace GameRes.Formats.Entis
                 else if ("ImageFrm" == id || "DiffeFrm" == id)
                 {
                     var entry = new EriEntry {
-                        Name    = string.Format ("{0}#{1:D4}.tga", base_name, i++),
+                        Name    = string.Format ("{0}#{1:D4}", base_name, i++),
                         Type    = "image",
                         Offset  = current_offset,
                         Size    = (uint)section_size,
@@ -110,17 +111,15 @@ namespace GameRes.Formats.Entis
             return new EriMultiImage (file, this, dir, info, palette);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var earc = (EriMultiImage)arc;
             var eent = (EriEntry)entry;
             var pixels = earc.GetFrame (eent.FrameIndex);
-            if (32 == earc.Info.BPP && 0 == (earc.Info.FormatType & EriType.WithAlpha))
-            {
-                for (int p = 3; p < pixels.Length; p += 4)
-                    pixels[p] = 0xFF;
-            }
-            return TgaStream.Create (earc.Info, pixels);
+            BitmapPalette palette = null;
+            if (8 == earc.Info.BPP && earc.Palette != null)
+                palette = new BitmapPalette (earc.Palette);
+            return new BitmapDecoder (pixels, earc.Info, earc.Format, palette);
         }
     }
 
@@ -128,6 +127,7 @@ namespace GameRes.Formats.Entis
     {
         public readonly EriMetaData     Info;
         public readonly Color[]         Palette;
+        public readonly PixelFormat     Format;
         byte[][]        Frames;
 
         public EriMultiImage (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, EriMetaData info, Color[] palette)
@@ -136,6 +136,24 @@ namespace GameRes.Formats.Entis
             Info = info;
             Palette = palette;
             Frames = new byte[dir.Count][];
+            if (8 == Info.BPP)
+            {
+                if (null == Palette)
+                    Format = PixelFormats.Gray8;
+                else
+                    Format = PixelFormats.Indexed8;
+            }
+            else if (32 == Info.BPP)
+            {
+                if (0 == (Info.FormatType & EriType.WithAlpha))
+                    Format = PixelFormats.Bgr32;
+                else
+                    Format = PixelFormats.Bgra32;
+            }
+            else if (16 == Info.BPP)
+                Format = PixelFormats.Bgr555;
+            else
+                Format = PixelFormats.Bgr24;
         }
 
         public byte[] GetFrame (int index)
@@ -165,5 +183,23 @@ namespace GameRes.Formats.Entis
     {
         public int  FrameIndex;
         public bool IsDiff;
+    }
+
+    internal class BitmapDecoder : IImageDecoder
+    {
+        public Stream            Source { get { return null; } }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get; private set; }
+        public ImageData          Image { get; private set; }
+
+        public BitmapDecoder (byte[] pixels, ImageMetaData info, PixelFormat format, BitmapPalette palette)
+        {
+            Info = info;
+            Image = ImageData.Create (info, format, palette, pixels);
+        }
+
+        public void Dispose ()
+        {
+        }
     }
 }

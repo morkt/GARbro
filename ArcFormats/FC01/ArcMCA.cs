@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 
 namespace GameRes.Formats.FC01
 {
@@ -69,7 +70,7 @@ namespace GameRes.Formats.FC01
                 index_offset += 4;
                 var entry = new Entry
                 {
-                    Name    = string.Format ("{0}#{1:D4}.tga", base_name, i),
+                    Name    = string.Format ("{0}#{1:D4}", base_name, i),
                     Offset  = next_offset,
                     Type    = "image",
                 };
@@ -84,31 +85,19 @@ namespace GameRes.Formats.FC01
             return new McaArchive (file, this, dir, options.Key);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            var mca = arc as McaArchive;
-            int method = arc.File.View.ReadInt32 (entry.Offset);
-            if (null == mca || method < 0 || method > 1)
-                return base.OpenEntry (arc, entry);
-            uint width  = arc.File.View.ReadUInt32 (entry.Offset+0xC);
-            uint height = arc.File.View.ReadUInt32 (entry.Offset+0x10);
-            uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+0x14);
-            int unpacked_size = arc.File.View.ReadInt32 (entry.Offset+0x18);
-
-            var data = arc.File.View.ReadBytes (entry.Offset+0x20, packed_size);
-            MrgOpener.Decrypt (data, 0, data.Length, mca.Key);
-            if (method > 0)
+            var mca = (McaArchive)arc;
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            try
             {
-                using (var input = new BinMemoryStream (data))
-                using (var lzss = new MrgLzssReader (input, data.Length, unpacked_size))
-                {
-                    lzss.Unpack();
-                    data = lzss.Data;
-                }
+                return new McaDecoder (input, mca.Key);
             }
-            int stride = ((int)width * 3 + 3) & ~3;
-            var info = new ImageMetaData { Width = width, Height = height, BPP = 24 };
-            return TgaStream.Create (info, stride, data);
+            catch
+            {
+                input.Dispose();
+                throw;
+            }
         }
 
         public override ResourceOptions GetDefaultOptions ()
@@ -127,6 +116,46 @@ namespace GameRes.Formats.FC01
         public override object GetAccessWidget ()
         {
             return new GUI.WidgetMCG();
+        }
+    }
+
+    internal sealed class McaDecoder : BinaryImageDecoder
+    {
+        byte                m_key;
+        int                 m_method;
+        int                 m_packed_size;
+        int                 m_unpacked_size;
+
+        public McaDecoder (IBinaryStream input, byte key) : base (input)
+        {
+            m_key = key;
+            var header = m_input.ReadHeader (0x20);
+            m_method = header.ToInt32 (0);
+            if (m_method < 0 || m_method > 1)
+                throw new InvalidFormatException();
+            uint width  = header.ToUInt32 (0xC);
+            uint height = header.ToUInt32 (0x10);
+            m_packed_size = header.ToInt32 (0x14);
+            m_unpacked_size = header.ToInt32 (0x18);
+            Info = new ImageMetaData { Width = width, Height = height, BPP = 24 };
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = 0x20;
+            var data = m_input.ReadBytes (m_packed_size);
+            MrgOpener.Decrypt (data, 0, data.Length, m_key);
+            if (m_method > 0)
+            {
+                using (var input = new BinMemoryStream (data))
+                using (var lzss = new MrgLzssReader (input, data.Length, m_unpacked_size))
+                {
+                    lzss.Unpack();
+                    data = lzss.Data;
+                }
+            }
+            int stride = ((int)Info.Width * 3 + 3) & ~3;
+            return ImageData.Create (Info, PixelFormats.Bgr24, null, data, stride);
         }
     }
 }
