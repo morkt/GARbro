@@ -137,4 +137,28 @@ namespace GameRes.Formats
             return b;
         }
     }
+
+    /// <summary>
+    /// CryptoStream that disposes transformation object upon close.
+    /// </summary>
+    public class InputCryptoStream : CryptoStream
+    {
+        ICryptoTransform    m_transform;
+
+        public InputCryptoStream (Stream input, ICryptoTransform transform)
+            : base (input, transform, CryptoStreamMode.Read)
+        {
+            m_transform = transform;
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            base.Dispose (disposing);
+            if (disposing && m_transform != null)
+            {
+                m_transform.Dispose();
+                m_transform = null;
+            }
+        }
+    }
 }

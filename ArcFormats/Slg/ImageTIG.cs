@@ -40,7 +40,7 @@ namespace GameRes.Formats.Slg
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             using (var proxy = new ProxyStream (stream.AsStream, true))
-            using (var crypt = new CryptoStream (proxy, new TigTransform(), CryptoStreamMode.Read))
+            using (var crypt = new InputCryptoStream (proxy, new TigTransform()))
             using (var input = new BinaryStream (crypt, stream.Name))
                 return base.ReadMetaData (input);
         }
@@ -48,7 +48,7 @@ namespace GameRes.Formats.Slg
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var proxy = new ProxyStream (stream.AsStream, true))
-            using (var crypt = new CryptoStream (proxy, new TigTransform(), CryptoStreamMode.Read))
+            using (var crypt = new InputCryptoStream (proxy, new TigTransform()))
             using (var input = new BinaryStream (crypt, stream.Name))
                 return base.Read (input, info);
         }

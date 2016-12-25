@@ -74,7 +74,7 @@ namespace GameRes.Formats.Irrlicht
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read);
+            return new InputCryptoStream (input, new NotTransform());
         }
     }
 }

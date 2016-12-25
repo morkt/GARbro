@@ -48,7 +48,7 @@ namespace GameRes.Formats.Crowd
             if (key.Length != stream.Read (key, 0, key.Length))
                 return null;
             using (var enc = new InputProxyStream (stream.AsStream, true))
-            using (var crypto = new CryptoStream (enc, new GaxTransform (key), CryptoStreamMode.Read))
+            using (var crypto = new InputCryptoStream (enc, new GaxTransform (key)))
             using (var input = new BinaryStream (crypto, stream.Name))
             {
                 var info = Png.ReadMetaData (input);
@@ -70,7 +70,7 @@ namespace GameRes.Formats.Crowd
         {
             var meta = (GaxMetaData)info;
             using (var enc = new StreamRegion (stream.AsStream, 0x14, true))
-            using (var crypto = new CryptoStream (enc, new GaxTransform (meta.Key), CryptoStreamMode.Read))
+            using (var crypto = new InputCryptoStream (enc, new GaxTransform (meta.Key)))
             using (var input = new BinaryStream (crypto, stream.Name))
                 return Png.Read (input, info);
         }

@@ -104,7 +104,7 @@ namespace GameRes.Formats.NSystem
                 || arc.File.View.AsciiEqual (entry.Offset, "MSCENARIO FILE  "))
                 return base.OpenEntry (arc, entry);
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new CryptoStream (input, new MsdTransform (msarc.Key), CryptoStreamMode.Read);
+            return new InputCryptoStream (input, new MsdTransform (msarc.Key));
         }
 
         string QueryPassword (string arc_name)

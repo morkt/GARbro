@@ -135,7 +135,7 @@ namespace GameRes.Formats.Kogado
                 return input;
             }
             if (3 == packed_entry.CompressionType)
-                return new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read);
+                return new InputCryptoStream (input, new NotTransform());
             try
             {
                 if (2 == packed_entry.CompressionType)

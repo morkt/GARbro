@@ -127,7 +127,7 @@ namespace GameRes.Formats.Selene
             var kpe = entry as KcapEntry;
             if (null == kpa || null == kpe || !kpe.Encrypted)
                 return input;
-            return new CryptoStream (input, new KcapTransform(kpa.KeyTable), CryptoStreamMode.Read);
+            return new InputCryptoStream (input, new KcapTransform(kpa.KeyTable));
         }
 
         public static string GetPassPhrase (string title)

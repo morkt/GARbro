@@ -83,7 +83,7 @@ namespace GameRes.Formats.Nags
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (!entry.Name.EndsWith (".scb", StringComparison.InvariantCultureIgnoreCase))
                 return input;
-            return new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read);
+            return new InputCryptoStream (input, new NotTransform());
         }
     }
 }

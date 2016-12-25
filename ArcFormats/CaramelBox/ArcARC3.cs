@@ -193,7 +193,7 @@ namespace GameRes.Formats.CaramelBox
                 return input;
             if (a3ent.IsEncrypted)
             {
-                input = new CryptoStream (input, new NotTransform(), CryptoStreamMode.Read);
+                input = new InputCryptoStream (input, new NotTransform());
             }
             if (!a3ent.IsPacked)
                 return input;

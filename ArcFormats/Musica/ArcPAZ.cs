@@ -158,7 +158,7 @@ namespace GameRes.Formats.Musica
             {
                 input = new XoredStream (input, xor_key);
                 var enc = new Blowfish (scheme.ArcKeys[arc_name].IndexKey);
-                input = new CryptoStream (input, enc.CreateDecryptor(), CryptoStreamMode.Read);
+                input = new InputCryptoStream (input, enc.CreateDecryptor());
                 using (var index = new ArcView.Reader (input))
                 {
                     int count = index.ReadInt32();
@@ -291,7 +291,7 @@ namespace GameRes.Formats.Musica
 
         Stream DecryptEntry (Stream input, PazArchive arc, PazEntry entry)
         {
-            input = new CryptoStream (input, arc.Encryption.CreateDecryptor(), CryptoStreamMode.Read);
+            input = new InputCryptoStream (input, arc.Encryption.CreateDecryptor());
             var key = entry.Key;
             if (null == key)
                 return input;
@@ -305,7 +305,7 @@ namespace GameRes.Formats.Musica
                     rc4.NextByte();
                 }
             }
-            return new CryptoStream (input, rc4, CryptoStreamMode.Read);
+            return new InputCryptoStream (input, rc4);
         }
 
         PazScheme QueryEncryption (string arc_name, uint signature)

@@ -142,7 +142,7 @@ namespace GameRes.Formats.Primel
             default: // not encrypted
                 return input;
             }
-            input = new CryptoStream (input, decryptor, CryptoStreamMode.Read);
+            input = new InputCryptoStream (input, decryptor);
             try
             {
                 if (0 != (flags & 0xFF))

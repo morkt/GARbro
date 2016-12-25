@@ -162,7 +162,7 @@ namespace GameRes.Formats.Tactics
             {
                 // NOTE CryptoStream will close an input stream
                 using (var proxy = new InputProxyStream (input, true))
-                using (var xored = new CryptoStream (proxy, new NotTransform(), CryptoStreamMode.Read))
+                using (var xored = new InputCryptoStream (proxy, new NotTransform()))
                 using (var lzss = new LzssStream (xored))
                     if (m_index.Length != lzss.Read (m_index, 0, m_index.Length))
                         return false;

@@ -195,7 +195,7 @@ namespace GameRes.Formats.NitroPlus
             {
                 var input = narc.File.CreateStream (nent.Segments[0].Offset, nent.Segments[0].AlignedSize);
                 var decryptor = narc.Encryption.CreateDecryptor();
-                return new CryptoStream (input, decryptor, CryptoStreamMode.Read);
+                return new InputCryptoStream (input, decryptor);
             }
             return new NpkStream (narc, nent);
         }
@@ -443,7 +443,7 @@ namespace GameRes.Formats.NitroPlus
             var segment = m_segment.Current;
             m_stream = m_file.CreateStream (segment.Offset, segment.AlignedSize);
             var decryptor = m_encryption.CreateDecryptor();
-            m_stream = new CryptoStream (m_stream, decryptor, CryptoStreamMode.Read);
+            m_stream = new InputCryptoStream (m_stream, decryptor);
             if (segment.IsCompressed)
                 m_stream = new DeflateStream (m_stream, CompressionMode.Decompress);
         }
