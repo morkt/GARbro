@@ -142,34 +142,20 @@ namespace GameRes.Formats.Lilim
         }
     }
 
-    internal sealed class AbmReader : IImageDecoder
+    internal sealed class AbmReader : BinaryImageDecoder
     {
-        IBinaryStream   m_input;
         byte[]          m_output;
         AbmImageData    m_info;
-        ImageData       m_image;
         int             m_bpp;
 
-        public Stream            Source { get { return m_input.AsStream; } }
-        public ImageFormat SourceFormat { get { return null; } }
-        public ImageMetaData       Info { get { return m_info; } }
-        public ImageData          Image
-        {
-            get
-            {
-                if (null == m_image)
-                    m_image = ReadImage();
-                return m_image;
-            }
-        }
-
-        public AbmReader (IBinaryStream file, AbmImageData info)
+        public AbmReader (IBinaryStream file, AbmImageData info) : base (file)
         {
             m_info = info;
             m_input = file;
+            Info = m_info;
         }
 
-        ImageData ReadImage ()
+        protected override ImageData GetImageData ()
         {
             if (2 == m_info.Mode)
             {
@@ -335,18 +321,5 @@ namespace GameRes.Formats.Lilim
                 src += frame_w * pixel_size;
             }
         }
-
-        #region IDisposable Members
-        bool m_disposed = false;
-        public void Dispose ()
-        {
-            if (!m_disposed)
-            {
-                m_input.Dispose();
-                m_disposed = true;
-            }
-            GC.SuppressFinalize (this);
-        }
-        #endregion
     }
 }
