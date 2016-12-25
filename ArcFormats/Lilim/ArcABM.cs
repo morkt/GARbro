@@ -148,11 +148,9 @@ namespace GameRes.Formats.Lilim
         AbmImageData    m_info;
         int             m_bpp;
 
-        public AbmReader (IBinaryStream file, AbmImageData info) : base (file)
+        public AbmReader (IBinaryStream file, AbmImageData info) : base (file, info)
         {
             m_info = info;
-            m_input = file;
-            Info = m_info;
         }
 
         protected override ImageData GetImageData ()

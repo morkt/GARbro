@@ -633,7 +633,6 @@ namespace GameRes.Formats.Emote
 
         public PsbTextureDecoder (IBinaryStream input, PsbTexMetaData info) : base (input, info)
         {
-            m_input = input;
             m_info = info;
         }
 
