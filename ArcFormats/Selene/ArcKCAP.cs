@@ -28,7 +28,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Security.Cryptography;
 using System.IO;
-using GameRes.Utility;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Properties;
 
@@ -229,7 +228,7 @@ namespace GameRes.Formats.Selene
             private readonly byte[] KeyTable;
 
             public bool          CanReuseTransform { get { return true; } }
-            public bool CanTransformMultipleBlocks { get { return true; } }
+            public bool CanTransformMultipleBlocks { get { return false; } }
             public int              InputBlockSize { get { return KeyTable.Length; } }
             public int             OutputBlockSize { get { return KeyTable.Length; } }
 
