@@ -57,6 +57,8 @@ Section "install"
     File "${RELEASE_DIR}\Concentus.dll"
     File "${RELEASE_DIR}\Concentus.Oggfile.dll"
     File "${RELEASE_DIR}\GameRes.dll"
+    File "${RELEASE_DIR}\Microsoft.Deployment.Compression.dll"
+    File "${RELEASE_DIR}\Microsoft.Deployment.Compression.Cab.dll"
     File "${RELEASE_DIR}\Microsoft.WindowsAPICodePack.dll"
     File "${RELEASE_DIR}\Microsoft.WindowsAPICodePack.Shell.dll"
     File "${RELEASE_DIR}\NAudio.dll"
@@ -108,6 +110,8 @@ Section "uninstall"
     Delete $INSTDIR\Concentus.dll
     Delete $INSTDIR\Concentus.Oggfile.dll
     Delete $INSTDIR\GameRes.dll
+    Delete $INSTDIR\Microsoft.Deployment.Compression.dll
+    Delete $INSTDIR\Microsoft.Deployment.Compression.Cab.dll
     Delete $INSTDIR\Microsoft.WindowsAPICodePack.dll
     Delete $INSTDIR\Microsoft.WindowsAPICodePack.Shell.dll
     Delete $INSTDIR\NAudio.dll
