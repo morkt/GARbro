@@ -178,6 +178,7 @@ namespace GameRes.Formats.CandySoft
 
                         int offset = m_input.ReadUInt8();
                         int count  = m_input.ReadUInt8();
+                        remaining -= 2;
                         offset |= (count & 0xF0) << 4;
                         count   = (count & 0x0F) + 3;
 
@@ -192,6 +193,7 @@ namespace GameRes.Formats.CandySoft
                     else
                     {
                         m_output[dst++] = m_input.ReadUInt8();
+                        remaining--;
                     }
                 }
             }
