@@ -28,17 +28,40 @@ using System.Security.Cryptography;
 
 namespace GameRes.Formats
 {
-    public sealed class NotTransform : ICryptoTransform
+    public abstract class ByteTransform : ICryptoTransform
     {
-        private const int BlockSize = 1;
+        const int BlockSize = 1;
 
         public bool          CanReuseTransform { get { return true; } }
         public bool CanTransformMultipleBlocks { get { return true; } }
         public int              InputBlockSize { get { return BlockSize; } }
         public int             OutputBlockSize { get { return BlockSize; } }
 
-        public int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount,
-                                   byte[] outputBuffer, int outputOffset)
+        public abstract int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount,
+                                            byte[] outputBuffer, int outputOffset);
+
+        public byte[] TransformFinalBlock (byte[] inputBuffer, int inputOffset, int inputCount)
+        {
+            byte[] outputBuffer = new byte[inputCount];
+            TransformBlock (inputBuffer, inputOffset, inputCount, outputBuffer, 0);
+            return outputBuffer;
+        }
+
+        public void Dispose ()
+        {
+            Dispose (true);
+            System.GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+        }
+    }
+
+    public sealed class NotTransform : ByteTransform
+    {
+        public override int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount,
+                                            byte[] outputBuffer, int outputOffset)
         {
             for (int i = 0; i < inputCount; ++i)
             {
@@ -46,55 +69,25 @@ namespace GameRes.Formats
             }
             return inputCount;
         }
-
-        public byte[] TransformFinalBlock (byte[] inputBuffer, int inputOffset, int inputCount)
-        {
-            byte[] outputBuffer = new byte[inputCount];
-            TransformBlock (inputBuffer, inputOffset, inputCount, outputBuffer, 0);
-            return outputBuffer;
-        }
-
-        public void Dispose ()
-        {
-            System.GC.SuppressFinalize (this);
-        }
     }
 
-    public sealed class XorTransform : ICryptoTransform
+    public sealed class XorTransform : ByteTransform
     {
-        private const int BlockSize = 1;
         private byte m_key;
-
-        public bool          CanReuseTransform { get { return true; } }
-        public bool CanTransformMultipleBlocks { get { return true; } }
-        public int              InputBlockSize { get { return BlockSize; } }
-        public int             OutputBlockSize { get { return BlockSize; } }
 
         public XorTransform (byte key)
         {
             m_key = key;
         }
 
-        public int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount,
-                                   byte[] outputBuffer, int outputOffset)
+        public override int TransformBlock (byte[] inputBuffer, int inputOffset, int inputCount,
+                                            byte[] outputBuffer, int outputOffset)
         {
             for (int i = 0; i < inputCount; ++i)
             {
                 outputBuffer[outputOffset++] = (byte)(m_key ^ inputBuffer[inputOffset+i]);
             }
             return inputCount;
-        }
-
-        public byte[] TransformFinalBlock (byte[] inputBuffer, int inputOffset, int inputCount)
-        {
-            byte[] outputBuffer = new byte[inputCount];
-            TransformBlock (inputBuffer, inputOffset, inputCount, outputBuffer, 0);
-            return outputBuffer;
-        }
-
-        public void Dispose ()
-        {
-            System.GC.SuppressFinalize (this);
         }
     }
 
