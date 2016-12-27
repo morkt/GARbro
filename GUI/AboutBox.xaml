@@ -91,7 +91,7 @@ IN THE SOFTWARE.
                                     <GridViewColumn>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Path=CanCreate, Converter={StaticResource guiCanCreateConverter}}" Margin="-6,0,-6,0"/>
+                                                <TextBlock Text="{Binding Path=CanWrite, Converter={StaticResource guiCanCreateConverter}}" Margin="-6,0,-6,0"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
