@@ -73,18 +73,18 @@ namespace GameRes
 
         public int CurrentSchemeVersion { get; private set; }
         public string          SchemeID { get { return "GARbroDB"; } }
-        public string  AssemblyLocation { get { return m_gameres_dir.Value; } }
+        public string  AssemblyLocation { get; private set; }
         public string     DataDirectory { get { return m_gamedata_dir.Value; } }
 
         public Exception LastError { get; set; }
 
         public event ParametersRequestEventHandler  ParametersRequest;
 
-        private Lazy<string> m_gameres_dir = new Lazy<string> (() => Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location));
         private Lazy<string> m_gamedata_dir;
 
         private FormatCatalog ()
         {
+            AssemblyLocation = Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly().Location);
             m_gamedata_dir = new Lazy<string> (() => Path.Combine (AssemblyLocation, "GameData"));
 
             //An aggregate catalog that combines multiple catalogs
