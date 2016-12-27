@@ -327,11 +327,11 @@ namespace GameRes
                     return false;
                 unsafe
                 {
-                    byte* ptr = m_view.GetPointer (m_offset);
+                    byte* ptr = m_view.GetPointer (m_offset) + (offset - m_offset);
                     try {
                         for (int i = 0; i < data.Length; ++i)
                         {
-                            if (ptr[offset-m_offset+i] != data[i])
+                            if (ptr[i] != data[i])
                                 return false;
                         }
                     } finally {
