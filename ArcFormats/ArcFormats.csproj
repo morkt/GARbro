@@ -90,6 +90,7 @@
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcARCX.cs" />
     <Compile Include="ArcCG.cs" />
+    <Compile Include="Artemis\ArcPFS.cs" />
     <Compile Include="BlackRainbow\ArcDX.cs" />
     <Compile Include="Cadath\ArcKAR.cs" />
     <Compile Include="Cadath\ImageKGF.cs" />
