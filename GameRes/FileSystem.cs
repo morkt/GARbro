@@ -783,6 +783,26 @@ namespace GameRes
         {
             return m_vfs.Top.GetFiles (pattern);
         }
+
+        static readonly char[] PathSeparatorChars = { '\\', '/', ':' };
+
+        /// <summary>
+        /// Returns true if given <paramref name="path"/> points to a specified <paramref name="filename"/>.
+        /// </summary>
+        public static bool IsPathEqualsToFileName (string path, string filename)
+        {
+            // first, filter out completely different paths
+            if (!path.EndsWith (filename, StringComparison.InvariantCultureIgnoreCase))
+                return false;
+            // now, compare length of filename portion of the path
+            int filename_index = path.LastIndexOfAny (PathSeparatorChars);
+            if (-1 == filename_index)
+                filename_index = 0;
+            else
+                filename_index++;
+            int filename_portion_length = path.Length - filename_index;
+            return filename.Length == filename_portion_length;
+        }
     }
 
     public class FileNameGlob

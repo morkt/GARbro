@@ -136,9 +136,8 @@ namespace GameRes.Formats.Rugp
                 if (null == arc_man)
                     return null;
             }
-            var base_name = Path.GetFileName (file.Name);
             var arc_object = arc_man.ArcList.FirstOrDefault();
-            if (null == arc_object || !base_name.Equals (arc_object.RioName, StringComparison.InvariantCultureIgnoreCase))
+            if (null == arc_object || !VFS.IsPathEqualsToFileName (file.Name, arc_object.RioName))
                 return null;
             return new RioReader (arc_man, file);
         }

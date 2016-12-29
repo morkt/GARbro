@@ -101,7 +101,7 @@ namespace GameRes.Formats.Rpm
 
             // special case for "instdata.arc" archives
             if (scheme.Keyword != "inst"
-                && Path.GetFileName (file.Name).Equals ("instdata.arc", StringComparison.InvariantCultureIgnoreCase))
+                && VFS.IsPathEqualsToFileName (file.Name, "instdata.arc"))
                 scheme = new EncryptionScheme ("inst", scheme.NameLength);
 
             int index_size = count * (scheme.NameLength + 12);

@@ -80,7 +80,7 @@ namespace GameRes.Formats.MAI
                     dir_offset += 8;
                 }
             }
-            bool is_mask_arc = "mask.arc" == Path.GetFileName (file.Name).ToLowerInvariant();
+            bool is_mask_arc = VFS.IsPathEqualsToFileName (file.Name, "mask.arc");
             var dir = new List<Entry> (count);
             int next_folder = null == folders ? count : folders[0].Index;
             int folder = 0;

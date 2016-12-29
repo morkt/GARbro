@@ -114,7 +114,7 @@ namespace GameRes.Formats.KAAS
                 return null;
             var dir = new List<Entry> (count);
             int index_offset = 0x10;
-            bool is_voice = Path.GetFileName (file.Name).Equals ("voice.pb", StringComparison.InvariantCultureIgnoreCase);
+            bool is_voice = VFS.IsPathEqualsToFileName (file.Name, "voice.pb");
             int data_offset = index_offset + 8 * count;
             for (int i = 0; i < count; ++i)
             {

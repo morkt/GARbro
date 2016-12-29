@@ -331,7 +331,7 @@ namespace GameRes.Formats.AZSys
             if (null != scheme.ContentKey)
                 return scheme.ContentKey.Value;
 
-            if ("system.arc".Equals (Path.GetFileName (file.Name), StringComparison.InvariantCultureIgnoreCase))
+            if (VFS.IsPathEqualsToFileName (file.Name, "system.arc"))
             {
                 return ReadSysenvSeed (file, dir, scheme.IndexKey);
             }

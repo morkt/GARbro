@@ -54,7 +54,7 @@ namespace GameRes.Formats.Silky
                 return null;
 
             // rather loose criterion, haven't found anything better yet.
-            bool is_mp3 = Path.GetFileName (file.Name).Equals ("voice.awf", StringComparison.InvariantCultureIgnoreCase);
+            bool is_mp3 = VFS.IsPathEqualsToFileName (file.Name, "voice.awf");
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
