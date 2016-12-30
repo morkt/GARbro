@@ -51,7 +51,7 @@ namespace GameRes.Formats.Silky
             if (!IsSaneCount (count))
                 return null;
             long index_offset = 4;
-            uint index_size = (uint)(count * (0x104 + 8));
+            uint index_size = (uint)(count * (0x104 + 12));
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
             var name_buffer = new byte[0x104];
@@ -59,11 +59,11 @@ namespace GameRes.Formats.Silky
             for (int i = 0; i < count; ++i)
             {
                 file.View.Read (index_offset, name_buffer, 0, (uint)name_buffer.Length);
-                int name_length = 0;
-                while (name_length < name_buffer.Length && 0 != name_buffer[name_length])
-                    ++name_length;
+                int name_length = Array.IndexOf<byte> (name_buffer, 0);
                 if (0 == name_length)
                     return null;
+                if (-1 == name_length)
+                    name_length = name_buffer.Length;
                 byte key = (byte)(name_length+1);
                 for (int j = 0; j < name_length; ++j)
                 {
