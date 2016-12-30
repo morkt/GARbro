@@ -221,6 +221,7 @@
     <Compile Include="NitroPlus\WidgetNPK.xaml.cs">
       <DependentUpon>WidgetNPK.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NonColor\ArcACV.cs" />
     <Compile Include="NonColor\ArcDAT.cs" />
     <Compile Include="Crc64.cs" />
     <Compile Include="NonColor\WidgetNCARC.xaml.cs">
