@@ -110,60 +110,17 @@ namespace GameRes.Formats.NonColor
             var scheme = QueryScheme (file.Name);
             if (null == scheme)
                 return null;
-            var file_map = ReadFilenameMap (scheme);
 
-            uint index_offset = 4;
-            int skipped = 0;
             var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
+            using (var input = file.CreateStream (4, (uint)count * 0x15))
             {
-                ulong hash   = file.View.ReadUInt64 (index_offset);
-                int   flags  = file.View.ReadByte (index_offset+8) ^ (byte)hash;
-                uint  offset = file.View.ReadUInt32 (index_offset+9) ^ (uint)hash;
-                uint  size   = file.View.ReadUInt32 (index_offset+0xD) ^ (uint)hash;
-                uint  unpacked_size = file.View.ReadUInt32 (index_offset+0x11) ^ (uint)hash;
-                index_offset += 0x15;
-
-                string name;
-                byte[] raw_name = null;
-                if (file_map.TryGetValue (hash, out raw_name))
+                foreach (var entry in ReadIndex (input, count, scheme))
                 {
-                    name = Encodings.cp932.GetString (raw_name);
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
                 }
-                else if (2 == flags)
-                {
-                    name = hash.ToString ("X8");
-                }
-                else
-                {
-//                    System.Diagnostics.Trace.WriteLine ("Unknown hash", hash.ToString ("X8"));
-                    ++skipped;
-                    continue;
-                }
-                if (flags != 2)
-                {
-                    offset          ^= raw_name[raw_name.Length >> 1];
-                    size            ^= raw_name[raw_name.Length >> 2];
-                    unpacked_size   ^= raw_name[raw_name.Length >> 3];
-                }
-                var entry = new ArcDatEntry {
-                    Name = name,
-                    Type = FormatCatalog.Instance.GetTypeFromName (name),
-                    RawName = raw_name,
-                    Hash = hash,
-                    Flags = flags,
-                    Offset = offset,
-                    Size = size,
-                    UnpackedSize = unpacked_size,
-                    IsPacked = 2 == flags,
-                };
-
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
             }
-            if (skipped != 0)
-                System.Diagnostics.Trace.WriteLine (string.Format ("Missing {0} names", skipped));
             return new ArcDatArchive (file, this, dir, scheme.Hash);
         }
 
@@ -177,32 +134,80 @@ namespace GameRes.Formats.NonColor
             if (2 == dent.Flags)
             {
                 if (darc.MasterKey != 0)
-                {
-                    unsafe
-                    {
-                        fixed (byte* data8 = data)
-                        {
-                            uint key = (uint)(dent.Hash ^ darc.MasterKey);
-                            uint* data32 = (uint*)data8;
-                            for (int i = data.Length/4; i > 0; --i)
-                                *data32++ ^= key;
-                        }
-                    }
-                }
+                    DecryptData (data, (uint)(dent.Hash ^ darc.MasterKey));
                 return new ZLibStream (new MemoryStream (data), CompressionMode.Decompress);
             }
             // 1 == dent.Flags
-            int block_length = data.Length / dent.RawName.Length;
-            int n = 0;
-            for (int i = 0; i < dent.RawName.Length-1; ++i)
-            for (int j = 0; j < block_length; ++j)
-                data[n++] ^= dent.RawName[i];
+            if (dent.RawName != null && 0 != dent.Flags)
+                DecryptWithName (data, dent.RawName);
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        internal IEnumerable<ArcDatEntry> ReadIndex (IBinaryStream input, int count, Scheme scheme, uint key = 0)
+        {
+            int skipped = 0;
+            var file_map = ReadFilenameMap (scheme);
+            for (int i = 0; i < count; ++i)
+            {
+                var hash = input.ReadUInt64();
+                var entry = new ArcDatEntry
+                {
+                    Hash   = hash,
+                    Flags  = input.ReadByte()   ^ (byte)hash,
+                    Offset = input.ReadUInt32() ^ (uint)hash ^ key,
+                    Size   = input.ReadUInt32() ^ (uint)hash,
+                    UnpackedSize = input.ReadUInt32() ^ (uint)hash,
+                };
+                entry.IsPacked = 0 != (entry.Flags & 2);
+                byte[] raw_name = null;
+                if (file_map.TryGetValue (hash, out raw_name))
+                {
+                    entry.Name = Encodings.cp932.GetString (raw_name);
+                    entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                    entry.RawName = raw_name;
+                }
+                if (0 == (entry.Flags & 2))
+                {
+                    if (null == raw_name)
+                    {
+//                      System.Diagnostics.Trace.WriteLine ("Unknown hash", hash.ToString ("X16"));
+                        ++skipped;
+                        continue;
+                    }
+                    entry.Offset        ^= raw_name[raw_name.Length >> 1];
+                    entry.Size          ^= raw_name[raw_name.Length >> 2];
+                    entry.UnpackedSize  ^= raw_name[raw_name.Length >> 3];
+                }
+                if (string.IsNullOrEmpty (entry.Name))
+                    entry.Name = hash.ToString ("X16");
+                yield return entry;
+            }
+            if (skipped != 0)
+                System.Diagnostics.Trace.WriteLine (string.Format ("Missing {0} names", skipped), "[noncolor]");
+        }
+
+        internal unsafe void DecryptData (byte[] data, uint key)
+        {
+            fixed (byte* data8 = data)
+            {
+                uint* data32 = (uint*)data8;
+                for (int i = data.Length/4; i > 0; --i)
+                    *data32++ ^= key;
+            }
+        }
+
+        internal void DecryptWithName (byte[] data, byte[] name)
+        {
+            int block_length = data.Length / name.Length;
+            int n = 0;
+            for (int i = 0; i < name.Length-1; ++i)
+            for (int j = 0; j < block_length; ++j)
+                data[n++] ^= name[i];
         }
 
         static IDictionary<ulong, Tuple<uint, int>> FileMapIndex = null;
 
-        internal IDictionary<ulong, Tuple<uint, int>> ReadIndex (BinaryReader idx)
+        internal IDictionary<ulong, Tuple<uint, int>> ReadFileMapIndex (BinaryReader idx)
         {
             int scheme_count = idx.ReadInt32();
             idx.BaseStream.Seek (12, SeekOrigin.Current);
@@ -230,7 +235,7 @@ namespace GameRes.Formats.NonColor
             using (var idx = new BinaryReader (idx_stream))
             {
                 if (null == FileMapIndex)
-                    FileMapIndex = ReadIndex (idx);
+                    FileMapIndex = ReadFileMapIndex (idx);
 
                 Tuple<uint, int> nc_info;
                 if (!FileMapIndex.TryGetValue (scheme.Hash, out nc_info))
@@ -263,7 +268,7 @@ namespace GameRes.Formats.NonColor
             set { KnownSchemes = ((ArcDatScheme)value).KnownSchemes; }
         }
 
-        Scheme QueryScheme (string arc_name)
+        internal Scheme QueryScheme (string arc_name)
         {
             var title = FormatCatalog.Instance.LookupGame (arc_name);
             if (!string.IsNullOrEmpty (title) && KnownSchemes.ContainsKey (title))
