@@ -247,6 +247,7 @@
     <Compile Include="ScrPlayer\ArcPAK.cs" />
     <Compile Include="ScrPlayer\ImageI.cs" />
     <Compile Include="ShiinaRio\WarcEncryption.cs" />
+    <Compile Include="Silky\ArcAzurite.cs" />
     <Compile Include="Silky\ImageZIT.cs" />
     <Compile Include="SimpleEncryption.cs" />
     <Compile Include="Slg\ArcSZS.cs" />
