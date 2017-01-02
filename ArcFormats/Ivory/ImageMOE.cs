@@ -44,6 +44,7 @@ namespace GameRes.Formats.Ivory
             uint height = wh >> 16;
             if (0 == width || width > 800 || 0 == height || height > 600)
                 return null;
+            stream.Position = 4;
             if (!IsValidInput (stream.AsStream, width, height))
                 return null;
             return new ImageMetaData { Width = width, Height = height, BPP = 24 };

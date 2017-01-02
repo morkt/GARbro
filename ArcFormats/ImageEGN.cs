@@ -51,7 +51,7 @@ namespace GameRes.Formats.Unknown
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            int signature = (int)~stream.Signature;
+            int signature = ~stream.ReadInt32();
             int mode = (signature & 0x70) >> 4; // v6
             if (0 != (mode & 4))
                 return null;

@@ -69,6 +69,7 @@ namespace GameRes.Formats.Ikura
             case 0x48474948: bpp = 16; break;
             default: return null;
             }
+            stream.Position = 4;
             uint width = stream.ReadUInt16();
             uint height = stream.ReadUInt16();
             return new ImageMetaData {

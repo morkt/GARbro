@@ -47,6 +47,7 @@ namespace GameRes.Formats.Cri
             uint unpacked_size = stream.Signature;
             if (unpacked_size <= 0x20 || unpacked_size > 0x5000000) // ~83MB
                 return null;
+            stream.Position = 4;
             using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
             using (var input = new SeekableStream (lzss))
             using (var xtx = new BinaryStream (input, stream.Name))
