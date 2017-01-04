@@ -1194,6 +1194,15 @@ namespace GARbro.GUI
             CurrentDirectory.SelectAll();
         }
 
+        void CopyNamesExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var names = CurrentDirectory.SelectedItems.Cast<EntryViewModel>().Select (f => f.Name);
+            if (names.Any())
+            {
+                Clipboard.SetText (string.Join ("\r\n", names));
+            }
+        }
+
         void NextItemExec (object sender, ExecutedRoutedEventArgs e)
         {
             if (LookupActive)
@@ -1442,5 +1451,6 @@ namespace GARbro.GUI
         public static readonly RoutedCommand SelectAll = new RoutedCommand();
         public static readonly RoutedCommand SetFileType = new RoutedCommand();
         public static readonly RoutedCommand NextItem = new RoutedCommand();
+        public static readonly RoutedCommand CopyNames = new RoutedCommand();
     }
 }

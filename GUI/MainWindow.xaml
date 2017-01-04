@@ -277,6 +277,7 @@
                     <KeyBinding Gesture="Ctrl+E" Command="{x:Static local:Commands.ExploreItem}"/>
                     <KeyBinding Gesture="F2" Command="{x:Static local:Commands.RenameItem}"/>
                     <KeyBinding Gesture="Space" Command="{x:Static local:Commands.NextItem}"/>
+                    <KeyBinding Gesture="Ctrl+Insert" Command="{x:Static local:Commands.CopyNames}"/>
                     <MouseBinding Gesture="LeftDoubleClick" Command="{x:Static local:Commands.OpenItem}" />
                 </ListView.InputBindings>
                 <ListView.ItemContainerStyle>
@@ -380,6 +381,7 @@
         <CommandBinding Command="{x:Static local:Commands.OpenRecent}" Executed="OpenRecentExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.AddSelection}" Executed="AddSelectionExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.SelectAll}"  Executed="SelectAllExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.CopyNames}"  Executed="CopyNamesExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.NextItem}"  Executed="NextItemExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.ExtractItem}" Executed="ExtractItemExec"   CanExecute="CanExecuteExtract"/>
         <CommandBinding Command="{x:Static local:Commands.CreateArchive}" Executed="CreateArchiveExec" CanExecute="CanExecuteCreateArchive"/>
