@@ -274,7 +274,7 @@
     <Compile Include="BlueGale\ImageZBM.cs" />
     <Compile Include="Circus\ArcPCK.cs" />
     <Compile Include="Cmvs\ArcCPZ.cs" />
-    <Compile Include="ArcPBX.cs" />
+    <Compile Include="Pandora\ArcPBX.cs" />
     <Compile Include="Banana\ArcPK.cs" />
     <Compile Include="Banana\ImageMAG.cs" />
     <Compile Include="CatSystem\ArcHG2.cs" />
