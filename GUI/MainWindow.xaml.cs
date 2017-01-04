@@ -1199,7 +1199,14 @@ namespace GARbro.GUI
             var names = CurrentDirectory.SelectedItems.Cast<EntryViewModel>().Select (f => f.Name);
             if (names.Any())
             {
-                Clipboard.SetText (string.Join ("\r\n", names));
+                try
+                {
+                    Clipboard.SetText (string.Join ("\r\n", names));
+                }
+                catch (Exception X)
+                {
+                    Trace.WriteLine (X.Message, "Clipboard error");
+                }
             }
         }
 
