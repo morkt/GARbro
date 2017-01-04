@@ -1,8 +1,8 @@
 //! \file       ImageRCT.cs
 //! \date       Fri Aug 01 11:36:31 2014
-//! \brief      RCT/RC8 image format implementation.
+//! \brief      RCT image format implementation.
 //
-// Copyright (C) 2014-2016 by morkt
+// Copyright (C) 2014-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -150,16 +150,18 @@ namespace GameRes.Formats.Majiro
             return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
         }
 
+        static readonly Lazy<ImageFormat> s_rc8_format = new Lazy<ImageFormat> (() => FindByTag ("RC8"));
+
         ImageData ApplyMaskToImage (RctMetaData info, byte[] image, string mask_name)
         {
             using (var mask_file = VFS.OpenBinaryStream (mask_name))
             {
-                var format = FindFormat (mask_file);
-                if (null == format || !(format.Item1 is Rc8Format)
-                    || info.Width != format.Item2.Width || info.Height != format.Item2.Height)
+                var mask_info = s_rc8_format.Value.ReadMetaData (mask_file);
+                if (null == mask_info
+                    || info.Width != mask_info.Width || info.Height != mask_info.Height)
                     throw new InvalidFormatException();
 
-                using (var reader = new Rc8Format.Reader (mask_file, format.Item2))
+                using (var reader = new Rc8Format.Reader (mask_file, mask_info))
                 {
                     reader.Unpack();
                     var palette = reader.Palette;
@@ -588,145 +590,6 @@ namespace GameRes.Formats.Majiro
             public void Dispose ()
             {
                 GC.SuppressFinalize (this);
-            }
-            #endregion
-        }
-    }
-
-    [Export(typeof(ImageFormat))]
-    public class Rc8Format : ImageFormat
-    {
-        public override string Tag { get { return "RC8"; } }
-        public override string Description { get { return "Majiro game engine indexed image format"; } }
-        public override uint Signature { get { return 0x9a925a98; } }
-
-        public override ImageMetaData ReadMetaData (IBinaryStream stream)
-        {
-            stream.Position = 4;
-            int id = stream.ReadByte();
-            if (0x38 != id)
-                return null;
-            id = stream.ReadByte();
-            if (0x5f != id)
-                return null;
-            int version = stream.ReadByte();
-            if (0x30 != version)
-                return null;
-            version = stream.ReadByte() - 0x30;
-            if (version != 0)
-                return null;
-
-            uint width = stream.ReadUInt32();
-            uint height = stream.ReadUInt32();
-            if (width > 0x8000 || height > 0x8000)
-                return null;
-            return new ImageMetaData
-            {
-                Width   = width,
-                Height  = height,
-                OffsetX = 0,
-                OffsetY = 0,
-                BPP     = 8,
-            };
-        }
-
-        public override ImageData Read (IBinaryStream file, ImageMetaData info)
-        {
-            using (var reader = new Reader (file, info))
-            {
-                reader.Unpack();
-                var palette = new BitmapPalette (reader.Palette);
-                return ImageData.Create (info, PixelFormats.Indexed8, palette, reader.Data, (int)info.Width);
-            }
-        }
-
-        public override void Write (Stream file, ImageData image)
-        {
-            throw new NotImplementedException ("Rc8Format.Write is not implemented.");
-        }
-
-        internal sealed class Reader : IDisposable
-        {
-            private IBinaryStream   m_input;
-            private uint            m_width;
-            private Color[]         m_palette;
-            private byte[]          m_data;
-
-            public Color[] Palette { get { return m_palette; } }
-            public byte[]     Data { get { return m_data; } }
-
-            public Reader (IBinaryStream file, ImageMetaData info)
-            {
-                m_width = info.Width;
-                file.Position = 0x14;
-                var palette_data = new byte[0x300];
-                if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
-                    throw new InvalidFormatException();
-                m_palette = new Color[0x100];
-                for (int i = 0; i < 0x100; ++i)
-                {
-                    m_palette[i] = Color.FromRgb (palette_data[i*3], palette_data[i*3+1], palette_data[i*3+2]);
-                }
-                m_data = new byte[m_width * info.Height];
-                m_input = file;
-            }
-
-            private static readonly sbyte[] ShiftTable = new sbyte[] {
-                -16, -32, -48, -64,
-                49, 33, 17, 1, -15, -31, -47,
-                34, 18, 2, -14, -30,
-            };
-
-            public void Unpack ()
-            {
-                int data_pos = 0;
-                int eax = 0;
-                int pixels_remaining = m_data.Length;
-                while (pixels_remaining > 0)
-                {
-                    int count = eax + 1;
-                    if (count > pixels_remaining)
-                        throw new InvalidFormatException();
-                    pixels_remaining -= count;
-
-                    if (count != m_input.Read (m_data, data_pos, count))
-                        throw new InvalidFormatException();
-                    data_pos += count;
-
-                    while (pixels_remaining > 0)
-                    {
-                        eax = m_input.ReadByte();
-                        if (0 == (eax & 0x80))
-                        {
-                            if (0x7f == eax)
-                                eax += m_input.ReadUInt16();
-                            break;
-                        }
-                        int shift_index = eax >> 3;
-                        eax &= 7;
-                        if (7 == eax)
-                            eax += m_input.ReadUInt16();
-
-                        count = eax + 3;
-                        if (pixels_remaining < count)
-                            throw new InvalidFormatException();
-                        pixels_remaining -= count;
-                        int shift = ShiftTable[shift_index & 0x0f];
-                        int shift_row = shift & 0x0f;
-                        shift >>= 4;
-                        shift_row *= (int)m_width;
-                        shift -= shift_row;
-                        if (shift >= 0 || data_pos+shift < 0)
-                            throw new InvalidFormatException();
-                        Binary.CopyOverlapped (m_data, data_pos+shift, data_pos, count);
-                        data_pos += count;
-                    }
-                }
-            }
-
-            #region IDisposable Members
-            public void Dispose ()
-            {
             }
             #endregion
         }
