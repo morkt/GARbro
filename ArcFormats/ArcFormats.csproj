@@ -476,6 +476,7 @@
     <Compile Include="Xuse\ArcXARC.cs" />
     <Compile Include="Xuse\ArcXuse.cs" />
     <Compile Include="YaneSDK\ArcDAT.cs" />
+    <Compile Include="Youkai\ArcDAT.cs" />
     <Compile Include="Yox\ArcYOX.cs" />
     <Compile Include="Yuka\ArcYKC.cs" />
     <Compile Include="BlackCyc\AudioVAW.cs" />
