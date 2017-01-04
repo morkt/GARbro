@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany ("mørkt")]
 [assembly: AssemblyProduct("GARbro.GUI")]
-[assembly: AssemblyCopyright("Copyright © 2014-2016 mørkt")]
+[assembly: AssemblyCopyright ("Copyright © 2014-2017 mørkt")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,5 +51,5 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion ("1.3.23.1590")]
-[assembly: AssemblyFileVersion ("1.3.23.1590")]
+[assembly: AssemblyVersion ("1.3.23.1605")]
+[assembly: AssemblyFileVersion ("1.3.23.1605")]

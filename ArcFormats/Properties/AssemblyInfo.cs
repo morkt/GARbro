@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany ("mørkt")]
 [assembly: AssemblyProduct("ArcFormats")]
-[assembly: AssemblyCopyright ("Copyright © 2014-2015 mørkt")]
+[assembly: AssemblyCopyright ("Copyright © 2014-2017 mørkt")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion ("1.2.27.1170")]
-[assembly: AssemblyFileVersion ("1.2.27.1170")]
+[assembly: AssemblyVersion ("1.2.27.1180")]
+[assembly: AssemblyFileVersion ("1.2.27.1180")]
