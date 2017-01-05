@@ -104,6 +104,7 @@
     <Compile Include="NSystem\WidgetMSD.xaml.cs">
       <DependentUpon>WidgetMSD.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pandora\ImageXL24.cs" />
     <Compile Include="rUGP\ArcRIO.cs" />
     <Compile Include="Astronauts\ArcGXP.cs" />
     <Compile Include="Banana\ImageGEC.cs" />
