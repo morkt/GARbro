@@ -2,7 +2,7 @@
 //! \date       Mon Feb 16 17:21:47 2015
 //! \brief      Lucifen Easy Game System archive implementation.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -132,7 +132,7 @@ namespace GameRes.Formats.Lucifen
                     return arc;
             }
             catch { /* unknown encryption, ignore parse errors */ }
-            var new_scheme = QueryEncryptionScheme();
+            var new_scheme = QueryEncryptionScheme (file.Name);
             if (new_scheme == CurrentScheme && !CurrentScheme.ImportGameInit)
                 return null;
             CurrentScheme = new_scheme;
@@ -354,14 +354,21 @@ namespace GameRes.Formats.Lucifen
             return new GUI.WidgetLPK();
         }
 
-        EncryptionScheme QueryEncryptionScheme ()
+        EncryptionScheme QueryEncryptionScheme (string arc_name)
         {
             CurrentFileMap.Clear();
+            string title = FormatCatalog.Instance.LookupGame (arc_name);
+            Dictionary<string, Key> file_map;
+            if (!string.IsNullOrEmpty (title) && KnownSchemes.ContainsKey (title))
+            {
+                if (KnownKeys.TryGetValue (title, out file_map))
+                    CurrentFileMap = new Dictionary<string, Key> (file_map);
+                return KnownSchemes[title];
+            }
             var options = Query<LuciOptions> (arcStrings.ArcEncryptedNotice);
             if (null == options)
                 return DefaultScheme;
-            string title = options.Scheme;
-            Dictionary<string, Key> file_map;
+            title = options.Scheme;
             if (KnownKeys.TryGetValue (title, out file_map))
                 CurrentFileMap = new Dictionary<string, Key> (file_map);
             return KnownSchemes[title];
