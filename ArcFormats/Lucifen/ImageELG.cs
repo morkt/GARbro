@@ -26,7 +26,6 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
@@ -102,7 +101,6 @@ namespace GameRes.Formats.Lucifen
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (ElgMetaData)info;
-            file.Position = meta.HeaderSize;
             using (var reader = new Reader (file, meta))
             {
                 reader.Unpack();
@@ -131,6 +129,7 @@ namespace GameRes.Formats.Lucifen
                 m_type = info.Type;
                 m_output = new byte[m_width*m_height*m_bpp/8];
                 m_input = stream;
+                m_input.Position = info.HeaderSize;
             }
 
             public void Unpack ()
