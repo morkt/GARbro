@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using GameRes.Compression;
@@ -47,6 +48,74 @@ namespace GameRes.Formats.Cyberworks
         }
     }
 
+    internal abstract class ArchiveNameParser
+    {
+        protected Regex m_regex;
+
+        protected ArchiveNameParser (string pattern)
+        {
+            m_regex = new Regex (pattern, RegexOptions.IgnoreCase);
+        }
+
+        public Tuple<string, int> ParseName (string arc_name)
+        {
+            var match = m_regex.Match (arc_name);
+            if (!match.Success)
+                return null;
+            int arc_idx;
+            var toc_name = ParseMatch (match, out arc_idx);
+            if (null == toc_name)
+                return null;
+            return Tuple.Create (toc_name, arc_idx);
+        }
+
+        protected abstract string ParseMatch (Match match, out int arc_idx);
+    }
+
+    internal class ArcNameParser : ArchiveNameParser
+    {
+        public ArcNameParser () : base (@"^.+0(?<id>(?<num>\d)(?<idx>[a-z])?)(?:|\..*)$") { }
+
+        protected override string ParseMatch (Match match, out int arc_idx)
+        {
+            arc_idx = 0;
+            char num = match.Groups["num"].Value[0];
+            if (num < '4' || num > '6')
+                return null;
+            if (match.Groups["idx"].Success)
+                arc_idx = char.ToUpper (match.Groups["idx"].Value[0]) - '@';
+
+            var toc_name_builder = new StringBuilder (match.Value);
+            var num_pos = match.Groups["id"].Index;
+            toc_name_builder.Remove (num_pos, match.Groups["id"].Length);
+            toc_name_builder.Insert (num_pos, num-'3');
+            return toc_name_builder.ToString();
+        }
+    }
+
+    internal class DatNameParser : ArchiveNameParser
+    {
+        public DatNameParser () : base (@"^(?<name>d[a-z]+?)(?<idx>[ah])?\.dat$") { }
+
+        protected override string ParseMatch (Match match, out int arc_idx)
+        {
+            var toc_name_builder = new StringBuilder (match.Groups["name"].Value);
+            arc_idx = 0;
+            if (match.Groups["idx"].Success)
+            {
+                if ('a' == match.Groups["idx"].Value[0])
+                {
+                    arc_idx = 1;
+                    toc_name_builder.Append ('h');
+                }
+            }
+            else
+                toc_name_builder.Append ('h');
+            toc_name_builder.Append (".dat");
+            return toc_name_builder.ToString();
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
@@ -61,47 +130,17 @@ namespace GameRes.Formats.Cyberworks
             Extensions = new string[] { "dat", "04", "05", "06" };
         }
 
-        static Regex s_arcname_re = new Regex (@"^.+0(?<id>(?<num>\d)(?<idx>[a-z])?)(?:|\..*)$", RegexOptions.IgnoreCase);
-        static Regex s_datname_re = new Regex (@"^(?<name>d[a-z]+?)(?<idx>[ah])?\.dat$", RegexOptions.IgnoreCase);
+        static readonly ArchiveNameParser[] s_name_parsers = { new ArcNameParser(), new DatNameParser() };
 
         public override ArcFile TryOpen (ArcView file)
         {
             var arc_name = Path.GetFileName (file.Name);
-            int arc_idx = 0;
-            StringBuilder toc_name_builder;
-            var match = s_arcname_re.Match (arc_name);
-            if (match.Success)
-            {
-                char num = match.Groups["num"].Value[0];
-                if (num < '4' || num > '6')
-                    return null;
-                if (match.Groups["idx"].Success)
-                    arc_idx = char.ToUpper (match.Groups["idx"].Value[0]) - '@';
-
-                toc_name_builder = new StringBuilder (arc_name);
-                var num_pos = match.Groups["id"].Index;
-                toc_name_builder.Remove (num_pos, match.Groups["id"].Length);
-                toc_name_builder.Insert (num_pos, num-'3');
-            }
-            else if ((match = s_datname_re.Match (arc_name)).Success)
-            {
-                toc_name_builder = new StringBuilder (match.Groups["name"].Value);
-                if (match.Groups["idx"].Success)
-                {
-                    if ('a' == match.Groups["idx"].Value[0])
-                    {
-                        arc_idx = 1;
-                        toc_name_builder.Append ('h');
-                    }
-                }
-                else
-                    toc_name_builder.Append ('h');
-                toc_name_builder.Append (".dat");
-            }
-            else
+            var result = s_name_parsers.Select (p => p.ParseName (arc_name)).FirstOrDefault (p => p != null);
+            if (null == result)
                 return null;
+            string toc_name = result.Item1;
+            int arc_idx = result.Item2;
 
-            var toc_name = toc_name_builder.ToString();
             toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), toc_name);
             if (!VFS.FileExists (toc_name))
                 return null;
