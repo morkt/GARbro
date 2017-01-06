@@ -132,13 +132,16 @@ namespace GameRes.Formats
 
         protected override IMFSourceReader CreateReader (MediaFoundationReaderSettings settings)
         {
+            const int MF_SOURCE_READER_ALL_STREAMS          = -2;
+            const int MF_SOURCE_READER_FIRST_AUDIO_STREAM   = -3;
+
             IMFByteStream byteStream;
             MFCreateMFByteStreamOnStream (new ComStream (m_stream), out byteStream);
             var source_reader = MediaFoundationApi.CreateSourceReaderFromByteStream (byteStream);
 
-            source_reader.SetStreamSelection (-2, false);
-            source_reader.SetStreamSelection (-3, true);
-            source_reader.SetCurrentMediaType (-3, IntPtr.Zero, new MediaType
+            source_reader.SetStreamSelection (MF_SOURCE_READER_ALL_STREAMS, false);
+            source_reader.SetStreamSelection (MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
+            source_reader.SetCurrentMediaType (MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, new MediaType
             {
                 MajorType = MediaTypes.MFMediaType_Audio,
                 SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM
