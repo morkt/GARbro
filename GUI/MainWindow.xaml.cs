@@ -628,6 +628,15 @@ namespace GARbro.GUI
                 Phrase.Clear ();
                 Mismatch = false;
             }
+
+            public void Update (int timestamp)
+            {
+                if (timestamp - LastTime >= TextLookupTimeout)
+                {
+                    Reset();
+                }
+                LastTime = timestamp;
+            }
         }
 
         const int TextLookupTimeout = 1000; // milliseconds
@@ -653,11 +662,7 @@ namespace GARbro.GUI
             if (source == null)
                 return;
 
-            if (timestamp - m_current_input.LastTime > TextLookupTimeout)
-            {
-                m_current_input.Reset();
-            }
-            m_current_input.LastTime = timestamp;
+            m_current_input.Update (timestamp);
             if (m_current_input.Mismatch)
                 return;
 
