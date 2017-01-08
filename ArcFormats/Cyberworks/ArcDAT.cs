@@ -50,13 +50,16 @@ namespace GameRes.Formats.Cyberworks
 
     internal abstract class ArchiveNameParser
     {
-        protected Regex m_regex;
+        readonly Regex m_regex;
 
         protected ArchiveNameParser (string pattern)
         {
             m_regex = new Regex (pattern, RegexOptions.IgnoreCase);
         }
 
+        /// <summary>
+        /// Returns toc filename and archive index corresponding to <paramref name="arc_name"/>.
+        /// </summary>
         public Tuple<string, int> ParseName (string arc_name)
         {
             var match = m_regex.Match (arc_name);
