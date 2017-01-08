@@ -25,9 +25,11 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -286,8 +288,94 @@ namespace GameRes.Formats.Majiro
 
         private string QueryPassword ()
         {
+            if (VFS.IsVirtual)
+            {
+                var password = FindImageKey();
+                if (!string.IsNullOrEmpty (password))
+                    return password;
+            }
             var options = Query<RctOptions> (arcStrings.ArcImageEncrypted);
             return options.Password;
+        }
+
+        static readonly Lazy<ArchiveFormat> s_Majiro = new Lazy<ArchiveFormat> (() => FormatCatalog.Instance.ArcFormats.FirstOrDefault (x => x.Tag == "MAJIRO"));
+
+        private string FindImageKey ()
+        {
+            var arc_fs = VFS.Top as ArchiveFileSystem;
+            if (null == arc_fs)
+                return null;
+            try
+            {
+                // look for "start.mjo" within "scenario.arc" archive
+                var src_name = arc_fs.Source.File.Name;
+                var scenario_arc_name = Path.Combine (Path.GetDirectoryName (src_name), "scenario.arc");
+                if (!File.Exists (scenario_arc_name))
+                    return null;
+                byte[] script;
+                using (var file = new ArcView (scenario_arc_name))
+                using (var arc = s_Majiro.Value.TryOpen (file))
+                {
+                    if (null == arc)
+                        return null;
+                    var start_mjo = arc.Dir.First (e => e.Name == "start.mjo");
+                    using (var mjo = arc.OpenEntry (start_mjo))
+                    {
+                        script = new byte[mjo.Length];
+                        mjo.Read (script, 0, script.Length);
+                    }
+                }
+                if (Binary.AsciiEqual (script, "MajiroObjX1.000"))
+                    DecryptMjo (script);
+                else if (!Binary.AsciiEqual (script, "MjPlainBytecode"))
+                    return null;
+
+                // locate key within start.mjo script
+                int n = script.ToInt32 (0x18);
+                for (int offset = 0x20 + n * 8; offset < script.Length - 4; ++offset)
+                {
+                    offset = Array.IndexOf<byte> (script, 1, offset);
+                    if (-1 == offset)
+                        break;
+                    if (8 != script[offset+1])
+                        continue;
+                    int str_length = script.ToUInt16 (offset+2);
+                    if (0 == str_length || str_length + 12 > script.Length - offset
+                        || 0x0835 != script.ToUInt16 (offset+str_length+4)
+                        || 0x7A7B6ED4 != script.ToUInt32 (offset+str_length+6))
+                        continue;
+                    offset += 4;
+                    int end = Array.IndexOf<byte> (script, 0, offset, str_length);
+                    if (-1 != end)
+                        str_length = end - offset;
+                    var password = Encodings.cp932.GetString (script, offset, str_length);
+                    Trace.WriteLine (string.Format ("Found key in start.mjo [{0}]", password), "[RCT]");
+                    return password;
+                }
+            }
+            catch { /* ignore errors */ }
+            return null;
+        }
+
+        private void DecryptMjo (byte[] data)
+        {
+            int offset = 0x1C + 8 * data.ToInt32 (0x18);
+            if (offset < 0x1C || offset >= data.Length - 4)
+                return;
+            int count = data.ToInt32 (offset);
+            offset += 4;
+            if (count <= 0 || count > data.Length - offset)
+                return;
+            Debug.Assert (Crc32.Table.Length == 0x100);
+            unsafe
+            {
+                fixed (uint* table = Crc32.Table)
+                {
+                    byte* key = (byte*)table;
+                    for (int i = 0; i < count; ++i)
+                        data[offset+i] ^= key[i & 0x3FF];
+                }
+            }
         }
 
         public override ResourceOptions GetDefaultOptions ()
