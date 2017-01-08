@@ -99,6 +99,7 @@
     <Compile Include="Cmvs\AudioMV2.cs" />
     <Compile Include="Cmvs\ImageMSK.cs" />
     <Compile Include="Cmvs\ImagePB2.cs" />
+    <Compile Include="Ellefin\ArcEPK.cs" />
     <Compile Include="Majiro\ImageRC8.cs" />
     <Compile Include="NSystem\ArcFJSYS.cs" />
     <Compile Include="NSystem\ImageMGD.cs" />
