@@ -61,6 +61,47 @@ namespace GameRes.Formats.Lucifen
         public          byte ContentXor;
         public          uint RotatePattern;
         public          bool ImportGameInit;
+
+        internal void DecryptContent (byte[] data)
+        {
+            for (int i = 0; i < data.Length; ++i)
+            {
+                int v = data[i] ^ ContentXor;
+                data[i] = Binary.RotByteR ((byte)v, 4);
+            }
+        }
+
+        internal unsafe void DecryptEntry (byte[] data, int length, uint key)
+        {
+            uint pattern = RotatePattern;
+            fixed (byte* buf_raw = data)
+            {
+                uint* encoded = (uint*)buf_raw;
+                length /= 4;
+                for (int i = 0; i < length; ++i)
+                {
+                    encoded[i] ^= key;
+                    pattern = Binary.RotR (pattern, 4);
+                    key = Binary.RotL (key, (int)pattern);
+                }
+            }
+        }
+
+        internal unsafe void DecryptIndex (byte[] data, int length, uint key)
+        {
+            uint pattern = RotatePattern;
+            fixed (byte* buf_raw = data)
+            {
+                uint* encoded = (uint*)buf_raw;
+                length /= 4;
+                for (int i = 0; i < length; ++i)
+                {
+                    encoded[i] ^= key;
+                    pattern = Binary.RotL (pattern, 4);
+                    key = Binary.RotR (key, (int)pattern);
+                }
+            }
+        }
     }
 
     [Serializable]
@@ -150,82 +191,37 @@ namespace GameRes.Formats.Lucifen
         {
             if (0 == entry.Size)
                 return Stream.Null;
-            var larc = arc as LuciArchive;
             var lent = entry as LuciEntry;
             Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (null == larc || null == lent)
+            if (null == lent)
                 return input;
-            byte[] data;
+            if (lent.IsPacked)
+            {
+                input = new LzssStream (input);
+            }
+            var larc = arc as LuciArchive;
+            if (null == larc)
+                return input;
+            var data = new byte[lent.UnpackedSize];
             using (input)
             {
-                if (lent.IsPacked)
-                {
-                    using (var reader = new LzssReader (input, (int)lent.Size, (int)lent.UnpackedSize))
-                    {
-                        reader.Unpack();
-                        data = reader.Data;
-                    }
-                }
-                else
-                {
-                    data = new byte[lent.Size];
-                    input.Read (data, 0, data.Length);
-                }
+                input.Read (data, 0, data.Length);
             }
             if (larc.Info.WholeCrypt)
             {
-                DecryptContent (data, larc.Scheme.ContentXor);
+                larc.Scheme.DecryptContent (data);
             }
             if (larc.Info.IsEncrypted)
             {
                 int count = Math.Min (data.Length, 0x100);
                 if (count != 0)
-                    DecryptEntry (data, count, larc.Info.Key, larc.Scheme.RotatePattern);
+                    larc.Scheme.DecryptEntry (data, count, larc.Info.Key);
             }
             input = new BinMemoryStream (data, entry.Name);
             if (null != larc.Info.Prefix)
                 return new PrefixStream (larc.Info.Prefix, input);
             else
                 return input;
-        }
-
-        static void DecryptContent (byte[] data, byte key)
-        {
-            for (int i = 0; i < data.Length; ++i)
-            {
-                int v = data[i] ^ key;
-                data[i] = Binary.RotByteR ((byte)v, 4);
-            }
-        }
-
-        static unsafe void DecryptEntry (byte[] data, int length, uint key, uint pattern)
-        {
-            fixed (byte* buf_raw = data)
-            {
-                uint* encoded = (uint*)buf_raw;
-                length /= 4;
-                for (int i = 0; i < length; ++i)
-                {
-                    encoded[i] ^= key;
-                    pattern = Binary.RotR (pattern, 4);
-                    key = Binary.RotL (key, (int)pattern);
-                }
-            }
-        }
-
-        static unsafe void DecryptIndex (byte[] data, int length, uint key, uint pattern)
-        {
-            fixed (byte* buf_raw = data)
-            {
-                uint* encoded = (uint*)buf_raw;
-                length /= 4;
-                for (int i = 0; i < length; ++i)
-                {
-                    encoded[i] ^= key;
-                    pattern = Binary.RotL (pattern, 4);
-                    key = Binary.RotR (key, (int)pattern);
-                }
-            }
         }
 
         ArcFile Open (byte[] basename, ArcView file, EncryptionScheme scheme, Key key)
@@ -254,7 +250,7 @@ namespace GameRes.Formats.Lucifen
             var index = new byte[index_size];
             if (index_size != file.View.Read (8, index, 0, (uint)index_size))
                 return null;
-            DecryptIndex (index, index_size, key2, scheme.RotatePattern);
+            scheme.DecryptIndex (index, index_size, key2);
             var lpk_info = new LpkInfo
             {
                 AlignedOffset = 0 != (flags & 1),
@@ -414,7 +410,7 @@ namespace GameRes.Formats.Lucifen
         {
             m_index = index;
             int count = LittleEndian.ToInt32 (m_index, 0);
-            if (count <= 0 || count > 0xfffff)
+            if (!ArchiveFormat.IsSaneCount (count))
                 return null;
             int index_offset = 4;
             int prefix_length = m_index[index_offset++];
