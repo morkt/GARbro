@@ -129,13 +129,17 @@ namespace GameRes.Formats.Musica
             if (!file.Name.EndsWith (".paz", StringComparison.InvariantCultureIgnoreCase))
                 return null;
             uint signature = file.View.ReadUInt32 (0);
-            uint index_size = file.View.ReadUInt32 (0x20);
-            byte xor_key = (byte)(index_size >> 24);
-            index_size ^= (uint)(xor_key << 24 | xor_key << 16 | xor_key << 8 | xor_key);
-            if (index_size + 0x24 >= file.MaxOffset)
-                return null;
             var arc_name = Path.GetFileNameWithoutExtension (file.Name).ToLowerInvariant();
+            // XXX encryption is queried for every .paz file
             var scheme = QueryEncryption (arc_name, signature);
+            uint start_offset = scheme.Version > 0 ? 0x20u : 0u;
+            uint index_size = file.View.ReadUInt32 (start_offset);
+            start_offset += 4;
+            byte xor_key = (byte)(index_size >> 24);
+            if (xor_key != 0)
+                index_size ^= (uint)(xor_key << 24 | xor_key << 16 | xor_key << 8 | xor_key);
+            if (0 != (index_size & 7) || index_size + start_offset >= file.MaxOffset)
+                return null;
 
             var arc_list = new List<Entry>();
             var arc_dir = VFS.GetDirectoryName (file.Name);
@@ -151,12 +155,13 @@ namespace GameRes.Formats.Musica
             }
             bool is_audio = AudioPazNames.Contains (arc_name);
             bool is_video = VideoPazNames.Contains (arc_name);
-            Stream input = file.CreateStream (0x24, index_size);
+            Stream input = file.CreateStream (start_offset, index_size);
             byte[] video_key = null;
             List<Entry> dir;
             try
             {
-                input = new XoredStream (input, xor_key);
+                if (xor_key != 0)
+                    input = new XoredStream (input, xor_key);
                 var enc = new Blowfish (scheme.ArcKeys[arc_name].IndexKey);
                 input = new InputCryptoStream (input, enc.CreateDecryptor());
                 using (var index = new ArcView.Reader (input))
@@ -173,25 +178,28 @@ namespace GameRes.Formats.Musica
                         var name = index.BaseStream.ReadCString();
                         var entry = FormatCatalog.Instance.Create<PazEntry> (name);
                         entry.Offset    = index.ReadInt64();
-                        entry.Size      = index.ReadUInt32();
+                        entry.UnpackedSize = index.ReadUInt32();
+                        entry.Size        = index.ReadUInt32();
+                        entry.AlignedSize = index.ReadUInt32();
                         if (!entry.CheckPlacement (max_offset))
                             return null;
-                        entry.UnpackedSize = index.ReadUInt32();
-                        entry.AlignedSize = index.ReadUInt32();
-                        entry.IsPacked = index.ReadInt32() != 0;
+                        entry.IsPacked = index.ReadInt32 () != 0;
                         if (string.IsNullOrEmpty (entry.Type) && is_audio)
                         {
                             entry.Type = "audio";
                         }
-                        string password = "";
-                        if (!entry.IsPacked && scheme.TypeKeys != null)
+                        if (scheme.Version > 0)
                         {
-                            password = scheme.GetTypePassword (name, is_audio);
-                        }
-                        if (!string.IsNullOrEmpty (password) || is_video)
-                        {
-                            password = string.Format ("{0} {1:X08} {2}", name.ToLowerInvariant(), entry.UnpackedSize, password);
-                            entry.Key = Encodings.cp932.GetBytes (password);
+                            string password = "";
+                            if (!entry.IsPacked && scheme.TypeKeys != null)
+                            {
+                                password = scheme.GetTypePassword (name, is_audio);
+                            }
+                            if (!string.IsNullOrEmpty (password) || is_video)
+                            {
+                                password = string.Format ("{0} {1:X08} {2}", name.ToLowerInvariant(), entry.UnpackedSize, password);
+                                entry.Key = Encodings.cp932.GetBytes (password);
+                            }
                         }
                         dir.Add (entry);
                     }
@@ -221,7 +229,16 @@ namespace GameRes.Formats.Musica
                 }
             }
             if (is_video)
+            {
+                if (scheme.Version < 1)
+                {
+                    var table = new byte[0x100];
+                    for (int i = 0; i < 0x100; ++i)
+                        table[video_key[i]] = (byte)i;
+                    video_key = table;
+                }
                 return new MovPazArchive (file, this, dir, scheme.Version, xor_key, video_key, parts);
+            }
             return new PazArchive (file, this, dir, scheme.Version, xor_key, scheme.ArcKeys[arc_name].DataKey, parts);
         }
 
@@ -258,7 +275,8 @@ namespace GameRes.Formats.Musica
                 if (null == input)
                     return Stream.Null;
 
-                input = new XoredStream (input, parc.XorKey);
+                if (parc.XorKey != 0)
+                    input = new XoredStream (input, parc.XorKey);
                 if (parc is MovPazArchive)
                     input = DecryptVideo (input, (MovPazArchive)parc, pent);
                 else
@@ -280,6 +298,17 @@ namespace GameRes.Formats.Musica
 
         Stream DecryptVideo (Stream input, MovPazArchive arc, PazEntry entry)
         {
+            if (arc.Version < 1)
+            {
+                using (input)
+                {
+                    var data = new byte[entry.AlignedSize];
+                    input.Read (data, 0, data.Length);
+                    for (int i = 0; i < data.Length; ++i)
+                        data[i] = arc.MovKey[data[i]];
+                    return new BinMemoryStream (data, entry.Name);
+                }
+            }
             var key = new byte[0x100];
             for (int i = 0; i < 0x100; ++i)
                 key[i] = (byte)(arc.MovKey[i] ^ entry.Key[i % entry.Key.Length]);
