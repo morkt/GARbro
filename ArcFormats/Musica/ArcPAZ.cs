@@ -41,7 +41,7 @@ namespace GameRes.Formats.Musica
         public byte[]   Key;
     }
 
-    internal class PazArchiveBase : ArcFile
+    internal abstract class PazArchiveBase : ArcFile
     {
         public readonly int         Version;
         public readonly byte        XorKey;
@@ -66,6 +66,8 @@ namespace GameRes.Formats.Musica
                         yield return part;
             }
         }
+
+        internal abstract Stream DecryptEntry (Stream input, PazEntry entry);
 
         bool _paz_disposed = false;
         protected override void Dispose (bool disposing)
@@ -92,6 +94,25 @@ namespace GameRes.Formats.Musica
         {
             Encryption = new Blowfish (data_key);
         }
+
+        internal override Stream DecryptEntry (Stream input, PazEntry entry)
+        {
+            input = new InputCryptoStream (input, Encryption.CreateDecryptor());
+            var key = entry.Key;
+            if (null == key)
+                return input;
+            var rc4 = new Rc4Transform (key);
+            if (Version >= 2)
+            {
+                uint crc = Crc32.Compute (key, 0, key.Length);
+                int skip_rounds = (int)(crc >> 12) & 0xFF; 
+                for (int i = 0; i < skip_rounds; ++i)
+                {
+                    rc4.NextByte();
+                }
+            }
+            return new InputCryptoStream (input, rc4);
+        }
     }
 
     internal class MovPazArchive : PazArchiveBase
@@ -102,6 +123,28 @@ namespace GameRes.Formats.Musica
             : base (arc, impl, dir, version, key, parts)
         {
             MovKey = mov_key;
+        }
+
+        internal override Stream DecryptEntry (Stream input, PazEntry entry)
+        {
+            if (Version < 1)
+            {
+                using (input)
+                {
+                    var data = new byte[entry.AlignedSize];
+                    input.Read (data, 0, data.Length);
+                    for (int i = 0; i < data.Length; ++i)
+                        data[i] = MovKey[data[i]];
+                    return new BinMemoryStream (data, entry.Name);
+                }
+            }
+            var key = new byte[0x100];
+            for (int i = 0; i < 0x100; ++i)
+                key[i] = (byte)(MovKey[i] ^ entry.Key[i % entry.Key.Length]);
+
+            var rc4 = new Rc4Transform (key);
+            var block = rc4.GenerateBlock ((int)Math.Min (0x10000, input.Length));
+            return new ByteStringEncryptedStream (input, block);
         }
     }
 
@@ -277,10 +320,8 @@ namespace GameRes.Formats.Musica
 
                 if (parc.XorKey != 0)
                     input = new XoredStream (input, parc.XorKey);
-                if (parc is MovPazArchive)
-                    input = DecryptVideo (input, (MovPazArchive)parc, pent);
-                else
-                    input = DecryptEntry (input, (PazArchive)parc, pent);
+
+                input = parc.DecryptEntry (input, pent);
 
                 if (pent.Size < pent.AlignedSize)
                     input = new LimitStream (input, pent.Size);
@@ -294,47 +335,6 @@ namespace GameRes.Formats.Musica
                     input.Dispose();
                 throw;
             }
-        }
-
-        Stream DecryptVideo (Stream input, MovPazArchive arc, PazEntry entry)
-        {
-            if (arc.Version < 1)
-            {
-                using (input)
-                {
-                    var data = new byte[entry.AlignedSize];
-                    input.Read (data, 0, data.Length);
-                    for (int i = 0; i < data.Length; ++i)
-                        data[i] = arc.MovKey[data[i]];
-                    return new BinMemoryStream (data, entry.Name);
-                }
-            }
-            var key = new byte[0x100];
-            for (int i = 0; i < 0x100; ++i)
-                key[i] = (byte)(arc.MovKey[i] ^ entry.Key[i % entry.Key.Length]);
-
-            var rc4 = new Rc4Transform (key);
-            var block = rc4.GenerateBlock ((int)Math.Min (0x10000, input.Length));
-            return new ByteStringEncryptedStream (input, block);
-        }
-
-        Stream DecryptEntry (Stream input, PazArchive arc, PazEntry entry)
-        {
-            input = new InputCryptoStream (input, arc.Encryption.CreateDecryptor());
-            var key = entry.Key;
-            if (null == key)
-                return input;
-            var rc4 = new Rc4Transform (key);
-            if (arc.Version >= 2)
-            {
-                uint crc = Crc32.Compute (key, 0, key.Length);
-                int skip_rounds = (int)(crc >> 12) & 0xFF; 
-                for (int i = 0; i < skip_rounds; ++i)
-                {
-                    rc4.NextByte();
-                }
-            }
-            return new InputCryptoStream (input, rc4);
         }
 
         PazScheme QueryEncryption (string arc_name, uint signature)
