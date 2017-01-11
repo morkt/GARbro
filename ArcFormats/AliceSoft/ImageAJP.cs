@@ -78,6 +78,11 @@ namespace GameRes.Formats.AliceSoft
                 var decoder = new JpegBitmapDecoder (jpeg,
                     BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 BitmapSource bitmap = decoder.Frames[0];
+                if (0 == meta.AlphaOffset || 0 == meta.AlphaSize)
+                {
+                    bitmap.Freeze();
+                    return new ImageData (bitmap, info);
+                }
                 if (bitmap.Format.BitsPerPixel != 32)
                     bitmap = new FormatConvertedBitmap (bitmap, PixelFormats.Bgr32, null, 0);
 
