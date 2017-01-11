@@ -78,6 +78,7 @@
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="AdvSys\ArcAdvSys3.cs" />
     <Compile Include="AdvSys\ImageGWD.cs" />
+    <Compile Include="AliceSoft\ArcAAR.cs" />
     <Compile Include="AliceSoft\ArcAFA.cs" />
     <Compile Include="AliceSoft\ArcALK.cs" />
     <Compile Include="AliceSoft\ImageAJP.cs" />
