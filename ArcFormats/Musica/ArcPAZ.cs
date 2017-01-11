@@ -172,9 +172,8 @@ namespace GameRes.Formats.Musica
             if (!file.Name.EndsWith (".paz", StringComparison.InvariantCultureIgnoreCase))
                 return null;
             uint signature = file.View.ReadUInt32 (0);
-            var arc_name = Path.GetFileNameWithoutExtension (file.Name).ToLowerInvariant();
             // XXX encryption is queried for every .paz file
-            var scheme = QueryEncryption (arc_name, signature);
+            var scheme = QueryEncryption (file.Name, signature);
             uint start_offset = scheme.Version > 0 ? 0x20u : 0u;
             uint index_size = file.View.ReadUInt32 (start_offset);
             start_offset += 4;
@@ -196,6 +195,7 @@ namespace GameRes.Formats.Musica
                 arc_list.Add (part);
                 max_offset += part.Size;
             }
+            var arc_name = Path.GetFileNameWithoutExtension (file.Name).ToLowerInvariant();
             bool is_audio = AudioPazNames.Contains (arc_name);
             bool is_video = VideoPazNames.Contains (arc_name);
             Stream input = file.CreateStream (start_offset, index_size);
@@ -342,9 +342,15 @@ namespace GameRes.Formats.Musica
             PazScheme scheme = null;
             if (!KnownSchemes.TryGetValue (signature, out scheme) && KnownTitles.Count > 1)
             {
-                var options = Query<PazOptions> (arcStrings.ArcEncryptedNotice);
-                scheme = options.Scheme;
+                var title = FormatCatalog.Instance.LookupGame (arc_name);
+                scheme = GetScheme (title);
+                if (null == scheme)
+                {
+                    var options = Query<PazOptions> (arcStrings.ArcEncryptedNotice);
+                    scheme = options.Scheme;
+                }
             }
+            arc_name = Path.GetFileNameWithoutExtension (arc_name).ToLowerInvariant();
             if (null == scheme || !scheme.ArcKeys.ContainsKey (arc_name))
                 throw new UnknownEncryptionScheme();
             return scheme;
