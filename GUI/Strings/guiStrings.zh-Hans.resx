@@ -456,4 +456,8 @@
     <value>正在播放 {0} / {3} / {2}bps / {1}Hz</value>
     <comment>{0}=filename, {1}=sampling rate, {2}=bitrate, {3}=total time </comment>
   </data>
+  <data name="CtxMenuSelectByMask" xml:space="preserve">
+    <value>Select files by mask...</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

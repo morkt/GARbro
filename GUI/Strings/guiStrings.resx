@@ -459,4 +459,7 @@ Overwrite?</value>
   <data name="LabelDevSite" xml:space="preserve">
     <value>Development site</value>
   </data>
+  <data name="CtxMenuSelectByMask" xml:space="preserve">
+    <value>Select files by mask...</value>
+  </data>
 </root>

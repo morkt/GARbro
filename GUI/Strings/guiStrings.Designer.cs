@@ -214,6 +214,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Select files by mask....
+        /// </summary>
+        public static string CtxMenuSelectByMask {
+            get {
+                return ResourceManager.GetString("CtxMenuSelectByMask", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Sort by.
         /// </summary>
         public static string CtxMenuSortBy {

@@ -81,6 +81,8 @@
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuExtract}" InputGestureText="F4"
                       Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
                       Command="{x:Static local:Commands.ExtractItem}" />
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuSelectByMask}"
+                      Command="{x:Static local:Commands.AddSelection}"/>
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuFileType}">
                 <MenuItem DataContext="image" Header="{Binding Converter={StaticResource entryTypeConverter}}"
                           Command="{x:Static local:Commands.SetFileType}" CommandParameter="{Binding}"/>
@@ -92,6 +94,7 @@
                           Command="{x:Static local:Commands.SetFileType}" CommandParameter=""/>
             </MenuItem>
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuExplorer}" InputGestureText="Ctrl+E"
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
                       Command="{x:Static local:Commands.ExploreItem}"/>
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuDelete}" InputGestureText="Del"
                       Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"

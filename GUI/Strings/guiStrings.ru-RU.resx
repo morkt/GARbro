@@ -480,4 +480,7 @@
   <data name="LabelDevSite" xml:space="preserve">
     <value>Сайт разработки</value>
   </data>
+  <data name="CtxMenuSelectByMask" xml:space="preserve">
+    <value>Выбрать файлы по маске...</value>
+  </data>
 </root>
