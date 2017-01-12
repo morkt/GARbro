@@ -75,7 +75,7 @@ namespace GameRes.Formats.ShiinaRio
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new Reader (stream, (S25MetaData)info))
+            using (var reader = new Reader (stream, (S25MetaData)info, true))
                 return reader.Image;
         }
 
@@ -92,6 +92,7 @@ namespace GameRes.Formats.ShiinaRio
             uint            m_origin;
             byte[]          m_output;
             bool            m_incremental;
+            bool            m_should_dispose;
             ImageMetaData   m_info;
             ImageData       m_image;
 
@@ -114,7 +115,7 @@ namespace GameRes.Formats.ShiinaRio
 
             public byte[]   Data { get { return m_output; } }
 
-            public Reader (IBinaryStream file, S25MetaData info)
+            public Reader (IBinaryStream file, S25MetaData info, bool leave_open = false)
             {
                 m_width = (int)info.Width;
                 m_height = (int)info.Height;
@@ -123,6 +124,7 @@ namespace GameRes.Formats.ShiinaRio
                 m_origin = info.FirstOffset;
                 m_incremental = info.Incremental;
                 m_info = info;
+                m_should_dispose = !leave_open;
             }
 
             public byte[] Unpack ()
@@ -369,8 +371,17 @@ namespace GameRes.Formats.ShiinaRio
             }
 
             #region IDisposable Members
+            bool m_disposed = false;
             public void Dispose ()
             {
+                if (!m_disposed)
+                {
+                    if (m_should_dispose)
+                    {
+                        m_input.Dispose();
+                    }
+                    m_disposed = true;
+                }
                 GC.SuppressFinalize (this);
             }
             #endregion
