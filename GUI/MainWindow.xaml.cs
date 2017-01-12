@@ -1169,6 +1169,7 @@ namespace GARbro.GUI
                     CurrentDirectory.SelectAll();
                     return;
                 }
+                SetBusyState();
                 var glob = new FileNameGlob (selection.Mask.Text);
                 var matching = ViewModel.Where (entry => glob.IsMatch (entry.Name));
                 if (!matching.Any())
@@ -1176,15 +1177,10 @@ namespace GARbro.GUI
                     SetStatusText (string.Format (guiStrings.MsgNoMatching, selection.Mask.Text));
                     return;
                 }
-                int count = 0;
-                foreach (var item in matching)
-                {
-                    if (!CurrentDirectory.SelectedItems.Contains (item))
-                    {
-                        CurrentDirectory.SelectedItems.Add (item);
-                        ++count;
-                    }
-                }
+                var selected = CurrentDirectory.SelectedItems.Cast<EntryViewModel>();
+                matching = matching.Except (selected).ToList();
+                int count = matching.Count();
+                CurrentDirectory.SetSelectedItems (selected.Concat (matching));
                 if (count != 0)
                     SetStatusText (Localization.Format ("MsgSelectedFiles", count));
             }

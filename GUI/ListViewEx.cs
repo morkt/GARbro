@@ -44,6 +44,11 @@ namespace GARbro.GUI
         {
         }
 
+        new public bool SetSelectedItems (IEnumerable selected_items)
+        {
+            return base.SetSelectedItems (selected_items);
+        }
+
         protected override DependencyObject GetContainerForItemOverride()
         {
             return new ListViewItemEx();
