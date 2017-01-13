@@ -849,4 +849,26 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, values, pos, count);
         }
     }
+
+    [Serializable]
+    public class HighRunningCrypt : ICrypt
+    {
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            byte key = (byte)entry.Hash;
+            if (0 == key)
+                return;
+            for (int i = 0; i < count; ++i)
+            {
+                if ((offset + i) % key != 0)
+                    data[pos+i] ^= key;
+            }
+        }
+
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            byte key = (byte)entry.Hash;
+            return key != 0 && offset % key != 0 ? (byte)(value ^ key) : value;
+        }
+    }
 }
