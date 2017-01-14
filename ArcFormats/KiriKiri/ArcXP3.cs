@@ -379,11 +379,17 @@ NextEntry:
             else
                 input = new Xp3Stream (arc.File, xp3_entry);
 
-            if (entry.Size <= 5 || "image" == entry.Type || "audio" == entry.Type)
+            if (xp3_entry.UnpackedSize <= 5 || "audio" == entry.Type)
                 return input;
 
             var header = new byte[5];
             input.Read (header, 0, 5);
+            if (0x184D2204 == header.ToInt32 (0)) // LZ4 magic
+            {
+                // assume no scripts are compressed using LZ4, return decompressed stream right away
+                return DecompressLz4 (xp3_entry, header, input);
+            }
+
             if (0xFE == header[0] && 0xFE == header[1] && header[2] < 3 && 0xFF == header[3] && 0xFE == header[4])
                 return DecryptScript (header[2], input, xp3_entry.UnpackedSize);
 
@@ -391,6 +397,31 @@ NextEntry:
                 return new PrefixStream (header, input);
             input.Position = 0;
             return input;
+        }
+
+        Stream DecompressLz4 (Xp3Entry entry, byte[] header, Stream input)
+        {
+            if (header.Length != 5)
+                throw new ArgumentException ("Invalid header length for DecompressLz4", "header");
+            var info = new Lz4FrameInfo (header[4]);
+            info.SetBlockSize (input.ReadByte());
+            if (info.HasContentLength)
+            {
+                input.Read (header, 0, 4);
+                long length = header.ToUInt32 (0);
+                input.Read (header, 0, 4);
+                length |= (long)header.ToUInt32 (0) << 32;
+                info.OriginalLength = length;
+                entry.UnpackedSize = (uint)length;
+                entry.IsPacked = true;
+            }
+            if (info.HasDictionary)
+            {
+                input.Read (header, 0, 4);
+                info.DictionaryId = header.ToInt32 (0);
+            }
+            input.ReadByte(); // skip descriptor checksum
+            return new Lz4Stream (input, info);
         }
 
         Stream DecryptScript (int enc_type, Stream input, uint unpacked_size)
