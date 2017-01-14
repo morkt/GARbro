@@ -278,6 +278,7 @@ namespace GameRes.Formats.Emote
         bool ReadHeader (bool encrypted)
         {
             m_input.Position = 4;
+            
             m_version = m_input.ReadUInt16();
             m_flags = m_input.ReadUInt16();
             if (encrypted && m_version < 3)
@@ -301,7 +302,7 @@ namespace GameRes.Formats.Emote
                   && m_strings_data >= 0x28 && m_strings_data < m_chunk_data
                   && m_chunk_offsets >= 0x28 && m_chunk_offsets < m_chunk_data
                   && m_chunk_lengths >= 0x28 && m_chunk_lengths < m_chunk_data
-                  && m_chunk_data   >= 0x28 && m_chunk_data < buffer_length
+                  && m_chunk_data   >= 0x28 && m_chunk_data <= buffer_length
                   && m_root         >= 0x28 && m_root < m_chunk_data))
                 return false;
 
@@ -638,19 +639,23 @@ namespace GameRes.Formats.Emote
 
         protected override ImageData GetImageData ()
         {
-            var pixels = new byte[m_info.Width * m_info.Height * 4];
+            int stride = (int)m_info.Width * 4;
+            var pixels = new byte[stride * (int)m_info.Height];
             if ("RGBA8" == m_info.TexType)
-                ReadRgba8 (pixels);
+                ReadRgba8 (pixels, stride);
+            else if ("L8" == m_info.TexType)
+                ReadL8 (pixels, stride);
+            else if ("A8L8" == m_info.TexType)
+                ReadA8L8 (pixels, stride);
             else if ("RGBA4444" == m_info.TexType)
-                ReadRgba4444 (pixels);
+                ReadRgba4444 (pixels, stride);
             else
                 throw new NotImplementedException (string.Format ("PSB texture format '{0}' not implemented", m_info.TexType));
-            return ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels);
+            return ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels, stride);
         }
 
-        void ReadRgba8 (byte[] output)
+        void ReadRgba8 (byte[] output, int dst_stride)
         {
-            int dst_stride = (int)m_info.Width * 4;
             long next_row = 0;
             int src_stride = m_info.FullWidth * 4;
             int dst = 0;
@@ -663,9 +668,51 @@ namespace GameRes.Formats.Emote
             }
         }
 
-        void ReadRgba4444 (byte[] output)
+        void ReadL8 (byte[] output, int dst_stride)
         {
-            int dst_stride = (int)m_info.Width * 4;
+            int src_stride = m_info.FullWidth;
+            int dst = 0;
+            var row = new byte[src_stride];
+            m_input.Position = 0;
+            for (uint i = 0; i < m_info.Height; ++i)
+            {
+                m_input.Read (row, 0, src_stride);
+                int src = 0;
+                for (int x = 0; x < dst_stride; x += 4)
+                {
+                    byte c = row[src++];
+                    output[dst++] = c;
+                    output[dst++] = c;
+                    output[dst++] = c;
+                    output[dst++] = 0xFF;
+                }
+            }
+        }
+
+        void ReadA8L8 (byte[] output, int dst_stride)
+        {
+            int src_stride = m_info.FullWidth * 2;
+            int dst = 0;
+            var row = new byte[src_stride];
+            m_input.Position = 0;
+            for (uint i = 0; i < m_info.Height; ++i)
+            {
+                m_input.Read (row, 0, src_stride);
+                int src = 0;
+                for (int x = 0; x < dst_stride; x += 4)
+                {
+                    byte c = row[src++];
+                    byte a = row[src++];
+                    output[dst++] = c;
+                    output[dst++] = c;
+                    output[dst++] = c;
+                    output[dst++] = a;
+                }
+            }
+        }
+
+        void ReadRgba4444 (byte[] output, int dst_stride)
+        {
             int src_stride = m_info.FullWidth * 2;
             int dst = 0;
             var row = new byte[src_stride];
