@@ -870,5 +870,10 @@ namespace GameRes.Formats.KiriKiri
             byte key = (byte)entry.Hash;
             return key != 0 && offset % key != 0 ? (byte)(value ^ key) : value;
         }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            Decrypt (entry, offset, data, pos, count);
+        }
     }
 }
