@@ -123,7 +123,7 @@ namespace GameRes.Formats.MAI
                 if (info.Colors > 0)
                 {
                     m_input.Position = 0x20;
-                    Palette = RleDecoder.ReadPalette (m_input, info.Colors, 3);
+                    Palette = ImageFormat.ReadPalette (m_input, info.Colors, PaletteFormat.Bgr);
                 }
                 m_input.Position = info.DataOffset;
                 int size = info.IsCompressed ? m_width*m_height*m_pixel_size : (int)info.DataLength;
@@ -240,7 +240,7 @@ namespace GameRes.Formats.MAI
             {
                 m_input.Position = m_info.DataOffset;
                 if (m_info.Colors > 0)
-                    Palette = RleDecoder.ReadPalette (m_input, m_info.Colors, 3);
+                    Palette = ImageFormat.ReadPalette (m_input, m_info.Colors, PaletteFormat.Bgr);
                 if (m_info.IsCompressed)
                     RleDecoder.Unpack (m_input, (int)m_info.DataLength, m_output, m_pixel_size);
                 else
@@ -324,7 +324,7 @@ namespace GameRes.Formats.MAI
         {
             var meta = (CmMetaData)info;
             stream.Position = meta.DataOffset;
-            var palette = RleDecoder.ReadPalette (stream.AsStream, 0x100, 4);
+            var palette = ReadPalette (stream.AsStream, 0x100, PaletteFormat.BgrX);
 
             var pixels = new byte[info.Width*info.Height];
             if (meta.IsCompressed)
@@ -341,20 +341,6 @@ namespace GameRes.Formats.MAI
 
     internal class RleDecoder
     {
-        public static BitmapPalette ReadPalette (Stream input, int colors, int color_size)
-        {
-            var palette_data = new byte[colors*color_size];
-            if (palette_data.Length != input.Read (palette_data, 0, palette_data.Length))
-                throw new InvalidFormatException();
-            var palette = new Color[colors];
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                int c = i * color_size;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            return new BitmapPalette (palette);
-        }
-
         static public void Unpack (Stream input, int input_size, byte[] output, int pixel_size)
         {
             int read = 0;

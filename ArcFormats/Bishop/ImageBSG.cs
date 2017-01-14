@@ -244,16 +244,7 @@ namespace GameRes.Formats.Bishop
         BitmapPalette ReadPalette ()
         {
             m_input.Position = m_info.PaletteOffset;
-            var palette_data = new byte[0x400];
-            if (palette_data.Length != m_input.Read (palette_data, 0, palette_data.Length))
-                throw new InvalidFormatException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            return new BitmapPalette (palette);
+            return ImageFormat.ReadPalette (m_input.AsStream);
         }
 
         #region IDisposable Members

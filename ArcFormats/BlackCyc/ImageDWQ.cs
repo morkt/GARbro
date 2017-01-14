@@ -260,7 +260,7 @@ namespace GameRes.Formats.BlackCyc
             if (8 == bpp)
             {
                 int colors = Math.Min (header.ToInt32 (0x2E), 0x100);
-                palette = DwqBmpReader.ReadPalette (file.AsStream, colors);
+                palette = ImageFormat.ReadPalette (file.AsStream, colors);
             }
             int pixel_size = bpp / 8;
             int stride = ((int)info.Width * pixel_size + 3) & ~3;
@@ -324,28 +324,11 @@ namespace GameRes.Formats.BlackCyc
                 int colors = Math.Min (LittleEndian.ToInt32 (header, 0x2E), 0x100);
                 if (0 == colors)
                     colors = 0x100;
-                Palette = ReadPalette (m_input, colors);
+                Palette = ImageFormat.ReadPalette (m_input, colors);
             }
             uint data_position = LittleEndian.ToUInt32 (header, 0xA);
             m_input.Position = data_position;
             m_pixels = new byte[Stride*m_height];
-        }
-
-        public static BitmapPalette ReadPalette (Stream input, int colors)
-        {
-            int palette_size = colors * 4;
-            var palette_data = new byte[palette_size];
-            if (palette_size != input.Read (palette_data, 0, palette_size))
-                throw new InvalidFormatException();
-            var palette = new Color[colors];
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                byte r = palette_data[i*4+2];
-                byte g = palette_data[i*4+1];
-                byte b = palette_data[i*4];
-                palette[i] = Color.FromRgb (r, g, b);
-            }
-            return new BitmapPalette (palette);
         }
 
         public void Unpack () // sub_408990

@@ -63,7 +63,7 @@ namespace GameRes.Formats.Leaf
             stream.Position = 12;
             BitmapPalette palette = null;
             if (8 == info.BPP)
-                palette = ReadPalette (stream.AsStream);
+                palette = ReadPalette (stream.AsStream, 0x100, PaletteFormat.RgbX);
             if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                 throw new EndOfStreamException();
             PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24
@@ -75,20 +75,6 @@ namespace GameRes.Formats.Leaf
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("LgfFormat.Write not implemented");
-        }
-
-        BitmapPalette ReadPalette (Stream input)
-        {
-            var palette_data = new byte[0x400];
-            if (palette_data.Length != input.Read (palette_data, 0, palette_data.Length))
-                throw new EndOfStreamException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < 0x100; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c], palette_data[c+1], palette_data[c+2]);
-            }
-            return new BitmapPalette (palette);
         }
     }
 }

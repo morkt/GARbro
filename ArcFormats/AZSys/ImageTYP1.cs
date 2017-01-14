@@ -117,29 +117,12 @@ namespace GameRes.Formats.AZSys
                 m_input = input;
             }
 
-            public BitmapPalette ReadPalette ()
-            {
-                var palette_data = new byte[0x400];
-                if (0x400 != m_input.Read (palette_data, 0, 0x400))
-                    throw new InvalidFormatException();
-                var palette = new Color[0x100];
-                for (int i = 0; i < palette.Length; ++i)
-                {
-                    int src = i * 4;
-                    byte b = palette_data[src++];
-                    byte g = palette_data[src++];
-                    byte r = palette_data[src++];
-                    palette[i] = Color.FromRgb (r, g, b);
-                }
-                return new BitmapPalette (palette);
-            }
-
             public void Unpack ()
             {
                 if (m_info.HasPalette)
                 {
                     m_input.Position = m_info.SeparateChannels ? 0x1E : 0x0E;
-                    Palette = ReadPalette();
+                    Palette = ImageFormat.ReadPalette (m_input);
                 }
                 if (!m_info.SeparateChannels)
                 {

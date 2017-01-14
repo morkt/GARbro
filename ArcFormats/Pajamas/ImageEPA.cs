@@ -117,20 +117,7 @@ namespace GameRes.Formats.Pajamas
                 m_height = (int)info.Height;
                 m_output = new byte[info.Width*info.Height*m_pixel_size];
                 if (8 == info.BPP)
-                    ReadPalette();
-            }
-
-            private void ReadPalette ()
-            {
-                var palette_data = new byte[0x300];
-                if (palette_data.Length != m_input.Read (palette_data, 0, palette_data.Length))
-                    throw new InvalidFormatException();
-                var palette = new Color[0x100];
-                for (int i = 0; i < palette.Length; ++i)
-                {
-                    palette[i] = Color.FromRgb (palette_data[i*3+2], palette_data[i*3+1], palette_data[i*3]);
-                }
-                Palette = new BitmapPalette (palette);
+                    Palette = ImageFormat.ReadPalette (m_input, 0x100, PaletteFormat.Bgr);
             }
 
             public void Unpack ()

@@ -246,17 +246,10 @@ namespace GameRes.Formats.Entis
 
         internal static Color[] ReadPalette (Stream input, int palette_length)
         {
-            var palette_data = new byte[0x400];
-            if (palette_length > palette_data.Length)
+            int colors = palette_length / 4;
+            if (colors <= 0 || colors > 0x100)
                 throw new InvalidFormatException();
-            if (palette_length != input.Read (palette_data, 0, palette_length))
-                throw new InvalidFormatException();
-            var colors = new Color[256];
-            for (int i = 0; i < 256; ++i)
-            {
-                colors[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
-            }
-            return colors;
+            return ImageFormat.ReadColorMap (input, colors);
         }
 
         internal EriReader ReadImageData (IBinaryStream stream, EriMetaData meta)

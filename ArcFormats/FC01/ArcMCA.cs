@@ -69,7 +69,7 @@ namespace GameRes.Formats.FC01
             BitmapPalette palette = null;
             if (8 == bpp)
             {
-                palette = ReadPalette (file, index_offset);
+                palette = ImageFormat.ReadPalette (file, index_offset);
                 index_offset += 0x400;
             }
             string base_name = Path.GetFileNameWithoutExtension (file.Name);
@@ -110,19 +110,6 @@ namespace GameRes.Formats.FC01
                 input.Dispose();
                 throw;
             }
-        }
-
-        BitmapPalette ReadPalette (ArcView file, uint offset)
-        {
-            var palette = file.View.ReadBytes (offset, 0x400);
-            int src = 0;
-            var colors = new Color[0x100];
-            for (int i = 0; i < 0x100; ++i)
-            {
-                colors[i] = Color.FromRgb (palette[src+2], palette[src+1], palette[src]);
-                src += 4;
-            }
-            return new BitmapPalette (colors);
         }
 
         public override ResourceOptions GetDefaultOptions ()

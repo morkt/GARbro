@@ -185,7 +185,7 @@ namespace GameRes.Formats.ExHibit
         {
             m_input.Position = 0x24;
             if (0 != m_info.PaletteSize)
-                Palette = ReadPalette (m_info.PaletteSize);
+                Palette = ImageFormat.ReadPalette (m_input, m_info.PaletteSize);
 
             var packed = new byte[m_info.DataSize];
             if (packed.Length != m_input.Read (packed, 0, packed.Length))
@@ -265,20 +265,6 @@ namespace GameRes.Formats.ExHibit
                     dst += count;
                 }
             }
-        }
-
-        BitmapPalette ReadPalette (int colors)
-        {
-            var palette_data = new byte[colors*4];
-            if (palette_data.Length != m_input.Read (palette_data, 0, palette_data.Length))
-                throw new InvalidFormatException();
-            var palette = new Color[colors];
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            return new BitmapPalette (palette);
         }
 
         void ReadAlpha ()

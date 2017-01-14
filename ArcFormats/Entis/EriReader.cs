@@ -425,6 +425,9 @@ namespace GameRes.Formats.Entis
                     throw new InvalidFormatException();
                 DecodeType2Image (context);
                 return;
+            case 4:
+                DecodeType4Image (context);
+                return;
             case 8:
                 if (nBitCount != 8)
                     throw new InvalidFormatException();
@@ -587,6 +590,11 @@ namespace GameRes.Formats.Entis
                     m_output[dst+x] = (byte)m_ptrLineBuf[4 * x];
                 dst += m_dwBytesPerLine;
             }
+        }
+
+        private void DecodeType4Image (RLEDecodeContext context)
+        {
+            throw new NotImplementedException ("Arithmetic compression not implemented");
         }
 
         private void DecodeLossyImage (HuffmanDecodeContext context)

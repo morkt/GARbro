@@ -183,22 +183,7 @@ namespace GameRes.Formats.Seraphim
 
         public BitmapPalette ReadPalette (int colors)
         {
-            int palette_size = colors * 3;
-            var palette_data = new byte[Math.Max (palette_size, 0x300)];
-            if (palette_size != m_input.Read (palette_data, 0, palette_size))
-                throw new InvalidFormatException();
-            var palette = new Color[0x100];
-            if (colors > 0x100)
-                colors = 0x100;
-            int src = 0;
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                byte r = palette_data[src++];
-                byte g = palette_data[src++];
-                byte b = palette_data[src++];
-                palette[i] = Color.FromRgb (r, g, b);
-            }
-            return new BitmapPalette (palette);
+            return ImageFormat.ReadPalette (m_input, Math.Min (colors, 0x100), PaletteFormat.Rgb);
         }
 
         public void UnpackCb ()

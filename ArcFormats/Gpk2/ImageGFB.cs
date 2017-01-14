@@ -67,7 +67,7 @@ namespace GameRes.Formats.Gpk2
             if (8 == meta.BPP && meta.DataOffset != 0x40)
             {
                 stream.Position = 0x40;
-                palette = ReadPalette (stream.AsStream, meta.DataOffset - 0x40);
+                palette = ReadPalette (stream, meta.DataOffset - 0x40);
             }
 
             stream.Position = meta.DataOffset;
@@ -113,11 +113,11 @@ namespace GameRes.Formats.Gpk2
             return ImageData.CreateFlipped (info, format, palette, pixels, stride);
         }
 
-        BitmapPalette ReadPalette (Stream input, int palette_size)
+        BitmapPalette ReadPalette (IBinaryStream input, int palette_size)
         {
             palette_size = Math.Min (0x400, palette_size);
-            var palette_data = new byte[palette_size];
-            if (palette_data.Length != input.Read (palette_data, 0, palette_data.Length))
+            var palette_data = input.ReadBytes (palette_size);
+            if (palette_data.Length != palette_size)
                 throw new EndOfStreamException();
             int color_size = palette_size / 0x100;
             var palette = new Color[0x100];

@@ -113,7 +113,7 @@ namespace GameRes.Formats.Ivory
                 }
             }
             input.Position = 0x18 + meta.Size2 + meta.Size3;
-            var palette = ReadPalette (input.AsStream, meta.Colors);
+            var palette = ReadPalette (input.AsStream, Math.Min (0x100, meta.Colors), PaletteFormat.Rgb);
             return ImageData.Create (info, PixelFormats.Indexed8, palette, pixels);
         }
 
@@ -121,26 +121,6 @@ namespace GameRes.Formats.Ivory
             0, 0, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8, 8, 16,
             0, 2, 4, 8, 0, 2, 0, 2, 4, 0, 2, 4, 0, 2, 4, 0,
         };
-
-        BitmapPalette ReadPalette (Stream input, int colors)
-        {
-            int palette_size = colors * 3;
-            var palette_data = new byte[Math.Max (palette_size, 0x300)];
-            if (palette_size != input.Read (palette_data, 0, palette_size))
-                throw new EndOfStreamException();
-            var palette = new Color[0x100];
-            if (colors > 0x100)
-                colors = 0x100;
-            int src = 0;
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                byte r = palette_data[src++];
-                byte g = palette_data[src++];
-                byte b = palette_data[src++];
-                palette[i] = Color.FromRgb (r, g, b);
-            }
-            return new BitmapPalette (palette);
-        }
 
         public override void Write (Stream file, ImageData image)
         {

@@ -179,17 +179,8 @@ namespace GameRes.Formats.Adobe
 
         void ReadPalette (int palette_size)
         {
-            var palette_data = m_input.ReadBytes (palette_size);
-            if (palette_data.Length != palette_size)
-                throw new EndOfStreamException();
-            int colors = Math.Min (256, palette_size/3);
-            var palette = new Color[colors];
-            for (int i = 0; i < colors; ++i)
-            {
-                int c = i * 3;
-                palette[i] = Color.FromRgb (palette_data[c], palette_data[c+1], palette_data[c+2]);
-            }
-            Palette = new BitmapPalette (palette);
+            int colors = Math.Min (0x100, palette_size/3);
+            Palette = ImageFormat.ReadPalette (m_input.AsStream, colors, PaletteFormat.Rgb);
         }
 
         byte[] UnpackRLE ()

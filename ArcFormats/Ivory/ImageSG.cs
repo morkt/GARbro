@@ -239,7 +239,7 @@ namespace GameRes.Formats.Ivory
             m_output = new byte[m_width * m_height];
             Format = PixelFormats.Indexed8;
 
-            Palette = new BitmapPalette (ReadPalette());
+            Palette = ImageFormat.ReadPalette (m_input.AsStream);
             var index = new int[m_height];
             for (int i = 0; i < m_height; ++i)
                 index[i] = m_input.ReadInt32();
@@ -278,7 +278,7 @@ namespace GameRes.Formats.Ivory
             m_output = new byte[m_stride * m_height];
             Format = PixelFormats.Bgra32;
 
-            var palette = ReadPalette();
+            var palette = ImageFormat.ReadColorMap (m_input.AsStream);
             var index = new int[m_height];
             for (int i = 0; i < m_height; ++i)
                 index[i] = m_input.ReadInt32();
@@ -341,20 +341,6 @@ namespace GameRes.Formats.Ivory
                     }
                 }
             }
-        }
-
-        Color[] ReadPalette ()
-        {
-            var palette_data = m_input.ReadBytes (0x400);
-            if (palette_data.Length != 0x400)
-                throw new EndOfStreamException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < 0x100; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            return palette;
         }
 
         #region IDisposable Members

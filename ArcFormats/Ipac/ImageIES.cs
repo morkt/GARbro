@@ -76,7 +76,7 @@ namespace GameRes.Formats.BaseUnit
             else if (8 == info.BPP)
             {
                 stream.Position = 0x20;
-                var palette = ReadPalette (stream.AsStream);
+                var palette = ReadPalette (stream.AsStream, 0x100, PaletteFormat.RgbX);
                 var pixels = new byte[info.Width * info.Height];
                 if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                     throw new EndOfStreamException();
@@ -89,20 +89,6 @@ namespace GameRes.Formats.BaseUnit
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("IesFormat.Write not implemented");
-        }
-
-        BitmapPalette ReadPalette (Stream input)
-        {
-            var palette_data = new byte[0x400];
-            if (palette_data.Length != input.Read (palette_data, 0, palette_data.Length))
-                throw new EndOfStreamException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < 0x100; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c], palette_data[c+1], palette_data[c+2]);
-            }
-            return new BitmapPalette (palette);
         }
     }
 }

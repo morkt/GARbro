@@ -236,7 +236,7 @@ namespace GameRes.Formats.LiveMaker
             if (frame.BPP <= 0)
                 throw new InvalidFormatException();
             if (frame.BPP <= 8)
-                frame.Palette = ReadPalette (1 << frame.BPP);
+                frame.Palette = ImageFormat.ReadColorMap (m_input.AsStream, 1 << frame.BPP);
             frame.Stride = (frame.Width * frame.BPP + 7) / 8;
             frame.AlphaStride = (frame.Width + 3) & ~3;
             if (frame.BPP >= 8)
@@ -523,20 +523,6 @@ namespace GameRes.Formats.LiveMaker
                 }
                 a += frame.AlphaStride;
             }
-        }
-
-        Color[] ReadPalette (int colors)
-        {
-            var palette_data = m_input.ReadBytes (4 * colors);
-            if (palette_data.Length != 4 * colors)
-                throw new EndOfStreamException();
-            var palette = new Color[colors];
-            for (int i = 0; i < colors; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            return palette;
         }
 
         void ShuffleBlocks (int[] refs, int count)

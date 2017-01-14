@@ -46,6 +46,17 @@ namespace GameRes
         public override string Type { get { return "image"; } }
     }
 
+    /// <summary>
+    /// Enumeration representing possible palette serialization formats.
+    /// </summary>
+    public enum PaletteFormat
+    {
+        Rgb     = 1,
+        Bgr     = 2,
+        RgbX    = 5,
+        BgrX    = 6,
+    }
+
     public class ImageData
     {
         private BitmapSource m_bitmap;
@@ -171,5 +182,43 @@ namespace GameRes
         public static ImageFormat  Png { get { return s_PngFormat.Value; } }
         public static ImageFormat  Bmp { get { return s_BmpFormat.Value; } }
         public static ImageFormat  Tga { get { return s_TgaFormat.Value; } }
+
+        /// <summary>
+        /// Desereialize color map from <paramref name="input"/> stream, consisting of specified number of
+        /// <paramref name="colors"/> stored in specified <paramref name="format"/>.
+        /// Default number of colors is 256 and format is 4-byte BGRX (where X is an unsignificant byte).
+        /// </summary>
+        public static Color[] ReadColorMap (Stream input, int colors = 0x100, PaletteFormat format = PaletteFormat.BgrX)
+        {
+            int bpp = PaletteFormat.Rgb == format || PaletteFormat.Bgr == format ? 3 : 4;
+            var palette_data = new byte[bpp * colors];
+            if (palette_data.Length != input.Read (palette_data, 0, palette_data.Length))
+                throw new EndOfStreamException();
+            int src = 0;
+            var color_map = new Color[colors];
+            Func<int, Color> get_color;
+            if (PaletteFormat.Bgr == format || PaletteFormat.BgrX == format)
+                get_color = x => Color.FromRgb (palette_data[x+2], palette_data[x+1], palette_data[x]);
+            else
+                get_color = x => Color.FromRgb (palette_data[x],   palette_data[x+1], palette_data[x+2]);
+
+            for (int i = 0; i < colors; ++i)
+            {
+                color_map[i] = get_color (src);
+                src += bpp;
+            }
+            return color_map;
+        }
+
+        public static BitmapPalette ReadPalette (Stream input, int colors = 0x100, PaletteFormat format = PaletteFormat.BgrX)
+        {
+            return new BitmapPalette (ReadColorMap (input, colors, format));
+        }
+
+        public static BitmapPalette ReadPalette (ArcView file, long offset, int colors = 0x100, PaletteFormat format = PaletteFormat.BgrX)
+        {
+            using (var input = file.CreateStream (offset, (uint)(4 * colors))) // largest possible size for palette
+                return ReadPalette (input, colors, format);
+        }
     }
 }

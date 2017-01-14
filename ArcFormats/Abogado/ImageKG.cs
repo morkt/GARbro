@@ -115,7 +115,7 @@ namespace GameRes.Formats.Abogado
             if (8 == m_info.BPP)
             {
                 m_input.Position = m_info.PaletteOffset;
-                ReadPalette();
+                Palette = ImageFormat.ReadPalette (m_input.AsStream);
             }
             m_bits.Input.Position = m_info.DataOffset;
             ResetDict();
@@ -179,20 +179,6 @@ namespace GameRes.Formats.Abogado
             }
             m_output = pixels;
             m_pixel_size = 4;
-        }
-
-        void ReadPalette ()
-        {
-            var palette_data = m_input.ReadBytes (0x400);
-            if (palette_data.Length != 0x400)
-                throw new EndOfStreamException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < 0x100; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            Palette = new BitmapPalette (palette);
         }
 
         void UnpackChannel (int dst)

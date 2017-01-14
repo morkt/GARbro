@@ -82,23 +82,10 @@ namespace GameRes.Formats.Eushully
                 if (8 == info.SourceBPP)
                 {
                     reader.Read (header, 0, 0x18); // skip rest of the header
-                    info.Palette = ReadPalette (reader.BaseStream);
+                    info.Palette = ReadColorMap (reader.BaseStream);
                 }
                 return info;
             }
-        }
-
-        static Color[] ReadPalette (Stream input)
-        {
-            var palette_data = new byte[0x400];
-            if (0x400 != input.Read (palette_data, 0, 0x400))
-                throw new EndOfStreamException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                palette[i] = Color.FromRgb (palette_data[i*4+2], palette_data[i*4+1], palette_data[i*4]);
-            }
-            return palette;
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)

@@ -126,7 +126,7 @@ namespace GameRes.Formats.Vitamin
             int input_size = m_info.InputSize - 0x20;
             if (m_info.HasPalette)
             {
-                ReadPalette();
+                Palette = ImageFormat.ReadPalette (m_input.AsStream, 0x100, PaletteFormat.Rgb);
                 input_size -= 0x300;
             }
             int x = 0;
@@ -186,20 +186,6 @@ namespace GameRes.Formats.Vitamin
                     count -= line_left;
                 }
             }
-        }
-
-        void ReadPalette ()
-        {
-            var palette_data = m_input.ReadBytes (0x300);
-            if (palette_data.Length != 0x300)
-                throw new EndOfStreamException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < 0x100; ++i)
-            {
-                int c = i * 3;
-                palette[i] = Color.FromRgb (palette_data[c], palette_data[c+1], palette_data[c+2]);
-            }
-            Palette = new BitmapPalette (palette);
         }
 
         #region IDisposable Members

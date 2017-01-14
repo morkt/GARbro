@@ -77,7 +77,7 @@ namespace GameRes.Formats.EmonEngine
             stream.Position = meta.DataOffset;
             BitmapPalette palette = null;
             if (meta.Colors != 0)
-                palette = ReadPalette (stream.AsStream, Math.Max (meta.Colors, 3));
+                palette = ReadPalette (stream.AsStream, Math.Max (meta.Colors, 3), PaletteFormat.RgbX);
             var pixels = new byte[meta.Stride * (int)info.Height];
             if (meta.LzssFrameSize != 0)
             {
@@ -105,22 +105,6 @@ namespace GameRes.Formats.EmonEngine
             else
                 format = PixelFormats.Indexed8;
             return ImageData.CreateFlipped (info, format, palette, pixels, meta.Stride);
-        }
-
-        BitmapPalette ReadPalette (Stream input, int colors)
-        {
-            int palette_size = colors * 4;
-            var palette_data = new byte[palette_size];
-            if (palette_size != input.Read (palette_data, 0, palette_size))
-                throw new InvalidFormatException();
-            var palette = new Color[colors];
-            int src = 0;
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                palette[i] = Color.FromRgb (palette_data[src], palette_data[src+1], palette_data[src+2]);
-                src += 4;
-            }
-            return new BitmapPalette (palette);
         }
 
         public override void Write (Stream file, ImageData image)

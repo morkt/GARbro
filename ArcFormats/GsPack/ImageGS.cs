@@ -118,17 +118,5 @@ namespace GameRes.Formats.Gs
         {
             throw new NotImplementedException ("PicFormat.Write not implemented");
         }
-
-        private static BitmapPalette ReadPalette (Stream input)
-        {
-            var colors = new byte[0x400];
-            if (colors.Length != input.Read (colors, 0, colors.Length))
-                throw new InvalidFormatException();
-            var color_data = new Color[0x100];
-            int n = 0;
-            for (int i = 0; i < 0x400; i += 4)
-                color_data[n++] = Color.FromRgb (colors[i+2], colors[i+1], colors[i]);
-            return new BitmapPalette (color_data);
-        }
     }
 }

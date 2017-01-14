@@ -69,20 +69,6 @@ namespace GameRes.Formats.Elf
             }
         }
 
-        public static BitmapPalette ReadPalette (Stream input)
-        {
-            var palette_data = new byte[0x400];
-            if (palette_data.Length != input.Read (palette_data, 0, palette_data.Length))
-                throw new InvalidFormatException();
-            var palette = new Color[0x100];
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            return new BitmapPalette (palette);
-        }
-
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("Gp8Format.Write not implemented");
