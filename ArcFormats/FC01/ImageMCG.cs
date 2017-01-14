@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
@@ -79,7 +80,7 @@ namespace GameRes.Formats.FC01
             if (header_size < 0x40)
                 return null;
             int bpp = header.ToInt32 (0x24);
-            if (24 != bpp)
+            if (24 != bpp && 8 != bpp)
                 throw new NotSupportedException ("Not supported MCG image bitdepth");
             return new McgMetaData
             {
@@ -111,11 +112,11 @@ namespace GameRes.Formats.FC01
                 else
                     key = LastKey.Value;
             }
-            var reader = new McgDecoder (stream.AsStream, meta, key);
+            var reader = new McgDecoder (stream, meta, key);
             reader.Unpack();
             if (reader.Key != 0)
                 LastKey = reader.Key;
-            return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, reader.Stride);
+            return ImageData.Create (info, reader.Format, reader.Palette, reader.Data, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -152,33 +153,49 @@ namespace GameRes.Formats.FC01
         int     m_height;
         int     m_pixels;
         byte    m_key;
-        int     m_version;
+        IBinaryStream   m_file;
+        McgMetaData     m_info;
 
-        public byte[] Data { get { return m_output; } }
-        public int  Stride { get; private set; }
-        public byte    Key { get { return m_key; } }
+        public byte              Key { get { return m_key; } }
+        public byte[]           Data { get { return m_output; } }
+        public int            Stride { get; private set; }
+        public PixelFormat    Format { get; private set; }
+        public BitmapPalette Palette { get; private set; }
 
-        public McgDecoder (Stream input, McgMetaData info, byte key)
+        public McgDecoder (IBinaryStream input, McgMetaData info, byte key)
         {
-            input.Position = info.DataOffset;
-            m_input = new byte[info.PackedSize];
-            if (m_input.Length != input.Read (m_input, 0, m_input.Length))
-                throw new InvalidFormatException ("Unexpected end of file");
+            m_file = input;
+            m_info = info;
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_pixels = m_width*m_height;
             m_key = key;
-            m_version = info.Version;
-            Stride = 3 * m_width;
-            if (101 == m_version)
+            Stride = m_width * m_info.BPP / 8;
+            if (101 == m_info.Version)
                 Stride = (Stride + 3) & -4;
+            if (24 == m_info.BPP)
+                Format = PixelFormats.Bgr24;
+            else if (8 == m_info.BPP)
+                Format = PixelFormats.Indexed8;
+            else
+                throw new InvalidFormatException();
         }
 
         static readonly byte[] ChannelOrder = { 1, 0, 2 };
 
         public void Unpack ()
         {
-            if (200 == m_version)
+            m_file.Position = m_info.DataOffset;
+            int input_size = m_info.PackedSize;
+            if (8 == m_info.BPP)
+            {
+                ReadPalette();
+                input_size -= 0x400;
+            }
+            m_input = m_file.ReadBytes (input_size);
+            if (m_input.Length != input_size)
+                throw new InvalidFormatException ("Unexpected end of file");
+            if (200 == m_info.Version)
                 UnpackV200();
             else
                 UnpackV101();
@@ -296,6 +313,19 @@ namespace GameRes.Formats.FC01
                 m_output[dst++] = (byte)g;
                 m_output[dst++] = (byte)(r + g);
             }
+        }
+
+        void ReadPalette ()
+        {
+            var palette_data = m_file.ReadBytes (0x400);
+            int src = 0;
+            var colors = new Color[0x100];
+            for (int i = 0; i < 0x100; ++i)
+            {
+                colors[i] = Color.FromRgb (palette_data[src+2], palette_data[src+1], palette_data[src]);
+                src += 4;
+            }
+            Palette = new BitmapPalette (colors);
         }
     }
 }
