@@ -189,7 +189,7 @@ namespace GameRes.Formats.FC01
             int input_size = m_info.PackedSize;
             if (8 == m_info.BPP)
             {
-                ReadPalette();
+                Palette = ImageFormat.ReadPalette (m_file.AsStream);
                 input_size -= 0x400;
             }
             m_input = m_file.ReadBytes (input_size);
@@ -313,19 +313,6 @@ namespace GameRes.Formats.FC01
                 m_output[dst++] = (byte)g;
                 m_output[dst++] = (byte)(r + g);
             }
-        }
-
-        void ReadPalette ()
-        {
-            var palette_data = m_file.ReadBytes (0x400);
-            int src = 0;
-            var colors = new Color[0x100];
-            for (int i = 0; i < 0x100; ++i)
-            {
-                colors[i] = Color.FromRgb (palette_data[src+2], palette_data[src+1], palette_data[src]);
-                src += 4;
-            }
-            Palette = new BitmapPalette (colors);
         }
     }
 }
