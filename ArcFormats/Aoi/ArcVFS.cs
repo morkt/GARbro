@@ -43,7 +43,7 @@ namespace GameRes.Formats.Aoi
         public VfsOpener ()
         {
             Extensions = new string[] { "vfs" };
-            Signatures = new uint[] { 0x01014656, 0x02004656, 0 };
+            Signatures = new uint[] { 0x01014656, 0x02004656, 0x01004656, 0 };
         }
 
         public override ArcFile TryOpen (ArcView file)
