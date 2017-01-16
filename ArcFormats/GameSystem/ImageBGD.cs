@@ -64,30 +64,28 @@ namespace GameRes.Formats.GameSystem
             file.Position = 0x10;
             for (int i = 0; i < count; ++i)
             {
-                byte c = file.ReadUInt8();
+                int c = file.ReadInt24();
                 s1 = s1 << 4 | c & 0xF;
                 s2 = s2 << 4 | (c >> 4) & 0xF;
+                s3 = s3 << 4 | (c >> 8) & 0xF;
                 b += RgbShift[s1];
                 g += RgbShift[s2];
-                c = file.ReadUInt8();
-                s3 = s3 << 4 | c & 0xF;
                 r += RgbShift[s3];
                 pixels[dst++] = (byte)b;
                 pixels[dst++] = (byte)g;
                 pixels[dst++] = (byte)r;
-                s3 = ShiftTable[s3] << 4 | (c >> 4) & 0xF;
-                c = file.ReadUInt8();
-                s1 = ShiftTable[s1] << 4 | c & 0xF;
-                s2 = ShiftTable[s2] << 4 | (c >> 4) & 0xF;
+                s1 = ShiftTable[s1] << 4 | (c >> 16) & 0xF;
+                s2 = ShiftTable[s2] << 4 | (c >> 20) & 0xF;
+                s3 = ShiftTable[s3] << 4 | (c >> 12) & 0xF;
                 b += RgbShift[s1];
                 g += RgbShift[s2];
                 r += RgbShift[s3];
+                pixels[dst++] = (byte)b;
+                pixels[dst++] = (byte)g;
+                pixels[dst++] = (byte)r;
                 s1 = ShiftTable[s1];
                 s2 = ShiftTable[s2];
                 s3 = ShiftTable[s3];
-                pixels[dst++] = (byte)b;
-                pixels[dst++] = (byte)g;
-                pixels[dst++] = (byte)r;
             }
             return ImageData.CreateFlipped (info, PixelFormats.Bgr24, null, pixels, (int)info.Width*3);
         }
