@@ -82,6 +82,7 @@ namespace GameRes.Formats.FC01
             int bpp = header.ToInt32 (0x24);
             if (24 != bpp && 8 != bpp)
                 throw new NotSupportedException ("Not supported MCG image bitdepth");
+            int packed_size = header.ToInt32 (0x38);
             return new McgMetaData
             {
                 Width = header.ToUInt32 (0x1c),
@@ -90,7 +91,7 @@ namespace GameRes.Formats.FC01
                 OffsetY = header.ToInt32 (0x18),
                 BPP = bpp,
                 DataOffset = header_size,
-                PackedSize = header.ToInt32 (0x38) - header_size,
+                PackedSize = packed_size,
                 Version = version,
             };
         }
@@ -187,6 +188,9 @@ namespace GameRes.Formats.FC01
         {
             m_file.Position = m_info.DataOffset;
             int input_size = m_info.PackedSize;
+            if (0 == input_size)
+                input_size = (int)m_file.Length;
+            input_size -= m_info.DataOffset;
             if (8 == m_info.BPP)
             {
                 Palette = ImageFormat.ReadPalette (m_file.AsStream);
