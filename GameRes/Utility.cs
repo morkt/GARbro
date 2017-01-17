@@ -61,11 +61,22 @@ namespace GameRes.Utility
             return AsciiEqual (name1, 0, name2);
         }
 
+        /// <summary>
+        /// Check if sequence of ASCII characters in array <paramref name="name1"/> is equal to string <paramref name="name2"/>.
+        /// This methods avoids costly construction of the string object from byte array for a mere purpose of
+        /// comparison.
+        /// </summary>
         public static bool AsciiEqual (byte[] name1, int offset, string name2)
         {
             return name1.AsciiEqual (offset, name2);
         }
 
+        /// <summary>
+        /// Copy potentially overlapping sequence of <paramref name="count"/> bytes in array
+        /// <paramref name="data"/> from <paramref name="src"/> to <paramref name="dst"/>.
+        /// If destination offset resides within source region then sequence will repeat itself.  Widely used
+        /// in various compression techniques.
+        /// </summary>
         public static void CopyOverlapped (byte[] data, int src, int dst, int count)
         {
             if (dst > src)
@@ -84,6 +95,11 @@ namespace GameRes.Utility
             }
         }
 
+        /// <summary>
+        /// Extract null-terminated string (a "C string") from array <paramref name="data"/> starting
+        /// at offset <paramref name="index"/> up to <paramref name="length_limit"/> bytes long, stored in
+        /// encoding <paramref name="enc"/>.
+        /// </summary>
         public static string GetCString (byte[] data, int index, int length_limit, Encoding enc)
         {
             int name_length = 0;
