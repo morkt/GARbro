@@ -2,7 +2,7 @@
 //! \date       Sat Aug 01 13:18:46 2015
 //! \brief      Black Cyc image format.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -202,9 +202,13 @@ namespace GameRes.Formats.BlackCyc
                             var palette = reader.Palette.Colors;
                             for (int i = 0; i < alpha.Length; ++i)
                             {
-                                var color = palette[alpha[i]];
-                                int A = (color.R + color.G + color.B) / 3;
-                                alpha[i] = (byte)A;
+                                int color_idx = alpha[i];
+                                if (color_idx < palette.Count)
+                                {
+                                    var color = palette[color_idx];
+                                    int A = (color.R + color.G + color.B) / 3;
+                                    alpha[i] = (byte)A;
+                                }
                             }
                             bitmap = ApplyAlphaChannel (bitmap, alpha);
                         }
