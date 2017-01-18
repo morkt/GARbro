@@ -123,68 +123,7 @@ namespace GameRes.Formats.AST
                     return new XoredStream (input, 0xFF);
                 return input;
             }
-            using (input)
-            {
-                var data = UnpackLzss (input, pent.Size, pent.UnpackedSize);
-                return new BinMemoryStream (data, entry.Name);
-            }
-        }
-
-        byte[] UnpackLzss (Stream input, uint input_size, uint output_size)
-        {
-            var output = new byte[output_size];
-            var frame = new byte[0x1000];
-            int frame_pos = 0xFEE;
-            const int frame_mask = 0xFFF;
-
-            int dst = 0;
-            int remaining = (int)input_size;
-            int ctl = 2;
-            while (dst < output.Length)
-            {
-                ctl >>= 1;
-                if (1 == ctl)
-                {
-                    if (remaining <= 0)
-                        break;
-                    ctl = input.ReadByte();
-                    if (-1 == ctl)
-                        break;
-                    --remaining;
-                    ctl |= 0x100;
-                }
-                if (0 != (ctl & 1))
-                {
-                    int b = input.ReadByte();
-                    if (-1 == b)
-                        break;
-                    --remaining;
-                    frame[frame_pos++] = output[dst++] = (byte)~b;
-                    frame_pos &= frame_mask;
-                }
-                else
-                {
-                    if (remaining < 2)
-                        break;
-                    int lo = input.ReadByte();
-                    int hi = input.ReadByte();
-                    if (-1 == hi)
-                        break;
-                    remaining -= 2;
-                    int offset = (hi & 0xf0) << 4 | lo;
-                    for (int count = 3 + (hi & 0xF); count != 0; --count)
-                    {
-                        if (dst >= output.Length)
-                            break;
-                        byte v = frame[offset++];
-                        offset &= frame_mask;
-                        frame[frame_pos++] = v;
-                        frame_pos &= frame_mask;
-                        output[dst++] = v;
-                    }
-                }
-            }
-            return output;
+            return new XoredStream (new LzssStream (input), 0xFF);
         }
     }
 }
