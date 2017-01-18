@@ -48,5 +48,10 @@ namespace GARbro.GUI
         {
             this.DialogResult = true;
         }
+
+        private void acb_OnEnterKeyDown (object sender, KeyEventArgs e)
+        {
+            this.DialogResult = true;
+        }
     }
 }
