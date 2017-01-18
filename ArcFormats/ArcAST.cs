@@ -2,7 +2,7 @@
 //! \date       Tue Apr 21 02:24:20 2015
 //! \brief      AST script engine resource archives.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -113,23 +113,17 @@ namespace GameRes.Formats.AST
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
             var pent = entry as PackedEntry;
             if (null == pent || !(arc is AstArchive))
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+                return input;
             if (!pent.IsPacked)
             {
-                arc.File.View.Reserve (entry.Offset, entry.Size);
-                var sig = arc.File.View.ReadUInt32 (entry.Offset);
-                if (0xB8B1AF76 == sig) // PNG signature ^ FF
-                {
-                    var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-                    for (int i = 0; i < data.Length; ++i)
-                        data[i] ^= 0xff;
-                    return new BinMemoryStream (data, entry.Name);
-                }
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+                if (0xB8B1AF76 == input.Signature) // PNG signature ^ FF
+                    return new XoredStream (input, 0xFF);
+                return input;
             }
-            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
+            using (input)
             {
                 var data = UnpackLzss (input, pent.Size, pent.UnpackedSize);
                 return new BinMemoryStream (data, entry.Name);
