@@ -133,8 +133,9 @@ namespace GameRes.Formats.GameSystem
             int stride = (int)Info.Width * 4;
             var pixels = new byte[stride * (int)Info.Height];
             m_input.Read (pixels, 0, pixels.Length);
-            return ImageData.CreateFlipped (Info, PixelFormats.Bgr32, null, pixels, stride);
-
+            for (int i = 3; i < pixels.Length; i += 4)
+                pixels[i] = (byte)(pixels[i] * 0xFF / 0x80);
+            return ImageData.CreateFlipped (Info, PixelFormats.Bgra32, null, pixels, stride);
         }
     }
 }

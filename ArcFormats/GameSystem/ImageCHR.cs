@@ -181,9 +181,7 @@ namespace GameRes.Formats.GameSystem
                 {
                     m_input.Read (m_output, dst, 3);
                     int a = m_input.ReadByte();
-                    if (a != 0x80)
-                        throw new InvalidFormatException ("Error reading overlay frame");
-                    m_output[dst+3] = 0xFF;
+                    m_output[dst+3] = (byte)(a * 0xFF / 0x80);
                     dst += 4;
                 }
                 output += m_stride;
