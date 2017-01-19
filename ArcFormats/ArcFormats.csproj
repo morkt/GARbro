@@ -104,6 +104,7 @@
     <Compile Include="Entis\ArcPAC.cs" />
     <Compile Include="GameSystem\ArcCHR.cs" />
     <Compile Include="GameSystem\ArcCMP.cs" />
+    <Compile Include="GameSystem\ImageALP.cs" />
     <Compile Include="GameSystem\ImageBGD.cs" />
     <Compile Include="GameSystem\ImageCGD.cs" />
     <Compile Include="GameSystem\ImageCHR.cs" />
