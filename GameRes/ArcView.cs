@@ -616,7 +616,7 @@ namespace GameRes
                 if (m_position + 3 > m_size)
                     throw new EndOfStreamException();
                 int v = m_view.ReadUInt16 (m_start+m_position);
-                v |= m_view.ReadByte (m_start+m_position+2);
+                v |= m_view.ReadByte (m_start+m_position+2) << 16;
                 m_position += 3;
                 return v;
             }
