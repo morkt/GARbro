@@ -43,15 +43,46 @@ namespace GameRes.Formats.GameSystem
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (file.MaxOffset <= 8 || !file.View.AsciiEqual (file.MaxOffset-8, "PACK"))
+            if (file.MaxOffset <= 8)
                 return null;
+            List<Entry> dir = null;
+            uint signature = file.View.ReadUInt32 (file.MaxOffset-8);
+            if (0x4B434150 == signature) // 'PACK'
+            {
+                dir = ReadIndex (file);
+            }
+            else
+            {
+                foreach (var key in KnownKeys.Values)
+                {
+                    uint pack_key = key.ToUInt32 (0);
+                    if (0x4B434150 == (signature ^ pack_key))
+                    {
+                        dir = ReadIndex (file, key);
+                        break;
+                    }
+                }
+            }
+            if (null == dir || 0 == dir.Count)
+                return null;
+            return new ArcFile (file, this, dir);
+        }
+
+        List<Entry> ReadIndex (ArcView file, byte[] key = null)
+        {
+            bool is_encrypted = key != null;
             uint index_offset = file.View.ReadUInt32 (file.MaxOffset-4);
             if (index_offset >= file.MaxOffset)
                 return null;
             int index_size = file.View.ReadInt32 (index_offset);
+            if (index_size <= 0)
+                return null;
             var index = new byte[index_size];
-            using (var input = file.CreateStream (index_offset+4))
-                LzUnpack (input, index);
+            Stream input = file.CreateStream (index_offset+4);
+            if (is_encrypted)
+                input = new ByteStringEncryptedStream (input, key);
+            using (var packed = BinaryStream.FromStream (input, ""))
+                LzUnpack (packed, index);
             var dir = new List<Entry>();
             int index_pos = 0;
             uint offset = LittleEndian.ToUInt32 (index, index_pos);
@@ -76,9 +107,7 @@ namespace GameRes.Formats.GameSystem
                 dir.Add (entry);
                 offset = next_offset;
             }
-            if (0 == dir.Count)
-                return null;
-            return new ArcFile (file, this, dir);
+            return dir;
         }
 
         void LzUnpack (IBinaryStream input, byte[] output)
@@ -116,5 +145,24 @@ namespace GameRes.Formats.GameSystem
                 LzUnpack (input, data);
             return new BinMemoryStream (data, entry.Name);
         }
+
+        internal static IDictionary<string, byte[]> KnownKeys
+        {
+            get { return GameScheme.KnownKeys; }
+        }
+
+        static CmpScheme GameScheme = new CmpScheme { KnownKeys = new Dictionary<string, byte[]> () };
+
+        public override ResourceScheme Scheme
+        {
+            get { return GameScheme; }
+            set { GameScheme = (CmpScheme)value; }
+        }
+    }
+
+    [Serializable]
+    public class CmpScheme : ResourceScheme
+    {
+        public IDictionary<string, byte[]> KnownKeys;
     }
 }
