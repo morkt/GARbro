@@ -94,6 +94,8 @@
     <Compile Include="Artemis\ArcPFS.cs" />
     <Compile Include="AudioWMA.cs" />
     <Compile Include="BlackRainbow\ArcDX.cs" />
+    <Compile Include="C4\AudioVMD.cs" />
+    <Compile Include="C4\ImageGD.cs" />
     <Compile Include="Cadath\ArcKAR.cs" />
     <Compile Include="Cadath\ImageKGF.cs" />
     <Compile Include="Cmvs\ArcCPZ2.cs" />
