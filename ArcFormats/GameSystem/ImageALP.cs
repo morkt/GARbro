@@ -55,7 +55,7 @@ namespace GameRes.Formats.GameSystem
         {
             file.Position = 8;
             var pixels = file.ReadBytes ((int)info.Width * (int)info.Height);
-            return ImageData.Create (info, PixelFormats.Gray8, null, pixels);
+            return ImageData.CreateFlipped (info, PixelFormats.Gray8, null, pixels, (int)info.Width);
         }
 
         public override void Write (Stream file, ImageData image)
