@@ -160,13 +160,20 @@ namespace GameRes.Formats.Ankh
             var pent = entry as PackedEntry;
             if (pent != null && pent.IsPacked && pent.Size > 8)
             {
-                if (arc.File.View.AsciiEqual (entry.Offset, "TPW"))
-                    return OpenTpw (arc, pent);
-                if (arc.File.View.AsciiEqual (entry.Offset+4, "HDJ\0"))
-                    return OpenImage (arc, pent);
-                if (entry.Size > 12 && 'W' == arc.File.View.ReadByte (entry.Offset+4)
-                    && arc.File.View.AsciiEqual (entry.Offset+8, "RIFF"))
-                    return OpenAudio (arc, entry);
+                try
+                {
+                    if (arc.File.View.AsciiEqual (entry.Offset, "TPW"))
+                        return OpenTpw (arc, pent);
+                    if (arc.File.View.AsciiEqual (entry.Offset+4, "HDJ\0"))
+                        return OpenImage (arc, pent);
+                    if (entry.Size > 12 && 'W' == arc.File.View.ReadByte (entry.Offset+4)
+                        && arc.File.View.AsciiEqual (entry.Offset+8, "RIFF"))
+                        return OpenAudio (arc, entry);
+                }
+                catch (Exception X)
+                {
+                    System.Diagnostics.Trace.WriteLine (X.Message, "[GRP]");
+                }
             }
             return base.OpenEntry (arc, entry);
         }
@@ -340,7 +347,10 @@ namespace GameRes.Formats.Ankh
                         if (n != 0)
                             count += GetBits (n) + 1;
                     }
-                    Binary.CopyOverlapped (output, dst+offset, dst, count);
+                    int src = dst + offset;
+                    if (src < 0)
+                        throw new InvalidDataException();
+                    Binary.CopyOverlapped (output, src, dst, count);
                     dst += count;
                 }
                 else
