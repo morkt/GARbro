@@ -107,6 +107,7 @@
     <Compile Include="ExeFile.cs" />
     <Compile Include="GameSystem\ArcCHR.cs" />
     <Compile Include="GameSystem\ArcCMP.cs" />
+    <Compile Include="GameSystem\ArcDAT.cs" />
     <Compile Include="GameSystem\ImageALP.cs" />
     <Compile Include="GameSystem\ImageBGD.cs" />
     <Compile Include="GameSystem\ImageCGD.cs" />
