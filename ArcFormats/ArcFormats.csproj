@@ -104,6 +104,7 @@
     <Compile Include="Cmvs\ImagePB2.cs" />
     <Compile Include="Ellefin\ArcEPK.cs" />
     <Compile Include="Entis\ArcPAC.cs" />
+    <Compile Include="ExeFile.cs" />
     <Compile Include="GameSystem\ArcCHR.cs" />
     <Compile Include="GameSystem\ArcCMP.cs" />
     <Compile Include="GameSystem\ImageALP.cs" />

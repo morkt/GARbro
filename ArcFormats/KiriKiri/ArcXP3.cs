@@ -295,67 +295,23 @@ NextEntry:
 
         private long SkipExeHeader (ArcView file)
         {
-            long offset = 0x10;
-            long pe_offset = file.View.ReadUInt32 (0x3c);
-            if (pe_offset < file.MaxOffset && 0x4550 == file.View.ReadUInt32 (pe_offset)) // 'PE'
+            var exe = new ExeFile (file);
+            if (exe.ContainsSection (".rsrc"))
             {
-                int opt_header = file.View.ReadUInt16 (pe_offset+0x14); // SizeOfOptionalHeader
-                offset = file.View.ReadUInt32 (pe_offset+0x54); // SizeOfHeaders
-                long section_table = pe_offset+opt_header+0x18;
-                int count = file.View.ReadUInt16 (pe_offset+6); // NumberOfSections
-                if (section_table + 0x28*count < file.MaxOffset)
-                {
-                    for (int i = 0; i < count; ++i)
-                    {
-                        uint size = file.View.ReadUInt32 (section_table+0x10);
-                        uint addr = file.View.ReadUInt32 (section_table+0x14);
-                        if (file.View.AsciiEqual (section_table, ".rsrc\0"))
-                        {
-                            // look within EXE resource section
-                            offset = addr;
-                            break;
-                        }
-                        section_table += 0x28;
-                        if (0 != size)
-                            offset = Math.Max ((long)addr + size, offset);
-                    }
-                }
+                var offset = exe.FindString (exe.Sections[".rsrc"], s_xp3_header);
+                if (offset != -1 && 0 != file.View.ReadUInt32 (offset+s_xp3_header.Length))
+                    return offset;
             }
-            unsafe
+            var section = exe.Overlay;
+            while (section.Offset < file.MaxOffset)
             {
-                while (offset < file.MaxOffset)
-                {
-                    uint page_size = (uint)Math.Min (0x10000L, file.MaxOffset - offset);
-                    if (page_size < 0x20)
-                        break;
-                    using (var view = file.CreateViewAccessor (offset, page_size))
-                    {
-                        byte* page_begin = view.GetPointer (offset);
-                        byte* page_end   = page_begin + page_size - 0x10;
-                        try {
-                            for (byte* ptr = page_begin; ptr != page_end; ++ptr)
-                            {
-                                // TODO: search every byte only when inside resource section,
-                                // otherwise stick to paragraph boundary.
-                                int i = 0;
-                                while (ptr[i] == s_xp3_header[i])
-                                {
-                                    if (++i == s_xp3_header.Length)
-                                    {
-                                        // check whether index offset is non-zero
-                                        if (0 == *(uint*)(ptr+i))
-                                            break;
-                                        return offset + (ptr - page_begin);
-                                    }
-                                }
-                            }
-                        }
-                        finally {
-                            view.SafeMemoryMappedViewHandle.ReleasePointer();
-                        }
-                    }
-                    offset += page_size - 0x10;
-                }
+                var offset = exe.FindString (section, s_xp3_header, 0x10);
+                if (-1 == offset)
+                    break;
+                if (0 != file.View.ReadUInt32 (offset+s_xp3_header.Length))
+                    return offset;
+                section.Offset = offset + 0x10;
+                section.Size = (uint)(file.MaxOffset - section.Offset);
             }
             return 0;
         }

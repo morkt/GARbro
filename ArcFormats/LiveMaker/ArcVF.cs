@@ -190,27 +190,8 @@ namespace GameRes.Formats.LiveMaker
 
         uint SkipExeData (ArcView file)
         {
-            uint offset = 0;
-            uint pe_offset = file.View.ReadUInt32 (0x3c);
-            if (pe_offset < file.MaxOffset && 0x4550 == file.View.ReadUInt32 (pe_offset)) // 'PE'
-            {
-                int opt_header = file.View.ReadUInt16 (pe_offset+0x14); // SizeOfOptionalHeader
-                offset = file.View.ReadUInt32 (pe_offset+0x54); // SizeOfHeaders
-                long section_table = pe_offset+opt_header+0x18;
-                int count = file.View.ReadUInt16 (pe_offset+6); // NumberOfSections
-                if (section_table + 0x28*count < file.MaxOffset)
-                {
-                    for (int i = 0; i < count; ++i)
-                    {
-                        uint size = file.View.ReadUInt32 (section_table+0x10);
-                        uint addr = file.View.ReadUInt32 (section_table+0x14);
-                        section_table += 0x28;
-                        if (0 != size)
-                            offset = Math.Max (addr + size, offset);
-                    }
-                }
-            }
-            return offset;
+            var exe = new ExeFile (file);
+            return (uint)exe.Overlay.Offset;
         }
     }
 
