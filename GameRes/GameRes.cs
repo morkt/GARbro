@@ -53,6 +53,23 @@ namespace GameRes
         {
             return Offset < max_offset && Size <= max_offset && Offset <= max_offset - Size;
         }
+
+        /// <summary>
+        /// Change entry type to the type of resource <paramref name="res"/>.
+        /// Entry name extension is changed accordingly.
+        /// </summary>
+        public void ChangeType (IResource res)
+        {
+            if (null == res)
+                return;
+            Type = res.Type;
+            foreach (var ext in res.Extensions)
+            {
+                if (!string.IsNullOrEmpty (ext))
+                    Name = Path.ChangeExtension (Name, ext);
+                break;
+            }
+        }
     }
 
     public class PackedEntry : Entry
