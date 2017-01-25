@@ -84,7 +84,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 return null;
             int version = file.View.ReadByte (7) - 0x30;
             version = 100 + version * 10;
-            if (170 != version && 130 != version && 150 != version)
+            if (170 != version && 150 != version && 140 != version && 130 != version && 120 != version)
                 throw new NotSupportedException ("Not supported WARC version");
             uint index_offset = 0xf182ad82u ^ file.View.ReadUInt32 (8);
             if (index_offset >= file.MaxOffset)

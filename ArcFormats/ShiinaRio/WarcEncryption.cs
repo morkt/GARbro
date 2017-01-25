@@ -141,9 +141,9 @@ namespace GameRes.Formats.ShiinaRio
             uint effective_length = Math.Min (data_length, 1024u);
             int a, b;
             uint fac = 0;
+            Rand = data_length;
             if (WarcVersion > 120)
             {
-                Rand = data_length;
                 a = (sbyte)data[index]   ^ (sbyte)data_length;
                 b = (sbyte)data[index+1] ^ (sbyte)(data_length / 2);
                 if (data_length != MaxIndexLength)
