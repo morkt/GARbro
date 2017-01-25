@@ -346,6 +346,7 @@
     <Compile Include="TamaSoft\AudioESD.cs" />
     <Compile Include="TamaSoft\ImageBTN.cs" />
     <Compile Include="TamaSoft\ImageSUR.cs" />
+    <Compile Include="TanukiSoft\ArcTAC.cs" />
     <Compile Include="Taskforce\ArcDAT.cs" />
     <Compile Include="TechnoBrain\AudioWAPE.cs" />
     <Compile Include="TechnoBrain\ImageIPF.cs" />
