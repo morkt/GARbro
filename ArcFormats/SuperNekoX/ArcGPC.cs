@@ -141,12 +141,7 @@ namespace GameRes.Formats.SuperNekoX
                     else
                         res = AutoEntry.DetectFileType (signature);
                     if (null != res)
-                    {
-                        entry.Type = res.Type;
-                        var ext = res.Extensions.FirstOrDefault();
-                        if (!string.IsNullOrEmpty (ext))
-                            entry.Name = Path.ChangeExtension (entry.Name, ext);
-                    }
+                        entry.ChangeType (res);
                 }
             }
         }

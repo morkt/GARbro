@@ -156,19 +156,12 @@ namespace GameRes.Formats.Neko
                 }
                 uint signature = get_signature (entry);
                 var res = AutoEntry.DetectFileType (signature);
-                string ext = "";
                 if (res != null)
-                {
-                    ext = res.Extensions.FirstOrDefault();
-                    entry.Type = res.Type;
-                }
+                    entry.ChangeType (res);
                 else if (0x474E4D8A == signature)
-                    ext = "mng";
+                    entry.Name = Path.ChangeExtension (entry.Name, "mng");
                 else if (entry.Name.StartsWith ("script/"))
                     entry.Type = "script";
-
-                if (!string.IsNullOrEmpty (ext))
-                    entry.Name = Path.ChangeExtension (entry.Name, ext);
             }
         }
 

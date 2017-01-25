@@ -147,22 +147,9 @@ namespace GameRes.Formats.Qlie
         static protected void DetectFileType (ArcView file, Entry entry)
         {
             uint signature = file.View.ReadUInt32 (entry.Offset);
-            if (signature != 0)
-            {
-                string ext = null;
-                if (0x4D42 == (signature & 0xFFFF))
-                {
-                    ext = "bmp";
-                }
-                else
-                {
-                    var res = FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
-                    if (null != res)
-                        ext = res.Extensions.FirstOrDefault();
-                }
-                if (!string.IsNullOrEmpty (ext))
-                    entry.Name = Path.ChangeExtension (entry.Name, ext);
-            }
+            var res = AutoEntry.DetectFileType (signature);
+            if (null != res)
+                entry.ChangeType (res);
         }
 
         static string GetTypeName (byte[] type_buf)

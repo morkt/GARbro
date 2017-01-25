@@ -330,12 +330,7 @@ namespace GameRes.Formats.Valkyria
                     else
                         res = AutoEntry.DetectFileType (signature);
                     if (res != null)
-                    {
-                        entry.Type = res.Type;
-                        var ext = res.Extensions.FirstOrDefault();
-                        if (!string.IsNullOrEmpty (ext))
-                            entry.Name = Path.ChangeExtension (entry.Name, ext);
-                    }
+                        entry.ChangeType (res);
                     else if (OdnOpener.Image32NameRe.IsMatch (entry.Name))
                         entry.Type = "image";
                 }

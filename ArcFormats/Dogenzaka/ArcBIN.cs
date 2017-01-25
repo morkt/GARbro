@@ -82,12 +82,7 @@ namespace GameRes.Formats.Dogenzaka
                     return null;
                 var res = AutoEntry.DetectFileType (file.View.ReadUInt32 (entry.Offset));
                 if (res != null)
-                {
-                    entry.Type = res.Type;
-                    var ext = res.Extensions.FirstOrDefault();
-                    if (!string.IsNullOrEmpty (ext))
-                        entry.Name = Path.ChangeExtension (entry.Name, ext);
-                }
+                    entry.ChangeType (res);
             }
             return new ArcFile (file, this, dir);
         }
