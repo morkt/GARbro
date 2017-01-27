@@ -69,7 +69,7 @@ namespace GameRes.Formats.Silky
                 for (int j = 0; j < name_length; ++j)
                 {
                     name_buffer[j] -= key--;
-                    if (name_buffer[j]  < 0x20)
+                    if (VFS.InvalidFileNameChars.Contains ((char)name_buffer[j])) // XXX
                         return null;
                 }
                 var name = Encodings.cp932.GetString (name_buffer, 0, name_length);
