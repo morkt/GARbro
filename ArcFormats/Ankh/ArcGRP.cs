@@ -102,39 +102,33 @@ namespace GameRes.Formats.Ankh
                         entry.Size -= 4;
                     }
                     if (file.View.AsciiEqual (start_offset, "BM"))
-                    {
-                        entry.Name = Path.ChangeExtension (entry.Name, "bmp");
-                        entry.Type = "image";
-                    }
+                        entry.ChangeType (ImageFormat.Bmp);
                 }
                 else if (file.View.AsciiEqual (entry.Offset+4, "HDJ\0"))
                 {
                     if (file.View.AsciiEqual (entry.Offset+12, "BM"))
-                    {
-                        entry.Name = Path.ChangeExtension (entry.Name, "bmp");
-                        entry.Type = "image";
-                    }
+                        entry.ChangeType (ImageFormat.Bmp);
+                    else if (file.View.AsciiEqual (entry.Offset+12, "MThd"))
+                        entry.Name = Path.ChangeExtension (entry.Name, "mid");
+
                     entry.UnpackedSize = file.View.ReadUInt32 (entry.Offset);
                     entry.IsPacked = true;
                 }
                 else if (file.View.AsciiEqual (entry.Offset+4, "OggS"))
                 {
-                    entry.Name = Path.ChangeExtension (entry.Name, "ogg");
-                    entry.Type = "audio";
+                    entry.ChangeType (OggAudio.Instance);
                     entry.Offset += 4;
                     entry.Size   -= 4;
                 }
                 else if (entry.Size > 12 && file.View.AsciiEqual (entry.Offset+8, "RIFF"))
                 {
-                    entry.Name = Path.ChangeExtension (entry.Name, "wav");
-                    entry.Type = "audio";
+                    entry.ChangeType (AudioFormat.Wav);
                     entry.UnpackedSize = file.View.ReadUInt32 (entry.Offset);
                     entry.IsPacked = true;
                 }
                 else if (file.View.AsciiEqual (entry.Offset, "BM"))
                 {
-                    entry.Name = Path.ChangeExtension (entry.Name, "bmp");
-                    entry.Type = "image";
+                    entry.ChangeType (ImageFormat.Bmp);
                 }
                 else if (entry.Size > 0x16 && IsAudioEntry (file, entry))
                 {
@@ -298,7 +292,33 @@ namespace GameRes.Formats.Ankh
             m_input = input;
         }
 
+        // Different games have slightly different formats using exact same headers,
+        // so have to invent some flawed format recognition here.
+        enum GrpVariant { Default, BoD };
+
+        static GrpVariant LastUsedMethod = GrpVariant.Default;
+
+        static GrpVariant GetOppositeVariant ()
+        {
+            return GrpVariant.Default == LastUsedMethod ? GrpVariant.BoD : GrpVariant.Default;
+        }
+
         public void UnpackHDJ (byte[] output, int dst)
+        {
+            try
+            {
+                if (UnpackHDJVariant (output, dst, LastUsedMethod))
+                    return;
+            }
+            catch { /* ignore unpack errors */ }
+            var method = GetOppositeVariant();
+            m_input.Position = 0;
+            if (!UnpackHDJVariant (output, dst, method))
+                throw new InvalidFormatException();
+            LastUsedMethod = method;
+        }
+
+        private bool UnpackHDJVariant (byte[] output, int dst, GrpVariant method)
         {
             ResetBits();
             int word_count = 0;
@@ -327,13 +347,17 @@ namespace GameRes.Formats.Ankh
                     }
                     else
                     {
-                        count = GetBits (2) + 2;
-                        long_count = 5 == count;
+                        if (method == GrpVariant.Default)
+                            count = GetBits (2);
                         if (0 == byte_count)
                         {
                             next_byte = m_input.ReadUInt32();
                             byte_count = 4;
                         }
+                        if (method != GrpVariant.Default)
+                            count = GetBits (2);
+                        count += 2;
+                        long_count = 5 == count;
                         offset = (int)(next_byte | 0xFFFFFF00);
                         next_byte >>= 8;
                         --byte_count;
@@ -348,8 +372,8 @@ namespace GameRes.Formats.Ankh
                             count += GetBits (n) + 1;
                     }
                     int src = dst + offset;
-                    if (src < 0)
-                        throw new InvalidDataException();
+                    if (src < 0 || src >= dst || dst + count > output.Length)
+                        return false;
                     Binary.CopyOverlapped (output, src, dst, count);
                     dst += count;
                 }
@@ -365,9 +389,60 @@ namespace GameRes.Formats.Ankh
                     --byte_count;
                 }
             }
+            return true;
         }
 
         public void UnpackS (byte[] output, int dst, int channels)
+        {
+            try
+            {
+                if (UnpackSVariant (output, dst, channels, LastUsedMethod))
+                    return;
+            }
+            catch { /* ignore parse errors */ }
+            var method = GetOppositeVariant();
+            m_input.Position = 0;
+            if (UnpackSVariant (output, dst, channels, method))
+                LastUsedMethod = method;
+        }
+
+        bool UnpackSVariant (byte[] output, int dst, int channels, GrpVariant method)
+        {
+            if (GrpVariant.Default == method)
+                UnpackSv2 (output, dst, channels);
+            else
+                UnpackSv1 (output, dst, channels);
+            return m_input.PeekByte() == -1; // rather loose test, but whatever
+        }
+
+        void UnpackSv1 (byte[] output, int dst, int channels)
+        {
+            ResetBits();
+            short last_word = 0;
+            while (dst < output.Length)
+            {
+                int word;
+                if (GetNextBit() != 0)
+                {
+                    if (GetNextBit() != 0)
+                        word = GetBits (10) << 6;
+                    else
+                        word = 0;
+                }
+                else
+                {
+                    int adjust = GetBits (5) << 6;
+                    if (0 != (adjust & 0x400))
+                        adjust = -(adjust & 0x3FF);
+                    word = last_word + adjust;
+                }
+                last_word = (short)word;
+                LittleEndian.Pack (last_word, output, dst);
+                dst += 2;
+            }
+        }
+
+        void UnpackSv2 (byte[] output, int dst, int channels)
         {
             if (channels != 1)
                 m_input.Seek ((channels-1) * 4, SeekOrigin.Current);
