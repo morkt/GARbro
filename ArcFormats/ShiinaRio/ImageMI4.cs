@@ -52,7 +52,6 @@ namespace GameRes.Formats.ShiinaRio
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            stream.Position = 0x10;
             using (var reader = new Reader (stream, (int)info.Width, (int)info.Height))
             {
                 reader.Unpack ();
@@ -80,13 +79,19 @@ namespace GameRes.Formats.ShiinaRio
                 m_output = new byte[m_stride*height];
             }
 
-            uint m_bit_count;
+            int  m_bit_count;
             uint m_bits;
 
-            void ResetBits ()
+            void LoadBits ()
             {
-                m_bits = m_input.ReadUInt32();
-                m_bit_count = 32;
+                for (int i = 0; i < 4; ++i)
+                {
+                    int b = m_input.ReadByte();
+                    if (-1 == b)
+                        break;
+                    m_bits = (m_bits >> 8) | (uint)(b << 24);
+                    m_bit_count += 8;
+                }
             }
 
             uint GetBit ()
@@ -95,8 +100,7 @@ namespace GameRes.Formats.ShiinaRio
                 m_bits <<= 1;
                 if (0 == --m_bit_count)
                 {
-                    m_bits = m_input.ReadUInt32();
-                    m_bit_count = 32;
+                    LoadBits();
                 }
                 return bit;
             }
@@ -113,7 +117,9 @@ namespace GameRes.Formats.ShiinaRio
 
             public void Unpack ()
             {
-                ResetBits();
+                m_input.Position = 0x10;
+                m_bit_count = 0;
+                LoadBits();
                 int dst = 0;
                 byte b = 0, g = 0, r = 0;
                 while (dst < m_output.Length)
@@ -122,9 +128,12 @@ namespace GameRes.Formats.ShiinaRio
                     {
                         if (GetBit() != 0)
                         {
-                            b = m_input.ReadUInt8();
-                            g = m_input.ReadUInt8();
-                            r = m_input.ReadUInt8();
+                            if (m_input.PeekByte() != -1)
+                            {
+                                b = m_input.ReadUInt8();
+                                g = m_input.ReadUInt8();
+                                r = m_input.ReadUInt8();
+                            }
                         }
                         else if (GetBit() != 0)
                         {
