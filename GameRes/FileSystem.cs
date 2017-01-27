@@ -784,6 +784,8 @@ namespace GameRes
             return m_vfs.Top.GetFiles (pattern);
         }
 
+        public static readonly ISet<char> InvalidFileNameChars = new HashSet<char> (Path.GetInvalidFileNameChars());
+
         static readonly char[] PathSeparatorChars = { '\\', '/', ':' };
 
         /// <summary>
