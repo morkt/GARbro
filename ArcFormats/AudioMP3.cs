@@ -98,13 +98,22 @@ namespace GameRes.Formats
         {
             var header = file.ReadHeader (10).ToArray();
             long start_offset = SkipId3Tag (header);
+            int sync_pos = 0;
             if (0 != start_offset)
             {
                 file.Position = start_offset;
                 if (4 != file.Read (header, 0, 4))
                     return null;
             }
-            if (0xff != header[0] || 0xe2 != (header[1] & 0xe6) || 0xf0 == (header[2] & 0xf0))
+            else if (0xFF != header[0])
+            {
+                file.Position = 1;
+                header = file.ReadBytes (0x100);
+                sync_pos = System.Array.IndexOf<byte> (header, 0xFF, 1, 0xFC);
+                if (-1 == sync_pos)
+                    return null;
+            }
+            if (0xFF != header[sync_pos] || 0xE2 != (header[sync_pos+1] & 0xE6) || 0xF0 == (header[sync_pos+2] & 0xF0))
                 return null;
             file.Position = 0;
             return new Mp3Input (file.AsStream);
