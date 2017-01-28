@@ -2,7 +2,7 @@
 //! \date       Thu Aug 14 19:10:02 2014
 //! \brief      PD archive format implementation.
 //
-// Copyright (C) 2014 by morkt
+// Copyright (C) 2014-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -62,13 +62,13 @@ namespace GameRes.Formats.Fs
             uint version = file.View.ReadUInt32 (4);
             if (0x796c6e4f != version && 0x73756c50 != version) // 'Only' || 'Plus'
                 return null;
-            uint count = file.View.ReadUInt32 (0x40);
-            if (count > 0x0fffff || count * 0x90 >= file.MaxOffset)
+            int count = file.View.ReadInt32 (0x40);
+            if (!IsSaneCount (count) || count * 0x90 >= file.MaxOffset)
                 return null;
             bool encrypted = 0x73756c50 == version;
             long cur_offset = 0x48;
-            var dir = new List<Entry> ((int)count);
-            for (uint i = 0; i < count; ++i)
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (cur_offset, 0x80);
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
@@ -88,19 +88,7 @@ namespace GameRes.Formats.Fs
         {
             Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (arc is PackPlusArchive)
-            {
-                MemoryStream buffer;
-                using (input)
-                {
-                    buffer = new MemoryStream ((int)entry.Size); 
-                    input.CopyTo (buffer);
-                }
-                var data = buffer.GetBuffer();
-                for (uint i = 0; i < entry.Size; ++i)
-                    data[i] = (byte)~data[i];
-                buffer.Position = 0;
-                input = buffer;
-            }
+                input = new XoredStream (input, 0xFF);
             return input;
         }
 
@@ -229,11 +217,6 @@ namespace GameRes.Formats.Fs
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        public FlyingShinePdOpener ()
-        {
-            Extensions = new string[] { "pd" };
-        }
-
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "ngShinePDFile\0"))
@@ -241,7 +224,7 @@ namespace GameRes.Formats.Fs
             uint crc = file.View.ReadUInt16 (0x12);
             byte key  = file.View.ReadByte (0x14);
             int count = file.View.ReadInt32 (0x1c);
-            if (count < 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             uint index_size = (uint)(0x30 * count);
             if (index_size > file.View.Reserve (0x20, index_size))
@@ -274,6 +257,61 @@ namespace GameRes.Formats.Fs
         {
             for (int i = 0; i < buf.Length; ++i)
                 buf[i] ^= key;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Pd3Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "PD/3"; } }
+        public override string Description { get { return "Flying Shine resource archive version 3"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int index_count = file.View.ReadInt32 (0);
+            int count = file.View.ReadInt32 (4);
+            uint total_size = file.View.ReadUInt32 (0xC);
+            if (index_count < count || !IsSaneCount (index_count) || !IsSaneCount (count))
+                return null;
+            uint index_size = 0x11C * (uint)index_count;
+            if (index_size >= file.MaxOffset - 0x18)
+                return null;
+            uint index_offset = 0x18;
+            long base_offset = index_size + index_offset;
+            if (base_offset + total_size != file.MaxOffset)
+                return null;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < index_count; ++i)
+            {
+                if (0 != file.View.ReadByte (index_offset))
+                {
+                    var name = file.View.ReadString (index_offset, 0x104);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Size = file.View.ReadUInt32 (index_offset+0x108);
+                    entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x10C);
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                }
+                index_offset += 0x11C;
+            }
+            if (0 == dir.Count)
+                return null;
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!entry.Name.EndsWith (".def", StringComparison.InvariantCultureIgnoreCase) &&
+                !entry.Name.EndsWith (".dsf", StringComparison.InvariantCultureIgnoreCase))
+                return base.OpenEntry (arc, entry);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            for (int i = 0; i < data.Length; ++i)
+                data[i] = Binary.RotByteR (data[i], 4);
+            return new BinMemoryStream (data);
         }
     }
 }
