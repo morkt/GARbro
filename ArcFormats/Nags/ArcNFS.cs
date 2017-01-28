@@ -56,8 +56,7 @@ namespace GameRes.Formats.Nags
             if (first_offset != 0)
                 return null;
 
-            var index = new byte[index_size];
-            file.View.Read (4, index, 0, index_size);
+            var index = file.View.ReadBytes (4, index_size);
             for (int i = 0; i < index.Length; ++i)
                 index[i] ^= key;
 
@@ -67,6 +66,8 @@ namespace GameRes.Formats.Nags
             for (int i = 0; i < count; ++i)
             {
                 var name = Binary.GetCString (index, index_offset, 0x18);
+                if (0 == name.Length)
+                    return null;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = base_offset + LittleEndian.ToUInt32 (index, index_offset+0x18);
                 entry.Size   = LittleEndian.ToUInt32 (index, index_offset+0x1C);
