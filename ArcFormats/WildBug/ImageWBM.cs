@@ -102,7 +102,7 @@ namespace GameRes.Formats.WildBug
                 BPP    = data[0xC],
                 EntryCount = count,
                 EntrySize = dir_size,
-                Header = header.ToArray(),
+                Header = dir,
             };
         }
 
