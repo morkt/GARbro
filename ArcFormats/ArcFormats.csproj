@@ -347,6 +347,13 @@
     <Compile Include="TamaSoft\AudioESD.cs" />
     <Compile Include="TamaSoft\ImageBTN.cs" />
     <Compile Include="TamaSoft\ImageSUR.cs" />
+    <Compile Include="Tanaka\ArcARC0.cs" />
+    <Compile Include="Tanaka\ArcBMX.cs" />
+    <Compile Include="Tanaka\ArcMBF.cs" />
+    <Compile Include="Tanaka\ArcVPK.cs" />
+    <Compile Include="Tanaka\ArcWRC.cs" />
+    <Compile Include="Tanaka\ArcWSM.cs" />
+    <Compile Include="Tanaka\ImageBC.cs" />
     <Compile Include="TanukiSoft\ArcTAC.cs" />
     <Compile Include="Taskforce\ArcDAT.cs" />
     <Compile Include="TechnoBrain\AudioWAPE.cs" />
