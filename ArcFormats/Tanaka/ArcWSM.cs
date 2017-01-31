@@ -25,18 +25,24 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Will
 {
     [Export(typeof(ArchiveFormat))]
-    public class WsmOpener : ArchiveFormat
+    public class Wsm2Opener : ArchiveFormat
     {
-        public override string         Tag { get { return "WSM"; } }
-        public override string Description { get { return "Tanaka Tatsuhiro's engine music archive"; } }
+        public override string         Tag { get { return "WSM2"; } }
+        public override string Description { get { return "Tanaka Tatsuhiro's engine music archive v2"; } }
         public override uint     Signature { get { return 0x324D5357; } } // 'WSM2'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
+
+        public Wsm2Opener ()
+        {
+            Extensions = new string[] { "wsm" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -55,6 +61,8 @@ namespace GameRes.Formats.Will
                 var entry = new Entry { Type = "audio" };
                 entry.Offset = index.ToUInt32 (table_offset) - 0x14;
                 entry.Size   = index.ToUInt32 (table_offset+8) + 0x14;
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
                 table_offset += 0x20;
                 dir.Add (entry);
             }
@@ -76,5 +84,73 @@ namespace GameRes.Formats.Will
             }
             return new ArcFile (file, this, dir);
         }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Wsm1Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "WSM1"; } }
+        public override string Description { get { return "Tanaka Tatsuhiro's engine music archive v1"; } }
+        public override uint     Signature { get { return 0x314D5357; } } // 'WSM1'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public Wsm1Opener ()
+        {
+            Extensions = new string[] { "wsm" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            uint index_size = file.View.ReadUInt32 (4);
+            int count = file.View.ReadInt32 (8);
+            if (!IsSaneCount (count) || index_size >= file.MaxOffset)
+                return null;
+            var index = file.View.ReadBytes (0, index_size);
+            var dir = new List<Entry> (count);
+            int index_offset = 0x10;
+            for (int i = 0; i < count; ++i)
+            {
+                int entry_pos = index.ToInt32 (index_offset);
+                index_offset += 4;
+                int name_length = index[entry_pos];
+                var name = Binary.GetCString (index, entry_pos+1, name_length-1);
+                if (0 == name.Length)
+                    return null;
+                entry_pos += name_length;
+                var entry = new WsmEntry {
+                    Name = string.Format ("{0}.wav", name),
+                    Type = "audio",
+                    Offset = index.ToUInt32 (entry_pos+8),
+                    Size   = index.ToUInt32 (entry_pos+12),
+                };
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                entry.Format.FormatTag = 1;
+                entry.Format.Channels = index[entry_pos+2];
+                entry.Format.BitsPerSample = index[entry_pos+3];
+                entry.Format.SamplesPerSecond = index.ToUInt32 (entry_pos+4);
+                entry.Format.BlockAlign = (ushort)(entry.Format.Channels * entry.Format.BitsPerSample/8);
+                entry.Format.AverageBytesPerSecond = entry.Format.SamplesPerSecond * entry.Format.BlockAlign;
+                dir.Add (entry);
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var went = (WsmEntry)entry;
+            using (var riff = new MemoryStream (0x2C))
+            {
+                WaveAudio.WriteRiffHeader (riff, went.Format, entry.Size);
+                var input = arc.File.CreateStream (entry.Offset, entry.Size);
+                return new PrefixStream (riff.ToArray(), input);
+            }
+        }
+    }
+
+    internal class WsmEntry : Entry
+    {
+        public WaveFormat Format;
     }
 }
