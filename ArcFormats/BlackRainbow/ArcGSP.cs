@@ -103,14 +103,22 @@ namespace GameRes.Formats.BlackRainbow
                     index.Add (base_offset + offset);
                 index_offset += 4;
             }
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
+            index.Sort();
             var dir = new List<Entry> (index.Count);
             for (int i = 0; i < index.Count; ++i)
             {
                 long offset = index[i];
-                string name = file.View.ReadString (offset, 0x20);
+                string name = file.View.ReadString (offset, 0x24);
+                if (0 == name.Length)
+                {
+                    name = string.Format ("{0:D2}_{1}#{0:D2}", i, base_name);
+                    if (file.View.AsciiEqual (offset + 0x24, "_BMD"))
+                        name += ".bmd";
+                }
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = offset + 0x24;
-                entry.Size   = file.View.ReadUInt32 (offset+0x20);
+                entry.Size   = i + 1 < index.Count ? (uint)(index[i+1] - offset) : (uint)(file.MaxOffset - offset);
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);
