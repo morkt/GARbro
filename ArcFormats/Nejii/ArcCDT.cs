@@ -41,7 +41,7 @@ namespace GameRes.Formats.Nejii
 
         public CdtOpener ()
         {
-            Extensions = new string[] { "cdt", "pdt", "vdt" };
+            Extensions = new string[] { "cdt", "pdt", "vdt", "ovd" };
         }
 
         public override ArcFile TryOpen (ArcView file)
