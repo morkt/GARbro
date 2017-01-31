@@ -139,25 +139,29 @@ namespace GameRes
 
         public override void Write (SoundInput source, Stream output)
         {
+            WriteRiffHeader (output, source.Format, (uint)source.PcmSize);
+            source.Position = 0;
+            source.CopyTo (output);
+        }
+
+        public static void WriteRiffHeader (Stream output, WaveFormat format, uint pcm_size)
+        {
             using (var buffer = new BinaryWriter (output, Encoding.ASCII, true))
             {
-                uint total_size = (uint)(0x2e - 8 + source.PcmSize);
-                buffer.Write (Signature);
+                uint total_size = (uint)(0x24 + pcm_size);
+                buffer.Write (Wav.Signature);
                 buffer.Write (total_size);
                 buffer.Write (0x45564157); // 'WAVE'
                 buffer.Write (0x20746d66); // 'fmt '
-                buffer.Write (0x12);
-                buffer.Write (source.Format.FormatTag);
-                buffer.Write (source.Format.Channels);
-                buffer.Write (source.Format.SamplesPerSecond);
-                buffer.Write (source.Format.AverageBytesPerSecond);
-                buffer.Write (source.Format.BlockAlign);
-                buffer.Write (source.Format.BitsPerSample);
-                buffer.Write ((ushort)0);
+                buffer.Write (0x10);
+                buffer.Write (format.FormatTag);
+                buffer.Write (format.Channels);
+                buffer.Write (format.SamplesPerSecond);
+                buffer.Write (format.AverageBytesPerSecond);
+                buffer.Write (format.BlockAlign);
+                buffer.Write (format.BitsPerSample);
                 buffer.Write (0x61746164); // 'data'
-                buffer.Write ((uint)source.PcmSize);
-                source.Position = 0;
-                source.CopyTo (output);
+                buffer.Write (pcm_size);
             }
         }
     }
