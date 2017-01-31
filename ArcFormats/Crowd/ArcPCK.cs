@@ -156,30 +156,14 @@ namespace GameRes.Formats.Crowd
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
             var went = entry as PkwEntry;
             if (null == went)
-                return arc.File.CreateStream (entry.Offset, entry.Size);
-            var riff = new byte[0x2c];
-            using (var buf = new MemoryStream (riff))
-            using (var wav = new BinaryWriter (buf))
+                return input;
+            using (var riff = new MemoryStream (0x2C))
             {
-                wav.Write (0x46464952); // 'RIFF'
-                uint total_size = went.UnpackedSize - 8;
-                wav.Write (total_size);
-                wav.Write (0x45564157); // 'WAVE'
-                wav.Write (0x20746d66); // 'fmt '
-                wav.Write (0x10);
-                wav.Write (went.Format.FormatTag);
-                wav.Write (went.Format.Channels);
-                wav.Write (went.Format.SamplesPerSecond);
-                wav.Write (went.Format.AverageBytesPerSecond);
-                wav.Write (went.Format.BlockAlign);
-                wav.Write (went.Format.BitsPerSample);
-                wav.Write (0x61746164); // 'data'
-                wav.Write (went.Size);
-                wav.Flush ();
-                var input = arc.File.CreateStream (entry.Offset, entry.Size);
-                return new PrefixStream (riff, input);
+                WaveAudio.WriteRiffHeader (riff, went.Format, went.Size);
+                return new PrefixStream (riff.ToArray(), input);
             }
         }
     }
