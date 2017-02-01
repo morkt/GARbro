@@ -77,9 +77,26 @@ namespace GameRes.Formats.Will
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var reader = new TxReader (file, (TxMetaData)info);
+            var meta = (TxMetaData)info;
+            PixelFormat format;
+            BitmapPalette palette = null;
+            if (24 == info.BPP)
+                format = PixelFormats.Bgr24;
+            else if (32 == info.BPP)
+                format = PixelFormats.Bgra32;
+            else if (16 == info.BPP)
+                format = PixelFormats.Bgr555;
+            else if (8 == info.BPP)
+            {
+                format = PixelFormats.Indexed8;
+                file.Position = 0x36;
+                palette = ReadPalette (file.AsStream, meta.Colors);
+            }
+            else
+                throw new InvalidFormatException();
+            var reader = new TxReader (file, meta);
             var pixels = reader.Unpack();
-            return ImageData.CreateFlipped (info, reader.Format, reader.Palette, pixels, reader.Stride);
+            return ImageData.CreateFlipped (info, format, palette, pixels, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -94,8 +111,6 @@ namespace GameRes.Formats.Will
         TxMetaData      m_info;
         byte[]          m_output;
 
-        public PixelFormat    Format { get; private set; }
-        public BitmapPalette Palette { get; private set; }
         public byte[]           Data { get { return m_output; } }
         public int            Stride { get { return m_info.Stride; } }
 
@@ -104,20 +119,6 @@ namespace GameRes.Formats.Will
             m_input = input;
             m_info = info;
             m_output = new byte[m_info.Stride * (int)m_info.Height];
-            if (24 == m_info.BPP)
-                Format = PixelFormats.Bgr24;
-            else if (32 == m_info.BPP)
-                Format = PixelFormats.Bgra32;
-            else if (16 == m_info.BPP)
-                Format = PixelFormats.Bgr555;
-            else if (8 == m_info.BPP)
-            {
-                Format = PixelFormats.Indexed8;
-                m_input.Position = 0x36;
-                Palette = ImageFormat.ReadPalette (m_input.AsStream, m_info.Colors);
-            }
-            else
-                throw new InvalidFormatException();
         }
 
         public byte[] Unpack ()
