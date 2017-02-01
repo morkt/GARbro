@@ -42,6 +42,7 @@ namespace GameRes.Formats.Will
         public Wsm2Opener ()
         {
             Extensions = new string[] { "wsm" };
+            Signatures = new uint[] { 0x324D5357, 0x334D5357 };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -50,6 +51,7 @@ namespace GameRes.Formats.Will
             int count = file.View.ReadInt32 (0xC);
             if (!IsSaneCount (count) || index_size >= file.MaxOffset - 0x40)
                 return null;
+            int version = file.View.ReadByte (3) - '0';
             int table_offset = file.View.ReadInt32 (0x10);
             int table_count = file.View.ReadInt32 (0x14);
             if (table_offset >= index_size || !IsSaneCount (table_count))
@@ -61,6 +63,8 @@ namespace GameRes.Formats.Will
                 var entry = new Entry { Type = "audio" };
                 entry.Offset = index.ToUInt32 (table_offset) - 0x14;
                 entry.Size   = index.ToUInt32 (table_offset+8) + 0x14;
+                if (3 == version)
+                    entry.Size += index.ToUInt32 (table_offset+4);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 table_offset += 0x20;
