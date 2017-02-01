@@ -51,6 +51,8 @@ namespace GameRes.Formats.Will
             Extensions = new string[] { "wip", "msk", "mos" };
         }
 
+        public bool ApplyMask = false;
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             file.Position = 4;
@@ -87,27 +89,24 @@ namespace GameRes.Formats.Will
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (WipMetaData)info;
-            if (meta.FrameCount > 1)
-                Trace.WriteLine ("Extra frames ignored", info.FileName);
-            file.Position = 8 + 24 * meta.FrameCount;
-            Color[] palette = null;
-            if (8 == meta.BPP)
-            {
-                var palette_data = new byte[0x400];
-                if (palette_data.Length != file.Read (palette_data, 0, palette_data.Length))
-                    throw new InvalidFormatException();
-                palette = new Color[0x100];
-                for (int i = 0; i < 0x100; ++i)
-                {
-                    palette[i] = Color.FromRgb (palette_data[i*4], palette_data[i*4+1], palette_data[i*4+2]);
-                }
-            }
             using (var reader = new Reader (file, meta))
             {
                 reader.Unpack();
                 if (24 == meta.BPP)
                 {
                     byte[] raw = reader.Data;
+                    if (ApplyMask && !meta.FileName.EndsWith (".msk", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        var mask_name = Path.ChangeExtension (meta.FileName, "msk");
+                        if (VFS.FileExists (mask_name))
+                        {
+                            try
+                            {
+                                return ApplyMaskToWipData (meta, raw, mask_name);
+                            }
+                            catch { /* ignore mask read errors */ }
+                        }
+                    }
                     int size = (int)meta.Width * (int)meta.Height;
                     byte[] pixels = new byte[size*3];
                     int dst = 0;
@@ -122,11 +121,43 @@ namespace GameRes.Formats.Will
                 else if (8 == meta.BPP)
                 {
                     byte[] pixels = reader.Data;
-                    var bmp_palette = new BitmapPalette (palette);
+                    var bmp_palette = new BitmapPalette (reader.Palette);
                     return ImageData.Create (meta, PixelFormats.Indexed8, bmp_palette, pixels, (int)meta.Width);
                 }
                 else
                     throw new InvalidFormatException();
+            }
+        }
+
+        ImageData ApplyMaskToWipData (ImageMetaData info, byte[] image, string mask_name)
+        {
+            using (var mask_file = VFS.OpenBinaryStream (mask_name))
+            {
+                if (mask_file.Signature != Signature)
+                    throw new InvalidFormatException();
+                var mask_info = ReadMetaData (mask_file) as WipMetaData;
+                if (null == mask_info || 8 != mask_info.BPP
+                    || info.Width != mask_info.Width || info.Height != mask_info.Height)
+                    throw new InvalidFormatException();
+                using (var reader = new Reader (mask_file, mask_info))
+                {
+                    reader.Unpack();
+                    var palette = reader.Palette;
+                    int dst_stride = (int)info.Width * 4;
+                    var pixels = new byte[dst_stride * (int)info.Height];
+                    int plane_size = (int)info.Width * (int)info.Height;
+                    var alpha = reader.Data;
+                    int dst = 0;
+                    for (int src = 0; src < plane_size; ++src)
+                    {
+                        pixels[dst++] = image[src];
+                        pixels[dst++] = image[src+plane_size];
+                        pixels[dst++] = image[src+plane_size*2];
+                        var color = palette[alpha[src]];
+                        pixels[dst++] = (byte)((color.B + color.G + color.R) / 3);
+                    }
+                    return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, dst_stride);
+                }
             }
         }
 
@@ -136,7 +167,8 @@ namespace GameRes.Formats.Will
             private uint            m_length;
             private byte[]          m_data;
 
-            public byte[] Data { get { return m_data; } }
+            public byte[]     Data { get { return m_data; } }
+            public Color[] Palette { get; private set; }
 
             public Reader (IBinaryStream file, WipMetaData info)
             {
@@ -145,6 +177,9 @@ namespace GameRes.Formats.Will
                 int stride = (int)info.Width*4;
                 m_data = new byte[stride * (int)info.Height];
                 m_input = file;
+                m_input.Position = 8 + 24 * info.FrameCount;
+                if (8 == info.BPP)
+                    Palette = ReadColorMap (file.AsStream, 0x100, PaletteFormat.RgbX);
             }
 
             private byte[] m_window = new byte[0x1000];
