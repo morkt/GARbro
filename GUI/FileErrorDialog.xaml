@@ -1,0 +1,20 @@
+﻿<w:ModalWindow x:Class="GARbro.GUI.FileErrorDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:w="clr-namespace:Rnd.Windows"
+               Title="{Binding Title}" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+               ResizeMode="NoResize" SizeToContent="WidthAndHeight"
+               Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+    <StackPanel Orientation="Vertical">
+        <TextBox x:Name="ErrorText" Text="{Binding Text}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="10"/>
+        <Separator/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <CheckBox x:Name="IgnoreErrors" Content="_Ignore further errors" Margin="10" VerticalAlignment="Center"/>
+            <Button Content="_Continue" Margin="10" Width="75" Height="25" IsDefault="True" Click="ContinueButton_Click"/>
+            <Button Content="_Abort" Margin="10" Width="75" Height="25" IsCancel="True" Click="AbortButton_Click"/>
+        </StackPanel>
+    </StackPanel>
+    <Window.InputBindings>
+        <KeyBinding Gesture="Ctrl+C" Command="{Binding CopyCommand}"/>
+    </Window.InputBindings>
+</w:ModalWindow>
