@@ -348,6 +348,7 @@
     <Compile Include="TamaSoft\ImageBTN.cs" />
     <Compile Include="TamaSoft\ImageSUR.cs" />
     <Compile Include="Tanaka\ArcARC0.cs" />
+    <Compile Include="Tanaka\ArcARCG.cs" />
     <Compile Include="Tanaka\ArcBMX.cs" />
     <Compile Include="Tanaka\ArcMBF.cs" />
     <Compile Include="Tanaka\ArcVPK.cs" />
