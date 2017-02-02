@@ -33,7 +33,6 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using Ookii.Dialogs.Wpf;
 using GameRes;
 using GARbro.GUI.Strings;
 using GARbro.GUI.Properties;
@@ -114,6 +113,7 @@ namespace GARbro.GUI
         private bool                m_skip_audio  = false;
         private bool                m_adjust_image_offset = false;
         private bool                m_convert_audio;
+        private bool                m_ignore_errors;
         private ImageFormat         m_image_format;
         private int                 m_extract_count;
         private int                 m_skip_count;
@@ -284,7 +284,7 @@ namespace GARbro.GUI
             var arc = m_fs.Source;
             int total = file_list.Count();
             int progress_count = 0;
-            bool ignore_errors = false;
+            m_ignore_errors = false;
             foreach (var entry in file_list)
             {
                 if (m_progress_dialog.CancellationPending)
@@ -303,52 +303,16 @@ namespace GARbro.GUI
                 }
                 catch (Exception X)
                 {
-                    if (!ignore_errors)
+                    if (!m_ignore_errors)
                     {
-                        IntPtr progress_handle = IntPtr.Zero;
-                        try
-                        {
-                            var error_text = string.Format ("{0}\n{1}\n{2}", "Failed to extract file",
-                                                            entry.Name, X.Message);
-                            bool dialog_result = false;
-                            m_main.Dispatcher.Invoke (() => {
-                                progress_handle = HideProgressDialog();
-                                var dialog = new FileErrorDialog ("File extraction error", error_text);
-                                dialog.Owner = m_main;
-                                dialog_result = dialog.ShowDialog() ?? false;
-                                ignore_errors = dialog.IgnoreErrors.IsChecked ?? false;
-                            });
-                            if (!dialog_result)
-                                break;
-                        }
-                        finally
-                        {
-                            if (progress_handle != IntPtr.Zero)
-                                ShowWindow (progress_handle, SW_SHOW);
-                        }
+                        var error_text = string.Format ("{0}\n{1}\n{2}", "Failed to extract file",
+                                                        entry.Name, X.Message);
+                        if (!m_main.Dispatcher.Invoke (() => ShowErrorDialog (error_text)))
+                            break;
                     }
                     ++m_skip_count;
                 }
             }
-        }
-
-        const int SW_HIDE = 0;
-        const int SW_SHOW = 5;
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr FindWindowEx (IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
-        [DllImport("user32.dll")][return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool ShowWindow (IntPtr hWnd, int nCmdShow);
-
-        IntPtr HideProgressDialog ()
-        {
-            // i just want to temporarily hide progress dialog when error window pops up, or at least force it
-            // to background so it can't be interacted with until error dialog is resolved.  Unfortunately
-            // it's impossible with Ookii.Dialogs implementation aside from ugly hacks like this one.
-            var found = FindWindowEx (IntPtr.Zero, IntPtr.Zero, null, m_progress_dialog.WindowTitle);
-            if (IntPtr.Zero != found)
-                ShowWindow (found, SW_HIDE);
-            return found;
         }
 
         void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
@@ -448,6 +412,31 @@ namespace GARbro.GUI
                 ext = string.Format ("{0}.{1}", attempt, target_ext);
             }
             throw new IOException ("File aready exists");
+        }
+
+        bool ShowErrorDialog (string error_text)
+        {
+            var dialog = new FileErrorDialog ("File extraction error", error_text);
+            var progress_dialog_hwnd = m_progress_dialog.GetWindowHandle(); 
+            if (progress_dialog_hwnd != IntPtr.Zero)
+            {
+                var native_dialog = new WindowInteropHelper (dialog);
+                native_dialog.Owner = progress_dialog_hwnd;
+                NativeMethods.EnableWindow (progress_dialog_hwnd, false);
+                EventHandler on_closed = null;
+                on_closed = (s, e) => {
+                    NativeMethods.EnableWindow (progress_dialog_hwnd, true);
+                    dialog.Closed -= on_closed;
+                };
+                dialog.Closed += on_closed;
+            }
+            else
+            {
+                dialog.Owner = m_main;
+            }
+            bool dialog_result = dialog.ShowDialog() ?? false;
+            m_ignore_errors = dialog.IgnoreErrors.IsChecked ?? false;
+            return dialog_result;
         }
 
         void OnExtractComplete (object sender, RunWorkerCompletedEventArgs e)

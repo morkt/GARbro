@@ -95,9 +95,6 @@
       <HintPath>..\packages\NAudio.1.8.0\lib\net35\NAudio.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Ookii.Dialogs.Wpf">
-      <HintPath>..\packages\Ookii.Dialogs.1.0\lib\net35\Ookii.Dialogs.Wpf.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Controls.Input.Toolkit">
@@ -158,6 +155,10 @@
     <Compile Include="ListViewEx.cs" />
     <Compile Include="ModalWindow.cs" />
     <Compile Include="NAudio.cs" />
+    <Compile Include="ProgressDialog\IProgressDialog.cs" />
+    <Compile Include="ProgressDialog\ProgressDialog.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="Shell.cs" />
     <Compile Include="Strings\guiStrings.Designer.cs">

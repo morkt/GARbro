@@ -34,7 +34,6 @@ using System.Diagnostics;
 using GameRes;
 using GARbro.GUI.Strings;
 using GARbro.GUI.Properties;
-using Ookii.Dialogs.Wpf;
 using System.Runtime.InteropServices;
 
 namespace GARbro.GUI

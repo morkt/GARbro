@@ -3,7 +3,7 @@
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                xmlns:w="clr-namespace:Rnd.Windows"
                Title="{Binding Title}" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
-               ResizeMode="NoResize" SizeToContent="WidthAndHeight"
+               ResizeMode="NoResize" SizeToContent="WidthAndHeight" ShowActivated="True"
                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
     <StackPanel Orientation="Vertical">
         <TextBox x:Name="ErrorText" Text="{Binding Text}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="10"/>
