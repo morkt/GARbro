@@ -342,19 +342,13 @@ namespace GARbro.GUI
 
         IntPtr HideProgressDialog ()
         {
-//            IntPtr parent = new WindowInteropHelper (m_main).Handle;
-//            var found = FindWindowEx (parent, IntPtr.Zero, null, m_progress_dialog.WindowTitle);
+            // i just want to temporarily hide progress dialog when error window pops up, or at least force it
+            // to background so it can't be interacted with until error dialog is resolved.  Unfortunately
+            // it's impossible with Ookii.Dialogs implementation aside from ugly hacks like this one.
             var found = FindWindowEx (IntPtr.Zero, IntPtr.Zero, null, m_progress_dialog.WindowTitle);
             if (IntPtr.Zero != found)
                 ShowWindow (found, SW_HIDE);
             return found;
-        }
-
-        bool ShowErrorDialog (string error_text)
-        {
-            var dialog = new FileErrorDialog ("File extraction error", error_text);
-            dialog.Owner = m_main;
-            return dialog.ShowDialog() ?? false;
         }
 
         void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
