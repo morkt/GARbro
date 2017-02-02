@@ -351,6 +351,7 @@
     <Compile Include="Tanaka\ArcARCG.cs" />
     <Compile Include="Tanaka\ArcBMX.cs" />
     <Compile Include="Tanaka\ArcMBF.cs" />
+    <Compile Include="Tanaka\ArcSMV.cs" />
     <Compile Include="Tanaka\ArcVPK.cs" />
     <Compile Include="Tanaka\ArcWRC.cs" />
     <Compile Include="Tanaka\ArcWSM.cs" />

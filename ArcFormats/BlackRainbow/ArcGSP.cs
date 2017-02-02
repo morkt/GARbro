@@ -118,7 +118,7 @@ namespace GameRes.Formats.BlackRainbow
                 }
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = offset + 0x24;
-                entry.Size   = i + 1 < index.Count ? (uint)(index[i+1] - offset) : (uint)(file.MaxOffset - offset);
+                entry.Size   = (uint)((i + 1 < index.Count ? index[i+1]  : file.MaxOffset) - entry.Offset);
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);
