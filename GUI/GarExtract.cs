@@ -291,7 +291,7 @@ namespace GARbro.GUI
                     else if (m_convert_audio && entry.Type == "audio")
                         ExtractAudio (arc, entry);
                     else
-                        arc.Extract (entry);
+                        ExtractEntryAsIs (arc, entry);
                     ++m_extract_count;
                 }
                 catch (SkipExistingFileException)
@@ -316,6 +316,13 @@ namespace GARbro.GUI
                     ++m_skip_count;
                 }
             }
+        }
+
+        void ExtractEntryAsIs (ArcFile arc, Entry entry)
+        {
+            using (var input = arc.OpenEntry (entry))
+            using (var output = CreateNewFile (entry.Name))
+                input.CopyTo (output);
         }
 
         void ExtractImage (ArcFile arc, Entry entry, ImageFormat target_format)
