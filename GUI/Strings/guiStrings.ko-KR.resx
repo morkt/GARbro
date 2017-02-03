@@ -459,20 +459,16 @@
     <value>마스크로 파일 선택...</value>
   </data>
   <data name="ButtonAbort" xml:space="preserve">
-    <value>Abort</value>
-    <comment>translation pending</comment>
+    <value>중단</value>
   </data>
   <data name="ButtonContinue" xml:space="preserve">
-    <value>Continue</value>
-    <comment>translation pending</comment>
+    <value>계속</value>
   </data>
   <data name="LabelIgnoreErrors" xml:space="preserve">
-    <value>Ignore further errors</value>
-    <comment>translation pending</comment>
+    <value>추가 오류 무시</value>
   </data>
   <data name="TextExtractionError" xml:space="preserve">
-    <value>File extraction error</value>
-    <comment>translation pending</comment>
+    <value>파일 추출 오류</value>
   </data>
   <data name="ButtonOverwrite" xml:space="preserve">
     <value>Overwrite</value>
