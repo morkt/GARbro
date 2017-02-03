@@ -474,4 +474,24 @@ Overwrite?</value>
   <data name="TextExtractionError" xml:space="preserve">
     <value>File extraction error</value>
   </data>
+  <data name="ButtonOverwrite" xml:space="preserve">
+    <value>_Overwrite</value>
+  </data>
+  <data name="ButtonRename" xml:space="preserve">
+    <value>_Rename</value>
+  </data>
+  <data name="ButtonSkip" xml:space="preserve">
+    <value>_Skip</value>
+  </data>
+  <data name="LabelApplyToAll" xml:space="preserve">
+    <value>A_pply to all duplicate files</value>
+  </data>
+  <data name="LabelDuplicateFileQuestion" xml:space="preserve">
+    <value>What should be done?</value>
+  </data>
+  <data name="TextErrorConverting" xml:space="preserve">
+    <value>Error occured while converting file
+{0}
+{1}</value>
+  </data>
 </root>

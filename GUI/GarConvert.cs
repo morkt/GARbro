@@ -143,42 +143,38 @@ namespace GARbro.GUI
         void ConvertWorker (object sender, DoWorkEventArgs e)
         {
             m_pending_error = null;
-            try
+            int total = m_source.Count();
+            int i = 0;
+            foreach (var entry in m_source)
             {
-                int total = m_source.Count();
-                int i = 0;
-                foreach (var entry in m_source)
+                if (m_progress_dialog.CancellationPending)
                 {
-                    if (m_progress_dialog.CancellationPending)
-                        throw new OperationCanceledException();
-                    var filename = entry.Name;
-                    int progress = i++*100/total;
-                    m_progress_dialog.ReportProgress (progress, string.Format (guiStrings.MsgConvertingFile,
-                        Path.GetFileName (filename)), null);
-                    try
-                    {
-                        if ("image" == entry.Type)
-                            ConvertImage (filename);
-                        else if ("audio" == entry.Type)
-                            ConvertAudio (filename);
-                    }
-                    catch (NotImplementedException X)
-                    {
-                        // target format creation not implemented
-                        m_pending_error = X;
-                        break;
-                    }
-                    catch (Exception X)
-                    {
-                        if (!IgnoreErrors)
-                            throw;
-                        m_failed.Add (Tuple.Create (Path.GetFileName (filename), X.Message));
-                    }
+                    m_pending_error = new OperationCanceledException();
+                    break;
                 }
-            }
-            catch (Exception X)
-            {
-                m_pending_error = X;
+                var filename = entry.Name;
+                int progress = i++*100/total;
+                m_progress_dialog.ReportProgress (progress, string.Format (guiStrings.MsgConvertingFile,
+                    Path.GetFileName (filename)), null);
+                try
+                {
+                    if ("image" == entry.Type)
+                        ConvertImage (filename);
+                    else if ("audio" == entry.Type)
+                        ConvertAudio (filename);
+                }
+                catch (Exception X)
+                {
+                    if (!IgnoreErrors)
+                    {
+                        var error_text = string.Format (guiStrings.TextErrorConverting, entry.Name, X.Message);
+                        var result = m_main.Dispatcher.Invoke (() => m_main.ShowErrorDialog (guiStrings.TextMediaConvertError, error_text, m_progress_dialog.GetWindowHandle()));
+                        if (!result.Continue)
+                            break;
+                        IgnoreErrors = result.IgnoreErrors;
+                    }
+                    m_failed.Add (Tuple.Create (Path.GetFileName (filename), X.Message));
+                }
             }
         }
 

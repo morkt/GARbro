@@ -304,8 +304,10 @@ namespace GARbro.GUI
                     if (!m_ignore_errors)
                     {
                         var error_text = string.Format (guiStrings.TextErrorExtracting, entry.Name, X.Message);
-                        if (!m_main.Dispatcher.Invoke (() => ShowErrorDialog (error_text)))
+                        var result = m_main.Dispatcher.Invoke (() => m_main.ShowErrorDialog (guiStrings.TextExtractionError, error_text, m_progress_dialog.GetWindowHandle()));
+                        if (!result.Continue)
                             break;
+                        m_ignore_errors = result.IgnoreErrors;
                     }
                     ++m_skip_count;
                 }
@@ -409,31 +411,6 @@ namespace GARbro.GUI
                 ext = string.Format ("{0}.{1}", attempt, target_ext);
             }
             throw new IOException ("File aready exists");
-        }
-
-        bool ShowErrorDialog (string error_text)
-        {
-            var dialog = new FileErrorDialog (guiStrings.TextExtractionError, error_text);
-            var progress_dialog_hwnd = m_progress_dialog.GetWindowHandle(); 
-            if (progress_dialog_hwnd != IntPtr.Zero)
-            {
-                var native_dialog = new WindowInteropHelper (dialog);
-                native_dialog.Owner = progress_dialog_hwnd;
-                NativeMethods.EnableWindow (progress_dialog_hwnd, false);
-                EventHandler on_closed = null;
-                on_closed = (s, e) => {
-                    NativeMethods.EnableWindow (progress_dialog_hwnd, true);
-                    dialog.Closed -= on_closed;
-                };
-                dialog.Closed += on_closed;
-            }
-            else
-            {
-                dialog.Owner = m_main;
-            }
-            bool dialog_result = dialog.ShowDialog() ?? false;
-            m_ignore_errors = dialog.IgnoreErrors.IsChecked ?? false;
-            return dialog_result;
         }
 
         void OnExtractComplete (object sender, RunWorkerCompletedEventArgs e)

@@ -115,6 +115,33 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _Overwrite.
+        /// </summary>
+        public static string ButtonOverwrite {
+            get {
+                return ResourceManager.GetString("ButtonOverwrite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Rename.
+        /// </summary>
+        public static string ButtonRename {
+            get {
+                return ResourceManager.GetString("ButtonRename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Skip.
+        /// </summary>
+        public static string ButtonSkip {
+            get {
+                return ResourceManager.GetString("ButtonSkip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Close.
         /// </summary>
         public static string CtxMenuClose {
@@ -313,6 +340,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A_pply to all duplicate files.
+        /// </summary>
+        public static string LabelApplyToAll {
+            get {
+                return ResourceManager.GetString("LabelApplyToAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive format.
         /// </summary>
         public static string LabelArchiveFormat {
@@ -363,6 +399,15 @@ namespace GARbro.GUI.Strings {
         public static string LabelDevSite {
             get {
                 return ResourceManager.GetString("LabelDevSite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What should be done?.
+        /// </summary>
+        public static string LabelDuplicateFileQuestion {
+            get {
+                return ResourceManager.GetString("LabelDuplicateFileQuestion", resourceCulture);
             }
         }
         
@@ -960,6 +1005,17 @@ namespace GARbro.GUI.Strings {
         public static string TextEncoding {
             get {
                 return ResourceManager.GetString("TextEncoding", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error occured while converting file
+        ///{0}
+        ///{1}.
+        /// </summary>
+        public static string TextErrorConverting {
+            get {
+                return ResourceManager.GetString("TextErrorConverting", resourceCulture);
             }
         }
         

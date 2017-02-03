@@ -147,6 +147,9 @@
     <Compile Include="FileErrorDialog.xaml.cs">
       <DependentUpon>FileErrorDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FileExistsDialog.xaml.cs">
+      <DependentUpon>FileExistsDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="GarConvert.cs" />
     <Compile Include="GarCreate.cs" />
     <Compile Include="GarExtract.cs" />
@@ -200,6 +203,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FileErrorDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FileExistsDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

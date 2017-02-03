@@ -1,0 +1,21 @@
+﻿<w:ModalWindow x:Class="GARbro.GUI.FileExistsDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:w="clr-namespace:Rnd.Windows"
+               xmlns:s="clr-namespace:GARbro.GUI.Strings"
+               Title="File already exists" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+               ResizeMode="NoResize" SizeToContent="WidthAndHeight" ShowActivated="True"
+               Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+    <StackPanel Orientation="Vertical">
+        <TextBlock x:Name="Notice" Text="File named {0} already exists in destination folder." Margin="10"/>
+        <TextBlock Text="{x:Static s:guiStrings.LabelDuplicateFileQuestion}" Margin="10"/>
+        <Separator/>
+        <CheckBox x:Name="ApplyToAll" Content="{x:Static s:guiStrings.LabelApplyToAll}" Margin="10"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <Button Content="{x:Static s:guiStrings.ButtonSkip}" Margin="10" Width="75" Height="25" IsDefault="True" Click="SkipButton_Click"/>
+            <Button Content="{x:Static s:guiStrings.ButtonOverwrite}" Margin="10" Width="75" Height="25" Click="OverwriteButton_Click"/>
+            <Button Content="{x:Static s:guiStrings.ButtonRename}" Margin="10" Width="75" Height="25" Click="RenameButton_Click"/>
+            <Button Content="{x:Static s:guiStrings.ButtonAbort}" Margin="10" Width="75" Height="25" IsCancel="True" Click="AbortButton_Click"/>
+        </StackPanel>
+    </StackPanel>
+</w:ModalWindow>

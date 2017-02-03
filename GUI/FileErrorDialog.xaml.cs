@@ -16,6 +16,16 @@ namespace GARbro.GUI
             this.DataContext = new ViewModel { Title = title, Text = error_text };
         }
 
+        new public FileErrorDialogResult ShowDialog ()
+        {
+            bool dialog_result = base.ShowDialog() ?? false;
+            return new FileErrorDialogResult
+            {
+                Continue     = dialog_result,
+                IgnoreErrors = IgnoreErrors.IsChecked ?? false
+            };
+        }
+
         private void ContinueButton_Click (object sender, RoutedEventArgs e)
         {
             this.DialogResult = true;
@@ -72,5 +82,11 @@ namespace GARbro.GUI
             #pragma warning disable 67
             public event EventHandler CanExecuteChanged;
         }
+    }
+
+    public struct FileErrorDialogResult
+    {
+        public bool Continue;
+        public bool IgnoreErrors;
     }
 }
