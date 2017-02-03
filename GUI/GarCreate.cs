@@ -56,21 +56,17 @@ namespace GARbro.GUI
         }
     }
 
-    internal class GarCreate
+    internal class GarCreate : GarOperation
     {
-        private MainWindow      m_main;
         private string          m_arc_name;
         private IList<Entry>    m_file_list;
-        private ProgressDialog  m_progress_dialog;
         private ArchiveFormat   m_format;
         private ResourceOptions m_options;
-        private Exception       m_pending_error;
 
         delegate void AddFilesEnumerator (IList<Entry> list, string path, DirectoryInfo path_info);
 
-        public GarCreate (MainWindow parent)
+        public GarCreate (MainWindow parent) : base (parent, guiStrings.TextCreateArchiveError)
         {
-            m_main = parent;
             m_arc_name = Settings.Default.appLastCreatedArchive;
         }
 

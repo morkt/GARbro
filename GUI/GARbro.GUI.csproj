@@ -153,6 +153,7 @@
     <Compile Include="GarConvert.cs" />
     <Compile Include="GarCreate.cs" />
     <Compile Include="GarExtract.cs" />
+    <Compile Include="GarOperation.cs" />
     <Compile Include="HistoryStack.cs" />
     <Compile Include="ImagePreview.cs" />
     <Compile Include="ListViewEx.cs" />
@@ -298,6 +299,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\Cursors\grabbing.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\64x64\actions.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\64x64\alert.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

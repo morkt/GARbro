@@ -102,9 +102,8 @@ namespace GARbro.GUI
         }
     }
 
-    sealed internal class GarExtract : IDisposable
+    sealed internal class GarExtract : GarOperation, IDisposable
     {
-        private MainWindow          m_main;
         private string              m_arc_name;
         private ArchiveFileSystem   m_fs;
         private readonly bool       m_should_ascend;
@@ -113,16 +112,14 @@ namespace GARbro.GUI
         private bool                m_skip_audio  = false;
         private bool                m_adjust_image_offset = false;
         private bool                m_convert_audio;
-        private bool                m_ignore_errors;
         private ImageFormat         m_image_format;
         private int                 m_extract_count;
         private int                 m_skip_count;
         private bool                m_extract_in_progress = false;
-        private ProgressDialog      m_progress_dialog;
 
         public bool IsActive { get { return m_extract_in_progress; } }
 
-        public GarExtract (MainWindow parent, string source)
+        public GarExtract (MainWindow parent, string source) : base (parent, guiStrings.TextExtractionError)
         {
             m_arc_name = Path.GetFileName (source);
             try
@@ -135,15 +132,13 @@ namespace GARbro.GUI
                 throw new OperationCanceledException (string.Format ("{1}: {0}", X.Message, m_arc_name));
             }
             m_fs = VFS.Top as ArchiveFileSystem;
-            m_main = parent;
         }
 
-        public GarExtract (MainWindow parent, string source, ArchiveFileSystem fs)
+        public GarExtract (MainWindow parent, string source, ArchiveFileSystem fs) : base (parent, guiStrings.TextExtractionError)
         {
             if (null == fs)
                 throw new UnknownFormatException();
             m_fs = fs;
-            m_main = parent;
             m_arc_name = Path.GetFileName (source);
             m_should_ascend = false;
         }
@@ -282,7 +277,7 @@ namespace GARbro.GUI
             var arc = m_fs.Source;
             int total = file_list.Count();
             int progress_count = 0;
-            m_ignore_errors = false;
+            bool ignore_errors = false;
             foreach (var entry in file_list)
             {
                 if (m_progress_dialog.CancellationPending)
@@ -299,15 +294,24 @@ namespace GARbro.GUI
                         arc.Extract (entry);
                     ++m_extract_count;
                 }
+                catch (SkipExistingFileException)
+                {
+                    ++m_skip_count;
+                    continue;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
                 catch (Exception X)
                 {
-                    if (!m_ignore_errors)
+                    if (!ignore_errors)
                     {
                         var error_text = string.Format (guiStrings.TextErrorExtracting, entry.Name, X.Message);
-                        var result = m_main.Dispatcher.Invoke (() => m_main.ShowErrorDialog (guiStrings.TextExtractionError, error_text, m_progress_dialog.GetWindowHandle()));
+                        var result = ShowErrorDialog (error_text);
                         if (!result.Continue)
                             break;
-                        m_ignore_errors = result.IgnoreErrors;
+                        ignore_errors = result.IgnoreErrors;
                     }
                     ++m_skip_count;
                 }
@@ -320,11 +324,12 @@ namespace GARbro.GUI
             {
                 var src_format = decoder.SourceFormat; // could be null
                 string target_ext = target_format.Extensions.FirstOrDefault() ?? "";
-                string outname = FindUniqueFileName (entry.Name, target_ext);
+                string outname = Path.ChangeExtension (entry.Name, target_ext);
+                outname = ArchiveFormat.CreatePath (outname);
                 if (src_format == target_format)
                 {
                     // source format is the same as a target, copy file as is
-                    using (var output = ArchiveFormat.CreateFile (outname))
+                    using (var output = CreateNewFile (outname))
                         decoder.Source.CopyTo (output);
                     return;
                 }
@@ -333,7 +338,7 @@ namespace GARbro.GUI
                 {
                     image = AdjustImageOffset (image);
                 }
-                using (var outfile = ArchiveFormat.CreateFile (outname))
+                using (var outfile = CreateNewFile (outname))
                 {
                     target_format.Write (outfile, image);
                 }
@@ -369,7 +374,7 @@ namespace GARbro.GUI
             return new ImageData (bitmap);
         }
 
-        static void ExtractAudio (ArcFile arc, Entry entry)
+        void ExtractAudio (ArcFile arc, Entry entry)
         {
             using (var file = arc.OpenBinaryEntry (entry))
             using (var sound = AudioFormat.Read (file))
@@ -380,13 +385,14 @@ namespace GARbro.GUI
             }
         }
 
-        public static void ConvertAudio (string entry_name, SoundInput input)
+        public void ConvertAudio (string filename, SoundInput input)
         {
+            filename = ArchiveFormat.CreatePath (filename);
             string source_format = input.SourceFormat;
             if (GarConvertMedia.CommonAudioFormats.Contains (source_format))
             {
-                string output_name = FindUniqueFileName (entry_name, source_format);
-                using (var output = ArchiveFormat.CreateFile (output_name))
+                var output_name = Path.ChangeExtension (filename, source_format);
+                using (var output = CreateNewFile (output_name))
                 {
                     input.Source.Position = 0;
                     input.Source.CopyTo (output);
@@ -394,23 +400,10 @@ namespace GARbro.GUI
             }
             else
             {
-                string output_name = FindUniqueFileName (entry_name, "wav");
-                using (var output = ArchiveFormat.CreateFile (output_name))
+                var output_name = Path.ChangeExtension (filename, "wav");
+                using (var output = CreateNewFile (output_name))
                     AudioFormat.Wav.Write (input, output);
             }
-        }
-
-        public static string FindUniqueFileName (string source_filename, string target_ext)
-        {
-            string ext = target_ext;
-            for (int attempt = 1; attempt < 100; ++attempt)
-            {
-                string filename = Path.ChangeExtension (source_filename, ext);
-                if (!File.Exists (filename))
-                    return filename;
-                ext = string.Format ("{0}.{1}", attempt, target_ext);
-            }
-            throw new IOException ("File aready exists");
         }
 
         void OnExtractComplete (object sender, RunWorkerCompletedEventArgs e)

@@ -496,4 +496,8 @@
 {1}</value>
     <comment>translation pending</comment>
   </data>
+  <data name="TextFileAlreadyExists" xml:space="preserve">
+    <value>File {0} already exists in the destination folder.</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

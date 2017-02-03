@@ -106,21 +106,17 @@ namespace GARbro.GUI
         }
     }
 
-    internal class GarConvertMedia
+    internal class GarConvertMedia : GarOperation
     {
-        private MainWindow      m_main;
-        private ProgressDialog  m_progress_dialog;
         private IEnumerable<Entry> m_source;
         private ImageFormat     m_image_format;
-        private Exception       m_pending_error;
         private List<Tuple<string,string>> m_failed = new List<Tuple<string,string>>();
 
         public bool IgnoreErrors { get; set; }
         public IEnumerable<Tuple<string,string>> FailedFiles { get { return m_failed; } }
 
-        public GarConvertMedia (MainWindow parent)
+        public GarConvertMedia (MainWindow parent) : base (parent, guiStrings.TextMediaConvertError)
         {
-            m_main = parent;
         }
 
         public void Convert (IEnumerable<Entry> images, ImageFormat format)
@@ -163,12 +159,21 @@ namespace GARbro.GUI
                     else if ("audio" == entry.Type)
                         ConvertAudio (filename);
                 }
+                catch (SkipExistingFileException)
+                {
+                    continue;
+                }
+                catch (OperationCanceledException X)
+                {
+                    m_pending_error = X;
+                    break;
+                }
                 catch (Exception X)
                 {
                     if (!IgnoreErrors)
                     {
                         var error_text = string.Format (guiStrings.TextErrorConverting, entry.Name, X.Message);
-                        var result = m_main.Dispatcher.Invoke (() => m_main.ShowErrorDialog (guiStrings.TextMediaConvertError, error_text, m_progress_dialog.GetWindowHandle()));
+                        var result = ShowErrorDialog (error_text);
                         if (!result.Continue)
                             break;
                         IgnoreErrors = result.IgnoreErrors;
@@ -227,41 +232,20 @@ namespace GARbro.GUI
                     return;
                 file.Position = 0;
                 var image = src_format.Item1.Read (file, src_format.Item2);
+                var output = CreateNewFile (target_name);
                 try
                 {
-                    using (var output = CreateNewFile (target_name))
-                        m_image_format.Write (output, image);
+                    m_image_format.Write (output, image);
                 }
                 catch // delete destination file on conversion failure
                 {
+                    // FIXME if user chooses to overwrite file, and conversion results in error,
+                    // then original file will be lost.
+                    output.Dispose();
                     File.Delete (target_name);
                     throw;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Creates new file with specified filename, or, if it's already exists, tries to open
-        /// files named "FILENAME.1.EXT", "FILENAME.2.EXT" and so on.
-        /// <exception cref="System.IOException">Throws exception after 100th failed attempt.</exception>
-        /// </summary>
-
-        public static Stream CreateNewFile (string filename)
-        {
-            string name = filename;
-            var ext = new Lazy<string> (() => Path.GetExtension (filename));
-            for (int attempt = 1; ; ++attempt)
-            {
-                try
-                {
-                    return File.Open (name, FileMode.CreateNew);
-                }
-                catch (IOException) // file already exists
-                {
-                    if (100 == attempt) // limit number of attempts
-                        throw;
-                }
-                name = Path.ChangeExtension (filename, attempt.ToString()+ext.Value);
+                output.Dispose();
             }
         }
 

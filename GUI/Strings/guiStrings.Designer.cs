@@ -1076,6 +1076,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File {0} already exists in the destination folder..
+        /// </summary>
+        public static string TextFileAlreadyExists {
+            get {
+                return ResourceManager.GetString("TextFileAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Multimedia conversion error.
         /// </summary>
         public static string TextMediaConvertError {

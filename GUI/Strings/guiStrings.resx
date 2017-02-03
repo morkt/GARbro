@@ -494,4 +494,7 @@ Overwrite?</value>
 {0}
 {1}</value>
   </data>
+  <data name="TextFileAlreadyExists" xml:space="preserve">
+    <value>File {0} already exists in the destination folder.</value>
+  </data>
 </root>
