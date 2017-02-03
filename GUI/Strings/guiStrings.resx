@@ -462,4 +462,16 @@ Overwrite?</value>
   <data name="CtxMenuSelectByMask" xml:space="preserve">
     <value>Select files by mask...</value>
   </data>
+  <data name="ButtonAbort" xml:space="preserve">
+    <value>_Abort</value>
+  </data>
+  <data name="ButtonContinue" xml:space="preserve">
+    <value>_Continue</value>
+  </data>
+  <data name="LabelIgnoreErrors" xml:space="preserve">
+    <value>_Ignore further errors</value>
+  </data>
+  <data name="TextExtractionError" xml:space="preserve">
+    <value>File extraction error</value>
+  </data>
 </root>

@@ -2,7 +2,7 @@
 //! \date       Fri Jul 25 05:52:27 2014
 //! \brief      Extract archive frontend.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -119,7 +119,6 @@ namespace GARbro.GUI
         private int                 m_skip_count;
         private bool                m_extract_in_progress = false;
         private ProgressDialog      m_progress_dialog;
-        private Exception           m_pending_error;
 
         public bool IsActive { get { return m_extract_in_progress; } }
 
@@ -270,7 +269,6 @@ namespace GARbro.GUI
                 m_progress_dialog.ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar;
             }
             m_convert_audio = !m_skip_audio && Settings.Default.appConvertAudio;
-            m_pending_error = null;
             m_progress_dialog.DoWork += (s, e) => ExtractWorker (file_list);
             m_progress_dialog.RunWorkerCompleted += OnExtractComplete;
             m_progress_dialog.ShowDialog (m_main);
@@ -305,8 +303,7 @@ namespace GARbro.GUI
                 {
                     if (!m_ignore_errors)
                     {
-                        var error_text = string.Format ("{0}\n{1}\n{2}", "Failed to extract file",
-                                                        entry.Name, X.Message);
+                        var error_text = string.Format (guiStrings.TextErrorExtracting, entry.Name, X.Message);
                         if (!m_main.Dispatcher.Invoke (() => ShowErrorDialog (error_text)))
                             break;
                     }
@@ -416,7 +413,7 @@ namespace GARbro.GUI
 
         bool ShowErrorDialog (string error_text)
         {
-            var dialog = new FileErrorDialog ("File extraction error", error_text);
+            var dialog = new FileErrorDialog (guiStrings.TextExtractionError, error_text);
             var progress_dialog_hwnd = m_progress_dialog.GetWindowHandle(); 
             if (progress_dialog_hwnd != IntPtr.Zero)
             {
@@ -449,17 +446,6 @@ namespace GARbro.GUI
                 m_main.Dispatcher.Invoke (m_main.RefreshView);
             }
             m_main.SetStatusText (Localization.Format ("MsgExtractedFiles", m_extract_count));
-            if (null != m_pending_error)
-            {
-                if (m_pending_error is OperationCanceledException)
-                    m_main.SetStatusText (m_pending_error.Message);
-                else
-                {
-                    string message = string.Format (guiStrings.TextErrorExtracting,
-                                                    m_progress_dialog.Description, m_pending_error.Message);
-                    m_main.PopupError (message, guiStrings.MsgErrorExtracting);
-                }
-            }
             this.Dispose();
         }
         

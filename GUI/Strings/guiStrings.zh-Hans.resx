@@ -460,4 +460,20 @@
     <value>Select files by mask...</value>
     <comment>translation pending</comment>
   </data>
+  <data name="ButtonAbort" xml:space="preserve">
+    <value>Abort</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="ButtonContinue" xml:space="preserve">
+    <value>Continue</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="LabelIgnoreErrors" xml:space="preserve">
+    <value>Ignore further errors</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextExtractionError" xml:space="preserve">
+    <value>File extraction error</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

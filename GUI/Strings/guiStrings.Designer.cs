@@ -61,11 +61,29 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _Abort.
+        /// </summary>
+        public static string ButtonAbort {
+            get {
+                return ResourceManager.GetString("ButtonAbort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancel.
         /// </summary>
         public static string ButtonCancel {
             get {
                 return ResourceManager.GetString("ButtonCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Continue.
+        /// </summary>
+        public static string ButtonContinue {
+            get {
+                return ResourceManager.GetString("ButtonContinue", resourceCulture);
             }
         }
         
@@ -381,6 +399,15 @@ namespace GARbro.GUI.Strings {
         public static string LabelExtractFileTo {
             get {
                 return ResourceManager.GetString("LabelExtractFileTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Ignore further errors.
+        /// </summary>
+        public static string LabelIgnoreErrors {
+            get {
+                return ResourceManager.GetString("LabelIgnoreErrors", resourceCulture);
             }
         }
         
@@ -962,6 +989,15 @@ namespace GARbro.GUI.Strings {
         public static string TextExtractImages {
             get {
                 return ResourceManager.GetString("TextExtractImages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File extraction error.
+        /// </summary>
+        public static string TextExtractionError {
+            get {
+                return ResourceManager.GetString("TextExtractionError", resourceCulture);
             }
         }
         
