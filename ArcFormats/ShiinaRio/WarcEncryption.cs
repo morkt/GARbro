@@ -1126,4 +1126,35 @@ namespace GameRes.Formats.ShiinaRio
             }
         }
     }
+
+    [Serializable]
+    public class CountCrypt : IDecryptExtra
+    {
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x200 && (flags & 0x204) == 0x204)
+                DoCountCrypt (data, index, (int)length);
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x200 && (flags & 0x104) == 0x104)
+                DoCountCrypt (data, index, (int)length);
+        }
+
+        void DoCountCrypt (byte[] data, int index, int length)
+        {
+            length = (length & 0x7E) | 1;
+            byte count_00 = 0, count_FF = 0;
+            for (int i = 0; i < length; ++i)
+            {
+                if (0xFF == data[index+i])
+                    count_FF++;
+                else if (0 == data[index+i])
+                    count_00++;
+            }
+            data[index + 0x100] ^= count_00;
+            data[index + 0x104] ^= count_FF;
+        }
+    }
 }

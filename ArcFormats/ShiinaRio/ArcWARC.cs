@@ -158,13 +158,15 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             uint unpacked_size = LittleEndian.ToUInt32 (enc_data, 4);
             sig ^= (unpacked_size ^ 0x82AD82) & 0xffffff;
 
-            if (0 != (wentry.Flags & 0x80000000u) && entry.Size > 8) // encrypted entry
-                warc.Decoder.Decrypt (enc_data, 8, entry.Size-8);
-            if (warc.Decoder.ExtraCrypt != null)
-                warc.Decoder.ExtraCrypt.Decrypt (enc_data, 8, entry.Size-8, 0x202);
-            if (0 != (wentry.Flags & 0x20000000u) && entry.Size > 8)
-                warc.Decoder.Decrypt2 (enc_data, 8, entry.Size-8);
-
+            if (entry.Size > 8)
+            {
+                if (0 != (wentry.Flags & 0x80000000u)) // encrypted entry
+                    warc.Decoder.Decrypt (enc_data, 8, entry.Size-8);
+                if (warc.Decoder.ExtraCrypt != null)
+                    warc.Decoder.ExtraCrypt.Decrypt (enc_data, 8, entry.Size-8, 0x202);
+                if (0 != (wentry.Flags & 0x20000000u))
+                    warc.Decoder.Decrypt2 (enc_data, 8, entry.Size-8);
+            }
             byte[] unpacked = enc_data;
             UnpackMethod unpack = null;
             switch (sig & 0xffffff)
