@@ -850,6 +850,27 @@ namespace GameRes.Formats.KiriKiri
         }
     }
 
+    // reminder:
+    // locate virtual table, then find constructor where it's referenced.
+    [Serializable]
+    public class YuzuCrypt : ICrypt
+    {
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            uint hash = entry.Hash ^ 0x1DDB6E7A;
+            byte key = (byte)(hash ^ (hash >> 8) ^ (hash >> 16) ^ (hash >> 24));
+            if (0 == key)
+                key = 0xD0;
+            for (int i = 0; i < count; ++i)
+                data[pos+i] ^= key;
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            Decrypt (entry, offset, data, pos, count);
+        }
+    }
+
     [Serializable]
     public class HighRunningCrypt : ICrypt
     {
