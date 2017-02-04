@@ -240,6 +240,7 @@ namespace GARbro.GUI
 
         private void ExtractFilesFromArchive (string text, IEnumerable<Entry> file_list)
         {
+            file_list = file_list.Where (e => e.Offset >= 0);
             if (file_list.Skip (1).Any() // file_list.Count() > 1
                 && (m_skip_images || m_skip_script || m_skip_audio))
                 file_list = file_list.Where (f => !(m_skip_images && f.Type == "image") && 
