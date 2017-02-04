@@ -322,7 +322,7 @@ namespace GARbro.GUI
         void ExtractEntryAsIs (ArcFile arc, Entry entry)
         {
             using (var input = arc.OpenEntry (entry))
-            using (var output = CreateNewFile (entry.Name))
+            using (var output = CreateNewFile (entry.Name, true))
                 input.CopyTo (output);
         }
 
@@ -333,11 +333,10 @@ namespace GARbro.GUI
                 var src_format = decoder.SourceFormat; // could be null
                 string target_ext = target_format.Extensions.FirstOrDefault() ?? "";
                 string outname = Path.ChangeExtension (entry.Name, target_ext);
-                outname = ArchiveFormat.CreatePath (outname);
                 if (src_format == target_format)
                 {
                     // source format is the same as a target, copy file as is
-                    using (var output = CreateNewFile (outname))
+                    using (var output = CreateNewFile (outname, true))
                         decoder.Source.CopyTo (output);
                     return;
                 }
@@ -346,7 +345,7 @@ namespace GARbro.GUI
                 {
                     image = AdjustImageOffset (image);
                 }
-                using (var outfile = CreateNewFile (outname))
+                using (var outfile = CreateNewFile (outname, true))
                 {
                     target_format.Write (outfile, image);
                 }
@@ -395,12 +394,11 @@ namespace GARbro.GUI
 
         public void ConvertAudio (string filename, SoundInput input)
         {
-            filename = ArchiveFormat.CreatePath (filename);
             string source_format = input.SourceFormat;
             if (GarConvertMedia.CommonAudioFormats.Contains (source_format))
             {
                 var output_name = Path.ChangeExtension (filename, source_format);
-                using (var output = CreateNewFile (output_name))
+                using (var output = CreateNewFile (output_name, true))
                 {
                     input.Source.Position = 0;
                     input.Source.CopyTo (output);
@@ -409,7 +407,7 @@ namespace GARbro.GUI
             else
             {
                 var output_name = Path.ChangeExtension (filename, "wav");
-                using (var output = CreateNewFile (output_name))
+                using (var output = CreateNewFile (output_name, true))
                     AudioFormat.Wav.Write (input, output);
             }
         }
