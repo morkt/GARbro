@@ -460,4 +460,49 @@
     <value>Select files by mask...</value>
     <comment>translation pending</comment>
   </data>
+  <data name="ButtonAbort" xml:space="preserve">
+    <value>Abort</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="ButtonContinue" xml:space="preserve">
+    <value>Continue</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="LabelIgnoreErrors" xml:space="preserve">
+    <value>Ignore further errors</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextExtractionError" xml:space="preserve">
+    <value>File extraction error</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="ButtonOverwrite" xml:space="preserve">
+    <value>Overwrite</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="ButtonRename" xml:space="preserve">
+    <value>Rename</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="ButtonSkip" xml:space="preserve">
+    <value>Skip</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="LabelApplyToAll" xml:space="preserve">
+    <value>Apply to all duplicate files</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="LabelDuplicateFileQuestion" xml:space="preserve">
+    <value>What should be done?</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextErrorConverting" xml:space="preserve">
+    <value>Error occured while converting file
+{0}
+{1}</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextFileAlreadyExists" xml:space="preserve">
+    <value>文件{0}已经存在。</value>
+  </data>
 </root>

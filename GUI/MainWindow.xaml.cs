@@ -1,6 +1,6 @@
 ﻿// Game Resource Browser
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -35,6 +35,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using Microsoft.VisualBasic.FileIO;
 using GARbro.GUI.Properties;
@@ -193,6 +194,40 @@ namespace GARbro.GUI
         public void PopupError (string message, string title)
         {
             Dispatcher.Invoke (() => MessageBox.Show (this, message, title, MessageBoxButton.OK, MessageBoxImage.Error));
+        }
+
+        internal FileErrorDialogResult ShowErrorDialog (string error_title, string error_text, IntPtr parent_hwnd)
+        {
+            var dialog = new FileErrorDialog (error_title, error_text);
+            SetModalWindowParent (dialog, parent_hwnd);
+            return dialog.ShowDialog();
+        }
+
+        internal FileExistsDialogResult ShowFileExistsDialog (string title, string text, IntPtr parent_hwnd)
+        {
+            var dialog = new FileExistsDialog (title, text);
+            SetModalWindowParent (dialog, parent_hwnd);
+            return dialog.ShowDialog();
+        }
+
+        private void SetModalWindowParent (Window dialog, IntPtr parent_hwnd)
+        {
+            if (parent_hwnd != IntPtr.Zero)
+            {
+                var native_dialog = new WindowInteropHelper (dialog);
+                native_dialog.Owner = parent_hwnd;
+                NativeMethods.EnableWindow (parent_hwnd, false);
+                EventHandler on_closed = null;
+                on_closed = (s, e) => {
+                    NativeMethods.EnableWindow (parent_hwnd, true);
+                    dialog.Closed -= on_closed;
+                };
+                dialog.Closed += on_closed;
+            }
+            else
+            {
+                dialog.Owner = this;
+            }
         }
 
         const int MaxRecentFiles = 9;

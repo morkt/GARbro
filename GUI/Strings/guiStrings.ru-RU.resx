@@ -460,7 +460,7 @@
     <value>Выбрать файлы</value>
   </data>
   <data name="TextErrorExtracting" xml:space="preserve">
-    <value>Произошёл сбой во время извлечения файла
+    <value>Не удалось извлечь файл
 {0}
 {1}</value>
   </data>
@@ -482,5 +482,40 @@
   </data>
   <data name="CtxMenuSelectByMask" xml:space="preserve">
     <value>Выбрать файлы по маске...</value>
+  </data>
+  <data name="ButtonAbort" xml:space="preserve">
+    <value>Прервать</value>
+  </data>
+  <data name="ButtonContinue" xml:space="preserve">
+    <value>Продолжить</value>
+  </data>
+  <data name="LabelIgnoreErrors" xml:space="preserve">
+    <value>Игнорировать дальнейшие ошибки</value>
+  </data>
+  <data name="TextExtractionError" xml:space="preserve">
+    <value>Ошибка извлечения файла</value>
+  </data>
+  <data name="ButtonOverwrite" xml:space="preserve">
+    <value>Заменить</value>
+  </data>
+  <data name="ButtonRename" xml:space="preserve">
+    <value>Переименовать</value>
+  </data>
+  <data name="ButtonSkip" xml:space="preserve">
+    <value>Пропустить</value>
+  </data>
+  <data name="LabelApplyToAll" xml:space="preserve">
+    <value>Применить ко всем совпадающим файлам</value>
+  </data>
+  <data name="LabelDuplicateFileQuestion" xml:space="preserve">
+    <value>Что делать?</value>
+  </data>
+  <data name="TextErrorConverting" xml:space="preserve">
+    <value>Не удадось конвертировать файл
+{0}
+{1}</value>
+  </data>
+  <data name="TextFileAlreadyExists" xml:space="preserve">
+    <value>Файл с именем {0} уже существует.</value>
   </data>
 </root>

@@ -61,11 +61,29 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _Abort.
+        /// </summary>
+        public static string ButtonAbort {
+            get {
+                return ResourceManager.GetString("ButtonAbort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancel.
         /// </summary>
         public static string ButtonCancel {
             get {
                 return ResourceManager.GetString("ButtonCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Continue.
+        /// </summary>
+        public static string ButtonContinue {
+            get {
+                return ResourceManager.GetString("ButtonContinue", resourceCulture);
             }
         }
         
@@ -93,6 +111,33 @@ namespace GARbro.GUI.Strings {
         public static string ButtonOK {
             get {
                 return ResourceManager.GetString("ButtonOK", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Overwrite.
+        /// </summary>
+        public static string ButtonOverwrite {
+            get {
+                return ResourceManager.GetString("ButtonOverwrite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Rename.
+        /// </summary>
+        public static string ButtonRename {
+            get {
+                return ResourceManager.GetString("ButtonRename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Skip.
+        /// </summary>
+        public static string ButtonSkip {
+            get {
+                return ResourceManager.GetString("ButtonSkip", resourceCulture);
             }
         }
         
@@ -295,6 +340,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A_pply to all duplicate files.
+        /// </summary>
+        public static string LabelApplyToAll {
+            get {
+                return ResourceManager.GetString("LabelApplyToAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive format.
         /// </summary>
         public static string LabelArchiveFormat {
@@ -349,6 +403,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to What should be done?.
+        /// </summary>
+        public static string LabelDuplicateFileQuestion {
+            get {
+                return ResourceManager.GetString("LabelDuplicateFileQuestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encoding.
         /// </summary>
         public static string LabelEncoding {
@@ -381,6 +444,15 @@ namespace GARbro.GUI.Strings {
         public static string LabelExtractFileTo {
             get {
                 return ResourceManager.GetString("LabelExtractFileTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Ignore further errors.
+        /// </summary>
+        public static string LabelIgnoreErrors {
+            get {
+                return ResourceManager.GetString("LabelIgnoreErrors", resourceCulture);
             }
         }
         
@@ -937,6 +1009,17 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error occured while converting file
+        ///{0}
+        ///{1}.
+        /// </summary>
+        public static string TextErrorConverting {
+            get {
+                return ResourceManager.GetString("TextErrorConverting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error occured while extracting file
         ///{0}
         ///{1}.
@@ -966,6 +1049,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File extraction error.
+        /// </summary>
+        public static string TextExtractionError {
+            get {
+                return ResourceManager.GetString("TextExtractionError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Extract text.
         /// </summary>
         public static string TextExtractText {
@@ -980,6 +1072,15 @@ namespace GARbro.GUI.Strings {
         public static string TextExtractTitle {
             get {
                 return ResourceManager.GetString("TextExtractTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File {0} already exists in the destination folder..
+        /// </summary>
+        public static string TextFileAlreadyExists {
+            get {
+                return ResourceManager.GetString("TextFileAlreadyExists", resourceCulture);
             }
         }
         

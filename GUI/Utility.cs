@@ -35,6 +35,14 @@ namespace GARbro.GUI
 {
     internal class NativeMethods
     {
+        public static bool IsWindowsVistaOrLater
+        {
+            get
+            {
+                return Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version >= new Version (6, 0, 6000);
+            }
+        }
+
         [DllImport ("shlwapi.dll", CharSet = CharSet.Unicode)]
         internal static extern int StrCmpLogicalW (string psz1, string psz2);
 
@@ -46,6 +54,15 @@ namespace GARbro.GUI
 
         [DllImport ("user32.dll")]
         internal static extern int ReleaseDC (IntPtr hWnd, IntPtr hDc);
+
+        [DllImport ("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+        internal static extern IntPtr GetActiveWindow();
+
+        [DllImport ("user32.dll")][return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ShowWindow (IntPtr hWnd, int nCmdShow);
+
+        [DllImport ("user32.dll")][return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool EnableWindow (IntPtr hWnd, bool bEnable);
     }
 
     public static class Desktop

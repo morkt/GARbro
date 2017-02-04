@@ -462,4 +462,39 @@ Overwrite?</value>
   <data name="CtxMenuSelectByMask" xml:space="preserve">
     <value>Select files by mask...</value>
   </data>
+  <data name="ButtonAbort" xml:space="preserve">
+    <value>_Abort</value>
+  </data>
+  <data name="ButtonContinue" xml:space="preserve">
+    <value>_Continue</value>
+  </data>
+  <data name="LabelIgnoreErrors" xml:space="preserve">
+    <value>_Ignore further errors</value>
+  </data>
+  <data name="TextExtractionError" xml:space="preserve">
+    <value>File extraction error</value>
+  </data>
+  <data name="ButtonOverwrite" xml:space="preserve">
+    <value>_Overwrite</value>
+  </data>
+  <data name="ButtonRename" xml:space="preserve">
+    <value>_Rename</value>
+  </data>
+  <data name="ButtonSkip" xml:space="preserve">
+    <value>_Skip</value>
+  </data>
+  <data name="LabelApplyToAll" xml:space="preserve">
+    <value>A_pply to all duplicate files</value>
+  </data>
+  <data name="LabelDuplicateFileQuestion" xml:space="preserve">
+    <value>What should be done?</value>
+  </data>
+  <data name="TextErrorConverting" xml:space="preserve">
+    <value>Error occured while converting file
+{0}
+{1}</value>
+  </data>
+  <data name="TextFileAlreadyExists" xml:space="preserve">
+    <value>File {0} already exists in the destination folder.</value>
+  </data>
 </root>
