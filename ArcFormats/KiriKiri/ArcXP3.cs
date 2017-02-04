@@ -71,7 +71,8 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class Xp3Scheme : ResourceScheme
     {
-        public Dictionary<string, ICrypt> KnownSchemes;
+        public IDictionary<string, ICrypt>  KnownSchemes;
+        public ISet<string>                 NoCryptTitles;
     }
 
     // Archive version 1: encrypt file first, then calculate checksum
@@ -153,20 +154,7 @@ namespace GameRes.Formats.KiriKiri
                     if (entry_size < 0)
                         return null;
                     dir_offset += 12 + entry_size;
-                    if (0x6E666E68 == entry_signature       // "hnfn"
-                        || 0x6C696D73 == entry_signature    // "smil"
-                        || 0x46696C65 == entry_signature)   // "eliF"
-                    {
-                        uint hash = header.ReadUInt32();
-                        int name_size = header.ReadInt16();
-                        entry_size -= 6;
-                        if (name_size * 2 <= entry_size)
-                        {
-                            var filename = new string (header.ReadChars (name_size));
-                            filename_map.Add (hash, filename);
-                        }
-                    }
-                    else if (0x656C6946 == entry_signature) // "File"
+                    if (0x656C6946 == entry_signature) // "File"
                     {
                         var entry = new Xp3Entry();
                         while (entry_size > 0)
@@ -260,6 +248,24 @@ namespace GameRes.Formats.KiriKiri
                                 DeobfuscateEntry (entry);
                             }
                             dir.Add (entry);
+                        }
+                    }
+                    else if (entry_size > 7)
+                    {
+                        // 0x6E666E68 == entry_signature    // "hnfn"
+                        // 0x6C696D73 == entry_signature    // "smil"
+                        // 0x46696C65 == entry_signature    // "eliF"
+                        // 0x757A7559 == entry_signature    // "Yuzu"
+                        uint hash = header.ReadUInt32();
+                        int name_size = header.ReadInt16();
+                        if (name_size > 0)
+                        {
+                            entry_size -= 6;
+                            if (name_size * 2 <= entry_size)
+                            {
+                                var filename = new string (header.ReadChars (name_size));
+                                filename_map.Add (hash, filename);
+                            }
                         }
                     }
 NextEntry:
@@ -740,17 +746,26 @@ NextEntry:
             var title = FormatCatalog.Instance.LookupGame (file.Name);
             if (string.IsNullOrEmpty (title))
                 return null;
-            return GetScheme (title);
+            ICrypt algorithm;
+            if (!KnownSchemes.TryGetValue (title, out algorithm) && NoCryptTitles.Contains (title))
+                algorithm = NoCryptAlgorithm;
+            return algorithm;
         }
 
         static Xp3Scheme KiriKiriScheme = new Xp3Scheme
         {
             KnownSchemes = new Dictionary<string, ICrypt>(),
+            NoCryptTitles = new HashSet<string>()
         };
 
         public static IDictionary<string, ICrypt> KnownSchemes
         {
             get { return KiriKiriScheme.KnownSchemes; }
+        }
+
+        public static ISet<string> NoCryptTitles
+        {
+            get { return KiriKiriScheme.NoCryptTitles; }
         }
 
         public override ResourceScheme Scheme
