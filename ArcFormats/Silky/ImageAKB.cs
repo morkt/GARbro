@@ -37,6 +37,7 @@ namespace GameRes.Formats.Silky
         public byte[]   Background;
         public int      InnerWidth;
         public int      InnerHeight;
+        public uint     Flags;
     }
 
     [Export(typeof(ImageFormat))]
@@ -52,8 +53,8 @@ namespace GameRes.Formats.Silky
             var info = new AkbMetaData();
             info.Width = file.ReadUInt16();
             info.Height = file.ReadUInt16();
-            int flags = file.ReadInt32() & 0xFFFF;
-            info.BPP = 0 == flags ? 32 : 24;
+            info.Flags = file.ReadUInt32();
+            info.BPP = 0 == (info.Flags & 0x40000000) ? 32 : 24;
             info.Background = file.ReadBytes (4);
             info.OffsetX = file.ReadInt32();
             info.OffsetY = file.ReadInt32();
@@ -92,7 +93,12 @@ namespace GameRes.Formats.Silky
             m_info = info;
             m_pixel_size = m_info.BPP / 8;
             Stride = (int)m_info.Width * m_pixel_size;
-            Format = 24 == m_info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+            if (24 == m_info.BPP)
+                Format = PixelFormats.Bgr24;
+            else if (0 == (m_info.Flags & 0x80000000))
+                Format = PixelFormats.Bgr32;
+            else
+                Format = PixelFormats.Bgra32;
         }
 
         public byte[] Unpack ()
