@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using GameRes.Utility;
 
@@ -896,5 +897,61 @@ namespace GameRes.Formats.KiriKiri
         {
             Decrypt (entry, offset, data, pos, count);
         }
+    }
+
+    [Serializable]
+    public class SenrenCxCrypt : CxEncryption
+    {
+        public string FileMapName { get; set; }
+
+        public SenrenCxCrypt (CxScheme scheme) : base (scheme)
+        {
+        }
+
+        public override void Init (ArcFile arc)
+        {
+            if (null == KnownNames)
+                ReadNames();
+            foreach (var entry in arc.Dir)
+            {
+                string name;
+                if (KnownNames.TryGetValue (entry.Name, out name))
+                {
+                    entry.Name = name;
+                    entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                }
+            }
+        }
+
+        void ReadNames ()
+        {
+            var dir = FormatCatalog.Instance.DataDirectory;
+            var names_file = Path.Combine (dir, FileMapName);
+            var names = new Dictionary<string, string>();
+            try
+            {
+                var hash_buf = new char[32];
+                using (var reader = new StreamReader (names_file))
+                {
+                    while (32 == reader.Read (hash_buf, 0, 32))
+                    {
+                        if (',' != reader.Read())
+                            break;
+                        var name = reader.ReadLine();
+                        if (null == name)
+                            break;
+                        names[new string (hash_buf)] = name;
+                    }
+                }
+            }
+            catch (Exception X)
+            {
+                System.Diagnostics.Trace.WriteLine (X.Message, "[SenrenCxCrypt]");
+            }
+            KnownNames = names;
+        }
+
+        [NonSerialized]
+        Dictionary<string, string> KnownNames = null;
     }
 }
