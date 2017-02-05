@@ -471,33 +471,26 @@
     <value>파일 추출 오류</value>
   </data>
   <data name="ButtonOverwrite" xml:space="preserve">
-    <value>Overwrite</value>
-    <comment>translation pending</comment>
+    <value>덮어쓰기</value>
   </data>
   <data name="ButtonRename" xml:space="preserve">
-    <value>Rename</value>
-    <comment>translation pending</comment>
+    <value>이름 바꾸기</value>
   </data>
   <data name="ButtonSkip" xml:space="preserve">
-    <value>Skip</value>
-    <comment>translation pending</comment>
+    <value>건너뛰기</value>
   </data>
   <data name="LabelApplyToAll" xml:space="preserve">
-    <value>Apply to all duplicate files</value>
-    <comment>translation pending</comment>
+    <value>모든 중복 파일에 적용</value>
   </data>
   <data name="LabelDuplicateFileQuestion" xml:space="preserve">
-    <value>What should be done?</value>
-    <comment>translation pending</comment>
+    <value>어떻게 처리할까요?</value>
   </data>
   <data name="TextErrorConverting" xml:space="preserve">
-    <value>Error occured while converting file
+    <value>파일 변환중 오류가 발생하였습니다
 {0}
 {1}</value>
-    <comment>translation pending</comment>
   </data>
   <data name="TextFileAlreadyExists" xml:space="preserve">
-    <value>File {0} already exists in the destination folder.</value>
-    <comment>translation pending</comment>
+    <value>대상폴더에 파일 {0} 이(가) 이미 존재합니다.</value>
   </data>
 </root>
