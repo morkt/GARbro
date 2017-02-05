@@ -77,6 +77,8 @@ namespace GameRes.Formats.Emote
                     if (reader.Parse (key))
                     {
                         var dir = reader.GetTextures();
+                        if (null == dir)
+                            dir = reader.GetLayers();
                         if (null == dir || 0 == dir.Count)
                             return null;
                         return new ArcFile (file, this, dir);
