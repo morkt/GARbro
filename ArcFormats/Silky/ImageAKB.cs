@@ -173,9 +173,7 @@ namespace GameRes.Formats.Silky
                 blend_row = () => {
                     for (int x = 0; x < inner_stride; x += m_pixel_size)
                     {
-                        if (pixels[src+x  ] != m_info.Background[0] ||
-                            pixels[src+x+1] != m_info.Background[1] ||
-                            pixels[src+x+2] != m_info.Background[2])
+                        if (0x00 != pixels[src+x] || 0xFF != pixels[src+x+1] || 0x00 != pixels[src+x+2])
                         {
                             for (int i = 0; i < m_pixel_size; ++i)
                                 image[dst+x+i] = pixels[src+x+i];
