@@ -63,7 +63,6 @@ Section "install"
     File "${RELEASE_DIR}\Microsoft.WindowsAPICodePack.Shell.dll"
     File "${RELEASE_DIR}\NAudio.dll"
     File "${RELEASE_DIR}\NVorbis.dll"
-    File "${RELEASE_DIR}\Ookii.Dialogs.Wpf.dll"
     File "${RELEASE_DIR}\System.Data.SQLite.dll"
     File "${RELEASE_DIR}\System.Windows.Controls.Input.Toolkit.dll"
     File "${RELEASE_DIR}\WPFToolkit.dll"
@@ -116,7 +115,6 @@ Section "uninstall"
     Delete $INSTDIR\Microsoft.WindowsAPICodePack.Shell.dll
     Delete $INSTDIR\NAudio.dll
     Delete $INSTDIR\NVorbis.dll
-    Delete $INSTDIR\Ookii.Dialogs.Wpf.dll
     Delete $INSTDIR\System.Data.SQLite.dll
     Delete $INSTDIR\System.Windows.Controls.Input.Toolkit.dll
     Delete $INSTDIR\WPFToolkit.dll
