@@ -42,6 +42,8 @@ namespace GameRes.Formats.ShiinaRio
         public byte[] DecodeBin;
         public IByteArray       ShiinaImage;
         public IDecryptExtra    ExtraCrypt;
+
+        public static readonly EncryptionScheme Warc110 = new EncryptionScheme { EntryNameSize = 0x10 };
     }
 
     public interface IByteArray
@@ -136,7 +138,7 @@ namespace GameRes.Formats.ShiinaRio
 
         void DoEncryption (byte[] data, int index, uint data_length, ContentEncryptor encryptor)
         {
-            if (data_length < 3)
+            if (data_length < 3 || WarcVersion < 120)
                 return;
             uint effective_length = Math.Min (data_length, 1024u);
             int a, b;

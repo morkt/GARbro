@@ -2,7 +2,7 @@
 //! \date       Fri Apr 10 03:10:42 2015
 //! \brief      ShiinaRio engine archive format.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -83,14 +83,18 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             if (!file.View.AsciiEqual (4, " 1."))
                 return null;
             int version = file.View.ReadByte (7) - 0x30;
+            if (version < 1 || version > 7)
+                return null;
             version = 100 + version * 10;
-            if (170 != version && 150 != version && 140 != version && 130 != version && 120 != version)
-                throw new NotSupportedException ("Not supported WARC version");
-            uint index_offset = 0xf182ad82u ^ file.View.ReadUInt32 (8);
+            uint index_offset = 0xF182AD82u ^ file.View.ReadUInt32 (8);
             if (index_offset >= file.MaxOffset)
                 return null;
 
-            var scheme = QueryEncryption (file.Name);
+            EncryptionScheme scheme;
+            if (version > 110)
+                scheme = QueryEncryption (file.Name);
+            else
+                scheme = EncryptionScheme.Warc110;
             if (null == scheme)
                 return null;
             var decoder = new Decoder (version, scheme);
@@ -111,13 +115,17 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                 var zindex = new MemoryStream (enc_index, 8, (int)index_length-8);
                 index = new ZLibStream (zindex, CompressionMode.Decompress);
             }
-            else
+            else if (version >= 120)
             {
                 var unpacked = new byte[max_index_len];
                 index_length = UnpackRNG (enc_index, 0, index_length, unpacked);
                 if (0 == index_length)
                     return null;
                 index = new MemoryStream (unpacked, 0, (int)index_length);
+            }
+            else
+            {
+                index = new MemoryStream (enc_index, 0, (int)index_length);
             }
             using (var header = new BinaryReader (index))
             {
@@ -151,15 +159,14 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             var wentry = entry as WarcEntry;
             if (null == warc || null == wentry || entry.Size < 8)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var enc_data = new byte[entry.Size];
-            if (entry.Size != arc.File.View.Read (entry.Offset, enc_data, 0, entry.Size))
-                return Stream.Null;
+            var enc_data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            if (enc_data.Length <= 8)
+                return new BinMemoryStream (enc_data, entry.Name);
             uint sig = LittleEndian.ToUInt32 (enc_data, 0);
             uint unpacked_size = LittleEndian.ToUInt32 (enc_data, 4);
-            sig ^= (unpacked_size ^ 0x82AD82) & 0xffffff;
-
-            if (entry.Size > 8)
+            if (warc.Decoder.WarcVersion > 110)
             {
+                sig ^= (unpacked_size ^ 0x82AD82) & 0xFFFFFF;
                 if (0 != (wentry.Flags & 0x80000000u)) // encrypted entry
                     warc.Decoder.Decrypt (enc_data, 8, entry.Size-8);
                 if (warc.Decoder.ExtraCrypt != null)
@@ -185,10 +192,13 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
             {
                 unpacked = new byte[unpacked_size];
                 unpack (enc_data, unpacked);
-                if (0 != (wentry.Flags & 0x40000000))
-                    warc.Decoder.Decrypt2 (unpacked, 0, (uint)unpacked.Length);
-                if (warc.Decoder.ExtraCrypt != null)
-                    warc.Decoder.ExtraCrypt.Decrypt (unpacked, 0, (uint)unpacked.Length, 0x204);
+                if (warc.Decoder.WarcVersion > 110)
+                {
+                    if (0 != (wentry.Flags & 0x40000000))
+                        warc.Decoder.Decrypt2 (unpacked, 0, (uint)unpacked.Length);
+                    if (warc.Decoder.ExtraCrypt != null)
+                        warc.Decoder.ExtraCrypt.Decrypt (unpacked, 0, (uint)unpacked.Length, 0x204);
+                }
             }
             return new BinMemoryStream (unpacked, entry.Name);
         }
