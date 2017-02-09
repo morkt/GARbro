@@ -39,13 +39,20 @@ namespace GameRes.Formats.Cromwell
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public GraphicPakOpener ()
+        {
+            Signatures = new uint[] { 0x70617247, 0x63696F56 };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (4, "hic PackData"))
+            bool is_graphic = file.View.AsciiEqual (0, "Graphic PackData");
+            if (!is_graphic && !file.View.AsciiEqual (0, "Voice PackData. "))
                 return null;
             int count = file.View.ReadInt32 (0x10);
             if (!IsSaneCount (count))
                 return null;
+            string type = is_graphic ? "image" : "audio";
 
             uint index_offset = 0x14;
             var dir = new List<Entry> (count);
@@ -55,7 +62,7 @@ namespace GameRes.Formats.Cromwell
                 if (string.IsNullOrWhiteSpace (name))
                     return null;
                 index_offset += 0xC;
-                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                var entry = new PackedEntry { Name = name, Type = type };
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 if (entry.Offset >= file.MaxOffset)
                     return null;
