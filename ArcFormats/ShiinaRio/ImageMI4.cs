@@ -52,11 +52,9 @@ namespace GameRes.Formats.ShiinaRio
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new Reader (stream, (int)info.Width, (int)info.Height))
-            {
-                reader.Unpack ();
-                return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data);
-            }
+            var reader = new Reader (stream, (int)info.Width, (int)info.Height);
+            reader.Unpack();
+            return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -64,19 +62,28 @@ namespace GameRes.Formats.ShiinaRio
             throw new System.NotImplementedException ("Mi4Format.Write not implemented");
         }
 
-        internal sealed class Reader : IDisposable
+        internal sealed class Reader
         {
             IBinaryStream   m_input;
             byte[]          m_output;
             int             m_stride;
 
             public byte[] Data { get { return m_output; } }
+            public int  Stride { get { return m_stride; } }
 
             public Reader (IBinaryStream file, int width, int height)
             {
                 m_input = file;
                 m_stride = width * 3;
                 m_output = new byte[m_stride*height];
+            }
+
+            public void Unpack ()
+            {
+                m_input.Position = 0x10;
+                m_bit_count = 0;
+                LoadBits();
+                UnpackV2();
             }
 
             int  m_bit_count;
@@ -107,19 +114,101 @@ namespace GameRes.Formats.ShiinaRio
 
             uint GetBits (int count)
             {
-                uint bits = 0;
-                while (count --> 0)
+                int avail_bits = Math.Min (count, m_bit_count);
+                uint bits = m_bits >> (32 - avail_bits);
+                m_bits <<= avail_bits;
+                m_bit_count -= avail_bits;
+                count -= avail_bits;
+                if (0 == m_bit_count)
                 {
-                    bits = (bits << 1) | GetBit();
+                    LoadBits();
+                    if (count > 0)
+                    {
+                        bits = bits << count | m_bits >> (32 - count);
+                        m_bits <<= count;
+                        m_bit_count -= count;
+                    }
                 }
                 return bits;
             }
 
-            public void Unpack ()
+            void UnpackV1 ()
             {
-                m_input.Position = 0x10;
-                m_bit_count = 0;
-                LoadBits();
+                int dst = 0;
+                byte b = 0, g = 0, r = 0;
+                while (dst < m_output.Length)
+                {
+                    if (GetBit() == 0)
+                    {
+                        if (GetBit() != 0)
+                        {
+                            b = m_input.ReadUInt8();
+                            g = m_input.ReadUInt8();
+                            r = m_input.ReadUInt8();
+                        }
+                        else if (GetBit() != 0)
+                        {
+                            byte v = (byte)GetBits (2);
+                            if (3 == v)
+                            {
+                                b = m_output[dst - m_stride];
+                                g = m_output[dst - m_stride + 1];
+                                r = m_output[dst - m_stride + 2];
+                            }
+                            else
+                            {
+                                b += (byte)(v - 1);
+                                g += (byte)(GetBits(2) - 1);
+                                r += (byte)(GetBits(2) - 1);
+                            }
+                        }
+                        else if (GetBit() != 0)
+                        {
+                            byte v = (byte)(GetBits(3));
+                            if (7 == v)
+                            {
+                                b = m_output[dst - m_stride + 3];
+                                g = m_output[dst - m_stride + 4];
+                                r = m_output[dst - m_stride + 5];
+                            }
+                            else
+                            {
+                                b += (byte)(v - 3);
+                                g += (byte)(GetBits(3) - 3);
+                                r += (byte)(GetBits(3) - 3);
+                            }
+                        }
+                        else if (GetBit() != 0)
+                        {
+                            byte v = (byte)GetBits (4);
+                            if (0xF == v)
+                            {
+                                b = m_output[dst - m_stride - 3];
+                                g = m_output[dst - m_stride - 2];
+                                r = m_output[dst - m_stride - 1];
+                            }
+                            else
+                            {
+                                b += (byte)(v - 7);
+                                g += (byte)(GetBits(4) - 7);
+                                r += (byte)(GetBits(4) - 7);
+                            }
+                        }
+                        else
+                        {
+                            b += (byte)(GetBits(5) - 15);
+                            g += (byte)(GetBits(5) - 15);
+                            r += (byte)(GetBits(5) - 15);
+                        }
+                    }
+                    m_output[dst++] = b;
+                    m_output[dst++] = g;
+                    m_output[dst++] = r;
+                }
+            }
+
+            void UnpackV2 ()
+            {
                 int dst = 0;
                 byte b = 0, g = 0, r = 0;
                 while (dst < m_output.Length)
@@ -207,13 +296,6 @@ namespace GameRes.Formats.ShiinaRio
                     m_output[dst++] = r;
                 }
             }
-
-            #region IDisposable Members
-            public void Dispose ()
-            {
-                GC.SuppressFinalize (this);
-            }
-            #endregion
         }
     }
 }
