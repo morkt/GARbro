@@ -246,26 +246,64 @@ namespace GameRes.Formats.Emote
                 var item_value = item.Value as IDictionary;
                 if (null == item_value)
                     continue;
-                var texture = item_value["texture"] as IDictionary;
-                if (null == texture)
-                    continue;
-                var pixel = texture["pixel"] as EmChunk;
+                if (item_value.Contains ("texture"))
+                {
+                    AddTextureEntry (dir, item.Key, item_value["texture"] as IDictionary);
+                }
+                else if (item_value.Contains ("icon"))
+                {
+                    AddIconEntry (dir, item.Key, item_value["icon"] as IDictionary);
+                }
+            }
+            return dir;
+        }
+
+        void AddTextureEntry (List<Entry> dir, object name, IDictionary texture)
+        {
+            if (null == texture)
+                return;
+            var pixel = texture["pixel"] as EmChunk;
+            if (null == pixel)
+                return;
+            var entry = new TexEntry {
+                Name            = name.ToString(),
+                Type            = "image",
+                Offset          = DataOffset + pixel.Offset,
+                Size            = (uint)pixel.Length,
+                TexType         = texture["type"].ToString(),
+                Width           = Convert.ToInt32 (texture["width"]),
+                Height          = Convert.ToInt32 (texture["height"]),
+                TruncatedWidth  = Convert.ToInt32 (texture["truncated_width"]),
+                TruncatedHeight = Convert.ToInt32 (texture["truncated_height"]),
+            };
+            dir.Add (entry);
+        }
+
+        void AddIconEntry (List<Entry> dir, object name, IDictionary icon_list)
+        {
+            if (null == icon_list)
+                return;
+            foreach (DictionaryEntry icon in icon_list)
+            {
+                var layer = icon.Value as IDictionary;
+                var pixel = layer["pixel"] as EmChunk;
                 if (null == pixel)
                     continue;
                 var entry = new TexEntry {
-                    Name            = item.Key.ToString(),
-                    Type            = "image",
-                    Offset          = DataOffset + pixel.Offset,
-                    Size            = (uint)pixel.Length,
-                    TexType         = texture["type"].ToString(),
-                    Width           = Convert.ToInt32 (texture["width"]),
-                    Height          = Convert.ToInt32 (texture["height"]),
-                    TruncatedWidth  = Convert.ToInt32 (texture["truncated_width"]),
-                    TruncatedHeight = Convert.ToInt32 (texture["truncated_height"]),
+                    Name        = name.ToString()+'#'+icon.Key.ToString(),
+                    Type        = "image",
+                    Offset      = DataOffset + pixel.Offset,
+                    Size        = (uint)pixel.Length,
+                    Width       = Convert.ToInt32 (layer["width"]),
+                    Height      = Convert.ToInt32 (layer["height"]),
+                    OffsetX     = Convert.ToInt32 (layer["originX"]),
+                    OffsetY     = Convert.ToInt32 (layer["originY"]),
+                    TexType     = layer.Contains ("compress") ? layer["compress"].ToString() : "RGBA8",
                 };
+                entry.TruncatedWidth = entry.Width;
+                entry.TruncatedHeight = entry.Height;
                 dir.Add (entry);
             }
-            return dir;
         }
 
         int m_names;
@@ -651,6 +689,8 @@ namespace GameRes.Formats.Emote
                 ReadA8L8 (pixels, stride);
             else if ("RGBA4444" == m_info.TexType)
                 ReadRgba4444 (pixels, stride);
+            else if ("RL" == m_info.TexType)
+                ReadRle (pixels, stride);
             else
                 throw new NotImplementedException (string.Format ("PSB texture format '{0}' not implemented", m_info.TexType));
             return ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels, stride);
@@ -731,6 +771,29 @@ namespace GameRes.Formats.Emote
                     output[dst++] = (byte)((p & 0x00F0u) * 0xFFu / 0x00F0u);
                     output[dst++] = (byte)((p & 0x0F00u) * 0xFFu / 0x0F00u);
                     output[dst++] = (byte)((p & 0xF000u) * 0xFFu / 0xF000u);
+                }
+            }
+        }
+
+        void ReadRle (byte[] output, int dst_stride)
+        {
+            const int pixel_size = 4;
+            m_input.Position = 0;
+            int dst = 0;
+            while (dst < output.Length)
+            {
+                int count = m_input.ReadUInt8();
+                if (0 == (count & 0x80))
+                {
+                    count = pixel_size * (count + 1);
+                    dst += m_input.Read (output, dst, count);
+                }
+                else
+                {
+                    count = pixel_size * ((count & 0x7F) + 3);
+                    m_input.Read (output, dst, pixel_size);
+                    Binary.CopyOverlapped (output, dst, dst+pixel_size, count-pixel_size);
+                    dst += count;
                 }
             }
         }
