@@ -32,6 +32,7 @@ namespace GameRes.Formats.GameSystem
 {
     internal class ChrMetaData : ImageMetaData
     {
+        public uint DataOffset;
         public int  RgbSize;
     }
 
@@ -65,14 +66,14 @@ namespace GameRes.Formats.GameSystem
                 OffsetY = y,
                 BPP = 32,
                 RgbSize = rgb_size,
+                DataOffset = 0x20,
             };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var reader = new ChrReader (file, (ChrMetaData)info);
-            var pixels = reader.Unpack();
-            return ImageData.CreateFlipped (info, PixelFormats.Bgra32, null, pixels, reader.Stride);
+            return reader.Image;
         }
 
         public override void Write (Stream file, ImageData image)
@@ -81,9 +82,8 @@ namespace GameRes.Formats.GameSystem
         }
     }
 
-    internal sealed class ChrReader
+    internal class ChrReader : BinaryImageDecoder
     {
-        IBinaryStream   m_input;
         ChrMetaData     m_info;
         byte[]          m_output;
         int             m_stride;
@@ -91,12 +91,17 @@ namespace GameRes.Formats.GameSystem
         public byte[] Data { get { return m_output; } }
         public int  Stride { get { return m_stride; } }
 
-        public ChrReader (IBinaryStream input, ChrMetaData info)
+        public ChrReader (IBinaryStream input, ChrMetaData info) : base (input, info)
         {
-            m_input = input;
             m_info = info;
             m_stride = (int)m_info.Width * 4;
             m_output = new byte[m_stride * (int)m_info.Height];
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            var pixels = Unpack();
+            return ImageData.CreateFlipped (Info, PixelFormats.Bgra32, null, pixels, Stride);
         }
 
         public byte[] Unpack ()
@@ -114,7 +119,7 @@ namespace GameRes.Formats.GameSystem
 
         public byte[] UnpackBaseline ()
         {
-            m_input.Position = 0x20;
+            m_input.Position = m_info.DataOffset;
             UnpackRgb ((int)m_info.Height);
             return m_output;
         }

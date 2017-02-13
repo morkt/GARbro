@@ -96,7 +96,7 @@ namespace GameRes.Formats.GameSystem
             var cent = (ChrEntry)entry;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (cent.Info is ChrMetaData)
-                return new ChrDecoder (input, cent.Info);
+                return new ChrDecoder (input, cent.Info as ChrMetaData);
             else
                 return new ChrFrameDecoder (input, cent.Info);
         }
@@ -109,16 +109,15 @@ namespace GameRes.Formats.GameSystem
         public ImageMetaData    Info;
     }
 
-    internal class ChrDecoder : BinaryImageDecoder
+    internal class ChrDecoder : ChrReader
     {
-        public ChrDecoder (IBinaryStream input, ImageMetaData info) : base (input, info)
+        public ChrDecoder (IBinaryStream input, ChrMetaData info) : base (input, info)
         { }
 
         protected override ImageData GetImageData ()
         {
-            var reader = new ChrReader (m_input, (ChrMetaData)Info);
-            var pixels = reader.UnpackBaseline();
-            return ImageData.CreateFlipped (Info, PixelFormats.Bgra32, null, pixels, reader.Stride);
+            var pixels = UnpackBaseline();
+            return ImageData.CreateFlipped (Info, PixelFormats.Bgra32, null, pixels, Stride);
         }
     }
 

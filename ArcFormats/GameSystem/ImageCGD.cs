@@ -36,6 +36,11 @@ namespace GameRes.Formats.GameSystem
         public override string Description { get { return "'GameSystem' CG image format"; } }
         public override uint     Signature { get { return 0; } }
 
+        public CgdFormat ()
+        {
+            Extensions = new string[] { "cgd", "crgb" };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             if (file.Signature != file.Length)
@@ -55,9 +60,9 @@ namespace GameRes.Formats.GameSystem
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
+            file.Position = 0x10;
             var reader = new CgdReader (file, info);
-            var pixels = reader.Unpack();
-            return ImageData.CreateFlipped (info, reader.Format, null, pixels, reader.Stride);
+            return reader.Image;
         }
 
         public override void Write (Stream file, ImageData image)
@@ -66,29 +71,27 @@ namespace GameRes.Formats.GameSystem
         }
     }
 
-    internal sealed class CgdReader
+    internal sealed class CgdReader : BinaryImageDecoder
     {
-        IBinaryStream   m_input;
-        int             m_width;
-        int             m_height;
         byte[]          m_output;
 
         public int         Stride { get; private set; }
         public PixelFormat Format { get { return PixelFormats.Bgr24; } }
-        public byte[]        Data { get { return m_output; } }
 
-        public CgdReader (IBinaryStream input, ImageMetaData info)
+        public CgdReader (IBinaryStream input, ImageMetaData info) : base (input, info)
         {
-            m_input = input;
-            m_width = (int)info.Width;
-            m_height = (int)info.Height;
-            Stride = 3 * m_width;
-            m_output = new byte[Stride * m_height];
+            Stride = 3 * (int)info.Width;
+            m_output = new byte[Stride * (int)info.Height];
         }
 
-        public byte[] Unpack ()
+        protected override ImageData GetImageData ()
         {
-            m_input.Position = 0x10;
+            var pixels = Unpack();
+            return ImageData.CreateFlipped (Info, Format, null, pixels, Stride);
+        }
+
+        byte[] Unpack ()
+        {
             int dst = 0;
             byte r = 0, g = 0, b = 0;
             while (dst < m_output.Length)
@@ -131,7 +134,7 @@ namespace GameRes.Formats.GameSystem
             return m_output;
         }
 
-        static readonly byte[,] ColorTable = InitColorTable();
+        internal static readonly byte[,] ColorTable = InitColorTable();
 
         private static byte[,] InitColorTable ()
         {

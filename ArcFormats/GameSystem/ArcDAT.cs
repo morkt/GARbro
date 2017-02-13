@@ -65,6 +65,8 @@ namespace GameRes.Formats.GameSystem
                 long next_offset = (long)file.View.ReadUInt32 (index_offset+12) << 9;
                 if (next_offset < offset || next_offset > file.MaxOffset)
                     return null;
+                if (name.EndsWith (".CRGB") || name.EndsWith (".CHAR"))
+                    entry.Type = "image";
                 entry.Offset = offset;
                 entry.Size = (uint)(next_offset - offset);
                 dir.Add (entry);
@@ -100,6 +102,26 @@ namespace GameRes.Formats.GameSystem
                 ext_end = 16;
             var ext = Encoding.ASCII.GetString (name_buf, 12, ext_end-12);
             return name + '.' + ext;
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            if (entry.Name.EndsWith (".BGD") || entry.Name.EndsWith (".CRGB"))
+            {
+                var input = arc.File.CreateStream (entry.Offset, entry.Size);
+                var info = new ImageMetaData { Width = 800, Height = 600, BPP = 24 };
+                return new CgdReader (input, info);
+            }
+            else if (entry.Name.EndsWith (".CHAR"))
+            {
+                var input = arc.File.CreateStream (entry.Offset, entry.Size);
+                var info = new ChrMetaData {
+                    Width = 800, Height = 600, BPP = 32,
+                    DataOffset = 0, RgbSize = (int)input.Length,
+                };
+                return new ChrReader (input, info);
+            }
+            return base.OpenImage (arc, entry);
         }
     }
 }
