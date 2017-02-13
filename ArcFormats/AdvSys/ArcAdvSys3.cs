@@ -80,11 +80,7 @@ namespace GameRes.Formats.AdvSys
                 else
                 {
                     var res = AutoEntry.DetectFileType (signature);
-                    if (res != null)
-                    {
-                        entry.Type = res.Type;
-                        entry.Name = Path.ChangeExtension (entry.Name, res.Extensions.FirstOrDefault());
-                    }
+                    entry.ChangeType (res);
                 }
                 dir.Add (entry);
                 current_offset += size;
