@@ -33,6 +33,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Xml;
 using GameRes;
+using GARbro.GUI.Strings;
 
 namespace GARbro.GUI
 {
@@ -70,7 +71,7 @@ namespace GARbro.GUI
         {
             if (e.Error != null)
             {
-                SetStatusText (string.Format ("{0} {1}", "Update failed.", e.Error.Message));
+                SetStatusText (string.Format ("{0} {1}", guiStrings.MsgUpdateFailed, e.Error.Message));
                 return;
             }
             else if (e.Cancelled)
@@ -78,7 +79,7 @@ namespace GARbro.GUI
             var result = e.Result as GarUpdateInfo;
             if (null == result)
             {
-                SetStatusText ("No updates currently available.");
+                SetStatusText (guiStrings.MsgNoUpdates);
                 return;
             }
             var app_version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -87,12 +88,12 @@ namespace GARbro.GUI
             bool has_db_update = db_version < result.FormatsVersion && CheckAssemblies (result.Assemblies);
             if (!has_app_update && !has_db_update)
             {
-                SetStatusText ("GARbro version is up to date.");
+                SetStatusText (guiStrings.MsgUpToDate);
                 return;
             }
             var dialog = new UpdateDialog (result, has_app_update, has_db_update);
             dialog.Owner = this;
-            dialog.FormatsDownload.Click = FormatsDownloadExec;
+            dialog.FormatsDownload.Click += FormatsDownloadExec;
             dialog.ShowDialog();
         }
 

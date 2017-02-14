@@ -505,4 +505,40 @@
   <data name="TextFileAlreadyExists" xml:space="preserve">
     <value>文件{0}已经存在。</value>
   </data>
+  <data name="ButtonDownload" xml:space="preserve">
+    <value>Download</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="LabelReleaseNotes" xml:space="preserve">
+    <value>Release notes</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MenuCheckUpdates" xml:space="preserve">
+    <value>Check for updates...</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgNoUpdates" xml:space="preserve">
+    <value>No updates currently available.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpdateAvailable" xml:space="preserve">
+    <value>Formats database update available.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpdateFailed" xml:space="preserve">
+    <value>Update check failed.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpToDate" xml:space="preserve">
+    <value>GARbro version is up to date.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextNewVersion" xml:space="preserve">
+    <value>New version available:</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextVisitPage" xml:space="preserve">
+    <value>Visit download page</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

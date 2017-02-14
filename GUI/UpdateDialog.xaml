@@ -39,22 +39,22 @@ IN THE SOFTWARE.
         <StackPanel DockPanel.Dock="Right" Orientation="Vertical">
             <StackPanel x:Name="ReleasePane" Orientation="Vertical">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="New version available:" Margin="0,10,0,0"/>
+                    <TextBlock Text="{x:Static s:guiStrings.TextNewVersion}" Margin="0,10,0,0"/>
                     <TextBlock x:Name="ReleaseVersion" Text="{Binding ReleaseVersion}" Margin="5,10,10,0"/>
                 </StackPanel>
-                <Expander x:Name="ReleaseNotes" Header="Release notes" ExpandDirection="Down" IsExpanded="False" Margin="0,0,10,0">
+                <Expander x:Name="ReleaseNotes" Header="{x:Static s:guiStrings.LabelReleaseNotes}" ExpandDirection="Down" IsExpanded="False" Margin="0,0,10,0">
                     <TextBlock Text="{Binding ReleaseNotes}"/>
                 </Expander>
                 <TextBlock Margin="0,5,10,10">
                     <Hyperlink NavigateUri="{Binding ReleaseUrl}" RequestNavigate="Hyperlink_RequestNavigate">
-                        <TextBlock Text="Visit download page" ToolTip="{Binding ReleaseUrl}"/>
+                        <TextBlock Text="{x:Static s:guiStrings.TextVisitPage}" ToolTip="{Binding ReleaseUrl}"/>
                     </Hyperlink>
                 </TextBlock>
             </StackPanel>
             <StackPanel x:Name="FormatsPane" Orientation="Vertical">
                 <Separator Visibility="{Binding ElementName=ReleasePane, Path=Visibility}"/>
-                <TextBlock Text="Formats database update available." Margin="0,10,10,0"/>
-                <Button x:Name="FormatsDownload" Content="_Download" MinWidth="75" Height="25" Margin="0,10,10,10"/>
+                <TextBlock Text="{x:Static s:guiStrings.MsgUpdateAvailable}" Margin="0,10,10,0"/>
+                <Button x:Name="FormatsDownload" Content="{x:Static s:guiStrings.ButtonDownload}" Width="75" Height="25" Margin="0,10,10,10" HorizontalAlignment="Left"/>
             </StackPanel>
         </StackPanel>
     </DockPanel>

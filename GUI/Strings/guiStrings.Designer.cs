@@ -97,6 +97,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _Download.
+        /// </summary>
+        public static string ButtonDownload {
+            get {
+                return ResourceManager.GetString("ButtonDownload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Extract.
         /// </summary>
         public static string ButtonExtract {
@@ -457,6 +466,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Release notes.
+        /// </summary>
+        public static string LabelReleaseNotes {
+            get {
+                return ResourceManager.GetString("LabelReleaseNotes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Skip incovertible files..
         /// </summary>
         public static string LabelSkipFailures {
@@ -471,6 +489,15 @@ namespace GARbro.GUI.Strings {
         public static string MenuAbout {
             get {
                 return ResourceManager.GetString("MenuAbout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Check for updates....
+        /// </summary>
+        public static string MenuCheckUpdates {
+            get {
+                return ResourceManager.GetString("MenuCheckUpdates", resourceCulture);
             }
         }
         
@@ -772,6 +799,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No updates currently available..
+        /// </summary>
+        public static string MsgNoUpdates {
+            get {
+                return ResourceManager.GetString("MsgNoUpdates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File {0}
         ///already exists.
         ///
@@ -834,6 +870,33 @@ namespace GARbro.GUI.Strings {
         public static string MsgUnableInterpretImage {
             get {
                 return ResourceManager.GetString("MsgUnableInterpretImage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Formats database update available..
+        /// </summary>
+        public static string MsgUpdateAvailable {
+            get {
+                return ResourceManager.GetString("MsgUpdateAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update check failed..
+        /// </summary>
+        public static string MsgUpdateFailed {
+            get {
+                return ResourceManager.GetString("MsgUpdateFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GARbro version is up to date..
+        /// </summary>
+        public static string MsgUpToDate {
+            get {
+                return ResourceManager.GetString("MsgUpToDate", resourceCulture);
             }
         }
         
@@ -1094,6 +1157,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to New version available:.
+        /// </summary>
+        public static string TextNewVersion {
+            get {
+                return ResourceManager.GetString("TextNewVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive parameters.
         /// </summary>
         public static string TextParametersTitle {
@@ -1135,6 +1207,15 @@ namespace GARbro.GUI.Strings {
         public static string TextTitle {
             get {
                 return ResourceManager.GetString("TextTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Visit download page.
+        /// </summary>
+        public static string TextVisitPage {
+            get {
+                return ResourceManager.GetString("TextVisitPage", resourceCulture);
             }
         }
         

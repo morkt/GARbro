@@ -151,7 +151,7 @@
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
                     <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
-                    <MenuItem Header="Check for updates..." Command="{x:Static local:Commands.CheckUpdates}"/>
+                    <MenuItem Header="{x:Static s:guiStrings.MenuCheckUpdates}" Command="{x:Static local:Commands.CheckUpdates}"/>
                 </MenuItem>
             </Menu>
             <Separator Height="1" Margin="0"/>
