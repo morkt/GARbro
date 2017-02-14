@@ -46,6 +46,7 @@ namespace GARbro.GUI
         {
             var update_url = App.Resources["UpdateUrl"] as Uri;
             m_updater = new GarUpdate (this, update_url);
+            m_updater.CanExecuteChanged += (s, e) => CommandManager.InvalidateRequerySuggested();
         }
 
         public void CanExecuteUpdate (object sender, CanExecuteRoutedEventArgs e)
@@ -70,6 +71,43 @@ namespace GARbro.GUI
         public int      FormatsVersion { get; set; }
         public Uri          FormatsUrl { get; set; }
         public IDictionary<string, Version> Assemblies { get; set; }
+
+        public static GarUpdateInfo Parse (XmlDocument xml)
+        {
+            var root = xml.DocumentElement.SelectSingleNode ("/GARbro");
+            if (null == root)
+                return null;
+            var info = new GarUpdateInfo
+            {
+                ReleaseVersion = Version.Parse (GetInnerText (root.SelectSingleNode ("Release/Version"))),
+                ReleaseUrl = new Uri (GetInnerText (root.SelectSingleNode ("Release/Url"))),
+                ReleaseNotes = GetInnerText (root.SelectSingleNode ("Release/Notes")),
+
+                FormatsVersion = Int32.Parse (GetInnerText (root.SelectSingleNode ("FormatsData/FileVersion"))),
+                FormatsUrl = new Uri (GetInnerText (root.SelectSingleNode ("FormatsData/Url"))),
+                Assemblies = ParseAssemblies (root.SelectNodes ("FormatsData/Requires/Assembly")),
+            };
+            return info;
+        }
+
+        static string GetInnerText (XmlNode node)
+        {
+            return node != null ? node.InnerText : "";
+        }
+
+        static IDictionary<string, Version> ParseAssemblies (XmlNodeList nodes)
+        {
+            var dict = new Dictionary<string, Version>();
+            foreach (XmlNode node in nodes)
+            {
+                var attr = node.Attributes;
+                var name = attr["Name"];
+                var version = attr["Version"];
+                if (name != null && version != null)
+                    dict[name.Value] = Version.Parse (version.Value);
+            }
+            return dict;
+        }
     }
 
     internal sealed class GarUpdate : ICommand, IDisposable
@@ -105,7 +143,7 @@ namespace GARbro.GUI
         {
             var handler = CanExecuteChanged;
             if (handler != null)
-                handler (this, new EventArgs());
+                handler (this, EventArgs.Empty);
         }
 
         private void StartUpdatesCheck (object sender, DoWorkEventArgs e)
@@ -117,20 +155,31 @@ namespace GARbro.GUI
 
         private void UpdatesCheckComplete (object sender, RunWorkerCompletedEventArgs e)
         {
-            OnCanExecuteChanged();
-            if (e.Error != null)
+            try
             {
-                m_main.SetStatusText (string.Format ("{0} {1}", guiStrings.MsgUpdateFailed, e.Error.Message));
-                return;
+                if (e.Error != null)
+                {
+                    m_main.SetStatusText (string.Format ("{0} {1}", guiStrings.MsgUpdateFailed, e.Error.Message));
+                    return;
+                }
+                else if (e.Cancelled)
+                    return;
+                var result = e.Result as GarUpdateInfo;
+                if (null == result)
+                {
+                    m_main.SetStatusText (guiStrings.MsgNoUpdates);
+                    return;
+                }
+                ShowUpdateResult (result);
             }
-            else if (e.Cancelled)
-                return;
-            var result = e.Result as GarUpdateInfo;
-            if (null == result)
+            finally
             {
-                m_main.SetStatusText (guiStrings.MsgNoUpdates);
-                return;
+                OnCanExecuteChanged();
             }
+        }
+
+        private void ShowUpdateResult (GarUpdateInfo result)
+        {
             var app_version = Assembly.GetExecutingAssembly().GetName().Version;
             var db_version = FormatCatalog.Instance.CurrentSchemeVersion;
             bool has_app_update = app_version < result.ReleaseVersion;
@@ -142,26 +191,26 @@ namespace GARbro.GUI
             }
             var dialog = new UpdateDialog (result, has_app_update, has_db_update);
             dialog.Owner = m_main;
-            dialog.FormatsDownload.Click += (s, a) => StartFormatsDownload (dialog, result);
+            dialog.FormatsDownload.Click += (s, a) => StartFormatsDownload (dialog, result.FormatsUrl);
             dialog.ShowDialog();
         }
 
-        private void StartFormatsDownload (UpdateDialog dialog, GarUpdateInfo info)
+        private void StartFormatsDownload (UpdateDialog dialog, Uri formats_url)
         {
             try
             {
                 dialog.FormatsDownload.IsEnabled = false;
                 var app_data_folder = m_main.App.GetLocalAppDataFolder();
                 Directory.CreateDirectory (app_data_folder);
-                var local_formats_dat = Path.Combine (app_data_folder, App.FormatsDat);
                 using (var client = new WebClientEx())
                 using (var tmp_file = new GARbro.Shell.TemporaryFile (app_data_folder, Path.GetRandomFileName()))
                 {
                     client.Timeout = RequestTimeout;
                     // FIXME download blocks GUI thread.
-                    client.DownloadFile (info.FormatsUrl, tmp_file.Name);
+                    client.DownloadFile (formats_url, tmp_file.Name);
 
                     m_main.App.DeserializeScheme (tmp_file.Name);
+                    var local_formats_dat = Path.Combine (app_data_folder, App.FormatsDat);
                     if (!GARbro.Shell.File.Rename (tmp_file.Name, local_formats_dat))
                         throw new Win32Exception (GARbro.Shell.File.GetLastError());
                 }
@@ -203,40 +252,8 @@ namespace GARbro.GUI
             {
                 var xml = new XmlDocument();
                 xml.Load (input);
-                var root = xml.DocumentElement.SelectSingleNode ("/GARbro");
-                if (null == root)
-                    return null;
-                var info = new GarUpdateInfo
-                {
-                    ReleaseVersion = Version.Parse (GetInnerText (root.SelectSingleNode ("Release/Version"))),
-                    ReleaseUrl = new Uri (GetInnerText (root.SelectSingleNode ("Release/Url"))),
-                    ReleaseNotes = GetInnerText (root.SelectSingleNode ("Release/Notes")),
-
-                    FormatsVersion = Int32.Parse (GetInnerText (root.SelectSingleNode ("FormatsData/FileVersion"))),
-                    FormatsUrl = new Uri (GetInnerText (root.SelectSingleNode ("FormatsData/Url"))),
-                    Assemblies = ParseAssemblies (root.SelectNodes ("FormatsData/Requires/Assembly")),
-                };
-                return info;
+                return GarUpdateInfo.Parse (xml);
             }
-        }
-
-        static string GetInnerText (XmlNode node)
-        {
-            return node != null ? node.InnerText : "";
-        }
-
-        IDictionary<string, Version> ParseAssemblies (XmlNodeList nodes)
-        {
-            var dict = new Dictionary<string, Version>();
-            foreach (XmlNode node in nodes)
-            {
-                var attr = node.Attributes;
-                var name = attr["Name"];
-                var version = attr["Version"];
-                if (name != null && version != null)
-                    dict[name.Value] = Version.Parse (version.Value);
-            }
-            return dict;
         }
 
         bool m_disposed = false;
