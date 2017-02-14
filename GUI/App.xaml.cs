@@ -40,7 +40,8 @@ namespace GARbro.GUI
     {
         const StringComparison StringIgnoreCase = StringComparison.OrdinalIgnoreCase;
 
-        public static string Name { get { return "GARbro"; } }
+        public static string       Name { get { return "GARbro"; } }
+        public static string FormatsDat { get { return "Formats.dat"; } }
 
         /// <summary>
         /// Initial browsing directory.
@@ -80,12 +81,11 @@ namespace GARbro.GUI
             if (string.IsNullOrEmpty (InitPath))
                 InitPath = Directory.GetCurrentDirectory();
 
-            string formats_dat = "Formats.dat";
-            DeserializeScheme (Path.Combine (FormatCatalog.Instance.DataDirectory, formats_dat));
-            DeserializeScheme (Path.Combine (GetLocalAppDataFolder(), formats_dat));
+            DeserializeScheme (Path.Combine (FormatCatalog.Instance.DataDirectory, FormatsDat));
+            DeserializeScheme (Path.Combine (GetLocalAppDataFolder(), FormatsDat));
         }
 
-        string GetLocalAppDataFolder ()
+        public string GetLocalAppDataFolder ()
         {
             string local_app_data = Environment.GetFolderPath (Environment.SpecialFolder.LocalApplicationData);
             var attribs = Assembly.GetExecutingAssembly().GetCustomAttributes (typeof(AssemblyCompanyAttribute), false);
@@ -93,7 +93,7 @@ namespace GARbro.GUI
             return Path.Combine (local_app_data, company, Name);
         }
 
-        void DeserializeScheme (string scheme_file)
+        public void DeserializeScheme (string scheme_file)
         {
             try
             {

@@ -54,6 +54,8 @@ namespace GARbro.GUI
     {
         private App m_app;
 
+        public App App { get { return m_app; } }
+
         const StringComparison StringIgnoreCase = StringComparison.CurrentCultureIgnoreCase;
 
         public MainWindow()

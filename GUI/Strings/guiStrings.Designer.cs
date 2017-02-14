@@ -664,6 +664,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Update download failed..
+        /// </summary>
+        public static string MsgDownloadFailed {
+            get {
+                return ResourceManager.GetString("MsgDownloadFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to archive is empty.
         /// </summary>
         public static string MsgEmptyArchive {
@@ -879,6 +888,15 @@ namespace GARbro.GUI.Strings {
         public static string MsgUpdateAvailable {
             get {
                 return ResourceManager.GetString("MsgUpdateAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Formats database updated..
+        /// </summary>
+        public static string MsgUpdateComplete {
+            get {
+                return ResourceManager.GetString("MsgUpdateComplete", resourceCulture);
             }
         }
         
@@ -1207,6 +1225,15 @@ namespace GARbro.GUI.Strings {
         public static string TextTitle {
             get {
                 return ResourceManager.GetString("TextTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Application update.
+        /// </summary>
+        public static string TextUpdateTitle {
+            get {
+                return ResourceManager.GetString("TextUpdateTitle", resourceCulture);
             }
         }
         

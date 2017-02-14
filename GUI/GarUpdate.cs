@@ -34,17 +34,23 @@ using System.Windows.Input;
 using System.Xml;
 using GameRes;
 using GARbro.GUI.Strings;
+using System.IO;
 
 namespace GARbro.GUI
 {
     public partial class MainWindow : Window
     {
-        private readonly BackgroundWorker m_update_checker = new BackgroundWorker();
+        GarUpdate m_updater;
 
         private void InitUpdatesChecker ()
         {
-            m_update_checker.DoWork += StartUpdatesCheck;
-            m_update_checker.RunWorkerCompleted += UpdatesCheckComplete;
+            var update_url = App.Resources["UpdateUrl"] as Uri;
+            m_updater = new GarUpdate (this, update_url);
+        }
+
+        public void CanExecuteUpdate (object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = m_updater.CanExecute (e.Parameter);
         }
 
         /// <summary>
@@ -52,26 +58,69 @@ namespace GARbro.GUI
         /// </summary>
         private void CheckUpdatesExec (object sender, ExecutedRoutedEventArgs e)
         {
+            m_updater.Execute (e.Parameter);
+        }
+    }
+
+    public class GarUpdateInfo
+    {
+        public Version  ReleaseVersion { get; set; }
+        public Uri          ReleaseUrl { get; set; }
+        public string     ReleaseNotes { get; set; }
+        public int      FormatsVersion { get; set; }
+        public Uri          FormatsUrl { get; set; }
+        public IDictionary<string, Version> Assemblies { get; set; }
+    }
+
+    internal sealed class GarUpdate : ICommand, IDisposable
+    {
+        private readonly MainWindow     m_main;
+        private readonly BackgroundWorker m_update_checker = new BackgroundWorker();
+        private readonly Uri            m_url;
+
+        const int RequestTimeout = 20000; // milliseconds
+
+        public GarUpdate (MainWindow main, Uri url)
+        {
+            m_main = main;
+            m_url = url;
+            m_update_checker.DoWork += StartUpdatesCheck;
+            m_update_checker.RunWorkerCompleted += UpdatesCheckComplete;
+        }
+
+        public void Execute (object parameter)
+        {
             if (!m_update_checker.IsBusy)
                 m_update_checker.RunWorkerAsync();
         }
 
+        public bool CanExecute (object parameter)
+        {
+            return !m_update_checker.IsBusy;
+        }
+
+        public event EventHandler CanExecuteChanged;
+
+        void OnCanExecuteChanged ()
+        {
+            var handler = CanExecuteChanged;
+            if (handler != null)
+                handler (this, new EventArgs());
+        }
+
         private void StartUpdatesCheck (object sender, DoWorkEventArgs e)
         {
-            var url = m_app.Resources["UpdateUrl"] as Uri;
-            if (null == url)
-                return;
-            using (var updater = new GarUpdate (this))
-            {
-                e.Result = updater.Check (url);
-            }
+            OnCanExecuteChanged();
+            if (m_url != null)
+                e.Result = Check (m_url);
         }
 
         private void UpdatesCheckComplete (object sender, RunWorkerCompletedEventArgs e)
         {
+            OnCanExecuteChanged();
             if (e.Error != null)
             {
-                SetStatusText (string.Format ("{0} {1}", guiStrings.MsgUpdateFailed, e.Error.Message));
+                m_main.SetStatusText (string.Format ("{0} {1}", guiStrings.MsgUpdateFailed, e.Error.Message));
                 return;
             }
             else if (e.Cancelled)
@@ -79,7 +128,7 @@ namespace GARbro.GUI
             var result = e.Result as GarUpdateInfo;
             if (null == result)
             {
-                SetStatusText (guiStrings.MsgNoUpdates);
+                m_main.SetStatusText (guiStrings.MsgNoUpdates);
                 return;
             }
             var app_version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -88,17 +137,44 @@ namespace GARbro.GUI
             bool has_db_update = db_version < result.FormatsVersion && CheckAssemblies (result.Assemblies);
             if (!has_app_update && !has_db_update)
             {
-                SetStatusText (guiStrings.MsgUpToDate);
+                m_main.SetStatusText (guiStrings.MsgUpToDate);
                 return;
             }
             var dialog = new UpdateDialog (result, has_app_update, has_db_update);
-            dialog.Owner = this;
-            dialog.FormatsDownload.Click += FormatsDownloadExec;
+            dialog.Owner = m_main;
+            dialog.FormatsDownload.Click += (s, a) => StartFormatsDownload (dialog, result);
             dialog.ShowDialog();
         }
 
-        private void FormatsDownloadExec (object sender, RoutedEventArgs e)
+        private void StartFormatsDownload (UpdateDialog dialog, GarUpdateInfo info)
         {
+            try
+            {
+                dialog.FormatsDownload.IsEnabled = false;
+                var app_data_folder = m_main.App.GetLocalAppDataFolder();
+                Directory.CreateDirectory (app_data_folder);
+                var local_formats_dat = Path.Combine (app_data_folder, App.FormatsDat);
+                using (var client = new WebClientEx())
+                using (var tmp_file = new GARbro.Shell.TemporaryFile (app_data_folder, Path.GetRandomFileName()))
+                {
+                    client.Timeout = RequestTimeout;
+                    // FIXME download blocks GUI thread.
+                    client.DownloadFile (info.FormatsUrl, tmp_file.Name);
+
+                    m_main.App.DeserializeScheme (tmp_file.Name);
+                    if (!GARbro.Shell.File.Rename (tmp_file.Name, local_formats_dat))
+                        throw new Win32Exception (GARbro.Shell.File.GetLastError());
+                }
+                dialog.FormatsUpdateText.Text = guiStrings.MsgUpdateComplete;
+            }
+            catch (Exception X)
+            {
+                dialog.FormatsUpdateText.Text = string.Format ("{0}\n{1}", guiStrings.MsgDownloadFailed, X.Message);
+            }
+            finally
+            {
+                dialog.FormatsDownload.Visibility = Visibility.Collapsed;
+            }
         }
 
         /// <summary>
@@ -117,30 +193,8 @@ namespace GARbro.GUI
             }
             return true;
         }
-    }
 
-    public class GarUpdateInfo
-    {
-        public Version  ReleaseVersion { get; set; }
-        public Uri          ReleaseUrl { get; set; }
-        public string     ReleaseNotes { get; set; }
-        public int      FormatsVersion { get; set; }
-        public Uri          FormatsUrl { get; set; }
-        public IDictionary<string, Version> Assemblies { get; set; }
-    }
-
-    internal sealed class GarUpdate : IDisposable
-    {
-        Window      m_main;
-
-        const int RequestTimeout = 20000; // milliseconds
-
-        public GarUpdate (Window main)
-        {
-            m_main = main;
-        }
-
-        public GarUpdateInfo Check (Uri version_url)
+        GarUpdateInfo Check (Uri version_url)
         {
             var request = WebRequest.Create (version_url);
             request.Timeout = RequestTimeout;
@@ -190,9 +244,33 @@ namespace GARbro.GUI
         {
             if (!m_disposed)
             {
+                m_update_checker.Dispose();
                 m_disposed = true;
             }
             GC.SuppressFinalize (this);
+        }
+    }
+
+    /// <summary>
+    /// WebClient with timeout setting.
+    /// </summary>
+    internal class WebClientEx : WebClient
+    {
+        /// <summary>
+        /// Request timeout, in milliseconds.
+        /// </summary>
+        public int Timeout { get; set; }
+
+        public WebClientEx ()
+        {
+            Timeout = 60000;
+        }
+
+        protected override WebRequest GetWebRequest (Uri uri)
+        {
+            var request = base.GetWebRequest (uri);
+            request.Timeout = Timeout;
+            return request;
         }
     }
 }

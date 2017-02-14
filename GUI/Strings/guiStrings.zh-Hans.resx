@@ -517,12 +517,20 @@
     <value>Check for updates...</value>
     <comment>translation pending</comment>
   </data>
+  <data name="MsgDownloadFailed" xml:space="preserve">
+    <value>Update download failed.</value>
+    <comment>translation pending</comment>
+  </data>
   <data name="MsgNoUpdates" xml:space="preserve">
     <value>No updates currently available.</value>
     <comment>translation pending</comment>
   </data>
   <data name="MsgUpdateAvailable" xml:space="preserve">
     <value>Formats database update available.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpdateComplete" xml:space="preserve">
+    <value>Formats database updated.</value>
     <comment>translation pending</comment>
   </data>
   <data name="MsgUpdateFailed" xml:space="preserve">
@@ -535,6 +543,10 @@
   </data>
   <data name="TextNewVersion" xml:space="preserve">
     <value>New version available:</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextUpdateTitle" xml:space="preserve">
+    <value>Application update</value>
     <comment>translation pending</comment>
   </data>
   <data name="TextVisitPage" xml:space="preserve">

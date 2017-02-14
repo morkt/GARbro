@@ -403,7 +403,7 @@
         <CommandBinding Command="{x:Static local:Commands.HideMenuBar}" Executed="HideMenuBarExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.HideToolBar}" Executed="HideToolBarExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.About}"      Executed="AboutExec"      CanExecute="CanExecuteAlways"/>
-        <CommandBinding Command="{x:Static local:Commands.CheckUpdates}" Executed="CheckUpdatesExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.CheckUpdates}" Executed="CheckUpdatesExec" CanExecute="CanExecuteUpdate"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
 </Window>
