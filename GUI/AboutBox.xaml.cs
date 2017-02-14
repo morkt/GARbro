@@ -189,20 +189,8 @@ namespace GARbro.GUI
 
         private void Hyperlink_RequestNavigate (object sender, RequestNavigateEventArgs e)
         {
-            try
-            {
-                if (e.Uri.IsAbsoluteUri)
-                {
-                    Process.Start (new ProcessStartInfo (e.Uri.AbsoluteUri));
-                    e.Handled = true;
-                }
-                else
-                    throw new ApplicationException ("URI is not absolute");
-            }
-            catch (Exception X)
-            {
-                Trace.WriteLine ("Link navigation failed: "+X.Message, e.Uri.ToString());
-            }
+            if (App.NavigateUri (e.Uri))
+                e.Handled = true;
         }
     }
 

@@ -33,7 +33,6 @@ IN THE SOFTWARE.
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
     <Window.Resources>
-        <sys:Uri x:Key="DevLink">https://github.com/morkt/GARbro#readme</sys:Uri>
         <local:BooleanToVisibiltyConverter x:Key="guiBoolToVisibilityConverter" />
         <local:CanCreateConverter x:Key="guiCanCreateConverter"/>
         <CollectionViewSource x:Key="ArcFormatsSource" Source="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=ArcFormats, Mode=OneWay}">

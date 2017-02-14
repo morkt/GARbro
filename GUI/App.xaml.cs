@@ -29,6 +29,7 @@ using System.Diagnostics;
 using GARbro.GUI.Properties;
 using GameRes;
 using GameRes.Compression;
+using System.Reflection;
 
 namespace GARbro.GUI
 {
@@ -79,9 +80,25 @@ namespace GARbro.GUI
             if (string.IsNullOrEmpty (InitPath))
                 InitPath = Directory.GetCurrentDirectory();
 
-            string scheme_file = Path.Combine (FormatCatalog.Instance.DataDirectory, "Formats.dat");
+            string formats_dat = "Formats.dat";
+            DeserializeScheme (Path.Combine (FormatCatalog.Instance.DataDirectory, formats_dat));
+            DeserializeScheme (Path.Combine (GetLocalAppDataFolder(), formats_dat));
+        }
+
+        string GetLocalAppDataFolder ()
+        {
+            string local_app_data = Environment.GetFolderPath (Environment.SpecialFolder.LocalApplicationData);
+            var attribs = Assembly.GetExecutingAssembly().GetCustomAttributes (typeof(AssemblyCompanyAttribute), false);
+            string company = attribs.Length > 0 ? ((AssemblyCompanyAttribute)attribs[0]).Company : "";
+            return Path.Combine (local_app_data, company, Name);
+        }
+
+        void DeserializeScheme (string scheme_file)
+        {
             try
             {
+                if (!File.Exists (scheme_file))
+                    return;
                 using (var file = File.OpenRead (scheme_file))
                     FormatCatalog.Instance.DeserializeScheme (file);
             }
@@ -115,6 +132,25 @@ namespace GARbro.GUI
             // do not restore in minimized state
             if (Settings.Default.winState == System.Windows.WindowState.Minimized)
                 Settings.Default.winState = System.Windows.WindowState.Normal;
+        }
+
+        public static bool NavigateUri (Uri uri)
+        {
+            try
+            {
+                if (uri.IsAbsoluteUri)
+                {
+                    Process.Start (new ProcessStartInfo (uri.AbsoluteUri));
+                    return true;
+                }
+                else
+                    throw new ApplicationException ("URI is not absolute");
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine ("Link navigation failed: "+X.Message, uri.ToString());
+            }
+            return false;
         }
     }
 }
