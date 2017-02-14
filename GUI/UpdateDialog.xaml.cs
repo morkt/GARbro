@@ -15,7 +15,10 @@ namespace GARbro.GUI
             if (string.IsNullOrEmpty (info.ReleaseNotes))
                 this.ReleaseNotes.Visibility = Visibility.Collapsed;
             this.DataContext = info;
+            this.Closed += (s, e) => IsClosed = true;
         }
+
+        public bool IsClosed { get; private set; }
 
         private void Hyperlink_RequestNavigate (object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
         {

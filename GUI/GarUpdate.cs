@@ -178,6 +178,9 @@ namespace GARbro.GUI
             }
         }
 
+        UpdateDialog    m_dialog;
+        Uri             m_formats_url;
+
         private void ShowUpdateResult (GarUpdateInfo result)
         {
             var app_version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -189,14 +192,16 @@ namespace GARbro.GUI
                 m_main.SetStatusText (guiStrings.MsgUpToDate);
                 return;
             }
-            var dialog = new UpdateDialog (result, has_app_update, has_db_update);
-            dialog.Owner = m_main;
-            dialog.FormatsDownload.Click += (s, a) => StartFormatsDownload (dialog, result.FormatsUrl);
-            dialog.ShowDialog();
+            m_formats_url = result.FormatsUrl;
+            m_dialog = new UpdateDialog (result, has_app_update, has_db_update);
+            m_dialog.Owner = m_main;
+            m_dialog.FormatsDownload.Click += StartFormatsDownload;
+            m_dialog.ShowDialog();
         }
 
-        private void StartFormatsDownload (UpdateDialog dialog, Uri formats_url)
+        private async void StartFormatsDownload (object control, RoutedEventArgs e)
         {
+            var dialog = m_dialog;
             try
             {
                 dialog.FormatsDownload.IsEnabled = false;
@@ -206,24 +211,33 @@ namespace GARbro.GUI
                 using (var tmp_file = new GARbro.Shell.TemporaryFile (app_data_folder, Path.GetRandomFileName()))
                 {
                     client.Timeout = RequestTimeout;
-                    // FIXME download blocks GUI thread.
-                    client.DownloadFile (formats_url, tmp_file.Name);
+                    await client.DownloadFileTaskAsync (m_formats_url, tmp_file.Name);
 
                     m_main.App.DeserializeScheme (tmp_file.Name);
                     var local_formats_dat = Path.Combine (app_data_folder, App.FormatsDat);
                     if (!GARbro.Shell.File.Rename (tmp_file.Name, local_formats_dat))
                         throw new Win32Exception (GARbro.Shell.File.GetLastError());
                 }
-                dialog.FormatsUpdateText.Text = guiStrings.MsgUpdateComplete;
+                SetFormatsUpdateStatus (dialog, guiStrings.MsgUpdateComplete);
             }
             catch (Exception X)
             {
-                dialog.FormatsUpdateText.Text = string.Format ("{0}\n{1}", guiStrings.MsgDownloadFailed, X.Message);
+                SetFormatsUpdateStatus (dialog, guiStrings.MsgDownloadFailed, X.Message);
             }
             finally
             {
-                dialog.FormatsDownload.Visibility = Visibility.Collapsed;
+                dialog.FormatsDownload.Visibility = Visibility.Hidden;
             }
+        }
+
+        void SetFormatsUpdateStatus (UpdateDialog dialog, string text1, string text2 = null)
+        {
+            if (dialog.IsClosed)
+                m_main.SetStatusText (text1);
+            else if (null == text2)
+                dialog.FormatsUpdateText.Text = text1;
+            else
+                dialog.FormatsUpdateText.Text = string.Format ("{0}\n{1}", text1, text2);
         }
 
         /// <summary>
