@@ -38,8 +38,6 @@ namespace GARbro.GUI
     /// </summary>
     public partial class App : Application
     {
-        const StringComparison StringIgnoreCase = StringComparison.OrdinalIgnoreCase;
-
         public static string       Name { get { return "GARbro"; } }
         public static string FormatsDat { get { return "Formats.dat"; } }
 

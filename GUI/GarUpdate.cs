@@ -92,6 +92,7 @@ namespace GARbro.GUI
 
         static string GetInnerText (XmlNode node)
         {
+            // XXX node?.InnerText ?? ""
             return node != null ? node.InnerText : "";
         }
 
