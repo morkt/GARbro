@@ -6,7 +6,7 @@
              ShutdownMode="OnMainWindowClose" Exit="ApplicationExit">
     <Application.Resources>
         <sys:Uri x:Key="DevLink">https://github.com/morkt/GARbro#readme</sys:Uri>
-        <sys:Uri x:Key="UpdateUrl">https://morkt.github.io/version.xml</sys:Uri>
+        <sys:Uri x:Key="UpdateUrl">https://morkt.github.io/GARbro/version.xml</sys:Uri>
         <BitmapImage x:Key="IconSearch" UriSource="pack://application:,,,/Images/search4files.ico" />
     </Application.Resources>
 </Application>
