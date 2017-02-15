@@ -1,0 +1,61 @@
+﻿<!-- Game Resource browser
+
+Copyright (C) 2017 by morkt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+-->
+<Window x:Class="GARbro.GUI.UpdateDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:GARbro.GUI.Strings"
+        Title="{x:Static s:guiStrings.TextUpdateTitle}" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+        SizeToContent="WidthAndHeight" ResizeMode="NoResize">
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Bottom" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+            <Border BorderThickness="0,1,0,0" BorderBrush="Black">
+                <Button HorizontalAlignment="Right" Content="{x:Static s:guiStrings.ButtonOK}"
+                        Margin="10" Width="75" Height="25" Click="Button_Click" IsCancel="True"/>
+            </Border>
+        </DockPanel>
+        <Image DockPanel.Dock="Left" Source="Images/64x64/actions.png" Width="32" Height="32" Margin="10,20"
+               SnapsToDevicePixels="True" VerticalAlignment="Top" RenderOptions.BitmapScalingMode="HighQuality"/>
+        <StackPanel DockPanel.Dock="Right" Orientation="Vertical">
+            <StackPanel x:Name="ReleasePane" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{x:Static s:guiStrings.TextNewVersion}" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="ReleaseVersion" Text="{Binding ReleaseVersion}" Margin="5,10,10,0"/>
+                </StackPanel>
+                <Expander x:Name="ReleaseNotes" Header="{x:Static s:guiStrings.LabelReleaseNotes}" ExpandDirection="Down" IsExpanded="False" Margin="0,0,10,0">
+                    <TextBlock Text="{Binding ReleaseNotes}"/>
+                </Expander>
+                <TextBlock Margin="0,5,10,10">
+                    <Hyperlink NavigateUri="{Binding ReleaseUrl}" RequestNavigate="Hyperlink_RequestNavigate">
+                        <TextBlock Text="{x:Static s:guiStrings.TextVisitPage}" ToolTip="{Binding ReleaseUrl}"/>
+                    </Hyperlink>
+                </TextBlock>
+            </StackPanel>
+            <StackPanel x:Name="FormatsPane" Orientation="Vertical">
+                <Separator Visibility="{Binding ElementName=ReleasePane, Path=Visibility}"/>
+                <TextBlock x:Name="FormatsUpdateText" Text="{x:Static s:guiStrings.MsgUpdateAvailable}" Margin="0,10,10,10"/>
+                <Button x:Name="FormatsDownload" Content="{x:Static s:guiStrings.ButtonDownload}" Width="75" Height="25" Margin="0,0,10,10" HorizontalAlignment="Left"/>
+            </StackPanel>
+        </StackPanel>
+    </DockPanel>
+</Window>

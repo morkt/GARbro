@@ -518,4 +518,40 @@
   <data name="TextFileAlreadyExists" xml:space="preserve">
     <value>Файл с именем {0} уже существует.</value>
   </data>
+  <data name="ButtonDownload" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="LabelReleaseNotes" xml:space="preserve">
+    <value>Примечания к выпуску</value>
+  </data>
+  <data name="MenuCheckUpdates" xml:space="preserve">
+    <value>Проверить обновления...</value>
+  </data>
+  <data name="MsgDownloadFailed" xml:space="preserve">
+    <value>Не удалось обновить базу форматов.</value>
+  </data>
+  <data name="MsgNoUpdates" xml:space="preserve">
+    <value>Обновления недоступны.</value>
+  </data>
+  <data name="MsgUpdateAvailable" xml:space="preserve">
+    <value>Доступна обновлённая база форматов.</value>
+  </data>
+  <data name="MsgUpdateComplete" xml:space="preserve">
+    <value>База форматов успешно обновлена.</value>
+  </data>
+  <data name="MsgUpdateFailed" xml:space="preserve">
+    <value>Сбой проверки обновлений.</value>
+  </data>
+  <data name="MsgUpToDate" xml:space="preserve">
+    <value>Установлена актуальная версия GARbro.</value>
+  </data>
+  <data name="TextNewVersion" xml:space="preserve">
+    <value>Доступна новая версия:</value>
+  </data>
+  <data name="TextUpdateTitle" xml:space="preserve">
+    <value>Обновление программы</value>
+  </data>
+  <data name="TextVisitPage" xml:space="preserve">
+    <value>Перейти на страницу загрузки</value>
+  </data>
 </root>

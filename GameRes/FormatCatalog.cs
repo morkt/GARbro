@@ -254,15 +254,9 @@ namespace GameRes
 
         public void DeserializeScheme (Stream input)
         {
-            using (var reader = new BinaryReader (input, System.Text.Encoding.UTF8, true))
-            {
-                var header = reader.ReadChars (SchemeID.Length);
-                if (!header.SequenceEqual (SchemeID))
-                    throw new FormatException ("Invalid serialization file");
-                int version = reader.ReadInt32();
-                if (version <= CurrentSchemeVersion)
-                    return;
-            }
+            int version = GetSerializedSchemeVersion (input);
+            if (version <= CurrentSchemeVersion)
+                return;
             using (var zs = new ZLibStream (input, CompressionMode.Decompress, true))
             {
                 var bin = new BinaryFormatter();
@@ -306,6 +300,17 @@ namespace GameRes
             var bin = new BinaryFormatter();
             using (var zs = new ZLibStream (output, CompressionMode.Compress, true))
                 bin.Serialize (zs, db);
+        }
+
+        public int GetSerializedSchemeVersion (Stream input)
+        {
+            using (var reader = new BinaryReader (input, System.Text.Encoding.UTF8, true))
+            {
+                var header = reader.ReadChars (SchemeID.Length);
+                if (!header.SequenceEqual (SchemeID))
+                    throw new FormatException ("Invalid serialization file");
+                return reader.ReadInt32();
+            }
         }
     }
 

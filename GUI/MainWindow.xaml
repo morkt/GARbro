@@ -151,6 +151,7 @@
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
                     <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
+                    <MenuItem Header="{x:Static s:guiStrings.MenuCheckUpdates}" Command="{x:Static local:Commands.CheckUpdates}"/>
                 </MenuItem>
             </Menu>
             <Separator Height="1" Margin="0"/>
@@ -402,6 +403,7 @@
         <CommandBinding Command="{x:Static local:Commands.HideMenuBar}" Executed="HideMenuBarExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.HideToolBar}" Executed="HideToolBarExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.About}"      Executed="AboutExec"      CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.CheckUpdates}" Executed="CheckUpdatesExec" CanExecute="CanExecuteUpdate"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
 </Window>

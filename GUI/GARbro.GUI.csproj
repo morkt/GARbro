@@ -154,6 +154,7 @@
     <Compile Include="GarCreate.cs" />
     <Compile Include="GarExtract.cs" />
     <Compile Include="GarOperation.cs" />
+    <Compile Include="GarUpdate.cs" />
     <Compile Include="HistoryStack.cs" />
     <Compile Include="ImagePreview.cs" />
     <Compile Include="ListViewEx.cs" />
@@ -172,6 +173,9 @@
     </Compile>
     <Compile Include="TextViewer.xaml.cs">
       <DependentUpon>TextViewer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UpdateDialog.xaml.cs">
+      <DependentUpon>UpdateDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utility.cs" />
     <Compile Include="ViewModel.cs" />
@@ -224,6 +228,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="TextViewer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UpdateDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

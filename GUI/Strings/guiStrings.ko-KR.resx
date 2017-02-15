@@ -493,4 +493,52 @@
   <data name="TextFileAlreadyExists" xml:space="preserve">
     <value>대상폴더에 파일 {0} 이(가) 이미 존재합니다.</value>
   </data>
+  <data name="ButtonDownload" xml:space="preserve">
+    <value>Download</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="LabelReleaseNotes" xml:space="preserve">
+    <value>Release notes</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MenuCheckUpdates" xml:space="preserve">
+    <value>Check for updates...</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgDownloadFailed" xml:space="preserve">
+    <value>Update download failed.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgNoUpdates" xml:space="preserve">
+    <value>No updates currently available.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpdateAvailable" xml:space="preserve">
+    <value>Formats database update available.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpdateComplete" xml:space="preserve">
+    <value>Formats database updated.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpdateFailed" xml:space="preserve">
+    <value>Update check failed.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MsgUpToDate" xml:space="preserve">
+    <value>GARbro version is up to date.</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextNewVersion" xml:space="preserve">
+    <value>New version available:</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextUpdateTitle" xml:space="preserve">
+    <value>Application update</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextVisitPage" xml:space="preserve">
+    <value>Visit download page</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

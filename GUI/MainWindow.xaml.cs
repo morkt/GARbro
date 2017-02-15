@@ -54,6 +54,8 @@ namespace GARbro.GUI
     {
         private App m_app;
 
+        public App App { get { return m_app; } }
+
         const StringComparison StringIgnoreCase = StringComparison.CurrentCultureIgnoreCase;
 
         public MainWindow()
@@ -64,6 +66,7 @@ namespace GARbro.GUI
             if (this.Left < 0) this.Left = 0;
             InitDirectoryChangesWatcher();
             InitPreviewPane();
+            InitUpdatesChecker();
 
             if (null == Settings.Default.appRecentFiles)
                 Settings.Default.appRecentFiles = new StringCollection();
@@ -1478,6 +1481,7 @@ namespace GARbro.GUI
         public static readonly RoutedCommand SortBy = new RoutedCommand();
         public static readonly RoutedCommand Exit = new RoutedCommand();
         public static readonly RoutedCommand About = new RoutedCommand();
+        public static readonly RoutedCommand CheckUpdates = new RoutedCommand();
         public static readonly RoutedCommand GoBack = new RoutedCommand();
         public static readonly RoutedCommand GoForward = new RoutedCommand();
         public static readonly RoutedCommand DeleteItem = new RoutedCommand();
