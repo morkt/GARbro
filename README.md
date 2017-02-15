@@ -5,7 +5,7 @@ Visual Novels resource browser.
 
 Requires .NET Framework v4.5 or newer (https://www.microsoft.com/net)
 
-[Supported formats](http://htmlpreview.github.io/?https://github.com/morkt/GARbro/blob/master/supported.html)
+[Supported formats](https://morkt.github.io/GARbro/supported.html)
 
 [Download latest release](https://github.com/morkt/GARbro/releases)
 
