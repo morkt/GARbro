@@ -494,51 +494,39 @@
     <value>대상폴더에 파일 {0} 이(가) 이미 존재합니다.</value>
   </data>
   <data name="ButtonDownload" xml:space="preserve">
-    <value>Download</value>
-    <comment>translation pending</comment>
+    <value>다운로드</value>
   </data>
   <data name="LabelReleaseNotes" xml:space="preserve">
-    <value>Release notes</value>
-    <comment>translation pending</comment>
+    <value>릴리스 정보</value>
   </data>
   <data name="MenuCheckUpdates" xml:space="preserve">
-    <value>Check for updates...</value>
-    <comment>translation pending</comment>
+    <value>업데이트 확인...</value>
   </data>
   <data name="MsgDownloadFailed" xml:space="preserve">
-    <value>Update download failed.</value>
-    <comment>translation pending</comment>
+    <value>업데이트 다운로드에 실패했습니다.</value>
   </data>
   <data name="MsgNoUpdates" xml:space="preserve">
-    <value>No updates currently available.</value>
-    <comment>translation pending</comment>
+    <value>현재 사용가능한 업데이트가 없습니다.</value>
   </data>
   <data name="MsgUpdateAvailable" xml:space="preserve">
-    <value>Formats database update available.</value>
-    <comment>translation pending</comment>
+    <value>포맷 데이터베이스를 업데이트 하실수 있습니다.</value>
   </data>
   <data name="MsgUpdateComplete" xml:space="preserve">
-    <value>Formats database updated.</value>
-    <comment>translation pending</comment>
+    <value>포맷 데이터베이스를 업데이트했습니다.</value>
   </data>
   <data name="MsgUpdateFailed" xml:space="preserve">
-    <value>Update check failed.</value>
-    <comment>translation pending</comment>
+    <value>업데이트 확인에 실패했습니다.</value>
   </data>
   <data name="MsgUpToDate" xml:space="preserve">
-    <value>GARbro version is up to date.</value>
-    <comment>translation pending</comment>
+    <value>GARbro이 최신버전입니다.</value>
   </data>
   <data name="TextNewVersion" xml:space="preserve">
-    <value>New version available:</value>
-    <comment>translation pending</comment>
+    <value>새로운 버전을 사용하실 수 있습니다:</value>
   </data>
   <data name="TextUpdateTitle" xml:space="preserve">
-    <value>Application update</value>
-    <comment>translation pending</comment>
+    <value>응용프로그램 업데이트</value>
   </data>
   <data name="TextVisitPage" xml:space="preserve">
-    <value>Visit download page</value>
-    <comment>translation pending</comment>
+    <value>다운로드 페이지 방문</value>
   </data>
 </root>
