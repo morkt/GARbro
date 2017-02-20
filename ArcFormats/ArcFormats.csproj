@@ -90,6 +90,9 @@
     <Compile Include="Ankh\AudioPCM.cs" />
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcARCX.cs" />
+    <Compile Include="BlackRainbow\ArcCCF.cs" />
+    <Compile Include="BlackRainbow\ArcIMP.cs" />
+    <Compile Include="BlackRainbow\ArcSPPAK.cs" />
     <Compile Include="Foster\ArcC24.cs" />
     <Compile Include="Foster\ArcFA2.cs" />
     <Compile Include="Foster\ImageC24.cs" />
