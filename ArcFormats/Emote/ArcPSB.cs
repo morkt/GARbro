@@ -74,17 +74,21 @@ namespace GameRes.Formats.Emote
             {
                 foreach (var key in KnownKeys)
                 {
-                    if (reader.Parse (key))
+                    try
                     {
-                        var dir = reader.GetTextures();
-                        if (null == dir)
-                            dir = reader.GetLayers();
-                        if (null == dir || 0 == dir.Count)
-                            return null;
-                        return new ArcFile (file, this, dir);
+                        if (reader.Parse (key))
+                        {
+                            var dir = reader.GetTextures();
+                            if (null == dir)
+                                dir = reader.GetLayers();
+                            if (null == dir || 0 == dir.Count)
+                                return null;
+                            return new ArcFile (file, this, dir);
+                        }
+                        if (!reader.IsEncrypted)
+                            break;
                     }
-                    if (!reader.IsEncrypted)
-                        break;
+                    catch { /* ignore parse errors caused by invalid key */ }
                 }
                 if (reader.ParseNonEncrypted())
                 {
