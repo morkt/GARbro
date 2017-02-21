@@ -77,28 +77,26 @@ namespace GameRes.Formats.Emote
                     try
                     {
                         if (reader.Parse (key))
-                        {
-                            var dir = reader.GetTextures();
-                            if (null == dir)
-                                dir = reader.GetLayers();
-                            if (null == dir || 0 == dir.Count)
-                                return null;
-                            return new ArcFile (file, this, dir);
-                        }
+                            return OpenArcFile (reader, file);
                         if (!reader.IsEncrypted)
                             break;
                     }
                     catch { /* ignore parse errors caused by invalid key */ }
                 }
                 if (reader.ParseNonEncrypted())
-                {
-                    var dir = reader.GetLayers();
-                    if (null == dir)
-                        return null;
-                    return new ArcFile (file, this, dir);
-                }
+                    return OpenArcFile (reader, file);
                 return null;
             }
+        }
+
+        ArcFile OpenArcFile (PsbReader reader, ArcView file)
+        {
+            var dir = reader.GetTextures();
+            if (null == dir)
+                dir = reader.GetLayers();
+            if (null == dir || 0 == dir.Count)
+                return null;
+            return new ArcFile (file, this, dir);
         }
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
