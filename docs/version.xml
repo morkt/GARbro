@@ -17,7 +17,7 @@
 * more KiriKiri and ShiinaRio encryption schemes</Notes>
     </Release>
     <FormatsData>
-        <FileVersion>53</FileVersion>
+        <FileVersion>54</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.29.1274"/>
