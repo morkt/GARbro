@@ -2,7 +2,7 @@
 //! \date       Mon Jun 15 04:03:18 2015
 //! \brief      QLIE engine archives implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -32,6 +32,7 @@ using System.Linq;
 using GameRes.Utility;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
+using GameRes.Formats.Borland;
 
 namespace GameRes.Formats.Qlie
 {
@@ -136,7 +137,7 @@ namespace GameRes.Formats.Qlie
                 use_pack_keyfile = key_file != null;
                 // currently, user is prompted to choose encryption scheme only if there's 'key.fkey' file found.
                 if (use_pack_keyfile)
-                    arc_key = QueryEncryption();
+                    arc_key = QueryEncryption (file);
 //                use_pack_keyfile = null != arc_key;
 
                 var key_data = file.View.ReadBytes (file.MaxOffset-0x41C, 0x100);
@@ -423,10 +424,20 @@ namespace GameRes.Formats.Qlie
             return new GUI.WidgetQLIE();
         }
 
-        byte[] QueryEncryption ()
+        byte[] QueryEncryption (ArcView file)
         {
-            var options = Query<QlieOptions> (arcStrings.ArcEncryptedNotice);
-            return options.GameKeyData;
+            var title = FormatCatalog.Instance.LookupGame (file.Name, @"..\*.exe");
+            byte[] key = null;
+            if (!string.IsNullOrEmpty (title))
+                key = GetKeyData (title);
+            if (null == key)
+                key = GuessKeyData (file.Name);
+            if (null == key)
+            {
+                var options = Query<QlieOptions> (arcStrings.ArcEncryptedNotice);
+                key = options.GameKeyData;
+            }
+            return key;
         }
 
         static byte[] GetKeyData (string scheme)
@@ -456,6 +467,47 @@ namespace GameRes.Formats.Qlie
                 }
             }
             return null;
+        }
+
+        byte[] GuessKeyData (string arc_name)
+        {
+            if (VFS.IsVirtual)
+                return null;
+            // XXX add button to query dialog like with CatSystem?
+            var pattern = VFS.CombinePath (VFS.GetDirectoryName (arc_name), @"..\*.exe");
+            foreach (var file in VFS.GetFiles (pattern))
+            {
+                try
+                {
+                    var key = GetKeyDataFromExe (file.Name);
+                    if (key != null)
+                        return key;
+                }
+                catch { /* ignore errors */ }
+            }
+            return null;
+        }
+
+        public static byte[] GetKeyDataFromExe (string filename)
+        {
+            using (var exe = new ExeFile.ResourceAccessor (filename))
+            {
+                var tform = exe.GetResource ("TFORM1", "#10");
+                if (null == tform || !tform.AsciiEqual (0, "TPF0"))
+                    return null;
+                using (var input = new BinMemoryStream (tform))
+                {
+                    var deserializer = new DelphiDeserializer (input);
+                    var form = deserializer.Deserialize();
+                    var image = form.Contents.FirstOrDefault (n => n.Name == "IconKeyImage");
+                    if (null == image)
+                        return null;
+                    var icon = image.Props["Picture.Data"] as byte[];
+                    if (null == icon || icon.Length < 0x106 || !icon.AsciiEqual (0, "\x05TIcon"))
+                        return null;
+                    return new CowArray<byte> (icon, 6, 0x100).ToArray();
+                }
+            }
         }
     }
 }

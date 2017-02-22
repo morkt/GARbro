@@ -97,6 +97,7 @@
     <Compile Include="Foster\ArcFA2.cs" />
     <Compile Include="Foster\ImageC24.cs" />
     <Compile Include="GameSystem\ArcPureMail.cs" />
+    <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
     <Compile Include="Software House Parsley\ArcCG.cs" />
     <Compile Include="Artemis\ArcPFS.cs" />
