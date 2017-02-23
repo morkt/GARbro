@@ -93,6 +93,8 @@
     <Compile Include="BlackRainbow\ArcCCF.cs" />
     <Compile Include="BlackRainbow\ArcIMP.cs" />
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
+    <Compile Include="Cadath\ArcDAF.cs" />
+    <Compile Include="Cadath\ImageCGF.cs" />
     <Compile Include="Foster\ArcC24.cs" />
     <Compile Include="Foster\ArcFA2.cs" />
     <Compile Include="Foster\ImageC24.cs" />
