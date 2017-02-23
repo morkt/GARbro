@@ -134,7 +134,7 @@ namespace GameRes.Formats.BlackRainbow
         {
             m_input.Position = 0x10;
             var pixels = new byte[Info.Width * Info.Height * 4];
-            using (var lzs = new ByteStringEncryptedStream (m_input.AsStream, m_key))
+            using (var lzs = new ByteStringEncryptedStream (m_input.AsStream, m_key, true))
             using (var input = new LzssStream (lzs))
             {
                 if (pixels.Length != input.Read (pixels, 0, pixels.Length))
