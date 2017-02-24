@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using GameRes.Strings;
 
@@ -558,7 +559,7 @@ namespace GameRes
             if (null == arc)
             {
                 if (FormatCatalog.Instance.LastError is OperationCanceledException)
-                    throw FormatCatalog.Instance.LastError;
+                    ExceptionDispatchInfo.Capture (FormatCatalog.Instance.LastError).Throw();
                 else
                     throw new UnknownFormatException (FormatCatalog.Instance.LastError);
             }
