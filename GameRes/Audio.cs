@@ -38,6 +38,11 @@ namespace GameRes
         public ushort BlockAlign;
         public ushort BitsPerSample;
         public ushort ExtraSize;
+
+        public void SetBPS ()
+        {
+            AverageBytesPerSecond = (uint)(SamplesPerSecond * Channels * BitsPerSample / 8);
+        }
     }
 
     public abstract class SoundInput : Stream
