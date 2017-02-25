@@ -28,7 +28,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Xml;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
@@ -136,8 +138,12 @@ namespace GameRes.Formats.Entis
         string GetArcPassword (string arc_name)
         {
             var title = FormatCatalog.Instance.LookupGame (arc_name, @"..\*.exe");
+            string password = null;
             if (string.IsNullOrEmpty (title) || !KnownKeys.ContainsKey (title))
             {
+                password = ExtractNoaPassword (arc_name);
+                if (password != null)
+                    return password;
                 var options = Query<NoaOptions> (arcStrings.ArcEncryptedNotice);
                 if (!string.IsNullOrEmpty (options.PassPhrase))
                 {
@@ -145,7 +151,6 @@ namespace GameRes.Formats.Entis
                 }
                 title = options.Scheme;
             }
-            string password = null;
             if (!string.IsNullOrEmpty (title))
             {
                 Dictionary<string, string> filemap;
@@ -156,6 +161,51 @@ namespace GameRes.Formats.Entis
                 }
             }
             return password;
+        }
+
+        string ExtractNoaPassword (string arc_name)
+        {
+            if (VFS.IsVirtual)
+                return null;
+            var dir = VFS.GetDirectoryName (arc_name);
+            var noa_name = Path.GetFileName (arc_name);
+            var parent_dir = Directory.GetParent (dir).FullName;
+            var exe_files = VFS.GetFiles (VFS.CombinePath (parent_dir, "*.exe")).Concat (VFS.GetFiles (VFS.CombinePath (dir, "*.exe")));
+            foreach (var exe_entry in exe_files)
+            {
+                try
+                {
+                    using (var exe = new ExeFile.ResourceAccessor (exe_entry.Name))
+                    {
+                        var cotomi = exe.GetResource ("IDR_COTOMI", "#10");
+                        if (null == cotomi)
+                            continue;
+                        using (var res = new MemoryStream (cotomi))
+                        using (var input = DecodeNemesis (res))
+                        {
+                            var xml = new XmlDocument();
+                            xml.Load (input);
+                            var password = XmlFindArchiveKey (xml, noa_name);
+                            if (password != null)
+                                return password;
+                        }
+                    }
+                }
+                catch { /* ignore errors */ }
+            }
+            return null;
+        }
+
+        string XmlFindArchiveKey (XmlDocument xml, string filename)
+        {
+            foreach (XmlNode archive in xml.DocumentElement.SelectNodes ("archive[@path and @key]"))
+            {
+                var attr = archive.Attributes;
+                var path = attr["path"].Value;
+                if (VFS.IsPathEqualsToFileName (path, filename))
+                    return attr["key"].Value;
+            }
+            return null;
         }
 
         Stream DecodeNemesis (Stream input)
