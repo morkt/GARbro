@@ -500,7 +500,10 @@
     <Compile Include="ShiinaRio\ArcS25.cs" />
     <Compile Include="ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
+    <Compile Include="Valkyria\ArcDAT.cs" />
     <Compile Include="Valkyria\ArcODN.cs" />
+    <Compile Include="Valkyria\ImageMAL.cs" />
+    <Compile Include="Valkyria\ImageMG2.cs" />
     <Compile Include="Vitamin\ImageMFC.cs" />
     <Compile Include="Vitamin\ImageSBI.cs" />
     <Compile Include="VnEngine\ArcAXR.cs" />
