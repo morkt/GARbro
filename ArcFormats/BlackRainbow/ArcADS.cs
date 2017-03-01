@@ -48,6 +48,11 @@ namespace GameRes.Formats.BlackRainbow
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public AdsOpener ()
+        {
+            Signatures = new uint[] { 0x84D9514E, 0 };
+        }
+
         public static Dictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
 
         public override ResourceScheme Scheme
@@ -60,6 +65,7 @@ namespace GameRes.Formats.BlackRainbow
         {
             if (!file.Name.EndsWith (".ads", StringComparison.InvariantCultureIgnoreCase))
                 return null;
+            var arc_name = Path.GetFileNameWithoutExtension (file.Name);
             foreach (var key in KnownKeys.Values)
             {
                 using (var arc = new EncryptedViewStream (file, key))
@@ -67,7 +73,7 @@ namespace GameRes.Formats.BlackRainbow
                     uint signature = FormatCatalog.ReadSignature (arc);
                     if (2 == signature || 4 == signature || 5 == signature)
                     {
-                        var dir = ReadIndex (arc, key);
+                        var dir = ReadIndex (arc, key, arc_name);
                         if (dir != null)
                             return new AdsArchive (file, this, dir, key);
                     }
@@ -76,7 +82,7 @@ namespace GameRes.Formats.BlackRainbow
             return null;
         }
 
-        List<Entry> ReadIndex (Stream arc, byte[] key)
+        List<Entry> ReadIndex (Stream arc, byte[] key, string arc_name)
         {
             arc.Position = 8;
             using (var reader = new ArcView.Reader (arc))
@@ -108,7 +114,11 @@ namespace GameRes.Formats.BlackRainbow
                     reader.BaseStream.Position = offset;
                     reader.Read (name_buffer, 0, 0x20);
                     string name = Binary.GetCString (name_buffer, 0, 0x20);
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    Entry entry;
+                    if (0 == name.Length)
+                        entry = new Entry { Name = string.Format ("{0}#{1:D5}", arc_name, i), Type = "image" };
+                    else
+                        entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = offset + 0x24;
                     entry.Size = reader.ReadUInt32();
                     dir.Add (entry);
