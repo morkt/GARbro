@@ -4,6 +4,7 @@
 <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
 <title>GARbro - supported formats</title>
 <style type="text/css">
+body { font-family: Calibri, sans-serif }
 table { border-spacing: 0; border-collapse: collapse; }
 th,td { vertical-align: text-top; border: solid black 1px; }
 tr.odd td { background-color: #eee }
@@ -12,28 +13,40 @@ tr.last { height: auto }
 .footnote { font-size: 75%; vertical-align: super; top: 0.5em }
 .footnote::before { content: "[" }
 .footnote::after { content: "]" }
+.supported {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='16' viewBox='0 0 12 16'%3E%3Cpath fill='green' d='M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5z'/%3E%3C/svg%3E");
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding-left: 14px;
+    margin-left: 2px;
+}
 </style>
 </head>
 <body>
 <p>Formats recognized by <a href="https://github.com/morkt/GARbro">Game Archived Resources browser</a>. "Titles" column lists tested titles only.</p>
 <table>
 <tr><th>Files</th><th>Signature</th><th>Create</th><th>Brand/Engine<th>Titles</th></tr>
-<tr class="odd"><td>*.pak</td><td><tt>ADPACK32</tt></td><td>No</td><td rowspan="3">Active Soft</td><td rowspan="3">Bible Black<br/>Discipline<br/>Discipline LS<br/>Fearless]</td></tr>
-<tr class="odd"><td>*.edt</td><td><tt>.TRUE</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.ed8</td><td><tt>.8Bit</tt></td><td>No</td></tr>
-<tr><td>*.afs</td><td><tt>AFS</tt></td><td>No</td><td rowspan="7">CRI</td><td rowspan="7">
+<tr class="odd"><td>*.pak</td><td><tt>ADPACK32</tt></td><td></td><td rowspan="3">Active Soft</td><td rowspan="3">
+Bible Black<br/>
+Discipline<br/>
+Discipline LS<br/>
+Fearless]<br/>
+</td></tr>
+<tr class="odd"><td>*.edt</td><td><tt>.TRUE</tt></td><td></td></tr>
+<tr class="odd last"><td>*.ed8</td><td><tt>.8Bit</tt></td><td></td></tr>
+<tr><td>*.afs</td><td><tt>AFS</tt></td><td></td><td rowspan="7">CRI</td><td rowspan="7">
 Iwaihime<br/>
 Phantom of Inferno<span class="footnote">Xbox port</span><br/>
 Remember11<br/>
 </td></tr>
-<tr><td>*.bip</td><td>-</td><td>No</td></tr>
-<tr><td>*.cpk</td><td><tt>CPK</tt></td><td>No</td></tr>
-<tr><td>*.spc</td><td>-</td><td>No</td></tr>
-<tr><td>*.xtx</td><td><tt>xtx</tt></td><td>No</td></tr>
-<tr><td>*.hca</td><td><tt>HCA</tt></td><td>No</td></tr>
-<tr class="last"><td>*.adx</td><td><tt>\x80\x00</tt></td><td>No</td></tr>
-<tr class="odd"><td>data.ami</td><td><tt>AMI</tt></td><td>Yes</td><td>-</td><td>Muv-Luv Amaterasu Translation data files</td></tr>
-<tr><td>*.arc</td><td><tt>PackFile</tt><br/><tt>BURIKO ARC20</tt></td><td>No</td><td rowspan="2">BGI/Ethornell</td><td rowspan="2">
+<tr><td>*.bip</td><td>-</td><td></td></tr>
+<tr><td>*.cpk</td><td><tt>CPK</tt></td><td></td></tr>
+<tr><td>*.spc</td><td>-</td><td></td></tr>
+<tr><td>*.xtx</td><td><tt>xtx</tt></td><td></td></tr>
+<tr><td>*.hca</td><td><tt>HCA</tt></td><td></td></tr>
+<tr class="last"><td>*.adx</td><td><tt>\x80\x00</tt></td><td></td></tr>
+<tr class="odd"><td>data.ami</td><td><tt>AMI</tt></td><td><span class="supported"></span></td><td>-</td><td>Muv-Luv Amaterasu Translation data files</td></tr>
+<tr><td>*.arc</td><td><tt>PackFile</tt><br/><tt>BURIKO ARC20</tt></td><td></td><td rowspan="2">BGI/Ethornell</td><td rowspan="2">
 11gatsu no Arcadia<br/>
 Chou Dengeki Stryker<br/>
 Chou Jikuu Bakuren Monogatari ~door pi chu~<br/>
@@ -43,8 +56,8 @@ Melty Moment<br/>
 Sakura no Uta<br/>
 Traveling Stars<br/>
 </td></tr>
-<tr class="last"><td>-</td><td><tt>CompressedBG___</tt></td><td>No</td></tr>
-<tr class="odd"><td>*</td><td>-<br/><tt>SM2MPX10</tt></td><td>No</td><td rowspan="5">DRS</td><td rowspan="5">
+<tr class="last"><td>-</td><td><tt>CompressedBG___</tt></td><td></td></tr>
+<tr class="odd"><td>*</td><td>-<br/><tt>SM2MPX10</tt></td><td></td><td rowspan="5">DRS</td><td rowspan="5">
 Anata no Osanazuma<br/>
 Ecchi na Bunny-san wa Kirai?<br/>
 Kana ~Imouto~<br/>
@@ -62,22 +75,22 @@ Sumeragi no Miko-tachi<br/>
 Suzuri-sensei to 26-ko no Ecchi na Oppai<br/>
 Tsukushite Agechau series<br/>
 </td></tr>
-<tr class="odd"><td>*.ggd</td><td><tt>\xB9\xAA\xB3\xB3</tt><br/><tt>\xAB\xAD\xAA\xBA</tt><br/><tt>\xB7\xB6\xB8\xB7</tt><br/><tt>\xCD\xCA\xC9\xB8</tt></td><td>Yes</td></tr>
-<tr class="odd"><td>*.gg1<br/>*.gg2<br/>*.gg3<br/>*.gg0</td><td><tt>GGA00000</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.ggp</td><td><tt>GGPFAIKE</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.ygp</td><td><tt>YGP</tt></td><td>No</td></tr>
-<tr><td>*.bin</td><td><tt>ACPXPK01</tt></td><td>No</td><td>Escu:de<br/>Unison Shift</td><td>
+<tr class="odd"><td>*.ggd</td><td><tt>\xB9\xAA\xB3\xB3</tt><br/><tt>\xAB\xAD\xAA\xBA</tt><br/><tt>\xB7\xB6\xB8\xB7</tt><br/><tt>\xCD\xCA\xC9\xB8</tt></td><td><span class="supported"></span></td></tr>
+<tr class="odd"><td>*.gg1<br/>*.gg2<br/>*.gg3<br/>*.gg0</td><td><tt>GGA00000</tt></td><td></td></tr>
+<tr class="odd"><td>*.ggp</td><td><tt>GGPFAIKE</tt></td><td></td></tr>
+<tr class="odd last"><td>*.ygp</td><td><tt>YGP</tt></td><td></td></tr>
+<tr><td>*.bin</td><td><tt>ACPXPK01</tt></td><td></td><td>Escu:de<br/>Unison Shift</td><td>
 Eiyuu x Maou<br/>
 Wasurenagusa ~Forget-me-Not~<br/>
 </td></tr>
-<tr class="odd"><td>*.gsp</td><td>-</td><td>No</td><td rowspan="2">GSD</td><td rowspan="2">
+<tr class="odd"><td>*.gsp</td><td>-</td><td></td><td rowspan="2">GSD</td><td rowspan="2">
 Asanagi no Aquanauts<br/>
 I Cup Bonyuu Kangofu<br/>
 Natsuiro ☆ Communication ♪<br/>
 Saimin Gakuen<br/>
 </td></tr>
-<tr class="odd last"><td>*.bmz</td><td><tt>ZLC3</tt></td><td>Yes</td></tr>
-<tr><td>*.int</td><td><tt>KIF</tt></td><td>Yes<a href="#note-1" class="footnote">1</a></td><td rowspan="3">CatSystem2</td><td rowspan="3">
+<tr class="odd last"><td>*.bmz</td><td><tt>ZLC3</tt></td><td><span class="supported"></span></td></tr>
+<tr><td>*.int</td><td><tt>KIF</tt></td><td><a href="#note-1" class="supported footnote">1</a></td><td rowspan="3">CatSystem2</td><td rowspan="3">
 Grisaia no Kajitsu<br/>
 Happiness! Re:Lucks<br/>
 Kamikaze ☆ Explorer!<br/>
@@ -89,9 +102,9 @@ Shukufuku no Campanella<br/>
 TsunaBan ♥ Love Mix<br/>
 Utatemeguri<br/>
 </td></tr>
-<tr><td>*.hg3</td><td><tt>HG-3</tt></td><td>No</td></tr>
-<tr class="last"><td>*.hg2</td><td><tt>HG-2</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pak<br/>*.dat</td><td><tt>PACKDAT.</tt></td><td>No</td><td>SYSTEM-ε</td><td>
+<tr><td>*.hg3</td><td><tt>HG-3</tt></td><td></td></tr>
+<tr class="last"><td>*.hg2</td><td><tt>HG-2</tt></td><td></td></tr>
+<tr class="odd"><td>*.pak<br/>*.dat</td><td><tt>PACKDAT.</tt></td><td></td><td>SYSTEM-ε</td><td>
 Aoiro Rinne<br/>
 Cartagra<br/>
 Houkago no Senpai<br/>
@@ -99,12 +112,12 @@ PP -Pianissimo-<br/>
 Ryoujoku Guerilla Gari 3<br/>
 Nagomibako<br/>
 </td></tr>
-<tr><td>DATA.Pack</td><td><tt>KCAP</tt></td><td>No</td><td>Interheart<br/>Willow Soft</td><td>
+<tr><td>DATA.Pack</td><td><tt>KCAP</tt></td><td></td><td>Interheart<br/>Willow Soft</td><td>
 Itazura Mahjong<br/>
 Okaa-san ga Ippai!<br/>
 </td></tr>
-<tr class="odd"><td>*.pak</td><td><tt>HyPack</tt></td><td>Yes</td><td>Kogado</td><td>Symphonic Rain</td></tr>
-<tr><td>*+*.lst</td><td>-</td><td>No</td><td rowspan="2">Nexton LikeC</td><td rowspan="2">
+<tr class="odd"><td>*.pak</td><td><tt>HyPack</tt></td><td><span class="supported"></span></td><td>Kogado</td><td>Symphonic Rain</td></tr>
+<tr><td>*+*.lst</td><td>-</td><td></td><td rowspan="2">Nexton LikeC</td><td rowspan="2">
 Chikan Ou ~Inkoku no Souzousha~<br/>
 Daisaimin Rankou Gakuen<br/>
 Haitoku no Gakuen ~Yami ni Sasagerareta Otome-tachi~<br/>
@@ -120,8 +133,8 @@ Seidorei Onna Kyoushi<br/>
 Sentoreido Gakuen<br/>
 Yakuchu!<br/>
 </td></tr>
-<tr class="last"><td>*.tgf</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>MajiroArcV1.000</tt><br/><tt>MajiroArcV2.000</tt><br/><tt>MajiroArcV3.000</tt></td><td>Yes</td><td rowspan="3">Majiro</td><td rowspan="3">
+<tr class="last"><td>*.tgf</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.arc</td><td><tt>MajiroArcV1.000</tt><br/><tt>MajiroArcV2.000</tt><br/><tt>MajiroArcV3.000</tt></td><td><span class="supported"></span></td><td rowspan="3">Majiro</td><td rowspan="3">
 Ai Suru Tsuma, Misaki no Furin Shouko<br/>
 Amber Quartz<br/>
 Anata o Otoko ni Shite Ageru!<br/>
@@ -139,9 +152,9 @@ Strawberry Feels<br/>
 Switch!! ~Boku ga Natsu ni Omou Koto~<br/>
 White ~blanche comme la lune~<br/>
 </td></tr>
-<tr class="odd"><td>*.rct</td><td><tt>\x98\x5A\x92\x9AT</tt></td><td>Yes</td></tr>
-<tr class="odd last"><td>*.rc8</td><td><tt>\x98\x5A\x92\x9A8_00</tt></td><td>No</td></tr>
-<tr><td>*.dat</td><td><tt>NEKOPACK</tt></td><td>No</td><td>Rosebleu<br/>Lime</td><td>
+<tr class="odd"><td>*.rct</td><td><tt>\x98\x5A\x92\x9AT</tt></td><td><span class="supported"></span></td></tr>
+<tr class="odd last"><td>*.rc8</td><td><tt>\x98\x5A\x92\x9A8_00</tt></td><td></td></tr>
+<tr><td>*.dat</td><td><tt>NEKOPACK</tt></td><td></td><td>Rosebleu<br/>Lime</td><td>
 Inpyuri -Hito to Anata to Ayakashi to-<br/>
 Nostradamus ni Kiitemiro♪<br/>
 Tiny Dungeon ~BIRTH for YOURS~<br/>
@@ -149,7 +162,7 @@ Tiny Dungeon ~BLACK and WHITE~<br/>
 Tiny Dungeon ~BLESS of DRAGON~<br/>
 Tiny Dungeon ~Brave or Slave~<br/>
 </td></tr>
-<tr class="odd"><td>*.dat</td><td>-</td><td>No</td><td>Meteor<br/>Silver Bullet</td><td>
+<tr class="odd"><td>*.dat</td><td>-</td><td></td><td>Meteor<br/>Silver Bullet</td><td>
 Ayase Ke no Onna ~Inka no Ketsumyaku~<br/>
 Chokotto☆Vampire!<br/>
 Clover Point<br/>
@@ -157,7 +170,7 @@ Kindan ~Kimi wa Boku Dake no Maiden~<br/>
 Setsuei<br/>
 Tsuki to Mahou to Taiyo to<br/>
 </td></tr>
-<tr><td>*.npa</td><td><tt>NPA</tt></td><td>Yes</td><td>Nitro+</td><td>
+<tr><td>*.npa</td><td><tt>NPA</tt></td><td><span class="supported"></span></td><td>Nitro+</td><td>
 Axanael<br/>
 Chaos;Head<br/>
 DRAMAtical Murder<br/>
@@ -175,15 +188,15 @@ Sumaga<br/>
 Sweet Pool<br/>
 Zoku Satsuriku no Django<br/>
 </td></tr>
-<tr class="odd"><td>*.npa</td><td>-</td><td>Yes</td><td>Nitro+</td><td>Steins;Gate</td></tr>
-<tr><td>*.pak</td><td><tt>\002\000\000\000</tt><br/><tt>\003\000\000\000</tt></td><td>No</td><td>Nitro+<br/>CoreMoreco<br/>MAGI<br/></td><td>
+<tr class="odd"><td>*.npa</td><td>-</td><td><span class="supported"></span></td><td>Nitro+</td><td>Steins;Gate</td></tr>
+<tr><td>*.pak</td><td><tt>\002\000\000\000</tt><br/><tt>\003\000\000\000</tt></td><td></td><td>Nitro+<br/>CoreMoreco<br/>MAGI<br/></td><td>
 Hanachirasu<br/>
 Jingai Makyou<br/>
 Chibi Mama<br/>
 Ore to Imouto no Kounai Play<br/>
 Ren'ai Jugyou ~Oshiego no Yuuwaku~<br/>
 </td></tr>
-<tr class="odd"><td>*.nsa<br/>*.sar</td><td>-</td><td>Yes<a href="#note-1" class="footnote">1</a></td><td>NScripter</td><td>
+<tr class="odd"><td>*.nsa<br/>*.sar</td><td>-</td><td><a href="#note-1" class="supported footnote">1</a></td><td>NScripter</td><td>
 Binary Pot<br/>
 Chou Gedou Yuusha<br/>
 Shinshoku ~Inma no Ikenie~<br/>
@@ -192,7 +205,7 @@ Shokusou Tenshi Serika<br/>
 Tsukihime<br/>
 Umineko<br/>
 </td></tr>
-<tr><td>*.pac</td><td><tt>PAC</tt></td><td>No</td><td rowspan="2">NeXAS</td><td rowspan="2">
+<tr><td>*.pac</td><td><tt>PAC</tt></td><td></td><td rowspan="2">NeXAS</td><td rowspan="2">
 Aqua Blue<br/>
 Baldr Sky DiveX<br/>
 Fossette ~Cafe au Le Ciel Bleu~<br/>
@@ -200,8 +213,8 @@ Jinki Extend Re:Vision<br/>
 Maji de Watashi ni Koishinasai!<br/>
 Xross Scramble<br/>
 </td></tr>
-<tr><td>*.grp</td><td><tt>GR3</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pac</td><td><tt>PAC1</tt></td><td>No</td><td rowspan="2">RAGE</td><td rowspan="2">
+<tr><td>*.grp</td><td><tt>GR3</tt></td><td></td></tr>
+<tr class="odd"><td>*.pac</td><td><tt>PAC1</tt></td><td></td><td rowspan="2">RAGE</td><td rowspan="2">
 Brightia Plus<br/>
 Hana Hiraku<br/>
 Hitou Meguri ~Yokujou Juurin Onsen Ki~<br/>
@@ -209,14 +222,14 @@ Iinari<br/>
 Kyrie ~Blood Royal 3~<br/>
 Shiosai no Himei<br/>
 </td></tr>
-<tr class="odd last"><td>*.gcp</td><td><tt>CMP1</tt></td><td>No</td></tr>
-<tr><td>*.pd</td><td><tt>PackOnly</tt><br/><tt>PackPlus</tt><br/><tt>FlyingShinePDFile</tt></td><td>Yes</td><td>Flying Shine</td><td>
+<tr class="odd last"><td>*.gcp</td><td><tt>CMP1</tt></td><td></td></tr>
+<tr><td>*.pd</td><td><tt>PackOnly</tt><br/><tt>PackPlus</tt><br/><tt>FlyingShinePDFile</tt></td><td><span class="supported"></span></td><td>Flying Shine</td><td>
 Akarui Mirai ~Wet And Messy 2nd time~<br/>
 Cross†Channel<br/>
 Crime Rhyme<br/>
 </td></tr>
-<tr class="odd"><td>*.rpa</td><td><tt>RPA-3.0</tt></td><td>Yes</td><td>Ren'Py</td><td>Katawa Shoujo</td></tr>
-<tr><td>*.arc</td><td>-</td><td>Yes</td><td rowspan="3">Will</td><td rowspan="3">
+<tr class="odd"><td>*.rpa</td><td><tt>RPA-3.0</tt></td><td><span class="supported"></span></td><td>Ren'Py</td><td>Katawa Shoujo</td></tr>
+<tr><td>*.arc</td><td>-</td><td><span class="supported"></span></td><td rowspan="3">Will</td><td rowspan="3">
 Chaste ☆ Chase!<br/>
 Cynthia ~Sincerely to You~<br/>
 Folklore Jam<br/>
@@ -234,9 +247,9 @@ Tsuma Youji 2<br/>
 Wanna. SpartanSex Spermax!!!<br/>
 Yume Miru Kusuri<br/>
 </td></tr>
-<tr><td>*.wip<br/>*.msk<br/>*.mos</td><td><tt>WIPF</tt></td><td>No</td></tr>
-<tr class="last"><td>*.pna</td><td><tt>PNAP</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.xfl</td><td><tt>LB</tt></td><td>Yes</td><td rowspan="4">Liar-soft</td><td rowspan="4">
+<tr><td>*.wip<br/>*.msk<br/>*.mos</td><td><tt>WIPF</tt></td><td></td></tr>
+<tr class="last"><td>*.pna</td><td><tt>PNAP</tt></td><td></td></tr>
+<tr class="odd"><td>*.xfl</td><td><tt>LB</tt></td><td><span class="supported"></span></td><td rowspan="4">Liar-soft</td><td rowspan="4">
 Angel Bullet<br/>
 Divus Rabies<br/>
 Fairytale Requiem<br/>
@@ -246,10 +259,10 @@ Shikkoku no Sharnoth<br/>
 Yami no Sen Ou ~Seijo Ojoku~<br/>
 Astelight series<br/>
 </td></tr>
-<tr class="odd"><td>*.lwg</td><td><tt>LG</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.wcg</td><td><tt>WGq</tt></td><td>Yes</td></tr>
-<tr class="odd last"><td>*.lim</td><td><tt>LM</tt></td><td>No</td></tr>
-<tr><td>*.xp3</td><td><tt>XP3</tt></td><td>Yes</td><td rowspan="2">KiriKiri</td><td rowspan="2">
+<tr class="odd"><td>*.lwg</td><td><tt>LG</tt></td><td></td></tr>
+<tr class="odd"><td>*.wcg</td><td><tt>WGq</tt></td><td><span class="supported"></span></td></tr>
+<tr class="odd last"><td>*.lim</td><td><tt>LM</tt></td><td></td></tr>
+<tr><td>*.xp3</td><td><tt>XP3</tt></td><td><span class="supported"></span></td><td rowspan="2">KiriKiri</td><td rowspan="2">
 11eyes<br/>
 Ah, Ojou-sama<br/>
 Altered Pink ~Tokumu Sentai Duel Ranger~<br/>
@@ -327,8 +340,8 @@ Yuugu 2 ~Dai Ni Kinsho no Nozomu Mono~<br/>
 Zecchou Spiral!!<br/>
 Zettai Karen! Ojou-sama<br/>
 </td></tr>
-<tr class="last"><td>*.tlg</td><td><tt>TLG0.0</tt><br/><tt>TLG5.0</tt><br/><tt>TLG6.0</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.ypf</td><td><tt>YPF</tt></td><td>Yes</td><td rowspan="2">YU-RIS</td><td rowspan="2">
+<tr class="last"><td>*.tlg</td><td><tt>TLG0.0</tt><br/><tt>TLG5.0</tt><br/><tt>TLG6.0</tt></td><td></td></tr>
+<tr class="odd"><td>*.ypf</td><td><tt>YPF</tt></td><td><span class="supported"></span></td><td rowspan="2">YU-RIS</td><td rowspan="2">
 77 (Sevens) ~And, Two Stars Meet Again~<br/>
 Eroge! ~H mo Game mo Kaihatsu Zanmai~<br/>
 Koi Mekuri Clover<br/>
@@ -341,10 +354,10 @@ Unionism Quartet<br/>
 Unionism Quartet A3-Days<br/>
 Usotsuki Ouji to Nayameru Ohime-sama -Princess Syndrome-<br/>
 </td></tr>
-<tr class="odd last"><td>*.ycg</td><td><tt>YCG</tt></td><td>No</td></tr>
-<tr><td>*.isa</td><td><tt>ISM ARCHIVED</tt></td><td>No</td><td rowspan="2">ISM</td><td rowspan="2">Green ~Akizora no Screen~</td></tr>
-<tr class="last"><td>*.isg</td><td><tt>ISM IMAGEFILE</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.dat<br/>*.pak</td><td>-</td><td>No</td><td rowspan="3">Black Rainbow</td><td rowspan="3">
+<tr class="odd last"><td>*.ycg</td><td><tt>YCG</tt></td><td></td></tr>
+<tr><td>*.isa</td><td><tt>ISM ARCHIVED</tt></td><td></td><td rowspan="2">ISM</td><td rowspan="2">Green ~Akizora no Screen~</td></tr>
+<tr class="last"><td>*.isg</td><td><tt>ISM IMAGEFILE</tt></td><td></td></tr>
+<tr class="odd"><td>*.dat<br/>*.pak<br/>*.ads</td><td>-</td><td></td><td rowspan="3">Black Rainbow</td><td rowspan="3">
 Gadget<br/>
 Gitai Saimin<br/>
 Fukou na Kami<br/>
@@ -352,13 +365,13 @@ Saiminjutsu<br/>
 Soukan Yuugi 2<br/>
 Ura Saiminjutsu 2<br/>
 </td></tr>
-<tr class="odd"><td>*.bmd</td><td><tt>_BMD</tt></td><td>Yes</td></tr>
-<tr class="odd last"><td>*.asd</td><td>-</td><td>No</td></tr>
-<tr><td>*.dat</td><td>-</td><td>Yes</td><td>Studio e.go!</td><td>
+<tr class="odd"><td>*.bmd</td><td><tt>_BMD</tt></td><td><span class="supported"></span></td></tr>
+<tr class="odd last"><td>*.asd</td><td>-</td><td></td></tr>
+<tr><td>*.dat</td><td>-</td><td><span class="supported"></span></td><td>Studio e.go!</td><td>
 Men at Work 2<br/>
 Natsu Kagura<br/>
 </td></tr>
-<tr class="odd"><td>*.mbl</td><td>-</td><td>No</td><td rowspan="3">Marble</td><td rowspan="3">
+<tr class="odd"><td>*.mbl</td><td>-</td><td></td><td rowspan="3">Marble</td><td rowspan="3">
 Amai Seikatsu -Saikou no Gibo to Saikou no Gishimai-<br/>
 Assault Angel Canon<br/>
 Chikatetsu Fuusa Jiken<br/>
@@ -379,15 +392,15 @@ Sakura Machizaka Stories vol.2<br/>
 Shoujo Senki Soul Eater<br/>
 Trouble Succubus<br/>
 </td></tr>
-<tr class="odd"><td>*.prs</td><td><tt>YB</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.way</td><td><tt>WADY</tt></td><td>No</td></tr>
-<tr><td>*.dat</td><td>-</td><td>No</td><td rowspan="2">M no Violet<br/>Snack Factory<br/></td><td rowspan="2">
+<tr class="odd"><td>*.prs</td><td><tt>YB</tt></td><td></td></tr>
+<tr class="odd last"><td>*.way</td><td><tt>WADY</tt></td><td></td></tr>
+<tr><td>*.dat</td><td>-</td><td></td><td rowspan="2">M no Violet<br/>Snack Factory<br/></td><td rowspan="2">
 Nanase Ren<br/>
 Imouto ~Mitsutsubo Complete Edition~<br/>
 Ren no Koi<br/>
 </td></tr>
-<tr class="last"><td>*</td><td><tt>gra</tt><br/><tt>mas</tt><br/><tt>dif</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.ald</td><td>-</td><td>No</td><td rowspan="6">Alice Soft</td><td rowspan="6">
+<tr class="last"><td>*</td><td><tt>gra</tt><br/><tt>mas</tt><br/><tt>dif</tt></td><td></td></tr>
+<tr class="odd"><td>*.ald</td><td>-</td><td></td><td rowspan="7">Alice Soft</td><td rowspan="7">
 Boku dake no Hokenshitsu<br/>
 Daiteikoku<br/>
 Majo no Shokuzai<br/>
@@ -399,21 +412,21 @@ Toushin Toshi 3<br/>
 Tsuma Shibori<br/>
 Tsumamigui 3<br/>
 </td></tr>
-<tr class="odd"><td>*.afa</td><td><tt>AFAH</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.alk</td><td><tt>ALK0</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.red</td><td><tt>AAR</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.qnt</td><td><tt>QNT</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.dcf</td><td><tt>dcf</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.ajp</td><td><tt>AJP</tt></td><td>No</td></tr>
-<tr><td>*.pd<br/>*.pb</td><td>-</td><td>No</td><td>Discovery</td><td>Tsuma Tsuma</td></tr>
-<tr class="odd"><td>*.ifl</td><td><tt>IFLS</tt></td><td>No</td><td rowspan="3">Silky's</td><td rowspan="3">
+<tr class="odd"><td>*.afa</td><td><tt>AFAH</tt></td><td></td></tr>
+<tr class="odd"><td>*.alk</td><td><tt>ALK0</tt></td><td></td></tr>
+<tr class="odd"><td>*.red</td><td><tt>AAR</tt></td><td></td></tr>
+<tr class="odd"><td>*.qnt</td><td><tt>QNT</tt></td><td></td></tr>
+<tr class="odd"><td>*.dcf</td><td><tt>dcf</tt></td><td></td></tr>
+<tr class="odd last"><td>*.ajp</td><td><tt>AJP</tt></td><td></td></tr>
+<tr><td>*.pd<br/>*.pb</td><td>-</td><td></td><td>Discovery</td><td>Tsuma Tsuma</td></tr>
+<tr class="odd"><td>*.ifl</td><td><tt>IFLS</tt></td><td></td><td rowspan="3">Silky's</td><td rowspan="3">
 Flutter of Birds<br/>
 Flutter of Birds II<br/>
 Nikutai Ten'i<br/>
 </td></tr>
-<tr class="odd"><td>*.grd</td><td><tt>CMP_</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.igf</td><td><tt>ZEUS</tt></td><td>No</td></tr>
-<tr><td>*.dat<br/>*.arc</td><td>-<br/><tt>M2TYPE</tt></td><td>No</td><td rowspan="4">FFA System/G-SYS</td><td rowspan="4">
+<tr class="odd"><td>*.grd</td><td><tt>CMP_</tt></td><td></td></tr>
+<tr class="odd last"><td>*.igf</td><td><tt>ZEUS</tt></td><td></td></tr>
+<tr><td>*.dat<br/>*.arc</td><td>-<br/><tt>M2TYPE</tt></td><td></td><td rowspan="4">FFA System/G-SYS</td><td rowspan="4">
 Dokusen Kango<br/>
 Genecracer Saki<br/>
 Hazama no Tsuki<br/>
@@ -437,17 +450,17 @@ Shinshoku<br/>
 Sweet and Sweet<br/>
 Taijoku no Ori<br/>
 </td></tr>
-<tr><td>*.pt1</td><td>-</td><td>No</td></tr>
-<tr><td>*.wa1</td><td>-</td><td>No</td></tr>
-<tr class="last"><td>*.wa2</td><td><tt>APCM</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pak</td><td><tt>DataPack5</tt><br/><tt>GsPack4</tt></td><td>No</td><td rowspan="2">Autobahn<br/>Root<br/>Clover</td><td rowspan="2">
+<tr><td>*.pt1</td><td>-</td><td></td></tr>
+<tr><td>*.wa1</td><td>-</td><td></td></tr>
+<tr class="last"><td>*.wa2</td><td><tt>APCM</tt></td><td></td></tr>
+<tr class="odd"><td>*.pak</td><td><tt>DataPack5</tt><br/><tt>GsPack4</tt></td><td></td><td rowspan="2">Autobahn<br/>Root<br/>Clover</td><td rowspan="2">
 Aiyoku no Apron<br/>
 Para-Sol<br/>
 Shouhei-kun no Hani-Kami Life☆<br/>
 Touka Gettan<br/>
 </td></tr>
-<tr class="odd last"><td>*</td><td><tt>\x00\x00\x04\x00</tt></td><td>No</td></tr>
-<tr><td>*.war</td><td><tt>WARC 1.7</tt><br/><tt>WARC 1.5</tt><br/><tt>WARC 1.4</tt><br/><tt>WARC 1.3</tt><br/><tt>WARC 1.2</tt><br/><tt>WARC 1.1</tt></td><td>No</td><td rowspan="5">Shiina Rio</td><td rowspan="5">
+<tr class="odd last"><td>*</td><td><tt>\x00\x00\x04\x00</tt></td><td></td></tr>
+<tr><td>*.war</td><td><tt>WARC 1.7</tt><br/><tt>WARC 1.5</tt><br/><tt>WARC 1.4</tt><br/><tt>WARC 1.3</tt><br/><tt>WARC 1.2</tt><br/><tt>WARC 1.1</tt></td><td></td><td rowspan="5">Shiina Rio</td><td rowspan="5">
 Ao no Juuai <span class="footnote">ShiinaRio v2.34</span><br/>
 Aneiro <span class="footnote">ShiinaRio v2.49</span><br/>
 Bitch Nee-chan ga Seijun na Hazu ga Nai! <span class="footnote">ShiinaRio v2.50</span><br/>
@@ -518,11 +531,11 @@ Yokorenbo ~Immoral Mother~ <span class="footnote">ShiinaRio v2.44</span><br/>
 Yoyogi Hitozuma Senmon Gakuin<span class="footnote">ShiinaRio v2.37</span><br/>
 Zansho Omimai Moushiagemasu<span class="footnote">ShiinaRio v2.41</span><br/>
 </td></tr>
-<tr><td>*.s25</td><td><tt>S25</tt></td><td>No</td></tr>
-<tr><td>*.mi4</td><td><tt>MAI4</tt></td><td>No</td></tr>
-<tr><td>*.ogv</td><td><tt>OGV</tt></td><td>No</td></tr>
-<tr class="last"><td>*.pad</td><td><tt>PAD</tt></td><td>No</td></tr>
-<tr class="odd"><td>*</td><td><tt>ARC2</tt><br/><tt>ARC1</tt></td><td>No</td><td>AST</td><td>
+<tr><td>*.s25</td><td><tt>S25</tt></td><td></td></tr>
+<tr><td>*.mi4</td><td><tt>MAI4</tt></td><td></td></tr>
+<tr><td>*.ogv</td><td><tt>OGV</tt></td><td></td></tr>
+<tr class="last"><td>*.pad</td><td><tt>PAD</tt></td><td></td></tr>
+<tr class="odd"><td>*</td><td><tt>ARC2</tt><br/><tt>ARC1</tt></td><td></td><td>AST</td><td>
 Bokura wa Piacere<br/>
 Gakuen Tengoku ~Kyonyuu de Ikimakuri~<br/>
 Gokujou Chikan Densha<br/>
@@ -542,12 +555,12 @@ School Five ~Itsutsu no Himitsu no Monogatari~<br/>
 Tappun☆Oneecher<br/>
 Time Trouble ~Marie ni Kubikkake~<br/>
 </td></tr>
-<tr><td>*.dat</td><td>-</td><td>No</td><td>Ail</td><td>
+<tr><td>*.dat</td><td>-</td><td></td><td>Ail</td><td>
 Kyouhaku 2 ~Kizu ni Saku Hana Senketsu no Beni~<br/>
 Ragna☆彡Science<br/>
 Ma wo Jutaiseshi Otome no Kuetsu<br/>
 </td></tr>
-<tr class="odd"><td>*.lpk</td><td><tt>LPK1</tt></td><td>No</td><td rowspan="2">Lucifen</td><td rowspan="2">
+<tr class="odd"><td>*.lpk</td><td><tt>LPK1</tt></td><td></td><td rowspan="2">Lucifen</td><td rowspan="2">
 Doki Doki Rooming<br/>
 Gangsta Republica<br/>
 Koi no Honey Trap<br/>
@@ -561,8 +574,8 @@ Sakura Synchronicity<br/>
 Shinsetsu Ryouki no Ori Dai 2 Shou<br/>
 Shuffle! Essence+<br/>
 </td></tr>
-<tr class="odd last"><td>*.elg</td><td><tt>ELG</tt></td><td>No</td></tr>
-<tr><td>*.arc</td><td><tt>ARC\x1a</tt><br/><tt>ARC</tt></td><td>No</td><td rowspan="2">AZ System</td><td rowspan="2">
+<tr class="odd last"><td>*.elg</td><td><tt>ELG</tt></td><td></td></tr>
+<tr><td>*.arc</td><td><tt>ARC\x1a</tt><br/><tt>ARC</tt></td><td></td><td rowspan="2">AZ System</td><td rowspan="2">
 Clover Heart's<br/>
 Geki Tama! ~Seiryou Gakuen Engeki Bu~<br/>
 Maria ~Tenshi no Kiss to Akuma no Hanayome~<br/>
@@ -570,16 +583,16 @@ Marionette Zero<br/>
 Triptych<br/>
 Tsurugi Otome Noah<br/>
 </td></tr>
-<tr class="last"><td>*.cpb</td><td><tt>CPB\x1a</tt><br/><tt>TYP1</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.mfg<br/>*.mfm<br/>*.mfs</td><td><tt>ALPF</tt></td><td>No</td><td rowspan="2">Silky's</td><td rowspan="2">Jokei Kazoku</td></tr>
-<tr class="odd"><td>*</td><td><tt>MFG_</tt><br/><tt>MFGA</tt><br/><tt>MFGC</tt></td><td>No</td></tr>
-<tr><td>*.pmp<br/>*.pmw</td><td>-</td><td>Yes</td><td>ScenePlayer</td><td>
+<tr class="last"><td>*.cpb</td><td><tt>CPB\x1a</tt><br/><tt>TYP1</tt></td><td></td></tr>
+<tr class="odd"><td>*.mfg<br/>*.mfm<br/>*.mfs</td><td><tt>ALPF</tt></td><td></td><td rowspan="2">Silky's</td><td rowspan="2">Jokei Kazoku</td></tr>
+<tr class="odd"><td>*</td><td><tt>MFG_</tt><br/><tt>MFGA</tt><br/><tt>MFGC</tt></td><td></td></tr>
+<tr><td>*.pmp<br/>*.pmw</td><td>-</td><td><span class="supported"></span></td><td>ScenePlayer</td><td>
 Eraburu ~Erabu + Love x Double de~<br/>
 Nyuujoku Hitozuma Jogakuen<br/>
 Nyuukan Nurse<br/>
 WW&amp;F ~Taishou Teito Denkitan~<br/>
 </td></tr>
-<tr class="odd"><td>*.dat</td><td><tt>GAMEDAT PACK</tt><br/><tt>GAMEDAT PAC2</tt></td><td>No</td><td rowspan="2"> bootUP!<br/>Pajamas Soft<br/>Aries</td><td rowspan="2">
+<tr class="odd"><td>*.dat</td><td><tt>GAMEDAT PACK</tt><br/><tt>GAMEDAT PAC2</tt></td><td></td><td rowspan="2"> bootUP!<br/>Pajamas Soft<br/>Aries</td><td rowspan="2">
 Aneimo 2 ~Second Stage~<br/>
 Momichupa Teacher!<br/>
 Natsu no Owari no Nirvana<br/>
@@ -588,16 +601,16 @@ Prism Heart<br/>
 Toraba!<br/>
 Trouble @ Spiral!<br/>
 </tr>
-<tr class="odd last"><td>*.epa</td><td><tt>EP</tt></td><td>No</td></tr>
-<tr><td>*.arc</td><td><tt>MAI</tt></td><td>No</td><td rowspan="2">Matsuri Kikaku</td><td rowspan="2">
+<tr class="odd last"><td>*.epa</td><td><tt>EP</tt></td><td></td></tr>
+<tr><td>*.arc</td><td><tt>MAI</tt></td><td></td><td rowspan="2">Matsuri Kikaku</td><td rowspan="2">
 Chikan Sharyou Nigousha<br/>
 Hime Musha<br/>
 Warusa<br/>
 </td></tr>
-<tr class="last"><td>*.ami<br/>*.cmp<br/></td><td><tt>AM</tt><br/><tt>CM</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.mgd<br/>*.mgs</td><td><tt>MGD</tt><br/><tt>MGS</tt></td><td>No</td><td rowspan="2">MEGU</td><td rowspan="2">Seduce</tr>
-<tr class="odd"><td>*.agc</td><td><tt>AGd</tt></td><td>No</td></tr>
-<tr><td>*.pak+*.idx</td><td>-</td><td>No</td><td rowspan="2">EAGLS</td><td rowspan="2">
+<tr class="last"><td>*.ami<br/>*.cmp<br/></td><td><tt>AM</tt><br/><tt>CM</tt></td><td></td></tr>
+<tr class="odd"><td>*.mgd<br/>*.mgs</td><td><tt>MGD</tt><br/><tt>MGS</tt></td><td></td><td rowspan="2">MEGU</td><td rowspan="2">Seduce</tr>
+<tr class="odd"><td>*.agc</td><td><tt>AGd</tt></td><td></td></tr>
+<tr><td>*.pak+*.idx</td><td>-</td><td></td><td rowspan="2">EAGLS</td><td rowspan="2">
 Futago Hinyuu x 3<br/>
 Oppai Baka<br/>
 Oshiete! Yuiko Sensei<br/>
@@ -607,9 +620,9 @@ Saimin Class WONDERFUL<br/>
 Senpai - Oppai - Kako ni Modori Pai<br/>
 Tsuribaka ~Gakuen Taikou! Joshikousei Tsuriage Adventure~<br/>
 </td></tr>
-<tr class="last"><td>*.gr</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.dat</td><td><tt>SPack</tt></td><td>No</td><td>Goku-Fero</td><td>Inchuu Reiki Elenova</tr>
-<tr><td>*.fpk</td><td>-</td><td>No</td><td rowspan="2">Candy Soft<br/>Interheart</td><td rowspan="2">
+<tr class="last"><td>*.gr</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.dat</td><td><tt>SPack</tt></td><td></td><td>Goku-Fero</td><td>Inchuu Reiki Elenova</tr>
+<tr><td>*.fpk</td><td>-</td><td></td><td rowspan="2">Candy Soft<br/>Interheart</td><td rowspan="2">
 Aimai Ren'ai<br/>
 Chijoku no Kankei ~Inkou Kyoushi~<br/>
 Chijoku no Kankei 2<br/>
@@ -619,8 +632,8 @@ Mariko-sanchi no Seijijou ~Oba-san wa Boku no Mono~<br/>
 Oira wa Bandai 2<br/>
 Zoku Ryoujoku Sou<br/>
 </td></tr>
-<tr class="last"><td>*.kg</td><td><tt>GCGK</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.noa<br/>*.dat</td><td><tt>Entis\x1a</tt></td><td>No</td><td rowspan="2">Entis GLS</td><td rowspan="2">
+<tr class="last"><td>*.kg</td><td><tt>GCGK</tt></td><td></td></tr>
+<tr class="odd"><td>*.noa<br/>*.dat</td><td><tt>Entis\x1a</tt></td><td></td><td rowspan="2">Entis GLS</td><td rowspan="2">
 Alea Akaki Tsuki o Haruka ni Nozomi<br/>
 Iroha ~Aki no Yuuhi ni Kagefumi o~<br/>
 Gap P<br/>
@@ -637,11 +650,12 @@ Spicy Spycy!<br/>
 Tonarizuma<br/>
 Tsubasa o Kudasai<br/>
 Yatohime Zankikou<br/>
+Yosuga no Sora<br/>
 Zettai Joshi Ryouiki!<br/>
 </td></tr>
-<tr class="odd last"><td>*.eri<br/>*.mio</td><td><tt>Entis\x1a</tt></td><td>No</td></tr>
-<tr><td>*.saf</td><td>-</td><td>No</td><td>Lune</td><td>Rinkan Gakuen</td></tr>
-<tr class="odd"><td>*.arc+*.ari</td><td><tt>WFL1</tt></td><td>No</td><td rowspan="2">KaGuYa</td><td rowspan="2">
+<tr class="odd last"><td>*.eri<br/>*.mio</td><td><tt>Entis\x1a</tt></td><td></td></tr>
+<tr><td>*.saf</td><td>-</td><td></td><td>Lune</td><td>Rinkan Gakuen</td></tr>
+<tr class="odd"><td>*.arc+*.ari</td><td><tt>WFL1</tt></td><td></td><td rowspan="2">KaGuYa</td><td rowspan="2">
 Bishoku<br/>
 Dungeon Crusaderz ~Tales of Demon Eater~<br/>
 Dungeon Crusaderz 2 ~Eigou no Rakudo~<br/>
@@ -658,10 +672,10 @@ Saishuu Chikan Densha 3<br/>
 Serina<br/>
 Ura Nyuugaku ~Ineki ni Nureta Kyoukasho~<br/>
 </td></tr>
-<tr class="odd last"><td>*.bg_<br/>*.cg_<br/>*.sp_</td><td><tt>AP</tt><br/><tt>AO</tt></td><td>Yes</td></tr>
-<tr><td>*.dpk</td><td><tt>DPK</tt></td><td>No</td><td rowspan="2">DAC</td><td rowspan="2">Yumemiru Tsuki no Lunalutia</td></tr>
-<tr class="last"><td>*.dgc</td><td><tt>DGC</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pck</td><td>-</td><td>No</td><td rowspan="6">Crowd<br/>Anim</td><td rowspan="6">
+<tr class="odd last"><td>*.bg_<br/>*.cg_<br/>*.sp_</td><td><tt>AP</tt><br/><tt>AO</tt></td><td><span class="supported"></span></td></tr>
+<tr><td>*.dpk</td><td><tt>DPK</tt></td><td></td><td rowspan="2">DAC</td><td rowspan="2">Yumemiru Tsuki no Lunalutia</td></tr>
+<tr class="last"><td>*.dgc</td><td><tt>DGC</tt></td><td></td></tr>
+<tr class="odd"><td>*.pck</td><td>-</td><td></td><td rowspan="6">Crowd<br/>Anim</td><td rowspan="6">
 X Change R<br/>
 X Change<br/>
 X Change 2<br/>
@@ -677,12 +691,12 @@ Tokumei Sentai Sirenger<br/>
 Tokumei Sentai Yuzu Ranger<br/>
 Zetsuboushi<br/>
 </td></tr>
-<tr class="odd"><td>*.cwp</td><td><tt>CWDP</tt></td><td>Yes</td></tr>
-<tr class="odd"><td>*.cwd</td><td><tt>cwd</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.eog</td><td><tt>CRM</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.zbm<br/>*.cwl</td><td><tt>SZDD</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.gax</td><td><tt>\x00\x00\x00\x01</tt></td><td>No</td></tr>
-<tr><td>*.pack</td><td><tt>FilePackVer1.0</tt><br/><tt>FilePackVer2.0</tt><br/><tt>FilePackVer3.0</tt></td><td>No</td><td rowspan="3">QLIE</td><td rowspan="3">
+<tr class="odd"><td>*.cwp</td><td><tt>CWDP</tt></td><td><span class="supported"></span></td></tr>
+<tr class="odd"><td>*.cwd</td><td><tt>cwd</tt></td><td></td></tr>
+<tr class="odd"><td>*.eog</td><td><tt>CRM</tt></td><td></td></tr>
+<tr class="odd"><td>*.zbm<br/>*.cwl</td><td><tt>SZDD</tt></td><td></td></tr>
+<tr class="odd last"><td>*.gax</td><td><tt>\x00\x00\x00\x01</tt></td><td></td></tr>
+<tr><td>*.pack</td><td><tt>FilePackVer1.0</tt><br/><tt>FilePackVer2.0</tt><br/><tt>FilePackVer3.0</tt></td><td></td><td rowspan="3">QLIE</td><td rowspan="3">
 Bishoujo Mangekyou -Kami ga Tsukuritamouta Shoujo-tachi-<br/>
 Hidamari Basket<br/>
 Kikan Bakumatsu Ibun Last Cavalier<br/>
@@ -693,26 +707,26 @@ Princess Lover!<br/>
 Shinigami no Kiss wa Wakare no Aji<br/>
 Soshite Ashita no Sekai yori<br/>
 </td></tr>
-<tr><td>*.b</td><td><tt>ABMP7</tt><br/><tt>abmp10</tt><br/><tt>abmp11</tt></td><td>No</td></tr>
-<tr class="last"><td>*.png</td><td><tt>DPNG</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.dat</td><td>-</td><td>No</td><td rowspan="5">Circus</td><td rowspan="5">
+<tr><td>*.b</td><td><tt>ABMP7</tt><br/><tt>abmp10</tt><br/><tt>abmp11</tt></td><td></td></tr>
+<tr class="last"><td>*.png</td><td><tt>DPNG</tt></td><td></td></tr>
+<tr class="odd"><td>*.dat</td><td>-</td><td></td><td rowspan="5">Circus</td><td rowspan="5">
 D.S. -Dal Segno-<br/>
 Infantaria XP<br/>
 Maid no Yakata ~Zetsubou Hen~<br/>
 RPG Gakuen<br/>
 </td></tr>
-<tr class="odd"><td>*.pck</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.crx</td><td><tt>CRXG</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.crm</td><td><tt>CRXB</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.pcm</td><td><tt>XPCM</tt></td><td>No</td></tr>
-<tr><td>*.pak</td><td><tt>CHERRY PACK 2.0</tt><br/><tt>CHERRY PACK 3.0</tt><br/>-</td><td>No</td><td>Cherry</td><td>
+<tr class="odd"><td>*.pck</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.crx</td><td><tt>CRXG</tt></td><td></td></tr>
+<tr class="odd"><td>*.crm</td><td><tt>CRXB</tt></td><td></td></tr>
+<tr class="odd last"><td>*.pcm</td><td><tt>XPCM</tt></td><td></td></tr>
+<tr><td>*.pak</td><td><tt>CHERRY PACK 2.0</tt><br/><tt>CHERRY PACK 3.0</tt><br/>-</td><td></td><td>Cherry</td><td>
 Double<br/>
 Exile ~Blood Royal 2~<br/>
 Gakuen ~Nerawareta Chitai~<br/>
 Kimon Youitan<br/>
 Unbalance<br/>
 </td></tr>
-<tr class="odd"><td>*.lib<br/>*.dat</td><td><tt>LIB</tt><br/><tt>LIBP</tt><br/><tt>LIBU</tt><span class="footnote">encrypted</span></td><td>No</td><td rowspan="3">Malie</td><td rowspan="3">
+<tr class="odd"><td>*.lib<br/>*.dat</td><td><tt>LIB</tt><br/><tt>LIBP</tt><br/><tt>LIBU</tt><span class="footnote">encrypted</span></td><td></td><td rowspan="3">Malie</td><td rowspan="3">
 Angel Crown<br/>
 Deep Love Diary<br/>
 Dies irae<br/>
@@ -726,9 +740,9 @@ Tenmon Dokei no Aria<br/>
 Tsumi Koi x 2/3<br/>
 Zettai Meikyuu Grimm<br/>
 </td></tr>
-<tr class="odd"><td>*.mgf</td><td><tt>MalieGF</tt></td><td>Yes</td></tr>
-<tr class="odd last"><td>*.dzi</td><td><tt>DZI</tt></td><td>No</td></tr>
-<tr><td>*.arc</td><td>-</td><td>No</td><td rowspan="2">AI5WIN</td><td rowspan="2">
+<tr class="odd"><td>*.mgf</td><td><tt>MalieGF</tt></td><td><span class="supported"></span></td></tr>
+<tr class="odd last"><td>*.dzi</td><td><tt>DZI</tt></td><td></td></tr>
+<tr><td>*.arc</td><td>-</td><td></td><td rowspan="2">AI5WIN</td><td rowspan="2">
 Ai no Katachi ~Ecchi na Onna no Ko wa Kirai... Desu ka?~<br/>
 Ai Shimai ~Docchi ni Suru no!!~<br/>
 Ai Shimai Tsubomi...<br/>
@@ -736,8 +750,8 @@ Dorei Kaigo<br/>
 Jokei Kazoku ~Inbou~<br/>
 Shitai o Arau<br/>
 </td></tr>
-<tr class="last"><td>*.gcc</td><td><tt>G24n</tt><br/><tt>G24m</tt><br/><tt>R24n</tt><br/><tt>R24m</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.arc</td><td>-</td><td>No</td><td>RPM</td><td>
+<tr class="last"><td>*.gcc</td><td><tt>G24n</tt><br/><tt>G24m</tt><br/><tt>R24n</tt><br/><tt>R24m</tt></td><td></td></tr>
+<tr class="odd"><td>*.arc</td><td>-</td><td></td><td>RPM</td><td>
 Heartful Days ~Hi no Ataru Basho e~<br/>
 Hidamari<br/>
 Kimi no Koe ga Kikoeru<br/>
@@ -749,17 +763,17 @@ Tokumei Kyoushi Hitomi<br/>
 Toshiue Lesson ~Mama to Oba-san to Sensei to~<br/>
 Tutorial Summer<br/>
 </td></tr>
-<tr><td>*.iks</td><td><tt>NPSR</tt></td><td>No</td><td>X[iks]</td><td>Shikkan ~Hazukashimerareta Karada, Oreta Kokoro~</td></tr>
-<tr class="odd"><td>*.wbp</td><td><tt>ARCFORM3 WBUG</tt><br/><tt>ARCFORM4 WBUG</tt></td><td>No</td><td rowspan="4">Wild Bug</td><td rowspan="4">
+<tr><td>*.iks</td><td><tt>NPSR</tt></td><td></td><td>X[iks]</td><td>Shikkan ~Hazukashimerareta Karada, Oreta Kokoro~</td></tr>
+<tr class="odd"><td>*.wbp</td><td><tt>ARCFORM3 WBUG</tt><br/><tt>ARCFORM4 WBUG</tt></td><td></td><td rowspan="4">Wild Bug</td><td rowspan="4">
 Happy Planning<br/>
 Ryoujoku Hitozuma Club<br/>
 Sister Angel<br/>
 Yuukyou Gangu 2<br/>
 </td></tr>
-<tr class="odd"><td>*.wbm</td><td><tt>WPX\x1ABMP</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.wpn</td><td><tt>WBD\x1AWAV</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.wwa</td><td><tt>WPX\x1AWAV</tt></td><td>No</td></tr>
-<tr><td>*.mrg</td><td><tt>MRG</tt></td><td>No</td><td rowspan="3">F&amp;C</td><td rowspan="3">
+<tr class="odd"><td>*.wbm</td><td><tt>WPX\x1ABMP</tt></td><td></td></tr>
+<tr class="odd"><td>*.wpn</td><td><tt>WBD\x1AWAV</tt></td><td></td></tr>
+<tr class="odd last"><td>*.wwa</td><td><tt>WPX\x1AWAV</tt></td><td></td></tr>
+<tr><td>*.mrg</td><td><tt>MRG</tt></td><td></td><td rowspan="3">F&amp;C</td><td rowspan="3">
 Asa no Konai Yoru ni Dakarete -Eternal Night-<br/>
 Guren ni Somaru Gin no Rozario<br/>
 Konata yori Kanata made<br/>
@@ -768,19 +782,19 @@ Natural2 -DUO-<br/>
 Niji no Kanata ni<br/>
 Thirua Panic<br/>
 </td></tr>
-<tr><td>*.mcg</td><td><tt>MCG 2.00</tt></td><td>No</td></tr>
-<tr class="last"><td>*.acd</td><td><tt>ACD 1.00</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pk<br/>*.gpk<br/>*.tpk<br/>*.wpk<br/></td><td>-</td><td>No</td><td rowspan="2">U-Me Soft</td><td rowspan="2">
+<tr><td>*.mcg</td><td><tt>MCG 2.00</tt></td><td></td></tr>
+<tr class="last"><td>*.acd</td><td><tt>ACD 1.00</tt></td><td></td></tr>
+<tr class="odd"><td>*.pk<br/>*.gpk<br/>*.tpk<br/>*.wpk<br/></td><td>-</td><td></td><td rowspan="2">U-Me Soft</td><td rowspan="2">
 Do M Otoko Tantei ga Iku Katte ni Ittara Oshioki yo!<br/>
 Fetish Omote no Kioku/Ura no Kioku series<br/>
 Kyonyuu Maid Nakadashi Tengoku!<br/>
 </td></tr>
-<tr class="odd"><td>*.grx</td><td><tt>GRX\x1a</tt><br/><tt>SGX\x1a</tt></td><td>No</td></tr>
-<tr><td>*.fpk</td><td><tt>MFWY</tt></td><td>No</td><td rowspan="2">Caligula</td><td rowspan="2">
+<tr class="odd"><td>*.grx</td><td><tt>GRX\x1a</tt><br/><tt>SGX\x1a</tt></td><td></td></tr>
+<tr><td>*.fpk</td><td><tt>MFWY</tt></td><td></td><td rowspan="2">Caligula</td><td rowspan="2">
 Shinsetsu Ryouki no Ori<br/>
 </td></tr>
-<tr class="last"><td>*.gr2</td><td><tt>GR2_</tt><br/><tt>*Pola*</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>TACTICS_ARC_FILE</tt></td><td>No</td><td>Nexton/Tactics</td><td>
+<tr class="last"><td>*.gr2</td><td><tt>GR2_</tt><br/><tt>*Pola*</tt></td><td></td></tr>
+<tr class="odd"><td>*.arc</td><td><tt>TACTICS_ARC_FILE</tt></td><td></td><td>Nexton/Tactics</td><td>
 Gokudou no Hanayome<br/>
 Inraku no Miko<br/>
 Knight Carnival!<br/>
@@ -789,7 +803,7 @@ Nise Kyoushi ~Seikatsu Shidou ADV~<br/>
 Seal Princess<br/>
 Zettai★Maou ~Boku no Mune-kyun Gakuen Saga~<br/>
 </td></tr>
-<tr><td>*.sud</td><td>-</td><td>No</td><td rowspan="3">Triangle</td><td rowspan="3">
+<tr><td>*.sud</td><td>-</td><td></td><td rowspan="3">Triangle</td><td rowspan="3">
 Kourin Tenshi En Ciel Rena<br/>
 Mahou Senshi Princess Tear<br/>
 Mahou Senshi Sweet Knights ~Heroine Ryoujoku Shirei~<br/>
@@ -797,11 +811,11 @@ Mamagoto<br/>
 Monster Park ~Bakemono ni Miirareshi Hime~<br/>
 Vampire Crusaders<br/>
 </td></tr>
-<tr><td>*.iaf</td><td>-</td><td>No</td></tr>
-<tr class="last"><td>*.cgf</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.bin+*.pak</td><td><tt>hed</tt></td><td>No</td><td rowspan="2">elf</td><td rowspan="2">Adult Video King</td></tr>
-<tr class="odd last"><td>*.hip<br/>*.hiz<br/></td><td><tt>hip</tt><br/><tt>hiz</tt></td><td>No</td></tr>
-<tr><td>*.gpk+*.gtb<br/>*.vpk+*.vtb</td><td>-</td><td>No</td><td rowspan="3">Black Cyc</td><td rowspan="3">
+<tr><td>*.iaf</td><td>-</td><td></td></tr>
+<tr class="last"><td>*.cgf</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.bin+*.pak</td><td><tt>hed</tt></td><td></td><td rowspan="2">elf</td><td rowspan="2">Adult Video King</td></tr>
+<tr class="odd last"><td>*.hip<br/>*.hiz<br/></td><td><tt>hip</tt><br/><tt>hiz</tt></td><td></td></tr>
+<tr><td>*.gpk+*.gtb<br/>*.vpk+*.vtb</td><td>-</td><td></td><td rowspan="3">Black Cyc</td><td rowspan="3">
 Before Dawn Daybreak ~Shinen no Utahime~<br/>
 Extravaganza ~Mushi Mederu Shoujo~<br/>
 Gokuin no Sentou<br/>
@@ -812,9 +826,9 @@ Kurogane no Tsubasa ~The Alchemist's Story~<br/>
 Mushitsukai<br/>
 Yami no Koe series<br/>
 </td></tr>
-<tr><td>*.dwq</td><td><tt>BMP</tt><br/><tt>JPEG</tt><br/><tt>PNG</tt><br/><tt>JPEG+MASK</tt><br/><tt>PACKBMP+MASK</tt><br/></td><td>No</td></tr>
-<tr class="last"><td>*.vaw<br/>*.wgq</td><td><tt>IF PACKTYPE==</tt><br/><tt>OGG</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.aos</td><td>-</td><td>No</td><td rowspan="2">LiLiM</td><td rowspan="2">
+<tr><td>*.dwq</td><td><tt>BMP</tt><br/><tt>JPEG</tt><br/><tt>PNG</tt><br/><tt>JPEG+MASK</tt><br/><tt>PACKBMP+MASK</tt><br/></td><td></td></tr>
+<tr class="last"><td>*.vaw<br/>*.wgq</td><td><tt>IF PACKTYPE==</tt><br/><tt>OGG</tt></td><td></td></tr>
+<tr class="odd"><td>*.aos</td><td>-</td><td></td><td rowspan="2">LiLiM</td><td rowspan="2">
 Answer Dead<br/>
 Houou Senki Maimu<br/>
 Kango Sentai Nurse Ranger<br/>
@@ -822,16 +836,16 @@ Megami Taisen<br/>
 Shouryuu Senki Tenmu<br/>
 Wizard Girl Ambitious<br/>
 </td></tr>
-<tr class="odd last"><td>*.abm</td><td><tt>BM</tt></td><td>No</td></tr>
-<tr><td>*.arc<br/>*.xarc<br/>*.bin</td><td><tt>MIKO</tt><br/><tt>KOTORI</tt><br/><tt>XARC</tt></td><td>No</td><td rowspan="2">Xuse<br/>ETERNAL</td><td rowspan="2">
+<tr class="odd last"><td>*.abm</td><td><tt>BM</tt></td><td></td></tr>
+<tr><td>*.arc<br/>*.xarc<br/>*.bin</td><td><tt>MIKO</tt><br/><tt>KOTORI</tt><br/><tt>XARC</tt></td><td></td><td rowspan="2">Xuse<br/>ETERNAL</td><td rowspan="2">
 Barbaroi<br/>
 Kikouyoku Senki Gin no Toki no Corona<br/>
 Kikouyoku Senki Tenkuu no Yumina<br/>
 Nega0<br/>
 Seinarukana -The Spirit of Eternity Sword 2-<br/>
 </td></tr>
-<tr class="last"><td>*.wag<br/>*.4ag<br/>*.004</td><td><tt>WAG@</tt><br/><tt>GAF4</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.ykc</td><td><tt>YKC001</tt></td><td>Yes</td><td rowspan="2">Yuka</td><td rowspan="2">
+<tr class="last"><td>*.wag<br/>*.4ag<br/>*.004</td><td><tt>WAG@</tt><br/><tt>GAF4</tt></td><td></td></tr>
+<tr class="odd"><td>*.ykc</td><td><tt>YKC001</tt></td><td><span class="supported"></span></td><td rowspan="2">Yuka</td><td rowspan="2">
 Aozora no Mieru Oka<br/>
 HoneyComing<br/>
 Hoshizora e Kakaru Hashi AA<br/>
@@ -839,28 +853,28 @@ PriministAr<br/>
 SuGirly Wish<br/>
 _summer<br/>
 </td></tr>
-<tr class="odd last"><td>*.ykg</td><td><tt>YKG000</tt></td><td>No</td></tr>
-<tr><td>*.pak</td><td><tt>GCEX</tt></td><td>No</td><td rowspan="2">G2</td><td rowspan="2">
+<tr class="odd last"><td>*.ykg</td><td><tt>YKG000</tt></td><td></td></tr>
+<tr><td>*.pak</td><td><tt>GCEX</tt></td><td></td><td rowspan="2">G2</td><td rowspan="2">
 Aster<br/>
 Kimi to Koishite Musubarete<br/>
 Majiresu!! ~Omatase Little Wing~<br/>
 </td></tr>
-<tr class="last"><td>*.arg<br/>*.argb</td><td><tt>BGRA</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pac</td><td><tt>PACK</tt></td><td>No</td><td rowspan="2">Emic</td><td rowspan="2">
+<tr class="last"><td>*.arg<br/>*.argb</td><td><tt>BGRA</tt></td><td></td></tr>
+<tr class="odd"><td>*.pac</td><td><tt>PACK</tt></td><td></td><td rowspan="2">Emic</td><td rowspan="2">
 Chikan Densha Otoko ~Densetsu no Target~<br/>
 Futamajo<br/>
 </td></tr>
-<tr class="odd last"><td>*.bmp</td><td><tt>MWP</tt><br/><tt>TEYL</tt></td><td>No</td></tr>
-<tr><td>*.dat+*l.dat</td><td>-<br/><tt>GLNK</tt></td><td>No</td><td>Studio Miris<br/>Caligula</td><td>
+<tr class="odd last"><td>*.bmp</td><td><tt>MWP</tt><br/><tt>TEYL</tt></td><td></td></tr>
+<tr><td>*.dat+*l.dat</td><td>-<br/><tt>GLNK</tt></td><td></td><td>Studio Miris<br/>Caligula</td><td>
 Itadaki Jangarian<br/>
 Tetsuwan Gacchu!<br/>
 Sakimidare<br/>
 </td></tr>
-<tr class="odd"><td>*.bdf<br/>*.spl</td><td>-</td><td>No</td><td>Zyx</td><td>Innai Kansen series</td></tr>
-<tr><td>*.pak</td><td><tt>PAK</tt></td><td>No</td><td>Debonosu Works</td><td>
+<tr class="odd"><td>*.bdf<br/>*.spl</td><td>-</td><td></td><td>Zyx</td><td>Innai Kansen series</td></tr>
+<tr><td>*.pak</td><td><tt>PAK</tt></td><td></td><td>Debonosu Works</td><td>
 Gigai no Alruna<br/>
 </td></tr>
-<tr class="odd"><td>sys4ini.bin<br/>sys3ini.bin<br/>*.alf</td><td><tt>S4IC</tt><br/><tt>S3IC</tt></td><td>No</td><td rowspan="2">Eushully</td><td rowspan="2">
+<tr class="odd"><td>sys4ini.bin<br/>sys3ini.bin<br/>*.alf</td><td><tt>S4IC</tt><br/><tt>S3IC</tt></td><td></td><td rowspan="2">Eushully</td><td rowspan="2">
 Himegari Dungeon Meister<br/>
 Kuutei Senki ~Tasogare ni Shizumu Kusabi~<br/>
 Mahou ga Sekai o Sukuimasu<br/>
@@ -868,8 +882,8 @@ Meishoku no Reiki<br/>
 Soukai no Oujo-tachi<br/>
 Soukai no Valkyria <br/>
 </td></tr>
-<tr class="odd last"><td>*.agf</td><td><tt>ACGF</tt></td><td>No</td></tr>
-<tr><td>*.dxa<br/>*.usi<br/>*.hud<br/>*.dat</td><td><tt>DX</tt><span class="footnote">encrypted</span></td><td>No</td><td rowspan="2">DxLib</td><td rowspan="2">
+<tr class="odd last"><td>*.agf</td><td><tt>ACGF</tt></td><td></td></tr>
+<tr><td>*.dxa<br/>*.usi<br/>*.hud<br/>*.dat</td><td><tt>DX</tt><span class="footnote">encrypted</span></td><td></td><td rowspan="2">DxLib</td><td rowspan="2">
 Ashita wa Kitto, Haremasu you ni<br/>
 Cross Quartz<br/>
 Hyakki Yakou<br/>
@@ -879,8 +893,8 @@ Saiminjutsu Re<br/>
 Summoner Princess Artemina 2 -Tatakae! Apologue-<br/>
 Wizard Links<br/>
 </td></tr>
-<tr class="last"><td>*.med</td><td><tt>MD</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.tcd</td><td><tt>TCD2</tt><br/><tt>TCD3</tt></td><td>No</td><td rowspan="2">TopCat</td><td rowspan="2">
+<tr class="last"><td>*.med</td><td><tt>MD</tt></td><td></td></tr>
+<tr class="odd"><td>*.tcd</td><td><tt>TCD2</tt><br/><tt>TCD3</tt></td><td></td><td rowspan="2">TopCat</td><td rowspan="2">
 Atori no Sora to Shinchuu no Tsuki<br/>
 Favorite Sweet!<br/>
 Nanapuri<br/>
@@ -889,79 +903,79 @@ Soushinjutsu 3<br/>
 Temaribana<br/>
 Wakan Kazoku<br/>
 </td></tr>
-<tr class="odd last"><td>*.spd</td><td><tt>SPDC</tt><br/><tt>SPD8</tt></td><td>No</td></tr>
-<tr><td>*.dat</td><td><tt>CHE00</tt><br/><tt>MYK00</tt></td><td>No</td><td>Cherry Soft</td><td>
+<tr class="odd last"><td>*.spd</td><td><tt>SPDC</tt><br/><tt>SPD8</tt></td><td></td></tr>
+<tr><td>*.dat</td><td><tt>CHE00</tt><br/><tt>MYK00</tt></td><td></td><td>Cherry Soft</td><td>
 Blood Royal<br/>
 Heroine<br/>
 Promise<br/>
 </td></tr>
-<tr class="odd"><td>*.arc<br/>*.awf</td><td>-</td><td>No</td><td rowspan="3">Silky's</td><td rowspan="3">
+<tr class="odd"><td>*.arc<br/>*.awf</td><td>-</td><td></td><td rowspan="3">Silky's</td><td rowspan="3">
 Shitai o Arau<br/>
 </td></tr>
-<tr class="odd"><td>*.g24</td><td>-</td><td>No</td></tr>
-<tr class="odd last"><td>*.msk</td><td><tt>Rmsk</tt></td><td>No</td></tr>
-<tr><td>*.iar<br/>*.war</td><td><tt>iar</tt><br/><tt>war</tt><br/><tt>war2</tt></td><td>No</td><td>Studio Ryokucha</td><td>
+<tr class="odd"><td>*.g24</td><td>-</td><td></td></tr>
+<tr class="odd last"><td>*.msk</td><td><tt>Rmsk</tt></td><td></td></tr>
+<tr><td>*.iar<br/>*.war</td><td><tt>iar</tt><br/><tt>war</tt><br/><tt>war2</tt></td><td></td><td>Studio Ryokucha</td><td>
 Hanikami Clover<br/>
 Katakoi no Tsuki<br/>
 Katakoi no Tsuki Extra<br/>
 Magica Ride<br/>
 Shukufuku no Kane no Oto wa, Sakurairo no Kaze to Tomo ni<br/>
 </td></tr>
-<tr class="odd"><td>*.bsa</td><td><tt>BSArc</tt></td><td>No</td><td rowspan="2">Bishop</td><td rowspan="2">
+<tr class="odd"><td>*.bsa</td><td><tt>BSArc</tt></td><td></td><td rowspan="2">Bishop</td><td rowspan="2">
 Houkago ~Nureta Seifuku~<br/>
 Kyouiku Shidou<br/>
 Sansha Mendan ~Rensa Suru Chijoku Choukyou no Gakuen~<br/>
 Yakata ~Kannou Kitan~<br/>
 </td></tr>
-<tr class="odd last"><td>*.bsg</td><td><tt>BSS-Graphics</tt><br/><tt>BSS-Composition</tt></td><td>No</td></tr>
-<tr><td>*</td><td><tt>GPK2</tt></td><td>No</td><td rowspan="2">Studio Ryokucha</td><td rowspan="2">
+<tr class="odd last"><td>*.bsg</td><td><tt>BSS-Graphics</tt><br/><tt>BSS-Composition</tt></td><td></td></tr>
+<tr><td>*</td><td><tt>GPK2</tt></td><td></td><td rowspan="2">Studio Ryokucha</td><td rowspan="2">
 Princess Serenade<br/>
 </td></tr>
-<tr class="last"><td>*.gfb</td><td><tt>GFB</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pak</td><td><tt>\x05PACK2</tt></td><td>No</td><td rowspan="3">Palette</td><td rowspan="3">
+<tr class="last"><td>*.gfb</td><td><tt>GFB</tt></td><td></td></tr>
+<tr class="odd"><td>*.pak</td><td><tt>\x05PACK2</tt></td><td></td><td rowspan="3">Palette</td><td rowspan="3">
 Moshimo Ashita ga Harenaraba<br/>
 </td></tr>
-<tr class="odd"><td>*.pga</td><td><tt>PGAPGAH</tt></td><td>Yes</td></tr>
-<tr class="odd last"><td>*.chr</td><td><tt>char</tt></td><td>No</td></tr>
-<tr><td>*.gyu</td><td><tt>GYU\x1a</tt></td><td>No</td><td>ExHIBIT</td><td>
+<tr class="odd"><td>*.pga</td><td><tt>PGAPGAH</tt></td><td><span class="supported"></span></td></tr>
+<tr class="odd last"><td>*.chr</td><td><tt>char</tt></td><td></td></tr>
+<tr><td>*.gyu</td><td><tt>GYU\x1a</tt></td><td></td><td>ExHIBIT</td><td>
 Eve ~New Generation X~<br/>
 Fuyu no Rondo<br/>
 Natural Another One 2nd -Belladonna-<br/>
 </td></tr>
-<tr class="odd"><td>*.dat</td><td>-</td><td>No</td><td>ACTGS</td><td>
+<tr class="odd"><td>*.dat</td><td>-</td><td></td><td>ACTGS</td><td>
 Oreiro Ganbou<br/>
 Otome Smile<br/>
 Tadashiki Himehajime<br/>
 </td></tr>
-<tr><td>*.dat</td><td><tt>pack</tt></td><td>No</td><td rowspan="4">AnimeGameSystem</td><td rowspan="4">
+<tr><td>*.dat</td><td><tt>pack</tt></td><td></td><td rowspan="4">AnimeGameSystem</td><td rowspan="4">
 Eye's Only ~Sono Kagayaki wa Mabushisa ni Michite~<br/>
 Love Fetish series<br/>
 </td></tr>
-<tr><td>*.ani</td><td>-</td><td>No</td></tr>
-<tr><td>*.cg</td><td>-</td><td>No</td></tr>
-<tr class="last"><td>*.pcm</td><td>WAV</td><td>No</td></tr>
-<tr class="odd"><td>*.nfs</td><td>-</td><td>No</td><td rowspan="2">NAGS</td><td rowspan="2">
+<tr><td>*.ani</td><td>-</td><td></td></tr>
+<tr><td>*.cg</td><td>-</td><td></td></tr>
+<tr class="last"><td>*.pcm</td><td>WAV</td><td></td></tr>
+<tr class="odd"><td>*.nfs</td><td>-</td><td></td><td rowspan="2">NAGS</td><td rowspan="2">
 Trouble Trap Laboratory<br/>
 </td></tr>
-<tr class="odd last"><td>*.ngp</td><td><tt>NGP</tt></td><td>No</td></tr>
-<tr><td>*.hxp</td><td><tt>Him4</tt><br/><tt>Him5</tt><br/><tt>SHS6</tt><br/><tt>SHS7</tt></td><td>No</td><td>SH System</td><td>
+<tr class="odd last"><td>*.ngp</td><td><tt>NGP</tt></td><td></td></tr>
+<tr><td>*.hxp</td><td><tt>Him4</tt><br/><tt>Him5</tt><br/><tt>SHS6</tt><br/><tt>SHS7</tt></td><td></td><td>SH System</td><td>
 Natsumero<br/>
 Sumeragi Ryouko no Bitch na 1 nichi<br/>
 </td></tr>
-<tr class="odd"><td>*.det<br/>+*.nme<br/>+*.atm</td><td>-</td><td>No</td><td rowspan="2">μ-GameOperationSystem</td><td rowspan="2">
+<tr class="odd"><td>*.det<br/>+*.nme<br/>+*.atm</td><td>-</td><td></td><td rowspan="2">μ-GameOperationSystem</td><td rowspan="2">
 Ippai Shimasho<br/>
 Minami no Shima ni Furu Yuki<br/>
 </td></tr>
-<tr class="odd last"><td>*.bmp</td><td><tt>Fe</tt></td><td>No</td></tr>
-<tr><td>*.gpc+*.gph<br/>*.snd+*.snh<br/>*.snr+*.snh</td><td>-</td><td>No</td><td>Eushully</td><td>
+<tr class="odd last"><td>*.bmp</td><td><tt>Fe</tt></td><td></td></tr>
+<tr><td>*.gpc+*.gph<br/>*.snd+*.snh<br/>*.snr+*.snh</td><td>-</td><td></td><td>Eushully</td><td>
 Genrin no Kishougun<br/>
 </td></tr>
-<tr class="odd"><td>*.mpk</td><td>-</td><td>No</td><td rowspan="2">propeller</td><td rowspan="2">
+<tr class="odd"><td>*.mpk</td><td>-</td><td></td><td rowspan="2">propeller</td><td rowspan="2">
 Bullet Butlers<br/>
 Kitto, Sumiwataru Asairo Yori mo,<br/>
 </td></tr>
-<tr class="odd last"><td>*.mgr</td><td>-</td><td>No</td></tr>
-<tr><td>*.dat</td><td><tt>PAK0</tt></td><td>No</td><td>Studio e.go!</td><td>
+<tr class="odd last"><td>*.mgr</td><td>-</td><td></td></tr>
+<tr><td>*.dat</td><td><tt>PAK0</tt></td><td></td><td>Studio e.go!</td><td>
 GakuPara!! ~Gakuen Paradise!!~<br/>
 Izumo<br/>
 Izumo 2<br/>
@@ -971,27 +985,27 @@ Oni Kagura<br/>
 Tokino Senka<br/>
 Tsuki Kagura<br/>
 </td></tr>
-<tr class="odd"><td>*.pbx</td><td><tt>Pandora.box</tt></td><td>No</td><td rowspan="2">Terios</td><td rowspan="2">
+<tr class="odd"><td>*.pbx</td><td><tt>Pandora.box</tt></td><td></td><td rowspan="2">Terios</td><td rowspan="2">
 Elysion ~Eien no Sanctuary~<br/>
 Ikinari Happy Bell<br/>
 </td></tr>
-<tr class="odd last"><td>*.bmp</td><td><tt>XL24</tt></td><td>No</td></tr>
-<tr><td>*.pk<br/>*.dat</td><td>-</td><td>No</td><td rowspan="3">BANANA Shu-Shu<br/>Yellow Pig</td><td rowspan="3">
+<tr class="odd last"><td>*.bmp</td><td><tt>XL24</tt></td><td></td></tr>
+<tr><td>*.pk<br/>*.dat</td><td>-</td><td></td><td rowspan="3">BANANA Shu-Shu<br/>Yellow Pig</td><td rowspan="3">
 Tama Tama ~Tonari no Kanojo...<br/>
 Tama Tama Christmas Box<br/>
 Otto no Mae de Okasarete...<br/>
 </td></tr>
-<tr><td>*.mag</td><td>-</td><td>No</td></tr>
-<tr class="last"><td>*.gec</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.arc</td><td>-</td><td>No</td><td rowspan="2">AI6WIN</td><td rowspan="2">
+<tr><td>*.mag</td><td>-</td><td></td></tr>
+<tr class="last"><td>*.gec</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.arc</td><td>-</td><td></td><td rowspan="2">AI6WIN</td><td rowspan="2">
 Gakuen Saimin Reido<br/>
 Jokei Kazoku 3<br/>
 Mama no Oppai ~Ore no Doutei Milk ga Shiboritorareta Ken~<br/>
 Ochite Iku Niizuma<br/>
 Shinsou Noise<br/>
 </td></tr>
-<tr class="odd last"><td>*.akb</td><td><tt>AKB</tt><br/><tt>AKB+</tt></td><td>No</td></tr>
-<tr><td>*.cpz</td><td><tt>CPZ2</tt><br/><tt>CPZ5</tt><br/><tt>CPZ6</tt></td><td>No</td><td rowspan="5">CMVS<br/>CVNS</td><td rowspan="5">
+<tr class="odd last"><td>*.akb</td><td><tt>AKB</tt><br/><tt>AKB+</tt></td><td></td></tr>
+<tr><td>*.cpz</td><td><tt>CPZ2</tt><br/><tt>CPZ5</tt><br/><tt>CPZ6</tt></td><td></td><td rowspan="5">CMVS<br/>CVNS</td><td rowspan="5">
 Alto<br/>
 Amatsutsumi<br/>
 Ashita no Kimi to Au Tame ni<br/>
@@ -1002,33 +1016,33 @@ Memoria<br/>
 Miharu - Alto Another Story<br/>
 Natsu ni Kanaderu Bokura no Uta<br/>
 </td></tr>
-<tr><td>*.pb2</td><td><tt>PB2A</tt></td><td>No</td></tr>
-<tr><td>*.pb3</td><td><tt>PB3B</tt></td><td>No</td></tr>
-<tr><td>*.msk</td><td><tt>MSK0</tt></td><td>No</td></tr>
-<tr class="last"><td>*.mv2</td><td><tt>MV2X</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.g2<br/>*.stx</td><td>-</td><td>No</td><td rowspan="2">GLib2</td><td rowspan="2">
+<tr><td>*.pb2</td><td><tt>PB2A</tt></td><td></td></tr>
+<tr><td>*.pb3</td><td><tt>PB3B</tt></td><td></td></tr>
+<tr><td>*.msk</td><td><tt>MSK0</tt></td><td></td></tr>
+<tr class="last"><td>*.mv2</td><td><tt>MV2X</tt></td><td></td></tr>
+<tr class="odd"><td>*.g2<br/>*.stx</td><td>-</td><td></td><td rowspan="2">GLib2</td><td rowspan="2">
 Hikikomori Muke Hitozuma-sensei<br/>
 Hitozuma Net Auction<br/>
 </td></tr>
-<tr class="odd last"><td>*.pgx</td><td><tt>PGX</tt></td><td>No</td></tr>
-<tr><td>*.bin</td><td>-</td><td>No</td><td rowspan="2">Favorite</td><td rowspan="2">
+<tr class="odd last"><td>*.pgx</td><td><tt>PGX</tt></td><td></td></tr>
+<tr><td>*.bin</td><td>-</td><td></td><td rowspan="2">Favorite</td><td rowspan="2">
 AstralAir no Shiroki Towa<br/>
 </td></tr>
-<tr class="last"><td>*.hzc</td><td><tt>hzc1</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.bin</td><td><tt>ESC-ARC1</tt><br/><tt>ESC-ARC2</tt></td><td>No</td><td>Escu:de</td><td>
+<tr class="last"><td>*.hzc</td><td><tt>hzc1</tt></td><td></td></tr>
+<tr class="odd"><td>*.bin</td><td><tt>ESC-ARC1</tt><br/><tt>ESC-ARC2</tt></td><td></td><td>Escu:de</td><td>
 Otome Renshin Prister<br/>
 Suisei Tenshi Primaveil Zwei<br/>
 Verdia Gensoukyoku<br/>
 Wondering Repair!<br/>
 </td></tr>
-<tr><td>*.pac</td><td>-</td><td>No</td><td>Tmr-Hiro ADV System</td><td>
+<tr><td>*.pac</td><td>-</td><td></td><td>Tmr-Hiro ADV System</td><td>
 Dennou Shinpan Kisaragi Sanjikan<br/>
 Gokkun Athlete! Kyonyuu Medalist no Oshaburi Kyouka Gasshuku<br/>
 Hitozuma Sakunyuu Hyakkaten<br/>
 Mai Miko Moe<br/>
 Paimega<br/>
 </td></tr>
-<tr class="odd"><td>*.snn+*.inx</td><td>-</td><td>No</td><td rowspan="3">BlueGale</td><td rowspan="3">
+<tr class="odd"><td>*.snn+*.inx</td><td>-</td><td></td><td rowspan="3">BlueGale</td><td rowspan="3">
 Bifronte ~Kugaitou Kitan~<br/>
 Cafe Junkie<br/>
 Immoral<br/>
@@ -1036,9 +1050,9 @@ Majidashi! Royale ~Finish wa Watashi no Naka de~<br/>
 MILK Junkies<br/>
 Oppai Life<br/>
 </td></tr>
-<tr class="odd"><td>*.zbm</td><td><tt>amp_</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.amv</td><td><tt>ampV</tt></td><td>No</td></tr>
-<tr><td>*.vfs</td><td><tt>VF</tt></td><td>No</td><td rowspan="5">Aoi</td><td rowspan="5">
+<tr class="odd"><td>*.zbm</td><td><tt>amp_</tt></td><td></td></tr>
+<tr class="odd last"><td>*.amv</td><td><tt>ampV</tt></td><td></td></tr>
+<tr><td>*.vfs</td><td><tt>VF</tt></td><td></td><td rowspan="5">Aoi</td><td rowspan="5">
 Alfred Gakuen Mamono Daitai<br/>
 Brown Doori Sanbanme<br/>
 Daisounan<br/>
@@ -1049,19 +1063,19 @@ Mahiru ni Odoru Hanzaisha<br/>
 Ouzoku<br/>
 Planet Dragon<br/>
 </td></tr>
-<tr><td>*.iph</td><td><tt>RIFF....IPH fmt</tt></td><td>No</td></tr>
-<tr><td>*.ipf</td><td><tt>RIFF....IPF fmt</tt></td><td>No</td></tr>
-<tr><td>*.aog</td><td><tt>AoiOgg</tt></td><td>No</td></tr>
-<tr><td>*.box</td><td><tt>AOIBOX4</tt><br/><tt>AOIBOX5</tt><br/><tt>AOIBOX7</tt><br/><tt>AOIBX10</tt><br/><tt>AOIBX12</tt><br/><tt>AOIMY01</tt></td><td>No</td></tr>
-<tr class="last"><td>*.agf</td><td><tt>AGF</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.gd+*.dll</td><td>-</td><td>No</td><td>Xuse</td><td>
+<tr><td>*.iph</td><td><tt>RIFF....IPH fmt</tt></td><td></td></tr>
+<tr><td>*.ipf</td><td><tt>RIFF....IPF fmt</tt></td><td></td></tr>
+<tr><td>*.aog</td><td><tt>AoiOgg</tt></td><td></td></tr>
+<tr><td>*.box</td><td><tt>AOIBOX4</tt><br/><tt>AOIBOX5</tt><br/><tt>AOIBOX7</tt><br/><tt>AOIBX10</tt><br/><tt>AOIBX12</tt><br/><tt>AOIMY01</tt></td><td></td></tr>
+<tr class="last"><td>*.agf</td><td><tt>AGF</tt></td><td></td></tr>
+<tr class="odd"><td>*.gd+*.dll</td><td>-</td><td></td><td>Xuse</td><td>
 Eien no Aselia -The Spirit of Eternity Sword-
 </td></tr>
-<tr><td>*.dat</td><td><tt>DAF1</tt><br/><tt>DAF2</tt></td><td>No</td><td>DenSDK</td><td>
+<tr><td>*.dat</td><td><tt>DAF1</tt><br/><tt>DAF2</tt></td><td></td><td>DenSDK</td><td>
 Ayakashi<br/>
 Ayakashi H<br/>
 </td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>LIN2</tt><br/><tt>LINK3</tt><br/><tt>LINK5</tt><br/><tt>LINK6</tt></td><td>No</td><td rowspan="3">KaGuYa</td><td rowspan="3">
+<tr class="odd"><td>*.arc</td><td><tt>LIN2</tt><br/><tt>LINK3</tt><br/><tt>LINK5</tt><br/><tt>LINK6</tt></td><td></td><td rowspan="3">KaGuYa</td><td rowspan="3">
 Dokidoki Onee-san<br/>
 Harami Tama<br/>
 Mahokoi ~Ecchi na Mahou de Koi x Koi Shichau~<br/>
@@ -1069,73 +1083,73 @@ Mainichi ga M!<br/>
 Ningyou no Yakata<br/>
 Osananajimi to Ama~ku Ecchi ni Sugosu Houhou<br/>
 </td></tr>
-<tr class="odd"><td>*.alp</td><td><tt>AP-0</tt><br/><tt>AP-2</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.anm</td><td><tt>AN00</tt></td><td>No</td></tr>
-<tr><td>*.pcs</td><td><tt>PCCS</tt></td><td>No</td><td>C's ware</td><td>
+<tr class="odd"><td>*.alp</td><td><tt>AP-0</tt><br/><tt>AP-2</tt></td><td></td></tr>
+<tr class="odd last"><td>*.anm</td><td><tt>AN00</tt></td><td></td></tr>
+<tr><td>*.pcs</td><td><tt>PCCS</tt></td><td></td><td>C's ware</td><td>
 Kuro to Kuro to Kuro no Saidan ~Kodoku~<br/>
 Mikan<br/>
 </td></tr>
-<tr class="odd"><td>*.052<br/>*.055<br/>*.058</td><td><tt>VAFSH</tt></td><td>No</td><td rowspan="2">Softpal</td><td rowspan="2">
+<tr class="odd"><td>*.052<br/>*.055<br/>*.058</td><td><tt>VAFSH</tt></td><td></td><td rowspan="2">Softpal</td><td rowspan="2">
 Komorebi ni Yureru Tamashii no Koe<br/>
 Komokyun!! ~Heart ni Yureru Tamashi no Fandisc~<br/>
 Heavenly Guilt -Kami no Inai Machi-<br/>
 </td></tr>
-<tr class="odd last"><td>*</td><td><tt>BPIC</tt></td><td>No</td></tr>
-<tr><td>*</td><td><tt>NNNN</tt></td><td>No</td><td>Moko Pro</td><td>
+<tr class="odd last"><td>*</td><td><tt>BPIC</tt></td><td></td></tr>
+<tr><td>*</td><td><tt>NNNN</tt></td><td></td><td>Moko Pro</td><td>
 Houmon Hanbai ~Otona no Omocha Irimasen ka?~<br/>
 </td></tr>
-<tr class="odd"><td>*.pac</td><td>-<br/><tt>PAC</tt></td><td>No</td><td rowspan="2">Unison Shift<br/>Softpal</td><td rowspan="2">
+<tr class="odd"><td>*.pac</td><td>-<br/><tt>PAC</tt></td><td></td><td rowspan="2">Unison Shift<br/>Softpal</td><td rowspan="2">
 Maruhi Jinjibu Ryoujokuka<br/>
 M.E.s -Doukyuusei Maid Choukyou-<br/>
 Natsuiro Kokoro Log<br/>
 Shikotama Slave ~Aruji de Shimai na Tenshi to Akuma~<br/>
 Unity Marriage ~Futari no Hanayome~<br/>
 </td></tr>
-<tr class="odd last"><td>*.pgd</td><td><tt>GE</tt><br/><tt>PGD3</tt></td><td>No</td></tr>
-<tr><td>*.npk</td><td><tt>NPK2</tt></td><td>Yes</td><td>Nitro+</td><td>
+<tr class="odd last"><td>*.pgd</td><td><tt>GE</tt><br/><tt>PGD3</tt></td><td></td></tr>
+<tr><td>*.npk</td><td><tt>NPK2</tt></td><td><span class="supported"></span></td><td>Nitro+</td><td>
 Sonicomi<br/>
 Tokyo Necro<br/>
 </td></tr>
-<tr class="odd"><td>*</td><td><tt>arc</tt></td><td>No</td><td rowspan="2">ADVEngine</td><td rowspan="2">
+<tr class="odd"><td>*</td><td><tt>arc</tt></td><td></td><td rowspan="2">ADVEngine</td><td rowspan="2">
 Thanatos no Koi ~In Ane Otouto Soukan~<br/>
 </td></tr>
-<tr class="odd last"><td>*.gps</td><td><tt>GPS</tt></td><td>No</td></tr>
-<tr><td>*.szs</td><td><tt>SZS100__</tt></td><td>No</td><td rowspan="4">SLG system</td><td rowspan="4">
+<tr class="odd last"><td>*.gps</td><td><tt>GPS</tt></td><td></td></tr>
+<tr><td>*.szs</td><td><tt>SZS100__</tt></td><td></td><td rowspan="4">SLG system</td><td rowspan="4">
 Sengoku Hime<br/>
 Shihen 69 ~Shinen no Messiah~<br/>
 </td></tr>
-<tr><td>*.tig</td><td><tt>\x7C\xF3\xC2\x8B</tt></td><td>No</td></tr>
-<tr><td>*.alb</td><td><tt>ALB1.21</tt></td><td>No</td></tr>
-<tr class="last"><td>*.voi</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.wag</td><td><tt>IAF_</tt></td><td>No</td><td rowspan="3">Hexenhaus</td><td rowspan="3">
+<tr><td>*.tig</td><td><tt>\x7C\xF3\xC2\x8B</tt></td><td></td></tr>
+<tr><td>*.alb</td><td><tt>ALB1.21</tt></td><td></td></tr>
+<tr class="last"><td>*.voi</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.wag</td><td><tt>IAF_</tt></td><td></td><td rowspan="3">Hexenhaus</td><td rowspan="3">
 Angenehm Platz -Kleiner Garten Sie Erstellen-<br/>
-<tr class="odd"><td>*.arc</td><td><tt>ARCC</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.bin</td><td><tt>ODIO</tt></td><td>No</td></tr>
+<tr class="odd"><td>*.arc</td><td><tt>ARCC</tt></td><td></td></tr>
+<tr class="odd last"><td>*.bin</td><td><tt>ODIO</tt></td><td></td></tr>
 </td></tr>
-<tr><td>*.eme</td><td><tt>RREDATA</tt></td><td>No</td><td>Emon Engine</td><td>
+<tr><td>*.eme</td><td><tt>RREDATA</tt></td><td></td><td>Emon Engine</td><td>
 Ase Nure Shoujo Misaki "Anata no Nioi de Icchau!"<br/>
 D-spray Biyaku de Motemote Kachou Dairi Hosa<br/>
 Hitomi no Rakuin ~Inbaku no Mesu Dorei~<br/>
 Jokujima<br/>
 Saiin Haramase Keyword<br/>
 </td></tr>
-<tr class="odd"><td>*.grp<br/>*.bin</td><td>-<br/><tt>TPW</tt></td><td>No</td><td>Tirol<br/>Talisman<br/>Ankh</td><td>
+<tr class="odd"><td>*.grp<br/>*.bin</td><td>-<br/><tt>TPW</tt></td><td></td><td>Tirol<br/>Talisman<br/>Ankh</td><td>
 Aigan Shoujo<br/>
 Blaze of Destiny<br/>
 Blaze of Destiny II<br/>
 Mozu<br/>
 </td></tr>
-<tr><td>*.gpc</td><td><tt>Gpc7</tt></td><td>No</td><td>Super NekoX</td><td>
+<tr><td>*.gpc</td><td><tt>Gpc7</tt></td><td></td><td>Super NekoX</td><td>
 Jorou Gumo ~Makotogatari~<br/>
 Sister Contrast!
 </td></tr>
-<tr class="odd"><td>*.psb</td><td><tt>PSB</tt></td><td>No</td><td>E-mote</td><td>
+<tr class="odd"><td>*.psb</td><td><tt>PSB</tt></td><td></td><td>E-mote</td><td>
 Angenehm Platz -Kleiner Garten Sie Erstellen-<br/>
 </td></tr>
-<tr><td>*.zit</td><td><tt>ZT</tt></td><td>No</td><td>Silky's</td><td>
+<tr><td>*.zit</td><td><tt>ZT</tt></td><td></td><td>Silky's</td><td>
 Sweet ~Hanjuku na Tenshi-tachi~<br/>
 </td></tr>
-<tr class="odd"><td>*.ovk</td><td>-</td><td>No</td><td rowspan="5">RealLive</td><td rowspan="5">
+<tr class="odd"><td>*.ovk</td><td>-</td><td></td><td rowspan="5">RealLive</td><td rowspan="5">
 Devote 2 Ikenai Houkago<br/>
 Gakuen Taima! Holy x Moly<br/>
 Joi-san no Iitsuke!!<br/>
@@ -1143,68 +1157,68 @@ Shiawase na Ohime-sama<br/>
 Shin Genre Esudere!!<br/>
 Warui Koto Shitai<br/>
 </td></tr>
-<tr class="odd"><td>*.nwa</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.koe</td><td><tt>KOEPAC</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.g00</td><td>-</td><td>No</td></tr>
-<tr class="odd last"><td>*.pdt</td><td><tt>PDT10</tt></td><td>No</td></tr>
-<tr><td>*.pak<br/>*.pac</td><td><tt>ＶＣ製品版</tt><br/><tt>\x01\x00\x00\x00</tt></td><td>No</td><td rowspan="2">Circus</td><td rowspan="2">
+<tr class="odd"><td>*.nwa</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.koe</td><td><tt>KOEPAC</tt></td><td></td></tr>
+<tr class="odd"><td>*.g00</td><td>-</td><td></td></tr>
+<tr class="odd last"><td>*.pdt</td><td><tt>PDT10</tt></td><td></td></tr>
+<tr><td>*.pak<br/>*.pac</td><td><tt>ＶＣ製品版</tt><br/><tt>\x01\x00\x00\x00</tt></td><td></td><td rowspan="2">Circus</td><td rowspan="2">
 Valkyrie Complex<br/>
 </td></tr>
-<tr class="last"><td>*.cps</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>arc*.dat<br/>script.dat</td><td>-<br/><tt>ACV1</tt></td><td>No</td><td>non color<br/>mirai</td><td>
+<tr class="last"><td>*.cps</td><td>-</td><td></td></tr>
+<tr class="odd"><td>arc*.dat<br/>script.dat</td><td>-<br/><tt>ACV1</tt></td><td></td><td>non color<br/>mirai</td><td>
 Doubly na Kanojo<br/>
 Hana Hime * Absolute!<br/>
 Nora to Oujo to Noraneko Heart<br/>
 Tsujidou-san no Jun'ai Road<br/>
 Tsujidou-san no Virgin Road<br/>
 </td></tr>
-<tr><td>*.pak</td><td><tt>PACK</tt></td><td>No</td><td>Studio Nekopunch</td><td>
+<tr><td>*.pak</td><td><tt>PACK</tt></td><td></td><td>Studio Nekopunch</td><td>
 Colorfull!!<br/>
 Uso x Mote ~Usonko Motemote-shon~<br/>
 </td></tr>
-<tr class="odd"><td>*.syg</td><td><tt>$SYG</tt></td><td>No</td><td><a title="Risa game platform system">Risa</a></td><td>
+<tr class="odd"><td>*.syg</td><td><tt>$SYG</tt></td><td></td><td><a title="Risa game platform system">Risa</a></td><td>
 Chijoku Yuugi<br/>
 Kakure Ecchi<br/>
 OL Gari ~Nureta Office~<br/>
 Taiiku Souko ~Shoujotachi no Sange~<br/>
 </td></tr>
-<tr><td>*.cmp</td><td><tt>SBI</tt></td><td>No</td><td rowspan="2">Vitamin</td><td rowspan="2">
+<tr><td>*.cmp</td><td><tt>SBI</tt></td><td></td><td rowspan="2">Vitamin</td><td rowspan="2">
 Big Magnum Harimoto-sensei<br/>
 </td></tr>
-<tr><td>*.mfc</td><td><tt>MFC</tt></td><td>No</td></tr>
-<tr class="odd"><td>game.dat</td><td><tt>vff</tt></td><td>No</td><td rowspan="2">LiveMaker</td><td rowspan="2">
+<tr><td>*.mfc</td><td><tt>MFC</tt></td><td></td></tr>
+<tr class="odd"><td>game.dat</td><td><tt>vff</tt></td><td></td><td rowspan="2">LiveMaker</td><td rowspan="2">
 Grope ~Yami no Naka no Kotori-tachi~<br/>
 Incest Lover ~Mama to Haha no Himitsu~<br/>
 Ryoujoku Seifuku Jogakuen ~Chimitsu ni Nureta Seifuku~<br/>
 </td></tr>
-<tr class="odd last"><td>*.gal</td><td><tt>Gale105</tt><br/><tt>Gale106</tt></td><td>No</td></tr>
-<tr><td>*.png<br/>*.bmp</td><td><tt>EENC</tt><br/><tt>EENZ</tt></td><td>No</td><td rowspan="2">Bruns</td><td rowspan="2">
+<tr class="odd last"><td>*.gal</td><td><tt>Gale105</tt><br/><tt>Gale106</tt></td><td></td></tr>
+<tr><td>*.png<br/>*.bmp</td><td><tt>EENC</tt><br/><tt>EENZ</tt></td><td></td><td rowspan="2">Bruns</td><td rowspan="2">
 Majiyome<br/>
 Uchi no Tsuma Dakimasenka?<br/>
 </td></tr>
-<tr class="last"><td>*.um3</td><td><tt>\xB0\x98\x98\xAC</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pbz</td><td><tt>PBZ1</tt></td><td>No</td><td rowspan="3">PVNS</td><td rowspan="3">
+<tr class="last"><td>*.um3</td><td><tt>\xB0\x98\x98\xAC</tt></td><td></td></tr>
+<tr class="odd"><td>*.pbz</td><td><tt>PBZ1</tt></td><td></td><td rowspan="3">PVNS</td><td rowspan="3">
 Karen<br/>
 </td></tr>
-<tr class="odd"><td>*.psb</td><td><tt>PSBP</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.mk</td><td><tt>MKVS</tt></td><td>No</td></tr>
-<tr><td>*.pak</td><td>-</td><td>No</td><td>Black Rainbow<br/>Melty</td><td>
+<tr class="odd"><td>*.psb</td><td><tt>PSBP</tt></td><td></td></tr>
+<tr class="odd last"><td>*.mk</td><td><tt>MKVS</tt></td><td></td></tr>
+<tr><td>*.pak</td><td>-</td><td></td><td>Black Rainbow<br/>Melty</td><td>
 Ingoku Chikan Ressha<br/>
 love, VAMPIRE FLOWERS<br/>
 Peropero Saimin 3 Raouden ~Yousei no Sakuryaku~<br/>
 </td></tr>
-<tr class="odd"><td>*.gxp</td><td><tt>GXP</tt></td><td>No</td><td>Astronauts</td><td>
+<tr class="odd"><td>*.gxp</td><td><tt>GXP</tt></td><td></td><td>Astronauts</td><td>
 Demonion 2 ~Maou to Sannin no Joou~<br/>
 </td></tr>
-<tr><td>*.axr</td><td><tt>AXRe</tt></td><td>No</td><td rowspan="2">GEM/vnengine</td><td rowspan="2">
+<tr><td>*.axr</td><td><tt>AXRe</tt></td><td></td><td rowspan="2">GEM/vnengine</td><td rowspan="2">
 Natsunone -Ring-<br/>
 </td></tr>
-<tr class="last"><td>*.zaw</td><td><tt>ZAW</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pac</td><td><tt>MGPK</tt><td>No</td><td>MangaGamer</td><td>
+<tr class="last"><td>*.zaw</td><td><tt>ZAW</tt></td><td></td></tr>
+<tr class="odd"><td>*.pac</td><td><tt>MGPK</tt><td></td><td>MangaGamer</td><td>
 Cartagra<br/>
 Kara no Shoujo 2<br/>
 </td></tr>
-<tr><td>data.NN<br/>ArcNN.dat</td><td>-</td><td>No</td><td>Cyberworks</td><td>
+<tr><td>data.NN<br/>ArcNN.dat</td><td>-</td><td></td><td>Cyberworks</td><td>
 Abunai Kankei<br/>
 Aneboku ~Onee-chan wa Bijin 3 Shimai~<br/>
 Aniyome Kyouka-san to Sono Haha Chikako-san<br/>
@@ -1219,6 +1233,7 @@ Gakkou Yarashii Kaidan<br/>
 Gibo no Toiki ~Haitoku Kokoro ni tadayou Haha no Iroka~<br/>
 Gokkun♪ Vampire ☆ Princess<br/>
 Hanamaru! 2<br/>
+Harame ~Ore wa Kono Gakuen de Fukushuu o Nashi Togeru~<br/>
 Hare Kano ~Futari no Osananajimi to Harem na Kankei~<br/>
 Hime Kami 1/2<br/>
 In'youchuu Goku ~Ryoujoku Jigoku Taimaroku~<br/>
@@ -1226,6 +1241,7 @@ In'youchuu Kyou ~Ryoujoku Byoutou Taimaroku~<br/>
 In'youchuu Rei ~Ryoujoku Shiro Taima Emaki~<br/>
 In'youchuu Shoku ~Ryoushokutou Taimaroku~<br/>
 Kairaku Izonshou<br/>
+Kimi no Karada wa Uso o Tsuku.<br/>
 Koitsuma Biyori ~Yukino-san wa Hitozuma Kanrinin~<br/>
 Kowaku no Toki<br/>
 Kuraibito<br/>
@@ -1243,235 +1259,236 @@ Yumekoi Tensei<br/>
 Zoku Etsuraku no Tane<br/>
 Zoku Kairaku Izonshou ~Sono Go no Ryouko-san~<br/>
 </td></tr>
-<tr class="odd"><td>*.bin</td><td><tt>OZ</tt></td><td>No</td><td>Patisserie</td><td>
+<tr class="odd"><td>*.bin</td><td><tt>OZ</tt></td><td></td><td>Patisserie</td><td>
 Ore no Tamanokoshi ni Notte Kure<br/>
 </td></tr>
-<tr><td>*.arc</td><td>-</td><td>No</td><td>KISS</td><td>
+<tr><td>*.arc</td><td>-</td><td></td><td>KISS</td><td>
 xx na Kanojo no Tsukurikata<br/>
 </td></tr>
-<tr class="odd"><td>*.pak</td><td><tt>IPAC</tt></td><td>No</td><td rowspan="3">Nounai Kanojo</td><td rowspan="3">
+<tr class="odd"><td>*.pak</td><td><tt>IPAC</tt></td><td></td><td rowspan="3">Nounai Kanojo</td><td rowspan="3">
 Osananajimi wa Bed Yakuza!<br/>
 </td></tr>
-<tr class="odd"><td>*.ies</td><td><tt>IES2</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.wst</td><td><tt>WST2</tt></td><td>No</td></tr>
-<tr><td>*.dat</td><td><tt>DDP2</tt><br/><tt>DDP3</tt></td><td>No</td><td>DDSystem</td><td>
+<tr class="odd"><td>*.ies</td><td><tt>IES2</tt></td><td></td></tr>
+<tr class="odd last"><td>*.wst</td><td><tt>WST2</tt></td><td></td></tr>
+<tr><td>*.dat</td><td><tt>DDP2</tt><br/><tt>DDP3</tt></td><td></td><td>DDSystem</td><td>
 Nukiani!! Sweet Home<br/>
 </td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>ARCX</tt></td><td>No</td><td>Studio Jaren</td><td>
+<tr class="odd"><td>*.arc</td><td><tt>ARCX</tt></td><td></td><td>Studio Jaren</td><td>
 Denpa no Dorei<br/>
 Soushinjutsu Plus<br/>
 Soushinjutsu 2<br/>
 </td></tr>
-<tr><td>*.ns2</td><td>-</td><td>No</td><td>NScripter2</td><td>
+<tr><td>*.ns2</td><td>-</td><td></td><td>NScripter2</td><td>
 Rakuin Hime Runed Princess<br/>
 Shinshoku -Zero- ~Inma no Ikenie~<br/>
 Shinshoku 3 ~Inma no Ikenie~<br/>
 Shokusou Tenshi Serika 2<br/>
 </td></tr>
-<tr class="odd"><td>*.dat</td><td>-</td><td>No</td><td>NekoSDK</td><td>
+<tr class="odd"><td>*.dat</td><td>-</td><td></td><td>NekoSDK</td><td>
 Elevator Panic ~Misshitsu no Inkou~<br/>
 </td></tr>
-<tr><td>*.dat</td><td><tt>MK2.0</tt></td><td>No</td><td>MAIKA</td><td>
+<tr><td>*.dat</td><td><tt>MK2.0</tt></td><td></td><td>MAIKA</td><td>
 Inka Gakuen Taisen<br/>
 Uchuu Keiji Soldivan<br/>
 </td></tr>
-<tr class="odd"><td>*.ttd</td><td><tt>.FRC</tt></td><td>No</td><td>Morning</td><td>
+<tr class="odd"><td>*.ttd</td><td><tt>.FRC</tt></td><td></td><td>Morning</td><td>
 Binkan Ecchi! ~Futari no Oyatsu wa Tokunou Milk~<br/>
 </td></tr>
-<tr><td>*.bin</td><td><tt>ARC4</tt><br/><tt>arc3</tt></td><td>No</td><td rowspan="2">Caramel BOX</td><td rowspan="2">
+<tr><td>*.bin</td><td><tt>ARC4</tt><br/><tt>arc3</tt></td><td></td><td rowspan="2">Caramel BOX</td><td rowspan="2">
 Boku no Te no Naka no Rakuen<br/>
 Caramel Box Yarukibako<br/>
 </td></tr>
-<tr class="last"><td>*.fcb</td><td><tt>fcb1</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.dat</td><td><tt>YOX</tt></td><td>No</td><td>Shelf</td><td>
+<tr class="last"><td>*.fcb</td><td><tt>fcb1</tt></td><td></td></tr>
+<tr class="odd"><td>*.dat</td><td><tt>YOX</tt></td><td></td><td>Shelf</td><td>
 Kagiroi ~Shaku Kei~<br/>
 L.i.n.k.<br/>
 </td></tr>
-<tr><td>*.lac</td><td><tt>LAC</tt></td><td>No</td><td rowspan="8">Leaf</td><td rowspan="8">
+<tr><td>*.lac</td><td><tt>LAC</tt></td><td></td><td rowspan="8">Leaf</td><td rowspan="8">
 Kimi ga Yobu, Megiddo no Oka de<br/>
 ToHeart2 AnotherDays<br/>
 </td></tr>
-<tr><td>*.a</td><td><tt>\x1E\xAF</tt></td><td>No</td></tr>
-<tr><td>*.am</td><td><tt>am00</tt></td><td>No</td></tr>
-<tr><td>*.g</td><td>-</td><td>No</td></tr>
-<tr><td>*.w</td><td>-</td><td>No</td></tr>
-<tr><td>*.pak</td><td><tt>LAC</tt></td><td>No</td></tr>
-<tr><td>*.tex</td><td><tt>TEX PACK0.02</tt></td><td>No</td></tr>
-<tr class="last"><td>*.lgf</td><td><tt>lgf</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.ark</td><td>-</td><td>No</td><td>Irrlicht</td><td>
+<tr><td>*.a</td><td><tt>\x1E\xAF</tt></td><td></td></tr>
+<tr><td>*.am</td><td><tt>am00</tt></td><td></td></tr>
+<tr><td>*.g</td><td>-</td><td></td></tr>
+<tr><td>*.w</td><td>-</td><td></td></tr>
+<tr><td>*.pak</td><td><tt>LAC</tt></td><td></td></tr>
+<tr><td>*.tex</td><td><tt>TEX PACK0.02</tt></td><td></td></tr>
+<tr class="last"><td>*.lgf</td><td><tt>lgf</tt></td><td></td></tr>
+<tr class="odd"><td>*.ark</td><td>-</td><td></td><td>Irrlicht</td><td>
 Alter Ego<br/>
 </td></tr>
-<tr><td>*.kpc</td><td><tt>SCRPACK1</tt></td><td>No</td><td rowspan="3">KScript</td><td rowspan="3">
+<tr><td>*.kpc</td><td><tt>SCRPACK1</tt></td><td></td><td rowspan="3">KScript</td><td rowspan="3">
 Inumimi Berserk<br/>
 </td></tr>
-<tr><td>*.kgp</td><td><tt>GRPH</tt></td><td>No</td></tr>
-<tr class="last"><td>*.ksl</td><td><tt>KSLM</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.moe</td><td>-<br/><tt>MMD\x1A</tt></td><td>No</td><td>Ivory</td><td>
+<tr><td>*.kgp</td><td><tt>GRPH</tt></td><td></td></tr>
+<tr class="last"><td>*.ksl</td><td><tt>KSLM</tt></td><td></td></tr>
+<tr class="odd"><td>*.moe</td><td>-<br/><tt>MMD\x1A</tt></td><td></td><td>Ivory</td><td>
 Triangle Heart <span class="footnote">1998 release</span><br/>
 </td></tr>
-<tr><td>*.pak</td><td><tt>pack</tt></td><td>No</td><td rowspan="2">ScrPlayer</td><td rowspan="2">
+<tr><td>*.pak</td><td><tt>pack</tt></td><td></td><td rowspan="2">ScrPlayer</td><td rowspan="2">
 Stray Sheep ~Chijoku no Zangeshitsu~<br/>
 </td>
-<tr class="last"><td>*.i</td><td><tt>IMG2</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.pk</td><td><tt>fPK</tt></td><td>No</td><td rowspan="3">Ivory</td><td rowspan="3">
+<tr class="last"><td>*.i</td><td><tt>IMG2</tt></td><td></td></tr>
+<tr class="odd"><td>*.pk</td><td><tt>fPK</tt></td><td></td><td rowspan="3">Ivory</td><td rowspan="3">
 Triangle Heart 1-2-3<br/>
 </td></tr>
-<tr class ="odd"><td>*.sg</td><td><tt>fSG</tt></td><td>No</td></tr>
-<tr class ="odd last"><td>*.px</td><td><tt>fPX</tt></td><td>No</td></tr>
-<tr><td>*.fpk</td><td><tt>FPK 0100</tt></td><td>No</td><td>MoonhirGames</td><td>
+<tr class ="odd"><td>*.sg</td><td><tt>fSG</tt></td><td></td></tr>
+<tr class ="odd last"><td>*.px</td><td><tt>fPX</tt></td><td></td></tr>
+<tr><td>*.fpk</td><td><tt>FPK 0100</tt></td><td></td><td>MoonhirGames</td><td>
 Bitchin Beach<br/>
 Doushite? Ijitte Princess Final Road<br/>
 Pretty Devil Paradise ~Millium Makai Dakkan Shirei~<br/>
 S Sensei no Koto<br/>
 </td></tr>
-<tr class="odd"><td>*.epk</td><td><tt>EPK</tt></td><td>No</td><td rowspan="3">TamaSoft</td><td rowspan="3">
+<tr class="odd"><td>*.epk</td><td><tt>EPK</tt></td><td></td><td rowspan="3">TamaSoft</td><td rowspan="3">
 Lost Child<br/>
 </td></tr>
-<tr class="odd"><td>*.sur</td><td><tt>ESUR</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.esd</td><td><tt>ESD</tt></td><td>No</td></tr>
-<tr><td>*.pak</td><td><tt>NEKOPACK4A</tt></td><td>No</td><td>NekoSDK</td><td>
+<tr class="odd"><td>*.sur</td><td><tt>ESUR</tt></td><td></td></tr>
+<tr class="odd last"><td>*.esd</td><td><tt>ESD</tt></td><td></td></tr>
+<tr><td>*.pak</td><td><tt>NEKOPACK4A</tt></td><td></td><td>NekoSDK</td><td>
 In Vitro Shoujo -Aragaishi Junshin Naru Shoujo-<br/>
 Kyonyuu Fantasy - Digital Novel<br/>
 Shirudaku Settai Okawari Ippaime<br/>
 </td></tr>
-<tr class="odd"><td>*.pcf</td><td><tt>PackCode</tt></td><td>No</td><td rowspan="2">Symphony</td><td rowspan="2">
+<tr class="odd"><td>*.pcf</td><td><tt>PackCode</tt></td><td></td><td rowspan="2">Symphony</td><td rowspan="2">
 Tiara<br/>
 </td></tr>
-<tr class="odd last"><td>*.gbc</td><td><tt>GBCF</tt></td><td>No</td></tr>
-<tr><td>*.paz</td><td>-</td><td>No</td><td>Musica</td><td>
+<tr class="odd last"><td>*.gbc</td><td><tt>GBCF</tt></td><td></td></tr>
+<tr><td>*.paz</td><td>-</td><td></td><td>Musica</td><td>
 Haru no Ashioto<br/>
 Sakura no Sakukoro<br/>
 Tsumi no Hikari Rendezvous<br/>
 </td></tr>
-<tr class="odd"><td>arc.dat</td><td>-</td><td>No</td><td rowspan="2">AdvSys3</td><td rowspan="2">
+<tr class="odd"><td>arc.dat</td><td>-</td><td></td><td rowspan="2">AdvSys3</td><td rowspan="2">
 Chijoku Tsuma Natsuki<br/>
 Jii Tousaku<br/>
 Joku Dorei Tsuma<br/>
 Okami Tsuma ~Ryokan Baito de no Himitsu~<br/>
 Tain Shoukougun<br/>
 </td></tr>
-<tr class="odd last"><td>*.gwd</td><td><tt>GWD</tt></td><td>No</td></tr>
-<tr><td>*.dat</td><td><tt>tskforce</tt></td><td>No</td><td>Taskforce</td><td>
+<tr class="odd last"><td>*.gwd</td><td><tt>GWD</tt></td><td></td></tr>
+<tr><td>*.dat</td><td><tt>tskforce</tt></td><td></td><td>Taskforce</td><td>
 Musumaker<br/>
 </td></tr>
-<tr class="odd"><td>*.dsk+*.pft</td><td>-</td><td>No</td><td rowspan="3">Abogado Powers</td><td rowspan="3">
+<tr class="odd"><td>*.dsk+*.pft</td><td>-</td><td></td><td rowspan="3">Abogado Powers</td><td rowspan="3">
 Pigeon Blood<br/>
 </td></tr>
-<tr class="odd"><td>*.kg</td><td><tt>KG</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.adp</td><td>-</td><td>No</td></tr>
-<tr><td>*.cab</td><td><tt>PackDat3</tt></td><td>No</td><td>Entertainment<br/>Executive Engine</td><td>
+<tr class="odd"><td>*.kg</td><td><tt>KG</tt></td><td></td></tr>
+<tr class="odd last"><td>*.adp</td><td>-</td><td></td></tr>
+<tr><td>*.cab</td><td><tt>PackDat3</tt></td><td></td><td>Entertainment<br/>Executive Engine</td><td>
 Ryoujoku Fukushuu Gakuen ~Rinkan no Houkago~<br/>
 Shin Onna Kyoushi Yuuwaku Shinro Shidoushitsu<br/>
 </td></tr>
-<tr class="odd"><td>*.dat</td><td>-</td><td>No</td><td>YaneSDK</td><td>
+<tr class="odd"><td>*.dat</td><td>-</td><td></td><td>YaneSDK</td><td>
 Ore-sama no RagnaRock<br/>
 Shikigami<br/>
 </td></tr>
-<tr><td>*.rio</td><td>-</td><td>No</td><td rowspan="2">age</td><td rowspan="2">
+<tr><td>*.rio</td><td>-</td><td></td><td rowspan="2">age</td><td rowspan="2">
 Kaseki no Uta<br/>
 </td></tr>
-<tr class="last"><td>*.rip<br/>*.s5i</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.pak</td><td><tt>PACK</tt></td><td>No</td><td>Black Rainbow</td><td>
+<tr class="last"><td>*.rip<br/>*.s5i</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.pak</td><td><tt>PACK</tt></td><td></td><td>Black Rainbow</td><td>
 Soukan Yuugi<br/>
 </td></tr>
-<tr><td>*.odn</td><td>-</td><td>No</td><td>Valkyria</td><td>
+<tr><td>*.odn</td><td>-</td><td></td><td>Valkyria</td><td>
+Hyakushou Ryouran Konagi Ikki!<br/>
 Motto! Debutopia<br/>
 Ura Seitokai yo, Koumon o Seiatsu Seyo!<br/>
 </td></tr>
-<tr class="odd"><td>*</td><td><tt>FJSYS</tt></td><td>No</td><td rowspan="2">NSystem</td><td rowspan="2">
+<tr class="odd"><td>*</td><td><tt>FJSYS</tt></td><td></td><td rowspan="2">NSystem</td><td rowspan="2">
 Idol★Harem<br/>
 </td></tr>
-<tr class="odd last"><td>*.mgd</td><td><tt>MGD</tt></td><td>No</td></tr>
-<tr><td>*.dat+*.db</td><td>-</td><td>No</td><td>IGS</td><td>
+<tr class="odd last"><td>*.mgd</td><td><tt>MGD</tt></td><td></td></tr>
+<tr><td>*.dat+*.db</td><td>-</td><td></td><td>IGS</td><td>
 Maou no Ingu<br/>
 </td></tr>
-<tr class="odd"><td>*.bin</td><td><tt>KAR</tt></td><td>No</td><td rowspan="2">Cadath</td><td rowspan="2">
+<tr class="odd"><td>*.bin</td><td><tt>KAR</tt></td><td></td><td rowspan="4">Cadath</td><td rowspan="4">
 DA Pantsu!!<br/>
 Doreijou<br/>
 </td></tr>
-<tr class="odd"><td>*.kgf</td><td><tt>KGF</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>DAF\x1A</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*.cgf</td><td><tt>CGF\x1A</tt></td><td>No</td></tr>
-<tr><td>*.pfs</td><td><tt>pf8</tt></td><td>No</td><td>Artemis Engine</td><td>
+<tr class="odd"><td>*.kgf</td><td><tt>KGF</tt></td><td></td></tr>
+<tr class="odd"><td>*.arc</td><td><tt>DAF\x1A</tt></td><td></td></tr>
+<tr class="odd last"><td>*.cgf</td><td><tt>CGF\x1A</tt></td><td></td></tr>
+<tr><td>*.pfs</td><td><tt>pf8</tt></td><td></td><td>Artemis Engine</td><td>
 Boku no Elf Onee-san<br/>
 </td></tr>
-<tr class="odd"><td>*.dat</td><td>-</td><td>No</td><td>Youkai Tamanokoshi</td><td>
+<tr class="odd"><td>*.dat</td><td>-</td><td></td><td>Youkai Tamanokoshi</td><td>
 Tsumadori
 </td></tr>
-<tr><td>*.epk</td><td><tt>EPK</tt></td><td>No</td><td rowspan="2">Ellefin Game System</td><td rowspan="2">
+<tr><td>*.epk</td><td><tt>EPK</tt></td><td></td><td rowspan="2">Ellefin Game System</td><td rowspan="2">
 Angelium -Tokimeki Love God-<br/>
 Teri ☆ Mix<br/>
 </td></tr>
-<tr class="last"><td>*.elg</td><td><tt>ELG</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>ARC0</tt></td><td>No</td><td rowspan="2">Mixwill soft</td><td rowspan="2">
+<tr class="last"><td>*.elg</td><td><tt>ELG</tt></td><td></td></tr>
+<tr class="odd"><td>*.arc</td><td><tt>ARC0</tt></td><td></td><td rowspan="2">Mixwill soft</td><td rowspan="2">
 Onepapa ~Onegai PaPa!~<br/>
 </td></tr>
-<tr class="odd last"><td>*.pb</td><td><tt>PB00</tt></td><td>No</td></tr>
-<tr><td>*.cmp</td><td>-</td><td>No</td><td rowspan="3">0verflow</td><td rowspan="3">
+<tr class="odd last"><td>*.pb</td><td><tt>PB00</tt></td><td></td></tr>
+<tr><td>*.cmp</td><td>-</td><td></td><td rowspan="3">0verflow</td><td rowspan="3">
 Large PonPon<br/>
 PureMail<br/>
 Summer Radish Vacation!!<br/>
 Summer Radish Vacation!! 2<br/>
 </td></tr>
-<tr><td>*.cgd<br/>*.bgd<br/>*.chr<br/>*.crgb</td><td>-</td><td>No</td></tr>
-<tr class="last"><td>*.adp4</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.vfs</td><td><tt>VFS File</tt></td><td>No</td><td>VNSystem</td><td>
+<tr><td>*.cgd<br/>*.bgd<br/>*.chr<br/>*.crgb</td><td>-</td><td></td></tr>
+<tr class="last"><td>*.adp4</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.vfs</td><td><tt>VFS File</tt></td><td></td><td>VNSystem</td><td>
 Seika no Mori<br/>
 </td></tr>
-<tr><td>*.gd</td><td><tt>GD2</tt><br/><tt>GD3</tt></td><td>No</td><td rowspan="2">C4</td><td rowspan="2">
+<tr><td>*.gd</td><td><tt>GD2</tt><br/><tt>GD3</tt></td><td></td><td rowspan="2">C4</td><td rowspan="2">
 Koi Suru Science<br/>
 Mite Kudasaimasu?<br/>
 </td></tr>
-<tr class="last"><td>*.vmd</td><td>-</td><td>No</td></tr>
-<tr class ="odd"><td>*.dpm<br/>*.bin</td><td><tt>DPMX</tt></td><td>No</td><td>Hot Soup Processor</td><td>
+<tr class="last"><td>*.vmd</td><td>-</td><td></td></tr>
+<tr class ="odd"><td>*.dpm<br/>*.bin</td><td><tt>DPMX</tt></td><td></td><td>Hot Soup Processor</td><td>
 femme fatale<br/>
 </td></tr>
-<tr><td>*.cdt<br/>*.pdt<br/>*.vdt<br/>*.ovd</td><td><tt>RK1</tt></td><td>No</td><td rowspan="2">NEJII</td><td rowspan="2">
+<tr><td>*.cdt<br/>*.pdt<br/>*.vdt<br/>*.ovd</td><td><tt>RK1</tt></td><td></td><td rowspan="2">NEJII</td><td rowspan="2">
 Kidou Houshinki<br/>
 Sutadoru!<br/>
 </td></tr>
-<tr><td class="last">*.pcd</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.tac</td><td><tt>TArc1.10</tt><br/><tt>TArc1.00</tt></td><td>No</td><td>TanukiSoft</td><td>
+<tr><td class="last">*.pcd</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.tac</td><td><tt>TArc1.10</tt><br/><tt>TArc1.00</tt></td><td></td><td>TanukiSoft</td><td>
 Shoujo Kyouiku<br/>
 Shoukoujo<br/>
 </td></tr>
-<tr><td>*.arc</td><td><tt>\x00ARC</tt></td><td>No</td><td>One-up</td><td>
+<tr><td>*.arc</td><td><tt>\x00ARC</tt></td><td></td><td>One-up</td><td>
 Dedenden!<br/>
 </td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>ARC0</tt><br/><tt>ARCG</tt></td><td>No</td><td rowspan="7">Will</td><td rowspan="7">
+<tr class="odd"><td>*.arc</td><td><tt>ARC0</tt><br/><tt>ARCG</tt></td><td></td><td rowspan="7">Will</td><td rowspan="7">
 Bishimai Kutsujoku no Heya<br/>
 ~Miboujin~ Niku Dorei<br/>
 Ryoujoku Joshi Gakuen<br/>
 </td></tr>
-<tr class="odd"><td>*.bmx</td><td>-</td><td>No</td></tr>
-<tr class="odd"><td>*.mbf</td><td><tt>MBF0</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.vpk</td><td><tt>VPK1</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.wrc</td><td><tt>WVX0</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.wsm</td><td><tt>WSM1</tt><br/><tt>WSM2</tt><br/><tt>WSM3</tt></td><td>No</td></tr>
-<tr class="odd last"><td>*</td><td><tt>BC</tt></td><td>No</td></tr>
-<tr><td>*.pak</td><td><tt>Graphic PackData</tt></td><td>No</td><td rowspan="2">cromwell</td><td rowspan="2">
+<tr class="odd"><td>*.bmx</td><td>-</td><td></td></tr>
+<tr class="odd"><td>*.mbf</td><td><tt>MBF0</tt></td><td></td></tr>
+<tr class="odd"><td>*.vpk</td><td><tt>VPK1</tt></td><td></td></tr>
+<tr class="odd"><td>*.wrc</td><td><tt>WVX0</tt></td><td></td></tr>
+<tr class="odd"><td>*.wsm</td><td><tt>WSM1</tt><br/><tt>WSM2</tt><br/><tt>WSM3</tt></td><td></td></tr>
+<tr class="odd last"><td>*</td><td><tt>BC</tt></td><td></td></tr>
+<tr><td>*.pak</td><td><tt>Graphic PackData</tt></td><td></td><td rowspan="2">cromwell</td><td rowspan="2">
 Ikenie Reijou<br/>
 Tremolo<br/>
 </td></tr>
-<tr><td>*.opk</td><td><tt>VoiceOggPackFile</tt></td><td>No</td></tr>
-<tr class="odd"><td>CG</td><td>-</td><td>No</td><td>Software House Parsley</td><td>
+<tr><td>*.opk</td><td><tt>VoiceOggPackFile</tt></td><td></td></tr>
+<tr class="odd"><td>CG</td><td>-</td><td></td><td>Software House Parsley</td><td>
 Mugen no Meikyuu 3 Type S<br/>
 Phantom Knight Mugen no Meikyuu II<br/>
 </td></tr>
-<tr><td>*.fa2</td><td><tt>FA2</tt></td><td>No</td><td rowspan="2">Foster</td><td rowspan="2">
+<tr><td>*.fa2</td><td><tt>FA2</tt></td><td></td><td rowspan="2">Foster</td><td rowspan="2">
 Mania na Onna
 </td></tr>
-<tr class="last"><td>*.c24</td><td><tt>C24</tt></td><td>No</td></tr>
-<tr class="odd"><td>*.imp</td><td>-</td><td>No</td><td rowspan="2">Black Rainbow</td><td rowspan="2">
+<tr class="last"><td>*.c24</td><td><tt>C24</tt></td><td></td></tr>
+<tr class="odd"><td>*.imp</td><td>-</td><td></td><td rowspan="2">Black Rainbow</td><td rowspan="2">
 From M<br/>
 Kannagi<br/>
 </td></tr>
-<tr class="odd last"><td>*.pak</td><td><tt>CCf"</tt></td><td>No</td></tr>
-<tr><td>*.dat</td><td>-</td><td>No</td><td rowspan="3">Valkyria</td><td rowspan="3">
+<tr class="odd last"><td>*.pak</td><td><tt>CCf"</tt></td><td></td></tr>
+<tr><td>*.dat</td><td>-</td><td></td><td rowspan="3">Valkyria</td><td rowspan="3">
 Kangokujou ~Ingyaku no Shihai~<br/>
 </td></tr>
-<tr><td>*.mg2</td><td><tt>MICOCG01</tt></td><td>No</td></tr>
-<tr><td class="last">*.mal</td><td><tt>MICOMSK00</tt></td><td>No</td></tr>
+<tr><td>*.mg2</td><td><tt>MICOCG01</tt></td><td></td></tr>
+<tr><td class="last">*.mal</td><td><tt>MICOMSK00</tt></td><td></td></tr>
 </table>
 <p><a name="note-1" class="footnote">1</a> Non-encrypted only</p>
 </body>
