@@ -94,6 +94,8 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
+        const int SyncSearchThreshold = 0x280;
+
         public override SoundInput TryOpen (IBinaryStream file)
         {
             var header = file.ReadHeader (10).ToArray();
@@ -108,8 +110,8 @@ namespace GameRes.Formats
             else if (0xFF != header[0])
             {
                 file.Position = 1;
-                header = file.ReadBytes (0x100);
-                sync_pos = System.Array.IndexOf<byte> (header, 0xFF, 1, 0xFC);
+                header = file.ReadBytes (SyncSearchThreshold);
+                sync_pos = System.Array.IndexOf<byte> (header, 0xFF, 1, SyncSearchThreshold-4);
                 if (-1 == sync_pos)
                     return null;
             }
