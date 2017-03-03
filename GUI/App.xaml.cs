@@ -108,7 +108,14 @@ namespace GARbro.GUI
 
         void ApplicationExit (object sender, ExitEventArgs e)
         {
-            Settings.Default.Save();
+            try
+            {
+                Settings.Default.Save();
+            }
+            catch (Exception X)
+            {
+                Trace.WriteLine (X.Message, "[GARbro.GUI.App]");
+            }
         }
 
         void UpgradeSettings ()
