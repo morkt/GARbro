@@ -5,6 +5,7 @@
                xmlns:s="clr-namespace:GARbro.GUI.Strings"
                Title="File already exists" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
                ResizeMode="NoResize" SizeToContent="WidthAndHeight" ShowActivated="True"
+               FocusManager.FocusedElement="{Binding ElementName=FirstButton}"
                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
     <StackPanel Orientation="Horizontal">
         <Image Source="Images/64x64/actions.png" Width="64" Height="64" Margin="10"
@@ -14,7 +15,7 @@
             <TextBlock Text="{x:Static s:guiStrings.LabelDuplicateFileQuestion}" Margin="0,0,10,10"/>
             <Separator/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button Content="{x:Static s:guiStrings.ButtonSkip}" Margin="0,10,10,10" MinWidth="75" Height="25" IsDefault="True" Click="SkipButton_Click"/>
+                <Button Content="{x:Static s:guiStrings.ButtonSkip}" Margin="0,10,10,10" MinWidth="75" Height="25" IsDefault="True" Click="SkipButton_Click" x:Name="FirstButton"/>
                 <Button Content="{x:Static s:guiStrings.ButtonOverwrite}" Margin="10" MinWidth="75" Height="25" Click="OverwriteButton_Click"/>
                 <Button Content="{x:Static s:guiStrings.ButtonRename}" Margin="10" MinWidth="75" Height="25" Click="RenameButton_Click"/>
                 <Button Content="{x:Static s:guiStrings.ButtonAbort}" Margin="10" MinWidth="75" Height="25" IsCancel="True" Click="AbortButton_Click"/>
