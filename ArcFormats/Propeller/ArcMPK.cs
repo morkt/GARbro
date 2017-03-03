@@ -76,12 +76,11 @@ namespace GameRes.Formats.Propeller
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".msc", StringComparison.InvariantCultureIgnoreCase))
-                return base.OpenEntry (arc, entry);
-            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            for (int i = 0; i < data.Length; ++i)
-                data[i] ^= 0x88;
-            return new BinMemoryStream (data, entry.Name);
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (!entry.Name.EndsWith (".msc", StringComparison.InvariantCultureIgnoreCase)
+                || 0x88 != input.PeekByte())
+                return input;
+            return new XoredStream (input, 0x88);
         }
     }
 }
