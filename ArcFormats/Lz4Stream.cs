@@ -76,8 +76,8 @@ namespace GameRes.Compression
                 throw Lz4Stream.InvalidData();
             IndependentBlocks  = 0 != (flags & 0x20);
             HasBlockChecksum   = 0 != (flags & 0x10);
-            HasContentLength   = 0 != (flags & 4);
-            HasContentChecksum = 0 != (flags & 3);
+            HasContentLength   = 0 != (flags & 8);
+            HasContentChecksum = 0 != (flags & 4);
             HasDictionary      = 0 != (flags & 1);
         }
 
