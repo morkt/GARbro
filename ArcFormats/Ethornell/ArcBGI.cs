@@ -122,12 +122,21 @@ namespace GameRes.Formats.BGI
             {
                 string name = file.View.ReadString (index_offset, 0x60);
                 var offset = base_offset + file.View.ReadUInt32 (index_offset+0x60);
-                var entry = AutoEntry.Create (file, offset, name);
-                entry.Size   = file.View.ReadUInt32 (index_offset+0x64);
+                var entry = new Entry { Name = name, Offset = offset };
+                entry.Size = file.View.ReadUInt32 (index_offset+0x64);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 0x80;
+            }
+            foreach (var entry in dir)
+            {
+                uint signature = file.View.ReadUInt32 (entry.Offset);
+                var res = AutoEntry.DetectFileType (signature);
+                if (res != null)
+                    entry.Type = res.Type;
+                else if (file.View.AsciiEqual (entry.Offset+4, "bw  "))
+                    entry.Type = "audio";
             }
             return new ArcFile (file, this, dir);
         }
