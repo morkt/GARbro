@@ -87,6 +87,8 @@ namespace GameRes.Formats.NekoSDK
                 entry.Size   = file.View.ReadUInt32 (index_offset+4) ^ (uint)key;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
+                if (name.EndsWith (".alp", StringComparison.InvariantCultureIgnoreCase))
+                    entry.Type = "";
                 dir.Add (entry);
                 index_offset += 8;
             }
