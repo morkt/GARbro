@@ -276,7 +276,7 @@ namespace GameRes.Formats.LiveMaker
                 if (0 == m_info.Compression || 2 == m_info.Compression && is_alpha)
                     return ReadZlib (frame, packed, is_alpha);
                 if (2 == m_info.Compression)
-                    return ReadJpeg (frame, packed);
+                    return ReadJpeg (frame, packed, is_alpha);
                 return ReadBlocks (frame, packed, is_alpha);
             }
         }
@@ -331,7 +331,7 @@ namespace GameRes.Formats.LiveMaker
                     {
                         int frame_ref = refs[i];
                         int layer_ref = refs[i+1];
-                        if (frame_ref > m_frames.Count || layer_ref > m_frames[frame_ref].Layers.Count)
+                        if (frame_ref >= m_frames.Count || layer_ref >= m_frames[frame_ref].Layers.Count)
                             throw new InvalidFormatException();
                         var layer = m_frames[frame_ref].Layers[layer_ref];
                         byte[] src = is_alpha ? layer.Alpha : layer.Pixels;
@@ -371,7 +371,7 @@ namespace GameRes.Formats.LiveMaker
                 return ReadBlocks (frame, zs, is_alpha);
         }
 
-        byte[] ReadJpeg (Frame frame, Stream packed)
+        byte[] ReadJpeg (Frame frame, Stream packed, bool is_alpha)
         {
             var decoder = new JpegBitmapDecoder (packed, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
             var bitmap = decoder.Frames[0];
@@ -379,6 +379,8 @@ namespace GameRes.Formats.LiveMaker
             int stride = bitmap.PixelWidth * bitmap.Format.BitsPerPixel / 8;
             var pixels = new byte[bitmap.PixelHeight * stride];
             bitmap.CopyPixels (pixels, stride, 0);
+            if (!is_alpha)
+                frame.Stride = stride;
             return pixels;
         }
 
