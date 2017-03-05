@@ -29,6 +29,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -412,14 +413,14 @@ namespace GARbro.GUI
             }
         }
 
-        void OnExtractComplete (object sender, RunWorkerCompletedEventArgs e)
+        async void OnExtractComplete (object sender, RunWorkerCompletedEventArgs e)
         {
             m_extract_in_progress = false;
             m_progress_dialog.Dispose();
             m_main.Activate();
             if (!m_main.ViewModel.IsArchive)
             {
-                m_main.Dispatcher.Invoke (m_main.RefreshView);
+                await m_main.Dispatcher.Invoke<Task> (m_main.RefreshView);
             }
             m_main.SetStatusText (Localization.Format ("MsgExtractedFiles", m_extract_count));
             this.Dispose();

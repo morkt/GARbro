@@ -176,15 +176,15 @@ namespace GARbro.GUI
             }
         }
 
-        void OnCreateComplete (object sender, RunWorkerCompletedEventArgs e)
+        async void OnCreateComplete (object sender, RunWorkerCompletedEventArgs e)
         {
             m_progress_dialog.Dispose();
             m_main.Activate();
             if (null == m_pending_error)
             {
                 Settings.Default.appLastCreatedArchive = m_arc_name;
-                m_main.Dispatcher.Invoke (() => {
-                    m_main.ChangePosition (new DirectoryPosition (m_arc_name));
+                await m_main.Dispatcher.Invoke (async () => {
+                    await m_main.ChangePosition (new DirectoryPosition (m_arc_name));
                 });
             }
             else

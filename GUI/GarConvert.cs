@@ -249,7 +249,7 @@ namespace GARbro.GUI
             }
         }
 
-        void OnConvertComplete (object sender, RunWorkerCompletedEventArgs e)
+        async void OnConvertComplete (object sender, RunWorkerCompletedEventArgs e)
         {
             m_main.ResumeWatchDirectoryChanges();
             m_progress_dialog.Dispose();
@@ -261,7 +261,7 @@ namespace GARbro.GUI
                     m_main.PopupError (m_pending_error.Message, guiStrings.TextMediaConvertError);
             }
             m_main.Activate();
-            m_main.RefreshView();
+            await m_main.RefreshView();
         }
     }
 }

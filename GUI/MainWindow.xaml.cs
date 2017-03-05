@@ -31,6 +31,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -85,19 +86,19 @@ namespace GARbro.GUI
             pathLine.EnterKeyDown += acb_OnKeyDown;
         }
 
-        void WindowLoaded (object sender, RoutedEventArgs e)
+        async void WindowLoaded (object sender, RoutedEventArgs e)
         {
-            lv_SetSortMode (Settings.Default.lvSortColumn, Settings.Default.lvSortDirection);
-            Dispatcher.InvokeAsync (WindowRendered, DispatcherPriority.ContextIdle);
             ImageData.SetDefaultDpi (Desktop.DpiX, Desktop.DpiY);
+            lv_SetSortMode (Settings.Default.lvSortColumn, Settings.Default.lvSortDirection);
+            await Dispatcher.InvokeAsync<Task> (WindowRendered, DispatcherPriority.ContextIdle);
         }
 
-        void WindowRendered ()
+        async Task WindowRendered ()
         {
             DirectoryViewModel vm = null;
             try
             {
-                vm = GetNewViewModel (m_app.InitPath);
+                vm = await GetNewViewModel (m_app.InitPath);
             }
             catch (Exception X)
             {
@@ -105,7 +106,7 @@ namespace GARbro.GUI
             }
             if (null == vm)
             {
-                vm = CreateViewModel (Directory.GetCurrentDirectory(), true);
+                vm = await CreateViewModel (Directory.GetCurrentDirectory(), true);
             }
             ViewModel = vm;
             lv_SelectItem (0);
@@ -311,7 +312,7 @@ namespace GARbro.GUI
             ViewModel = vm;
         }
 
-        DirectoryViewModel GetNewViewModel (string path)
+        async Task<DirectoryViewModel> GetNewViewModel (string path)
         {
             if (!string.IsNullOrEmpty (path))
             {
@@ -319,10 +320,35 @@ namespace GARbro.GUI
                     path = Path.GetFullPath (path);
                 var entry = VFS.FindFile (path);
                 if (!(entry is SubDirEntry))
-                    SetBusyState();
-                VFS.ChDir (entry);
+                {
+                    using (new DisableInputScope (this))
+                        await Task.Run (() => VFS.ChDir (entry));
+                }
+                else
+                {
+                    VFS.ChDir (entry);
+                }
             }
             return new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
+        }
+
+        internal sealed class DisableInputScope : IDisposable
+        {
+            MainWindow parent;
+            public DisableInputScope (MainWindow win, Cursor cursor = null)
+            {
+                parent = win;
+                parent.IsEnabled = false;
+                parent.m_busy_state = true;
+                Mouse.OverrideCursor = cursor ?? Cursors.Wait;
+            }
+
+            public void Dispose ()
+            {
+                parent.IsEnabled = true;
+                parent.m_busy_state = false;
+                Mouse.OverrideCursor = null;
+            }
         }
 
         private bool m_busy_state = false;
@@ -340,11 +366,11 @@ namespace GARbro.GUI
         /// <summary>
         /// Create view model corresponding to <paramref name="path">. Returns null on error.
         /// </summary>
-        DirectoryViewModel TryCreateViewModel (string path)
+        async Task<DirectoryViewModel> TryCreateViewModel (string path)
         {
             try
             {
-                return GetNewViewModel (path);
+                return await GetNewViewModel (path);
             }
             catch (Exception X)
             {
@@ -357,11 +383,11 @@ namespace GARbro.GUI
         /// Create view model corresponding to <paramref name="path"> or empty view model if there was
         /// an error accessing path.
         /// </summary>
-        DirectoryViewModel CreateViewModel (string path, bool suppress_warning = false)
+        async Task<DirectoryViewModel> CreateViewModel (string path, bool suppress_warning = false)
         {
             try
             {
-                return GetNewViewModel (path);
+                return await GetNewViewModel (path);
             }
             catch (Exception X)
             {
@@ -400,14 +426,14 @@ namespace GARbro.GUI
             m_watcher.EnableRaisingEvents = !ViewModel.IsArchive;
         }
 
-        private void InvokeRefreshView (object source, FileSystemEventArgs e)
+        private async void InvokeRefreshView (object source, FileSystemEventArgs e)
         {
             var watcher = source as FileSystemWatcher;
             var vm = ViewModel;
             if (!vm.IsArchive && vm.Path.First() == watcher.Path)
             {
                 watcher.EnableRaisingEvents = false;
-                Dispatcher.Invoke (RefreshView);
+                await Dispatcher.Invoke<Task> (RefreshView);
             }
         }
         #endregion
@@ -730,7 +756,7 @@ namespace GARbro.GUI
 
         static readonly Regex FullpathRe = new Regex (@"^(?:[a-z]:|[\\/])", RegexOptions.IgnoreCase);
 
-        private void acb_OnKeyDown (object sender, KeyEventArgs e)
+        private async void acb_OnKeyDown (object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Return)
                 return;
@@ -739,12 +765,13 @@ namespace GARbro.GUI
                 return;
             if (FullpathRe.IsMatch (path))
             {
-                OpenFile (path);
+                await OpenFile (path);
                 return;
             }
             try
             {
-                PushViewModel (GetNewViewModel (path));
+                var vm = await GetNewViewModel (path);
+                PushViewModel (vm);
                 lv_Focus();
             }
             catch (Exception X)
@@ -765,12 +792,12 @@ namespace GARbro.GUI
             return new DirectoryPosition (ViewModel, evm);
         }
 
-        public bool SetCurrentPosition (DirectoryPosition pos)
+        public async Task<bool> SetCurrentPosition (DirectoryPosition pos)
         {
             try
             {
                 VFS.FullPath = pos.Path;
-                var vm = TryCreateViewModel (pos.Path.Last());
+                var vm = await TryCreateViewModel (pos.Path.Last());
                 if (null == vm)
                     return false;
                 ViewModel = vm;
@@ -782,10 +809,10 @@ namespace GARbro.GUI
             {
                 // if VFS.FullPath throws an exception, ViewModel becomes inconsistent at this point
                 // and should be rebuilt
-                ViewModel = CreateViewModel (VFS.Top.CurrentDirectory, true);
                 SetStatusText (X.Message);
-                return false;
             }
+            ViewModel = await CreateViewModel (VFS.Top.CurrentDirectory, true);
+            return false;
         }
 
         public void SaveCurrentPosition ()
@@ -793,26 +820,26 @@ namespace GARbro.GUI
             m_history.Push (GetCurrentPosition());
         }
 
-        public void ChangePosition (DirectoryPosition new_pos)
+        public async Task ChangePosition (DirectoryPosition new_pos)
         {
             var current = GetCurrentPosition();
             if (!current.Path.SequenceEqual (new_pos.Path))
                 SaveCurrentPosition();
-            SetCurrentPosition (new_pos);
+            await SetCurrentPosition (new_pos);
         }
 
-        private void GoBackExec (object sender, ExecutedRoutedEventArgs e)
+        private async void GoBackExec (object sender, ExecutedRoutedEventArgs e)
         {
             DirectoryPosition current = m_history.Undo (GetCurrentPosition());
             if (current != null)
-                SetCurrentPosition (current);
+                await SetCurrentPosition (current);
         }
 
-        private void GoForwardExec (object sender, ExecutedRoutedEventArgs e)
+        private async void GoForwardExec (object sender, ExecutedRoutedEventArgs e)
         {
             DirectoryPosition current = m_history.Redo (GetCurrentPosition());
             if (current != null)
-                SetCurrentPosition (current);
+                await SetCurrentPosition (current);
         }
 
         private void CanExecuteGoBack (object sender, CanExecuteRoutedEventArgs e)
@@ -826,7 +853,7 @@ namespace GARbro.GUI
         }
         #endregion
 
-        private void OpenFileExec (object control, ExecutedRoutedEventArgs e)
+        private async void OpenFileExec (object control, ExecutedRoutedEventArgs e)
         {
             var dlg = new OpenFileDialog {
                 CheckFileExists = true,
@@ -836,14 +863,14 @@ namespace GARbro.GUI
             };
             if (!dlg.ShowDialog (this).Value)
                 return;
-            OpenFile (dlg.FileName);
+            await OpenFile (dlg.FileName);
         }
 
-        private void OpenFile (string filename)
+        private async Task OpenFile (string filename)
         {
             try
             {
-                OpenFileOrDir (filename);
+                await OpenFileOrDir (filename);
             }
             catch (OperationCanceledException X)
             {
@@ -855,12 +882,15 @@ namespace GARbro.GUI
             }
         }
 
-        private void OpenFileOrDir (string filename)
+        private async Task OpenFileOrDir (string filename)
         {
             if (filename == CurrentPath || string.IsNullOrEmpty (filename))
                 return;
             if (File.Exists (filename))
-                VFS.FullPath = new string[] { filename, "" };
+            {
+                using (new DisableInputScope (this))
+                    await Task.Run (() => { VFS.FullPath = new string[] { filename, "" }; });
+            }
             else
                 VFS.FullPath = new string[] { filename };
             var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
@@ -870,18 +900,18 @@ namespace GARbro.GUI
             lv_SelectItem (0);
         }
 
-        private void OpenRecentExec (object control, ExecutedRoutedEventArgs e)
+        private async void OpenRecentExec (object control, ExecutedRoutedEventArgs e)
         {
             string filename = e.Parameter as string;
             if (string.IsNullOrEmpty (filename))
                 return;
-            OpenFile (filename);
+            await OpenFile (filename);
         }
 
         /// <summary>
         /// Open file/directory.
         /// </summary>
-        private void OpenItemExec (object control, ExecutedRoutedEventArgs e)
+        private async void OpenItemExec (object control, ExecutedRoutedEventArgs e)
         {
             EntryViewModel entry = null;
             var lvi = e.OriginalSource as ListViewItem;
@@ -896,10 +926,10 @@ namespace GARbro.GUI
                 PlayFile (entry.Source);
                 return;
             }
-            OpenDirectoryEntry (ViewModel, entry);
+            await OpenDirectoryEntry (ViewModel, entry);
         }
 
-        private void OpenDirectoryEntry (DirectoryViewModel vm, EntryViewModel entry)
+        private async Task OpenDirectoryEntry (DirectoryViewModel vm, EntryViewModel entry)
         {
             string old_dir = null == vm ? "" : vm.Path.Last();
             string new_dir = entry.Source.Name;
@@ -912,11 +942,14 @@ namespace GARbro.GUI
             }
             Trace.WriteLine (new_dir, "OpenDirectoryEntry");
             int old_fs_count = VFS.Count;
-            vm = TryCreateViewModel (new_dir);
+            vm = await TryCreateViewModel (new_dir);
             if (null == vm)
             {
                 if (VFS.Count == old_fs_count)
+                {
+                    lv_SelectItem (entry);
                     return;
+                }
                 vm = new DirectoryViewModel (VFS.FullPath, new Entry[0], VFS.IsVirtual);
                 PushViewModel (vm);
             }
@@ -1040,16 +1073,16 @@ namespace GARbro.GUI
         /// <summary>
         /// Refresh current view.
         /// </summary>
-        private void RefreshExec (object sender, ExecutedRoutedEventArgs e)
+        private async void RefreshExec (object sender, ExecutedRoutedEventArgs e)
         {
-            RefreshView();
+            await RefreshView();
         }
 
-        public void RefreshView ()
+        public async Task RefreshView ()
         {
             VFS.Flush();
             var pos = GetCurrentPosition();
-            SetCurrentPosition (pos);
+            await SetCurrentPosition (pos);
         }
 
         /// <summary>
@@ -1077,7 +1110,7 @@ namespace GARbro.GUI
         /// <summary>
         /// Delete item from both media library and disk drive.
         /// </summary>
-        private void DeleteItemExec (object sender, ExecutedRoutedEventArgs e)
+        private async void DeleteItemExec (object sender, ExecutedRoutedEventArgs e)
         {
             var items = CurrentDirectory.SelectedItems.Cast<EntryViewModel>().Where (f => !f.IsDirectory);
             if (!items.Any())
@@ -1111,7 +1144,7 @@ namespace GARbro.GUI
                         ResumeWatchDirectoryChanges();
                         throw;
                     }
-                    RefreshView();
+                    await RefreshView();
                     SetStatusText (Localization.Format ("MsgDeletedItems", count));
                 }
             }
@@ -1364,6 +1397,8 @@ namespace GARbro.GUI
                 if (null != control)
                 {
                     bool busy_state = m_busy_state;
+                    if (busy_state)
+                        Mouse.OverrideCursor = null;
                     var param_dialog = new ArcParametersDialog (control, e.Notice);
                     param_dialog.Owner = this;
                     e.InputResult = param_dialog.ShowDialog() ?? false;
@@ -1404,7 +1439,7 @@ namespace GARbro.GUI
                 item.Visibility = Visibility.Visible;
         }
 
-        private void OnDropEvent (object sender, DragEventArgs e)
+        private async void OnDropEvent (object sender, DragEventArgs e)
         {
             try
             {
@@ -1416,17 +1451,17 @@ namespace GARbro.GUI
                 var filename = files.First();
                 try
                 {
-                    OpenFileOrDir (filename);
+                    await OpenFileOrDir (filename);
                 }
                 catch (Exception X)
                 {
-                    VFS.FullPath = new string[] { Path.GetDirectoryName (filename) };
-                    var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
-                    PushViewModel (vm);
-                    filename = Path.GetFileName (filename);
-                    lv_SelectItem (filename);
                     SetStatusText (string.Format("{0}: {1}", filename, X.Message));
                 }
+                VFS.FullPath = new string[] { Path.GetDirectoryName (filename) };
+                var vm = new DirectoryViewModel (VFS.FullPath, VFS.GetFiles(), VFS.IsVirtual);
+                PushViewModel (vm);
+                filename = Path.GetFileName (filename);
+                lv_SelectItem (filename);
             }
             catch (Exception X)
             {
