@@ -2,7 +2,7 @@
 //! \date       Thu Nov 05 04:40:35 2015
 //! \brief      AnimeGameSystem resource archive.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -106,10 +106,10 @@ namespace GameRes.Formats.Ags
 
         public override object GetAccessWidget ()
         {
-            return new GUI.WidgetAGS();
+            return new GUI.WidgetAGS (KnownSchemes.Keys);
         }
 
-        public static EncryptionScheme GetScheme (string title)
+        public EncryptionScheme GetScheme (string title)
         {
             EncryptionScheme scheme;
             if (string.IsNullOrEmpty (title) || !KnownSchemes.TryGetValue (title, out scheme))
@@ -117,18 +117,19 @@ namespace GameRes.Formats.Ags
             return scheme;
         }
 
-        public static Dictionary<string, EncryptionScheme> KnownSchemes = new Dictionary<string, EncryptionScheme>();
-        static HashSet<string> EncryptedArchives = new HashSet<string>();
+        AgsScheme m_scheme = new AgsScheme
+        {
+            KnownSchemes = new Dictionary<string, EncryptionScheme>(),
+            EncryptedArchives = new HashSet<string>()
+        };
+
+        Dictionary<string, EncryptionScheme> KnownSchemes { get { return m_scheme.KnownSchemes; } }
+        HashSet<string>                 EncryptedArchives { get { return m_scheme.EncryptedArchives; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new AgsScheme { KnownSchemes = KnownSchemes, EncryptedArchives = EncryptedArchives }; }
-            set
-            {
-                var ags = (AgsScheme)value;
-                KnownSchemes = ags.KnownSchemes;
-                EncryptedArchives = ags.EncryptedArchives;
-            }
+            get { return m_scheme; }
+            set { m_scheme = (AgsScheme)value; }
         }
     }
 
