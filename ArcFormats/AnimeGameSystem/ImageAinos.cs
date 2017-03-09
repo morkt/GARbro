@@ -24,10 +24,8 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
 using System.Windows.Media;
 using GameRes.Utility;
 
@@ -37,150 +35,6 @@ namespace GameRes.Formats.Ags
     {
         public int Type;
         public int Right, Bottom;
-    }
-
-    internal class AniEntry : Entry
-    {
-        public int  FrameIndex;
-        public int  FrameType;
-        public int  KeyFrame;
-    }
-
-    [Export(typeof(ArchiveFormat))]
-    public class AniOpener : ArchiveFormat
-    {
-        public override string         Tag { get { return "ANI"; } }
-        public override string Description { get { return "Anime Game System animation resource"; } }
-        public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanWrite { get { return false; } }
-
-        public override ArcFile TryOpen (ArcView file)
-        {
-            if (!file.Name.EndsWith (".ani", StringComparison.InvariantCultureIgnoreCase))
-                return null;
-            uint first_offset = file.View.ReadUInt32 (0);
-            if (first_offset < 4 || file.MaxOffset > int.MaxValue || first_offset >= file.MaxOffset || 0 != (first_offset & 3))
-                return null;
-            int frame_count = (int)(first_offset / 4);
-            if (frame_count > 10000)
-                return null;
-            long index_offset = 4;
-
-            var frame_table = new uint[frame_count];
-            frame_table[0] = first_offset;
-            for (int i = 1; i < frame_count; ++i)
-            {
-                var offset = file.View.ReadUInt32 (index_offset);
-                index_offset += 4;
-                if (offset < first_offset || offset >= file.MaxOffset)
-                    return null;
-                frame_table[i] = offset;
-            }
-
-            var frame_map = new Dictionary<uint, byte>();
-            foreach (var offset in frame_table)
-            {
-                if (!frame_map.ContainsKey (offset))
-                {
-                    byte frame_type = file.View.ReadByte (offset);
-                    if (frame_type >= 0x20)
-                        return null;
-                    frame_map[offset] = frame_type;
-                }
-            }
-
-            int last_key_frame = 0;
-            var dir = new List<Entry>();
-            for (int i = 0; i < frame_count; ++i)
-            {
-                var offset = frame_table[i];
-                int frame_type = frame_map[offset];
-                if (1 == frame_type)
-                    continue;
-                frame_type &= 0xF;
-                if (0 == frame_type || 0xA == frame_type)
-                    last_key_frame = dir.Count;
-                var entry = new AniEntry
-                {
-                    Name = string.Format ("{0:D4}.tga", i),
-                    Type = "image",
-                    Offset = offset,
-                    FrameType = frame_type,
-                    KeyFrame = last_key_frame,
-                    FrameIndex = dir.Count,
-                };
-                dir.Add (entry);
-            }
-            if (0 == dir.Count)
-                return null;
-
-            var ordered = dir.OrderBy (e => e.Offset).ToList();
-            for (int i = 0; i < ordered.Count; ++i)
-            {
-                var entry = ordered[i] as AniEntry;
-                long next_offset = file.MaxOffset;
-                for (int j = i+1; j <= ordered.Count; ++j)
-                {
-                    next_offset = j == ordered.Count ? file.MaxOffset : ordered[j].Offset;
-                    if (next_offset != entry.Offset)
-                        break;
-                }
-                entry.Size = (uint)(next_offset - entry.Offset);
-            }
-            return new ArcFile (file, this, dir);
-        }
-
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            var ani = (AniEntry)entry;
-            byte[] key_frame = null;
-            if (ani.KeyFrame != ani.FrameIndex)
-            {
-                var dir = (List<Entry>)arc.Dir;
-                for (int i = ani.KeyFrame; i < ani.FrameIndex; ++i)
-                {
-                    var frame = dir[i];
-                    using (var s = arc.File.CreateStream (frame.Offset, frame.Size))
-                    {
-                        var frame_info = Cg.ReadMetaData (s) as CgMetaData;
-                        if (null == frame_info)
-                            break;
-                        using (var reader = new CgFormat.Reader (s, frame_info, key_frame))
-                        {
-                            reader.Unpack();
-                            key_frame = reader.Data;
-                        }
-                    }
-                }
-            }
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            CgMetaData info = null;
-            try
-            {
-                info = Cg.ReadMetaData (input) as CgMetaData;
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
-            }
-            if (null == info)
-            {
-                input.Position = 0;
-                return input;
-            }
-            using (input)
-            using (var reader = new CgFormat.Reader (input, info, key_frame))
-            {
-                reader.Unpack();
-                return TgaStream.Create (info, reader.Data);
-            }
-        }
-
-        static Lazy<ImageFormat> s_Cg = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("CG"));
-
-        ImageFormat Cg { get { return s_Cg.Value; } }
     }
 
     [Export(typeof(ImageFormat))]
@@ -227,12 +81,8 @@ namespace GameRes.Formats.Ags
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = (CgMetaData)info;
-            using (var reader = new Reader (stream, meta))
-            {
-                reader.Unpack();
-                return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, (int)info.Width*3);
-            }
+            using (var reader = new Reader (stream, (CgMetaData)info))
+                return reader.Image;
         }
 
         internal sealed class Reader : IImageDecoder
@@ -247,6 +97,7 @@ namespace GameRes.Formats.Ags
             int             m_top;
             int             m_right;
             int             m_bottom;
+            bool            m_should_dispose;
 
             public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
             public ImageFormat SourceFormat { get { return null; } }
@@ -265,7 +116,11 @@ namespace GameRes.Formats.Ags
             }
             public byte[] Data { get { return m_output; } }
 
-            public Reader (IBinaryStream file, CgMetaData info, byte[] base_image = null)
+            public Reader (IBinaryStream file, CgMetaData info) : this (file, info, null, true)
+            {
+            }
+
+            public Reader (IBinaryStream file, CgMetaData info, byte[] base_image, bool leave_open = false)
             {
                 m_type = info.Type;
                 m_width = (int)info.Width;
@@ -283,6 +138,7 @@ namespace GameRes.Formats.Ags
                     m_input.Position = 13;
                 else
                     m_input.Position = 5;
+                m_should_dispose = !leave_open;
             }
 
             static readonly short[] ShiftX = new short[] { // 409b6c
@@ -416,8 +272,17 @@ namespace GameRes.Formats.Ags
             }
 
             #region IDisposable Members
+            bool m_disposed = false;
             public void Dispose ()
             {
+                if (!m_disposed)
+                {
+                    if (m_should_dispose)
+                    {
+                        m_input.Dispose();
+                    }
+                    m_disposed = true;
+                }
                 GC.SuppressFinalize (this);
             }
             #endregion
