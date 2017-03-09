@@ -55,6 +55,8 @@ namespace GameRes
         Bgr     = 2,
         RgbX    = 5,
         BgrX    = 6,
+        RgbA    = 9,
+        BgrA    = 10,
     }
 
     public class ImageData
@@ -199,6 +201,10 @@ namespace GameRes
             Func<int, Color> get_color;
             if (PaletteFormat.Bgr == format || PaletteFormat.BgrX == format)
                 get_color = x => Color.FromRgb (palette_data[x+2], palette_data[x+1], palette_data[x]);
+            else if (PaletteFormat.BgrA == format)
+                get_color = x => Color.FromArgb (palette_data[x+3], palette_data[x+2], palette_data[x+1], palette_data[x]);
+            else if (PaletteFormat.RgbA == format)
+                get_color = x => Color.FromArgb (palette_data[x+3], palette_data[x], palette_data[x+1], palette_data[x+2]);
             else
                 get_color = x => Color.FromRgb (palette_data[x],   palette_data[x+1], palette_data[x+2]);
 
