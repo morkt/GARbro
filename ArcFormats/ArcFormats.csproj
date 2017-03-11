@@ -101,6 +101,7 @@
     <Compile Include="Foster\ImageC24.cs" />
     <Compile Include="GameSystem\ArcPureMail.cs" />
     <Compile Include="GameSystem\AudioADP4.cs" />
+    <Compile Include="Kaas\AudioKAAS.cs" />
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
     <Compile Include="Software House Parsley\ArcCG.cs" />
