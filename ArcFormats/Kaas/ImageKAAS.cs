@@ -2,7 +2,7 @@
 //! \date       Sat Apr 11 03:09:41 2015
 //! \brief      KAAS engine image format implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -46,9 +46,14 @@ namespace GameRes.Formats.KAAS
     [Export(typeof(ImageFormat))]
     public class PicFormat : ImageFormat
     {
-        public override string         Tag { get { return "PIC"; } }
+        public override string         Tag { get { return "PIC/KAAS"; } }
         public override string Description { get { return "KAAS engine image format"; } }
         public override uint     Signature { get { return 0; } }
+
+        public PicFormat ()
+        {
+            Extensions = new string[] { "" };
+        }
 
         public override void Write (Stream file, ImageData image)
         {
@@ -57,26 +62,24 @@ namespace GameRes.Formats.KAAS
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            int mode = stream.ReadByte();
+            var header = stream.ReadHeader (0x12);
+            int mode = header[0];
             switch (mode)
             {
-            case 5: case 6:
+            case 5: case 6: case 8: case 9:
                 break;
             default:
                 return null;
             }
-            int key = stream.ReadByte();
-            var header = stream.ReadBytes (0x10);
-            if (header.Length != 0x10)
-                return null;
-            uint width  = LittleEndian.ToUInt16 (header, 0);
-            uint height = LittleEndian.ToUInt16 (header, 2);
+            int key = header[1];
+            uint width  = LittleEndian.ToUInt16 (header, 2);
+            uint height = LittleEndian.ToUInt16 (header, 4);
             if (0 == width || width > 4096 || 0 == height || height > 4096)
                 return null;
             var file_len = stream.Length;
-            uint comp_size1 = LittleEndian.ToUInt32 (header, 6);
-            uint comp_size2 = LittleEndian.ToUInt32 (header, 10);
-            uint comp_size3 = LittleEndian.ToUInt16 (header, 14);
+            uint comp_size1 = LittleEndian.ToUInt32 (header, 8);
+            uint comp_size2 = LittleEndian.ToUInt32 (header, 12);
+            uint comp_size3 = LittleEndian.ToUInt16 (header, 16);
             if (comp_size1 >= file_len || comp_size2 >= file_len || comp_size3 >= file_len)
                 return null;
             return new PicMetaData
@@ -94,15 +97,14 @@ namespace GameRes.Formats.KAAS
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            stream.Position = 0x12;
-            using (var reader = new Reader (stream.AsStream, (PicMetaData)info))
+            using (var reader = new Reader (stream, (PicMetaData)info))
             {
                 reader.Unpack();
-                return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, (int)info.Width*3);
+                return ImageData.Create (info, reader.Format, null, reader.Data, reader.Stride);
             }
         }
 
-        internal class Reader : IDisposable
+        internal sealed class Reader : IDisposable
         {
             byte[]          m_comp0;
             byte[]          m_comp1;
@@ -111,12 +113,16 @@ namespace GameRes.Formats.KAAS
             int             m_mode;
             int             m_key;
 
-            public byte[] Data { get { return m_output; } }
+            public PixelFormat Format { get { return PixelFormats.Bgr24; } }
+            public byte[]        Data { get { return m_output; } }
+            public int         Stride { get; private set; }
 
-            public Reader (Stream file, PicMetaData info)
+            public Reader (IBinaryStream file, PicMetaData info)
             {
                 m_mode = info.Mode;
                 m_key = info.Key;
+                Stride = (int)info.Width * 3;
+                file.Position = 0x12;
                 if (6 == info.Mode)
                 {
                     uint out_len = info.Width * info.Height * 3;
@@ -149,6 +155,8 @@ namespace GameRes.Formats.KAAS
                 {
                 case 5: Unpack5(); break;
                 case 6: Unpack6(); break;
+                case 8: Unpack8(); break;
+                case 9: Unpack9(); break;
                 default:
                     throw new NotSupportedException ("[KAAS] Not supported image compression");
                 }
@@ -156,54 +164,52 @@ namespace GameRes.Formats.KAAS
 
             private void Unpack5 ()
             {
-                int i = 0;
-                int src = 0;
+                int src0 = 0;
+                int src1 = 0;
+                int src2 = 0;
                 int dst = 0;
                 int ctl = 1;
-                int x = 0;
-
                 for (;;)
                 {
-//                    int type = (m_comp0[x/4] >> (x & 3)*2) & 3;
                     if (1 == ctl)
                     {
-                        if (x == m_comp0.Length)
+                        if (src0 == m_comp0.Length)
                             break;
-                        ctl = m_comp0[x++] | 0x100;
+                        ctl = m_comp0[src0++] | 0x100;
                     }
                     int type = ctl & 3;
                     ctl >>= 2;
 
-                    int count, off;
+                    int count, offset;
                     switch (type)
                     {
                     case 0:
-                        m_output[dst++] = m_comp1[src++];
+                        m_output[dst++] = m_comp1[src1++];
                         break;
                     case 1:
-                        count = ((m_comp2[i / 2] >> (4 * (i & 1))) & 0xf) + 2;
-                        off = m_comp1[src++] + 2;
-                        Binary.CopyOverlapped (m_output, dst-off, dst, count);
+                        count = ((m_comp2[src2 / 2] >> (4 * (src2 & 1))) & 0xf) + 2;
+                        ++src2;
+                        offset = m_comp1[src1++] + 2;
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
                         dst += count;
-                        ++i;
                         break;
                     case 2:
-                        count = LittleEndian.ToUInt16 (m_comp1, src);
+                        count = LittleEndian.ToUInt16 (m_comp1, src1);
                         if (0 == count)
                             return;
-                        off = (count & 0xfff) + 2;
+                        src1 += 2;
+                        offset = (count & 0xfff) + 2;
                         count = (count >> 12) + 2;
-                        Binary.CopyOverlapped (m_output, dst-off, dst, count);
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
                         dst += count;
-                        src += 2;
                         break;
                     default:
-                        off = (((m_comp2[i / 2] << (4 * (2 - (i & 1)))) & 0xf00) | m_comp1[src]) + 2;
-                        count = m_comp1[src+1] + 18;
-                        Binary.CopyOverlapped (m_output, dst-off, dst, count);
+                        offset = (((m_comp2[src2 / 2] << (4 * (2 - (src2 & 1)))) & 0xf00) | m_comp1[src1]) + 2;
+                        count = m_comp1[src1+1] + 18;
+                        ++src2;
+                        src1 += 2;
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
                         dst += count;
-                        src += 2;
-                        ++i;
                         break;
                     }
                 }
@@ -214,6 +220,108 @@ namespace GameRes.Formats.KAAS
                 int conv_base = m_key & 0x3f;
                 for (int i = 0; i < m_output.Length; ++i)
                     m_output[i] -= ScrambleTable[conv_base + (i&0xff)];
+            }
+
+            private void Unpack8 ()
+            {
+                int src0 = 0;
+                int src1 = 0;
+                int src2 = 0;
+                int dst = 0;
+                for (;;)
+                {
+                    int count, offset;
+                    int type = (m_comp0[src0 / 8] >> (src0 & 6)) & 3;
+                    src0 += 2;
+                    if (type == 0)
+                    {
+                        m_output[dst++] = m_comp1[src1++];
+                        m_output[dst++] = m_comp1[src1++];
+                        m_output[dst++] = m_comp1[src1++];
+                    }
+                    else if (1 == type)
+                    {
+                        int code = m_comp1[src1++] + ((m_comp2[src2 / 2] << (4 * (2 - (src2 & 1)))) & 0xf00);
+                        ++src2;
+                        count = ((code >> 10) + 1) * 3;
+                        offset = ((code & 0x3FF) + 1) * 3;
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
+                        dst += count;
+                    }
+                    else if (2 == type)
+                    {
+                        int code = LittleEndian.ToUInt16 (m_comp1, src1);
+                        src1 += 2;
+                        count = ((code >> 14) + 1) * 3;
+                        offset = ((code & 0x3FFF) + 1) * 3;
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
+                        dst += count;
+                    }
+                    else
+                    {
+                        int code = ((m_comp2[src2 / 2] << (4 * (4 - (src2 & 1)))) & 0xF0000) | LittleEndian.ToUInt16 (m_comp1, src1);
+                        if (0 == code)
+                            break;
+                        src1 += 2;
+                        ++src2;
+                        count = ((code >> 14) + 5) * 3;
+                        offset = ((code & 0x3FFF) + 1) * 3;
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
+                        dst += count;
+                    }
+                }
+            }
+
+            private void Unpack9 ()
+            {
+                int src0 = 0;
+                int src1 = 0;
+                int src2 = 0;
+                int dst = 0;
+                for (;;)
+                {
+                    int count, offset;
+                    int type = (m_comp0[src0 / 8] >> (src0 & 6)) & 3;
+                    src0 += 2;
+                    if (0 == type)
+                    {
+                        count = (m_comp0[src0 / 8] >> (src0 & 6)) & 3;
+                        src0 += 2;
+                        count = (count + 1) * 3;
+                        Buffer.BlockCopy (m_comp1, src1, m_output, dst, count);
+                        dst += count;
+                        src1 += count;
+                    }
+                    else
+                    {
+                        if (1 == type)
+                        {
+                            int code = m_comp1[src1++] + ((m_comp2[src2 / 2] << (4 * (2 - (src2 & 1)))) & 0xF00);
+                            ++src2;
+                            count = ((code >> 10) + 1) * 3;
+                            offset = ((code & 0x3FF) + 1) * 3;
+                        }
+                        else if (2 == type)
+                        {
+                            int code = LittleEndian.ToUInt16 (m_comp1, src1);
+                            src1 += 2;
+                            count = ((code >> 14) + 1) * 3;
+                            offset = ((code & 0x3FFF) + 1) * 3;
+                        }
+                        else
+                        {
+                            int code = ((m_comp2[src2 / 2] << (4 * (4 - (src2 & 1)))) & 0xf0000) | LittleEndian.ToUInt16 (m_comp1, src1);
+                            if (0 == code)
+                                break;
+                            src1 += 2;
+                            ++src2;
+                            count = ((code >> 14) + 5) * 3;
+                            offset = ((code & 0x3FFF) + 1) * 3;
+                        }
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
+                        dst += count;
+                    }
+                }
             }
 
             static readonly byte[] ScrambleTable = new byte[] {
@@ -248,5 +356,3 @@ namespace GameRes.Formats.KAAS
         }
     }
 }
-
-
