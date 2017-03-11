@@ -129,7 +129,7 @@ namespace GameRes.Formats.Ags
                 m_top = info.OffsetY;
                 m_right = info.Right == 0 ? m_width : info.Right;
                 m_bottom = info.Bottom == 0 ? m_height : info.Bottom;
-                m_output = base_image ?? new byte[3*m_width*m_height];
+                m_output = base_image ?? CreateBackground();
                 m_input = file;
                 Info = info;
                 ShiftTable = InitShiftTable();
@@ -157,6 +157,14 @@ namespace GameRes.Formats.Ags
                     table[i] = 3 * (ShiftX[i] + ShiftY[i] * m_width);
                 }
                 return table;
+            }
+
+            private byte[] CreateBackground ()
+            {
+                var bg = new byte[3*m_width*m_height];
+                for (int i = 1; i < bg.Length; i += 3)
+                    bg[i] = 0xFF;
+                return bg;
             }
 
             public void Unpack ()

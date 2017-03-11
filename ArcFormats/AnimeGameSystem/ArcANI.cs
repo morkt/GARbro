@@ -147,10 +147,9 @@ namespace GameRes.Formats.Ags
                 }
             }
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            CgMetaData info = null;
             try
             {
-                info = Cg.ReadMetaData (input) as CgMetaData;
+                var info = Cg.ReadMetaData (input) as CgMetaData;
                 if (null == info)
                     throw new InvalidFormatException();
                 return new CgFormat.Reader (input, info, key_frame);
