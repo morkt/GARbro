@@ -51,23 +51,12 @@ namespace GameRes.Formats.Qlie
 
     internal class QlieArchive : ArcFile
     {
-        /// <summary>
-        /// Hash generated from the key data contained within archive index.
-        /// </summary>
-        public uint Hash;
+        public readonly IEncryption Encryption;
 
-        /// <summary>
-        /// Internal game data used to decrypt encrypted entries.
-        /// null if not used.
-        /// </summary>
-        public byte[] GameKeyData;
-
-        public QlieArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir,
-                            uint hash, byte[] key_data)
+        public QlieArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, IEncryption enc)
             : base (arc, impl, dir)
         {
-            Hash = hash;
-            GameKeyData = key_data;
+            Encryption = enc;
         }
     }
 
@@ -115,11 +104,10 @@ namespace GameRes.Formats.Qlie
                 return null;
             long index_offset = file.MaxOffset - 0x1c;
             if (!file.View.AsciiEqual (index_offset, "FilePackVer")
-                || !file.View.AsciiEqual (index_offset+0xC, ".0"))
+                || '.' != file.View.ReadByte (index_offset+0xC))
                 return null;
-            int pack_version = file.View.ReadByte (index_offset+0xB) - '0';
-            if (pack_version < 1 || pack_version > 3)
-                throw new NotSupportedException ("Not supported QLIE archive version");
+            var pack_version = new Version (file.View.ReadByte (index_offset+0xB) - '0',
+                                            file.View.ReadByte (index_offset+0xD) - '0');
             int count = file.View.ReadInt32 (index_offset+0x10);
             if (!IsSaneCount (count))
                 return null;
@@ -129,9 +117,8 @@ namespace GameRes.Formats.Qlie
 
             byte[] arc_key = null;
             byte[] key_file = null;
-            uint name_key = 0xC4; // default name encryption key for versions 1 and 2
             bool use_pack_keyfile = false;
-            if (3 == pack_version)
+            if (pack_version.Major >= 3)
             {
                 key_file = FindKeyFile (file);
                 use_pack_keyfile = key_file != null;
@@ -139,51 +126,45 @@ namespace GameRes.Formats.Qlie
                 if (use_pack_keyfile)
                     arc_key = QueryEncryption (file);
 //                use_pack_keyfile = null != arc_key;
-
-                var key_data = file.View.ReadBytes (file.MaxOffset-0x41C, 0x100);
-                name_key = GenerateKey (key_data) & 0x0FFFFFFFu;
             }
+            var enc = QlieEncryption.Create (file, pack_version, arc_key);
 
             var name_buffer = new byte[0x100];
             var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
+            using (var index = file.CreateStream (index_offset))
             {
-                int name_length = file.View.ReadUInt16 (index_offset);
-                if (name_length > name_buffer.Length)
-                    name_buffer = new byte[name_length];
-                if (name_length != file.View.Read (index_offset+2, name_buffer, 0, (uint)name_length))
-                    return null;
-
-                int key = name_length + ((int)name_key ^ 0x3e);
-                for (int k = 0; k < name_length; ++k)
-                    name_buffer[k] ^= (byte)(((k + 1) ^ key) + k + 1);
-
-                string name = Encodings.cp932.GetString (name_buffer, 0, name_length);
-                var entry = FormatCatalog.Instance.Create<QlieEntry> (name);
-                if (use_pack_keyfile)
-                    entry.RawName = name_buffer.Take (name_length).ToArray();
-
-                index_offset += 2 + name_length;
-                entry.Offset = file.View.ReadInt64 (index_offset);
-                entry.Size   = file.View.ReadUInt32 (index_offset+8);
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                entry.UnpackedSize = file.View.ReadUInt32 (index_offset+12);
-                entry.IsPacked = 0 != file.View.ReadInt32 (index_offset+0x10);
-                entry.IsEncrypted = 0 != file.View.ReadInt32 (index_offset+0x14);
-                entry.Hash = file.View.ReadUInt32 (index_offset+0x18);
-                entry.KeyFile = key_file;
-                if (3 == pack_version && use_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
+                for (int i = 0; i < count; ++i)
                 {
-                    // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
-                    key_file = ReadEntryBytes (file, entry, name_key, arc_key);
+                    int name_length = index.ReadUInt16();
+                    if (enc.IsUnicode)
+                        name_length *= 2;
+                    if (name_length > name_buffer.Length)
+                        name_buffer = new byte[name_length];
+                    if (name_length != index.Read (name_buffer, 0, name_length))
+                        return null;
+                    var name = enc.DecryptName (name_buffer, name_length);
+                    var entry = FormatCatalog.Instance.Create<QlieEntry> (name);
+                    if (use_pack_keyfile)
+                        entry.RawName = name_buffer.Take (name_length).ToArray();
+
+                    entry.Offset = index.ReadInt64();           // [+00]
+                    entry.Size   = index.ReadUInt32();          // [+08]
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    entry.UnpackedSize = index.ReadUInt32();    // [+0C]
+                    entry.IsPacked    = 0 != index.ReadInt32(); // [+10]
+                    entry.IsEncrypted = 0 != index.ReadInt32(); // [+14]
+                    entry.Hash = index.ReadUInt32();            // [+18]
+                    entry.KeyFile = key_file;
+                    if (3 == pack_version.Major && use_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
+                    {
+                        // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
+                        key_file = ReadEntryBytes (file, entry, enc);
+                    }
+                    dir.Add (entry);
                 }
-                dir.Add (entry);
-                index_offset += 0x1c;
             }
-            if (pack_version < 3)
-                name_key = 0;
-            return new QlieArchive (file, this, dir, name_key, arc_key);
+            return new QlieArchive (file, this, dir, enc);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -192,125 +173,27 @@ namespace GameRes.Formats.Qlie
             var qarc = arc as QlieArchive;
             if (null == qent || null == qarc || (!qent.IsEncrypted && !qent.IsPacked))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var data = ReadEntryBytes (arc.File, qent, qarc.Hash, qarc.GameKeyData);
+            var data = ReadEntryBytes (arc.File, qent, qarc.Encryption);
             return new BinMemoryStream (data, entry.Name);
         }
 
-        private byte[] ReadEntryBytes (ArcView file, QlieEntry entry, uint hash, byte[] game_key)
+        private byte[] ReadEntryBytes (ArcView file, QlieEntry entry, IEncryption enc)
         {
             var data = file.View.ReadBytes (entry.Offset, entry.Size);
             if (entry.IsEncrypted)
             {
-                if (entry.KeyFile != null)
-                    DecryptV3 (data, 0, data.Length, entry.RawName, hash, entry.KeyFile, game_key);
-                else
-                    Decrypt (data, 0, data.Length, hash);
+                enc.DecryptEntry (data, 0, data.Length, entry);
             }
             if (entry.IsPacked)
             {
-                var unpacked = Decompress (data);
-                if (null != unpacked)
-                    data = unpacked;
+                data = Decompress (data) ?? data;
             }
             return data;
         }
 
-        private void Decrypt (byte[] buffer, int offset, int length, uint key)
-        {
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException ("offset");
-            if (length > buffer.Length || offset > buffer.Length - length)
-                throw new ArgumentOutOfRangeException ("length");
-
-            ulong hash = 0xA73C5F9DA73C5F9Dul;
-            ulong xor = ((uint)length + key) ^ 0xFEC9753Eu;
-            xor |= xor << 32;
-            unsafe
-            {
-                fixed (byte* raw = buffer)
-                {
-                    ulong* encoded = (ulong*)(raw + offset);
-                    for (int i = 0; i < length / 8; ++i)
-                    {
-                        hash = MMX.PAddD (hash, 0xCE24F523CE24F523ul) ^ xor;
-                        xor = *encoded ^ hash;
-                        *encoded++ = xor;
-                    }
-                }
-            }
-        }
-
-        private void DecryptV3 (byte[] data, int offset, int length, byte[] file_name,
-                                uint arc_hash, byte[] key_file, byte[] game_key)
-        {
-            // play it safe with 'unsafe' sections
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException ("offset");
-            if (length > data.Length || offset > data.Length - length)
-                throw new ArgumentOutOfRangeException ("length");
-
-            if (length < 8)
-                return;
-
-            uint hash = 0x85F532;
-            uint seed = 0x33F641;
-
-            for (uint i = 0; i < file_name.Length; i++)
-            {
-                hash += (i & 0xFF) * file_name[i];
-                seed ^= hash;
-            }
-
-            seed += arc_hash ^ (7 * ((uint)data.Length & 0xFFFFFF) + (uint)data.Length
-                                + hash + (hash ^ (uint)data.Length ^ 0x8F32DCu));
-            seed = 9 * (seed & 0xFFFFFF);
-
-            if (game_key != null)
-                seed ^= 0x453A;
-
-            var mt = new QlieMersenneTwister (seed);
-            if (key_file != null)
-                mt.XorState (key_file);
-            if (game_key != null)
-                mt.XorState (game_key);
-
-            // game code fills dword[41] table, but only the first 16 qwords are used
-            ulong[] table = new ulong[16];
-            for (int i = 0; i < table.Length; ++i)
-                table[i] = mt.Rand64();
-
-            // compensate for 9 discarded dwords
-            for (int i = 0; i < 9; ++i)
-                mt.Rand();
-
-            ulong hash64 = mt.Rand64();
-            uint t = mt.Rand() & 0xF;
-            unsafe
-            {
-                fixed (byte* raw_data = &data[offset])
-                {
-                    ulong* data64 = (ulong*)raw_data;
-                    int qword_length = length / 8;
-                    for (int i = 0; i < qword_length; ++i)
-                    {
-                        hash64 = MMX.PAddD (hash64 ^ table[t], table[t]);
-
-                        ulong d = data64[i] ^ hash64;
-                        data64[i] = d;
-
-                        hash64 = MMX.PAddB (hash64, d) ^ d;
-                        hash64 = MMX.PAddW (MMX.PSllD (hash64, 1), d);
-
-                        t++;
-                        t &= 0xF;
-                    }
-                }
-            }
-        }
-
         internal static byte[] Decompress (byte[] input)
         {
-            if (LittleEndian.ToUInt32 (input, 0) != 0xFF435031)
+            if (LittleEndian.ToUInt32 (input, 0) != 0xFF435031) // '1PC\xFF'
                 return null;
 
             bool is_16bit = 0 != (input[4] & 1);
@@ -391,25 +274,6 @@ namespace GameRes.Formats.Qlie
                 return null;
 
             return output;
-        }
-
-        uint GenerateKey (byte[] key_data)
-        {
-            ulong hash = 0;
-            ulong key  = 0;
-            unsafe
-            {
-                fixed (byte* data = key_data)
-                {
-                    ulong* data64 = (ulong*)data;
-                    for (int i = key_data.Length / 8; i > 0; --i)
-                    {
-                        hash = MMX.PAddW (hash, 0x0307030703070307);
-                        key  = MMX.PAddW (key, *data64++ ^ hash);
-                    }
-                }
-            }
-            return (uint)(key ^ (key >> 32));
         }
 
         public override ResourceOptions GetDefaultOptions ()
