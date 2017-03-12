@@ -177,6 +177,7 @@ namespace GameRes.Formats
     /// <summary>
     /// Create stream in TGA format from the given image pixels.
     /// </summary>
+    [Obsolete]
     public static class TgaStream
     {
         public static Stream Create (ImageMetaData info, byte[] pixels, bool flipped = false)
