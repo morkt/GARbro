@@ -2,7 +2,7 @@
 //! \date       Wed Oct 28 02:51:46 2015
 //! \brief      QLIE mulit-frame images.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,13 +23,13 @@
 // IN THE SOFTWARE.
 //
 
-using GameRes.Utility;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Qlie
 {
@@ -52,50 +52,88 @@ namespace GameRes.Formats.Qlie
             int version = file.View.ReadByte (4) * 10 + file.View.ReadByte (5) - '0' * 11;
             if (file.View.ReadByte (6) != 0 || version < 10 || version > 12)
                 return null;
-            string base_name = Path.GetFileNameWithoutExtension (file.Name);
-            uint offset = 0x10;
-            var dir = new List<Entry>();
+            using (var reader = new AbmpReader (file, version))
+            {
+                var dir = reader.ReadIndex();
+                if (null == dir || 0 == dir.Count)
+                    return null;
+                return new ArcFile (file, this, dir);
+            }
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (0xFF435031 != arc.File.View.ReadUInt32 (entry.Offset))
+                return base.OpenEntry (arc, entry);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            data = PackOpener.Decompress (data) ?? data;
+            return new BinMemoryStream (data, entry.Name);
+        }
+    }
+
+    internal sealed class AbmpReader : IDisposable
+    {
+        ArcView             m_file;
+        IBinaryStream       m_input;
+        string              m_base_name;
+        int                 m_version;
+        List<Entry>         m_dir;
+
+        public AbmpReader (ArcView file, int version)
+        {
+            m_file = file;
+            m_input = file.CreateStream();
+            m_base_name = Path.GetFileNameWithoutExtension (file.Name);
+            m_version = version;
+            m_dir = new List<Entry>();
+        }
+
+        public List<Entry> ReadIndex ()
+        {
+            m_input.Position = 0x10;
             int n = 0;
             var type_buf = new byte[0x10];
-            while (offset < file.MaxOffset)
+            while (0x10 == m_input.Read (type_buf, 0, 0x10))
             {
-                if (0x10 != file.View.Read (offset, type_buf, 0, 0x10))
-                    break;
-                offset += 0x10;
                 if (Binary.AsciiEqual (type_buf, "abdata"))
                 {
+                    uint size = m_input.ReadUInt32(); 
                     var entry = new Entry {
-                        Name = string.Format ("{0}#{1}.dat", base_name, n++),
-                        Offset = offset + 4,
-                        Size = file.View.ReadUInt32 (offset),
+                        Name = string.Format ("{0}#{1}.dat", m_base_name, n++),
+                        Offset = m_input.Position,
+                        Size = size,
                     };
-                    dir.Add (entry);
-                    offset += 4 + entry.Size;
+                    m_dir.Add (entry);
+                    Skip (size);
                 }
-                else if (Binary.AsciiEqual (type_buf, "abimage10\0")
-                         || Binary.AsciiEqual (type_buf, "absound10\0"))
+                else if (Binary.AsciiEqual (type_buf, "abimage10\0") ||
+                         Binary.AsciiEqual (type_buf, "absound10\0"))
                 {
-                    int count = file.View.ReadByte (offset++);
-                    for (int i = 0; i < count && offset < file.MaxOffset; ++i)
+                    int count = m_input.ReadByte();
+                    for (int i = 0; i < count; ++i)
                     {
-                        file.View.Read (offset, type_buf, 0, 0x10);
+                        if (0x10 != m_input.Read (type_buf, 0, 0x10))
+                            break;
                         var tag = Binary.GetCString (type_buf, 0, 0x10, Encoding.ASCII);
                         string name = null;
                         if ("abimgdat15" == tag)
                         {
-                            uint name_length = file.View.ReadUInt16 (offset+0x14);
-                            offset += 0x16;
+                            Skip (4);
+                            int name_length = m_input.ReadUInt16();
                             if (name_length > 0)
                             {
-                                var name_bytes = file.View.ReadBytes (offset, name_length*2);
+                                var name_bytes = m_input.ReadBytes (name_length*2);
                                 name = Encoding.Unicode.GetString (name_bytes);
-                                offset += name_length*2;
                             }
-                            name_length = file.View.ReadUInt16 (offset);
-                            if (name_length > 0 && string.IsNullOrEmpty (name))
-                                name = file.View.ReadString (offset+2, name_length);
-                            offset += 2 + name_length;
-                            byte type = file.View.ReadByte (offset);
+                            name_length = m_input.ReadUInt16();
+                            if (name_length > 0)
+                            {
+                                if (string.IsNullOrEmpty (name))
+                                    name = m_input.ReadCString (name_length);
+                                else
+                                    Skip ((uint)name_length);
+                            }
+                            byte type = m_input.ReadUInt8();
                             /*
                             case 0:   ".bmp"
                             case 1:   ".jpg"
@@ -107,76 +145,65 @@ namespace GameRes.Formats.Qlie
                             case 7:   ".ogv"
                             case 8:   ".mdl"
                             */
-                            offset += 0x12;
+                            Skip (0x11);
                         }
                         else
                         {
-                            uint name_length = file.View.ReadUInt16 (offset+0x10);
-                            name = file.View.ReadString (offset+0x12, name_length);
-                            offset += 0x12 + name_length;
+                            int name_length = m_input.ReadUInt16();
+                            name = m_input.ReadCString (name_length);
 
                             if (tag != "abimgdat10" && tag != "absnddat10")
                             {
-                                offset += 2u + file.View.ReadUInt16 (offset);
+                                Skip (m_input.ReadUInt16());
                                 if ("abimgdat13" == tag)
-                                    offset += 0x0C;
+                                    Skip (0x0C);
                                 else if ("abimgdat14" == tag)
-                                    offset += 0x4C;
+                                    Skip (0x4C);
                             }
-                            ++offset;
+                            m_input.ReadByte();
                         }
-                        var size = file.View.ReadUInt32 (offset);
-                        offset += 4;
+                        var size = m_input.ReadUInt32();
                         if (0 != size)
                         {
                             if (string.IsNullOrEmpty (name))
-                                name = string.Format ("{0}#{1}", base_name, n++);
+                                name = string.Format ("{0}#{1}", m_base_name, n++);
                             else
                                 name = s_InvalidChars.Replace (name, "_");
                             var entry = new Entry {
                                 Name = name,
                                 Type = tag.StartsWith ("abimg") ? "image" : tag.StartsWith ("absnd") ? "audio" : "",
-                                Offset = offset,
+                                Offset = m_input.Position,
                                 Size = size,
                             };
-                            if (entry.CheckPlacement (file.MaxOffset))
+                            if (entry.CheckPlacement (m_file.MaxOffset))
                             {
-                                DetectFileType (file, entry);
-                                dir.Add (entry);
+                                DetectFileType (m_file, entry);
+                                m_dir.Add (entry);
                             }
                         }
-                        offset += size;
+                        Skip (size);
                     }
                 }
                 else
                 {
                     var entry = new Entry {
-                        Name = string.Format ("{0}#{1}#{2}", base_name, n++, GetTypeName (type_buf)),
-                        Offset = offset,
-                        Size = (uint)(file.MaxOffset - offset),
+                        Name = string.Format ("{0}#{1}#{2}", m_base_name, n++, GetTypeName (type_buf)),
+                        Offset = m_input.Position,
+                        Size = (uint)(m_file.MaxOffset - m_input.Position),
                     };
-                    dir.Add (entry);
-                    offset += entry.Size;
+                    m_dir.Add (entry);
+                    Skip (entry.Size);
                 }
             }
-            if (0 == dir.Count)
-                return null;
-            return new ArcFile (file, this, dir);
+            return m_dir;
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        void Skip (uint amount)
         {
-            if (0xFF435031 != arc.File.View.ReadUInt32 (entry.Offset))
-                return base.OpenEntry (arc, entry);
-            var packed = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, packed, 0, entry.Size);
-            var unpacked = PackOpener.Decompress (packed);
-            if (null == unpacked)
-                unpacked = packed;
-            return new BinMemoryStream (unpacked, entry.Name);
+            m_input.Seek (amount, SeekOrigin.Current);
         }
 
-        static protected void DetectFileType (ArcView file, Entry entry)
+        static internal void DetectFileType (ArcView file, Entry entry)
         {
             uint signature = file.View.ReadUInt32 (entry.Offset);
             var res = AutoEntry.DetectFileType (signature);
@@ -200,6 +227,18 @@ namespace GameRes.Formats.Qlie
         }
 
         static readonly Regex s_InvalidChars = new Regex (@"[:/\\*?]");
+
+        #region IDisposable Members
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_input.Dispose();
+                _disposed = true;
+            }
+        }
+        #endregion
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -244,7 +283,7 @@ namespace GameRes.Formats.Qlie
                 };
                 if (!entry.CheckPlacement (file.MaxOffset))
                     break;
-                DetectFileType (file, entry);
+                AbmpReader.DetectFileType (file, entry);
                 dir.Add (entry);
                 offset += size;
             }
