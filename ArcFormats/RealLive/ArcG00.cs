@@ -2,7 +2,7 @@
 //! \date       Wed May 04 13:21:19 2016
 //! \brief      RealLive engine multi-frame image.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Windows.Media;
 
 namespace GameRes.Formats.RealLive
 {
@@ -79,18 +80,15 @@ namespace GameRes.Formats.RealLive
             if (count <= 1 || count > 0x100)
                 return null;
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
-            uint size = width * height * 4 + 0x12; // virtual TGA image size
 
             uint index_offset = 9;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
                 var entry = new G00Entry {
-                    Name = string.Format ("{0}#{1:D3}.tga", base_name, i),
+                    Name = string.Format ("{0}#{1:D3}", base_name, i),
                     X = file.View.ReadInt32 (index_offset),
                     Y = file.View.ReadInt32 (index_offset+4),
-                    IsPacked = true,
-                    UnpackedSize = size,
                 };
                 dir.Add (entry);
                 index_offset += 0x18;
@@ -116,46 +114,64 @@ namespace GameRes.Formats.RealLive
             return new G00Archive (file, this, dir, info, bitmap);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            if (0 == entry.Size)
-                return Stream.Null;
             var g00arc = (G00Archive)arc;
             var g00ent = (G00Entry)entry;
-            using (var input = new BinMemoryStream (g00arc.Bitmap))
-            {
-                input.Position = g00ent.Offset;
-                int tile_type = input.ReadUInt16();
-                int count = input.ReadUInt16();
-                if (tile_type != 1)
-                    throw new InvalidFormatException();
-                input.Seek (0x70, SeekOrigin.Current);
-                int dst_stride = (int)g00arc.ImageInfo.Width * 4;
-                var pixels = new byte[(int)g00arc.ImageInfo.Height * dst_stride];
-                for (int i = 0; i < count; ++i)
-                {
-                    int tile_x = input.ReadUInt16();
-                    int tile_y = input.ReadUInt16();
-                    input.ReadInt16();
-                    int tile_width = input.ReadUInt16();
-                    int tile_height = input.ReadUInt16();
-                    input.Seek (0x52, SeekOrigin.Current);
+            var input = new BinMemoryStream (g00arc.Bitmap);
+            return new G00TileDecoder (input, g00arc.ImageInfo, g00ent);
+        }
 
-                    tile_x += g00ent.X;
-                    tile_y += g00ent.Y;
-                    if (tile_x + tile_width  > g00arc.ImageInfo.Width ||
-                        tile_y + tile_height > g00arc.ImageInfo.Height)
-                        throw new InvalidFormatException();
-                    int dst = tile_y * dst_stride + tile_x * 4;
-                    int tile_stride = tile_width * 4;
-                    for (int row = 0; row < tile_height; ++row)
-                    {
-                        input.Read (pixels, dst, tile_stride);
-                        dst += dst_stride;
-                    }
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var g00arc = (G00Archive)arc;
+            return new BinMemoryStream (g00arc.Bitmap, (int)entry.Offset, (int)entry.Size);
+        }
+    }
+
+    internal sealed class G00TileDecoder : BinaryImageDecoder
+    {
+        private G00Entry g00ent;
+
+        public G00TileDecoder (IBinaryStream input, ImageMetaData info, G00Entry entry)
+            : base (input, info)
+        {
+            g00ent = entry;
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = g00ent.Offset;
+            int tile_type = m_input.ReadUInt16();
+            int count = m_input.ReadUInt16();
+            if (tile_type != 1)
+                throw new InvalidFormatException();
+            m_input.Seek (0x70, SeekOrigin.Current);
+            int dst_stride = (int)Info.Width * 4;
+            var pixels = new byte[(int)Info.Height * dst_stride];
+            for (int i = 0; i < count; ++i)
+            {
+                int tile_x = m_input.ReadUInt16();
+                int tile_y = m_input.ReadUInt16();
+                m_input.ReadInt16();
+                int tile_width = m_input.ReadUInt16();
+                int tile_height = m_input.ReadUInt16();
+                m_input.Seek (0x52, SeekOrigin.Current);
+
+                tile_x += g00ent.X;
+                tile_y += g00ent.Y;
+                if (tile_x + tile_width  > Info.Width ||
+                    tile_y + tile_height > Info.Height)
+                    throw new InvalidFormatException();
+                int dst = tile_y * dst_stride + tile_x * 4;
+                int tile_stride = tile_width * 4;
+                for (int row = 0; row < tile_height; ++row)
+                {
+                    m_input.Read (pixels, dst, tile_stride);
+                    dst += dst_stride;
                 }
-                return TgaStream.Create (g00arc.ImageInfo, pixels);
             }
+            return ImageData.Create (Info, PixelFormats.Bgra32, null, pixels, dst_stride);
         }
     }
 }
