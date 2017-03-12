@@ -80,19 +80,51 @@ namespace GameRes.Formats.Qlie
                     {
                         file.View.Read (offset, type_buf, 0, 0x10);
                         var tag = Binary.GetCString (type_buf, 0, 0x10, Encoding.ASCII);
-                        uint name_length = file.View.ReadUInt16 (offset+0x10);
-                        var name = file.View.ReadString (offset+0x12, name_length);
-                        offset += 0x12 + name_length;
-
-                        if (tag != "abimgdat10" && tag != "absnddat10")
+                        string name = null;
+                        if ("abimgdat15" == tag)
                         {
-                            offset += 2u + file.View.ReadUInt16 (offset);
-                            if ("abimgdat13" == tag)
-                                offset += 0x0C;
-                            else if ("abimgdat14" == tag)
-                                offset += 0x4C;
+                            uint name_length = file.View.ReadUInt16 (offset+0x14);
+                            offset += 0x16;
+                            if (name_length > 0)
+                            {
+                                var name_bytes = file.View.ReadBytes (offset, name_length*2);
+                                name = Encoding.Unicode.GetString (name_bytes);
+                                offset += name_length*2;
+                            }
+                            name_length = file.View.ReadUInt16 (offset);
+                            if (name_length > 0 && string.IsNullOrEmpty (name))
+                                name = file.View.ReadString (offset+2, name_length);
+                            offset += 2 + name_length;
+                            byte type = file.View.ReadByte (offset);
+                            /*
+                            case 0:   ".bmp"
+                            case 1:   ".jpg"
+                            case 2:
+                            case 3:   ".png"
+                            case 4:   ".m"
+                            case 5:   ".argb"
+                            case 6:   ".b"
+                            case 7:   ".ogv"
+                            case 8:   ".mdl"
+                            */
+                            offset += 0x12;
                         }
-                        ++offset;
+                        else
+                        {
+                            uint name_length = file.View.ReadUInt16 (offset+0x10);
+                            name = file.View.ReadString (offset+0x12, name_length);
+                            offset += 0x12 + name_length;
+
+                            if (tag != "abimgdat10" && tag != "absnddat10")
+                            {
+                                offset += 2u + file.View.ReadUInt16 (offset);
+                                if ("abimgdat13" == tag)
+                                    offset += 0x0C;
+                                else if ("abimgdat14" == tag)
+                                    offset += 0x4C;
+                            }
+                            ++offset;
+                        }
                         var size = file.View.ReadUInt32 (offset);
                         offset += 4;
                         if (0 != size)
