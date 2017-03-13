@@ -67,6 +67,8 @@ namespace GameRes.Formats.Eagls
                 index = DecryptIndex (idx);
             int index_offset = 0;
             int entry_size = index.Length / 10000;
+            if (entry_size > 40)
+                entry_size = 40;
             bool long_offsets = 40 == entry_size;
             int name_size = long_offsets ? 0x18 : 0x14;
             long first_offset = LittleEndian.ToUInt32 (index, name_size);
