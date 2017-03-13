@@ -292,8 +292,8 @@ namespace GameRes.Formats.Qlie
         {
             var title = FormatCatalog.Instance.LookupGame (file.Name, @"..\*.exe");
             byte[] key = null;
-            if (!string.IsNullOrEmpty (title))
-                key = GetKeyData (title);
+            if (!string.IsNullOrEmpty (title) && KnownKeys.ContainsKey (title))
+                return KnownKeys[title];
             if (null == key)
                 key = GuessKeyData (file.Name);
             if (null == key)
