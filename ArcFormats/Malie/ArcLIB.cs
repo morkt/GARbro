@@ -33,6 +33,13 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Malie
 {
+    internal interface ILibIndexReader : IDisposable
+    {
+        List<Entry> Dir { get; }
+
+        bool ReadIndex ();
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class LibOpener : ArchiveFormat
     {
@@ -171,18 +178,17 @@ namespace GameRes.Formats.Malie
             {
                 var encryption = new Camellia (scheme.Key);
                 ReadEncrypted (file.View, encryption, 0, header, 0, 0x10);
-                LibIndexReader reader;
+                ILibIndexReader reader;
                 if (Binary.AsciiEqual (header, 0, "LIBP"))
                     reader = new LibPReader (file, encryption, header, scheme);
                 else if (Binary.AsciiEqual (header, 0, "LIBU"))
-                    reader = new LibUReader (file, encryption, header, scheme);
+                    reader = LibUReader.Create (file, encryption);
                 else
                     continue;
                 using (reader)
                 {
-                    var dir = reader.ReadIndex();
-                    if (dir != null)
-                        return new MalieArchive (file, this, dir, encryption);
+                    if (reader.ReadIndex())
+                        return new MalieArchive (file, this, reader.Dir, encryption);
                 }
             }
             return null;
@@ -197,7 +203,7 @@ namespace GameRes.Formats.Malie
             return new StreamRegion (input, entry.Offset, entry.Size);
         }
 
-        internal abstract class LibIndexReader : IDisposable
+        internal abstract class LibIndexReader : ILibIndexReader
         {
             protected ArcView.Frame m_view;
             protected readonly long m_max_offset;
@@ -215,7 +221,7 @@ namespace GameRes.Formats.Malie
                 m_header = header;
             }
 
-            public abstract List<Entry> ReadIndex ();
+            public abstract bool ReadIndex ();
 
             #region IDisposable Members
             public void Dispose ()
@@ -244,11 +250,11 @@ namespace GameRes.Formats.Malie
                 m_data_align = scheme.DataAlign - 1;
             }
 
-            public override List<Entry> ReadIndex ()
+            public override bool ReadIndex ()
             {
                 int count = LittleEndian.ToInt32 (m_header, 4);
                 if (!IsSaneCount (count))
-                    return null;
+                    return false;
                 int offset_count = LittleEndian.ToInt32 (m_header, 8);
 
                 m_index     = new byte[0x20 * count];
@@ -256,10 +262,10 @@ namespace GameRes.Formats.Malie
 
                 m_base_offset += 0x10;
                 if (m_index.Length != ReadEncrypted (m_view, m_enc, m_base_offset, m_index, 0, m_index.Length))
-                    return null;
+                    return false;
                 m_base_offset += m_index.Length;
                 if (offsets.Length != ReadEncrypted (m_view, m_enc, m_base_offset, offsets, 0, offsets.Length))
-                    return null;
+                    return false;
                 m_offset_table = new uint[offset_count];
                 Buffer.BlockCopy (offsets, 0, m_offset_table, 0, offsets.Length);
 
@@ -268,7 +274,7 @@ namespace GameRes.Formats.Malie
 
                 m_dir.Capacity = offset_count;
                 ReadDir ("", 0, 1);
-                return m_dir.Count > 0 ? m_dir : null;
+                return m_dir.Count > 0;
             }
 
             private void ReadDir (string root, int entry_index, int count)
@@ -298,84 +304,6 @@ namespace GameRes.Formats.Malie
                     }
                 }
             }
-        }
-
-        internal class LibUReader : LibIndexReader
-        {
-            BinaryReader    m_input;
-
-            public LibUReader (ArcView file, Camellia encryption, byte[] header, LibScheme scheme)
-                : base (file, encryption, header)
-            {
-                var input = new EncryptedStream (file, encryption);
-                m_input = new BinaryReader (input, Encoding.Unicode);
-            }
-
-            public override List<Entry> ReadIndex ()
-            {
-                return ReadDir ("", 0) ? m_dir : null;
-            }
-
-            bool ReadDir (string root, long base_offset)
-            {
-                m_input.BaseStream.Position = base_offset;
-                if (0x5542494C != m_input.ReadUInt32()) // 'LIBU'
-                    return false;
-                m_input.ReadInt32();
-                int count = m_input.ReadInt32();
-                if (!IsSaneCount (count))
-                    return false;
-                if (m_dir.Capacity < m_dir.Count + count)
-                    m_dir.Capacity = m_dir.Count + count;
-
-                long index_pos = base_offset + 0x10;
-                for (int i = 0; i < count; ++i)
-                {
-                    m_input.BaseStream.Position = index_pos;
-                    var name = ReadName();
-                    uint entry_size = m_input.ReadUInt32();
-                    long entry_offset = base_offset + m_input.ReadInt64();
-                    index_pos = m_input.BaseStream.Position;
-                    bool has_extension = -1 != name.IndexOf ('.');
-                    name = Path.Combine (root, name);
-                    if (!has_extension && ReadDir (name, entry_offset))
-                        continue;
-
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
-                    entry.Offset = entry_offset;
-                    entry.Size   = entry_size;
-                    if (!entry.CheckPlacement (m_max_offset))
-                        return false;
-
-                    m_dir.Add (entry);
-                }
-                return true;
-            }
-
-            char[] m_name_buffer = new char[0x22];
-
-            string ReadName ()
-            {
-                m_input.Read (m_name_buffer, 0, 0x22);
-                int length = Array.IndexOf (m_name_buffer, '\0');
-                if (-1 == length)
-                    length = m_name_buffer.Length;
-                return new string (m_name_buffer, 0, length);
-            }
-
-            #region IDisposable methods
-            bool m_disposed = false;
-            protected override void Dispose (bool disposing)
-            {
-                if (!m_disposed)
-                {
-                    if (disposing)
-                        m_input.Dispose();
-                    m_disposed = true;
-                    base.Dispose();
-                }
-            }
-            #endregion
         }
 
         private static int ReadEncrypted (ArcView.Frame view, Camellia enc, long offset, byte[] buffer, int index, int length)

@@ -103,6 +103,7 @@
     <Compile Include="GameSystem\AudioADP4.cs" />
     <Compile Include="Kaas\ArcPB.cs" />
     <Compile Include="Kaas\AudioKAAS.cs" />
+    <Compile Include="Malie\ArcLIBU.cs" />
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
