@@ -48,6 +48,11 @@ namespace GameRes.Formats.Qlie
         /// </summary>
         public uint ArcKey { get; protected set; }
 
+        /// <summary>
+        /// Key used to decrypt names, usually same as ArcKey.
+        /// </summary>
+        public int NameKey { get; protected set; }
+
         public static IEncryption Create (ArcView file, Version version, byte[] arc_key)
         {
             if (2 == version.Major || 1 == version.Major)
@@ -71,7 +76,8 @@ namespace GameRes.Formats.Qlie
     {
         public EncryptionV2 ()
         {
-            ArcKey = 0xC4;
+            NameKey = 0xC4;
+            ArcKey = 0;
         }
 
         public override uint CalculateHash (byte[] data, int length)
@@ -81,7 +87,7 @@ namespace GameRes.Formats.Qlie
 
         public override string DecryptName (byte[] name, int name_length)
         {
-            int key = name_length + ((int)ArcKey ^ 0x3E);
+            int key = name_length + (NameKey ^ 0x3E);
             for (int k = 0; k < name_length; ++k)
                 name[k] ^= (byte)(((k + 1) ^ key) + k + 1);
 
@@ -94,7 +100,7 @@ namespace GameRes.Formats.Qlie
                 throw new ArgumentOutOfRangeException ("offset");
             if (length > data.Length || offset > data.Length - length)
                 throw new ArgumentOutOfRangeException ("length");
-            uint arc_key = 0; // ArcKey?
+            uint arc_key = ArcKey;
 
             ulong hash = 0xA73C5F9DA73C5F9Dul;
             ulong xor = ((uint)length + arc_key) ^ 0xFEC9753Eu;
@@ -128,6 +134,7 @@ namespace GameRes.Formats.Qlie
             GameKeyData = game_key;
             var key_data = file.View.ReadBytes (file.MaxOffset-0x41C, 0x100);
             ArcKey = CalculateHash (key_data, key_data.Length) & 0x0FFFFFFFu;
+            NameKey = (int)ArcKey;
         }
 
         public override uint CalculateHash (byte[] data, int length)
@@ -234,6 +241,7 @@ namespace GameRes.Formats.Qlie
         {
             var key_data = file.View.ReadBytes (file.MaxOffset-0x41C, 0x100);
             ArcKey = CalculateHash (key_data, key_data.Length) & 0x0FFFFFFFu;
+            NameKey = (int)ArcKey;
         }
 
         public override uint CalculateHash (byte[] data, int length)
@@ -263,7 +271,7 @@ namespace GameRes.Formats.Qlie
         {
             int char_count = name_length / 2;
             int hash = (char_count * char_count) ^ char_count;
-            hash ^= (int)(0x3E13 ^ (ArcKey >> 16) ^ ArcKey);
+            hash ^= 0x3E13 ^ (NameKey >> 16) ^ NameKey;
             hash &= 0xFFFF;
             int key = hash;
             for (int i = 0; i < char_count; ++i)
