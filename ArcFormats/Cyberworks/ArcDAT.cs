@@ -119,6 +119,31 @@ namespace GameRes.Formats.Cyberworks
         }
     }
 
+    internal class OldArcNameParser : ArchiveNameParser
+    {
+        public OldArcNameParser () : base (@"^Arc0(?<num>\d)\..*$") { }
+
+        // matches archive body to its index
+        static readonly IDictionary<char, int> s_arcmap = new Dictionary<char, int> {
+            { '2', 0 }, { '3', 1 }, { '5', 4 } 
+        };
+
+        protected override string ParseMatch (Match match, out int arc_idx)
+        {
+            arc_idx = 0;
+            char num = match.Groups["num"].Value[0];
+            int index_num;
+            if (!s_arcmap.TryGetValue (num, out index_num))
+                return null;
+
+            var toc_name_builder = new StringBuilder (match.Value);
+            var num_pos = match.Groups["num"].Index;
+            toc_name_builder.Remove (num_pos, match.Groups["num"].Length);
+            toc_name_builder.Insert (num_pos, index_num);
+            return toc_name_builder.ToString();
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
@@ -138,16 +163,20 @@ namespace GameRes.Formats.Cyberworks
         public override ArcFile TryOpen (ArcView file)
         {
             var arc_name = Path.GetFileName (file.Name);
-            var result = s_name_parsers.Select (p => p.ParseName (arc_name)).FirstOrDefault (p => p != null);
-            if (null == result)
+            var dir_name = VFS.GetDirectoryName (file.Name);
+            string game_name = arc_name != "Arc06.dat" ? TryParseMeta (VFS.CombinePath (dir_name, "Arc06.dat")) : null;
+            Tuple<string, int> parsed = null;
+            if (string.IsNullOrEmpty (game_name))
+                parsed = s_name_parsers.Select (p => p.ParseName (arc_name)).FirstOrDefault (p => p != null);
+            else // Shukujo no Tsuyagoto special case
+                parsed = OldDatOpener.ArcNameParser.ParseName (arc_name);
+            if (null == parsed)
                 return null;
-            string toc_name = result.Item1;
-            int arc_idx = result.Item2;
+            string toc_name = parsed.Item1;
+            int arc_idx = parsed.Item2;
 
-            toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), toc_name);
-            if (!VFS.FileExists (toc_name))
-                return null;
-            var toc = ReadToc (toc_name);
+            toc_name = VFS.CombinePath (dir_name, toc_name);
+            var toc = ReadToc (toc_name, 8);
             if (null == toc)
                 return null;
 
@@ -205,6 +234,11 @@ namespace GameRes.Formats.Cyberworks
                     index.Position = next_pos;
                 }
             }
+            return ArchiveFromDir (file, dir, has_images);
+        }
+
+        internal ArcFile ArchiveFromDir (ArcView file, List<Entry> dir, bool has_images)
+        {
             if (0 == dir.Count)
                 return null;
             if (!has_images)
@@ -213,27 +247,39 @@ namespace GameRes.Formats.Cyberworks
             return new BellArchive (file, this, dir, scheme);
         }
 
-        byte[] ReadToc (string toc_name)
+        /// <summary>
+        // Try to parse file containing game meta-information.
+        /// </summary>
+        internal string TryParseMeta (string meta_arc_name)
         {
-            using (var toc_view = VFS.OpenView (toc_name))
+            if (!VFS.FileExists (meta_arc_name))
+                return null;
+            using (var unpacker = new TocUnpacker (meta_arc_name))
             {
-                if (toc_view.MaxOffset <= 0x10)
+                if (unpacker.Length > 0x1000)
                     return null;
-                uint unpacked_size = DecodeDecimal (toc_view, 0);
-                if (unpacked_size <= 4 || unpacked_size > 0x1000000)
+                var data = unpacker.Unpack (8);
+                if (null == data)
                     return null;
-                uint packed_size = DecodeDecimal (toc_view, 8);
-                if (packed_size > toc_view.MaxOffset - 0x10)
-                    return null;
-                using (var toc_s = toc_view.CreateStream (0x10, packed_size))
-                using (var lzss = new LzssStream (toc_s))
+                using (var content = new BinMemoryStream (data))
                 {
-                    var toc = new byte[unpacked_size];
-                    if (toc.Length != lzss.Read (toc, 0, toc.Length))
+                    int title_length = content.ReadInt32();
+                    if (title_length <= 0 || title_length > content.Length)
                         return null;
-                    return toc;
+                    var title = content.ReadBytes (title_length);
+                    if (title.Length != title_length)
+                        return null;
+                    return Encodings.cp932.GetString (title);
                 }
             }
+        }
+
+        internal byte[] ReadToc (string toc_name, int num_length)
+        {
+            if (!VFS.FileExists (toc_name))
+                return null;
+            using (var toc_unpacker = new TocUnpacker (toc_name))
+                return toc_unpacker.Unpack (num_length);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -285,19 +331,6 @@ namespace GameRes.Formats.Cyberworks
             }
             input.Position = 0;
             return new ImageFormatDecoder (input);
-        }
-
-        uint DecodeDecimal (ArcView file, long offset)
-        {
-            uint v = 0;
-            uint rank = 1;
-            for (int i = 7; i >= 0; --i, rank *= 10)
-            {
-                uint b = file.View.ReadByte (offset+i);
-                if (b != 0xFF)
-                    v += (b ^ 0x7F) * rank;
-            }
-            return v;
         }
 
         internal AImageScheme QueryScheme (string arc_name)
@@ -376,32 +409,16 @@ namespace GameRes.Formats.Cyberworks
             Extensions = new string[] { "dat" };
         }
 
-        static readonly Regex s_arcname_re = new Regex (@"^Arc0(?<num>\d)\..*$", RegexOptions.IgnoreCase);
-
-        static readonly IDictionary<int, int> s_arcmap = new Dictionary<int, int>
-        {
-            { 2, 0 }, { 3, 1 }, { 5, 4 } 
-        };
+        internal static readonly ArchiveNameParser ArcNameParser = new OldArcNameParser();
 
         public override ArcFile TryOpen (ArcView file)
         {
             var arc_name = Path.GetFileName (file.Name);
-            var match = s_arcname_re.Match (arc_name);
-            if (!match.Success)
+            var parsed = ArcNameParser.ParseName (arc_name);
+            if (null == parsed)
                 return null;
-            int num = match.Groups["num"].Value[0] - '0';
-            int index_num;
-            if (!s_arcmap.TryGetValue (num, out index_num))
-                return null;
-
-            var toc_name_builder = new StringBuilder (arc_name);
-            var num_pos = match.Groups["num"].Index;
-            toc_name_builder.Remove (num_pos, match.Groups["num"].Length);
-            toc_name_builder.Insert (num_pos, index_num);
-
-            var toc_name = toc_name_builder.ToString();
-            toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), toc_name);
-            var toc = ReadToc (toc_name);
+            var toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), parsed.Item1);
+            var toc = ReadToc (toc_name, 4);
             if (null == toc)
                 return null;
 
@@ -439,12 +456,7 @@ namespace GameRes.Formats.Cyberworks
                     dir.Add (entry);
                 }
             }
-            if (0 == dir.Count)
-                return null;
-            if (!has_images)
-                return new ArcFile (file, this, dir);
-            var scheme = QueryScheme (file.Name);
-            return new BellArchive (file, this, dir, scheme);
+            return ArchiveFromDir (file, dir, has_images);
         }
 
         protected override IImageDecoder DecryptImage (IBinaryStream input, AImageScheme scheme)
@@ -455,40 +467,133 @@ namespace GameRes.Formats.Cyberworks
             input.Position = 0;
             return new ImageFormatDecoder (input);
         }
+    }
 
-        byte[] ReadToc (string toc_name)
+    [Export(typeof(ArchiveFormat))]
+    public class OldDatOpener2 : DatOpener
+    {
+        public override string         Tag { get { return "ARC/Csystem/2"; } }
+        public override string Description { get { return "TinkerBell resource archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public OldDatOpener2 ()
         {
-            using (var toc_view = VFS.OpenView (toc_name))
+            Extensions = new string[] { "dat" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            var arc_name = Path.GetFileName (file.Name);
+            var parsed = OldDatOpener.ArcNameParser.ParseName (arc_name);
+            if (null == parsed)
+                return null;
+            var toc_name = VFS.CombinePath (VFS.GetDirectoryName (file.Name), parsed.Item1);
+            var toc = ReadToc (toc_name, 4);
+            if (null == toc)
+                return null;
+
+            bool has_images = false;
+            var dir = new List<Entry>();
+            int entry_size = toc.ToInt32 (0);
+            if (entry_size <= 0 || entry_size > 0x11)
+                return null;
+            using (var index = new BinMemoryStream (toc))
             {
-                if (toc_view.MaxOffset <= 8)
-                    return null;
-                int unpacked_size = DecodeDecimal (toc_view, 0);
-                if (unpacked_size <= 4 || unpacked_size > 0x1000000)
-                    return null;
-                int packed_size = DecodeDecimal (toc_view, 4);
-                if (packed_size > toc_view.MaxOffset - 8)
-                    return null;
-                using (var toc_s = toc_view.CreateStream (8, (uint)packed_size))
-                using (var lzss = new LzssStream (toc_s))
+                while (index.Position < index.Length)
                 {
-                    var toc = new byte[unpacked_size];
-                    if (toc.Length != lzss.Read (toc, 0, toc.Length))
+                    entry_size = index.ReadInt32();
+                    if (entry_size <= 0)
                         return null;
-                    return toc;
+                    var next_pos = index.Position + entry_size;
+                    uint id = index.ReadUInt32();
+                    var entry = new PackedEntry { Name = id.ToString ("D6") };
+                    entry.UnpackedSize = index.ReadUInt32();
+                    entry.Size = index.ReadUInt32();
+                    entry.IsPacked = entry.UnpackedSize != entry.Size;
+                    entry.Offset = index.ReadUInt32();
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    char type = (char)index.ReadByte();
+                    if (type > 0x20 && type < 0x7F)
+                    {
+                        string ext = new string (type, 1);
+                        if ('b' == type)
+                        {
+                            entry.Type = "image";
+                            has_images = true;
+                        }
+                        else if ('k' == type || 'j' == type)
+                            entry.Type = "audio";
+                        entry.Name = Path.ChangeExtension (entry.Name, ext);
+                    }
+                    dir.Add (entry);
+                    index.Position = next_pos;
                 }
+            }
+            return ArchiveFromDir (file, dir, has_images);
+        }
+    }
+
+    internal sealed class TocUnpacker : IDisposable
+    {
+        ArcView     m_file;
+
+        public long Length { get { return m_file.MaxOffset; } }
+
+        public TocUnpacker (string toc_name)
+        {
+            m_file = VFS.OpenView (toc_name);
+        }
+
+        public byte[] Unpack (int num_length)
+        {
+            int data_offset = num_length*2;
+            if (m_file.MaxOffset <= data_offset)
+                return null;
+            uint unpacked_size = DecodeDecimal (0, num_length);
+            if (unpacked_size <= 4 || unpacked_size > 0x1000000)
+                return null;
+            uint packed_size = DecodeDecimal (num_length, num_length);
+            if (packed_size > m_file.MaxOffset - data_offset)
+                return null;
+            return Unpack (data_offset, packed_size, unpacked_size);
+        }
+
+        byte[] Unpack (int offset, uint packed_size, uint unpacked_size)
+        {
+            using (var toc_s = m_file.CreateStream (offset, packed_size))
+            using (var lzss = new LzssStream (toc_s))
+            {
+                var toc = new byte[unpacked_size];
+                if (toc.Length != lzss.Read (toc, 0, toc.Length))
+                    return null;
+                return toc;
             }
         }
 
-        int DecodeDecimal (ArcView file, long offset)
+        uint DecodeDecimal (long offset, int num_length)
         {
-            int v = 0;
-            for (int rank = 1000; rank != 0; rank /= 10)
+            uint v = 0;
+            uint rank = 1;
+            for (int i = num_length-1; i >= 0; --i, rank *= 10)
             {
-                int b = file.View.ReadByte (offset++);
+                uint b = m_file.View.ReadByte (offset+i);
                 if (b != 0xFF)
                     v += (b ^ 0x7F) * rank;
             }
             return v;
+        }
+
+        bool _disposed = false;
+        public void Dispose ()
+        {
+            if (!_disposed)
+            {
+                m_file.Dispose();
+                _disposed = true;
+            }
         }
     }
 }
