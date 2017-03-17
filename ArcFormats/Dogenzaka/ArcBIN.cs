@@ -134,9 +134,9 @@ namespace GameRes.Formats.Dogenzaka
                 var name = string.Format ("{0}#{1:D4}", base_name, i);
                 var entry = AutoEntry.Create (file, next_offset, name);
                 next_offset = base_offset + file.View.ReadUInt32 (index_offset);
-                if (next_offset > file.MaxOffset)
-                    return null;
                 entry.Size = next_offset - (uint)entry.Offset;
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);
