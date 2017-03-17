@@ -201,6 +201,10 @@ namespace GameRes.Formats.KiriKiri
                                 }
                                 if (filename_map.Count > 0)
                                     name = filename_map.Get (entry.Hash, name);
+                                if (name.Length > 0x100)
+                                {
+                                    goto NextEntry;
+                                }
                                 entry.Name = name;
                                 entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
                                 entry.IsEncrypted = !(entry.Cipher is NoCrypt)
