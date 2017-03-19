@@ -108,6 +108,7 @@
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
+    <Compile Include="rUGP\AudioRHA.cs" />
     <Compile Include="Software House Parsley\ArcCG.cs" />
     <Compile Include="Artemis\ArcPFS.cs" />
     <Compile Include="AudioWMA.cs" />
