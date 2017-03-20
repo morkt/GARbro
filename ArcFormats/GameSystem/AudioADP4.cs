@@ -38,23 +38,33 @@ namespace GameRes.Formats.GameSystem
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
+        public Adp4Audio ()
+        {
+            Extensions = new string[] { "adp4", "adps" };
+        }
+
+        const uint DefaultSampleRate = 44100; // XXX varies
+
         public override SoundInput TryOpen (IBinaryStream file)
         {
             bool is_adp4 = file.Name.EndsWith (".adp4", StringComparison.InvariantCultureIgnoreCase);
-            if (!is_adp4 || file.Length <= 4)
+            bool is_adps = !is_adp4 && file.Name.EndsWith (".adps", StringComparison.InvariantCultureIgnoreCase);
+            if (!(is_adp4 || is_adps) || file.Length <= 4)
                 return null;
             var decoder = new AdpDecoder (file);
-            var pcm = decoder.Decode();
+            var pcm = decoder.Decode (is_adps);
             var format = new WaveFormat {
                 FormatTag      = 1,
                 Channels       = 2,
-                SamplesPerSecond = 44100, // XXX varies
+                SamplesPerSecond = DefaultSampleRate,
                 BlockAlign     = 4,
                 BitsPerSample  = 16,
             };
             format.SetBPS();
             var input = new MemoryStream (pcm);
-            return new RawPcmInput (input, format);
+            var sound = new RawPcmInput (input, format);
+            file.Dispose();
+            return sound;
         }
     }
 
@@ -69,13 +79,56 @@ namespace GameRes.Formats.GameSystem
 
         byte[] m_output;
 
-        public byte[] Decode ()
+        public byte[] Decode (bool is_adps)
         {
             m_input.Position = 0;
             int sample_count = m_input.ReadInt32();
+            if (is_adps)
+            {
+                m_input.Position = sample_count + 8;
+                sample_count = m_input.ReadInt32();
+            }
             m_output = new byte[sample_count * 8];
-            DecodeBits (sample_count);
+            if (is_adps)
+                DecodeAdps (sample_count);
+            else
+                DecodeBits (sample_count);
             return m_output;
+        }
+
+        void DecodeAdps (int sample_count)
+        {
+            uint sample = 0;
+            uint left_sample = 0;
+            uint right_sample = 0;
+            int dst = 0;
+            while (sample_count > 0)
+            {
+                uint bits = m_input.ReadUInt16();
+
+                left_sample += bits & 0xF;
+                int s = AdpSamples[left_sample] + (short)sample;
+                sample = sample >> 16 | (uint)(Clamp (s) << 16);
+                left_sample = AdpAdjust[left_sample];
+                right_sample += (bits >> 8) & 0xF;
+                s = AdpSamples[right_sample] + (short)sample;
+                sample = sample >> 16 | (uint)(Clamp (s) << 16);
+                right_sample = AdpAdjust[right_sample];
+                LittleEndian.Pack (sample, m_output, dst);
+                dst += 4;
+
+                left_sample += (bits >> 4) & 0xF;
+                s = AdpSamples[left_sample] + (short)sample;
+                sample = sample >> 16 | (uint)(Clamp (s) << 16);
+                left_sample = AdpAdjust[left_sample];
+                right_sample += bits >> 12;
+                s = AdpSamples[right_sample] + (short)sample;
+                sample = sample >> 16 | (uint)(Clamp (s) << 16);
+                right_sample = AdpAdjust[right_sample];
+                LittleEndian.Pack (sample, m_output, dst);
+                dst += 4;
+                sample_count -= 2;
+            }
         }
 
         void DecodeBits (int sample_count)
