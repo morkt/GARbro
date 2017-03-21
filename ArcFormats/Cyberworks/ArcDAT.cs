@@ -144,6 +144,17 @@ namespace GameRes.Formats.Cyberworks
         }
     }
 
+    internal class InKyouParser : ArchiveNameParser
+    {
+        public InKyouParser () : base (@"^inyoukyou_kuon\.app$") { }
+
+        protected override string ParseMatch (Match match, out int arc_idx)
+        {
+            arc_idx = 0;
+            return "inyoukyou_kuon.dat";
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
@@ -155,10 +166,10 @@ namespace GameRes.Formats.Cyberworks
 
         public DatOpener ()
         {
-            Extensions = new string[] { "dat", "04", "05", "06" };
+            Extensions = new string[] { "dat", "04", "05", "06", "app" };
         }
 
-        static readonly ArchiveNameParser[] s_name_parsers = { new ArcNameParser(), new DatNameParser() };
+        static readonly ArchiveNameParser[] s_name_parsers = { new ArcNameParser(), new DatNameParser(), new InKyouParser() };
 
         public override ArcFile TryOpen (ArcView file)
         {
