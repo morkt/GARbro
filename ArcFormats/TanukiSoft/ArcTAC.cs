@@ -39,10 +39,17 @@ namespace GameRes.Formats.Tanuki
         public override string         Tag { get { return "TAC"; } }
         public override string Description { get { return "TanukiSoft resource archive"; } }
         public override uint     Signature { get { return 0x63724154; } } // 'TArc'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
+        public TacOpener ()
+        {
+            Extensions = new string[] { "tac", "stx" };
+        }
+
         static readonly byte[] IndexKey = Encoding.ASCII.GetBytes ("TLibArchiveData");
+
+        static readonly string ListFileName = "tanuki.lst";
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -59,6 +66,7 @@ namespace GameRes.Formats.Tanuki
 
             int bucket_count = file.View.ReadInt32 (0x18);
             uint index_size = file.View.ReadUInt32 (0x1C);
+            uint arc_seed = file.View.ReadUInt32 (0x20);
             long index_offset = version >= 110 ? 0x2C : 0x24;
             long base_offset = index_offset + index_size;
             var blowfish = new Blowfish (IndexKey);
@@ -69,6 +77,7 @@ namespace GameRes.Formats.Tanuki
             using (var unpacked = new ZLibStream (input, CompressionMode.Decompress))
             using (var index = new BinaryReader (unpacked))
             {
+                var file_map = BuildFileNameMap (arc_seed);
                 var dir_table = new List<TacBucket> (bucket_count);
                 for (int i = 0; i < bucket_count; ++i)
                 {
@@ -98,16 +107,28 @@ namespace GameRes.Formats.Tanuki
                     {
                         var entry = dir[bucket.Index+i] as TacEntry;
                         entry.Hash = entry.Hash << 16 | bucket.Hash;
-                        entry.Name = string.Format ("{0:X16}", entry.Hash);
+                        bool known_name = file_map.ContainsKey (entry.Hash);
+                        if (known_name)
+                        {
+                            entry.Name = file_map[entry.Hash];
+                            entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                        }
+                        else
+                        {
+                            entry.Name = string.Format ("{0:X16}", entry.Hash);
+                        }
                         if (entry.IsPacked)
                             continue;
                         entry.Key = Encoding.ASCII.GetBytes (string.Format ("{0}_tlib_secure_", entry.Hash));
-                        var bf = new Blowfish (entry.Key);
-                        file.View.Read (entry.Offset, buffer, 0, 8);
-                        bf.Decipher (buffer, 8);
-                        var res = AutoEntry.DetectFileType (buffer.ToUInt32 (0));
-                        if (res != null)
-                            entry.ChangeType (res);
+                        if (!known_name)
+                        {
+                            var bf = new Blowfish (entry.Key);
+                            file.View.Read (entry.Offset, buffer, 0, 8);
+                            bf.Decipher (buffer, 8);
+                            var res = AutoEntry.DetectFileType (buffer.ToUInt32 (0));
+                            if (res != null)
+                                entry.ChangeType (res);
+                        }
                         if ("image" == entry.Type)
                             entry.EncryptedSize = Math.Min (10240, entry.Size);
                         else
@@ -146,6 +167,69 @@ namespace GameRes.Formats.Tanuki
                 var data = arc.File.View.ReadBytes (tent.Offset, tent.Size);
                 bf.Decipher (data, data.Length & ~7);
                 return new BinMemoryStream (data);
+            }
+        }
+
+        internal static ulong HashFromString (string s, uint seed)
+        {
+            s = s.Replace ('\\', '/').ToUpperInvariant();
+            var bytes = Encodings.cp932.GetBytes (s);
+            ulong hash = 0;
+            for (int i = 0; i < bytes.Length; ++i)
+            {
+                hash = bytes[i] + 0x19919 * hash + seed;
+            }
+            return hash;
+        }
+
+        internal static ulong HashFromAsciiString (string s, uint seed)
+        {
+            ulong hash = 0;
+            for (int i = 0; i < s.Length; ++i)
+            {
+                hash = (uint)char.ToUpperInvariant (s[i]) + 0x19919 * hash + seed;
+            }
+            return hash;
+        }
+
+        Dictionary<ulong, string> BuildFileNameMap (uint seed)
+        {
+            var map = new Dictionary<ulong, string> (KnownNames.Length);
+            foreach (var name in KnownNames)
+            {
+                map[HashFromAsciiString (name, seed)] = name;
+            }
+            return map;
+        }
+
+        internal string[] KnownNames { get { return s_known_file_names.Value; } }
+
+        static Lazy<string[]> s_known_file_names = new Lazy<string[]> (ReadTanukiLst);
+
+        static string[] ReadTanukiLst ()
+        {
+            try
+            {
+                var dir = FormatCatalog.Instance.DataDirectory;
+                var lst_file = Path.Combine (dir, ListFileName);
+                if (!File.Exists (lst_file))
+                    return new string[0];
+                using (var input = new StreamReader (lst_file))
+                {
+                    var names = new List<string>();
+                    string line;
+                    while ((line = input.ReadLine()) != null)
+                    {
+                        if (line.Length > 0)
+                            names.Add (line);
+                    }
+                    return names.ToArray();
+                }
+            }
+            catch (Exception X)
+            {
+                System.Diagnostics.Trace.WriteLine (X.Message, "[TAC]");
+                return new string[0];
             }
         }
     }
