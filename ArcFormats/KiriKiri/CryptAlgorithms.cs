@@ -954,4 +954,26 @@ namespace GameRes.Formats.KiriKiri
         [NonSerialized]
         Dictionary<string, string> KnownNames = null;
     }
+
+    [Serializable]
+    public class KissCrypt : ICrypt
+    {
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            uint key = entry.Hash ^ (entry.Hash >> 19) ^ 0x4A9EEFF0u;
+            int i = 0;
+            while (0 != ((offset + i) & 0xF))
+                ++i;
+            while (i < count)
+            {
+                data[pos+i] ^= (byte)(key ^ (offset + i));
+                i += 0x10;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            Decrypt (entry, offset, data, pos, count);
+        }
+    }
 }
