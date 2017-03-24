@@ -135,7 +135,7 @@ namespace GameRes.Formats.Dogenzaka
                 var entry = AutoEntry.Create (file, next_offset, name);
                 next_offset = base_offset + file.View.ReadUInt32 (index_offset);
                 entry.Size = next_offset - (uint)entry.Offset;
-                if (!entry.CheckPlacement (file.MaxOffset))
+                if (0 == entry.Size || !entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
             }
