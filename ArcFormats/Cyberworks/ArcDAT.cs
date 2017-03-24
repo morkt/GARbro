@@ -83,7 +83,12 @@ namespace GameRes.Formats.Cyberworks
         {
             arc_idx = 0;
             char num = match.Groups["num"].Value[0];
-            if (num < '4' || num > '6')
+            int index_num;
+            if (num >= '4' && num <= '6')
+                index_num = num - '3';
+            else if ('8' == num)
+                index_num = 7;
+            else
                 return null;
             if (match.Groups["idx"].Success)
                 arc_idx = char.ToUpper (match.Groups["idx"].Value[0]) - '@';
@@ -91,7 +96,7 @@ namespace GameRes.Formats.Cyberworks
             var toc_name_builder = new StringBuilder (match.Value);
             var num_pos = match.Groups["id"].Index;
             toc_name_builder.Remove (num_pos, match.Groups["id"].Length);
-            toc_name_builder.Insert (num_pos, num-'3');
+            toc_name_builder.Insert (num_pos, index_num);
             return toc_name_builder.ToString();
         }
     }
@@ -231,7 +236,7 @@ namespace GameRes.Formats.Cyberworks
                                 ext = new string (type);
                             else
                                 ext = new string (type[0], 1);
-                            if ("b0" == ext || "n0" == ext || "o0" == ext)
+                            if ("b0" == ext || "n0" == ext || "o0" == ext || "0b" == ext)
                             {
                                 entry.Type = "image";
                                 has_images = true;
