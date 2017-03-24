@@ -79,6 +79,9 @@ namespace GameRes.Compression
         private IEnumerator<int> Unpack ()
         {
             byte[] frame = new byte[FrameSize];
+            if (FrameFill != 0)
+                for (int i = 0; i < frame.Length; ++i)
+                    frame[i] = FrameFill;
             int frame_pos = FrameInitPos;
             int frame_mask = FrameSize-1;
             for (;;)
