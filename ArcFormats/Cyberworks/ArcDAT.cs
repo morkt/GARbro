@@ -174,7 +174,9 @@ namespace GameRes.Formats.Cyberworks
             Extensions = new string[] { "dat", "04", "05", "06", "app" };
         }
 
-        static readonly ArchiveNameParser[] s_name_parsers = { new ArcNameParser(), new DatNameParser(), new InKyouParser() };
+        static readonly ArchiveNameParser[] s_name_parsers = {
+            new ArcNameParser(), new DatNameParser(), new InKyouParser()
+        };
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -195,62 +197,12 @@ namespace GameRes.Formats.Cyberworks
             var toc = ReadToc (toc_name, 8);
             if (null == toc)
                 return null;
-
-            int entry_size = LittleEndian.ToInt32 (toc, 0) + 4;
-            if (entry_size < 0x16)
-                return null;
-            int count = toc.Length / entry_size;
-            if (!IsSaneCount (count))
-                return null;
-            var type = new char[2];
-            var dir = new List<Entry> (count);
-            bool has_images = false;
-            using (var index = new BinMemoryStream (toc, file.Name))
+            using (var index = new ArcIndexReader (toc, file, arc_idx))
             {
-                while (index.Position < index.Length)
-                {
-                    entry_size = index.ReadInt32();
-                    if (entry_size <= 0)
-                        return null;
-                    var next_pos = index.Position + entry_size;
-                    uint id = index.ReadUInt32();
-                    var entry = new PackedEntry { Name = id.ToString ("D6") };
-                    entry.UnpackedSize = index.ReadUInt32();
-                    entry.Size = index.ReadUInt32();
-                    entry.IsPacked = entry.UnpackedSize != entry.Size;
-                    entry.Offset = index.ReadUInt32();
-                    type[0] = (char)index.ReadByte();
-                    type[1] = (char)index.ReadByte();
-                    int entry_idx = 0;
-                    if (entry_size >= 0x17)
-                    {
-                        index.ReadInt32();
-                        entry_idx = index.ReadByte();
-                    }
-                    if (entry_idx == arc_idx)
-                    {
-                        if (type[0] > 0x20 && type[0] < 0x7F)
-                        {
-                            string ext;
-                            if (type[1] > 0x20 && type[1] < 0x7F)
-                                ext = new string (type);
-                            else
-                                ext = new string (type[0], 1);
-                            if ("b0" == ext || "n0" == ext || "o0" == ext || "0b" == ext)
-                            {
-                                entry.Type = "image";
-                                has_images = true;
-                            }
-                            else if ("j0" == ext || "k0" == ext || "u0" == ext)
-                                entry.Type = "audio";
-                            entry.Name = Path.ChangeExtension (entry.Name, ext);
-                        }
-                        dir.Add (entry);
-                    }
-                    index.Position = next_pos;
-                }
+                if (!index.Read())
+                    return null;
+                return ArchiveFromDir (file, index.Dir, index.HasImages);
             }
-            return ArchiveFromDir (file, dir, has_images);
         }
 
         internal ArcFile ArchiveFromDir (ArcView file, List<Entry> dir, bool has_images)
@@ -509,87 +461,66 @@ namespace GameRes.Formats.Cyberworks
             var toc = ReadToc (toc_name, 4);
             if (null == toc)
                 return null;
-
-            bool has_images = false;
-            var dir = new List<Entry>();
-            int entry_size = toc.ToInt32 (0);
-            if (entry_size <= 0 || entry_size > 0x11)
-                return null;
-            using (var index = new BinMemoryStream (toc))
+            using (var index = new DatIndexReader (toc, file))
             {
-                while (index.Position < index.Length)
-                {
-                    entry_size = index.ReadInt32();
-                    if (entry_size <= 0)
-                        return null;
-                    var next_pos = index.Position + entry_size;
-                    uint id = index.ReadUInt32();
-                    var entry = new PackedEntry { Name = id.ToString ("D6") };
-                    entry.UnpackedSize = index.ReadUInt32();
-                    entry.Size = index.ReadUInt32();
-                    entry.IsPacked = entry.UnpackedSize != entry.Size;
-                    entry.Offset = index.ReadUInt32();
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    char type = (char)index.ReadByte();
-                    if (type > 0x20 && type < 0x7F)
-                    {
-                        string ext = new string (type, 1);
-                        if ('b' == type)
-                        {
-                            entry.Type = "image";
-                            has_images = true;
-                        }
-                        else if ('k' == type || 'j' == type)
-                            entry.Type = "audio";
-                        entry.Name = Path.ChangeExtension (entry.Name, ext);
-                    }
-                    dir.Add (entry);
-                    index.Position = next_pos;
-                }
+                if (!index.Read())
+                    return null;
+                return ArchiveFromDir (file, index.Dir, index.HasImages);
             }
-            return ArchiveFromDir (file, dir, has_images);
         }
     }
 
     internal sealed class TocUnpacker : IDisposable
     {
-        ArcView     m_file;
+        ArcView   m_file;
+        bool      m_should_dispose;
 
-        public long Length { get { return m_file.MaxOffset; } }
+        public long       Length { get { return m_file.MaxOffset; } }
+        public uint   PackedSize { get; private set; }
+        public uint UnpackedSize { get; private set; }
 
-        public TocUnpacker (string toc_name)
+        public TocUnpacker (string toc_name) : this (VFS.OpenView (toc_name), true)
         {
-            m_file = VFS.OpenView (toc_name);
+        }
+
+        public TocUnpacker (ArcView file, bool should_dispose = false)
+        {
+            m_file = file;
+            m_should_dispose = should_dispose;
         }
 
         public byte[] Unpack (int num_length)
         {
-            int data_offset = num_length*2;
-            if (m_file.MaxOffset <= data_offset)
-                return null;
-            uint unpacked_size = DecodeDecimal (0, num_length);
-            if (unpacked_size <= 4 || unpacked_size > 0x1000000)
-                return null;
-            uint packed_size = DecodeDecimal (num_length, num_length);
-            if (packed_size > m_file.MaxOffset - data_offset)
-                return null;
-            return Unpack (data_offset, packed_size, unpacked_size);
+            return Unpack (0, num_length);
         }
 
-        byte[] Unpack (int offset, uint packed_size, uint unpacked_size)
+        public byte[] Unpack (long offset, int num_length)
         {
-            using (var toc_s = m_file.CreateStream (offset, packed_size))
+            long data_offset = offset + num_length*2;
+            if (m_file.MaxOffset <= data_offset)
+                return null;
+            UnpackedSize = DecodeDecimal (offset, num_length);
+            if (UnpackedSize <= 4 || UnpackedSize > 0x1000000)
+                return null;
+            PackedSize = DecodeDecimal (offset+num_length, num_length);
+            if (PackedSize > m_file.MaxOffset - data_offset || 0 == PackedSize)
+                return null;
+            return UnpackAt (data_offset);
+        }
+
+        byte[] UnpackAt (long offset)
+        {
+            using (var toc_s = m_file.CreateStream (offset, PackedSize))
             using (var lzss = new LzssStream (toc_s))
             {
-                var toc = new byte[unpacked_size];
+                var toc = new byte[UnpackedSize];
                 if (toc.Length != lzss.Read (toc, 0, toc.Length))
                     return null;
                 return toc;
             }
         }
 
-        uint DecodeDecimal (long offset, int num_length)
+        internal uint DecodeDecimal (long offset, int num_length)
         {
             uint v = 0;
             uint rank = 1;
@@ -605,11 +536,152 @@ namespace GameRes.Formats.Cyberworks
         bool _disposed = false;
         public void Dispose ()
         {
-            if (!_disposed)
+            if (m_should_dispose && !_disposed)
             {
                 m_file.Dispose();
                 _disposed = true;
             }
+        }
+    }
+
+    internal abstract class IndexReader : IDisposable
+    {
+        protected IBinaryStream   m_index;
+        readonly  long            m_max_offset;
+        private   List<Entry>     m_dir;
+
+        public List<Entry> Dir { get { return m_dir; } }
+        public long  MaxOffset { get { return m_max_offset; } }
+        public bool  HasImages { get; protected set; }
+
+        public IndexReader (byte[] toc, ArcView file)
+        {
+            m_index = new BinMemoryStream (toc);
+            m_max_offset = file.MaxOffset;
+        }
+
+        public bool Read ()
+        {
+            int entry_size = m_index.ReadInt32();
+            if (entry_size < 0x11)
+                return false;
+            int count = (int)m_index.Length / (entry_size + 4);
+            if (!ArchiveFormat.IsSaneCount (count))
+                return false;
+            m_index.Position = 0;
+            m_dir = new List<Entry> (count);
+            while (m_index.Position < m_index.Length)
+            {
+                entry_size = m_index.ReadInt32();
+                if (entry_size <= 0)
+                    return false;
+                var next_pos = m_index.Position + entry_size;
+                var entry = ReadEntryInfo();
+                if (ReadEntryType (entry, entry_size))
+                {
+                    if (!entry.CheckPlacement (MaxOffset))
+                        return false;
+                    m_dir.Add (entry);
+                }
+                m_index.Position = next_pos;
+            }
+            return true;
+        }
+
+        internal PackedEntry ReadEntryInfo ()
+        {
+            uint id = m_index.ReadUInt32();
+            var entry = new PackedEntry { Name = id.ToString ("D6") };
+            entry.UnpackedSize = m_index.ReadUInt32();
+            entry.Size = m_index.ReadUInt32();
+            entry.IsPacked = entry.UnpackedSize != entry.Size;
+            entry.Offset = m_index.ReadUInt32();
+            return entry;
+        }
+
+        protected abstract bool ReadEntryType (Entry entry, int entry_size);
+
+        public void Dispose ()
+        {
+            Dispose (true);
+        }
+
+        bool _disposed = false;
+        protected virtual void Dispose (bool disposing)
+        {
+            if (disposing && !_disposed)
+            {
+                m_index.Dispose();
+                _disposed = true;
+            }
+        }
+    }
+
+    internal class ArcIndexReader : IndexReader
+    {
+        int     m_arc_number;
+
+        public ArcIndexReader (byte[] toc, ArcView file, int arc_number) : base (toc, file)
+        {
+            m_arc_number = arc_number;
+        }
+
+        char[]  m_type = new char[2];
+
+        protected override bool ReadEntryType (Entry entry, int entry_size)
+        {
+            m_type[0] = (char)m_index.ReadByte();
+            m_type[1] = (char)m_index.ReadByte();
+            int entry_idx = 0;
+            if (entry_size >= 0x17)
+            {
+                m_index.ReadInt32();
+                entry_idx = m_index.ReadByte();
+            }
+            if (entry_idx != m_arc_number)
+                return false;
+            if (m_type[0] > 0x20 && m_type[0] < 0x7F)
+            {
+                string ext;
+                if (m_type[1] > 0x20 && m_type[1] < 0x7F)
+                    ext = new string (m_type);
+                else
+                    ext = new string (m_type[0], 1);
+                if ("b0" == ext || "n0" == ext || "o0" == ext || "0b" == ext)
+                {
+                    entry.Type = "image";
+                    HasImages = true;
+                }
+                else if ("j0" == ext || "k0" == ext || "u0" == ext)
+                    entry.Type = "audio";
+                entry.Name = Path.ChangeExtension (entry.Name, ext);
+            }
+            return true;
+        }
+    }
+
+    internal class DatIndexReader : IndexReader
+    {
+        public DatIndexReader (byte[] toc, ArcView file) : base (toc, file)
+        {
+        }
+
+        protected override bool ReadEntryType (Entry entry, int entry_size)
+        {
+            char type = (char)m_index.ReadByte();
+            if (type > 0x20 && type < 0x7F)
+            {
+                string ext = new string (type, 1);
+                if ('b' == type)
+                {
+                    entry.Type = "image";
+                    HasImages = true;
+                }
+                else if ('k' == type || 'j' == type)
+                    entry.Type = "audio";
+                entry.Name = Path.ChangeExtension (entry.Name, ext);
+            }
+            return true;
         }
     }
 }
