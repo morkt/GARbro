@@ -17,10 +17,10 @@ New formats:
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>59</FileVersion>
+        <FileVersion>60</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.29.1274"/>
+            <Assembly Name="ArcFormats" Version="1.2.30.1336"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>
