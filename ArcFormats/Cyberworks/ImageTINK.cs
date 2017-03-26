@@ -111,8 +111,10 @@ namespace GameRes.Formats.Cyberworks
                 else
                     UnpackV6 (bits_size, data_offset, data_offset + header[6]);
             }
+            else if (0 == bits_size)
+                CopyV0 (unpacked_size);
             else
-                throw new InvalidFormatException();
+                UnpackV1 (bits_size, unpacked_size);
         }
 
         void CopyV0 (int data_size)
@@ -149,6 +151,38 @@ namespace GameRes.Formats.Cyberworks
                     m_input.Read (gap, 0, gap.Length);
                     dst += dst_stride;
                 }
+            }
+        }
+
+        void UnpackV1 (int alpha_size, int rgb_size)
+        {
+            var alpha_map = m_input.ReadBytes (alpha_size);
+            if (alpha_map.Length != alpha_size)
+                throw new InvalidFormatException();
+
+            Info.BPP = 32;
+            int plane_size = (int)Info.Width * (int)Info.Height;
+            m_output = new byte[plane_size * 4];
+            int bit = 1;
+            int bit_src = 0;
+            int dst = 0;
+            for (int i = 0; i < plane_size; ++i)
+            {
+                if ((bit & alpha_map[bit_src]) != 0)
+                {
+                    m_input.Read (m_output, dst, 3);
+                    m_output[dst+3] = 0xFF;
+                }
+                else
+                    m_output[dst+3] = 0;
+                dst += 4;
+                if (0x80 == bit)
+                {
+                    ++bit_src;
+                    bit = 1;
+                }
+                else
+                    bit <<= 1;
             }
         }
 
