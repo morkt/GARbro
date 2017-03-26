@@ -174,6 +174,8 @@ namespace GameRes.Formats.Cyberworks
             Extensions = new string[] { "dat", "04", "05", "06", "app" };
         }
 
+        public bool BlendOverlayImages = true;
+
         static readonly ArchiveNameParser[] s_name_parsers = {
             new ArcNameParser(), new DatNameParser(), new InKyouParser()
         };
@@ -256,6 +258,7 @@ namespace GameRes.Formats.Cyberworks
             var pent = entry as PackedEntry;
             if (null != pent && pent.IsPacked)
             {
+                input = new BufferedStream (input);
                 input = new LzssStream (input);
             }
             return input;
@@ -269,7 +272,10 @@ namespace GameRes.Formats.Cyberworks
             var input = arc.OpenBinaryEntry (entry);
             try
             {
-                return DecryptImage (input, barc.Scheme);
+                var reader = DecryptImage (input, barc.Scheme);
+                if (BlendOverlayImages && reader is AImageReader)
+                    reader = BlendAImage (barc, entry, reader as AImageReader);
+                return reader;
             }
             catch
             {
@@ -299,6 +305,43 @@ namespace GameRes.Formats.Cyberworks
             }
             input.Position = 0;
             return new ImageFormatDecoder (input);
+        }
+
+        IImageDecoder BlendAImage (BellArchive arc, Entry entry, AImageReader overlay)
+        {
+            var header = overlay.ReadHeader();
+            if (header[0] != 1)
+                return overlay;
+            var scheme = arc.Scheme;
+            var dir = (List<Entry>)arc.Dir;
+            int i = dir.IndexOf (entry);
+            while (--i >= 0 && "image" == dir[i].Type)
+            {
+                using (var input = OpenEntry (arc, dir[i]))
+                {
+                    int type = input.ReadByte();
+                    if (type != 'a')
+                        break;
+                    int id = input.ReadByte();
+                    if (id != scheme.Value2)
+                        break;
+                    using (var bin = new BinaryStream (input, dir[i].Name))
+                    using (var base_image = new AImageReader (bin, scheme))
+                    {
+                        var base_header = base_image.ReadHeader();
+                        if (1 == base_header[0])
+                            continue;
+                        // check if image width/height are the same
+                        if (base_header[3] == header[3] && base_header[4] == header[4])
+                        {
+                            base_image.Unpack();
+                            overlay.Baseline = base_image.Data;
+                        }
+                        break;
+                    }
+                }
+            }
+            return overlay;
         }
 
         internal AImageScheme QueryScheme (string arc_name)
@@ -579,9 +622,8 @@ namespace GameRes.Formats.Cyberworks
                 var entry = ReadEntryInfo();
                 if (ReadEntryType (entry, entry_size))
                 {
-                    if (!entry.CheckPlacement (MaxOffset))
-                        return false;
-                    m_dir.Add (entry);
+                    if (entry.CheckPlacement (MaxOffset))
+                        m_dir.Add (entry);
                 }
                 m_index.Position = next_pos;
             }
@@ -668,6 +710,8 @@ namespace GameRes.Formats.Cyberworks
 
         protected override bool ReadEntryType (Entry entry, int entry_size)
         {
+            if (entry_size > 0x11)
+                throw new InvalidFormatException();
             char type = (char)m_index.ReadByte();
             if (type > 0x20 && type < 0x7F)
             {

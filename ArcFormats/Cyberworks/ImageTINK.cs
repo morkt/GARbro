@@ -51,10 +51,12 @@ namespace GameRes.Formats.Cyberworks
         byte[]          m_output;
         AImageScheme    m_scheme;
         ImageData       m_image;
+        int[]           m_header;
 
         public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
         public ImageFormat SourceFormat { get { return null; } }
         public ImageMetaData       Info { get { return m_info; } }
+        public byte[]          Baseline { get; set; }
 
         public ImageData Image
         {
@@ -81,17 +83,25 @@ namespace GameRes.Formats.Cyberworks
             m_scheme = scheme;
         }
 
-        public void Unpack ()
+        internal int[] ReadHeader ()
         {
+            if (m_header != null)
+                return m_header;
             int header_length = Math.Max (8, m_scheme.HeaderOrder.Length);
-            var header = new int[header_length];
+            m_header = new int[header_length];
             for (int i = 0; i < m_scheme.HeaderOrder.Length; ++i)
             {
                 int b = GetInt();
-                header[m_scheme.HeaderOrder[i]] = b;
+                m_header[m_scheme.HeaderOrder[i]] = b;
             }
-            Info.Width  = (uint)header[4];
-            Info.Height = (uint)header[3];
+            Info.Width  = (uint)m_header[4];
+            Info.Height = (uint)m_header[3];
+            return m_header;
+        }
+
+        public void Unpack ()
+        {
+            var header = ReadHeader();
             if (0 == Info.Width || Info.Width >= 0x8000 || 0 == Info.Height || Info.Height >= 0x8000)
                 throw new InvalidFormatException();
             int unpacked_size = header[5];
@@ -160,22 +170,32 @@ namespace GameRes.Formats.Cyberworks
             if (alpha_map.Length != alpha_size)
                 throw new InvalidFormatException();
 
-            Info.BPP = 32;
             int plane_size = (int)Info.Width * (int)Info.Height;
-            m_output = new byte[plane_size * 4];
+            if (Baseline != null)
+            {
+                Info.BPP = 24;
+                m_output = Baseline;
+            }
+            else
+            {
+                Info.BPP = 32;
+                m_output = new byte[plane_size * 4];
+            }
+            int pixel_size = Info.BPP / 8;
             int bit = 1;
             int bit_src = 0;
             int dst = 0;
             for (int i = 0; i < plane_size; ++i)
             {
+                byte alpha = 0;
                 if ((bit & alpha_map[bit_src]) != 0)
                 {
                     m_input.Read (m_output, dst, 3);
-                    m_output[dst+3] = 0xFF;
+                    alpha = 0xFF;
                 }
-                else
-                    m_output[dst+3] = 0;
-                dst += 4;
+                if (4 == pixel_size)
+                    m_output[dst+3] = alpha;
+                dst += pixel_size;
                 if (0x80 == bit)
                 {
                     ++bit_src;
