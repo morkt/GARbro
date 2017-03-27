@@ -2,7 +2,7 @@
 //! \date       Tue Dec 27 22:27:58 2016
 //! \brief      Artemis engine resource archive.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -50,8 +50,16 @@ namespace GameRes.Formats.Artemis
             if (!file.View.AsciiEqual (0, "pf"))
                 return null;
             int version = file.View.ReadByte (2) - '0';
-            if (8 != version)
-                return null;
+            switch (version)
+            {
+            case 8:     return OpenPf8 (file);
+            case 2:     return OpenPf2 (file);
+            default:    return null;
+            }
+        }
+
+        ArcFile OpenPf8 (ArcView file)
+        {
             uint index_size = file.View.ReadUInt32 (3);
             int count = file.View.ReadInt32 (7);
             if (!IsSaneCount (count) || 7L + index_size > file.MaxOffset)
@@ -78,6 +86,31 @@ namespace GameRes.Formats.Artemis
                 var key = sha1.ComputeHash (index); // calculated for archive versions 4, 5, 8 and 9
                 return new PfsArchive (file, this, dir, key);
             }
+        }
+
+        ArcFile OpenPf2 (ArcView file)
+        {
+            uint index_size = file.View.ReadUInt32 (3);
+            int count = file.View.ReadInt32 (0xB);
+            if (!IsSaneCount (count) || 7L + index_size > file.MaxOffset)
+                return null;
+            var index = file.View.ReadBytes (7, index_size);
+            int index_offset = 8;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                int name_length = index.ToInt32 (index_offset);
+                var name = Encodings.cp932.GetString (index, index_offset+4, name_length);
+                index_offset += name_length + 0x10;
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                entry.Offset = index.ToUInt32 (index_offset);
+                entry.Size   = index.ToUInt32 (index_offset+4);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                index_offset += 8;
+                dir.Add (entry);
+            }
+            return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
