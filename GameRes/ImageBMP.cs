@@ -114,19 +114,30 @@ namespace GameRes
             if ('B' != c1 || 'M' != c2)
                 return null;
             uint size = file.ReadUInt32();
-            if (size < 14+40)
+            SkipBytes (file, 8);
+            uint header_size = file.ReadUInt32();
+            if (size < 14+header_size)
             {
                 // some otherwise valid bitmaps have size field set to zero
                 if (size != 0 || !file.AsStream.CanSeek)
                     return null;
                 size = (uint)file.Length;
             }
-            SkipBytes (file, 8);
-            uint header_size = file.ReadUInt32();
-            if (header_size < 40 || size-14 < header_size)
+            uint width, height;
+            if (0xC == header_size)
+            {
+                width  = file.ReadUInt16();
+                height = file.ReadUInt16();
+            }
+            else if (header_size < 40 || size-14 < header_size)
+            {
                 return null;
-            uint width  = file.ReadUInt32();
-            uint height = file.ReadUInt32();
+            }
+            else
+            {
+                width  = file.ReadUInt32();
+                height = file.ReadUInt32();
+            }
             file.ReadInt16();
             int bpp = file.ReadInt16();
             return new BmpMetaData {
