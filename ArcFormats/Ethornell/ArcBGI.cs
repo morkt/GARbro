@@ -86,7 +86,7 @@ namespace GameRes.Formats.BGI
                         return new BinMemoryStream (decoder.Output, entry.Name);
                     }
                 }
-                return new ArcView.ArcStream (input, entry_offset, entry.Size);
+                return new ArcViewStream (input, entry_offset, entry.Size);
             }
             catch (Exception X)
             {
@@ -172,7 +172,7 @@ namespace GameRes.Formats.BGI
         public uint   Length { get { return m_dst_size; } }
 
         public DscDecoder (ArcView.Frame input)
-            : base (new ArcView.ArcStream (input, input.Offset+0x20, input.Reserved-0x20))
+            : base (new ArcViewStream (input, input.Offset+0x20, input.Reserved-0x20))
         {
             m_magic = (uint)input.ReadUInt16 (input.Offset) << 16;
             m_key = input.ReadUInt32 (input.Offset+0x10);
