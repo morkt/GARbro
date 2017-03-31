@@ -28,7 +28,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using GameRes.Utility;
 
 namespace GameRes
 {
@@ -37,12 +36,7 @@ namespace GameRes
         private readonly ArcView.Frame  m_view;
         private readonly long           m_start;
         private readonly long           m_size;
-        private long        m_position;
-        private byte[]      m_buffer;
-        private int         m_buffer_pos;   // read position within buffer
-        private int         m_buffer_len;   // length of bytes read in buffer
-
-        private const int DefaultBufferSize = 0x1000;
+        private long                    m_position;
 
         public string     Name { get; set; }
         public uint  Signature { get { return ReadSignature(); } }
@@ -54,20 +48,11 @@ namespace GameRes
         public override long Length   { get { return m_size; } }
         public override long Position
         {
-            get { return m_position + (m_buffer_pos - m_buffer_len); }
+            get { return m_position; }
             set {
                 if (value < 0)
                     throw new ArgumentOutOfRangeException ("value", "Stream position is out of range.");
-                var buffer_start = m_position - m_buffer_len;
-                if (m_buffer_pos != m_buffer_len && value >= buffer_start && value < m_position)
-                {
-                    m_buffer_pos = (int)(value - buffer_start);
-                }
-                else
-                {
-                    m_position = value;
-                    m_buffer_pos = m_buffer_len = 0;
-                }
+                m_position = value;
             }
         }
 
@@ -132,61 +117,24 @@ namespace GameRes
             return new CowArray<byte> (m_header, 0, size);
         }
 
-        private void RefillBuffer ()
-        {
-            if (null == m_buffer)
-                m_buffer = new byte[DefaultBufferSize];
-            uint length = (uint)Math.Min (m_size - m_position, m_buffer.Length);
-            m_buffer_len = m_view.Read (m_start + m_position, m_buffer, 0, length);
-            m_position += m_buffer_len;
-            m_buffer_pos = 0;
-        }
-
-        private void FlushBuffer ()
-        {
-            if (m_buffer_len != 0)
-            {
-                m_position += m_buffer_pos - m_buffer_len;
-                m_buffer_pos = m_buffer_len = 0;
-            }
-        }
-
         private void EnsureAvailable (int length)
         {
-            if (m_buffer_pos + length > m_buffer_len)
-            {
-                FlushBuffer();
-                if (m_position + length > m_size)
-                    throw new EndOfStreamException();
-                RefillBuffer();
-            }
-        }
-
-        private int ReadFromBuffer (byte[] array, int offset, int count)
-        {
-            int available = Math.Min (m_buffer_len - m_buffer_pos, count);
-            if (available > 0)
-            {
-                Buffer.BlockCopy (m_buffer, m_buffer_pos, array, offset, available);
-                m_buffer_pos += available;
-            }
-            return available;
+            if (m_position + length > m_size)
+                throw new EndOfStreamException();
         }
 
         public int PeekByte ()
         {
-            if (m_buffer_pos == m_buffer_len)
-                RefillBuffer();
-            if (m_buffer_pos == m_buffer_len)
+            if (m_position >= m_size)
                 return -1;
-            return m_buffer[m_buffer_pos];
+             return m_view.ReadByte (m_start+m_position);
         }
 
         public override int ReadByte ()
         {
             int b = PeekByte();
             if (-1 != b)
-                ++m_buffer_pos;
+                ++m_position;
             return b;
         }
 
@@ -206,8 +154,8 @@ namespace GameRes
         public short ReadInt16 ()
         {
             EnsureAvailable (2);
-            var v = m_buffer.ToInt16 (m_buffer_pos);
-            m_buffer_pos += 2;
+            var v = m_view.ReadInt16 (m_start+m_position);
+            m_position += 2;
             return v;
         }
 
@@ -219,16 +167,17 @@ namespace GameRes
         public int ReadInt24 ()
         {
             EnsureAvailable (3);
-            int v = m_buffer.ToInt24 (m_buffer_pos);
-            m_buffer_pos += 3;
+            int v = m_view.ReadUInt16 (m_start+m_position);
+            v |= m_view.ReadByte (m_start+m_position+2) << 16;
+            m_position += 3;
             return v;
         }
 
         public int ReadInt32 ()
         {
             EnsureAvailable (4);
-            int v = m_buffer.ToInt32 (m_buffer_pos);
-            m_buffer_pos += 4;
+            var v = m_view.ReadInt32 (m_start+m_position);
+            m_position += 4;
             return v;
         }
 
@@ -240,8 +189,8 @@ namespace GameRes
         public long ReadInt64 ()
         {
             EnsureAvailable (8);
-            var v = m_buffer.ToInt64 (m_buffer_pos);
-            m_buffer_pos += 8;
+            var v = m_view.ReadInt64 (m_start+m_position);
+            m_position += 8;
             return v;
         }
 
@@ -257,39 +206,10 @@ namespace GameRes
 
         public string ReadCString (int length, Encoding enc)
         {
-            if (m_buffer_pos == m_buffer_len && length <= DefaultBufferSize)
-                RefillBuffer();
-            if (m_buffer_pos + length <= m_buffer_len)
-            {
-                // whole string fit into buffer
-                var str = Binary.GetCString (m_buffer, m_buffer_pos, length, enc);
-                m_buffer_pos += length;
-                return str;
-            }
-            else if (length > DefaultBufferSize)
-            {
-                // requested string length is larger than internal buffer size
-                var string_buffer = ReadBytes (length);
-                return Binary.GetCString (string_buffer, 0, string_buffer.Length, enc);
-            }
-            else
-            {
-                int available = m_buffer_len - m_buffer_pos;
-                if (available > 0 && m_buffer_pos != 0)
-                    Buffer.BlockCopy (m_buffer, m_buffer_pos, m_buffer, 0, available);
-                else if (null == m_buffer)
-                    m_buffer = new byte[DefaultBufferSize];
-                int count = (int)Math.Min (m_buffer.Length - available, m_size - m_position);
-                if (count > 0)
-                {
-                    int read = m_view.Read (m_start + m_position, m_buffer, available, (uint)count);
-                    m_position += read;
-                    available += read;
-                }
-                m_buffer_len = available;
-                m_buffer_pos = Math.Min (length, m_buffer_len);
-                return Binary.GetCString (m_buffer, 0, m_buffer_pos, enc);
-            }
+            uint string_length = (uint)Math.Min (length, m_size-m_position);
+            var str = m_view.ReadString (m_position, (uint)string_length, enc);
+            m_position += string_length;
+            return str;
         }
 
         public string ReadCString ()
@@ -299,27 +219,12 @@ namespace GameRes
 
         public string ReadCString (Encoding enc)
         {
-            if (m_buffer_pos == m_buffer_len)
-                RefillBuffer();
-            int available = m_buffer_len - m_buffer_pos;
-            if (0 == available)
-                return string.Empty;
+            // underlying view includes rest of the stream
+            if (m_view.Offset <= m_position && m_view.Offset + m_view.Reserved >= m_start + m_size)
+                return ReadCStringUnsafe (enc);
 
-            int zero = Array.IndexOf<byte> (m_buffer, 0, m_buffer_pos, available);
-            if (zero != -1)
-            {
-                // null byte found within buffer
-                var str = enc.GetString (m_buffer, m_buffer_pos, zero - m_buffer_pos);
-                m_buffer_pos = zero+1;
-                return str;
-            }
-            // underlying view includes whole stream
-            if (m_view.Offset <= m_start && m_view.Offset + m_view.Reserved >= m_start + m_size)
-                return ReadCStringUnsafe (enc, available);
-
-            var string_buf = new byte[Math.Max (0x20, available * 2)];
-            ReadFromBuffer (string_buf, 0, available);
-            int size = available;
+            var string_buf = new byte[0x20];
+            int size = 0;
             for (;;)
             {
                 int b = ReadByte();
@@ -337,7 +242,6 @@ namespace GameRes
         private unsafe string ReadCStringUnsafe (Encoding enc, int skip_bytes = 0)
         {
             Debug.Assert (m_view.Offset + m_view.Reserved >= m_start + m_size);
-            FlushBuffer();
             using (var ptr = m_view.GetPointer())
             {
                 byte* s = ptr.Value + (m_start - m_view.Offset + m_position);
@@ -350,44 +254,33 @@ namespace GameRes
                 m_position += string_length;
                 if (string_length < view_length)
                     ++m_position;
-//                return enc.GetString (s, string_length); // .Net v4.6+ only
-                var string_buf = new byte[string_length];
-                Marshal.Copy ((IntPtr)s, string_buf, 0, string_length);
-                return enc.GetString (string_buf, 0, string_length);
+                return new string ((sbyte*)s, 0, string_length, enc);
             }
         }
 
         public byte[] ReadBytes (int count)
         {
-            if (m_buffer_pos + count <= m_buffer_len && m_buffer_len != 0)
-            {
-                var data = new CowArray<byte> (m_buffer, m_buffer_pos, count).ToArray();
-                m_buffer_pos += count;
-                return data;
-            }
-            var current_pos = Position;
-            if (0 == count || current_pos >= m_size)
+            if (0 == count || m_position >= m_size)
                 return new byte[0];
-            var bytes = m_view.ReadBytes (m_start+current_pos, (uint)Math.Min (count, m_size - current_pos));
-            Position = current_pos + bytes.Length;
+            var bytes = m_view.ReadBytes (m_start+m_position, (uint)Math.Min (count, m_size - m_position));
+            m_position += bytes.Length;
             return bytes;
         }
 
         #region System.IO.Stream methods
         public override void Flush()
         {
-            FlushBuffer();
         }
 
         public override long Seek (long offset, SeekOrigin origin)
         {
             switch (origin)
             {
-            case SeekOrigin.Begin:      Position = offset; break;
-            case SeekOrigin.Current:    Position += offset; break;
-            case SeekOrigin.End:        Position = m_size + offset; break;
+            case SeekOrigin.Current:    offset += m_position; break;
+            case SeekOrigin.End:        offset += m_size; break;
             }
-            return Position;
+            Position = offset;
+            return m_position;
         }
 
         public override void SetLength (long length)
@@ -397,26 +290,12 @@ namespace GameRes
 
         public override int Read (byte[] buffer, int offset, int count)
         {
-            int read_from_buffer = ReadFromBuffer (buffer, offset, count);
-            offset += read_from_buffer;
-            count -= read_from_buffer;
             if (0 == count || m_position >= m_size)
-                return read_from_buffer;
-            if (count < DefaultBufferSize)
-            {
-                RefillBuffer();
-                count = Math.Min (count, m_buffer_len);
-                Buffer.BlockCopy (m_buffer, m_buffer_pos, buffer, offset, count);
-                m_buffer_pos += count;
-                return read_from_buffer + count;
-            }
-            else
-            {
-                uint view_count = (uint)Math.Min (count, m_size - m_position);
-                int read_from_view = m_view.Read (m_start + m_position, buffer, offset, view_count);
-                m_position += read_from_view;
-                return read_from_buffer + read_from_view;
-            }
+                return 0;
+            count = (int)Math.Min (count, m_size - m_position);
+            int read = m_view.Read (m_start + m_position, buffer, offset, (uint)count);
+            m_position += read;
+            return read;
         }
 
         public override void Write (byte[] buffer, int offset, int count)

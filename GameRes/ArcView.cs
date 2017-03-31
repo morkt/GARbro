@@ -77,27 +77,6 @@ namespace GameRes
 
     public static class MappedViewExtension
     {
-        static public string ReadString (this MemoryMappedViewAccessor view, long offset, uint size, Encoding enc)
-        {
-            if (0 == size)
-                return string.Empty;
-            byte[] buffer = new byte[size];
-            uint n;
-            for (n = 0; n < size; ++n)
-            {
-                byte b = view.ReadByte (offset+n);
-                if (0 == b)
-                    break;
-                buffer[n] = b;
-            }
-            return enc.GetString (buffer, 0, (int)n);
-        }
-
-        static public string ReadString (this MemoryMappedViewAccessor view, long offset, uint size)
-        {
-            return ReadString (view, offset, size, Encodings.cp932);
-        }
-
         unsafe public static byte* GetPointer (this MemoryMappedViewAccessor view, long offset)
         {
             var num = offset % info.dwAllocationGranularity;
@@ -273,6 +252,7 @@ namespace GameRes
             private MemoryMappedViewAccessor    m_view;
             private long                        m_offset;
             private uint                        m_size;
+            private unsafe byte*                m_mem;
 
             public long Offset      { get { return m_offset; } }
             public uint Reserved    { get { return m_size; } }
@@ -283,6 +263,7 @@ namespace GameRes
                 m_offset = 0;
                 m_size = (uint)Math.Min (ArcView.PageSize, m_arc.MaxOffset);
                 m_view = m_arc.CreateViewAccessor (m_offset, m_size);
+                unsafe { m_mem = m_view.GetPointer (m_offset); }
             }
 
             public Frame (Frame other)
@@ -291,6 +272,7 @@ namespace GameRes
                 m_offset = 0;
                 m_size = (uint)Math.Min (ArcView.PageSize, m_arc.MaxOffset);
                 m_view = m_arc.CreateViewAccessor (m_offset, m_size);
+                unsafe { m_mem = m_view.GetPointer (m_offset); }
             }
 
             public Frame (ArcView arc, long offset, uint size)
@@ -299,6 +281,7 @@ namespace GameRes
                 m_offset = Math.Min (offset, m_arc.MaxOffset);
                 m_size = (uint)Math.Min (size, m_arc.MaxOffset-m_offset);
                 m_view = m_arc.CreateViewAccessor (m_offset, m_size);
+                unsafe { m_mem = m_view.GetPointer (m_offset); }
             }
 
             public uint Reserve (long offset, uint size)
@@ -313,11 +296,19 @@ namespace GameRes
                         size = (uint)(m_arc.MaxOffset-offset);
                     var old_view = m_view;
                     m_view = m_arc.CreateViewAccessor (offset, size);
+                    old_view.SafeMemoryMappedViewHandle.ReleasePointer();
                     old_view.Dispose();
                     m_offset = offset;
                     m_size = size;
+                    unsafe { m_mem = m_view.GetPointer (m_offset); }
                 }
                 return (uint)(m_offset + m_size - offset);
+            }
+
+            public void StrictReserve (long offset, uint size)
+            {
+                if (Reserve (offset, size) < size)
+                    throw new ArgumentException ("Not enough bytes to read in the memory mapped file view.", "offset");
             }
 
             public bool AsciiEqual (long offset, string data)
@@ -326,15 +317,11 @@ namespace GameRes
                     return false;
                 unsafe
                 {
-                    byte* ptr = m_view.GetPointer (m_offset) + (offset - m_offset);
-                    try {
-                        for (int i = 0; i < data.Length; ++i)
-                        {
-                            if (ptr[i] != data[i])
-                                return false;
-                        }
-                    } finally {
-                        m_view.SafeMemoryMappedViewHandle.ReleasePointer();
+                    byte* ptr = m_mem + (offset - m_offset);
+                    for (int i = 0; i < data.Length; ++i)
+                    {
+                        if (ptr[i] != data[i])
+                            return false;
                     }
                     return true;
                 }
@@ -360,12 +347,7 @@ namespace GameRes
 
             private unsafe void UnsafeCopy (long offset, byte[] buf, int buf_offset, int count)
             {
-                byte* ptr = m_view.GetPointer (m_offset);
-                try {
-                    Marshal.Copy ((IntPtr)(ptr+(offset-m_offset)), buf, buf_offset, count);
-                } finally {
-                    m_view.SafeMemoryMappedViewHandle.ReleasePointer();
-                }
+                Marshal.Copy ((IntPtr)(m_mem + (offset-m_offset)), buf, buf_offset, count);
             }
 
             /// <summary>
@@ -383,77 +365,67 @@ namespace GameRes
 
             public byte ReadByte (long offset)
             {
-                Reserve (offset, 1);
-                return m_view.ReadByte (offset-m_offset);
+                StrictReserve (offset, 1);
+                unsafe { return m_mem[offset-m_offset]; }
             }
 
             public sbyte ReadSByte (long offset)
             {
-                Reserve (offset, 1);
-                return m_view.ReadSByte (offset-m_offset);
+                StrictReserve (offset, 1);
+                unsafe { return (sbyte)m_mem[offset-m_offset]; }
             }
 
             public ushort ReadUInt16 (long offset)
             {
-                Reserve (offset, 2);
-                return m_view.ReadUInt16 (offset-m_offset);
+                StrictReserve (offset, 2);
+                unsafe { return *(ushort*)(m_mem+offset-m_offset); }
             }
 
             public short ReadInt16 (long offset)
             {
-                Reserve (offset, 2);
-                return m_view.ReadInt16 (offset-m_offset);
+                StrictReserve (offset, 2);
+                unsafe { return *(short*)(m_mem+offset-m_offset); }
             }
 
             public uint ReadUInt32 (long offset)
             {
-                Reserve (offset, 4);
-                return m_view.ReadUInt32 (offset-m_offset);
+                StrictReserve (offset, 4);
+                unsafe { return *(uint*)(m_mem+offset-m_offset); }
             }
 
             public int ReadInt32 (long offset)
             {
-                Reserve (offset, 4);
-                return m_view.ReadInt32 (offset-m_offset);
+                StrictReserve (offset, 4);
+                unsafe { return *(int*)(m_mem+offset-m_offset); }
             }
 
             public ulong ReadUInt64 (long offset)
             {
-                Reserve (offset, 8);
-                return m_view.ReadUInt64 (offset-m_offset);
+                StrictReserve (offset, 8);
+                unsafe { return *(ulong*)(m_mem+offset-m_offset); }
             }
 
             public long ReadInt64 (long offset)
             {
-                Reserve (offset, 8);
-                return m_view.ReadInt64 (offset-m_offset);
+                StrictReserve (offset, 8);
+                unsafe { return *(long*)(m_mem+offset-m_offset); }
             }
 
             public string ReadString (long offset, uint size, Encoding enc)
             {
                 size = Math.Min (size, Reserve (offset, size));
-                return m_view.ReadString (offset-m_offset, size, enc);
-                /* unsafe implementation requires .Net v4.6                
                 if (0 == size)
                     return string.Empty;
                 unsafe
                 {
-                    byte* s = m_view.GetPointer (m_offset) + (offset - m_offset);
-                    try
+                    byte* s = m_mem + (offset - m_offset);
+                    uint string_length = 0;
+                    while (string_length < size && 0 != s[string_length])
                     {
-                        uint string_length = 0;
-                        while (string_length < size && 0 != s[string_length])
-                        {
-                            ++string_length;
-                        }
-                        return enc.GetString (s, (int)string_length); // .Net v4.6+ only
+                        ++string_length;
                     }
-                    finally
-                    {
-                        m_view.SafeMemoryMappedViewHandle.ReleasePointer();
-                    }
+                    return new string ((sbyte*)s, 0, (int)string_length, enc);
                 }
-                */
             }
 
             public string ReadString (long offset, uint size)
@@ -481,6 +453,14 @@ namespace GameRes
                 {
                     if (disposing)
                     {
+                        unsafe
+                        {
+                            if (m_mem != null)
+                            {
+                                m_view.SafeMemoryMappedViewHandle.ReleasePointer();
+                                m_mem = null;
+                            }
+                        }
                         m_view.Dispose();
                     }
                     m_arc = null;
