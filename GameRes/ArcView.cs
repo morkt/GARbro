@@ -433,7 +433,7 @@ namespace GameRes
                 return ReadString (offset, size, Encodings.cp932);
             }
 
-            public unsafe ViewPointer GetPointer ()
+            internal unsafe ViewPointer GetPointer ()
             {
                 return new ViewPointer (m_view, m_offset);
             }
