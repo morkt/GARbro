@@ -110,6 +110,10 @@
     <Compile Include="Kurumi\ImageGRA.cs" />
     <Compile Include="Leaf\ArcPX.cs" />
     <Compile Include="Malie\ArcLIBU.cs" />
+    <Compile Include="MicroVision\ArcARC.cs" />
+    <Compile Include="MicroVision\ArcGSD.cs" />
+    <Compile Include="MicroVision\AudioIKM.cs" />
+    <Compile Include="MicroVision\ImageGPC.cs" />
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
