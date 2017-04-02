@@ -187,8 +187,12 @@ namespace GameRes.Compression
             // XXX checksum is ignored
         }
 
-        const int LastLiterals = 5;
-        const int MFLimit = 12;
+        const int MinMatch          = 4;
+        const int LastLiterals      = 5;
+        const int MFLimit           = 12;
+        const int MatchLengthBits   = 4;
+        const int MatchLengthMask   = 0xF;
+        const int RunMask           = 0xF;
 
         int DecompressBlock ()
         {
@@ -202,8 +206,8 @@ namespace GameRes.Compression
             {
                 /* get literal length */
                 int token = m_block[src++];
-                int length = token >> 4;
-                if (0xF == length)
+                int length = token >> MatchLengthBits;
+                if (RunMask == length)
                 {
                     int n;
                     do
@@ -211,7 +215,7 @@ namespace GameRes.Compression
                         n = m_block[src++];
                         length += n;
                     }
-                    while ((src < iend - 0xF) && (0xFF == n));
+                    while ((src < iend - RunMask) && (0xFF == n));
                     if (dst + length < dst || src + length < src) // overflow detection
                         throw InvalidData();
                 }
@@ -239,8 +243,8 @@ namespace GameRes.Compression
                     throw InvalidData();
 
                 /* get matchlength */
-                length = token & 0xF;
-                if (0xF == length)
+                length = token & MatchLengthMask;
+                if (MatchLengthMask == length)
                 {
                     int n;
                     do
@@ -254,7 +258,7 @@ namespace GameRes.Compression
                     if (dst + length < dst) // overflow detection
                         throw InvalidData();
                 }
-                length += 4;
+                length += MinMatch;
 
                 /* copy match within block */
                 Binary.CopyOverlapped (m_data, match, dst, length);
