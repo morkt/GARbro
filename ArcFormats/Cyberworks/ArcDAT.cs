@@ -258,7 +258,6 @@ namespace GameRes.Formats.Cyberworks
             var pent = entry as PackedEntry;
             if (null != pent && pent.IsPacked)
             {
-                input = new BufferedStream (input);
                 input = new LzssStream (input);
             }
             return input;
