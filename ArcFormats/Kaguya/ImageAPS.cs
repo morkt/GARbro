@@ -46,7 +46,7 @@ namespace GameRes.Formats.Kaguya
 
         public Aps3Format ()
         {
-            Extensions = new string[] { "aps", "parts" };
+            Extensions = new string[] { "aps", "parts", "ap3" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
