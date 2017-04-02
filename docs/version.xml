@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.4.26</Version>
+        <Version>1.4.27</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
-        <Notes>Attempt to extract NOA and QLIE archive keys from game executable files.
-
-New formats:
-- Software House Parsley CG archives
-- PureMail archives and ADP4 compressed audio
-- FA2 archives and C24 images
-- RealLive KOEPAC archives
-- Black Rainbow IMP and PAK archives
-- DAF archives and CGF images
-- Valkyria's MG2 and MAL images
-- more KiriKiri and ShiinaRio encryption schemes
+        <Notes>New formats:
+- new Csystem archives formats
+- QLIE FilePackVer3.1
+- Kaguya 'UF01' archives
+- Yatagarasu PKG archives
+- RHA audio files
+- ADPS audio files
+- support new EAGLS (pak+idx) archives
+- Artemis 'pf2' archives
+- Crowd CRZ images
+- MicroVision ARC1 archives, GPC images and IKM audio
+- more KiriKiri and Csystem encryption schemes
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>60</FileVersion>
+        <FileVersion>61</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.30.1336"/>
