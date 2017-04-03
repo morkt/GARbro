@@ -95,7 +95,6 @@ namespace GameRes.Formats.KiriKiri
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (TlgMetaData)info;
-            file.Position = meta.DataOffset;
 
             var image = ReadTlg (file, meta);
 
@@ -129,6 +128,7 @@ namespace GameRes.Formats.KiriKiri
 
         byte[] ReadTlg (IBinaryStream src, TlgMetaData info)
         {
+            src.Position = info.DataOffset;
             if (6 == info.Version)
                 return ReadV6 (src, info);
             else
@@ -167,7 +167,6 @@ namespace GameRes.Formats.KiriKiri
                 if (null == base_info)
                     return null;
                 base_info.FileName = base_name;
-                base_file.Position = base_info.DataOffset;
                 base_image = ReadTlg (base_file, base_info);
             }
             var pixels = BlendImage (base_image, base_info, image, meta);
