@@ -59,4 +59,4 @@ Written by [morkt](https://github.com/morkt/GARbro) under [MIT License](https://
 
 Korean translation by [mireado](https://github.com/mireado)
 
-Simplified Chinese translation by [tenyuhuang](https://github.com/tenyuhuang)
+Simplified Chinese translation by [tenyuhuang](https://github.com/tenyuhuang) and [PeratX](https://github.com/PeratX)
