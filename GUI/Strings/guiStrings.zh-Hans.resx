@@ -457,100 +457,77 @@
     <comment>{0}=filename, {1}=sampling rate, {2}=bitrate, {3}=total time </comment>
   </data>
   <data name="CtxMenuSelectByMask" xml:space="preserve">
-    <value>Select files by mask...</value>
-    <comment>translation pending</comment>
+    <value>用代号选择文件……</value>
   </data>
   <data name="ButtonAbort" xml:space="preserve">
-    <value>Abort</value>
-    <comment>translation pending</comment>
+    <value>中止</value>
   </data>
   <data name="ButtonContinue" xml:space="preserve">
-    <value>Continue</value>
-    <comment>translation pending</comment>
+    <value>继续</value>
   </data>
   <data name="LabelIgnoreErrors" xml:space="preserve">
-    <value>Ignore further errors</value>
-    <comment>translation pending</comment>
+    <value>忽略错误</value>
   </data>
   <data name="TextExtractionError" xml:space="preserve">
-    <value>File extraction error</value>
-    <comment>translation pending</comment>
+    <value>文件提取错误</value>
   </data>
   <data name="ButtonOverwrite" xml:space="preserve">
-    <value>Overwrite</value>
-    <comment>translation pending</comment>
+    <value>覆盖</value>
   </data>
   <data name="ButtonRename" xml:space="preserve">
-    <value>Rename</value>
-    <comment>translation pending</comment>
+    <value>重命名</value>
   </data>
   <data name="ButtonSkip" xml:space="preserve">
-    <value>Skip</value>
-    <comment>translation pending</comment>
+    <value>跳过</value>
   </data>
   <data name="LabelApplyToAll" xml:space="preserve">
-    <value>Apply to all duplicate files</value>
-    <comment>translation pending</comment>
+    <value>应用于所有重复文件</value>
   </data>
   <data name="LabelDuplicateFileQuestion" xml:space="preserve">
-    <value>What should be done?</value>
-    <comment>translation pending</comment>
+    <value>应该做什么？</value>
   </data>
   <data name="TextErrorConverting" xml:space="preserve">
-    <value>Error occured while converting file
+    <value>转换文件时发生错误
 {0}
 {1}</value>
-    <comment>translation pending</comment>
   </data>
   <data name="TextFileAlreadyExists" xml:space="preserve">
     <value>文件{0}已经存在。</value>
   </data>
   <data name="ButtonDownload" xml:space="preserve">
-    <value>Download</value>
-    <comment>translation pending</comment>
+    <value>下载</value>
   </data>
   <data name="LabelReleaseNotes" xml:space="preserve">
-    <value>Release notes</value>
-    <comment>translation pending</comment>
+    <value>发行注记</value>
   </data>
   <data name="MenuCheckUpdates" xml:space="preserve">
-    <value>Check for updates...</value>
-    <comment>translation pending</comment>
+    <value>检查更新……</value>
   </data>
   <data name="MsgDownloadFailed" xml:space="preserve">
-    <value>Update download failed.</value>
-    <comment>translation pending</comment>
+    <value>更新下载失败。</value>
   </data>
   <data name="MsgNoUpdates" xml:space="preserve">
-    <value>No updates currently available.</value>
-    <comment>translation pending</comment>
+    <value>无可用更新。</value>
   </data>
   <data name="MsgUpdateAvailable" xml:space="preserve">
-    <value>Formats database update available.</value>
-    <comment>translation pending</comment>
+    <value>有可用格式数据库更新。</value>
   </data>
   <data name="MsgUpdateComplete" xml:space="preserve">
-    <value>Formats database updated.</value>
-    <comment>translation pending</comment>
+    <value>格式数据库已更新。</value>
   </data>
   <data name="MsgUpdateFailed" xml:space="preserve">
-    <value>Update check failed.</value>
-    <comment>translation pending</comment>
+    <value>更新检查失败。</value>
   </data>
   <data name="MsgUpToDate" xml:space="preserve">
-    <value>GARbro version is up to date.</value>
-    <comment>translation pending</comment>
+    <value>GARbro 已是最新版本。</value>
   </data>
   <data name="TextNewVersion" xml:space="preserve">
-    <value>New version available:</value>
-    <comment>translation pending</comment>
+    <value>新版本已可用：</value>
   </data>
   <data name="TextUpdateTitle" xml:space="preserve">
-    <value>Application update</value>
-    <comment>translation pending</comment>
+    <value>应用程序更新</value>
   </data>
   <data name="TextVisitPage" xml:space="preserve">
-    <value>Visit download page</value>
-    <comment>translation pending</comment>
+    <value>访问下载页面</value>
   </data>
 </root>
