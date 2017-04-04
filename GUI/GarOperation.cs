@@ -48,8 +48,10 @@ namespace GARbro.GUI
         /// <summary>
         /// Create file <paramref name="filename"/>.  Also create path to file if <paramref name="create_path"/> is true.
         /// If file aready exists, popup dialog asking for necessary action.
-        /// WARNING: path to file should be relative, ArchiveFormat.CreatePath strips drive/root specification.
         /// </summary>
+        /// <remarks>
+        /// WARNING: path to file should be relative, ArchiveFormat.CreatePath strips drive/root specification.
+        /// </remarks>
         protected Stream CreateNewFile (string filename, bool create_path = false)
         {
             if (create_path)
