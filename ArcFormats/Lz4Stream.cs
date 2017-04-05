@@ -73,7 +73,7 @@ namespace GameRes.Compression
         {
             int version = flags >> 6;
             if (version != 1)
-                throw Lz4Stream.InvalidData();
+                throw Lz4Compressor.InvalidData();
             IndependentBlocks  = 0 != (flags & 0x20);
             HasBlockChecksum   = 0 != (flags & 0x10);
             HasContentLength   = 0 != (flags & 8);
@@ -89,7 +89,7 @@ namespace GameRes.Compression
             case 5: BlockSize = 0x40000; break;
             case 6: BlockSize = 0x100000; break;
             case 7: BlockSize = 0x400000; break;
-            default: throw Lz4Stream.InvalidData();
+            default: throw Lz4Compressor.InvalidData();
             }
         }
     }
@@ -173,7 +173,7 @@ namespace GameRes.Compression
                     m_block = new byte[m_block_size];
                 if (m_block_size != BaseStream.Read (m_block, 0, m_block_size))
                     throw new EndOfStreamException();
-                m_data_size = DecompressBlock();
+                m_data_size = Lz4Compressor.DecompressBlock (m_block, m_block_size, m_data, m_data.Length);
                 if (m_info.HasBlockChecksum)
                     ReadChecksum();
             }
@@ -185,91 +185,6 @@ namespace GameRes.Compression
             if (4 != BaseStream.Read (m_block_header, 0, 4))
                 throw new EndOfStreamException();
             // XXX checksum is ignored
-        }
-
-        const int MinMatch          = 4;
-        const int LastLiterals      = 5;
-        const int MFLimit           = 12;
-        const int MatchLengthBits   = 4;
-        const int MatchLengthMask   = 0xF;
-        const int RunMask           = 0xF;
-
-        int DecompressBlock ()
-        {
-            int src = 0;
-            int iend = m_block_size;
-
-            int dst = 0;
-            int oend = m_data.Length;
-
-            for (;;)
-            {
-                /* get literal length */
-                int token = m_block[src++];
-                int length = token >> MatchLengthBits;
-                if (RunMask == length)
-                {
-                    int n;
-                    do
-                    {
-                        n = m_block[src++];
-                        length += n;
-                    }
-                    while ((src < iend - RunMask) && (0xFF == n));
-                    if (dst + length < dst || src + length < src) // overflow detection
-                        throw InvalidData();
-                }
-
-                /* copy literals */
-                int copy_end = dst + length;
-                if ((copy_end > oend - MFLimit) || (src + length > iend - (3+LastLiterals)))
-                {
-                    if ((src + length != iend) || copy_end > oend)
-                        throw InvalidData();
-                    Buffer.BlockCopy (m_block, src, m_data, dst, length);
-                    src += length;
-                    dst += length;
-                    break;
-                }
-                Buffer.BlockCopy (m_block, src, m_data, dst, length);
-                src += length;
-                dst = copy_end;
-
-                /* get offset */
-                int offset = LittleEndian.ToUInt16 (m_block, src);
-                src += 2;
-                int match = dst - offset;
-                if (match < 0)
-                    throw InvalidData();
-
-                /* get matchlength */
-                length = token & MatchLengthMask;
-                if (MatchLengthMask == length)
-                {
-                    int n;
-                    do
-                    {
-                        n = m_block[src++];
-                        if (src > iend - LastLiterals)
-                            throw InvalidData();
-                        length += n;
-                    }
-                    while (0xFF == n);
-                    if (dst + length < dst) // overflow detection
-                        throw InvalidData();
-                }
-                length += MinMatch;
-
-                /* copy match within block */
-                Binary.CopyOverlapped (m_data, match, dst, length);
-                dst += length;
-            }
-            return dst; // number of output bytes decoded
-        }
-
-        internal static InvalidDataException InvalidData ()
-        {
-            return new InvalidDataException ("Invalid LZ4 compressed stream.");
         }
 
         #region Not supported IO.Stream methods
@@ -293,5 +208,93 @@ namespace GameRes.Compression
             throw new NotSupportedException ("Lz4Stream.Seek method is not supported");
         }
         #endregion
+    }
+
+    public class Lz4Compressor
+    {
+        const int MinMatch          = 4;
+        const int LastLiterals      = 5;
+        const int MFLimit           = 12;
+        const int MatchLengthBits   = 4;
+        const int MatchLengthMask   = 0xF;
+        const int RunMask           = 0xF;
+
+        public static int DecompressBlock (byte[] block, int block_size, byte[] output, int output_size)
+        {
+            int src = 0;
+            int iend = block_size;
+
+            int dst = 0;
+            int oend = output_size;
+
+            for (;;)
+            {
+                /* get literal length */
+                int token = block[src++];
+                int length = token >> MatchLengthBits;
+                if (RunMask == length)
+                {
+                    int n;
+                    do
+                    {
+                        n = block[src++];
+                        length += n;
+                    }
+                    while ((src < iend - RunMask) && (0xFF == n));
+                    if (dst + length < dst || src + length < src) // overflow detection
+                        throw InvalidData();
+                }
+
+                /* copy literals */
+                int copy_end = dst + length;
+                if ((copy_end > oend - MFLimit) || (src + length > iend - (3+LastLiterals)))
+                {
+                    if ((src + length != iend) || copy_end > oend)
+                        throw InvalidData();
+                    Buffer.BlockCopy (block, src, output, dst, length);
+                    src += length;
+                    dst += length;
+                    break;
+                }
+                Buffer.BlockCopy (block, src, output, dst, length);
+                src += length;
+                dst = copy_end;
+
+                /* get offset */
+                int offset = LittleEndian.ToUInt16 (block, src);
+                src += 2;
+                int match = dst - offset;
+                if (match < 0)
+                    throw InvalidData();
+
+                /* get matchlength */
+                length = token & MatchLengthMask;
+                if (MatchLengthMask == length)
+                {
+                    int n;
+                    do
+                    {
+                        n = block[src++];
+                        if (src > iend - LastLiterals)
+                            throw InvalidData();
+                        length += n;
+                    }
+                    while (0xFF == n);
+                    if (dst + length < dst) // overflow detection
+                        throw InvalidData();
+                }
+                length += MinMatch;
+
+                /* copy match within block */
+                Binary.CopyOverlapped (output, match, dst, length);
+                dst += length;
+            }
+            return dst; // number of output bytes decoded
+        }
+
+        internal static InvalidDataException InvalidData ()
+        {
+            return new InvalidDataException ("Invalid LZ4 compressed stream.");
+        }
     }
 }
