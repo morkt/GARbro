@@ -31,10 +31,7 @@ using System.Runtime.InteropServices;
 
 namespace GARbro.Shell
 {
-    /// <summary>
-    /// Wrapper around MoveFileEx WINAPI call.
-    /// </summary>
-    class File
+    static class File
     {
         [DllImport("kernel32.dll", EntryPoint="MoveFileExW", SetLastError=true, CharSet=CharSet.Unicode)]
         public static extern bool MoveFileEx (string lpExistingFileName, string lpNewFileName, MoveFileFlags dwFlags);
@@ -50,6 +47,9 @@ namespace GARbro.Shell
             FailIfNotTrackable      = 0x00000020
         }
 
+        /// <summary>
+        /// Wrapper around MoveFileEx WINAPI call.
+        /// </summary>
         public static bool Rename (string szFrom, string szTo)
         {
             return MoveFileEx (szFrom, szTo, MoveFileFlags.ReplaceExisting);
@@ -196,6 +196,21 @@ namespace GARbro.Shell
         {
             return Delete (path, FileOperationFlags.FOF_NOCONFIRMATION | FileOperationFlags.FOF_NOERRORUI | FileOperationFlags.FOF_SILENT);
 
+        }
+
+        [DllImport("shlwapi.dll", EntryPoint="PathCompactPathExW", CharSet = CharSet.Unicode)]
+        static extern bool PathCompactPathEx ([Out] StringBuilder pszOut, string szPath, int cchMax, int dwFlags);
+
+        const int MAX_PATH = 0x104;
+
+        /// <summary>
+        /// Truncates a path to fit within a certain number of characters by replacing path components with ellipses.
+        /// </summary>
+        public static string CompactPath (string name, int length)
+        {
+            var sb = new StringBuilder (MAX_PATH);
+            PathCompactPathEx (sb, name, Math.Min (length+1, MAX_PATH), 0);
+            return sb.ToString();
         }
     }
 
