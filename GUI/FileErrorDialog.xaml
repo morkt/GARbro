@@ -11,7 +11,7 @@
         <Image Source="Images/64x64/alert.png" Width="64" Height="64" Margin="10"
                SnapsToDevicePixels="True" VerticalAlignment="Top" RenderOptions.BitmapScalingMode="HighQuality"/>
         <StackPanel Orientation="Vertical">
-            <TextBox x:Name="ErrorText" Text="{Binding Text}" IsReadOnly="True" Background="Transparent" BorderThickness="0" Margin="0,10,10,10"/>
+            <TextBox x:Name="ErrorText" Text="{Binding Text}" IsReadOnly="True" Background="Transparent" TextWrapping="Wrap" BorderThickness="0" Margin="0,10,10,10" MaxWidth="400"/>
             <Separator/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <CheckBox x:Name="IgnoreErrors" Content="{x:Static s:guiStrings.LabelIgnoreErrors}" Margin="0,10,10,10" VerticalAlignment="Center"/>
