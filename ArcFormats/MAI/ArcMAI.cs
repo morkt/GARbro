@@ -100,19 +100,16 @@ namespace GameRes.Formats.MAI
                     return null;
                 var offset = file.View.ReadUInt32 (index_offset+0x10);
                 var entry = new AutoEntry (Path.Combine (current_folder, name), () => {
-                    uint signature = file.View.ReadUInt32 (offset);
                     if (is_mask_arc)
-                        return ImageFormat.FindByTag ("MSK/MAI");
-                    else if (0x4d43 == (signature & 0xffff)) // 'CM'
-                        return ImageFormat.FindByTag ("CM/MAI");
-                    else if (0x4d41 == (signature & 0xffff)) // 'AM'
-                        return ImageFormat.FindByTag ("AM/MAI");
-                    else if (0x4d42 == (signature & 0xffff)) // 'BM'
-                        return ImageFormat.Bmp;
-                    else if (signature != 0)
-                        return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
-                    else
-                        return null;
+                        return s_MskFormat.Value;
+                    uint signature = file.View.ReadUInt32 (offset);
+                    switch (signature & 0xFFFF)
+                    {
+                    case 0x4D43: return s_CmFormat.Value;
+                    case 0x4D41: return s_AmFormat.Value;
+                    case 0x4D42: return ImageFormat.Bmp;
+                    default: return AutoEntry.DetectFileType (signature);
+                    }
                 });
                 entry.Offset = offset;
                 entry.Size = file.View.ReadUInt32 (index_offset+0x14);
@@ -123,5 +120,9 @@ namespace GameRes.Formats.MAI
             }
             return new ArcFile (file, this, dir);
         }
+
+        static readonly ResourceInstance<ImageFormat> s_AmFormat  = new ResourceInstance<ImageFormat> ("AM/MAI");
+        static readonly ResourceInstance<ImageFormat> s_CmFormat  = new ResourceInstance<ImageFormat> ("CM/MAI");
+        static readonly ResourceInstance<ImageFormat> s_MskFormat = new ResourceInstance<ImageFormat> ("MSK/MAI");
     }
 }

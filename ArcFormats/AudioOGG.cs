@@ -138,6 +138,6 @@ namespace GameRes.Formats
 
         public static AudioFormat Instance { get { return s_OggFormat.Value; } }
 
-        static readonly Lazy<AudioFormat> s_OggFormat = new Lazy<AudioFormat> (() => FormatCatalog.Instance.AudioFormats.FirstOrDefault (x => x.Tag == "OGG"));
+        static readonly ResourceInstance<AudioFormat> s_OggFormat = new ResourceInstance<AudioFormat> ("OGG");
     }
 }

@@ -152,7 +152,7 @@ namespace GameRes.Formats.Majiro
             return ImageData.Create (meta, PixelFormats.Bgr24, null, pixels, (int)meta.Width*3);
         }
 
-        static readonly Lazy<ImageFormat> s_rc8_format = new Lazy<ImageFormat> (() => FindByTag ("RC8"));
+        static readonly ResourceInstance<ImageFormat> s_rc8_format = new ResourceInstance<ImageFormat> ("RC8");
 
         ImageData ApplyMaskToImage (RctMetaData info, byte[] image, string mask_name)
         {
@@ -298,7 +298,7 @@ namespace GameRes.Formats.Majiro
             return options.Password;
         }
 
-        static readonly Lazy<ArchiveFormat> s_Majiro = new Lazy<ArchiveFormat> (() => FormatCatalog.Instance.ArcFormats.FirstOrDefault (x => x.Tag == "MAJIRO"));
+        static readonly ResourceInstance<ArchiveFormat> s_Majiro = new ResourceInstance<ArchiveFormat> ("MAJIRO");
 
         private string FindImageKey ()
         {
