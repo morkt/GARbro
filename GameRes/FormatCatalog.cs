@@ -32,6 +32,7 @@ using System.Linq;
 using GameRes.Collections;
 using System.Runtime.Serialization.Formatters.Binary;
 using GameRes.Compression;
+using System.Threading;
 
 namespace GameRes
 {
@@ -312,6 +313,32 @@ namespace GameRes
                 return reader.ReadInt32();
             }
         }
+    }
+
+    /// <summary>
+    /// Lazily initialized wrapper for resource instances.
+    /// </summary>
+    public class ResourceInstance<T> where T : IResource
+    {
+        T           m_format;
+        Func<T>     m_resolver;
+
+        public ResourceInstance (string tag)
+        {
+            var t = typeof(T);
+            if (typeof(ImageFormat) == t || t.IsSubclassOf (typeof(ImageFormat)))
+                m_resolver = () => ImageFormat.FindByTag (tag) as T;
+            else if (typeof(ArchiveFormat) == t || t.IsSubclassOf (typeof(ArchiveFormat)))
+                m_resolver = () => FormatCatalog.Instance.ArcFormats.FirstOrDefault (f => f.Tag == tag) as T;
+            else if (typeof(AudioFormat) == t || t.IsSubclassOf (typeof(AudioFormat)))
+                m_resolver = () => FormatCatalog.Instance.AudioFormats.FirstOrDefault (f => f.Tag == tag) as T;
+            else if (typeof(ScriptFormat) == t || t. IsSubclassOf (typeof(ScriptFormat)))
+                m_resolver = () => FormatCatalog.Instance.ScriptFormats.FirstOrDefault (f => f.Tag == tag) as T;
+            else
+                throw new ApplicationException ("Invalid resource type specified for ResourceInstance<T>");
+        }
+
+        public T Value { get { return LazyInitializer.EnsureInitialized (ref m_format, m_resolver); } }
     }
 
     [Serializable]
