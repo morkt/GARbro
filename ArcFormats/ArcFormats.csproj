@@ -569,7 +569,7 @@
     <Compile Include="Zyx\ArcBDF.cs" />
     <Compile Include="Zyx\ImageSPL.cs" />
     <EmbeddedResource Include="Strings\arcStrings.zh-Hans.resx" />
-    <None Include="ArcSeraph.cs" />
+    <None Include="Seraphim\ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="NitroPlus\ArcSteinsGate.cs" />
     <Compile Include="Triangle\ArcSUD.cs" />
@@ -669,7 +669,7 @@
     <Compile Include="AliceSoft\ImageQNT.cs" />
     <Compile Include="Majiro\ImageRCT.cs" />
     <Compile Include="ShiinaRio\ImageS25.cs" />
-    <Compile Include="ImageSeraph.cs" />
+    <Compile Include="Seraphim\ImageSeraph.cs" />
     <Compile Include="Tactics\ImageTGF.cs" />
     <Compile Include="KiriKiri\ImageTLG.cs" />
     <Compile Include="WildBug\ImageWBM.cs" />
