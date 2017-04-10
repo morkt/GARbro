@@ -851,7 +851,7 @@ namespace GARbro.GUI
             }
             catch (Exception X)
             {
-                PopupError (string.Format("{0}:\n{1}", filename, X.Message), guiStrings.MsgErrorOpening);
+                PopupError (string.Format("{0}\n{1}", filename, X.Message), guiStrings.MsgErrorOpening);
             }
         }
 
