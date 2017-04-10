@@ -93,6 +93,66 @@ namespace GameRes.Formats
         }
     }
 
+    public static class StringExtensions
+    {
+        /// <summary>
+        /// Check if <paramref name="filename"/> has specified extension <param name="ext"/>.
+        /// </summary>
+        public static bool HasExtension (this string filename, string ext)
+        {
+            bool ext_is_empty = string.IsNullOrEmpty (ext);
+            if (!ext_is_empty && '.' == ext[0])
+                return filename.EndsWith (ext, StringComparison.InvariantCultureIgnoreCase);
+            int ext_start = GetExtensionIndex (filename);
+            // filename extension length
+            int l_ext_length = filename.Length - ext_start;
+            if (ext_is_empty)
+                return 0 == l_ext_length;
+            return (l_ext_length == ext.Length
+                    && filename.EndsWith (ext, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        /// <summary>
+        /// Check if filename ends with any of the extensions from the <paramref name="ext_list"/>.
+        /// </summary>
+        public static bool HasAnyOfExtensions (this string filename, params string[] ext_list)
+        {
+            int ext_start = GetExtensionIndex (filename);
+            int l_ext_length = filename.Length - ext_start;
+            foreach (string ext in ext_list)
+            {
+                if (string.IsNullOrEmpty (ext) || "." == ext)
+                {
+                    if (0 == l_ext_length)
+                        return true;
+                }
+                else if ('.' == ext[0] || l_ext_length == ext.Length)
+                {
+                    if (filename.EndsWith (ext, StringComparison.InvariantCultureIgnoreCase))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        internal static int GetExtensionIndex (string filename)
+        {
+            int name_start = filename.LastIndexOfAny (VFS.PathSeparatorChars);
+            if (-1 == name_start)
+                name_start = 0;
+            else
+                name_start++;
+            if (filename.Length == name_start) // path ends with '\'
+                return name_start;
+
+            int ext_start = filename.LastIndexOf ('.', filename.Length-1, filename.Length - name_start);
+            if (-1 == ext_start)
+                return filename.Length;
+            else
+                return ext_start + 1;
+        }
+    }
+
     public class HuffmanDecoder
     {
         byte[] m_src;
