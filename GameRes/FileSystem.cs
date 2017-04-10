@@ -787,7 +787,7 @@ namespace GameRes
 
         public static readonly ISet<char> InvalidFileNameChars = new HashSet<char> (Path.GetInvalidFileNameChars());
 
-        static readonly char[] PathSeparatorChars = { '\\', '/', ':' };
+        public static readonly char[] PathSeparatorChars = { '\\', '/', ':' };
 
         /// <summary>
         /// Returns true if given <paramref name="path"/> points to a specified <paramref name="filename"/>.
