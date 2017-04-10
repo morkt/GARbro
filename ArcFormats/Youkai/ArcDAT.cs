@@ -42,7 +42,7 @@ namespace GameRes.Formats.Youkai
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".dat"))
                 return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count) || 0 != file.View.ReadInt32 (4))
@@ -91,7 +91,7 @@ namespace GameRes.Formats.Youkai
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".dat"))
                 return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
@@ -132,7 +132,7 @@ namespace GameRes.Formats.Youkai
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".dat"))
                 return null;
             uint data_offset = file.View.ReadUInt32 (0);
             int count = file.View.ReadInt32 (4);

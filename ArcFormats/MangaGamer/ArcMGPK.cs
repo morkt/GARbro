@@ -87,9 +87,7 @@ namespace GameRes.Formats.Mg
                 entry.Size = file.View.ReadUInt32 (cur_offset+0x24);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                has_encrypted = has_encrypted
-                             || name.EndsWith (".png", StringComparison.InvariantCultureIgnoreCase)
-                             || name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase);
+                has_encrypted = has_encrypted || name.HasAnyOfExtensions ("png", "txt");
                 dir.Add (entry);
                 cur_offset += 0x30;
             }
@@ -113,7 +111,7 @@ namespace GameRes.Formats.Mg
                 byte[] data = new byte[entry.Size];
                 input.Read (data, 0, data.Length);
                 data = DecryptBlock (data, mgarc.Key);
-                if (entry.Name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase))
+                if (entry.Name.HasExtension ("txt"))
                     return DecompressStream (data);
                 return new BinMemoryStream (data, entry.Name);
             }

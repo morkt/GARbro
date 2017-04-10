@@ -115,12 +115,11 @@ namespace GameRes.Formats.TopCat
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (entry.Name.EndsWith (".OGG", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasExtension (".OGG"))
                 return RestoreOggStream (arc, entry);
-            if (entry.Name.EndsWith (".TSF", StringComparison.InvariantCultureIgnoreCase) ||
-                entry.Name.EndsWith (".TCT", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasAnyOfExtensions (".TSF", ".TCT"))
                 return OpenScript (arc, entry);
-            if (entry.Name.EndsWith (".SPD", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasExtension (".SPD"))
                 return OpenSpdc (arc, entry);
             return base.OpenEntry (arc, entry);
         }

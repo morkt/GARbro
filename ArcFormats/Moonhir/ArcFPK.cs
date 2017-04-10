@@ -92,7 +92,7 @@ namespace GameRes.Formats.MoonhirGames
                 entry.Size   = file.View.ReadUInt32 (index_offset+8);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.EndsWith (".fbx", StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension (".fbx"))
                     entry.Type = "image";
                 has_encrypted = has_encrypted || entry.IsEncrypted;
                 dir.Add (entry);

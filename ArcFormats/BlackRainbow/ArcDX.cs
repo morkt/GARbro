@@ -60,7 +60,7 @@ namespace GameRes.Formats.BlackRainbow
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".hse", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.HasExtension (".hse"))
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i < data.Length; ++i)
@@ -114,7 +114,7 @@ namespace GameRes.Formats.BlackRainbow
                     entry.Size   = m_index.ReadUInt32();
                     if (!entry.CheckPlacement (m_max_offset))
                         return false;
-                    if (name.EndsWith (".hse", StringComparison.InvariantCultureIgnoreCase))
+                    if (name.HasExtension (".hse"))
                         entry.Type = "image";
                     m_dir.Add (entry);
                 }

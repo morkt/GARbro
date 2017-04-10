@@ -42,7 +42,7 @@ namespace GameRes.Formats.Propeller
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".mgr", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".mgr"))
                 return null;
             int count = file.View.ReadInt16 (0);
             if (count <= 0 || count >= 0x100)

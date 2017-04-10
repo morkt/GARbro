@@ -90,7 +90,7 @@ namespace GameRes.Formats.Yuka
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             if (entry.Size < 0x24
-                || !entry.Name.EndsWith (".yks", StringComparison.InvariantCultureIgnoreCase)
+                || !entry.Name.HasExtension (".yks")
                 || !arc.File.View.AsciiEqual (entry.Offset, "YKS001")
                 || 1 != arc.File.View.ReadUInt16 (entry.Offset+6))
                 return base.OpenEntry (arc, entry);

@@ -54,9 +54,10 @@ namespace GameRes.Formats.Eagls
 
         public override ArcFile TryOpen (ArcView file)
         {
+            if (file.Name.HasExtension (".idx"))
+                return null;
             string idx_name = Path.ChangeExtension (file.Name, ".idx");
-            if (file.Name.Equals (idx_name, StringComparison.InvariantCultureIgnoreCase)
-                || !VFS.FileExists (idx_name))
+            if (!VFS.FileExists (idx_name))
                 return null;
             var idx_entry = VFS.FindFile (idx_name);
             if (idx_entry.Size > 0xfffff || idx_entry.Size < 10000)
@@ -81,7 +82,7 @@ namespace GameRes.Formats.Eagls
                 var name = Binary.GetCString (index, index_offset, name_size);
                 index_offset += name_size;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
-                if (name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension ("dat"))
                 {
                     entry.Type = "script";
                     has_scripts = true;
@@ -104,7 +105,7 @@ namespace GameRes.Formats.Eagls
             }
             if (0 == dir.Count)
                 return null;
-            if (dir[0].Name.EndsWith (".gr", StringComparison.InvariantCultureIgnoreCase)) // CG archive
+            if (dir[0].Name.HasExtension ("gr")) // CG archive
             {
                 var rng = DetectEncryptionScheme (file, dir[0]);
                 return new EaglsArchive (file, this, dir, new CgEncryption (rng));
@@ -121,9 +122,7 @@ namespace GameRes.Formats.Eagls
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var earc = arc as EaglsArchive;
-            if (null == earc
-                || !(entry.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase) ||
-                     entry.Name.EndsWith (".gr", StringComparison.InvariantCultureIgnoreCase)))
+            if (null == earc || !entry.Name.HasAnyOfExtensions ("dat", "gr"))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
 
             return earc.DecryptEntry (entry);

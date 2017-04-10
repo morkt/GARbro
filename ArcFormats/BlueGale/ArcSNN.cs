@@ -41,7 +41,7 @@ namespace GameRes.Formats.BlueGale
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".snn", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".snn"))
                 return null;
             var inx_name = Path.ChangeExtension (file.Name, "Inx");
             if (!VFS.FileExists (inx_name))

@@ -275,8 +275,7 @@ namespace GameRes.Formats.Will
 
         private static bool IsScriptFile (string filename)
         {
-            return filename.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase)
-                || filename.EndsWith (".wsc", StringComparison.InvariantCultureIgnoreCase);
+            return filename.HasAnyOfExtensions ("scr", "wsc");
         }
     }
 }

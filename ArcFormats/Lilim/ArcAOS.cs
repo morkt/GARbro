@@ -88,7 +88,7 @@ namespace GameRes.Formats.Lilim
                     entry.Offset += current_offset;
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
-                    if (name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+                    if (name.HasExtension (".scr"))
                         entry.IsCompressed = true;
                     dir.Add (entry);
                 }
@@ -153,9 +153,9 @@ namespace GameRes.Formats.Lilim
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x24);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension (".scr"))
                     entry.IsCompressed = true;
-                else if (name.EndsWith (".cmp", StringComparison.InvariantCultureIgnoreCase))
+                else if (name.HasExtension (".cmp"))
                 {
                     entry.IsCompressed = true;
                     entry.Name = Path.ChangeExtension (entry.Name, ".abm");

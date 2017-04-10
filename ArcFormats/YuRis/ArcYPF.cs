@@ -143,7 +143,7 @@ namespace GameRes.Formats.YuRis
                 input = new ZLibStream (input, CompressionMode.Decompress);
             uint unpacked_size = null == packed_entry ? entry.Size : packed_entry.UnpackedSize;
             if (null == ypf || 0 == ypf.ScriptKey || unpacked_size <= 0x20
-                || !entry.Name.EndsWith (".ybn", StringComparison.InvariantCultureIgnoreCase))
+                || !entry.Name.HasExtension (".ybn"))
                 return input;
             using (input)
             {

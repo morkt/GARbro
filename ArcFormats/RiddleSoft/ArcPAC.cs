@@ -57,7 +57,7 @@ namespace GameRes.Formats.Riddle
                 string name = file.View.ReadString (index_offset, 0x10);
                 uint size = file.View.ReadUInt32 (index_offset+0x10);
                 var entry = new PackedEntry { Name = name };
-                if (name.EndsWith (".scp", StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension (".scp"))
                 {
                     entry.Type = "script";
                     entry.IsPacked = size > 12 && file.View.AsciiEqual (index_offset+0x14, "CMP1");

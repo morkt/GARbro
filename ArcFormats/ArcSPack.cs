@@ -84,7 +84,7 @@ namespace GameRes.Formats.SPack
                 };
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension (".dat"))
                     entry.Type = "audio";
                 else
                     entry.Type = FormatCatalog.Instance.GetTypeFromName (name);

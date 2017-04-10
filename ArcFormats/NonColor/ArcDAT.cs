@@ -101,7 +101,7 @@ namespace GameRes.Formats.NonColor
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".dat"))
                 return null;
             int count = file.View.ReadInt32 (0) ^ 0x26ACA46E;
             if (!IsSaneCount (count))

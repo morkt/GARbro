@@ -169,7 +169,7 @@ namespace GameRes.Formats.Musica
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".paz", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".paz"))
                 return null;
             uint signature = file.View.ReadUInt32 (0);
             // XXX encryption is queried for every .paz file

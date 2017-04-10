@@ -68,7 +68,7 @@ namespace GameRes.Formats.NScripter
                 }
                 catch { /* ignore parse errors */ }
             }
-            if (!file.Name.EndsWith (".ns2", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".ns2"))
                 return null;
 
             var password = QueryPassword();

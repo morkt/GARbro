@@ -42,7 +42,7 @@ namespace GameRes.Formats.uGOS
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".det", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".det"))
                 return null;
             var name_file = Path.ChangeExtension (file.Name, "nme");
             var index_file = Path.ChangeExtension (file.Name, "atm");

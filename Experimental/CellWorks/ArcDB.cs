@@ -47,7 +47,7 @@ namespace GameRes.Formats.CellWorks
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (VFS.IsVirtual || !file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+            if (VFS.IsVirtual || !file.Name.HasExtension (".dat"))
                 return null;
             var db_files = VFS.GetFiles (VFS.CombinePath (VFS.GetDirectoryName (file.Name), "*.db"));
             if (!db_files.Any())

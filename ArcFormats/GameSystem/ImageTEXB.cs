@@ -39,7 +39,7 @@ namespace GameRes.Formats.GameSystem
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            if (!file.Name.EndsWith (".texb", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".texb"))
                 return null;
             var header = file.ReadHeader (8);
             uint width = header.ToUInt32 (0);

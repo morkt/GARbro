@@ -72,10 +72,7 @@ namespace GameRes.Formats.GameSystem
                     entry.UnpackedSize = index.ReadUInt32();
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
-                    if (entry.Name.EndsWith (".CRGB", StringComparison.InvariantCultureIgnoreCase) ||
-                        entry.Name.EndsWith (".CHAR", StringComparison.InvariantCultureIgnoreCase) ||
-                        entry.Name.EndsWith (".rol", StringComparison.InvariantCultureIgnoreCase) ||
-                        entry.Name.EndsWith (".edg", StringComparison.InvariantCultureIgnoreCase))
+                    if (entry.Name.HasAnyOfExtensions ("CRGB", "CHAR", "rol", "edg"))
                         entry.Type = "image";
                     entry.IsPacked = (flags & 0xFF0000) != 0;
                     entry.StoredSize = (flags & 0x2000000) != 0;
@@ -146,20 +143,19 @@ namespace GameRes.Formats.GameSystem
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            if (entry.Name.EndsWith (".BGD", StringComparison.InvariantCultureIgnoreCase) ||
-                entry.Name.EndsWith (".CRGB", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasAnyOfExtensions (".BGD", ".CRGB"))
             {
                 var input = OpenEntry (arc, entry);
                 var info = new ImageMetaData { Width = 800, Height = 600, BPP = 24 };
                 return new CgdReader (BinaryStream.FromStream (input, entry.Name), info);
             }
-            else if (entry.Name.EndsWith (".edg", StringComparison.InvariantCultureIgnoreCase))
+            else if (entry.Name.HasExtension (".edg"))
             {
                 var input = OpenEntry (arc, entry);
                 var info = new ImageMetaData { Width = 460, Height = 345, BPP = 24 };
                 return new ImgReader (BinaryStream.FromStream (input, entry.Name), info);
             }
-            else if (entry.Name.EndsWith (".rol", StringComparison.InvariantCultureIgnoreCase))
+            else if (entry.Name.HasExtension (".rol"))
             {
                 var input = OpenEntry (arc, entry);
                 uint width = 202;
@@ -167,7 +163,7 @@ namespace GameRes.Formats.GameSystem
                 var info = new ImageMetaData { Width = width, Height = height, BPP = 24 };
                 return new ImgReader (BinaryStream.FromStream (input, entry.Name), info);
             }
-            else if (entry.Name.EndsWith (".CHAR", StringComparison.InvariantCultureIgnoreCase))
+            else if (entry.Name.HasExtension (".CHAR"))
             {
                 var input = OpenEntry (arc, entry);
                 var info = new ChrMetaData {

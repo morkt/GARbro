@@ -115,7 +115,7 @@ namespace GameRes.Formats.Rugp
             if (CRioArchive.RioSignature == file.View.ReadUInt32 (0))
                 return new RioReader (file);
 
-            if (file.Name.EndsWith (".ici", StringComparison.InvariantCultureIgnoreCase))
+            if (file.Name.HasExtension (".ici"))
                 return null;
             var ici_name = file.Name + ".ici";
             if (!VFS.FileExists (ici_name))

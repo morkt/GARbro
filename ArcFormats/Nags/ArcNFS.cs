@@ -82,7 +82,7 @@ namespace GameRes.Formats.Nags
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (!entry.Name.EndsWith (".scb", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.HasExtension (".scb"))
                 return input;
             return new InputCryptoStream (input, new NotTransform());
         }

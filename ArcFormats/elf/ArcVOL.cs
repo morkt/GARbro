@@ -46,7 +46,7 @@ namespace GameRes.Formats.Elf
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".vol", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".vol"))
                 return null;
             uint first_offset = file.View.ReadUInt32 (0);
             if (first_offset < 0x10 || 0 != (first_offset & 0xF) || first_offset >= file.MaxOffset)

@@ -47,7 +47,7 @@ namespace GameRes.Formats.Cri
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".spc", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".spc"))
                 return null;
             uint unpacked_size = file.View.ReadUInt32 (0);
             if (unpacked_size <= 0x20 || unpacked_size > 0x5000000)

@@ -63,7 +63,7 @@ namespace GameRes.Formats.BlackRainbow
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".ads", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".ads"))
                 return null;
             var arc_name = Path.GetFileNameWithoutExtension (file.Name);
             foreach (var key in KnownKeys.Values)

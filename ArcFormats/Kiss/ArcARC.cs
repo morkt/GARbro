@@ -46,7 +46,7 @@ namespace GameRes.Formats.Kiss
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".arc", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".arc"))
                 return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))

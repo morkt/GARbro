@@ -47,8 +47,8 @@ namespace GameRes.Formats.GameSystem
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
-            bool is_adp4 = file.Name.EndsWith (".adp4", StringComparison.InvariantCultureIgnoreCase);
-            bool is_adps = !is_adp4 && file.Name.EndsWith (".adps", StringComparison.InvariantCultureIgnoreCase);
+            bool is_adp4 = file.Name.HasExtension (".adp4");
+            bool is_adps = !is_adp4 && file.Name.HasExtension (".adps");
             if (!(is_adp4 || is_adps) || file.Length <= 4)
                 return null;
             var decoder = new AdpDecoder (file);

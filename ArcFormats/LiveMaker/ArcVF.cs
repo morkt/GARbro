@@ -60,13 +60,13 @@ namespace GameRes.Formats.LiveMaker
                 //   game.ext  -- [optional] separate index (could be included into the main body)
 
                 uint signature = index_file.View.ReadUInt32 (0);
-                if (file.Name.EndsWith (".exe", StringComparison.InvariantCultureIgnoreCase)
+                if (file.Name.HasExtension (".exe")
                     && (0x5A4D == (signature & 0xFFFF))) // 'MZ'
                 {
                     base_offset = SkipExeData (index_file);
                     signature = index_file.View.ReadUInt32 (base_offset);
                 }
-                else if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase))
+                else if (!file.Name.HasExtension (".dat"))
                 {
                     return null;
                 }

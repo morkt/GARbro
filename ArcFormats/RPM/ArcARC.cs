@@ -94,7 +94,7 @@ namespace GameRes.Formats.Rpm
                 return null;
             var scheme = GuessScheme (file, count);
             // additional filename extension check avoids dialog popup on false positives
-            if (null == scheme && KnownSchemes.Count > 0 && file.Name.EndsWith (".arc", StringComparison.InvariantCultureIgnoreCase))
+            if (null == scheme && KnownSchemes.Count > 0 && file.Name.HasExtension (".arc"))
                 scheme = QueryScheme();
             if (null == scheme)
                 return null;

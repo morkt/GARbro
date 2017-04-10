@@ -91,7 +91,7 @@ namespace GameRes.Formats.Circus
                 entry.Size   = LittleEndian.ToUInt32 (index, index_pos+8);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.EndsWith (".cps", StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension (".cps"))
                     entry.Type = "image";
                 dir.Add (entry);
                 index_pos += 0x10;
@@ -108,12 +108,12 @@ namespace GameRes.Formats.Circus
             var data = vcarc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i < data.Length; ++i)
                 data[i] ^= vcarc.Key;
-            if (entry.Name.EndsWith (".cs", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasExtension (".cs"))
             {
                 for (int i = 0; i < data.Length; ++i)
                     --data[i];
             }
-            else if (entry.Name.EndsWith (".cps", StringComparison.InvariantCultureIgnoreCase))
+            else if (entry.Name.HasExtension (".cps"))
             {
                 data = UnpackCps (data);
             }

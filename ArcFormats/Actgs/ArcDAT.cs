@@ -115,7 +115,7 @@ namespace GameRes.Formats.Actgs
             var actarc = arc as ActressArchive;
             if (null == actarc || null == actarc.Key)
                 return base.OpenEntry (arc, entry);
-            if (entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasExtension (".scr"))
             {
                 if ('X' != arc.File.View.ReadByte (entry.Offset))
                     return base.OpenEntry (arc, entry);

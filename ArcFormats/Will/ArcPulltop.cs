@@ -97,7 +97,7 @@ namespace GameRes.Formats.Will
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".ws2", StringComparison.InvariantCultureIgnoreCase))
+            if (!IsScriptFile (entry.Name))
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i < data.Length; ++i)
@@ -105,6 +105,11 @@ namespace GameRes.Formats.Will
                 data[i] = Binary.RotByteR (data[i], 2);
             }
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        static bool IsScriptFile (string name)
+        {
+            return name.HasAnyOfExtensions ("ws2", "json");
         }
 
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
@@ -132,7 +137,7 @@ namespace GameRes.Formats.Will
                     var size = input.Length;
                     if (size > uint.MaxValue || current_offset + size > uint.MaxValue)
                         throw new FileSizeException();
-                    if (entry.Name.EndsWith (".ws2", StringComparison.InvariantCultureIgnoreCase))
+                    if (IsScriptFile (entry.Name))
                         CopyScript (input, output);
                     else
                         input.CopyTo (output);

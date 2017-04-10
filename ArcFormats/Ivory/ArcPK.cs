@@ -92,7 +92,7 @@ namespace GameRes.Formats.Ivory
                     {
                         var name = Binary.GetCString (cnam, entry.NameOffset);
                         entry.Name = name;
-                        if (name.EndsWith (".px", StringComparison.InvariantCultureIgnoreCase))
+                        if (name.HasExtension (".px"))
                             entry.Type = "audio";
                         else
                             entry.Type = FormatCatalog.Instance.GetTypeFromName (name);

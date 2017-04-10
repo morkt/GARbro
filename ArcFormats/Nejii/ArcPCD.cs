@@ -46,7 +46,7 @@ namespace GameRes.Formats.Nejii
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (file.MaxOffset < 0x30 || !file.Name.EndsWith (".pcd", StringComparison.InvariantCultureIgnoreCase))
+            if (file.MaxOffset < 0x30 || !file.Name.HasExtension (".pcd"))
                 return null;
             // check if first entry looks like WAVEFORMAT
             ushort channels = file.View.ReadUInt16 (0x12);

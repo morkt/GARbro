@@ -44,7 +44,7 @@ namespace GameRes.Formats.GameSystem
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".CHR", StringComparison.InvariantCultureIgnoreCase)
+            if (!file.Name.HasExtension (".CHR")
                 || file.View.ReadUInt32 (0) != file.MaxOffset)
                 return null;
             using (var input = file.CreateStream())

@@ -237,7 +237,7 @@ namespace GameRes.Formats.Amaterasu
             int update_count = 0;
             foreach (var entry in list)
             {
-                if (entry.Type != "image" && !entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+                if (entry.Type != "image" && !entry.Name.HasExtension (".scr"))
                     continue;
                 uint id;
                 if (!uint.TryParse (Path.GetFileNameWithoutExtension (entry.Name), NumberStyles.HexNumber,

@@ -42,7 +42,7 @@ namespace GameRes.Formats.BlackCyc
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".gpk", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".gpk"))
                 return null;
             var gtb_name = Path.ChangeExtension (file.Name, "gtb");
             if (!VFS.FileExists (gtb_name))

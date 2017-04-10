@@ -65,7 +65,7 @@ namespace GameRes.Formats.Valkyria
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".odn", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".odn"))
                 return null;
             var reader = new OdnIndexReader (file);
             var dir = reader.ReadIndex();

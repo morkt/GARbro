@@ -105,7 +105,7 @@ namespace GameRes.Formats.NScripter
                 }
             }
             catch { /* ignore parse errors */ }
-            if (zero_signature || !file.Name.EndsWith (".nsa", StringComparison.InvariantCultureIgnoreCase))
+            if (zero_signature || !file.Name.HasExtension (".nsa"))
                 return null;
 
             var password = QueryPassword();
@@ -251,7 +251,7 @@ namespace GameRes.Formats.NScripter
                 var header_entry = new NsaEntry { Name = entry.Name };
                 if (Compression.None != ons_options.CompressionType)
                 {
-                    if (entry.Name.EndsWith (".bmp", StringComparison.InvariantCultureIgnoreCase))
+                    if (entry.Name.HasExtension (".bmp"))
                         header_entry.CompressionType = ons_options.CompressionType;
                 }
                 index_size += 13;

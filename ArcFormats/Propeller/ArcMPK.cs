@@ -77,7 +77,7 @@ namespace GameRes.Formats.Propeller
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (!entry.Name.EndsWith (".msc", StringComparison.InvariantCultureIgnoreCase)
+            if (!entry.Name.HasExtension (".msc")
                 || 0x88 != input.PeekByte())
                 return input;
             return new XoredStream (input, 0x88);

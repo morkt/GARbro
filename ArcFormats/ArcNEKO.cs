@@ -148,8 +148,7 @@ namespace GameRes.Formats.Neko
         {
             foreach (var entry in dir.Where (e => string.IsNullOrEmpty (e.Type)))
             {
-                if (entry.Name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase) ||
-                    entry.Name.EndsWith (".nut", StringComparison.InvariantCultureIgnoreCase))
+                if (entry.Name.HasAnyOfExtensions ("txt", "nut"))
                 {
                     entry.Type = "script";
                     continue;

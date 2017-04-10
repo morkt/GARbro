@@ -41,7 +41,7 @@ namespace GameRes.Formats.Silky
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".arc", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".arc"))
                 return null;
             uint index_size = file.View.ReadUInt32 (0);
             if (index_size < 10 || index_size >= file.MaxOffset-4)

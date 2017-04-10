@@ -42,7 +42,7 @@ namespace GameRes.Formats.Yatagarasu
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".pkg", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".pkg"))
                 return null;
             uint key = file.View.ReadUInt32 (0x84); // last bytes of the first entry name
             if (key != file.View.ReadUInt32 (0x10C)) // keys of the first two entries supposed to be the same

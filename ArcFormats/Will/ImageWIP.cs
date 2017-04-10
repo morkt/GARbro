@@ -95,7 +95,7 @@ namespace GameRes.Formats.Will
                 if (24 == meta.BPP)
                 {
                     byte[] raw = reader.Data;
-                    if (ApplyMask && !meta.FileName.EndsWith (".msk", StringComparison.InvariantCultureIgnoreCase))
+                    if (ApplyMask && !meta.FileName.HasExtension (".msk"))
                     {
                         var mask_name = Path.ChangeExtension (meta.FileName, "msk");
                         if (VFS.FileExists (mask_name))

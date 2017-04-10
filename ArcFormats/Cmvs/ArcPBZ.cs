@@ -117,7 +117,7 @@ namespace GameRes.Formats.Pvns
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             Decrypt (data, parc.ArcKey);
-            if (entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase)
+            if (entry.Name.HasExtension (".scr")
                 && Binary.AsciiEqual (data, "PSRA") && data.Length > 20)
             {
                 data = DecryptScript (data, parc.ScriptKey);

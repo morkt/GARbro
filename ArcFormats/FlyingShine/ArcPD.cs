@@ -76,7 +76,7 @@ namespace GameRes.Formats.Fs
                 entry.Size = file.View.ReadUInt32 (cur_offset+0x88);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.EndsWith (".dsf", System.StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension (".dsf"))
                     entry.Type = "script";
                 dir.Add (entry);
                 cur_offset += 0x90;
@@ -305,8 +305,7 @@ namespace GameRes.Formats.Fs
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".def", StringComparison.InvariantCultureIgnoreCase) &&
-                !entry.Name.EndsWith (".dsf", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.HasAnyOfExtensions (".def", ".dsf"))
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i < data.Length; ++i)

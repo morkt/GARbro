@@ -78,7 +78,7 @@ namespace GameRes.Formats.Banana // namespace is arbitrary, actual format source
                 index_offset += 8;
                 if (entry.Offset < index_offset || !entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase))
+                if (name.HasExtension (".scr"))
                     entry.IsPacked = true;
                 dir.Add (entry);
             }

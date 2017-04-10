@@ -69,7 +69,7 @@ namespace GameRes.Formats.Silky
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             if (entry.Size <= 8
-                || !entry.Name.EndsWith (".snc", StringComparison.InvariantCultureIgnoreCase)
+                || !entry.Name.HasExtension (".snc")
                 || !arc.File.View.AsciiEqual (entry.Offset, "CMP_"))
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             int unpacked_size = arc.File.View.ReadInt32 (entry.Offset+4);

@@ -46,7 +46,7 @@ namespace GameRes.Formats.Irrlicht
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".pack", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".pack"))
                 return null;
             long offset = 0;
             var dir = new List<Entry>();

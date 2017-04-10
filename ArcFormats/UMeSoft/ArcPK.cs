@@ -83,8 +83,7 @@ namespace GameRes.Formats.UMeSoft
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".scr", StringComparison.InvariantCultureIgnoreCase) &&
-                !entry.Name.EndsWith (".tbl", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.HasAnyOfExtensions ("scr", "tbl"))
                 return base.OpenEntry (arc, entry);
             int output_size = arc.File.View.ReadInt32 (entry.Offset);
             if (output_size <= 0)

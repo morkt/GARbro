@@ -94,8 +94,7 @@ namespace GameRes.Formats.Elf
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (entry.Name.EndsWith (".mes", StringComparison.InvariantCultureIgnoreCase)
-                || entry.Name.EndsWith (".lib", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasAnyOfExtensions ("mes", "lib"))
                 return new LzssStream (input);
             return input;
         }

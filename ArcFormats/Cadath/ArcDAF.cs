@@ -68,7 +68,7 @@ namespace GameRes.Formats.Cadath
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!entry.Name.EndsWith (".snr", System.StringComparison.InvariantCultureIgnoreCase)
+            if (!entry.Name.HasExtension (".snr")
                 || !arc.File.View.AsciiEqual (entry.Offset, "SNR\x1A"))
                 return base.OpenEntry (arc, entry);
             try

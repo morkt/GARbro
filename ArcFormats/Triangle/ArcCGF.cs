@@ -78,7 +78,7 @@ namespace GameRes.Formats.Triangle
                 var name = file.View.ReadString (index_offset, entry_size-4);
                 uint flags = next_offset >> 30;
                 Entry entry;
-                if (1 == flags || name.EndsWith (".iaf", StringComparison.InvariantCultureIgnoreCase))
+                if (1 == flags || name.HasExtension (".iaf"))
                     entry = new Entry();
                 else
                     entry = new CgfEntry { Flags = flags };

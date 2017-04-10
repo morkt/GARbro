@@ -46,7 +46,7 @@ namespace GameRes.Formats.Triangle
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".iaf", StringComparison.InvariantCultureIgnoreCase)
+            if (!file.Name.HasExtension (".iaf")
                 || file.MaxOffset < 0x20)
                 return null;
             uint size = file.View.ReadUInt32 (1);

@@ -47,7 +47,7 @@ namespace GameRes.Formats.AdvSys
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".dat", StringComparison.InvariantCultureIgnoreCase)
+            if (!file.Name.HasExtension (".dat")
                 || !Path.GetFileName (file.Name).StartsWith ("arc", StringComparison.InvariantCultureIgnoreCase))
                 return null;
             long current_offset = 0;

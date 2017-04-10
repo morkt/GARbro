@@ -81,7 +81,7 @@ namespace GameRes.Formats.Mixwill
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             uint encrypted_size = entry.Size;
-            if (!entry.Name.EndsWith (".txt", StringComparison.InvariantCultureIgnoreCase)
+            if (!entry.Name.HasExtension (".txt")
                 && encrypted_size > 0x100)
                 encrypted_size = 0x100;
             var prefix = arc.File.View.ReadBytes (entry.Offset, encrypted_size);

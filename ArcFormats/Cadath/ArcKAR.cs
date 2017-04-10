@@ -69,7 +69,7 @@ namespace GameRes.Formats.Cadath
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (!entry.Name.EndsWith (".ns6", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.HasExtension (".ns6"))
                 return input;
             byte key = (byte)(entry.Size / 7);
             return new XoredStream (input, key);

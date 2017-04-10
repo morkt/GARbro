@@ -83,7 +83,7 @@ namespace GameRes.Formats.NSystem
                 entry.Offset = file.View.ReadInt64 (index_offset+8);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                has_scripts = has_scripts || name.EndsWith (".msd", StringComparison.InvariantCultureIgnoreCase);
+                has_scripts = has_scripts || name.HasExtension (".msd");
                 dir.Add (entry);
                 index_offset += 0x10;
             }
@@ -100,7 +100,7 @@ namespace GameRes.Formats.NSystem
         {
             var msarc = arc as MsdArchive;
             if (null == msarc || string.IsNullOrEmpty (msarc.Key)
-                || !entry.Name.EndsWith (".msd", StringComparison.InvariantCultureIgnoreCase)
+                || !entry.Name.HasExtension (".msd")
                 || arc.File.View.AsciiEqual (entry.Offset, "MSCENARIO FILE  "))
                 return base.OpenEntry (arc, entry);
             var input = arc.File.CreateStream (entry.Offset, entry.Size);

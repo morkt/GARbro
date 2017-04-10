@@ -740,7 +740,7 @@ NextEntry:
         {
             if ("image" == entry.Type || "archive" == entry.Type)
                 return false;
-            if (entry.Name.EndsWith (".ogg", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasExtension (".ogg"))
                 return false;
             return true;
         }

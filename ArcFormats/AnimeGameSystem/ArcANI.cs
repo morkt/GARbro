@@ -49,7 +49,7 @@ namespace GameRes.Formats.Ags
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".ani", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".ani"))
                 return null;
             uint first_offset = file.View.ReadUInt32 (0);
             if (first_offset < 4 || file.MaxOffset > int.MaxValue || first_offset >= file.MaxOffset || 0 != (first_offset & 3))

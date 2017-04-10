@@ -72,7 +72,7 @@ namespace GameRes.Formats.Abel
                         return null;
                     var name = Binary.GetCString (name_buffer, 0, name_buffer.Length);
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
-                    if (name.EndsWith (".acd", StringComparison.InvariantCultureIgnoreCase))
+                    if (name.HasExtension (".acd"))
                         entry.Type = "script";
                     entry.Offset = index.ReadUInt32() + base_offset;
                     entry.Size   = index.ReadUInt32();
@@ -86,10 +86,10 @@ namespace GameRes.Formats.Abel
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (entry.Size > 12 && entry.Name.EndsWith (".cmp", StringComparison.InvariantCultureIgnoreCase)
+            if (entry.Size > 12 && entry.Name.HasExtension (".cmp")
                 && arc.File.View.AsciiEqual (entry.Offset, "CMP\0"))
                 return OpenCmpEntry (arc, entry);
-            if (entry.Size > 8 && entry.Name.EndsWith (".acd", StringComparison.InvariantCultureIgnoreCase)
+            if (entry.Size > 8 && entry.Name.HasExtension (".acd")
                 && arc.File.View.AsciiEqual (entry.Offset, "ACD\0"))
                 return OpenAcdEntry (arc, entry);
             return base.OpenEntry (arc, entry);

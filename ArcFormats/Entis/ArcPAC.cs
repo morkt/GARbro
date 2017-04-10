@@ -46,7 +46,7 @@ namespace GameRes.Formats.Entis
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".pac", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".pac"))
                 return null;
             uint index_offset = 0;
             var name_buf = new byte[0x18];

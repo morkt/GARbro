@@ -109,7 +109,7 @@ namespace GameRes.Formats.AZSys
                     if (entry.CheckPlacement (file.MaxOffset))
                     {
                         dir.Add (entry);
-                        contains_scripts = contains_scripts || name.EndsWith (".asb", StringComparison.InvariantCultureIgnoreCase);
+                        contains_scripts = contains_scripts || name.HasExtension (".asb");
                     }
                 }
                 index_offset += 0x40;

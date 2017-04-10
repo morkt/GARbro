@@ -79,8 +79,7 @@ namespace GameRes.Formats.Ffa
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (entry.Size <= 8)
                 return input;
-            if (!entry.Name.EndsWith (".so4", StringComparison.InvariantCultureIgnoreCase) &&
-                !entry.Name.EndsWith (".so5", StringComparison.InvariantCultureIgnoreCase))
+            if (!entry.Name.HasAnyOfExtensions ("so4", "so5"))
                 return input;
             int packed = input.ReadInt32();
             int unpacked = input.ReadInt32();

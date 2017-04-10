@@ -68,7 +68,7 @@ namespace GameRes.Formats.RealLive
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.EndsWith (".g00", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".g00"))
                 return null;
             if (file.View.ReadByte (0) != 2)
                 return null;

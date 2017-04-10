@@ -43,7 +43,7 @@ namespace GameRes.Formats.Silky
         public override ArcFile TryOpen (ArcView file)
         {
             // enforce extension to avoid false positives
-            if (!file.Name.EndsWith (".awf", StringComparison.InvariantCultureIgnoreCase))
+            if (!file.Name.HasExtension (".awf"))
                 return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
@@ -74,7 +74,7 @@ namespace GameRes.Formats.Silky
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (entry.Name.EndsWith (".mp3", StringComparison.InvariantCultureIgnoreCase))
+            if (entry.Name.HasExtension (".mp3"))
                 return base.OpenEntry (arc, entry);
             // prepend WAV header
             var header = new byte[0x2C];
