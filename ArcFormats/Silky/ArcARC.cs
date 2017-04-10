@@ -23,12 +23,8 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.IO;
-using GameRes.Compression;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Silky
 {
@@ -56,6 +52,7 @@ namespace GameRes.Formats.Silky
             uint index_size = (uint)(count * (name_length + 8));
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
+            var seen_offsets = new HashSet<uint>();
             var dir = new List<Entry>();
             for (int i = 0; i < count; ++i)
             {
@@ -67,6 +64,8 @@ namespace GameRes.Formats.Silky
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
                 if (entry.Offset < index_size+4 || !entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                if (!seen_offsets.Add ((uint)entry.Offset))
                     return null;
                 dir.Add (entry);
                 index_offset += 8;
