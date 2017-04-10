@@ -167,7 +167,7 @@ namespace GameRes.Formats
             {
                 for (int i = 0; i < count; ++i)
                 {
-                    var name = m_file.View.ReadString (section_table, 0x10);
+                    var name = m_file.View.ReadString (section_table, 8);
                     var section = new Section {
                         Size  = m_file.View.ReadUInt32 (section_table+0x10), 
                         Offset = m_file.View.ReadUInt32 (section_table+0x14)
