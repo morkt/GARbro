@@ -38,6 +38,11 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0x44445A53u; } } // 'SZDD'
         public override bool      CanWrite { get { return false; } }
 
+        public Bm_Format ()
+        {
+            Extensions = new string[] { "bm_", "gpp" };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 0x0e;
