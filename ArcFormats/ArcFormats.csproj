@@ -548,6 +548,7 @@
     <Compile Include="Xuse\ArcXuse.cs" />
     <Compile Include="YaneSDK\ArcDAT.cs" />
     <Compile Include="Yatagarasu\ArcPKG.cs" />
+    <Compile Include="Yatagarasu\ArcPKG2.cs" />
     <Compile Include="Youkai\ArcDAT.cs" />
     <Compile Include="Yox\ArcYOX.cs" />
     <Compile Include="Yuka\ArcYKC.cs" />
