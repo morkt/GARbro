@@ -40,7 +40,8 @@
                 <Border BorderBrush="{x:Null}" Height="28" Width="115" Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Right" >
                     <TextBlock Text="{x:Static s:guiStrings.TextSaveImagesAs}" TextWrapping="Wrap" TextAlignment="Right"  VerticalAlignment="Center" HorizontalAlignment="Right"/>
                 </Border>
-                <ComboBox Name="ImageConversionFormat" DisplayMemberPath="Tag" Margin="10,3,0,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="75"/>
+                <ComboBox Name="ImageConversionFormat" DisplayMemberPath="Tag" Margin="10,3,0,0" VerticalAlignment="Top" Height="21" HorizontalAlignment="Right" Width="75"
+                          IsEnabled="{Binding ElementName=ExtractImages, Path=IsChecked}"/>
             </StackPanel>
             <CheckBox Grid.Row="2" Grid.Column="0" x:Name="ExtractText" Content="{x:Static s:guiStrings.TextExtractText}" HorizontalAlignment="Left" VerticalAlignment="Top"
                       Margin="10,6,0,0" Visibility="Collapsed"
