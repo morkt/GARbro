@@ -130,37 +130,6 @@ namespace GameRes.Formats.Unity
                 throw new ApplicationException (string.Format ("Duplicate asset object {0} (PathId: {1})", obj, obj.PathId));
             m_objects[obj.PathId] = obj;
         }
-
-        public Dictionary<long, string> ReadAssetBundle (Stream input, UnityObject bundle)
-        {
-            using (var stream = new StreamRegion (input, bundle.Offset, bundle.Size, true))
-            using (var reader = new AssetReader (stream, ""))
-            {
-                reader.SetupReaders (m_format, m_is_little_endian);
-                var name = reader.ReadString(); // m_Name
-                reader.Align();
-                var id_map = new Dictionary<long, string>();
-                id_map[bundle.PathId] = name;
-                int count = reader.ReadInt32(); // m_PreloadTable
-                for (int i = 0; i < count; ++i)
-                {
-                    reader.ReadInt32(); // m_FileID
-                    reader.ReadInt64(); // m_PathID
-                }
-                count = reader.ReadInt32(); // m_Container
-                for (int i = 0; i < count; ++i)
-                {
-                    name = reader.ReadString();
-                    reader.Align();
-                    reader.ReadInt32(); // preloadIndex
-                    reader.ReadInt32(); // preloadSize
-                    reader.ReadInt32(); // m_FileID
-                    long id = reader.ReadInt64();
-                    id_map[id] = name;
-                }
-                return id_map;
-            }
-        }
     }
 
     internal class AssetRef

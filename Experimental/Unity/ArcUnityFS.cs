@@ -251,7 +251,7 @@ namespace GameRes.Formats.Unity
                 var asset_bundle = asset.Objects.FirstOrDefault (x => x.TypeId == bundle_type_id);
                 if (asset_bundle != null)
                 {
-                    id_map = asset.ReadAssetBundle (file, asset_bundle);
+                    id_map = ReadAssetBundle (file, asset_bundle);
                 }
             }
             if (null == id_map)
@@ -287,6 +287,35 @@ namespace GameRes.Formats.Unity
                     name = ShortenPath (name);
                 entry.Name = name;
                 yield return entry;
+            }
+        }
+
+        Dictionary<long, string> ReadAssetBundle (Stream input, UnityObject bundle)
+        {
+            using (var reader = bundle.Open (input))
+            {
+                var name = reader.ReadString(); // m_Name
+                reader.Align();
+                int count = reader.ReadInt32(); // m_PreloadTable
+                for (int i = 0; i < count; ++i)
+                {
+                    reader.ReadInt32(); // m_FileID
+                    reader.ReadInt64(); // m_PathID
+                }
+                count = reader.ReadInt32(); // m_Container
+                var id_map = new Dictionary<long, string> (count+1);
+                id_map[bundle.PathId] = name;
+                for (int i = 0; i < count; ++i)
+                {
+                    name = reader.ReadString();
+                    reader.Align();
+                    reader.ReadInt32(); // preloadIndex
+                    reader.ReadInt32(); // preloadSize
+                    reader.ReadInt32(); // m_FileID
+                    long id = reader.ReadInt64();
+                    id_map[id] = name;
+                }
+                return id_map;
             }
         }
 
