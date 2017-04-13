@@ -198,6 +198,14 @@ namespace GameRes.Formats.Unity
             Asset = owner;
         }
 
+        public AssetReader Open (Stream input)
+        {
+            var stream = new StreamRegion (input, Offset, Size, true);
+            var reader = new AssetReader (stream, "");
+            reader.SetupReaders (Asset.Format, Asset.IsLittleEndian);
+            return reader;
+        }
+
         public void Load (AssetReader reader)
         {
             PathId = reader.ReadId();
@@ -449,6 +457,68 @@ namespace GameRes.Formats.Unity
             m_Offset = reader.ReadInt64();
             m_Size = reader.ReadInt64();
             m_CompressionFormat = reader.ReadInt32();
+        }
+    }
+
+    enum TextureFormat : int
+    {
+        Alpha8 = 1,
+        ARGB4444 = 2,
+        RGB24 = 3,
+        RGBA32 = 4,
+        ARGB32 = 5,
+        R16 = 6, // A 16 bit color texture format that only has a red channel.
+        RGB565 = 7,
+        DXT1 = 10,
+        DXT5 = 12,
+        RGBA4444 = 13,
+        BGRA32 = 14,
+    }
+
+    internal class Texture2D
+    {
+        public string   m_Name;
+        public int      m_Width;
+        public int      m_Height;
+        public int      m_CompleteImageSize;
+        public TextureFormat m_TextureFormat;
+        public int      m_MipCount;
+        public bool     m_IsReadable;
+        public bool     m_ReadAllowed;
+        public int      m_ImageCount;
+        public int      m_TextureDimension;
+        public int      m_FilterMode;
+        public int      m_Aniso;
+        public int      m_MipBias;
+        public int      m_WrapMode;
+        public int      m_LightFormat;
+        public int      m_ColorSpace;
+        // byte[] m_Data
+        // StreamingInfo m_StreamData
+        // uint offset
+        // uint size
+        // string path
+
+        public void Load (AssetReader reader)
+        {
+            m_Name = reader.ReadString();
+            reader.Align();
+            m_Width = reader.ReadInt32();
+            m_Height = reader.ReadInt32();
+            m_CompleteImageSize = reader.ReadInt32();
+            m_TextureFormat = (TextureFormat)reader.ReadInt32();
+            m_MipCount = reader.ReadInt32();
+            m_IsReadable = reader.ReadBool();
+            m_ReadAllowed = reader.ReadBool();
+            reader.Align();
+            m_ImageCount = reader.ReadInt32();
+            m_TextureDimension = reader.ReadInt32();
+            m_FilterMode = reader.ReadInt32();
+            m_Aniso = reader.ReadInt32();
+            m_MipBias = reader.ReadInt32();
+            m_WrapMode = reader.ReadInt32();
+            m_LightFormat = reader.ReadInt32();
+            m_ColorSpace = reader.ReadInt32();
         }
     }
 }

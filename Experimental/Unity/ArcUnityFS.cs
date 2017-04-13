@@ -105,13 +105,33 @@ namespace GameRes.Formats.Unity
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var uarc = (UnityBundle)arc;
-            var input = new BundleStream (uarc.File, uarc.Segments);
-            return new StreamRegion (input, entry.Offset, entry.Size);
+            Stream input = new BundleStream (uarc.File, uarc.Segments);
+            input = new StreamRegion (input, entry.Offset, entry.Size);
+            var aent = entry as AssetEntry;
+            if (null == aent || !aent.IsEncrypted)
+                return input;
+            using (input)
+            {
+                var data = new byte[entry.Size];
+                input.Read (data, 0, data.Length);
+                DecryptAsset (data);
+                return new BinMemoryStream (data);
+            }
         }
 
         internal static byte[] UnpackLzma (byte[] input, int unpacked_size)
         {
             throw new NotImplementedException();
+        }
+
+        internal void DecryptAsset (byte[] data)
+        {
+            uint key = 0xBF8766F5u;
+            for (int i = 0; i < data.Length; ++i)
+            {
+                key = ((0x343FD * key + 0x269EC3) >> 16) & 0x7FFF; // MSVC rand()
+                data[i] ^= (byte)key;
+            }
         }
     }
 
@@ -124,6 +144,7 @@ namespace GameRes.Formats.Unity
     {
         public BundleEntry  Bundle;
         public UnityObject  AssetObject;
+        public bool         IsEncrypted;
     }
 
     internal class UnityBundle : ArcFile
@@ -209,7 +230,7 @@ namespace GameRes.Formats.Unity
                     {
                         var asset = new Asset();
                         asset.Load (reader);
-                        var object_dir = ParseAsset (bundle, asset, stream);
+                        var object_dir = ParseAsset (stream, bundle, asset);
                         dir.AddRange (object_dir);
                     }
                 }
@@ -219,7 +240,7 @@ namespace GameRes.Formats.Unity
             return dir;
         }
 
-        IEnumerable<Entry> ParseAsset (BundleEntry bundle, Asset asset, Stream file)
+        IEnumerable<Entry> ParseAsset (Stream file, BundleEntry bundle, Asset asset)
         {
             Dictionary<long, string> id_map = null;
             var bundle_types = asset.Tree.TypeTrees.Where (t => t.Value.Type == "AssetBundle").Select (t => t.Key);
@@ -241,7 +262,11 @@ namespace GameRes.Formats.Unity
                 AssetEntry entry = null;
                 if ("AudioClip" == type)
                 {
-                    entry = ReadAudioClip (file, obj, asset);
+                    entry = ReadAudioClip (file, obj);
+                }
+                else if ("TextAsset" == type)
+                {
+                    entry = ReadTextAsset (file, obj);
                 }
                 if (null == entry)
                 {
@@ -253,9 +278,11 @@ namespace GameRes.Formats.Unity
                         Size = obj.Size,
                     };
                 }
+                if (null == entry.Bundle)
+                    entry.Bundle = bundle;
                 string name;
                 if (!id_map.TryGetValue (obj.PathId, out name))
-                    name = obj.PathId.ToString ("X16");
+                    name = GetObjectName (file, obj);
                 else
                     name = ShortenPath (name);
                 entry.Name = name;
@@ -263,12 +290,56 @@ namespace GameRes.Formats.Unity
             }
         }
 
-        AssetEntry ReadAudioClip (Stream input, UnityObject obj, Asset asset)
+        string GetObjectName (Stream input, UnityObject obj)
         {
-            using (var stream = new StreamRegion (input, obj.Offset, obj.Size, true))
-            using (var reader = new AssetReader (stream, ""))
+            TypeTree type;
+            if (obj.Asset.Tree.TypeTrees.TryGetValue (obj.TypeId, out type) && type.Children.Count > 0)
             {
-                reader.SetupReaders (asset.Format, asset.IsLittleEndian);
+                var first_field = type.Children[0];
+                if ("m_Name" == first_field.Name && "string" == first_field.Type)
+                {
+                    using (var reader = obj.Open (input))
+                    {
+                        var name = reader.ReadString();
+                        if (!string.IsNullOrEmpty (name))
+                            return name;
+                    }
+                }
+            }
+            return obj.PathId.ToString ("X16");
+        }
+
+        AssetEntry ReadTextAsset (Stream input, UnityObject obj)
+        {
+            var type_def = obj.Asset.Tree.TypeTrees[obj.TypeId];
+            var script = type_def.Children.FirstOrDefault (f => f.Name == "m_Script");
+            if (null == script)
+                return null;
+            using (var reader = obj.Open (input))
+            {
+                var name = reader.ReadString();
+                reader.Align();
+                uint size = reader.ReadUInt32();
+                var entry = new AssetEntry {
+                    AssetObject = obj,
+                    Offset = obj.Offset + reader.Position,
+                    Size = size,
+                    IsEncrypted = 0 != (script.Flags & 0x04000000),
+                };
+                if (entry.IsEncrypted)
+                {
+                    uint signature = reader.ReadUInt32();
+                    if (0x0D15F641 == signature)
+                        entry.Type = "image";
+                }
+                return entry;
+            }
+        }
+
+        AssetEntry ReadAudioClip (Stream input, UnityObject obj)
+        {
+            using (var reader = obj.Open (input))
+            {
                 var clip = new AudioClip();
                 clip.Load (reader);
                 var bundle_name = Path.GetFileName (clip.m_Source);
