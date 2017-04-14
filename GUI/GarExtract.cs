@@ -267,6 +267,7 @@ namespace GARbro.GUI
             m_convert_audio = !m_skip_audio && Settings.Default.appConvertAudio;
             m_progress_dialog.DoWork += (s, e) => ExtractWorker (file_list);
             m_progress_dialog.RunWorkerCompleted += OnExtractComplete;
+            m_main.IsEnabled = false;
             m_progress_dialog.ShowDialog (m_main);
             m_extract_in_progress = true;
         }
@@ -414,6 +415,7 @@ namespace GARbro.GUI
 
         void OnExtractComplete (object sender, RunWorkerCompletedEventArgs e)
         {
+            m_main.IsEnabled = true;
             m_extract_in_progress = false;
             m_progress_dialog.Dispose();
             m_main.Activate();
