@@ -99,6 +99,7 @@
     <Compile Include="Cadath\ImageCGF.cs" />
     <Compile Include="Crowd\ImageCRZ.cs" />
     <Compile Include="Cyberworks\ArcApp.cs" />
+    <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />
     <Compile Include="Foster\ArcC24.cs" />
     <Compile Include="Foster\ArcFA2.cs" />

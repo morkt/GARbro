@@ -30,7 +30,7 @@ using System.Text;
 using System.Windows.Media;
 using GameRes.Utility;
 
-namespace GameRes.Formats.Microsoft
+namespace GameRes.Formats.DirectDraw
 {
     internal class DdsMetaData : ImageMetaData
     {
@@ -91,17 +91,29 @@ namespace GameRes.Formats.Microsoft
             var meta = (DdsMetaData)info;
             if (meta.PixelFlags.HasFlag (DdsPF.Yuv | DdsPF.Luminance))
                 throw new NotSupportedException ("Not supported DDS texture color format");
-            if (!string.IsNullOrEmpty (meta.FourCC))
-                throw new NotImplementedException ("Compressed DDS textures not implemented");
-            if (meta.PixelFlags.HasFlag (DdsPF.Rgb)
-                && (0 == meta.RBitMask || 0 == meta.GBitMask || 0 == meta.BBitMask))
-                throw new InvalidFormatException();
-            var pixels = ReadPixelData (stream.AsStream, meta);
+            byte[] pixels;
             PixelFormat format;
-            if (meta.PixelFlags.HasFlag (DdsPF.AlphaPixels) && meta.ABitMask != 0)
+            if (string.IsNullOrEmpty (meta.FourCC))
+            {
+                if (meta.PixelFlags.HasFlag (DdsPF.Rgb)
+                    && (0 == meta.RBitMask || 0 == meta.GBitMask || 0 == meta.BBitMask))
+                    throw new InvalidFormatException();
+                pixels = ReadPixelData (stream.AsStream, meta);
+                if (meta.PixelFlags.HasFlag (DdsPF.AlphaPixels) && meta.ABitMask != 0)
+                    format = PixelFormats.Bgra32;
+                else
+                    format = PixelFormats.Bgr32;
+            }
+            else if ("DXT5" == meta.FourCC)
+            {
+                stream.Position = meta.DataOffset;
+                var input = stream.ReadBytes ((int)meta.Width * (int)meta.Height);
+                var dxt = new DxtDecoder (input, meta);
+                pixels = dxt.UnpackDXT5();
                 format = PixelFormats.Bgra32;
+            }
             else
-                format = PixelFormats.Bgr32;
+                throw new NotImplementedException ("Compressed DDS textures not implemented");
             return ImageData.Create (info, format, null, pixels);
         }
 
