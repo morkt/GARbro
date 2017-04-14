@@ -119,6 +119,20 @@ namespace GameRes.Formats.Unity
             }
         }
 
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var aent = entry as AssetEntry;
+            if (null == aent || aent.AssetObject.Type != "Texture2D")
+                return base.OpenImage (arc, entry);
+            var uarc = (UnityBundle)arc;
+            var obj = aent.AssetObject;
+            Stream input = new BundleStream (uarc.File, uarc.Segments);
+            input = new StreamRegion (input, obj.Offset, obj.Size);
+            var reader = new AssetReader (input, entry.Name);
+            reader.SetupReaders (obj.Asset);
+            return new Texture2DDecoder (reader);
+        }
+
         internal static byte[] UnpackLzma (byte[] input, int unpacked_size)
         {
             throw new NotImplementedException();
@@ -258,26 +272,7 @@ namespace GameRes.Formats.Unity
                 id_map = new Dictionary<long, string>();
             foreach (var obj in asset.Objects)
             {
-                string type = obj.Type;
-                AssetEntry entry = null;
-                if ("AudioClip" == type)
-                {
-                    entry = ReadAudioClip (file, obj);
-                }
-                else if ("TextAsset" == type)
-                {
-                    entry = ReadTextAsset (file, obj);
-                }
-                if (null == entry)
-                {
-                    entry = new AssetEntry {
-                        Type = type,
-                        Bundle = bundle,
-                        AssetObject = obj,
-                        Offset = obj.Offset,
-                        Size = obj.Size,
-                    };
-                }
+                var entry = ReadAsset (file, obj);
                 if (null == entry.Bundle)
                     entry.Bundle = bundle;
                 string name;
@@ -288,6 +283,24 @@ namespace GameRes.Formats.Unity
                 entry.Name = name;
                 yield return entry;
             }
+        }
+
+        AssetEntry ReadAsset (Stream file, UnityObject obj)
+        {
+            string type = obj.Type;
+            if ("AudioClip" == type)
+                return ReadAudioClip (file, obj);
+            else if ("TextAsset" == type)
+                return ReadTextAsset (file, obj);
+            else if ("Texture2D" == type)
+                type = "image";
+
+            return new AssetEntry {
+                Type = type,
+                AssetObject = obj,
+                Offset = obj.Offset,
+                Size = obj.Size,
+            };
         }
 
         Dictionary<long, string> ReadAssetBundle (Stream input, UnityObject bundle)

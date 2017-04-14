@@ -524,6 +524,7 @@
     <Compile Include="Unity\AudioFSB5.cs" />
     <Compile Include="Unity\BundleStream.cs" />
     <Compile Include="Unity\OggStream.cs" />
+    <Compile Include="Unity\Texture2D.cs" />
     <Compile Include="Unity\Vorbis.cs" />
     <Compile Include="Valkyria\ArcDAT.cs" />
     <Compile Include="Valkyria\ArcODN.cs" />

@@ -39,6 +39,7 @@ namespace GameRes.Formats.Unity
         IBinaryStream   m_input;
         int             m_format;
 
+        public Stream Source { get { return m_input.AsStream; } }
         public int    Format { get { return m_format; } }
         public long Position {
             get { return m_input.Position; }
@@ -58,6 +59,11 @@ namespace GameRes.Formats.Unity
         public Func<int>    ReadInt32;
         public Func<long>   ReadInt64;
         public Func<long>   ReadId;
+
+        public void SetupReaders (Asset asset)
+        {
+            SetupReaders (asset.Format, asset.IsLittleEndian);
+        }
 
         /// <summary>
         /// Setup reader endianness accordingly.
