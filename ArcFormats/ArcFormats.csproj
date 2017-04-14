@@ -644,7 +644,7 @@
     <Compile Include="Circus\ImageCRX.cs" />
     <Compile Include="Crowd\ImageCWL.cs" />
     <Compile Include="Crowd\ImageCWP.cs" />
-    <Compile Include="ImageDDS.cs" />
+    <Compile Include="DirectDraw\ImageDDS.cs" />
     <Compile Include="Dac\ImageDGC.cs" />
     <Compile Include="Ikura\ImageDRG.cs" />
     <Compile Include="Malie\ImageDZI.cs" />
