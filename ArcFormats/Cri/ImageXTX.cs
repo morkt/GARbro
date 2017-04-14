@@ -197,7 +197,8 @@ namespace GameRes.Formats.Cri
                     src += 2;
                 }
             }
-            UnpackDXT5 (packed);
+            var dxt = new DirectDraw.DxtDecoder (packed, m_info);
+            m_output = dxt.UnpackDXT5();
         }
 
         static int GetY (int i, int width, byte level)
@@ -220,108 +221,6 @@ namespace GameRes.Formats.Cri
             return ((((level << 3) - 1) & ((v3 >> 1) ^ (v3 ^ (v3 >> 1)) & 0xF)) >> v1)
                 + ((((((v2 >> 6) & 0xFF) + ((v3 >> (v1 + 5)) & 0xFE)) & 3)
                     + (((v3 >> (v1 + 7)) % (((width + 31)) >> 5)) << 2)) << 3);
-        }
-
-        void UnpackDXT5 (byte[] input)
-        {
-            int src = 0;
-            for (int y = 0; y < m_info.AlignedHeight; y += 4)
-            for (int x = 0; x < m_info.AlignedWidth; x += 4)
-            {
-                DecompressDXT5Block (input, src, y, x);
-                src += 16;
-            }
-        }
-
-        byte[] m_dxt5_alpha = new byte[16];
-
-        void DecompressDXT5Block (byte[] input, int src, int block_y, int block_x)
-        {
-            byte alpha0 = input[src];
-            byte alpha1 = input[src+1];
-
-            DecompressDXT5Alpha (input, src+2, m_dxt5_alpha);
-
-            ushort color0 = LittleEndian.ToUInt16 (input, src+8);
-            ushort color1 = LittleEndian.ToUInt16 (input, src+10);
-
-            int t = (color0 >> 11) * 255 + 16;
-            byte r0 = (byte)((t / 32 + t) / 32);
-            t = ((color0 & 0x07E0) >> 5) * 255 + 32;
-            byte g0 = (byte)((t / 64 + t) / 64);
-            t = (color0 & 0x001F) * 255 + 16;
-            byte b0 = (byte)((t / 32 + t) / 32);
-
-            t = (color1 >> 11) * 255 + 16;
-            byte r1 = (byte)((t / 32 + t) / 32);
-            t = ((color1 & 0x07E0) >> 5) * 255 + 32;
-            byte g1 = (byte)((t / 64 + t) / 64);
-            t = (color1 & 0x001F) * 255 + 16;
-            byte b1 = (byte)((t / 32 + t) / 32);
-
-            uint code = LittleEndian.ToUInt32 (input, src+12);
-
-            for (int y = 0; y < 4 && (block_y + y) < m_height; ++y)
-            for (int x = 0; x < 4 && (block_x + x) < m_width; ++x)
-            {
-                int alpha_code = m_dxt5_alpha[4 * y + x];
-                byte alpha;
-                if (0 == alpha_code)
-                    alpha = alpha0;
-                else if (1 == alpha_code)
-                    alpha = alpha1;
-                else if (alpha0 > alpha1)
-                    alpha = (byte)(((8 - alpha_code) * alpha0 + (alpha_code - 1) * alpha1) / 7);
-                else if (6 == alpha_code)
-                    alpha = 0;
-                else if (7 == alpha_code)
-                    alpha = 0xFF;
-                else
-                    alpha = (byte)(((6 - alpha_code) * alpha0 + (alpha_code - 1) * alpha1) / 5);
-
-                int dst = m_output_stride * (block_y + y) + (block_x + x) * 4;
-                switch (code & 3)
-                {
-                case 0:
-                    PutPixel (dst, r0, g0, b0, alpha);
-                    break;
-                case 1:
-                    PutPixel (dst, r1, g1, b1, alpha);
-                    break;
-                case 2:
-                    PutPixel (dst, (byte)((2 * r0 + r1) / 3), (byte)((2 * g0 + g1) / 3), (byte)((2 * b0 + b1) / 3), alpha);
-                    break;
-                case 3:
-                    PutPixel (dst, (byte)((r0 + 2 * r1) / 3), (byte)((g0 + 2 * g1) / 3), (byte)((b0 + 2 * b1) / 3), alpha);
-                    break;
-                }
-                code >>= 2;
-            }
-        }
-
-        static void DecompressDXT5Alpha (byte[] input, int src, byte[] output)
-        {
-            int dst = 0;
-            for (int j = 0; j < 2; ++j)
-            {
-                int block = input[src++];
-                block |= input[src++] << 8;
-                block |= input[src++] << 16;
-
-                for (int i = 0; i < 8; ++i)
-                {
-                    output[dst++] = (byte)(block & 7);
-                    block >>= 3;
-                }
-            }
-        }
-
-        void PutPixel (int dst, byte r, byte g, byte b, byte a)
-        {
-            m_output[dst]   = b;
-            m_output[dst+1] = g;
-            m_output[dst+2] = r;
-            m_output[dst+3] = a;
         }
     }
 }
