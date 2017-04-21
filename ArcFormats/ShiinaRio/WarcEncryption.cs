@@ -653,6 +653,7 @@ namespace GameRes.Formats.ShiinaRio
         protected readonly uint     Seed;
         protected readonly byte[]   DecodeTable;
         protected uint MinLength = 0x400;
+        protected int PostDataOffset = 0x200;
 
         public KeyDecryptBase (uint seed, byte[] decode_bin)
         {
@@ -674,26 +675,29 @@ namespace GameRes.Formats.ShiinaRio
         {
             if (length < MinLength)
                 return;
-            if ((flags & 0x102) == 0x102)
-                DecryptPre (data, index, length);
             if ((flags & 0x104) == 0x104)
                 DecryptPost (data, index, length);
+            if ((flags & 0x102) == 0x102)
+                DecryptPre (data, index, length);
         }
 
         protected abstract void DecryptPre (byte[] data, int index, uint length);
 
         protected virtual void DecryptPost (byte[] data, int index, uint length)
         {
-            data[index + 0x200] ^= (byte)Seed;
-            data[index + 0x201] ^= (byte)(Seed >> 8);
-            data[index + 0x202] ^= (byte)(Seed >> 16);
-            data[index + 0x203] ^= (byte)(Seed >> 24);
+            int pos = index + PostDataOffset;
+            data[pos  ] ^= (byte)Seed;
+            data[pos+1] ^= (byte)(Seed >> 8);
+            data[pos+2] ^= (byte)(Seed >> 16);
+            data[pos+3] ^= (byte)(Seed >> 24);
         }
     }
 
     [Serializable]
     public abstract class KeyDecryptExtra : KeyDecryptBase
     {
+        protected int EncryptedSize = 0xFF;
+
         public KeyDecryptExtra (uint seed, byte[] decode_bin) : base (seed, decode_bin)
         {
         }
@@ -702,7 +706,7 @@ namespace GameRes.Formats.ShiinaRio
         {
             var k = new uint[4];
             InitKey (Seed, k);
-            for (int i = 0; i < 0xFF; ++i)
+            for (int i = 0; i < EncryptedSize; ++i)
             {
                 uint j = k[3] ^ (k[3] << 11) ^ k[0] ^ ((k[3] ^ (k[3] << 11) ^ (k[0] >> 11)) >> 8);
                 k[3] = k[2];
@@ -729,6 +733,24 @@ namespace GameRes.Formats.ShiinaRio
             k[1] = key + 4;
             k[2] = key + 2;
             k[3] = key + 3;
+        }
+    }
+
+    [Serializable]
+    public class YuruPlusCrypt : KeyDecryptExtra
+    {
+        public YuruPlusCrypt (uint key, byte[] bin) : base (key, bin)
+        {
+            EncryptedSize = 0x100;
+            PostDataOffset = 0x204;
+        }
+
+        protected override void InitKey (uint key, uint[] k)
+        {
+            k[0] = key + 4;
+            k[1] = key + 3;
+            k[2] = key + 2;
+            k[3] = key + 1;
         }
     }
 
