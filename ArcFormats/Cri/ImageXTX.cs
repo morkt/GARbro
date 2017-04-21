@@ -104,37 +104,33 @@ namespace GameRes.Formats.Cri
         int         m_width;
         int         m_height;
         XtxMetaData m_info;
-        byte[]      m_output;
-        int         m_output_stride;
 
-        public byte[]        Data { get { return m_output; } }
         public PixelFormat Format { get; private set; }
 
         public XtxReader (Stream input, XtxMetaData info)
         {
             m_input = input;
             m_info = info;
-            m_input.Position = info.DataOffset;
             m_width = (int)m_info.Width;
-            m_output_stride = m_width * 4;
             m_height = (int)m_info.Height;
-            m_output = new byte[m_output_stride*m_height];
         }
 
         public byte[] Unpack ()
         {
+            m_input.Position = m_info.DataOffset;
             Format = PixelFormats.Bgra32;
             if (0 == m_info.Format)
-                ReadTex0();
+                return ReadTex0();
             else if (1 == m_info.Format)
-                ReadTex1();
+                return ReadTex1();
             else
-                ReadTex2();
-            return m_output;
+                return ReadTex2();
         }
 
-        void ReadTex0 ()
+        byte[] ReadTex0 ()
         {
+            int output_stride = m_width * 4;
+            var output = new byte[output_stride*m_height];
             int total = m_info.AlignedWidth * m_info.AlignedHeight;
             var texture = new byte[total*4];
             m_input.Read (texture, 0, texture.Length);
@@ -145,17 +141,18 @@ namespace GameRes.Formats.Cri
                 int x = GetX (i, m_info.AlignedWidth, 4);
                 if (y < m_height && x < m_width)
                 {
-                    int dst = m_output_stride * y + x * 4;
-                    m_output[dst]   = texture[src+3];
-                    m_output[dst+1] = texture[src+2];
-                    m_output[dst+2] = texture[src+1];
-                    m_output[dst+3] = texture[src];
+                    int dst = output_stride * y + x * 4;
+                    output[dst]   = texture[src+3];
+                    output[dst+1] = texture[src+2];
+                    output[dst+2] = texture[src+1];
+                    output[dst+3] = texture[src];
                 }
                 src += 4;
             }
+            return output;
         }
 
-        void ReadTex1 ()
+        byte[] ReadTex1 ()
         {
             int total = m_info.AlignedWidth * m_info.AlignedHeight;
             var texture = new byte[total*2];
@@ -173,11 +170,11 @@ namespace GameRes.Formats.Cri
                 src += 2;
             }
             Format = PixelFormats.Bgr565;
-            m_output = packed;
             throw new NotImplementedException ("XTX textures format 1 not implemented");
+//            return packed;
         }
 
-        void ReadTex2 ()
+        byte[] ReadTex2 ()
         {
             int tex_width = m_info.AlignedWidth >> 2;
             int total = tex_width * (m_info.AlignedHeight >> 2);
@@ -198,7 +195,7 @@ namespace GameRes.Formats.Cri
                 }
             }
             var dxt = new DirectDraw.DxtDecoder (packed, m_info);
-            m_output = dxt.UnpackDXT5();
+            return dxt.UnpackDXT5();
         }
 
         static int GetY (int i, int width, byte level)
