@@ -1,27 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.4.27</Version>
+        <Version>1.4.28</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
-        <Notes>New formats:
-- new Csystem archives formats
-- QLIE FilePackVer3.1
-- Kaguya 'UF01' archives
-- Yatagarasu PKG archives
-- RHA audio files
-- ADPS audio files
-- support new EAGLS (pak+idx) archives
-- Artemis 'pf2' archives
-- Crowd CRZ images
-- MicroVision ARC1 archives, GPC images and IKM audio
-- more KiriKiri and Csystem encryption schemes
+        <Notes>Updated Chinese translation.
+
+New formats:
+- 'UnityFS' archives and FSB5 audio
+- GRP audio archives
+- more KiriKiri and ShiinaRio encryption schemes
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>62</FileVersion>
+        <FileVersion>63</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.30.1336"/>
+            <Assembly Name="ArcFormats" Version="1.2.31.1367"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>
