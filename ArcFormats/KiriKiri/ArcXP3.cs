@@ -533,7 +533,7 @@ NextEntry:
                         Name            = name,
                         Cipher          = scheme,
                         IsEncrypted     = use_encryption
-                                       && !(scheme.StartupTjsNotEncrypted && name.EndsWith ("startup.tjs"))
+                                       && !(scheme.StartupTjsNotEncrypted && VFS.IsPathEqualsToFileName (name, "startup.tjs"))
                     };
                     bool compress = compress_contents && ShouldCompressFile (entry);
                     using (var file = File.Open (name, FileMode.Open, FileAccess.Read))
@@ -674,7 +674,6 @@ NextEntry:
                         Size         = unpacked_size,
                         PackedSize   = unpacked_size,
                     };
-                    xp3entry.Segments.Add (segment);
                     if (compress)
                     {
                         output = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9, true);
@@ -715,6 +714,7 @@ NextEntry:
                                 segment.PackedSize = (uint)(dest.Position - segment.Offset);
                                 xp3entry.Size = segment.PackedSize;
                             }
+                            xp3entry.Segments.Add (segment);
                         }
                     }
                 }
