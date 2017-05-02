@@ -108,6 +108,7 @@
     <Compile Include="GameSystem\AudioADP4.cs" />
     <Compile Include="Kaas\ArcPB.cs" />
     <Compile Include="Kaas\AudioKAAS.cs" />
+    <Compile Include="Kaguya\ArcAN21.cs" />
     <Compile Include="Kaguya\ArcUF.cs" />
     <Compile Include="Kurumi\ImageGRA.cs" />
     <Compile Include="Leaf\ArcPX.cs" />

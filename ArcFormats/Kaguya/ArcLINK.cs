@@ -2,7 +2,7 @@
 //! \date       Fri Jan 22 18:44:56 2016
 //! \brief      KaGuYa archive format.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -436,13 +436,14 @@ namespace GameRes.Formats.Kaguya
         public static ParamsDeserializer Create (IBinaryStream input)
         {
             var header = input.ReadHeader (0x11);
-            if (!header.AsciiEqual ("[SCR-PARAMS]"))
-                return null;
-            if (header.AsciiEqual (12, "v02"))
-                return new ParamsV2Deserializer (input);
-            else if (header.AsciiEqual (12, "v05.6"))
-                return new ParamsV5Deserializer (input);
-            return null;
+            if (header.AsciiEqual ("[SCR-PARAMS]"))
+            {
+                if (header.AsciiEqual (12, "v02"))
+                    return new ParamsV2Deserializer (input);
+                else if (header.AsciiEqual (12, "v05.5") || header.AsciiEqual (12, "v05.6"))
+                    return new ParamsV5Deserializer (input);
+            }
+            throw new UnknownEncryptionScheme();
         }
 
         public virtual LinkEncryption GetEncryption ()
@@ -642,7 +643,10 @@ namespace GameRes.Formats.Kaguya
                 new Tuple<string, Decryptor> ("AP",     (a, e) => DecryptImage (a, e, 0xC)),
             };
             if (anm_encrypted)
+            {
                 table.Add (new Tuple<string, Decryptor> ("AN00", (a, e) => DecryptAn00 (a, e)));
+                table.Add (new Tuple<string, Decryptor> ("AN21", (a, e) => DecryptAn21 (a, e)));
+            }
             m_type_table = table.ToArray();
         }
 
@@ -680,6 +684,34 @@ namespace GameRes.Formats.Kaguya
                 DecryptData (data, frame_offset, size);
                 frame_offset += size + 8;
             }
+            return new BinMemoryStream (data, entry.Name);
+        }
+
+        Stream DecryptAn21 (LinkArchive arc, LinkEntry entry)
+        {
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            int count = data.ToUInt16 (4);
+            int offset = 8;
+            for (int i = 0; i < count; ++i)
+            {
+                switch (data[offset++])
+                {
+                case 0: break;
+                case 1: offset += 8; break;
+                case 2:
+                case 3:
+                case 4:
+                case 5: offset += 4; break;
+                default: return new BinMemoryStream (data, entry.Name);
+                }
+            }
+            count = data.ToUInt16 (offset);
+            offset += 2 + count * 8 + 0x21;
+            int w = data.ToInt32 (offset);
+            int h = data.ToInt32 (offset+4);
+            int channels = data.ToInt32 (offset+8);
+            offset += 12;
+            DecryptData (data, offset, channels * w * h);
             return new BinMemoryStream (data, entry.Name);
         }
 
