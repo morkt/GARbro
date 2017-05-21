@@ -74,22 +74,37 @@ namespace GameRes.Formats.YaneSDK
             {
                 const int name_length = 0x100;
                 index.BaseStream.Position = 2;
-                var name_buf = new byte[name_length];
+                Func<int, Entry> read_entry;
+                if (null == toc_table)
+                {
+                    var name_buf = new byte[name_length];
+                    read_entry = i => {
+                        if (name_length != index.Read (name_buf, 0, name_length))
+                            return null;
+                        var name = Binary.GetCString (name_buf, 0);
+                        var entry = FormatCatalog.Instance.Create<Entry> (name);
+                        index.ReadUInt16();
+                        entry.Size = index.ReadUInt32();
+                        entry.Offset = index.ReadUInt32();
+                        return entry;
+                    };
+                }
+                else
+                {
+                    read_entry = i => {
+                        index.BaseStream.Seek (name_length + 6, SeekOrigin.Current);
+                        index.ReadUInt32(); // throws in case of EOF
+                        var toc_entry = toc_table[i];
+                        var entry = FormatCatalog.Instance.Create<Entry> (toc_entry.Name);
+                        entry.Offset = toc_entry.Offset;
+                        entry.Size = toc_entry.Size;
+                        return entry;
+                    };
+                }
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
                 {
-                    if (name_length != index.Read (name_buf, 0, name_length))
-                        return null;
-                    var name = Binary.GetCString (name_buf, 0);
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
-                    index.ReadUInt16();
-                    entry.Size = index.ReadUInt32();
-                    entry.Offset = index.ReadUInt32();
-                    if (toc_table != null)
-                    {
-                        entry.Offset = toc_table[i].Offset;
-                        entry.Size = toc_table[i].Size;
-                    }
+                    var entry = read_entry (i);
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
                     dir.Add (entry);
@@ -173,13 +188,15 @@ namespace GameRes.Formats.YaneSDK
     }
 
     [Serializable]
-    public struct HibikiTocRecord
+    public class HibikiTocRecord
     {
-        public uint Offset;
-        public uint Size;
+        public string   Name;
+        public uint     Offset;
+        public uint     Size;
 
-        public HibikiTocRecord (uint offset, uint size)
+        public HibikiTocRecord (string name, uint offset, uint size)
         {
+            Name = name;
             Offset = offset;
             Size = size;
         }
