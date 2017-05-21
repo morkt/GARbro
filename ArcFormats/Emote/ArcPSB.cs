@@ -693,6 +693,8 @@ namespace GameRes.Formats.Emote
                 ReadRgba4444 (pixels, stride);
             else if ("RL" == m_info.TexType)
                 ReadRle (pixels, stride);
+            else if ("DXT5" == m_info.TexType)
+                pixels = ReadDxt5();
             else
                 throw new NotImplementedException (string.Format ("PSB texture format '{0}' not implemented", m_info.TexType));
             return ImageData.Create (m_info, PixelFormats.Bgra32, null, pixels, stride);
@@ -798,6 +800,13 @@ namespace GameRes.Formats.Emote
                     dst += count;
                 }
             }
+        }
+
+        byte[] ReadDxt5 ()
+        {
+            var packed = m_input.ReadBytes ((int)m_input.Length);
+            var dxt = new DirectDraw.DxtDecoder (packed, m_info);
+            return dxt.UnpackDXT5();
         }
     }
 }
