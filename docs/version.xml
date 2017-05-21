@@ -12,7 +12,7 @@ New formats:
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>64</FileVersion>
+        <FileVersion>65</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.31.1367"/>
