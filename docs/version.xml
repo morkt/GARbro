@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.4.28</Version>
+        <Version>1.4.29</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
-        <Notes>Updated Chinese translation.
-
-New formats:
+        <Notes>New formats:
+- LINK6 archives variation, AN21 animation
+- DAT archives used in Niizuma Lovely x Cation
 - 'UnityFS' archives and FSB5 audio
 - GRP audio archives
 - more KiriKiri and ShiinaRio encryption schemes
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>65</FileVersion>
+        <FileVersion>66</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.31.1367"/>
