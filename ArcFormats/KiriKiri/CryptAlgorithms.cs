@@ -976,4 +976,49 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, data, pos, count);
         }
     }
+
+    [Serializable]
+    public class PuCaCrypt : ICrypt
+    {
+        public uint[] HashTable;
+        public byte[] KeyTable;
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            if (HashTable != null)
+            {
+                int i = Array.IndexOf (HashTable, entry.Hash);
+                if (i != -1)
+                {
+                    for (int j = 0; j < count; ++j)
+                        buffer[pos+j] ^= KeyTable[i];
+                    return;
+                }
+            }
+            var hash_table = new byte[32];
+            uint hash = entry.Hash;
+            for (int k = 0; k < 32; k += 4)
+            {
+                if (0 != (hash & 1))
+                    hash |= 0x80000000;
+                else
+                    hash &= 0x7FFFFFFF;
+                LittleEndian.Pack (hash, hash_table, k);
+                hash >>= 1;
+            }
+            var key_table = new byte[0x400];
+            for (int l = 0; l < 32; ++l)
+            {
+                for (int m = 0; m < 32; ++m)
+                    key_table[32 * l + m] = (byte)(~hash_table[l] ^ hash_table[m]);
+            }
+            for (int n = 0; n < count; ++n)
+                buffer[pos+n] ^= key_table[(offset + n) & 0x3FF];
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+    }
 }
