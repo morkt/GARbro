@@ -77,9 +77,9 @@ namespace GameRes.Formats.Malie
             return new LibUReader (input);
         }
 
-        public static LibUReader Create (ArcView file, Camellia encryption)
+        public static LibUReader Create (ArcView file, IMalieDecryptor decryptor)
         {
-            var input = new EncryptedStream (file, encryption);
+            var input = new EncryptedStream (file, decryptor);
             return new LibUReader (input);
         }
 

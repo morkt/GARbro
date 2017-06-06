@@ -27,8 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Text;
-using GameRes.Cryptography;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Malie
@@ -115,44 +113,13 @@ namespace GameRes.Formats.Malie
 
     public class MalieArchive : ArcFile
     {
-        public readonly Camellia Encryption;
+        public readonly IMalieDecryptor Decryptor;
 
-        public MalieArchive (ArcView file, ArchiveFormat format, ICollection<Entry> dir, Camellia encryption)
+        public MalieArchive (ArcView file, ArchiveFormat format, ICollection<Entry> dir, IMalieDecryptor decr)
             : base (file, format, dir)
         {
-            Encryption = encryption;
+            Decryptor = decr;
         }
-    }
-
-    [Serializable]
-    public class LibScheme
-    {
-        public uint     DataAlign;
-        public uint[]   Key;
-
-        public LibScheme (uint[] key) : this (0x1000, key)
-        {
-        }
-
-        public LibScheme (uint align, uint[] key)
-        {
-            DataAlign = align;
-            Key = key;
-        }
-
-        public LibScheme (string key) : this (Camellia.GenerateKey (key))
-        {
-        }
-
-        public LibScheme (uint align, string key) : this (align, Camellia.GenerateKey (key))
-        {
-        }
-    }
-
-    [Serializable]
-    public class MalieScheme : ResourceScheme
-    {
-        public Dictionary<string, LibScheme> KnownSchemes;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -167,6 +134,7 @@ namespace GameRes.Formats.Malie
         public DatOpener ()
         {
             Extensions = new string[] { "lib", "dat" };
+            Signatures = new uint[] { 0, 0x3F503FB1 };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -176,19 +144,19 @@ namespace GameRes.Formats.Malie
             var header = new byte[0x10];
             foreach (var scheme in KnownSchemes.Values)
             {
-                var encryption = new Camellia (scheme.Key);
-                ReadEncrypted (file.View, encryption, 0, header, 0, 0x10);
+                var decryptor = scheme.CreateDecryptor();
+                ReadEncrypted (file.View, decryptor, 0, header, 0, 0x10);
                 ILibIndexReader reader;
                 if (Binary.AsciiEqual (header, 0, "LIBP"))
-                    reader = new LibPReader (file, encryption, header, scheme);
+                    reader = new LibPReader (file, decryptor, header, scheme);
                 else if (Binary.AsciiEqual (header, 0, "LIBU"))
-                    reader = LibUReader.Create (file, encryption);
+                    reader = LibUReader.Create (file, decryptor);
                 else
                     continue;
                 using (reader)
                 {
                     if (reader.ReadIndex())
-                        return new MalieArchive (file, this, reader.Dir, encryption);
+                        return new MalieArchive (file, this, reader.Dir, decryptor);
                 }
             }
             return null;
@@ -199,25 +167,25 @@ namespace GameRes.Formats.Malie
             var march = arc as MalieArchive;
             if (null == march)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var input = new EncryptedStream (march.File, march.Encryption);
+            var input = new EncryptedStream (march.File, march.Decryptor);
             return new StreamRegion (input, entry.Offset, entry.Size);
         }
 
         internal abstract class LibIndexReader : ILibIndexReader
         {
-            protected ArcView.Frame m_view;
-            protected readonly long m_max_offset;
-            protected Camellia      m_enc;
-            protected List<Entry>   m_dir = new List<Entry>();
-            protected byte[]        m_header;
+            protected ArcView.Frame     m_view;
+            protected readonly long     m_max_offset;
+            protected IMalieDecryptor   m_dec;
+            protected List<Entry>       m_dir = new List<Entry>();
+            protected byte[]            m_header;
 
             public List<Entry> Dir { get { return m_dir; } }
 
-            protected LibIndexReader (ArcView file, Camellia encryption, byte[] header)
+            protected LibIndexReader (ArcView file, IMalieDecryptor decryptor, byte[] header)
             {
                 m_view = file.View;
                 m_max_offset = file.MaxOffset;
-                m_enc = encryption;
+                m_dec = decryptor;
                 m_header = header;
             }
 
@@ -243,8 +211,8 @@ namespace GameRes.Formats.Malie
             long          m_data_align;
             uint[]        m_offset_table;
 
-            public LibPReader (ArcView file, Camellia encryption, byte[] header, LibScheme scheme)
-                : base (file, encryption, header)
+            public LibPReader (ArcView file, IMalieDecryptor decryptor, byte[] header, LibScheme scheme)
+                : base (file, decryptor, header)
             {
                 m_base_offset = 0;
                 m_data_align = scheme.DataAlign - 1;
@@ -261,10 +229,10 @@ namespace GameRes.Formats.Malie
                 var offsets = new byte[4 * offset_count];
 
                 m_base_offset += 0x10;
-                if (m_index.Length != ReadEncrypted (m_view, m_enc, m_base_offset, m_index, 0, m_index.Length))
+                if (m_index.Length != ReadEncrypted (m_view, m_dec, m_base_offset, m_index, 0, m_index.Length))
                     return false;
                 m_base_offset += m_index.Length;
-                if (offsets.Length != ReadEncrypted (m_view, m_enc, m_base_offset, offsets, 0, offsets.Length))
+                if (offsets.Length != ReadEncrypted (m_view, m_dec, m_base_offset, offsets, 0, offsets.Length))
                     return false;
                 m_offset_table = new uint[offset_count];
                 Buffer.BlockCopy (offsets, 0, m_offset_table, 0, offsets.Length);
@@ -306,7 +274,7 @@ namespace GameRes.Formats.Malie
             }
         }
 
-        private static int ReadEncrypted (ArcView.Frame view, Camellia enc, long offset, byte[] buffer, int index, int length)
+        private static int ReadEncrypted (ArcView.Frame view, IMalieDecryptor dec, long offset, byte[] buffer, int index, int length)
         {
             int offset_pad  = (int)offset & 0xF;
             int aligned_len = (offset_pad + length + 0xF) & ~0xF;    
@@ -328,7 +296,7 @@ namespace GameRes.Formats.Malie
 
             for (int block_count = aligned_len / 0x10; block_count > 0; --block_count)
             {
-                enc.DecryptBlock (offset, aligned_buf, block);
+                dec.DecryptBlock (offset, aligned_buf, block);
                 block  += 0x10;
                 offset += 0x10;
             }
@@ -344,111 +312,5 @@ namespace GameRes.Formats.Malie
             get { return new MalieScheme { KnownSchemes = KnownSchemes }; }
             set { KnownSchemes = ((MalieScheme)value).KnownSchemes; }
         }
-    }
-
-    internal class EncryptedStream : Stream
-    {
-        ArcView.Frame   m_view;
-        Camellia        m_enc;
-        long            m_max_offset;
-        long            m_position = 0;
-        byte[]          m_current_block = new byte[BlockLength];
-        int             m_current_block_length = 0;
-        long            m_current_block_position = 0;
-
-        public const int BlockLength = 0x1000;
-
-        public Camellia Encryption { get { return m_enc; } }
-
-        public EncryptedStream (ArcView mmap, Camellia encryption)
-        {
-            m_view = mmap.CreateFrame();
-            m_enc = encryption;
-            m_max_offset = mmap.MaxOffset;
-        }
-
-        public override int Read (byte[] buf, int index, int count)
-        {
-            int total_read = 0;
-            bool refill_buffer = !(m_position >= m_current_block_position && m_position < m_current_block_position + m_current_block_length);
-            while (count > 0 && m_position < m_max_offset)
-            {
-                if (refill_buffer)
-                {
-                    m_current_block_position = m_position & ~((long)BlockLength-1);
-                    FillBuffer();
-                }
-                int src_offset = (int)m_position & (BlockLength-1);
-                int available = Math.Min (count, m_current_block_length - src_offset);
-                Buffer.BlockCopy (m_current_block, src_offset, buf, index, available);
-                m_position += available;
-                total_read += available;
-                index += available;
-                count -= available;
-                refill_buffer = true;
-            }
-            return total_read;
-        }
-
-        private void FillBuffer ()
-        {
-            m_current_block_length = m_view.Read (m_current_block_position, m_current_block, 0, (uint)BlockLength);
-            for (int offset = 0; offset < m_current_block_length; offset += 0x10)
-            {
-                m_enc.DecryptBlock (m_current_block_position+offset, m_current_block, offset);
-            }
-        }
-
-        #region IO.Stream methods
-        public override bool  CanRead { get { return !m_disposed; } }
-        public override bool CanWrite { get { return false; } }
-        public override bool  CanSeek { get { return !m_disposed; } }
-
-        public override long Length { get { return m_max_offset; } }
-        public override long Position
-        {
-            get { return m_position; }
-            set { m_position = value; }
-        }
-
-        public override long Seek (long pos, SeekOrigin whence)
-        {
-            if (SeekOrigin.Current == whence)
-                m_position += pos;
-            else if (SeekOrigin.End == whence)
-                m_position = m_max_offset + pos;
-            else
-                m_position = pos;
-            return m_position;
-        }
-
-        public override void Write (byte[] buf, int index, int count)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void SetLength (long length)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void Flush ()
-        {
-        }
-        #endregion
-
-        #region IDisposable methods
-        bool m_disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!m_disposed)
-            {
-                if (disposing)
-                    m_view.Dispose();
-                m_disposed = true;
-                base.Dispose();
-            }
-        }
-        #endregion
     }
 }

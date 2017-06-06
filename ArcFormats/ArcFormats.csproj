@@ -114,6 +114,8 @@
     <Compile Include="Kurumi\ImageGRA.cs" />
     <Compile Include="Leaf\ArcPX.cs" />
     <Compile Include="Malie\ArcLIBU.cs" />
+    <Compile Include="Malie\LibScheme.cs" />
+    <Compile Include="Malie\MalieEncryption.cs" />
     <Compile Include="MicroVision\ArcARC.cs" />
     <Compile Include="MicroVision\ArcGSD.cs" />
     <Compile Include="MicroVision\AudioIKM.cs" />
