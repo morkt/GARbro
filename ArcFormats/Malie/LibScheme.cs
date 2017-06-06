@@ -32,7 +32,7 @@ namespace GameRes.Formats.Malie
     [Serializable]
     public abstract class LibScheme
     {
-        public uint     DataAlign;
+        uint     DataAlign;
 
         public LibScheme (uint align)
         {
@@ -40,6 +40,12 @@ namespace GameRes.Formats.Malie
         }
 
         public abstract IMalieDecryptor CreateDecryptor ();
+
+        public virtual long GetAlignedOffset (long offset)
+        {
+            long align = DataAlign - 1;
+            return (offset + align) & ~align;
+        }
     }
 
     [Serializable]

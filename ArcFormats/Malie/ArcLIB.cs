@@ -206,16 +206,16 @@ namespace GameRes.Formats.Malie
 
         internal class LibPReader : LibIndexReader
         {
-            byte[]        m_index;
-            long          m_base_offset;
-            long          m_data_align;
-            uint[]        m_offset_table;
+            byte[]      m_index;
+            long        m_base_offset;
+            uint[]      m_offset_table;
+            LibScheme   m_scheme;
 
             public LibPReader (ArcView file, IMalieDecryptor decryptor, byte[] header, LibScheme scheme)
                 : base (file, decryptor, header)
             {
                 m_base_offset = 0;
-                m_data_align = scheme.DataAlign - 1;
+                m_scheme = scheme;
             }
 
             public override bool ReadIndex ()
@@ -238,7 +238,7 @@ namespace GameRes.Formats.Malie
                 Buffer.BlockCopy (offsets, 0, m_offset_table, 0, offsets.Length);
 
                 m_base_offset += offsets.Length;
-                m_base_offset = (m_base_offset + m_data_align) & ~m_data_align;
+                m_base_offset = m_scheme.GetAlignedOffset (m_base_offset);
 
                 m_dir.Capacity = offset_count;
                 ReadDir ("", 0, 1);
