@@ -61,6 +61,8 @@ namespace GameRes.Formats.Malie
 
         public void DecryptBlock (long block_offset, byte[] data, int index)
         {
+            if (null == data)
+                throw new ArgumentNullException ("data");
             if (index < 0 || index + 0x10 > data.Length)
                 throw new ArgumentOutOfRangeException ("index");
             int offset = (int)block_offset;
