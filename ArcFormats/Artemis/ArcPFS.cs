@@ -52,13 +52,14 @@ namespace GameRes.Formats.Artemis
             int version = file.View.ReadByte (2) - '0';
             switch (version)
             {
-            case 8:     return OpenPf8 (file);
+            case 6:
+            case 8:     return OpenPf (file, version);
             case 2:     return OpenPf2 (file);
             default:    return null;
             }
         }
 
-        ArcFile OpenPf8 (ArcView file)
+        ArcFile OpenPf (ArcView file, int version)
         {
             uint index_size = file.View.ReadUInt32 (3);
             int count = file.View.ReadInt32 (7);
@@ -81,9 +82,13 @@ namespace GameRes.Formats.Artemis
                 index_offset += 8;
                 dir.Add (entry);
             }
+            if (version != 8 && version != 9 && version != 4 && version != 5)
+                return new ArcFile (file, this, dir);
+
+            // key calculated for archive versions 4, 5, 8 and 9
             using (var sha1 = SHA1.Create())
             {
-                var key = sha1.ComputeHash (index); // calculated for archive versions 4, 5, 8 and 9
+                var key = sha1.ComputeHash (index);
                 return new PfsArchive (file, this, dir, key);
             }
         }
