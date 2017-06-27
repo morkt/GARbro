@@ -184,17 +184,16 @@ namespace GameRes.Formats.KiriKiri
                                 entry.Size         = (uint)packed_size;
                                 entry.UnpackedSize = (uint)file_size;
 
-                                int name_size = header.ReadInt16();
-                                if (name_size > 0x100 || name_size <= 0)
-                                {
-                                    goto NextEntry;
-                                }
                                 if (entry.IsEncrypted || ForceEncryptionQuery)
                                     entry.Cipher = crypt_algorithm.Value;
                                 else
                                     entry.Cipher = NoCryptAlgorithm;
 
-                                var name = new string (header.ReadChars (name_size));
+                                var name = entry.Cipher.ReadName (header);
+                                if (null == name)
+                                {
+                                    goto NextEntry;
+                                }
                                 if (entry.Cipher.ObfuscatedIndex && ObfuscatedPathRe.IsMatch (name))
                                 {
                                     goto NextEntry;

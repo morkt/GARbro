@@ -71,6 +71,18 @@ namespace GameRes.Formats.KiriKiri
         public virtual void Init (ArcFile arc)
         {
         }
+
+        /// <summary>
+        /// Read entry name from archive index.
+        /// </summary>
+        public virtual string ReadName (BinaryReader header)
+        {
+            int name_size = header.ReadInt16();
+            if (name_size > 0 && name_size <= 0x100)
+                return new string (header.ReadChars (name_size));
+            else
+                return null;
+        }
     }
 
     [Serializable]
@@ -1020,5 +1032,97 @@ namespace GameRes.Formats.KiriKiri
         {
             Decrypt (entry, offset, buffer, pos, count);
         }
+    }
+
+    [Serializable]
+    public class RhapsodyCrypt : ICrypt
+    {
+        public string FileListName { get; set; }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var key = new byte[12];
+            LittleEndian.Pack (entry.Hash, key, 0);
+            LittleEndian.Pack (0x6E1DA9B2u, key, 4);
+            LittleEndian.Pack (0x0040C800u, key, 8);
+            int k = (int)(offset % 12);
+            for (int i = 0; i < count; ++i)
+            {
+                buffer[pos+i] ^= key[k++];
+                if (12 == k)
+                    k = 0;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+
+        public override string ReadName (BinaryReader header)
+        {
+            if (null == KnownNames)
+                ReadNames();
+            uint key = header.ReadUInt32();
+            uint name_hash = header.ReadUInt32() ^ key;
+            string name;
+            if (KnownNames.TryGetValue (name_hash, out name))
+                return name;
+            uint ext_hash = header.ReadUInt32() ^ key;
+            name = name_hash.ToString ("X8");
+            switch (ext_hash)
+            {
+            case 0x01854675: name += ".png"; break; // GetNameHash (".png")
+            case 0x03D435DE: name += ".map"; break; // GetNameHash (".map")
+            case 0x2D1F13E0: name += ".asd"; break; // GetNameHash (".asd")
+            case 0x482F4319: name += ".tjs"; break; // GetNameHash (".tjs")
+            case 0xB01C48CA: name += ".ks";  break; // GetNameHash (".ks")
+            case 0xC0F7DFB2: name += ".wav"; break; // GetNameHash (".wav")
+            case 0xE3A31D19: name += ".jpg"; break; // GetNameHash (".jpg")
+            case 0xE7F3FEEB: name += ".ogg"; break; // GetNameHash (".ogg")
+            default: name += ext_hash.ToString ("X8"); break;
+            }
+            return name;
+        }
+
+        static uint GetNameHash (string name)
+        {
+            uint hash = 0;
+            for (int i = 0; i < name.Length; ++i)
+            {
+                int c = char.ToLowerInvariant (name[i]);
+                hash = 0x1000193u * hash ^ (byte)c;
+                hash = 0x1000193u * hash ^ (byte)(c >> 8);
+            }
+            return hash;
+        }
+
+        void ReadNames ()
+        {
+            var dir = FormatCatalog.Instance.DataDirectory;
+            var names_file = Path.Combine (dir, FileListName);
+            var names = new Dictionary<uint, string>();
+            try
+            {
+                using (var reader = new StreamReader (names_file))
+                {
+                    for (;;)
+                    {
+                        var name = reader.ReadLine();
+                        if (null == name)
+                            break;
+                        names[GetNameHash (name)] = name;
+                    }
+                }
+            }
+            catch (Exception X)
+            {
+                System.Diagnostics.Trace.WriteLine (X.Message, "[RhapsodyCrypt]");
+            }
+            KnownNames = names;
+        }
+
+        [NonSerialized]
+        Dictionary<uint, string> KnownNames = null;
     }
 }
