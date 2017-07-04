@@ -2,7 +2,7 @@
 //! \date       Fri Jun 17 18:49:04 2016
 //! \brief      Tinker Bell encrypted image file.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -24,9 +24,10 @@
 //
 
 using System;
-using System.ComponentModel.Composition;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace GameRes.Formats.Cyberworks
 {
@@ -52,11 +53,13 @@ namespace GameRes.Formats.Cyberworks
         AImageScheme    m_scheme;
         ImageData       m_image;
         int[]           m_header;
+        int             m_type;
 
         public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
         public ImageFormat SourceFormat { get { return null; } }
         public ImageMetaData       Info { get { return m_info; } }
         public byte[]          Baseline { get; set; }
+        public int                 Type { get { return m_type; } }
 
         public ImageData Image
         {
@@ -77,10 +80,11 @@ namespace GameRes.Formats.Cyberworks
 
         public byte[] Data { get { return m_output; } }
 
-        public AImageReader (IBinaryStream input, AImageScheme scheme)
+        public AImageReader (IBinaryStream input, AImageScheme scheme, int type = 'a')
         {
             m_input = input;
             m_scheme = scheme;
+            m_type = type;
         }
 
         internal int[] ReadHeader ()
@@ -97,6 +101,65 @@ namespace GameRes.Formats.Cyberworks
             Info.Width  = (uint)m_header[4];
             Info.Height = (uint)m_header[3];
             return m_header;
+        }
+
+        /// <summary>
+        /// Search archive <paramref name="arc"/> for baseline image.
+        /// </summary>
+        internal void ReadBaseline (BellArchive arc, Entry entry)
+        {
+            var header = ReadHeader();
+            if (!((header[0] & 1) == 1 && 'd' == this.Type
+                  || header[0] == 1 && 'a' == this.Type))
+                return;
+            var scheme = arc.Scheme;
+            var dir = (List<Entry>)arc.Dir;
+            int i = dir.IndexOf (entry);
+            while (--i >= 0 && "image" == dir[i].Type)
+            {
+                using (var input = arc.OpenEntry (dir[i]))
+                {
+                    int type = input.ReadByte();
+                    if ('d' == type)
+                        continue;
+                    if ('a' == type)
+                    {
+                        int id = input.ReadByte();
+                        if (id != scheme.Value2)
+                            break;
+                        using (var bin = new BinaryStream (input, dir[i].Name))
+                        using (var base_image = new AImageReader (bin, scheme))
+                        {
+                            var base_header = base_image.ReadHeader();
+                            if (1 == base_header[0])
+                                continue;
+                            // check if image width/height are the same
+                            if (base_header[3] == header[3] && base_header[4] == header[4])
+                            {
+                                base_image.Unpack();
+                                Baseline = base_image.Data;
+                            }
+                        }
+                    }
+                    else if ('b' == type || 'c' == type)
+                    {
+                        var size_buf = new byte[4];
+                        input.Read (size_buf, 0 , 4);
+                        var decoder = new PngBitmapDecoder (input, BitmapCreateOptions.None,
+                                                            BitmapCacheOption.OnLoad);
+                        BitmapSource frame = decoder.Frames[0];
+                        Info.Width = (uint)frame.PixelWidth;
+                        Info.Height = (uint)frame.PixelHeight;
+                        if (frame.Format.BitsPerPixel != 32)
+                            frame = new FormatConvertedBitmap (frame, PixelFormats.Bgra32, null, 0);
+                        int stride = frame.PixelWidth * 4;
+                        var pixels = new byte[stride * frame.PixelHeight];
+                        frame.CopyPixels (pixels, stride, 0);
+                        Baseline = pixels;
+                    }
+                    break;
+                }
+            }
         }
 
         public void Unpack ()
@@ -118,6 +181,8 @@ namespace GameRes.Formats.Cyberworks
             {
                 if (0 == bits_size)
                     CopyV6 (unpacked_size, header[6]);
+                else if (1 == (flags & 1) && 'd' == m_type && Baseline != null)
+                    UnpackV6d (bits_size, bits_size + header[6]);
                 else
                     UnpackV6 (bits_size, data_offset, data_offset + header[6]);
             }
@@ -303,6 +368,34 @@ namespace GameRes.Formats.Cyberworks
                 }
                 else
                     bit <<= 1;
+            }
+        }
+
+        void UnpackV6d (int bits_size, int rgb_offset)
+        {
+            Info.BPP = 32;
+            var rgb_map = m_input.ReadBytes (bits_size);
+            var alpha = m_input.ReadBytes (rgb_offset - bits_size);
+            int plane_size = Math.Min (Baseline.Length, bits_size*8);
+            m_output = Baseline;
+            int bit = 1;
+            int bit_src = 0;
+            int alpha_src = 0;
+            int dst = 0;
+            for (int i = 0; i < plane_size; ++i)
+            {
+                if ((bit & rgb_map[bit_src]) != 0)
+                {
+                    m_input.Read (m_output, dst, 3);
+                    m_output[dst+3] = alpha[alpha_src++];
+                }
+                dst += 4;
+                bit <<= 1;
+                if (0x100 == bit)
+                {
+                    ++bit_src;
+                    bit = 1;
+                }
             }
         }
 

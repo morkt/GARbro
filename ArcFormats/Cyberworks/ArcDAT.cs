@@ -2,7 +2,7 @@
 //! \date       Thu Jun 16 13:48:04 2016
 //! \brief      Tinker Bell resource archive.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -272,8 +272,12 @@ namespace GameRes.Formats.Cyberworks
             try
             {
                 var reader = DecryptImage (input, barc.Scheme);
-                if (BlendOverlayImages && reader is AImageReader)
-                    reader = BlendAImage (barc, entry, reader as AImageReader);
+                if (BlendOverlayImages)
+                {
+                    var overlay = reader as AImageReader;
+                    if (overlay != null)
+                        overlay.ReadBaseline (barc, entry);
+                }
                 return reader;
             }
             catch
@@ -294,53 +298,16 @@ namespace GameRes.Formats.Cyberworks
                     input = BinaryStream.FromStream (new StreamRegion (input.AsStream, 5, img_size), input.Name);
                 }
             }
-            else if (scheme != null && 'a' == type && input.Length > 21)
+            else if (scheme != null && ('a' == type || 'd' == type) && input.Length > 21)
             {
                 int id = input.ReadByte();
                 if (id == scheme.Value2)
                 {
-                    return new AImageReader (input, scheme);
+                    return new AImageReader (input, scheme, type);
                 }
             }
             input.Position = 0;
             return new ImageFormatDecoder (input);
-        }
-
-        IImageDecoder BlendAImage (BellArchive arc, Entry entry, AImageReader overlay)
-        {
-            var header = overlay.ReadHeader();
-            if (header[0] != 1)
-                return overlay;
-            var scheme = arc.Scheme;
-            var dir = (List<Entry>)arc.Dir;
-            int i = dir.IndexOf (entry);
-            while (--i >= 0 && "image" == dir[i].Type)
-            {
-                using (var input = OpenEntry (arc, dir[i]))
-                {
-                    int type = input.ReadByte();
-                    if (type != 'a')
-                        break;
-                    int id = input.ReadByte();
-                    if (id != scheme.Value2)
-                        break;
-                    using (var bin = new BinaryStream (input, dir[i].Name))
-                    using (var base_image = new AImageReader (bin, scheme))
-                    {
-                        var base_header = base_image.ReadHeader();
-                        if (1 == base_header[0])
-                            continue;
-                        // check if image width/height are the same
-                        if (base_header[3] == header[3] && base_header[4] == header[4])
-                        {
-                            base_image.Unpack();
-                            overlay.Baseline = base_image.Data;
-                        }
-                        break;
-                    }
-                }
-            }
-            return overlay;
         }
 
         internal AImageScheme QueryScheme (string arc_name)
