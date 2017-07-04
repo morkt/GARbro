@@ -2,7 +2,7 @@
 //! \date       Thu Oct 08 00:18:56 2015
 //! \brief      DxLib engine archives with 'DX' signature.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Text;
 using GameRes.Utility;
 
 namespace GameRes.Formats.DxLib
@@ -35,11 +36,13 @@ namespace GameRes.Formats.DxLib
     internal class DxArchive : ArcFile
     {
         public readonly byte[] Key;
+        public readonly int Version;
 
-        public DxArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, byte[] key)
+        public DxArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, byte[] key, int version)
             : base (arc, impl, dir)
         {
             Key = key;
+            Version = version;
         }
     }
 
@@ -60,8 +63,8 @@ namespace GameRes.Formats.DxLib
 
         public DxOpener ()
         {
-            Extensions = new string[] { "dxa", "hud", "usi", "med", "dat" };
-            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0x5524F211, 0 };
+            Extensions = new string[] { "dxa", "hud", "usi", "med", "dat", "bin" };
+            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0x5524F211, 0x69FC5FE4, 0 };
         }
 
         public static IList<byte[]> KnownKeys = new List<byte[]>();
@@ -76,7 +79,7 @@ namespace GameRes.Formats.DxLib
                 uint sig_key = LittleEndian.ToUInt32 (key, 0);
                 uint sig_test = signature ^ sig_key;
                 int version = (int)(sig_test >> 16);
-                if (0x5844 == (sig_test & 0xFFFF) && version <= 4) // 'DX'
+                if (0x5844 == (sig_test & 0xFFFF) && version <= 6) // 'DX'
                 {
                     var dir = ReadIndex (file, version, key);
                     if (null != dir)
@@ -87,7 +90,7 @@ namespace GameRes.Formats.DxLib
                             KnownKeys.Remove (key);
                             KnownKeys.Insert (0, key);
                         }
-                        return new DxArchive (file, this, dir, key);
+                        return new DxArchive (file, this, dir, key, version);
                     }
                     return null;
                 }
@@ -124,7 +127,7 @@ namespace GameRes.Formats.DxLib
                     if (null != dir)
                     {
                         KnownKeys.Insert (0, key);
-                        return new DxArchive (file, this, dir, key);
+                        return new DxArchive (file, this, dir, key, version);
                     }
                 }
                 catch { /* ignore parse errors */ }
@@ -138,9 +141,14 @@ namespace GameRes.Formats.DxLib
             var dx_arc = arc as DxArchive;
             if (null == dx_arc)
                 return input;
-            input = new EncryptedStream (input, entry.Offset, dx_arc.Key);
-            var dx_ent = entry as PackedEntry;
-            if (null == dx_ent || !dx_ent.IsPacked)
+            var dx_ent = (PackedEntry)entry;
+            long dec_offset = entry.Offset;
+            if (dx_arc.Version > 5)
+            {
+                dec_offset = dx_ent.UnpackedSize;
+            }
+            input = new EncryptedStream (input, dec_offset, dx_arc.Key);
+            if (!dx_ent.IsPacked)
                 return input;
             using (input)
             {
@@ -215,25 +223,52 @@ namespace GameRes.Formats.DxLib
 
         List<Entry> ReadIndex (ArcView file, int version, byte[] key)
         {
+            DxHeader dx = null;
+            if (version <= 4)
+                dx = ReadArcHeaderV4 (file, version, key);
+            else if (6 == version)
+                dx = ReadArcHeaderV6 (file, version, key);
+            if (null == dx || dx.DirTable >= dx.IndexSize || dx.FileTable >= dx.IndexSize)
+                return null;
+            using (var encrypted = file.CreateStream (dx.IndexOffset, dx.IndexSize))
+            using (var index = new EncryptedStream (encrypted, 6 == version ? 0 : dx.IndexOffset, key))
+            using (var reader = IndexReader.Create (dx, version, index))
+            {
+                return reader.Read();
+            }
+        }
+
+        DxHeader ReadArcHeaderV4 (ArcView file, int version, byte[] key)
+        {
             var header = file.View.ReadBytes (4, 0x18);
             if (0x18 != header.Length)
                 return null;
             Decrypt (header, 0, header.Length, 4, key);
-            var dx = new DxHeader {
+            return new DxHeader {
                 IndexSize  = LittleEndian.ToUInt32 (header, 0),
                 BaseOffset = LittleEndian.ToUInt32 (header, 4),
                 IndexOffset = LittleEndian.ToUInt32 (header, 8),
-                FileTable  = LittleEndian.ToUInt32 (header, 0x0c),
+                FileTable  = LittleEndian.ToUInt32 (header, 0x0C),
                 DirTable   = LittleEndian.ToUInt32 (header, 0x10),
+                CodePage   = 932,
             };
-            if (dx.DirTable >= dx.IndexSize || dx.FileTable >= dx.IndexSize)
+        }
+
+        DxHeader ReadArcHeaderV6 (ArcView file, int version, byte[] key)
+        {
+            var header = file.View.ReadBytes (4, 0x2C);
+            if (0x2C != header.Length)
                 return null;
-            using (var encrypted = file.CreateStream (dx.IndexOffset, dx.IndexSize))
-            using (var index = new EncryptedStream (encrypted, dx.IndexOffset, key))
-            using (var reader = new IndexReader (dx, version, index))
-            {
-                return reader.Read();
-            }
+            Decrypt (header, 0, header.Length, 4, key);
+            Dump.Write (header);
+            return new DxHeader {
+                IndexSize  = LittleEndian.ToUInt32 (header, 0),
+                BaseOffset = LittleEndian.ToInt64 (header, 4),
+                IndexOffset = LittleEndian.ToInt64 (header, 0x0C),
+                FileTable  = (uint)LittleEndian.ToInt64 (header, 0x14),
+                DirTable   = (uint)LittleEndian.ToInt64 (header, 0x1C),
+                CodePage   = LittleEndian.ToInt32 (header, 0x24),
+            };
         }
 
         internal static void Decrypt (byte[] data, int index, int count, long offset, byte[] key)
@@ -291,38 +326,79 @@ namespace GameRes.Formats.DxLib
         public uint IndexSize;
         public uint FileTable;
         public uint DirTable;
+        public int  CodePage;
     }
 
-    internal class DxDirectory
+    internal abstract class IndexReader : IDisposable
     {
-        public int DirOffset;
-        public int ParentDirOffset;
-        public int FileCount;
-        public int FileTable;
-    }
+        protected readonly int  m_version;
+        protected DxHeader      m_header;
+        protected BinaryStream  m_input;
+        protected Encoding      m_encoding;
+        protected List<Entry>   m_dir = new List<Entry>();
 
-    internal sealed class IndexReader : IDisposable
-    {
-        readonly int    m_version;
-        readonly int    m_entry_size;
-        DxHeader        m_header;
-        BinaryReader    m_input;
-        List<Entry>     m_dir = new List<Entry>();
-
-        public List<Entry> Dir { get { return m_dir; } }
-
-        public IndexReader (DxHeader header, int version, Stream input)
+        protected IndexReader (DxHeader header, int version, Stream input)
         {
-            m_version = version;
-            m_entry_size = m_version >= 2 ? 0x2C : 0x28;
             m_header = header;
-            m_input = new ArcView.Reader (input);
+            m_version = version;
+            m_input = new BinaryStream (input, "");
+            m_encoding = Encoding.GetEncoding (header.CodePage);
+        }
+
+        public static IndexReader Create (DxHeader header, int version, Stream input)
+        {
+            if (version <= 4)
+                return new IndexReaderV2 (header, version, input);
+            else if (6 == version)
+                return new IndexReaderV6 (header, version, input);
+            else
+                throw new InvalidFormatException ("Not supported DX archive version.");
         }
 
         public List<Entry> Read ()
         {
             ReadFileTable ("", 0);
             return m_dir;
+        }
+
+        protected abstract void ReadFileTable (string root, long table_offset);
+
+        protected string ExtractFileName (long table_offset)
+        {
+            m_input.Position = table_offset;
+            int name_offset = m_input.ReadUInt16() * 4 + 4;
+            m_input.Position = table_offset + name_offset;
+            return m_input.ReadCString (m_encoding);
+        }
+
+        #region IDisposable Members
+        bool disposed = false;
+        public void Dispose ()
+        {
+            if (!disposed)
+            {
+                m_input.Dispose();
+                disposed = true;
+            }
+        }
+        #endregion
+    }
+
+    internal sealed class IndexReaderV2 : IndexReader
+    {
+        readonly int    m_entry_size;
+
+        public IndexReaderV2 (DxHeader header, int version, Stream input) : base (header, version, input)
+        {
+            m_entry_size = m_version >= 2 ? 0x2C : 0x28;
+        }
+
+        private class DxDirectory
+        {
+            public int DirOffset;
+            public int ParentDirOffset;
+            public int FileCount;
+            public int FileTable;
         }
 
         DxDirectory ReadDirEntry ()
@@ -335,22 +411,22 @@ namespace GameRes.Formats.DxLib
             return dir;
         }
 
-        void ReadFileTable (string root, uint table_offset)
+        protected override void ReadFileTable (string root, long table_offset)
         {
-            m_input.BaseStream.Position = m_header.DirTable + table_offset;
+            m_input.Position = m_header.DirTable + table_offset;
             var dir = ReadDirEntry();
             if (dir.DirOffset != -1 && dir.ParentDirOffset != -1)
             {
-                m_input.BaseStream.Position = m_header.FileTable + dir.DirOffset;
+                m_input.Position = m_header.FileTable + dir.DirOffset;
                 root = Path.Combine (root, ExtractFileName (m_input.ReadUInt32()));
             }
             long current_pos = m_header.FileTable + dir.FileTable;
             for (int i = 0; i < dir.FileCount; ++i)
             {
-                m_input.BaseStream.Position = current_pos;
+                m_input.Position = current_pos;
                 uint name_offset = m_input.ReadUInt32();
                 uint attr = m_input.ReadUInt32();
-                m_input.BaseStream.Seek (0x18, SeekOrigin.Current);
+                m_input.Seek (0x18, SeekOrigin.Current);
                 uint offset = m_input.ReadUInt32();
                 if (0 != (attr & 0x10)) // FILE_ATTRIBUTE_DIRECTORY
                 {
@@ -377,26 +453,75 @@ namespace GameRes.Formats.DxLib
                 current_pos += m_entry_size;
             }
         }
+    }
 
-        string ExtractFileName (uint table_offset)
+    internal sealed class IndexReaderV6 : IndexReader
+    {
+        readonly int    m_entry_size;
+
+        public IndexReaderV6 (DxHeader header, int version, Stream input) : base (header, version, input)
         {
-            m_input.BaseStream.Position = table_offset;
-            int name_offset = m_input.ReadUInt16() * 4 + 4;
-            m_input.BaseStream.Position = table_offset + name_offset;
-            return m_input.BaseStream.ReadCString();
+            m_entry_size = 0x40;
         }
 
-        #region IDisposable Members
-        bool disposed = false;
-        public void Dispose ()
+        private class DxDirectory
         {
-            if (!disposed)
+            public long DirOffset;
+            public long ParentDirOffset;
+            public int  FileCount;
+            public long FileTable;
+        }
+
+        DxDirectory ReadDirEntry ()
+        {
+            var dir = new DxDirectory();
+            dir.DirOffset = m_input.ReadInt64();
+            dir.ParentDirOffset = m_input.ReadInt64();
+            dir.FileCount = (int)m_input.ReadInt64();
+            dir.FileTable = m_input.ReadInt64();
+            return dir;
+        }
+
+        protected override void ReadFileTable (string root, long table_offset)
+        {
+            m_input.Position = m_header.DirTable + table_offset;
+            var dir = ReadDirEntry();
+            if (dir.DirOffset != -1 && dir.ParentDirOffset != -1)
             {
-                m_input.Dispose();
-                disposed = true;
+                m_input.Position = m_header.FileTable + dir.DirOffset;
+                root = Path.Combine (root, ExtractFileName (m_input.ReadInt64()));
+            }
+            long current_pos = m_header.FileTable + dir.FileTable;
+            for (int i = 0; i < dir.FileCount; ++i)
+            {
+                m_input.Position = current_pos;
+                var name_offset = m_input.ReadInt64();
+                uint attr = (uint)m_input.ReadInt64();
+                m_input.Seek (0x18, SeekOrigin.Current);
+                var offset = m_input.ReadInt64();
+                if (0 != (attr & 0x10)) // FILE_ATTRIBUTE_DIRECTORY
+                {
+                    if (0 == offset || table_offset == offset)
+                        throw new InvalidFormatException ("Infinite recursion in DXA directory index");
+                    ReadFileTable (root, offset);
+                }
+                else
+                {
+                    var size = m_input.ReadInt64();
+                    var packed_size = m_input.ReadInt64();
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (Path.Combine (root, ExtractFileName (name_offset)));
+                    entry.Offset = m_header.BaseOffset + offset;
+                    entry.UnpackedSize = (uint)size;
+                    entry.IsPacked = -1 != packed_size;
+                    if (entry.IsPacked)
+                        entry.Size = (uint)packed_size;
+                    else
+                        entry.Size = (uint)size;
+                    m_dir.Add (entry);
+                }
+                current_pos += m_entry_size;
             }
         }
-        #endregion
     }
 
     internal class EncryptedStream : ProxyStream
