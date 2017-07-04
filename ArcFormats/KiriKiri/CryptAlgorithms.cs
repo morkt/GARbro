@@ -1076,6 +1076,7 @@ namespace GameRes.Formats.KiriKiri
             case 0x03D435DE: name += ".map"; break; // GetNameHash (".map")
             case 0x2D1F13E0: name += ".asd"; break; // GetNameHash (".asd")
             case 0x482F4319: name += ".tjs"; break; // GetNameHash (".tjs")
+            case 0x58924012: name += ".txt"; break; // GetNameHash (".txt")
             case 0xB01C48CA: name += ".ks";  break; // GetNameHash (".ks")
             case 0xC0F7DFB2: name += ".wav"; break; // GetNameHash (".wav")
             case 0xE3A31D19: name += ".jpg"; break; // GetNameHash (".jpg")
