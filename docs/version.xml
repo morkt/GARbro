@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.4.29</Version>
+        <Version>1.4.30</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
         <Notes>New formats:
-- LINK6 archives variation, AN21 animation
-- DAT archives used in Niizuma Lovely x Cation
-- 'UnityFS' archives and FSB5 audio
-- GRP audio archives
-- more KiriKiri and ShiinaRio encryption schemes
+- 'pf6' archives
+- DxLib version 6 archives (Detective Seven)
+- updated encryption schemes for malie LIBP archives
+- added more KiriKiri and ShiinaRio encryption schemes
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>71</FileVersion>
+        <FileVersion>72</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.33.1392"/>
