@@ -2,7 +2,7 @@
 //! \date       Mon Oct 03 04:16:11 2016
 //! \brief      Primel the Adventure System resource archive.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -98,6 +98,14 @@ namespace GameRes.Formats.Primel
 
         public void Unpack ()
         {
+            if (0x800 == (m_info.Flags & 0xFF00))
+                UnpackV2();
+            else
+                UnpackV1();
+        }
+
+        void UnpackV1 ()
+        {
             m_input.Input.Position = 0x30;
             int pixel_size = m_info.BPP / 8;
             int blocks_w = (int)(m_info.Width + 7) / 8;
@@ -148,6 +156,63 @@ namespace GameRes.Formats.Primel
             }
         }
 
+        void UnpackV2 ()
+        {
+            m_input.Input.Position = 0x30;
+            int pixel_size = m_info.BPP / 8;
+            int blocks_w = (int)(m_info.Width + 7) / 8;
+            int blocks_h = (int)(m_info.Height + 7) / 8;
+            short[,] block = new short[pixel_size, 64];
+
+            for (int by = 0; by < blocks_h; ++by)
+            {
+                int dst_line = by * 8 * m_stride;
+                for (int bx = 0; bx < blocks_w; ++bx)
+                {
+                    int dst_block = dst_line + bx * 8 * pixel_size;
+
+                    for (int i = 0; i < pixel_size; ++i)
+                    {
+                        for (int j = 0; j < 64; ++j)
+                            block[i,j] = 0;
+                        RestoreBlockV2 (block, i);
+                    }
+
+                    for (int y = 0; y < 8; ++y)
+                    {
+                        if (by + 1 == blocks_h && (by * 8 + y) >= m_info.Height)
+                            break;
+
+                        int src = y * 8;
+                        int dst = dst_block + y * m_stride;
+                        for (int x = 0; x < 8; ++x)
+                        {
+                            if (bx + 1 == blocks_w && (bx * 8 + x) >= m_info.Width)
+                                break;
+                            if (4 == pixel_size)
+                            {
+                                m_output[dst + x * 4 + 2] = (byte)block[0, src+x];
+                                m_output[dst + x * 4 + 1] = (byte)block[1, src+x];
+                                m_output[dst + x * 4]     = (byte)block[2, src+x];
+                                m_output[dst + x * 4 + 3] = (byte)block[3, src+x];
+                            }
+                            else if (3 == pixel_size)
+                            {
+                                m_output[dst + x * 3 + 2] = (byte)block[0, src+x];
+                                m_output[dst + x * 3 + 1] = (byte)block[1, src+x];
+                                m_output[dst + x * 3]     = (byte)block[2, src+x];
+                            }
+                            else
+                            {
+                                var val = block[0, src+x];
+                                m_output[dst + x] = (byte)val;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         void RestoreBlock (short[,] block, int n)
         {
             int row = 8;
@@ -168,12 +233,71 @@ namespace GameRes.Formats.Primel
             }
         }
 
+        void RestoreBlockV2 (short[,] block, int plane)
+        {
+            int skip;      
+            for (int i = 0; i < 64; ++i)
+            {
+                int n = GetIntV2 (out skip);
+                if (n != 0)
+                    block[plane, ZigzagOrder[i]] = (short)n;
+                else if (0 == skip)
+                    break;
+                else
+                    i += skip - 1;
+            }
+            for (int row = 0; row < 64; row += 8)
+            for (int x = 1; x < 8; ++x)
+            {
+                block[plane, row+x] += block[plane, row+x-1];
+            }
+            for (int row = 8; row < 64; row += 8)
+            for (int x = 0; x < 8; ++x)
+            {
+                block[plane, row+x] += block[plane, row-8+x];
+            }
+        }
+
         int GetInt ()
         {
             int count = m_input.GetBits (4);
             switch (count)
             {
             case 0: return 0;
+            case 1: return 1;
+
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                return m_input.GetBits (count - 1) + (1 << (count - 1));
+
+            case 8: return -1;
+            case 9: return -2;
+
+            default:
+                return m_input.GetBits (count - 9) - (2 << (count - 9));
+
+            case -1: throw new EndOfStreamException();
+            }
+        }
+
+        int GetIntV2 (out int repeat)
+        {
+            int count = m_input.GetBits (4);
+            repeat = 0;
+            switch (count)
+            {
+            case 0:
+                repeat = 1;
+                while (repeat < 16 && 1 == m_input.GetNextBit())
+                    ++repeat;
+                if (16 == repeat)
+                    repeat = 0;
+                return 0;
+                
             case 1: return 1;
 
             case 2:
