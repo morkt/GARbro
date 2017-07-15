@@ -260,7 +260,6 @@ namespace GameRes.Formats.DxLib
             if (0x2C != header.Length)
                 return null;
             Decrypt (header, 0, header.Length, 4, key);
-            Dump.Write (header);
             return new DxHeader {
                 IndexSize  = LittleEndian.ToUInt32 (header, 0),
                 BaseOffset = LittleEndian.ToInt64 (header, 4),
