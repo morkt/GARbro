@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
@@ -32,8 +33,15 @@ namespace GameRes.Formats.Valkyria
 {
     internal class Mg2MetaData : ImageMetaData
     {
-        public int ImageLength;
-        public int AlphaLength;
+        public int          ImageLength;
+        public int          AlphaLength;
+        public IMg2Scheme   Scheme;
+    }
+
+    internal interface IMg2Scheme
+    {
+        Mg2EncryptedStream CreateStream (Stream main, int offset, int length);
+        ImageData CreateImage (BitmapSource bitmap, ImageMetaData info);
     }
 
     [Export(typeof(ImageFormat))]
@@ -43,44 +51,54 @@ namespace GameRes.Formats.Valkyria
         public override string Description { get { return "Valkyria image format"; } }
         public override uint     Signature { get { return 0x4F43494D; } } // 'MICO'
 
+        static readonly IMg2Scheme[] KnownSchemes = { new Mg2SchemeV1(), new Mg2SchemeV2() };
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x10);
             if (!header.AsciiEqual (4, "CG01"))
                 return null;
             int length = header.ToInt32 (8);
-            using (var input = new Mg2EncryptedStream (file.AsStream, 0x10, length))
-            using (var png = new BinaryStream (input, file.Name))
+            foreach (var scheme in KnownSchemes)
             {
-                var info = Png.ReadMetaData (png);
-                if (null == info)
-                    return null;
-                return new Mg2MetaData
+                using (var input = scheme.CreateStream (file.AsStream, 0x10, length))
+                using (var png = new BinaryStream (input, file.Name))
                 {
-                    Width = info.Width,
-                    Height = info.Height,
-                    OffsetX = info.OffsetX,
-                    OffsetY = info.OffsetY,
-                    BPP = info.BPP,
-                    ImageLength = length,
-                    AlphaLength = header.ToInt32 (12)
-                };
+                    var info = Png.ReadMetaData (png);
+                    if (null == info)
+                        continue;
+                    return new Mg2MetaData
+                    {
+                        Width = info.Width,
+                        Height = info.Height,
+                        OffsetX = info.OffsetX,
+                        OffsetY = info.OffsetY,
+                        BPP = info.BPP,
+                        ImageLength = length,
+                        AlphaLength = header.ToInt32 (12),
+                        Scheme = scheme,
+                    };
+                }
             }
+            return null;
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (Mg2MetaData)info;
+            var frame = ReadBitmapSource (file.AsStream, meta);
+            return meta.Scheme.CreateImage (frame, meta);
+        }
+
+        BitmapSource ReadBitmapSource (Stream file, Mg2MetaData meta)
+        {
             BitmapSource frame;
-            using (var input = new Mg2EncryptedStream (file.AsStream, 0x10, meta.ImageLength))
+            using (var input = meta.Scheme.CreateStream (file, 0x10, meta.ImageLength))
             {
                 var decoder = new PngBitmapDecoder (input, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 frame = decoder.Frames[0];
                 if (0 == meta.AlphaLength)
-                {
-                    frame.Freeze();
-                    return new ImageData (frame, info);
-                }
+                    return frame;
             }
             if (frame.Format.BitsPerPixel != 32)
                 frame = new FormatConvertedBitmap (frame, PixelFormats.Bgr32, null, 0);
@@ -88,12 +106,14 @@ namespace GameRes.Formats.Valkyria
             var pixels = new byte[stride * (int)meta.Height];
             frame.CopyPixels (pixels, stride, 0);
 
-            using (var input = new Mg2EncryptedStream (file.AsStream, 0x10+meta.ImageLength, meta.AlphaLength))
+            using (var input = meta.Scheme.CreateStream (file, 0x10+meta.ImageLength, meta.AlphaLength))
             {
                 var decoder = new PngBitmapDecoder (input, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 BitmapSource alpha_frame = decoder.Frames[0];
                 if (alpha_frame.PixelWidth != frame.PixelWidth || alpha_frame.PixelHeight != frame.PixelHeight)
-                    return ImageData.Create (info, PixelFormats.Bgr32, null, pixels, stride);
+                    return BitmapSource.Create ((int)meta.Width, (int)meta.Height,
+                                                ImageData.DefaultDpiX, ImageData.DefaultDpiY,
+                                                PixelFormats.Bgr32, null, pixels, stride);
 
                 alpha_frame = new FormatConvertedBitmap (alpha_frame, PixelFormats.Gray8, null, 0);
                 var alpha = new byte[alpha_frame.PixelWidth * alpha_frame.PixelHeight];
@@ -104,7 +124,9 @@ namespace GameRes.Formats.Valkyria
                 {
                     pixels[dst] = alpha[src++];
                 }
-                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, stride);
+                return BitmapSource.Create ((int)meta.Width, (int)meta.Height,
+                                            ImageData.DefaultDpiX, ImageData.DefaultDpiY,
+                                            PixelFormats.Bgra32, null, pixels, stride);
             }
         }
 
@@ -117,11 +139,23 @@ namespace GameRes.Formats.Valkyria
     internal class Mg2EncryptedStream : StreamRegion
     {
         readonly int    m_threshold;
+        readonly byte   m_key;
 
-        public Mg2EncryptedStream (Stream main, int offset, int length)
+        protected Mg2EncryptedStream (Stream main, int offset, int length, int threshold, byte key)
             : base (main, offset, length, true)
         {
-            m_threshold = length / 5;
+            m_threshold = threshold;
+            m_key = key;
+        }
+
+        public static Mg2EncryptedStream CreateV1 (Stream main, int offset, int length)
+        {
+            return new Mg2EncryptedStream (main, offset, length, length / 5, 0);
+        }
+
+        public static Mg2EncryptedStream CreateV2 (Stream main, int offset, int length)
+        {
+            return new Mg2EncryptedStream (main, offset, length, Math.Min (25, length), (byte)length);
         }
 
         public override int Read (byte[] buffer, int offset, int count)
@@ -129,7 +163,7 @@ namespace GameRes.Formats.Valkyria
             int pos = (int)Position;
             int read = base.Read (buffer, offset, count);
             for (int i = 0; i < read && pos < m_threshold; ++i)
-                buffer[offset+i] ^= (byte)pos++;
+                buffer[offset+i] ^= (byte)(m_key + pos++);
             return read;
         }
 
@@ -138,8 +172,37 @@ namespace GameRes.Formats.Valkyria
             long pos = Position;
             int b = base.ReadByte();
             if (b != -1 && pos < m_threshold)
-                b ^= (byte)pos;
+                b ^= (byte)(m_key + pos);
             return b;
+        }
+    }
+
+    internal class Mg2SchemeV1 : IMg2Scheme
+    {
+        public Mg2EncryptedStream CreateStream (Stream main, int offset, int length)
+        {
+            return Mg2EncryptedStream.CreateV1 (main, offset, length);
+        }
+
+        public ImageData CreateImage (BitmapSource frame, ImageMetaData info)
+        {
+            frame.Freeze();
+            return new ImageData (frame, info);
+        }
+    }
+
+    internal class Mg2SchemeV2 : IMg2Scheme
+    {
+        public Mg2EncryptedStream CreateStream (Stream main, int offset, int length)
+        {
+            return Mg2EncryptedStream.CreateV2 (main, offset, length);
+        }
+
+        public ImageData CreateImage (BitmapSource frame, ImageMetaData info)
+        {
+            frame = new TransformedBitmap (frame, new ScaleTransform { ScaleY = -1 });
+            frame.Freeze();
+            return new ImageData (frame, info);
         }
     }
 }
