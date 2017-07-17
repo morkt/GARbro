@@ -129,6 +129,8 @@ namespace GameRes
             meta.Width   = Binary.BigEndian (file.ReadUInt32());
             meta.Height  = Binary.BigEndian (file.ReadUInt32());
             int bpp = file.ReadByte();
+            if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8 && bpp != 16)
+                return null;
             int color_type = file.ReadByte();
             switch (color_type)
             {
@@ -136,7 +138,8 @@ namespace GameRes
             case 3: meta.BPP = 24; break;
             case 4: meta.BPP = bpp*2; break;
             case 6: meta.BPP = bpp*4; break;
-            default: meta.BPP = bpp; break;
+            case 0: meta.BPP = bpp; break;
+            default: return null;
             }
             SkipBytes (file, 7);
 
