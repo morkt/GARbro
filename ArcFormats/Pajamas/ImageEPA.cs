@@ -82,7 +82,7 @@ namespace GameRes.Formats.Pajamas
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = (EpaMetaData)info as EpaMetaData;
+            var meta = (EpaMetaData)info;
             file.Position = 2 == meta.Mode ? 0x18 : 0x10;
             var reader = new Reader (file.AsStream, meta);
             reader.Unpack();
