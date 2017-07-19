@@ -106,6 +106,7 @@ namespace GARbro.GUI
             var oem = CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
             list.Add (Encoding.GetEncoding (oem));
             list.Add (Encoding.GetEncoding (932));
+            list.Add (Encoding.GetEncoding (936));
             list.Add (Encoding.UTF8);
             list.Add (Encoding.Unicode);
             list.Add (Encoding.BigEndianUnicode);
