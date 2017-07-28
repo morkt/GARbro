@@ -128,7 +128,7 @@ namespace GameRes.Formats.CatSystem
                 return null;
             if (file.View.AsciiEqual (8, "__key__.dat\x00"))
             {
-                uint? key = QueryEncryptionInfo();
+                uint? key = QueryEncryptionInfo (file.Name);
                 if (null == key)
                     throw new UnknownEncryptionScheme();
                 return OpenEncrypted (file, entry_count, key.Value);
@@ -274,8 +274,11 @@ namespace GameRes.Formats.CatSystem
             return new GUI.CreateINTWidget();
         }
 
-        uint? QueryEncryptionInfo ()
+        uint? QueryEncryptionInfo (string arc_name)
         {
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title) && KnownSchemes.ContainsKey (title))
+                return KnownSchemes[title].Key;
             var options = Query<IntOptions> (arcStrings.INTNotice);
             return options.EncryptionInfo.GetKey();
         }

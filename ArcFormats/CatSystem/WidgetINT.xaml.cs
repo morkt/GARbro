@@ -86,7 +86,7 @@ namespace GameRes.Formats.GUI
                 CheckPathExists = true,
                 Multiselect = false,
                 Title = arcStrings.INTChooseExe,
-                Filter = arcStrings.INTExeFiles+"|*.exe",
+                Filter = arcStrings.INTExeFiles+"|*.exe;*.bin",
                 FilterIndex = 1,
                 InitialDirectory = Directory.GetCurrentDirectory(),
             };
