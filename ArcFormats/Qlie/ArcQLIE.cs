@@ -38,9 +38,11 @@ namespace GameRes.Formats.Qlie
 {
     internal class QlieEntry : PackedEntry
     {
-        public bool IsEncrypted;
+        public int  EncryptionMethod;
         public uint Hash;
         public byte[] RawName;
+
+        public bool IsEncrypted { get { return EncryptionMethod != 0; } }
 
         /// <summary>
         /// Data from a separate key file "key.fkey" that comes with installed game.
@@ -153,7 +155,7 @@ namespace GameRes.Formats.Qlie
                         return null;
                     entry.UnpackedSize = index.ReadUInt32();    // [+0C]
                     entry.IsPacked    = 0 != index.ReadInt32(); // [+10]
-                    entry.IsEncrypted = 0 != index.ReadInt32(); // [+14]
+                    entry.EncryptionMethod = index.ReadInt32(); // [+14]
                     entry.Hash = index.ReadUInt32();            // [+18]
                     entry.KeyFile = key_file;
                     if (3 == pack_version.Major && use_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
@@ -328,6 +330,16 @@ namespace GameRes.Formats.Qlie
                 {
                     Trace.WriteLine ("reading key from "+name, "[QLIE]");
                     return File.ReadAllBytes (name);
+                }
+            }
+            var pattern = VFS.CombinePath (dir_name, @"..\*.exe");
+            foreach (var exe_file in VFS.GetFiles (pattern))
+            {
+                using (var exe = new ExeFile.ResourceAccessor (exe_file.Name))
+                {
+                    var reskey = exe.GetResource ("RESKEY", "#10");
+                    if (reskey != null)
+                        return reskey;
                 }
             }
             return null;

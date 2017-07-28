@@ -25,6 +25,7 @@
 
 using System;
 using System.Text;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Qlie
 {
@@ -285,13 +286,28 @@ namespace GameRes.Formats.Qlie
 
         public override void DecryptEntry (byte[] data, int offset, int length, QlieEntry entry)
         {
+            if (0 == entry.EncryptionMethod)
+                return;
             if (offset < 0)
                 throw new ArgumentOutOfRangeException ("offset");
             if (length > data.Length || offset > data.Length - length)
                 throw new ArgumentOutOfRangeException ("length");
             if (length < 8)
                 return;
+            unsafe
+            {
+                fixed (byte* raw_data = &data[offset])
+                {
+                    if (1 == entry.EncryptionMethod)
+                        DecryptV1 (raw_data, length, entry);
+                    else
+                        DecryptV2 (raw_data, length, entry);
+                }
+            }
+        }
 
+        unsafe void DecryptV1 (byte* data, int length, QlieEntry entry)
+        {
             var file_name = entry.Name;
             uint hash = 0x85F532;
             uint seed = 0x33F641;
@@ -306,34 +322,66 @@ namespace GameRes.Formats.Qlie
                               + hash + (hash ^ (uint)length ^ 0x8F32DCu));
             seed = 9 * (seed & 0xFFFFFF);
             var table = GenerateTable (0x20, seed); // originally 0x2C, 12 dwords not used
-            unsafe
+            ulong* data64 = (ulong*)data;
+            int qword_length = length / 8;
+            uint k = 2 * (table[0xD] & 0xF);
+            ulong hash64 = table[6] | (ulong)table[7] << 32;
+            for (int i = 0; i < qword_length; ++i)
             {
-                fixed (byte* raw_data = &data[offset])
-                {
-                    ulong* data64 = (ulong*)raw_data;
-                    int qword_length = length / 8;
-                    uint k = 2 * (table[0xD] & 0xF);
-                    ulong hash64 = table[6] | (ulong)table[7] << 32;
-                    for (int i = 0; i < qword_length; ++i)
-                    {
-                        ulong t = table[k] | (ulong)table[k+1] << 32;
-                        hash64 = MMX.PAddD (hash64 ^ t, t);
+                ulong t = table[k] | (ulong)table[k+1] << 32;
+                hash64 = MMX.PAddD (hash64 ^ t, t);
 
-                        ulong d = data64[i] ^ hash64;
-                        data64[i] = d;
+                ulong d = data64[i] ^ hash64;
+                data64[i] = d;
 
-                        hash64 = MMX.PAddB (hash64, d) ^ d;
-                        hash64 = MMX.PAddW (MMX.PSllD (hash64, 1), d);
+                hash64 = MMX.PAddB (hash64, d) ^ d;
+                hash64 = MMX.PAddW (MMX.PSllD (hash64, 1), d);
 
-                        k = (k + 2) & 0x1F;
-                    }
-                }
+                k = (k + 2) & 0x1F;
             }
         }
 
-        static uint[] GenerateTable (int length, uint seed)
+        unsafe void DecryptV2 (byte* data, int length, QlieEntry entry)
         {
-            const uint key = 0x8DF21431u;
+            var file_name = entry.Name;
+            uint hash = 0x86F7E2;
+            uint seed = 0x4437F1;
+
+            for (int i = 0; i < file_name.Length; i++)
+            {
+                hash += (uint)(file_name[i] << (i & 7));
+                seed ^= hash;
+            }
+
+            seed += ArcKey ^ (13 * ((uint)length & 0xFFFFFF) + (uint)length
+                              + hash + (hash ^ (uint)length ^ 0x56E213u));
+            seed = 13 * (seed & 0xFFFFFF);
+            var table = GenerateTable (0x20, seed, 0x8A77F473u); // originally 0x40
+            var key_data = GenerateKeyData (entry.KeyFile);
+
+            ulong* data64 = (ulong*)data;
+            int qword_length = length / 8;
+            int k = (8 * ((int)table[8] & 0xD)) & 0x7F;
+            ulong hash64 = table[6] | (ulong)table[7] << 32;
+            for (int i = 0; i < qword_length; ++i)
+            {
+                int t_index = 2 * (k & 0xF);
+                ulong t = table[t_index] | (ulong)table[t_index + 1] << 32;
+                t ^= LittleEndian.ToUInt64 (key_data, 8 * k);
+                hash64 = MMX.PAddD (hash64 ^ t, t);
+
+                ulong d = data64[i] ^ hash64;
+                data64[i] = d;
+
+                hash64 = MMX.PAddB (hash64, d) ^ d;
+                hash64 = MMX.PAddW (MMX.PSllD (hash64, 1), d);
+
+                k = (k + 1) & 0x7F;
+            }
+        }
+
+        static uint[] GenerateTable (int length, uint seed, uint key = 0x8DF21431u)
+        {
             var table = new uint[length];
             for (int i = 0; i < length; ++i)
             {
@@ -342,6 +390,31 @@ namespace GameRes.Formats.Qlie
                 table[i] = seed;
             }
             return table;
+        }
+
+        byte[] GenerateKeyData (byte[] key_file)
+        {
+            var key_data = new byte[0x400];
+            for (int i = 0; i < 0x100; ++i)
+            {
+                int hash;
+                if (0 != (i % 3))
+                    hash = (i + 7) * -(i + 3);
+                else
+                    hash = (i + 7) * (i + 3);
+                LittleEndian.Pack (hash, key_data, i * 4);
+            }
+            if (key_file != null && key_file.Length >= 128)
+            {
+                int k = key_file[49] % 73 + 128;
+                int l = key_file[79] % 7 + 7;
+                for (int i = 0; i < key_data.Length; ++i)
+                {
+                    k = (k + l) % key_file.Length;
+                    key_data[i] ^= key_file[k];
+                }
+            }
+            return key_data;
         }
     }
 }
