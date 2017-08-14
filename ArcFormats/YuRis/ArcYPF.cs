@@ -123,7 +123,7 @@ namespace GameRes.Formats.YuRis
                 return null;
             var parser = new Parser (file, version, count, dir_size);
 
-            var scheme = QueryEncryptionScheme (version);
+            var scheme = QueryEncryptionScheme (file.Name, version);
             var dir = parser.ScanDir (scheme);
             if (null == dir || 0 == dir.Count)
                 return null;
@@ -175,10 +175,13 @@ namespace GameRes.Formats.YuRis
             return new GUI.CreateYPFWidget();
         }
 
-        YpfScheme QueryEncryptionScheme (uint version)
+        YpfScheme QueryEncryptionScheme (string arc_name, uint version)
         {
-            var options = Query<YpfOptions> (arcStrings.YPFNotice);
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
             YpfScheme scheme;
+            if (!string.IsNullOrEmpty (title) && KnownSchemes.TryGetValue (title, out scheme))
+                return scheme;
+            var options = Query<YpfOptions> (arcStrings.YPFNotice);
             if (!KnownSchemes.TryGetValue (options.Scheme, out scheme) || null == scheme)
                 scheme = new YpfScheme {
                     SwapTable   = GuessSwapTable (version),
@@ -354,7 +357,7 @@ namespace GameRes.Formats.YuRis
                 uint* header = (uint*)raw;
                 uint version = header[1];
                 int first_item, last_item;
-                if (version >= 0x1CE || 0x12C == version)
+                if (version >= 0x1CE || 0x12C == version || 0x19A == version)
                 {
                     first_item = 3;
                     last_item = 7;
