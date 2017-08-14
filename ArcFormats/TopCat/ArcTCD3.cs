@@ -320,6 +320,8 @@ namespace GameRes.Formats.TopCat
                         name = Path.Combine (dir_name, name);
                         name = Path.ChangeExtension (name, section.Extension);
                         var entry = FormatCatalog.Instance.Create<TcdEntry> (name);
+                        if (name.HasExtension (".SPD"))
+                            entry.Type = "image";
                         entry.Offset = offsets[index];
                         entry.Size = offsets[index+1] - offsets[index];
                         entry.Index = index;
