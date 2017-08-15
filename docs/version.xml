@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.4.30</Version>
+        <Version>1.4.31</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
-        <Notes>New formats:
-- 'pf6' archives
-- DxLib version 6 archives (Detective Seven)
-- updated encryption schemes for malie LIBP archives
-- added more KiriKiri and ShiinaRio encryption schemes
+        <Notes>Changes:
+- updated INT, QLIE, YPF, PCF, GBC, MG2 formats support
+- added more KiriKiri and Malie encryption schemes
+- added CP936 encoding option to text viewer
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>76</FileVersion>
+        <FileVersion>78</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.33.1392"/>
+            <Assembly Name="ArcFormats" Version="1.2.35.1414"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>
