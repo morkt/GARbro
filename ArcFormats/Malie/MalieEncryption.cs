@@ -53,10 +53,12 @@ namespace GameRes.Formats.Malie
     public class CfiDecryptor : IMalieDecryptor
     {
         byte[] m_key;
+        uint[] m_rotate_key;
 
-        public CfiDecryptor (byte[] key)
+        public CfiDecryptor (byte[] key, uint[] rotate_key)
         {
             m_key = key;
+            m_rotate_key = rotate_key;
         }
 
         public void DecryptBlock (long block_offset, byte[] data, int index)
@@ -79,13 +81,13 @@ namespace GameRes.Formats.Malie
                 fixed (byte* data8 = &data[index])
                 {
                     uint* data32 = (uint*)data8;
-                    uint k = Binary.RotR (0x39653542, m_key[offset & 0x1F] ^ 0xA5);
+                    uint k = Binary.RotR (m_rotate_key[0], m_key[offset & 0x1F] ^ 0xA5);
                     data32[0] = Binary.RotR (data32[0] ^ k, m_key[(offset + 12) & 0x1F] ^ 0xA5);
-                    k = Binary.RotL (0x76706367, m_key[(offset + 3) & 0x1F] ^ 0xA5);
+                    k = Binary.RotL (m_rotate_key[1], m_key[(offset + 3) & 0x1F] ^ 0xA5);
                     data32[1] = Binary.RotL (data32[1] ^ k, m_key[(offset + 15) & 0x1F] ^ 0xA5);
-                    k = Binary.RotR (0x69454462, m_key[(offset + 6) & 0x1F] ^ 0xA5);
+                    k = Binary.RotR (m_rotate_key[2], m_key[(offset + 6) & 0x1F] ^ 0xA5);
                     data32[2] = Binary.RotR (data32[2] ^ k, m_key[(offset - 14) & 0x1F] ^ 0xA5);
-                    k = Binary.RotL (0x71334334, m_key[(offset + 9) & 0x1F] ^ 0xA5);
+                    k = Binary.RotL (m_rotate_key[3], m_key[(offset + 9) & 0x1F] ^ 0xA5);
                     data32[3] = Binary.RotL (data32[3] ^ k, m_key[(offset - 11) & 0x1F] ^ 0xA5);
                 }
             }

@@ -80,15 +80,17 @@ namespace GameRes.Formats.Malie
     public class LibCfiScheme : LibScheme
     {
         public byte[] Key { get; set; }
+        public uint[] RotateKey { get; set; }
 
-        public LibCfiScheme (uint align, byte[] key) : base (align)
+        public LibCfiScheme (uint align, byte[] key, uint[] rot_key) : base (align)
         {
             Key = key;
+            RotateKey = rot_key;
         }
 
         public override IMalieDecryptor CreateDecryptor ()
         {
-            return new CfiDecryptor (Key);
+            return new CfiDecryptor (Key, RotateKey);
         }
     }
 
