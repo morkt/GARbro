@@ -217,7 +217,7 @@ namespace GameRes.Formats.KiriKiri
 
         CxProgram GenerateProgram (uint seed)
         {
-            var program = new CxProgram (seed, ControlBlock);
+            var program = NewProgram (seed);
             for (int stage = 5; stage > 0; --stage)
             {
                 if (EmitCode (program, stage))
@@ -226,6 +226,11 @@ namespace GameRes.Formats.KiriKiri
                 program.Clear();
             }
             throw new CxProgramException ("Overly large CxEncryption bytecode");
+        }
+
+        internal virtual CxProgram NewProgram (uint seed)
+        {
+            return new CxProgram (seed, ControlBlock);
         }
 
         bool EmitCode (CxProgram program, int stage)
@@ -437,7 +442,7 @@ namespace GameRes.Formats.KiriKiri
         private List<uint>  m_code = new List<uint> (LengthLimit);
         private uint[]      m_ControlBlock;
         private int         m_length;
-        private uint        m_seed;
+        protected uint      m_seed;
 
         class Context
         {
@@ -562,11 +567,32 @@ namespace GameRes.Formats.KiriKiri
             return EmitUInt32 (GetRandom());
         }
 
-        public uint GetRandom ()
+        public virtual uint GetRandom ()
         {
             uint seed = m_seed;
             m_seed = 1103515245 * seed + 12345;
             return m_seed ^ (seed << 16) ^ (seed >> 16);
+        }
+    }
+
+    internal class CxProgramNana : CxProgram
+    {
+        protected uint  m_random_seed;
+
+        public CxProgramNana (uint seed, uint random_seed, uint[] control_block) : base (seed, control_block)
+        {
+            m_random_seed = random_seed;
+        }
+
+        public override uint GetRandom ()
+        {
+            uint s = m_seed ^ (m_seed << 17);
+            s ^= (s << 18) | (s >> 15);
+            m_seed = ~s;
+            uint r = m_random_seed ^ (m_random_seed << 13);
+            r ^= r >> 17;
+            m_random_seed = r ^ (r << 5);
+            return m_seed ^ m_random_seed;
         }
     }
 

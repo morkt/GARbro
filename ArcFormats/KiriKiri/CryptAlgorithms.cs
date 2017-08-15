@@ -968,6 +968,22 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
+    public class NanaCxCrypt : SenrenCxCrypt
+    {
+        uint m_random_seed;
+
+        public NanaCxCrypt (CxScheme scheme, uint seed) : base (scheme)
+        {
+            m_random_seed = seed;
+        }
+
+        internal override CxProgram NewProgram (uint seed)
+        {
+            return new CxProgramNana (seed, m_random_seed, ControlBlock);
+        }
+    }
+
+    [Serializable]
     public class KissCrypt : ICrypt
     {
         public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
