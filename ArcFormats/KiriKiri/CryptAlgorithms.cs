@@ -744,7 +744,7 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, buffer, pos, count);
         }
 
-        IEnumerable<byte> GetKey (uint hash)
+        internal IEnumerable<byte> GetKey (uint hash)
         {
             hash = (hash ^ m_seed) & 0x7FFFFFFF;
             hash = hash << 31 | hash;
@@ -1141,5 +1141,30 @@ namespace GameRes.Formats.KiriKiri
 
         [NonSerialized]
         Dictionary<uint, string> KnownNames = null;
+    }
+
+    [Serializable]
+    public class MadoCrypt : AkabeiCrypt
+    {
+        public MadoCrypt (uint seed) : base (seed)
+        {
+        }
+
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            int key_pos = (int)offset % 0x1F;
+            var key = GetKey (entry.Hash).ElementAt (key_pos);
+            return (byte)(value ^ key);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var key = GetKey (entry.Hash).ToArray();
+            int key_pos = (int)offset;
+            for (int i = 0; i < count; ++i)
+            {
+                buffer[pos+i] ^= key[key_pos++ % 0x1F];
+            }
+        }
     }
 }
