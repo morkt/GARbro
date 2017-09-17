@@ -43,8 +43,9 @@ namespace GameRes.Formats.Lilim
             var header = stream.ReadHeader (0x46);
             if ('B' != header[0] || 'M' != header[1])
                 return null;
-            int type = (sbyte)header[0x1C];
+            int type = header.ToInt16 (0x1C);
             uint frame_offset;
+            int bpp = 24;
             if (1 == type || 2 == type)
             {
                 int count = header.ToUInt16 (0x3A);
@@ -52,12 +53,14 @@ namespace GameRes.Formats.Lilim
                     return null;
                 frame_offset = header.ToUInt32 (0x42);
             }
-            else if (32 == type || 24 == type)
+            else if (32 == type || 24 == type || 8 == type || -8 == type)
             {
                 uint unpacked_size = header.ToUInt32 (2);
                 if (0 == unpacked_size || unpacked_size == stream.Length) // probably an ordinary bmp file
                     return null;
                 frame_offset = header.ToUInt32 (0xA);
+                if (8 == type)
+                    bpp = 8;
             }
             else
                 return null;
@@ -67,7 +70,7 @@ namespace GameRes.Formats.Lilim
             {
                 Width = header.ToUInt32 (0x12),
                 Height = header.ToUInt32 (0x16),
-                BPP = 24,
+                BPP = bpp,
                 Mode = type,
                 BaseOffset = frame_offset,
             };

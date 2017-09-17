@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
-using GameRes.Utility;
+using System.Windows.Media.Imaging;
 
 namespace GameRes.Formats.Lilim
 {
@@ -155,14 +155,40 @@ namespace GameRes.Formats.Lilim
 
         protected override ImageData GetImageData ()
         {
-            if (2 == m_info.Mode)
+            switch (m_info.Mode)
             {
-                m_bpp = 32;
+            case 8:
+            case -8:
+                m_input.Position = 0x36;
+                var palette = ImageFormat.ReadPalette (m_input.AsStream);
+                var bitmap_size = m_info.Width * m_info.Height;
+                m_output = new byte[bitmap_size];
                 m_input.Position = m_info.BaseOffset;
+                if (8 == m_info.Mode)
+                {
+                    m_bpp = 8;
+                    if (m_output.Length != m_input.Read (m_output, 0, m_output.Length))
+                        throw new EndOfStreamException();
+                    return ImageData.Create (m_info, PixelFormats.Indexed8, palette, m_output);
+                }
+                else
+                {
+                    var alpha = new byte[bitmap_size];
+                    UnpackStream8 (m_input, m_output, alpha);
+                    m_output = ApplyAlpha (m_output, alpha, palette);
+                    m_bpp = 32;
+                }
+                break;
+
+            case 2:
+                m_bpp = 32;
+                m_input.Position = m_info.FrameOffset;
                 m_output = UnpackV2 (m_input);
-            }
-            else if (1 == m_info.Mode || 32 == m_info.Mode || 24 == m_info.Mode)
-            {
+                break;
+
+            case 1:
+            case 24:
+            case 32:
                 if (1 == m_info.Mode)
                     m_bpp = 24;
                 else
@@ -180,9 +206,11 @@ namespace GameRes.Formats.Lilim
                     UnpackStream24 (m_input, m_output, total_length);
                 else
                     UnpackStream32 (m_input, m_output, total_length);
-            }
-            else
+                break;
+
+            default:
                 throw new NotImplementedException();
+            }
             if (0 != m_info.FrameOffset)
                 m_output = Unpack();
             PixelFormat format = 24 == m_bpp ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
@@ -318,6 +346,51 @@ namespace GameRes.Formats.Lilim
                 Buffer.BlockCopy (frame, src, m_output, dst, line_size);
                 src += frame_w * pixel_size;
             }
+        }
+
+        void UnpackStream8 (IBinaryStream input, byte[] output, byte[] alpha)
+        {
+            int alpha_dst = 0;
+            int dst = 0;
+            while (dst < output.Length)
+            {
+                byte rle = input.ReadUInt8();
+                if (0 == rle)
+                {
+                    int skip = input.ReadUInt8();
+                    dst += skip;
+                    alpha_dst += skip;
+                }
+                else if (rle != 0xFF)
+                {
+                    output[dst++] = input.ReadUInt8();
+                    alpha[alpha_dst++] = rle;
+                }
+                else
+                {
+                    int count = input.ReadUInt8();
+                    input.Read (output, dst, count);
+                    dst += count;
+                    for (int i = 0; i < count; ++i)
+                        alpha[alpha_dst++] = 0xFF;
+                }
+            }
+        }
+
+        byte[] ApplyAlpha (byte[] input, byte[] alpha, BitmapPalette palette)
+        {
+            var colors = palette.Colors;
+            var pixels = new byte[input.Length * 4];
+            int dst = 0;
+            for (int i = 0; i < input.Length; ++i)
+            {
+                var color = colors[input[i]];
+                pixels[dst++] = color.B;
+                pixels[dst++] = color.G;
+                pixels[dst++] = color.R;
+                pixels[dst++] = alpha[i];
+            }
+            return pixels;
         }
     }
 }
