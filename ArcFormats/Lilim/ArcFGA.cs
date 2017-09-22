@@ -23,10 +23,8 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.IO;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Lilim
@@ -45,10 +43,10 @@ namespace GameRes.Formats.Lilim
             if (!file.Name.HasExtension (".fga"))
                 return null;
             uint index_offset = 0;
-            var index_buffer = new byte[0x318];
-            var dir = new List<Entry> (0x20);
-            if (0x318 != file.View.Read (index_offset, index_buffer, 0, 0x318))
+            var index_buffer = file.View.ReadBytes (index_offset, 0x318);
+            if (0x318 != index_buffer.Length)
                 return null;
+            var dir = new List<Entry> (0x20);
             int pos = 0;
             while (pos < index_buffer.Length)
             {
@@ -67,13 +65,12 @@ namespace GameRes.Formats.Lilim
                 else
                 {
                     var name = Binary.GetCString (index_buffer, pos, 0xC);
-                    var entry = FormatCatalog.Instance.Create<AosEntry> (name);
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                     entry.Offset = index_buffer.ToUInt32 (pos+0xC);
                     entry.Size   = index_buffer.ToUInt32 (pos+0x10);
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
-                    if (name.HasExtension (".scr"))
-                        entry.IsCompressed = true;
+                    entry.IsPacked = name.HasExtension (".scr");
                     dir.Add (entry);
                     pos += 0x18;
                 }

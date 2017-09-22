@@ -28,15 +28,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Lilim
 {
-    internal class AosEntry : Entry
-    {
-        public bool IsCompressed;
-    }
-
     [Export(typeof(ArchiveFormat))]
     public class AosOpener : ArchiveFormat
     {
@@ -56,9 +50,7 @@ namespace GameRes.Formats.Lilim
             uint first_offset = file.View.ReadUInt32 (0x10);
             if (first_offset >= file.MaxOffset || 0 != (first_offset & 0x1F))
                 return null;
-            var name_buf = new byte[0x10];
-            if (0x10 != file.View.Read (first_offset, name_buf, 0, 0x10))
-                return null;
+            var name_buf = file.View.ReadBytes (first_offset, 0x10);
             if (!name_buf.SequenceEqual (IndexLink) && !name_buf.SequenceEqual (IndexEnd))
                 return null;
 
@@ -81,15 +73,14 @@ namespace GameRes.Formats.Lilim
                     if (-1 == name_length)
                         name_length = name_buf.Length;
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
-                    var entry = FormatCatalog.Instance.Create<AosEntry> (name);
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                     entry.Offset = file.View.ReadUInt32 (current_offset+0x10);
                     entry.Size   = file.View.ReadUInt32 (current_offset+0x14);
                     current_offset += 0x20;
                     entry.Offset += current_offset;
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
-                    if (name.HasExtension (".scr"))
-                        entry.IsCompressed = true;
+                    entry.IsPacked = name.HasExtension (".scr");
                     dir.Add (entry);
                 }
             }
@@ -98,14 +89,13 @@ namespace GameRes.Formats.Lilim
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var aent = entry as AosEntry;
-            if (null == aent || !aent.IsCompressed)
+            var aent = entry as PackedEntry;
+            if (null == aent || !aent.IsPacked)
                 return base.OpenEntry (arc, entry);
 
-            uint unpacked_size = arc.File.View.ReadUInt32 (entry.Offset);
-            var packed = new byte[entry.Size-4];
-            arc.File.View.Read (entry.Offset+4, packed, 0, (uint)packed.Length);
-            var unpacked = new byte[unpacked_size];
+            aent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset);
+            var packed = arc.File.View.ReadBytes (entry.Offset+4, entry.Size-4);
+            var unpacked = new byte[aent.UnpackedSize];
 
             var decoder = new HuffmanDecoder (packed, unpacked);
             decoder.Unpack();
@@ -148,16 +138,16 @@ namespace GameRes.Formats.Lilim
                 var name = file.View.ReadString (index_offset, 0x20);
                 if (0 == name.Length)
                     return null;
-                var entry = FormatCatalog.Instance.Create<AosEntry> (name);
+                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                 entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x20);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x24);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 if (name.HasExtension (".scr"))
-                    entry.IsCompressed = true;
+                    entry.IsPacked = true;
                 else if (name.HasExtension (".cmp"))
                 {
-                    entry.IsCompressed = true;
+                    entry.IsPacked = true;
                     entry.Name = Path.ChangeExtension (entry.Name, ".abm");
                     entry.Type = "image";
                 }
