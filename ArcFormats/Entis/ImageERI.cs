@@ -296,31 +296,12 @@ namespace GameRes.Formats.Entis
                                 throw new FileNotFoundException ("Referenced image not found", ref_file);
                             ref_info.FileName = ref_file;
                             var ref_reader = ReadImageData (ref_src, ref_info);
-                            AddImageBuffer (meta, reader.Data, ref_info, ref_reader.Data);
+                            reader.AddImageBuffer (ref_reader);
                         }
                     }
                 }
             }
             return reader;
-        }
-
-        void AddImageBuffer (EriMetaData dst_info, byte[] dst_img, EriMetaData src_info, byte[] src_img)
-        {
-            int src_bpp = (src_info.BPP + 7) / 8;
-            int dst_bpp = (dst_info.BPP + 7) / 8;
-            bool has_alpha = src_bpp == 4 && src_bpp == dst_bpp;
-            int dst = 0;
-            int src = 0;
-            while (dst < dst_img.Length)
-            {
-                dst_img[dst  ] += src_img[src  ];
-                dst_img[dst+1] += src_img[src+1];
-                dst_img[dst+2] += src_img[src+2];
-                if (has_alpha)
-                    dst_img[dst+3] += src_img[src+3];
-                dst += dst_bpp;
-                src += src_bpp;
-            }
         }
 
         static readonly Regex s_TagRe = new Regex (@"^\s*#\s*(\S+)");

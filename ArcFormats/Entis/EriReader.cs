@@ -73,6 +73,7 @@ namespace GameRes.Formats.Entis
         PtrProcedure[]  m_pfnColorOperation;
         byte[]          m_src_frame;
 
+        public EriMetaData      Info { get { return m_info; } }
         public byte[]           Data { get { return m_output; } }
         public PixelFormat    Format { get; private set; }
         public int            Stride { get { return Math.Abs (m_dwBytesPerLine); } }
@@ -148,6 +149,35 @@ namespace GameRes.Formats.Entis
                 ColorOperation1110,
                 ColorOperation1111
             };
+        }
+
+        internal void AddImageBuffer (EriReader src_reader)
+        {
+            var dst_reader = this;
+            var dst_img = dst_reader.Data;
+            var src_img = src_reader.Data;
+            int src_bpp = (src_reader.Info.BPP + 7) / 8;
+            int dst_bpp = (dst_reader.Info.BPP + 7) / 8;
+            bool has_alpha = src_bpp == 4 && src_bpp == dst_bpp;
+            int src_stride = src_reader.Stride;
+            int dst_stride = dst_reader.Stride;
+            int height = (int)dst_reader.Info.Height;
+            int width  = (int)dst_reader.Info.Width;
+            for (int y = 0; y < height; ++y)
+            {
+                int src = src_stride * y;
+                int dst = dst_stride * y;
+                for (int x = 0; x < width; ++x)
+                {
+                    dst_img[dst  ] += src_img[src  ];
+                    dst_img[dst+1] += src_img[src+1];
+                    dst_img[dst+2] += src_img[src+2];
+                    if (has_alpha)
+                        dst_img[dst+3] += src_img[src+3];
+                    dst += dst_bpp;
+                    src += src_bpp;
+                }
+            }
         }
 
         private void InitializeLossless ()
