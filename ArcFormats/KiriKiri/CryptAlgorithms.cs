@@ -2,7 +2,7 @@
 //! \date       Thu Feb 04 12:08:40 2016
 //! \brief      KiriKiri engine encryption algorithms.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,6 +27,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.KiriKiri
@@ -82,6 +84,96 @@ namespace GameRes.Formats.KiriKiri
                 return new string (header.ReadChars (name_size));
             else
                 return null;
+        }
+
+        /// <summary>
+        /// Post-process entry stream.
+        /// </summary>
+        public virtual Stream EntryReadFilter (Xp3Entry entry, Stream input)
+        {
+            if (entry.UnpackedSize <= 5 || "audio" == entry.Type)
+                return input;
+
+            var header = new byte[5];
+            input.Read (header, 0, 5);
+            if (0x184D2204 == header.ToInt32 (0)) // LZ4 magic
+            {
+                // assume no scripts are compressed using LZ4, return decompressed stream right away
+                return DecompressLz4 (entry, header, input);
+            }
+            if (0xFE == header[0] && 0xFE == header[1] && header[2] < 3 && 0xFF == header[3] && 0xFE == header[4])
+                return DecryptScript (header[2], input, entry.UnpackedSize);
+
+            if (!input.CanSeek)
+                return new PrefixStream (header, input);
+            input.Position = 0;
+            return input;
+        }
+
+        internal Stream DecompressLz4 (Xp3Entry entry, byte[] header, Stream input)
+        {
+            if (header.Length != 5)
+                throw new ArgumentException ("Invalid header length for DecompressLz4", "header");
+            var info = new Lz4FrameInfo (header[4]);
+            info.SetBlockSize (input.ReadByte());
+            if (info.HasContentLength)
+            {
+                input.Read (header, 0, 4);
+                long length = header.ToUInt32 (0);
+                input.Read (header, 0, 4);
+                length |= (long)header.ToUInt32 (0) << 32;
+                info.OriginalLength = length;
+                entry.UnpackedSize = (uint)length;
+                entry.IsPacked = true;
+            }
+            if (info.HasDictionary)
+            {
+                input.Read (header, 0, 4);
+                info.DictionaryId = header.ToInt32 (0);
+            }
+            input.ReadByte(); // skip descriptor checksum
+            return new Lz4Stream (input, info);
+        }
+
+        internal Stream DecryptScript (int enc_type, Stream input, uint unpacked_size)
+        {
+            using (var reader = new BinaryReader (input, Encoding.Unicode, true))
+            {
+                if (2 == enc_type)
+                {
+                    reader.ReadInt64(); // packed_size
+                    reader.ReadInt64(); // unpacked_size
+                    return new ZLibStream (input, CompressionMode.Decompress);
+                }
+                var output = new MemoryStream ((int)unpacked_size+2);
+                using (var writer = new BinaryWriter (output, Encoding.Unicode, true))
+                {
+                    writer.Write ('\xFEFF'); // BOM
+                    int c;
+                    if (1 == enc_type)
+                    {
+                        while ((c = reader.Read()) != -1)
+                        {
+                            c = (c & 0xAAAA) >> 1 | (c & 0x5555) << 1;
+                            writer.Write ((char)c);
+                        }
+                    }
+                    else
+                    {
+                        while ((c = reader.Read()) != -1)
+                        {
+                            if (c >= 0x20)
+                            {
+                                c = c ^ (((c & 0xFE) << 8) ^ 1);
+                                writer.Write ((char)c);
+                            }
+                        }
+                    }
+                }
+                output.Position = 0;
+                input.Dispose();
+                return output;
+            }
         }
     }
 
@@ -984,7 +1076,7 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class KissCrypt : ICrypt
+    public class KissCrypt : CzCrypt
     {
         public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
         {
