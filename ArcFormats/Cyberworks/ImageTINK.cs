@@ -167,11 +167,19 @@ namespace GameRes.Formats.Cyberworks
             var header = ReadHeader();
             if (0 == Info.Width || Info.Width >= 0x8000 || 0 == Info.Height || Info.Height >= 0x8000)
                 throw new InvalidFormatException();
-            int unpacked_size = header[5];
-            if (unpacked_size <= 0)
-                throw new InvalidFormatException();
             int flags     = header[0];
+            int unpacked_size = header[5];
             int bits_size = header[7];
+            if (unpacked_size <= 0)
+            {
+                if (0 == unpacked_size && 0 == header[6]
+                    && (1 == (flags & 1) && 'd' == m_type && Baseline != null))
+                {
+                    UnpackV6NoAlpha (bits_size);
+                    return;
+                }
+                throw new InvalidFormatException();
+            }
             int data_offset = bits_size * 2;
             if (0 == flags)
                 CopyV0 (unpacked_size);
@@ -388,6 +396,31 @@ namespace GameRes.Formats.Cyberworks
                 {
                     m_input.Read (m_output, dst, 3);
                     m_output[dst+3] = alpha[alpha_src++];
+                }
+                dst += 4;
+                bit <<= 1;
+                if (0x100 == bit)
+                {
+                    ++bit_src;
+                    bit = 1;
+                }
+            }
+        }
+
+        void UnpackV6NoAlpha (int bits_size)
+        {
+            Info.BPP = 32;
+            var rgb_map = m_input.ReadBytes (bits_size);
+            int plane_size = Math.Min (Baseline.Length, bits_size*8);
+            m_output = Baseline;
+            int bit = 1;
+            int bit_src = 0;
+            int dst = 0;
+            for (int i = 0; i < plane_size; ++i)
+            {
+                if ((bit & rgb_map[bit_src]) != 0)
+                {
+                    m_input.Read (m_output, dst, 3);
                 }
                 dst += 4;
                 bit <<= 1;

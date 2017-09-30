@@ -58,7 +58,7 @@ namespace GameRes.Formats.Cyberworks
                 {
                     if (!index.Read())
                         return null;
-                    return new BellArchive (file, this, index.Dir, null);
+                    return ArchiveFromDir (file, index.Dir, index.HasImages);
                 }
             }
         }
