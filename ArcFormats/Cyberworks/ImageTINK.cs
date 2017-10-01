@@ -173,7 +173,7 @@ namespace GameRes.Formats.Cyberworks
             if (unpacked_size <= 0)
             {
                 if (0 == unpacked_size && 0 == header[6]
-                    && (1 == (flags & 1) && 'd' == m_type && Baseline != null))
+                    && (1 == (flags & 1) && Baseline != null))
                 {
                     UnpackV6NoAlpha (bits_size);
                     return;
@@ -409,20 +409,24 @@ namespace GameRes.Formats.Cyberworks
 
         void UnpackV6NoAlpha (int bits_size)
         {
-            Info.BPP = 32;
             var rgb_map = m_input.ReadBytes (bits_size);
             int plane_size = Math.Min (Baseline.Length, bits_size*8);
             m_output = Baseline;
+            if (m_info.Width * m_info.Height * 3 == m_output.Length)
+                Info.BPP = 24;
+            else
+                Info.BPP = 32;
             int bit = 1;
             int bit_src = 0;
             int dst = 0;
+            int pixel_size = Info.BPP / 8;
             for (int i = 0; i < plane_size; ++i)
             {
                 if ((bit & rgb_map[bit_src]) != 0)
                 {
                     m_input.Read (m_output, dst, 3);
                 }
-                dst += 4;
+                dst += pixel_size;
                 bit <<= 1;
                 if (0x100 == bit)
                 {
