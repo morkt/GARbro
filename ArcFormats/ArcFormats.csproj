@@ -93,6 +93,8 @@
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcARCX.cs" />
     <Compile Include="Artemis\ArcMJA.cs" />
+    <Compile Include="BeF\AudioVZY.cs" />
+    <Compile Include="BeF\ImageALO.cs" />
     <Compile Include="BlackRainbow\ArcCCF.cs" />
     <Compile Include="BlackRainbow\ArcIMP.cs" />
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
