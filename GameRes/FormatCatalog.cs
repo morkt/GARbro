@@ -313,6 +313,27 @@ namespace GameRes
                 return reader.ReadInt32();
             }
         }
+
+        /// <summary>
+        /// Read text file <paramref name="filename"/> from data directory, performing <paramref name="process_line"/> action on each line.
+        /// </summary>
+        public void ReadFileList (string filename, Action<string> process_line)
+        {
+            var lst_file = Path.Combine (DataDirectory, filename);
+            if (!File.Exists (lst_file))
+                return;
+            using (var input = new StreamReader (lst_file))
+            {
+                string line;
+                while ((line = input.ReadLine()) != null)
+                {
+                    if (line.Length > 0)
+                    {
+                        process_line (line);
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
