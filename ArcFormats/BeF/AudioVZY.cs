@@ -56,7 +56,7 @@ namespace GameRes.Formats.BeF
                 (byte)'R', (byte)'I', (byte)'F', (byte)'F', header[4], header[5], header[6], header[7],
                 (byte)'W', (byte)'A', (byte)'V', (byte)'E', (byte)'f', (byte)'m', (byte)'t', (byte)' '
             };
-            Stream riff = new StreamRegion (file.AsStream, 0x10, true);
+            Stream riff = new StreamRegion (file.AsStream, 0x10);
             riff = new PrefixStream (header_bytes, riff);
             var wav = new BinaryStream (riff, file.Name);
             try
