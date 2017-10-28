@@ -1208,21 +1208,12 @@ namespace GameRes.Formats.KiriKiri
 
         void ReadNames ()
         {
-            var dir = FormatCatalog.Instance.DataDirectory;
-            var names_file = Path.Combine (dir, FileListName);
             var names = new Dictionary<uint, string>();
             try
             {
-                using (var reader = new StreamReader (names_file))
-                {
-                    for (;;)
-                    {
-                        var name = reader.ReadLine();
-                        if (null == name)
-                            break;
-                        names[GetNameHash (name)] = name;
-                    }
-                }
+                FormatCatalog.Instance.ReadFileList (FileListName, name => {
+                    names[GetNameHash (name)] = name;
+                });
             }
             catch (Exception X)
             {

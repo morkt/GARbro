@@ -168,21 +168,9 @@ namespace GameRes.Formats.Neko
         {
             try
             {
-                var dir = FormatCatalog.Instance.DataDirectory;
-                var lst_file = Path.Combine (dir, "nekopack.lst");
-                if (!File.Exists (lst_file))
-                    return new string[0];
-                using (var input = new StreamReader (lst_file))
-                {
-                    var names = new List<string>();
-                    string line;
-                    while ((line = input.ReadLine()) != null)
-                    {
-                        if (line.Length > 0)
-                            names.Add (line);
-                    }
-                    return names.ToArray();
-                }
+                var names = new List<string>();
+                FormatCatalog.Instance.ReadFileList ("nekopack.lst", name => names.Add (name));
+                return names.ToArray();
             }
             catch (Exception X)
             {
