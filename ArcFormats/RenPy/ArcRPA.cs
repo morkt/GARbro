@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
 using System.IO;
 using System.Text;
 using GameRes.Compression;
@@ -99,8 +100,8 @@ namespace GameRes.Formats.RenPy
                     return null;
                 }
                 var entry = FormatCatalog.Instance.Create<RpaEntry> (name);
-                entry.Offset       = (uint)((int)tuple[0] ^ key);
-                entry.UnpackedSize = (uint)((int)tuple[1] ^ key);
+                entry.Offset       = (long)(Convert.ToInt64 (tuple[0]) ^ key);
+                entry.UnpackedSize = (uint)(Convert.ToInt32 (tuple[1]) ^ key);
                 entry.Size         = entry.UnpackedSize;
                 if (tuple.Count > 2)
                 {
@@ -205,6 +206,8 @@ namespace GameRes.Formats.RenPy
         const byte PROTO            = 0x80; /* identify pickle protocol */
         const byte TUPLE2           = 0x86; /* build 2-tuple from two topmost stack items */
         const byte TUPLE3           = 0x87; /* build 3-tuple from three topmost stack items */
+        const byte LONG1            = 0x8A; /* push long from < 256 bytes */
+        const byte LONG4            = 0x8B; /* push really big long */
         const byte MARK             = (byte)'(';
         const byte STOP             = (byte)'.';
         const byte INT              = (byte)'I';
@@ -527,6 +530,16 @@ namespace GameRes.Formats.RenPy
                         break;
                     continue;
 
+                case LONG1:
+                    if (!LoadLong())
+                        break;
+                    continue;
+
+                case LONG4:
+                    if (!LoadLong4())
+                        break;
+                    continue;
+
                 case APPEND:
                     if (!LoadAppend())
                         break;
@@ -673,6 +686,47 @@ namespace GameRes.Formats.RenPy
                 return false;
             m_stack.Push (n);
             return true;
+        }
+
+        bool LoadLong ()
+        {
+            int count = m_stream.ReadByte();
+            if (-1 == count)
+                return false;
+            m_stack.Push (DecodeLong (count));
+            return true;
+        }
+
+        bool LoadLong4 ()
+        {
+            int count = 0;
+            if (!ReadInt (4, out count) || count < 0)
+                return false;
+            m_stack.Push (DecodeLong (count));
+            return true;
+        }
+
+        object DecodeLong (int count)
+        {
+            if (count <= 0)
+                return 0L;
+            else if (count > 8)
+            {
+                var bytes = new byte[count];
+                m_stream.Read (bytes, 0, count);
+                return new BigInteger (bytes);
+            }
+            else
+            {
+                var bytes = new byte[8];
+                m_stream.Read (bytes, 0, count);
+                if (0 != (bytes[count-1] & 0x80)) // sign bit is set
+                {
+                    for (int i = count; i < bytes.Length; ++i)
+                        bytes[i] = 0xFF;
+                }
+                return bytes.ToInt64 (0);
+            }
         }
 
         bool LoadCountedTuple (int count)
