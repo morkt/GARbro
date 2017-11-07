@@ -85,7 +85,13 @@ namespace GameRes.Formats.ExHibit
                 bool arc_found = false;
                 for (int i = 0; i < res_count && index_offset < toc_file.MaxOffset; ++i)
                 {
-                    if (toc_file.View.ReadInt32 (index_offset) == arc_index)
+                    int num = toc_file.View.ReadInt32 (index_offset);
+                    if (0x01000000 == num)
+                    {
+                        index_offset += 4;
+                        num = toc_file.View.ReadInt32 (index_offset);
+                    }
+                    if (num == arc_index)
                     {
                         arc_found = true;
                         break;
