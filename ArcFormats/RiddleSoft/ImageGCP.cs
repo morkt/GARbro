@@ -84,6 +84,15 @@ namespace GameRes.Formats.Riddle
             stream.Position = 12;
             var reader = new CmpReader (stream.AsStream, meta.PackedSize, meta.DataSize);
             reader.Unpack();
+            // 24bpp bitmaps have non-standard stride
+            if (24 == meta.BPP && 0 != (meta.Width & 3)
+                && (meta.Height * meta.Width * 3 + 54) == meta.DataSize)
+            {
+                int stride = (int)meta.Width * 3;
+                var pixels = new byte[stride * (int)meta.Height];
+                Buffer.BlockCopy (reader.Data, 54, pixels, 0, pixels.Length);
+                return ImageData.CreateFlipped (meta, PixelFormats.Bgr24, null, pixels, stride);
+            }
             using (var bmp = new MemoryStream (reader.Data))
             {
                 var decoder = new BmpBitmapDecoder (bmp,
