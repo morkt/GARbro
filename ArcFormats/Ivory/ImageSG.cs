@@ -169,6 +169,7 @@ namespace GameRes.Formats.Ivory
                 else
                     UnpackV2();
                 break;
+            case 3: UnpackV3(); break;
             default:
                 throw new NotImplementedException (string.Format ("sRGB image type {0} not implemented", m_info.RgbMode));
             }
@@ -339,6 +340,45 @@ namespace GameRes.Formats.Ivory
                             }
                         }
                     }
+                }
+            }
+        }
+
+        void UnpackV3 ()
+        {
+            Format = 3 == m_channels ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+            m_stride = m_width * m_channels;
+            m_output = new byte[m_stride * m_height];
+            var index = new int[m_height];
+            for (int i = 0; i < m_height; ++i)
+                index[i] = m_input.ReadInt32();
+            var data_pos = m_input.Position;
+            int dst = 0;
+            for (int y = 0; y < m_height; ++y)
+            {
+                m_input.Position = data_pos + index[y];
+                for (int x = 0; x < m_width; )
+                {
+                    int ctl = m_input.ReadUInt8();
+                    int count = ctl & 0x3F;
+                    if (0 != (ctl & 0x40))
+                    {
+                        count <<= 8;
+                        count |= m_input.ReadUInt8();
+                    }
+                    x += count;
+                    count *= m_channels;
+                    if (0 != (ctl & 0x80))
+                    {
+                        m_input.Read (m_output, dst, m_channels);
+                        if (count > m_channels)
+                            Binary.CopyOverlapped (m_output, dst, dst+m_channels, count - m_channels);
+                    }
+                    else
+                    {
+                        m_input.Read (m_output, dst, count);
+                    }
+                    dst += count;
                 }
             }
         }
