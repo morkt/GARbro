@@ -106,8 +106,11 @@ namespace GameRes.Formats.RenPy
                 if (tuple.Count > 2)
                 {
                     entry.Header = tuple[2] as byte[];
-                    if (null != entry.Header)
+                    if (null != entry.Header && entry.Header.Length > 0)
+                    {
                         entry.Size -= (uint)entry.Header.Length;
+                        entry.IsPacked = true;
+                    }
                 }
                 dir.Add (entry);
             }
@@ -124,7 +127,7 @@ namespace GameRes.Formats.RenPy
             else
                 input = Stream.Null;
             var rpa_entry = entry as RpaEntry;
-            if (null == rpa_entry || null == rpa_entry.Header)
+            if (null == rpa_entry || null == rpa_entry.Header || 0 == rpa_entry.Header.Length)
                 return input;
             return new PrefixStream (rpa_entry.Header, input);
         }
