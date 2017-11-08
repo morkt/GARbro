@@ -2,7 +2,7 @@
 //! \date       Mon Sep 12 01:39:49 2016
 //! \brief      'fPK' resource archive.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -44,75 +44,95 @@ namespace GameRes.Formats.Ivory
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
+        public PakOpener ()
+        {
+            Signatures = new uint[] { 0x204B5066, 0x324B5066 };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
-            if (file.MaxOffset != file.View.ReadUInt32 (4))
-                return null;
-
+            int version = '2' == file.View.ReadByte (3) ? 2 : 1;
             long base_offset = 0;
             List<Entry> dir = null;
-            bool got_names = false;
-            long offset = 8;
-            while (offset < file.MaxOffset)
+            byte[] names = null;
+            using (var stream = file.CreateStream())
             {
-                var id = new AsciiString (file.View.ReadBytes (offset, 4));
-                uint section_size = file.View.ReadUInt32 (offset+4);
-                if (0 == section_size)
+                Func<IBinaryStream, long> read_long;
+                if (2 == version)
+                    read_long = s => s.ReadInt64();
+                else
+                    read_long = s => s.ReadUInt32();
+
+                stream.Position = 4;
+                if (file.MaxOffset != read_long (stream))
                     return null;
-                uint header_size = file.View.ReadUInt32 (offset+8);
-                if ("cLST" == id)
+                for (;;)
                 {
-                    int count = file.View.ReadInt32 (offset+0x10);
-                    if (!IsSaneCount (count))
+                    long section_start = stream.Position;
+                    var id_bytes = stream.ReadBytes (4);
+                    if (0 == id_bytes.Length)
+                        break;
+                    var id = new AsciiString (id_bytes);
+                    var section_size = read_long (stream);
+                    var header_size = read_long (stream);
+                    if (section_size < 4 || header_size > section_size)
                         return null;
-                    uint key = file.View.ReadUInt32 (offset+0x14);
-                    var clst = file.View.ReadBytes (offset+header_size, section_size - header_size);
-                    Decrypt (clst, key);
-                    dir = new List<Entry> (count);
-                    int index_offset = 0;
-                    for (int i = 0; i < count; ++i)
+                    var content_pos = section_start + header_size;
+                    if ("cLST" == id)
                     {
-                        var entry = new PkEntry {
-                            NameOffset  = LittleEndian.ToInt32 (clst, index_offset),
-                            Offset      = LittleEndian.ToUInt32 (clst, index_offset+4),
-                            Size        = LittleEndian.ToUInt32 (clst, index_offset+8),
-                        };
-                        dir.Add (entry);
-                        index_offset += 12;
+                        stream.ReadUInt32();
+                        int count = stream.ReadInt32();
+                        if (!IsSaneCount (count))
+                            return null;
+                        uint key = stream.ReadUInt32();
+                        stream.Position = content_pos;
+                        var clst = stream.ReadBytes ((int)(section_size - header_size));
+                        Decrypt (clst, key);
+                        dir = new List<Entry> (count);
+                        using (var index = new BinMemoryStream (clst))
+                        {
+                            for (int i = 0; i < count; ++i)
+                            {
+                                var entry = new PkEntry {
+                                    NameOffset  = (int)read_long (index),
+                                    Offset      = (long)read_long (index),
+                                    Size        = (uint)read_long (index),
+                                };
+                                dir.Add (entry);
+                            }
+                        }
                     }
-                }
-                else if ("cNAM" == id)
-                {
-                    if (null == dir)
-                        return null;
-                    uint key = file.View.ReadUInt32 (offset+0x10);
-                    var cnam = file.View.ReadBytes (offset+header_size, section_size - header_size);
-                    Decrypt (cnam, key);
-                    foreach (PkEntry entry in dir)
+                    else if ("cNAM" == id)
                     {
-                        var name = Binary.GetCString (cnam, entry.NameOffset);
-                        entry.Name = name;
-                        if (name.HasExtension (".px"))
-                            entry.Type = "audio";
-                        else
-                            entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                        if (null == dir)
+                            return null;
+                        stream.ReadUInt32();
+                        uint key = stream.ReadUInt32();
+                        stream.Position = content_pos;
+                        names = stream.ReadBytes ((int)(section_size - header_size));
+                        Decrypt (names, key);
                     }
-                    got_names = true;
+                    else if ("cDAT" == id)
+                    {
+                        base_offset = content_pos;
+                    }
+                    stream.Position = section_start + section_size;
                 }
-                else if ("cDAT" == id)
-                {
-                    base_offset = offset + header_size;
-                }
-                offset += section_size;
             }
-            if (null == dir || !got_names || 0 == base_offset)
+            if (null == dir || null == names || 0 == base_offset)
                 return null;
 
-            foreach (var entry in dir)
+            foreach (PkEntry entry in dir)
             {
                 entry.Offset += base_offset;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
+                var name = Binary.GetCString (names, entry.NameOffset);
+                entry.Name = name;
+                if (name.HasExtension (".px"))
+                    entry.Type = "audio";
+                else
+                    entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
             }
             return new ArcFile (file, this, dir);
         }
