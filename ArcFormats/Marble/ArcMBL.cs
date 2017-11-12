@@ -28,9 +28,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Compression;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Marble
 {
@@ -144,9 +144,9 @@ namespace GameRes.Formats.Marble
                     return null;
                 if (contains_scripts)
                 {
-                    var options = Query<MblOptions> (arcStrings.MBLNotice);
-                    if (options.PassPhrase.Length > 0)
-                        return new MblArchive (file, this, dir, options.PassPhrase);
+                    var password = QueryPassPhrase (file.Name);
+                    if (!string.IsNullOrEmpty (password))
+                        return new MblArchive (file, this, dir, password);
                 }
                 return new ArcFile (file, this, dir);
             }
@@ -187,6 +187,15 @@ namespace GameRes.Formats.Marble
             return new BinMemoryStream (data, entry.Name);
         }
 
+        string QueryPassPhrase (string arc_name)
+        {
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title) && KnownKeys.ContainsKey (title))
+                return KnownKeys[title];
+            var options = Query<MblOptions> (arcStrings.MBLNotice);
+            return options.PassPhrase;
+        }
+
         public override ResourceOptions GetDefaultOptions ()
         {
             return new MblOptions { PassPhrase = Settings.Default.MBLPassPhrase };
@@ -195,6 +204,62 @@ namespace GameRes.Formats.Marble
         public override object GetAccessWidget ()
         {
             return new GUI.WidgetMBL();
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class GraMblOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "MBL/GRA"; } }
+        public override string Description { get { return "Marble engine graphics archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            uint filename_len = file.View.ReadUInt32 (0);
+            int count = file.View.ReadInt32 (4);
+            if (filename_len < 8 || filename_len > 0x40 || !IsSaneCount (count))
+                return null;
+            var arc_name = Path.GetFileNameWithoutExtension (file.Name);
+            if (!arc_name.Equals ("mg_gra", StringComparison.InvariantCultureIgnoreCase))
+                return null;
+
+            uint index_offset = 8;
+            uint index_size = (8u + filename_len) * (uint)count;
+            if (index_size > file.View.Reserve (index_offset, index_size))
+                return null;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                string name = file.View.ReadString (index_offset, filename_len);
+                if (0 == name.Length)
+                    break;
+                name = name.ToLowerInvariant();
+                index_offset += filename_len;
+                var entry = new Entry {
+                    Name    = Path.ChangeExtension (name, "bmp"),
+                    Type    = "image",
+                    Offset  = file.View.ReadUInt32 (index_offset),
+                    Size    = file.View.ReadUInt32 (index_offset+4),
+                };
+                if (entry.Offset < index_size || !entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 8;
+            }
+            if (0 == dir.Count || (1 == dir.Count && count > 1))
+                return null;
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (input.PeekByte() != 0x78)
+                return input;
+            return new ZLibStream (input, CompressionMode.Decompress);
         }
     }
 }
