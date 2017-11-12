@@ -644,6 +644,7 @@ namespace GARbro.GUI
                 case Key.Prior:
                 case Key.Home:
                 case Key.End:
+                case Key.Enter:
                     m_current_input.Reset();
                     break;
                 }
