@@ -157,4 +157,49 @@ namespace GameRes.Formats.Will
     {
         public WaveFormat Format;
     }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Wsm4Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "WSM4"; } }
+        public override string Description { get { return "Tanaka Tatsuhiro's engine music archive v4"; } }
+        public override uint     Signature { get { return 0x344D5357; } } // 'WSM4'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public Wsm4Opener ()
+        {
+            Extensions = new string[] { "wsm" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            uint data_offset = file.View.ReadUInt32 (4);
+            int count = file.View.ReadInt32 (0xC);
+            if (!IsSaneCount (count) || data_offset >= file.MaxOffset)
+                return null;
+            int table_offset = file.View.ReadInt32 (0x10);
+            int table_count = file.View.ReadInt32 (0x14);
+            if (table_offset >= data_offset || !IsSaneCount (table_count))
+                return null;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < table_count; ++i)
+            {
+                var entry = new Entry { Type = "audio" };
+                entry.Offset = file.View.ReadUInt32 (table_offset);
+                entry.Size   = file.View.ReadUInt32 (table_offset+4);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                table_offset += 0x24;
+                dir.Add (entry);
+            }
+            int index_offset = 0x44;
+            for (int i = 0; i < count; ++i)
+            {
+                dir[i].Name = file.View.ReadString (index_offset, 0x40);
+                index_offset += 0x1A8;
+            }
+            return new ArcFile (file, this, dir);
+        }
+    }
 }
