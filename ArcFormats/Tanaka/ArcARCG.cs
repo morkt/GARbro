@@ -28,6 +28,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using GameRes.Cryptography;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Will
 {
@@ -49,37 +52,58 @@ namespace GameRes.Formats.Will
         {
             if (0x10000 != file.View.ReadUInt32 (4))
                 return null;
-            uint index_offset = file.View.ReadUInt32 (8);
-            uint index_size   = file.View.ReadUInt32 (0xC);
+            int index_offset = file.View.ReadInt32 (8);
+            int index_size   = file.View.ReadInt32 (0xC);
             int dir_count = file.View.ReadUInt16 (0x10);
             int count = file.View.ReadInt32 (0x12);
-            if (!IsSaneCount (count) || index_offset >= file.MaxOffset
-                || index_size > file.View.Reserve (index_offset, index_size))
+            int base_offset = index_offset;
+            byte[] index = null;
+            if (0 == index_offset)
+            {
+                if (VFS.IsVirtual || !file.Name.HasExtension ("bmx"))
+                    return null;
+                var bmi_name = Path.ChangeExtension (file.Name, "bmi");
+                index = ReadIndex (bmi_name);
+                if (null == index || !index.AsciiEqual ("ARCG") || index.ToUInt32 (4) != 0x10000)
+                    return null;
+                index_offset = index.ToInt32 (8);
+                index_size   = index.ToInt32 (0xC);
+                dir_count = index.ToUInt16 (0x10);
+                count = index.ToInt32 (0x12);
+                base_offset = 0;
+            }
+            else
+            {
+                if (index_offset >= file.MaxOffset)
+                    return null;
+                index = file.View.ReadBytes (index_offset, (uint)index_size);
+            }
+            if (!IsSaneCount (count) || index_size > index.Length)
                 return null;
-
+            int index_pos = index_offset - base_offset;
             var dir = new List<Entry> (count);
             for (int j = 0; j < dir_count; ++j)
             {
-                uint name_length = file.View.ReadByte (index_offset);
-                var dir_name = file.View.ReadString (index_offset+1, name_length-1);
-                index_offset += name_length; 
-                uint dir_offset = file.View.ReadUInt32 (index_offset);
-                int file_count = file.View.ReadInt32 (index_offset+4);
-                if (dir_offset >= file.MaxOffset || file_count < 0 || file_count > count)
+                int name_length = index[index_pos];
+                var dir_name = Binary.GetCString (index, index_pos+1, name_length-1);
+                index_pos += name_length; 
+                int dir_offset = index.ToInt32 (index_pos) - base_offset;
+                int file_count = index.ToInt32 (index_pos+4);
+                if (dir_offset < 0 || dir_offset >= index.Length || file_count < 0 || file_count > count)
                     return null;
-                index_offset += 8;
+                index_pos += 8;
                 for (int i = 0; i < file_count; ++i)
                 {
-                    name_length = file.View.ReadByte (dir_offset);
+                    name_length = index[dir_offset];
                     if (0 == name_length)
                         return null;
-                    var file_name = file.View.ReadString (dir_offset+1, name_length-1);
+                    var file_name = Binary.GetCString (index, dir_offset+1, name_length-1);
                     file_name = file_name.Replace ('?', '？');
                     dir_offset += name_length;
                     file_name = Path.Combine (dir_name, file_name);
                     var entry = FormatCatalog.Instance.Create<Entry> (file_name);
-                    entry.Offset = file.View.ReadUInt32 (dir_offset);
-                    entry.Size   = file.View.ReadUInt32 (dir_offset+4);
+                    entry.Offset = index.ToUInt32 (dir_offset);
+                    entry.Size   = index.ToUInt32 (dir_offset+4);
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
                     dir_offset += 8;
@@ -100,6 +124,74 @@ namespace GameRes.Formats.Will
             return new ArcFile (file, this, dir);
         }
 
+        byte[] ReadIndex (string bmi_name)
+        {
+            var index = File.ReadAllBytes (bmi_name);
+            uint signature = index.ToUInt32 (0);
+            string passkey;
+            if (!KnownKeys.TryGetValue (signature, out passkey))
+            {
+                var root = Path.GetPathRoot (bmi_name);
+                if (string.IsNullOrEmpty (root))
+                    return null;
+                uint serial;
+                if (!GetVolumeInformation (root, IntPtr.Zero, 0, out serial,
+                                           IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0))
+                    return null;
+                passkey = string.Format ("{0:x4}{1}", serial, (int)serial);
+            }
+            uint seed = GetSeedFromString (passkey);
+            var twister = new MersenneTwister (seed);
+            unsafe
+            {
+                fixed (byte* idx8 = index)
+                {
+                    uint* dst = (uint*)idx8;
+                    for (int n = index.Length / 4; n > 0; --n)
+                    {
+                        *dst++ ^= twister.Rand();
+                    }
+                }
+            }
+            return index;
+        }
+
+        uint GetSeedFromString (string passphrase)
+        {
+            if (string.IsNullOrEmpty (passphrase))
+                return 0;
+            var buf = Encodings.cp932.GetBytes (passphrase);
+            int seed = (sbyte)buf[0];
+            for (int i = 1; i < buf.Length; ++i)
+                seed *= (sbyte)buf[i];
+            return (uint)seed;
+        }
+        
+        [DllImport("Kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public extern static bool GetVolumeInformation(
+            string rootPathName, IntPtr volumeNameBuffer, int volumeNameSize,
+            out uint volumeSerialNumber, IntPtr maximumComponentLength, IntPtr fileSystemFlags,
+            IntPtr fileSystemNameBuffer, int nFileSystemNameSize);
+
+        BmiScheme KnownSchemes = new BmiScheme();
+
+        public override ResourceScheme Scheme
+        {
+            get { return KnownSchemes; }
+            set { KnownSchemes = (BmiScheme)value; }
+        }
+
+        internal IDictionary<uint, string> KnownKeys {
+            get { return KnownSchemes.KnownKeys ?? new Dictionary<uint, string>(); }
+        }
+
         internal static Lazy<ImageFormat> BcFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("BC"));
+    }
+
+    [Serializable]
+    public class BmiScheme : ResourceScheme
+    {
+        public IDictionary<uint, string>  KnownKeys;
     }
 }
