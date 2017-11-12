@@ -37,6 +37,11 @@ namespace GameRes.Formats.Will
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public MbfOpener ()
+        {
+            Signatures = new uint[] { 0x3046424D, 0x3146424D };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
@@ -64,13 +69,18 @@ namespace GameRes.Formats.Will
             }
             foreach (var entry in dir)
             {
-                if (!file.View.AsciiEqual (data_offset, "BC"))
+                if (file.View.AsciiEqual (data_offset, "BC"))
+                {
+                    entry.Size = file.View.ReadUInt32 (data_offset+2);
+                    entry.Type = "image";
+                }
+                else if (file.View.AsciiEqual (data_offset, "$SEQ"))
+                    entry.Size = file.View.ReadUInt32 (data_offset+4);
+                else
                     return null;
                 entry.Offset = data_offset;
-                entry.Size = file.View.ReadUInt32 (data_offset+2);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                entry.Type = "image";
                 data_offset += entry.Size;
             }
             return new ArcFile (file, this, dir);
