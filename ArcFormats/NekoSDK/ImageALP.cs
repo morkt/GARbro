@@ -48,7 +48,7 @@ namespace GameRes.Formats.NekoSDK
                 if (alpha.Length != alp.Read (alpha, 0, alpha.Length) || alp.ReadByte() != -1)
                     return null;
             }
-            file.Position = info.HeaderLength;
+            file.Position = info.ImageOffset;
             int dst_stride = (int)info.Width * 4;
             int gap = -((int)info.Width * info.BPP / 8) & 3;
             var pixels = new byte[(int)info.Height * dst_stride];

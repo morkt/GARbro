@@ -37,7 +37,7 @@ namespace GameRes
     public class BmpMetaData : ImageMetaData
     {
         public uint ImageLength;
-        public uint HeaderLength;
+        public uint ImageOffset;
     }
 
     public interface IBmpExtension
@@ -114,7 +114,8 @@ namespace GameRes
             if ('B' != c1 || 'M' != c2)
                 return null;
             uint size = file.ReadUInt32();
-            SkipBytes (file, 8);
+            file.ReadUInt32();
+            uint image_offset = file.ReadUInt32();
             uint header_size = file.ReadUInt32();
             if (size < 14+header_size)
             {
@@ -147,7 +148,7 @@ namespace GameRes
                 OffsetY = 0,
                 BPP = bpp,
                 ImageLength = size,
-                HeaderLength = header_size + 14,
+                ImageOffset = image_offset,
             };
         }
     }
@@ -160,7 +161,7 @@ namespace GameRes
             if (file.AsStream.CanSeek)
             {
                 var width_x_height = info.Width * info.Height;
-                uint bmp_length = width_x_height * (uint)info.BPP/8 + info.HeaderLength;
+                uint bmp_length = width_x_height * (uint)info.BPP/8 + info.ImageOffset;
                 if (bmp_length == info.ImageLength || bmp_length+2 == info.ImageLength)
                 {
                     if (0x20 == info.BPP)
@@ -183,7 +184,7 @@ namespace GameRes
             if (alpha.Length != file.Read (alpha, 0, alpha.Length))
                 throw new EndOfStreamException();
 
-            file.Position = info.HeaderLength;
+            file.Position = info.ImageOffset;
             int dst_stride = (int)info.Width * 4;
             var pixels = new byte[(int)info.Height * dst_stride];
             int a_src = 0;
@@ -201,7 +202,7 @@ namespace GameRes
 
         private ImageData ReadBitmapBGRA (IBinaryStream file, BmpMetaData info)
         {
-            file.Position = info.HeaderLength;
+            file.Position = info.ImageOffset;
             int stride = (int)info.Width * 4;
             var pixels = new byte[(int)info.Height * stride];
             bool has_alpha = false;
