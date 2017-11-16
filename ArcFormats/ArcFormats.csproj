@@ -388,6 +388,10 @@
     <Compile Include="Tactics\WidgetTactics.xaml.cs">
       <DependentUpon>WidgetTactics.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tamamo\ArcPCK.cs" />
+    <Compile Include="Tamamo\WidgetPCK.xaml.cs">
+      <DependentUpon>WidgetPCK.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TamaSoft\ArcEPK.cs" />
     <Compile Include="TamaSoft\AudioESD.cs" />
     <Compile Include="TamaSoft\ImageBTN.cs" />
@@ -867,6 +871,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Tactics\WidgetTactics.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tamamo\WidgetPCK.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -669,5 +669,17 @@ namespace GameRes.Formats.Properties {
                 this["FJSYSPassword"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string PCKTitle {
+            get {
+                return ((string)(this["PCKTitle"]));
+            }
+            set {
+                this["PCKTitle"] = value;
+            }
+        }
     }
 }
