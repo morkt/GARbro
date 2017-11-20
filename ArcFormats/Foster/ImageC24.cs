@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
@@ -50,8 +51,13 @@ namespace GameRes.Formats.Foster
             int count = header.ToInt32 (4);
             if (count <= 0)
                 return null;
-            file.Position = header.ToUInt32 (8);
-            var info = new C24MetaData { BPP = 24 };
+            return ReadMetaData (file, header.ToUInt32 (8), 24);
+        }
+
+        internal C24MetaData ReadMetaData (IBinaryStream file, long offset, int bpp)
+        {
+            file.Position = offset;
+            var info = new C24MetaData { BPP = bpp };
             info.Width = file.ReadUInt32();
             info.Height = file.ReadUInt32();
             info.OffsetX = file.ReadInt32();
@@ -72,17 +78,18 @@ namespace GameRes.Formats.Foster
         }
     }
 
-    internal sealed class C24Decoder : IImageDecoder
+    internal abstract class CDecoderBase : IImageDecoder
     {
-        IBinaryStream   m_input;
-        C24MetaData     m_info;
-        byte[]          m_output;
-        bool            m_should_dispose;
-        ImageData       m_image;
+        protected IBinaryStream m_input;
+        protected C24MetaData   m_info;
+        protected byte[]        m_output;
+        private   ImageData     m_image;
+        private   bool          m_should_dispose;
 
         public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
         public ImageFormat SourceFormat { get { return null; } }
         public ImageMetaData       Info { get { return m_info; } }
+        public PixelFormat       Format { get; private set; }
 
         public ImageData Image
         {
@@ -90,27 +97,66 @@ namespace GameRes.Formats.Foster
             {
                 if (null == m_image)
                 {
-                    var pixels = Unpack();
-                    m_image = ImageData.Create (m_info, PixelFormats.Bgr24, null, pixels);
+                    Unpack();
+                    m_image = ImageData.Create (m_info, Format, null, m_output);
                 }
                 return m_image;
             }
         }
 
-        public C24Decoder (IBinaryStream file, C24MetaData info, bool leave_open = false)
+        public CDecoderBase (IBinaryStream file, C24MetaData info, PixelFormat format, bool leave_open = false)
         {
             m_input = file;
             m_info = info;
-            m_output = new byte[3 * m_info.Width * m_info.Height];
+            m_output = new byte[(info.BPP / 8) * (int)m_info.Width * (int)m_info.Height];
             m_should_dispose = !leave_open;
+            Format = format;
         }
 
-        public byte[] Unpack ()
+        protected uint[] ReadRows ()
         {
             m_input.Position = m_info.DataOffset;
             var rows = new uint[m_info.Height];
             for (int i = 0; i < rows.Length; ++i)
                 rows[i] = m_input.ReadUInt32();
+            return rows;
+        }
+
+        protected abstract void Unpack ();
+
+        #region IDisposable Members
+        bool m_disposed = false;
+
+        public void Dispose ()
+        {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (!m_disposed)
+            {
+                if (disposing && m_should_dispose)
+                {
+                    m_input.Dispose();
+                }
+                m_disposed = true;
+            }
+        }
+        #endregion
+    }
+
+    internal sealed class C24Decoder : CDecoderBase
+    {
+        public C24Decoder (IBinaryStream file, C24MetaData info, bool leave_open = false)
+            : base (file, info, PixelFormats.Bgr24, leave_open)
+        {
+        }
+
+        protected override void Unpack ()
+        {
+            var rows = ReadRows();
             int dst = 0;
             int width = (int)m_info.Width;
             foreach (uint row_offset in rows)
@@ -140,23 +186,6 @@ namespace GameRes.Formats.Foster
                     rle = !rle;
                 }
             }
-            return m_output;
         }
-
-        #region IDisposable Members
-        bool m_disposed = false;
-        public void Dispose ()
-        {
-            if (!m_disposed)
-            {
-                if (m_should_dispose)
-                {
-                    m_input.Dispose();
-                }
-                m_disposed = true;
-            }
-            System.GC.SuppressFinalize (this);
-        }
-        #endregion
     }
 }

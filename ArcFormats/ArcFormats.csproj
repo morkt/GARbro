@@ -108,6 +108,7 @@
     <Compile Include="Foster\ArcC24.cs" />
     <Compile Include="Foster\ArcFA2.cs" />
     <Compile Include="Foster\ImageC24.cs" />
+    <Compile Include="Foster\ImageC25.cs" />
     <Compile Include="GameSystem\ArcPureMail.cs" />
     <Compile Include="GameSystem\AudioADP4.cs" />
     <Compile Include="ImagePSM.cs" />

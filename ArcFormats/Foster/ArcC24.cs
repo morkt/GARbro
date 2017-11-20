@@ -23,7 +23,6 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -75,18 +74,38 @@ namespace GameRes.Formats.Foster
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            var offset = entry.Offset;
-            var info = new C24MetaData
-            {
-                Width   = arc.File.View.ReadUInt32 (offset),
-                Height  = arc.File.View.ReadUInt32 (offset+4),
-                OffsetX = arc.File.View.ReadInt32 (offset+8),
-                OffsetY = arc.File.View.ReadInt32 (offset+12),
-                BPP     = 24,
-                DataOffset = (uint)(offset + 0x10),
-            };
+            var info = ReadImageInfo (arc.File, entry.Offset, 24);
             var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset);
             return new C24Decoder (input, info);
+        }
+
+        internal C24MetaData ReadImageInfo (ArcView file, long offset, int bpp)
+        {
+            return new C24MetaData
+            {
+                Width   = file.View.ReadUInt32 (offset),
+                Height  = file.View.ReadUInt32 (offset+4),
+                OffsetX = file.View.ReadInt32 (offset+8),
+                OffsetY = file.View.ReadInt32 (offset+12),
+                BPP     = bpp,
+                DataOffset = (uint)(offset + 0x10),
+            };
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class C25Opener : C24Opener
+    {
+        public override string         Tag { get { return "C25"; } }
+        public override uint     Signature { get { return 0x00353243; } } // 'C25'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var info = ReadImageInfo (arc.File, entry.Offset, 32);
+            var input = arc.File.CreateStream (0, (uint)arc.File.MaxOffset);
+            return new C25Decoder (input, info);
         }
     }
 }
