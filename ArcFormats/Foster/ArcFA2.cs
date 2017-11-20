@@ -53,7 +53,7 @@ namespace GameRes.Formats.Foster
                 if (is_packed)
                     index = Decompress (input, (uint)count * 0x20);
                 else
-                    index = file.View.ReadBytes (index_offset, (uint)(file.MaxOffset - index_offset));
+                    index = input.ReadBytes ((int)(file.MaxOffset - index_offset));
             }
 
             uint data_offset = 0x10;
