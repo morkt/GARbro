@@ -2,7 +2,7 @@
 //! \date       Fri Oct 31 13:37:11 2014
 //! \brief      Will ARC archive format implementation.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
@@ -57,7 +58,7 @@ namespace GameRes.Formats.Will
         ArcOpener ()
         {
             Extensions = new string[] { "arc" };
-            Signatures = new uint[] { 1, 0 };
+            Signatures = new uint[] { 1, 0, 5 };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -71,8 +72,6 @@ namespace GameRes.Formats.Will
             for (int i = 0; i < ext_count; ++i)
             {
                 string ext = file.View.ReadString (dir_offset, 4).ToLowerInvariant();
-                if (0 == ext.Length)
-                    return null;
                 int count = file.View.ReadInt32 (dir_offset+4);
                 uint offset = file.View.ReadUInt32 (dir_offset+8);
                 if (count <= 0 || count > 0xffff || offset <= dir_offset || offset > file.MaxOffset)
@@ -95,17 +94,18 @@ namespace GameRes.Formats.Will
 
         List<Entry> ReadFileList (ArcView file, IEnumerable<ExtRecord> ext_list, uint name_size)
         {
-            var dir = new List<Entry>();
+            var dir = new List<Entry> (ext_list.Sum (ext => ext.FileCount));
             foreach (var ext in ext_list)
             {
-                dir.Capacity = dir.Count + ext.FileCount;
                 uint dir_offset = ext.DirOffset;
                 for (int i = 0; i < ext.FileCount; ++i)
                 {
                     string name = file.View.ReadString (dir_offset, name_size);
                     if (string.IsNullOrEmpty (name))
                         return null;
-                    name = name.ToLowerInvariant()+'.'+ext.Extension;
+                    name = name.ToLowerInvariant();
+                    if (ext.Extension.Length > 0)
+                        name = Path.ChangeExtension (name, ext.Extension);
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Size = file.View.ReadUInt32 (dir_offset+name_size);
                     entry.Offset = file.View.ReadUInt32 (dir_offset+name_size+4);
@@ -176,8 +176,6 @@ namespace GameRes.Formats.Will
             foreach (var entry in list)
             {
                 string ext = Path.GetExtension (entry.Name).TrimStart ('.').ToUpperInvariant();
-                if (string.IsNullOrEmpty (ext))
-                    throw new InvalidFileName (entry.Name, arcStrings.MsgNoExtension);
                 if (ext.Length > 3)
                     throw new InvalidFileName (entry.Name, arcStrings.MsgExtensionTooLong);
                 string name = Path.GetFileNameWithoutExtension (entry.Name).ToUpperInvariant();
