@@ -50,8 +50,6 @@ namespace GameRes.Formats.RPGMaker
             if (!file.View.AsciiEqual (4, "AD\0"))
                 return null;
             int version = file.View.ReadByte (7);
-            if (version != 3)
-                return null;
             using (var index = file.CreateStream())
             {
                 List<Entry> dir = null;
