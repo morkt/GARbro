@@ -987,7 +987,10 @@ namespace GARbro.GUI
                     }
                     CurrentAudio = new WaveStreamImpl (sound);
                     AudioDevice = new WaveOutEvent();
-                    AudioDevice.Init (CurrentAudio);
+                    if ("wav" == sound.SourceFormat)
+                        AudioDevice.Init (CurrentAudio.ToSampleProvider());
+                    else
+                        AudioDevice.Init (CurrentAudio);
                     AudioDevice.PlaybackStopped += OnPlaybackStopped;
                     AudioDevice.Play();
                     input = null;
