@@ -92,7 +92,9 @@ namespace GameRes.Formats.Rpm
             uint is_compressed = file.View.ReadUInt32 (4);
             if (is_compressed > 1) // should be either 0 or 1
                 return null;
-            var scheme = GuessScheme (file, count);
+
+            var index_reader = new ArcIndexReader (file, count, is_compressed != 0);
+            var scheme = index_reader.GuessScheme (8, new int[] { 0x20, 0x18 });
             // additional filename extension check avoids dialog popup on false positives
             if (null == scheme && KnownSchemes.Count > 0 && file.Name.HasExtension (".arc"))
                 scheme = QueryScheme();
@@ -104,35 +106,9 @@ namespace GameRes.Formats.Rpm
                 && VFS.IsPathEqualsToFileName (file.Name, "instdata.arc"))
                 scheme = new EncryptionScheme ("inst", scheme.NameLength);
 
-            int index_size = count * (scheme.NameLength + 12);
-            var index = new byte[index_size];
-            if (index_size != file.View.Read (8, index, 0, (uint)index_size))
+            var dir = index_reader.ReadIndex (8, scheme);
+            if (null == dir)
                 return null;
-            DecryptIndex (index, scheme.Keyword);
-
-            uint data_offset = LittleEndian.ToUInt32 (index, scheme.NameLength + 8);
-            if (data_offset != 8 + index_size)
-                return null;
-
-            int index_offset = 0;
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
-            {
-                var name = Binary.GetCString (index, index_offset, scheme.NameLength);
-                index_offset += scheme.NameLength;
-                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                entry.UnpackedSize  = LittleEndian.ToUInt32 (index, index_offset);
-                entry.Size          = LittleEndian.ToUInt32 (index, index_offset+4);
-                entry.Offset        = LittleEndian.ToUInt32 (index, index_offset+8);
-                entry.IsPacked      = is_compressed != 0;
-                if (0 != entry.Size)
-                {
-                    if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                }
-                dir.Add (entry);
-                index_offset += 12;
-            }
             return new ArcFile (file, this, dir);
         }
 
@@ -147,18 +123,98 @@ namespace GameRes.Formats.Rpm
             return new LzssStream (input);
         }
 
-        EncryptionScheme GuessScheme (ArcView file, int count)
+        public override ResourceOptions GetDefaultOptions ()
         {
-            int[] possible_sizes = { 0x20, 0x18 };
-            byte[] first_entry = new byte[possible_sizes[0] + 12];
-            if (first_entry.Length != file.View.Read (8, first_entry, 0, (uint)first_entry.Length))
+            return new RpmOptions {
+                Scheme = GetScheme (Settings.Default.RPMScheme),
+            };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new WidgetARC();
+        }
+
+        EncryptionScheme QueryScheme ()
+        {
+            var options = Query<RpmOptions> (arcStrings.RPMEncryptedNotice);
+            return options.Scheme;
+        }
+
+        static EncryptionScheme GetScheme (string title)
+        {
+            EncryptionScheme scheme = null;
+            KnownSchemes.TryGetValue (title, out scheme);
+            return scheme;
+        }
+    }
+
+    internal sealed class ArcIndexReader
+    {
+        ArcView             m_file;
+        int                 m_count;
+        bool                m_is_compressed;
+
+        public ArcIndexReader (ArcView file, int count, bool is_compressed)
+        {
+            m_file = file;
+            m_count = count;
+            m_is_compressed = is_compressed;
+        }
+
+        public List<Entry> ReadIndex (long offset, EncryptionScheme scheme)
+        {
+            int index_size = m_count * (scheme.NameLength + 12);
+            var index = m_file.View.ReadBytes (offset, (uint)index_size);
+            if (index.Length != index_size)
+                return null;
+            DecryptIndex (index, scheme.Keyword);
+
+            uint data_offset = LittleEndian.ToUInt32 (index, scheme.NameLength + 8);
+            if (data_offset != offset + index_size)
+                return null;
+
+            int index_offset = 0;
+            var dir = new List<Entry> (m_count);
+            for (int i = 0; i < m_count; ++i)
+            {
+                var name = Binary.GetCString (index, index_offset, scheme.NameLength);
+                index_offset += scheme.NameLength;
+                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                entry.UnpackedSize  = LittleEndian.ToUInt32 (index, index_offset);
+                entry.Size          = LittleEndian.ToUInt32 (index, index_offset+4);
+                entry.Offset        = LittleEndian.ToUInt32 (index, index_offset+8);
+                entry.IsPacked      = m_is_compressed;
+                if (0 != entry.Size)
+                {
+                    if (entry.Offset < data_offset || !entry.CheckPlacement (m_file.MaxOffset))
+                        return null;
+                }
+                dir.Add (entry);
+                index_offset += 12;
+            }
+            return dir;
+        }
+
+        internal static void DecryptIndex (byte[] data, string key)
+        {
+            for (int i = 0; i < data.Length; ++i)
+            {
+                data[i] += (byte)key[i % key.Length];
+            }
+        }
+
+        public EncryptionScheme GuessScheme (int index_offset, int[] possible_name_sizes)
+        {
+            byte[] first_entry = new byte[possible_name_sizes[0] + 12];
+            if (first_entry.Length != m_file.View.Read (index_offset, first_entry, 0, (uint)first_entry.Length))
                 return null;
             byte[] key_bits = new byte[4];
             byte[] actual_offset = new byte[4];
-            foreach (var name_length in possible_sizes)
+            foreach (var name_length in possible_name_sizes)
             {
-                int first_offset = 8 + count * (name_length + 12);
-                if (first_offset >= file.MaxOffset)
+                int first_offset = index_offset + m_count * (name_length + 12);
+                if (first_offset >= m_file.MaxOffset)
                     continue;
                 LittleEndian.Pack (first_offset, actual_offset, 0);
                 int i;
@@ -207,39 +263,6 @@ namespace GameRes.Formats.Rpm
                 }
             }
             return -1;
-        }
-
-        private void DecryptIndex (byte[] data, string key)
-        {
-            for (int i = 0; i < data.Length; ++i)
-            {
-                data[i] += (byte)key[i % key.Length];
-            }
-        }
-
-        public override ResourceOptions GetDefaultOptions ()
-        {
-            return new RpmOptions {
-                Scheme = GetScheme (Settings.Default.RPMScheme),
-            };
-        }
-
-        public override object GetAccessWidget ()
-        {
-            return new WidgetARC();
-        }
-
-        EncryptionScheme QueryScheme ()
-        {
-            var options = Query<RpmOptions> (arcStrings.RPMEncryptedNotice);
-            return options.Scheme;
-        }
-
-        static EncryptionScheme GetScheme (string title)
-        {
-            EncryptionScheme scheme = null;
-            KnownSchemes.TryGetValue (title, out scheme);
-            return scheme;
         }
     }
 }
