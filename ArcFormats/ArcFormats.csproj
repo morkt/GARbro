@@ -124,6 +124,7 @@
     <Compile Include="Malie\ArcLIBU.cs" />
     <Compile Include="Malie\LibScheme.cs" />
     <Compile Include="Malie\MalieEncryption.cs" />
+    <Compile Include="Masys\ArcMGS.cs" />
     <Compile Include="Masys\ImageALP.cs" />
     <Compile Include="MicroVision\ArcARC.cs" />
     <Compile Include="MicroVision\ArcGSD.cs" />
