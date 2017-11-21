@@ -95,6 +95,7 @@ namespace GameRes.Formats.Megu
         public ushort  Channels;
         public uint    SamplesPerSecond;
         public ushort  BitsPerSample;
+        public byte    Format;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -118,11 +119,9 @@ namespace GameRes.Formats.Megu
             var dir = new List<Entry> (count);
             int index_offset = 0x22;
             byte[] name_buf = new byte[16];
-            for (uint i = 0; i < count; ++i)
+            for (int i = 0; i < count; ++i)
             {
-                ushort channels = file.View.ReadUInt16 (index_offset+1);
-                uint rate = file.View.ReadUInt32 (index_offset+3);
-                ushort bits = file.View.ReadUInt16 (index_offset+7);
+                byte format = file.View.ReadByte (index_offset);
                 int name_size = file.View.ReadByte (index_offset+9);
                 if (0 == name_size)
                     return null;
@@ -131,18 +130,20 @@ namespace GameRes.Formats.Megu
                 file.View.Read (index_offset+10, name_buf, 0, (uint)name_size);
                 if (100 == flag)
                     MgdOpener.Decrypt (name_buf, 0, name_size);
-                index_offset += 10 + name_size;
+                var name = Encodings.cp932.GetString (name_buf, 0, name_size);
+                name = Path.ChangeExtension (name, GetExtFromFormatId (format));
 
-                var entry = new MgsEntry
+                var entry = FormatCatalog.Instance.Create<MgsEntry> (name);
+                entry.Format = format;
+                if (0 == format)
                 {
-                    Name = Encodings.cp932.GetString (name_buf, 0, name_size) + ".wav",
-                    Type = "audio",
-                    Size = file.View.ReadUInt32 (index_offset),
-                    Offset = file.View.ReadUInt32 (index_offset + 4),
-                    Channels = channels,
-                    SamplesPerSecond = rate,
-                    BitsPerSample = bits,
-                };
+                    entry.Channels = file.View.ReadUInt16 (index_offset+1);
+                    entry.SamplesPerSecond = file.View.ReadUInt32 (index_offset+3);
+                    entry.BitsPerSample = file.View.ReadUInt16 (index_offset+7);
+                }
+                index_offset += 10 + name_size;
+                entry.Size = file.View.ReadUInt32 (index_offset);
+                entry.Offset = file.View.ReadUInt32 (index_offset + 4);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
@@ -154,30 +155,32 @@ namespace GameRes.Formats.Megu
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var went = entry as MgsEntry;
-            if (null == went)
+            if (null == went || went.Format != 0)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
-            var riff = new byte[0x2c];
-            using (var buf = new MemoryStream (riff))
-            using (var wav = new BinaryWriter (buf))
+            using (var riff = new MemoryStream (0x2C))
             {
-                wav.Write (0x46464952); // 'RIFF'
-                uint total_size = 0x2c - 8 + entry.Size;
-                wav.Write (total_size);
-                wav.Write (0x45564157); // 'WAVE'
-                wav.Write (0x20746d66); // 'fmt '
-                wav.Write (0x10);
-                wav.Write ((ushort)1);
-                wav.Write (went.Channels);
-                wav.Write (went.SamplesPerSecond);
-                uint bps = went.SamplesPerSecond * went.Channels * went.BitsPerSample / 8;
-                wav.Write (bps);
-                wav.Write ((ushort)2);
-                wav.Write (went.BitsPerSample);
-                wav.Write (0x61746164); // 'data'
-                wav.Write (went.Size);
-                wav.Flush ();
+                ushort align = (ushort)(went.Channels * went.BitsPerSample / 8);
+                var format = new WaveFormat {
+                    FormatTag = 1,
+                    Channels = went.Channels,
+                    SamplesPerSecond = went.SamplesPerSecond,
+                    AverageBytesPerSecond = went.SamplesPerSecond * align,
+                    BlockAlign = align,
+                    BitsPerSample = went.BitsPerSample,
+                };
+                WaveAudio.WriteRiffHeader (riff, format, entry.Size);
                 var input = arc.File.CreateStream (entry.Offset, entry.Size);
-                return new PrefixStream (riff, input);
+                return new PrefixStream (riff.ToArray(), input);
+            }
+        }
+
+        internal static string GetExtFromFormatId (int id)
+        {
+            switch (id)
+            {
+            case 0: return "wav";
+            case 1: return "mid";
+            default: return null;
             }
         }
     }
