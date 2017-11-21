@@ -134,6 +134,7 @@
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
     <Compile Include="RPGMaker\ArcRGSS.cs" />
+    <Compile Include="RPM\ArcZENOS.cs" />
     <Compile Include="rUGP\AudioRHA.cs" />
     <Compile Include="Lilim\ArcFGA.cs" />
     <Compile Include="Slg\ArcSPD.cs" />
