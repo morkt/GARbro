@@ -111,6 +111,7 @@
     <Compile Include="Foster\ImageC25.cs" />
     <Compile Include="GameSystem\ArcPureMail.cs" />
     <Compile Include="GameSystem\AudioADP4.cs" />
+    <Compile Include="ImagePNX.cs" />
     <Compile Include="ImagePSM.cs" />
     <Compile Include="Kaas\ArcPB.cs" />
     <Compile Include="Kaas\AudioKAAS.cs" />
