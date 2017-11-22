@@ -44,7 +44,7 @@ namespace GameRes.Formats.CsWare
             uint width  = header.ToUInt32 (4);
             uint height = header.ToUInt32 (8);
             int bpp = header.ToUInt16 (0xE);
-            if (bpp != 2 && bpp != 8 && bpp != 24)
+            if (bpp != 1 && bpp != 8 && bpp != 24)
                 return null;
             return new ImageMetaData { Width = width, Height = height, BPP = bpp };
         }
