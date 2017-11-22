@@ -102,6 +102,7 @@
     <Compile Include="Cadath\ArcDAF.cs" />
     <Compile Include="Cadath\ImageCGF.cs" />
     <Compile Include="Crowd\ImageCRZ.cs" />
+    <Compile Include="CsWare\ImageBPC.cs" />
     <Compile Include="Cyberworks\ArcApp.cs" />
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />
