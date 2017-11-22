@@ -535,6 +535,9 @@
     <Compile Include="TopCat\ImageSPD.cs" />
     <Compile Include="Triangle\ArcCGF.cs" />
     <Compile Include="Triangle\ArcIAF.cs" />
+    <Compile Include="Ucom\ArcDATA.cs" />
+    <Compile Include="Ucom\ArcUK.cs" />
+    <Compile Include="Ucom\ImageGPC.cs" />
     <Compile Include="uGOS\ArcDET.cs" />
     <Compile Include="uGOS\ImageBMP.cs" />
     <Compile Include="UMeSoft\ArcPK.cs" />
