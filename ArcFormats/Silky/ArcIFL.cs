@@ -2,7 +2,7 @@
 //! \date       Sun Apr 12 20:47:04 2015
 //! \brief      IFLS archive implementation.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -45,8 +45,7 @@ namespace GameRes.Formats.Silky
         {
             uint data_offset = file.View.ReadUInt32 (4);
             int count = file.View.ReadInt32 (8);
-            if (data_offset <= 12 || data_offset >= file.MaxOffset
-                || count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count) || data_offset <= 12 || data_offset >= file.MaxOffset)
                 return null;
             var dir = new List<Entry> (count);
             long index_offset = 12;
@@ -55,7 +54,7 @@ namespace GameRes.Formats.Silky
                 string name = file.View.ReadString (index_offset, 0x10);
                 if (0 == name.Length)
                     return null;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x10);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x14);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -68,13 +67,18 @@ namespace GameRes.Formats.Silky
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (entry.Size <= 8
-                || !entry.Name.HasExtension (".snc")
-                || !arc.File.View.AsciiEqual (entry.Offset, "CMP_"))
-                return arc.File.CreateStream (entry.Offset, entry.Size);
-            int unpacked_size = arc.File.View.ReadInt32 (entry.Offset+4);
-            using (var input = arc.File.CreateStream (entry.Offset+8, entry.Size-8))
-            using (var lzss = new LzssReader (input, (int)(entry.Size - 8), unpacked_size))
+            var pent = (PackedEntry)entry;
+            if (!pent.IsPacked)
+            {
+                if (entry.Size <= 12
+                    || entry.Name.HasExtension (".grd") // let GrdFormat unpack images
+                    || !arc.File.View.AsciiEqual (entry.Offset, "CMP_"))
+                    return arc.File.CreateStream (entry.Offset, entry.Size);
+                pent.IsPacked = true;
+                pent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset+4);
+            }
+            using (var input = arc.File.CreateStream (entry.Offset+12, entry.Size-12))
+            using (var lzss = new LzssReader (input, (int)input.Length, (int)pent.UnpackedSize))
             {
                 lzss.FrameFill = 0x20;
                 lzss.Unpack();
