@@ -48,11 +48,10 @@ namespace GameRes.Formats.ScenePlayer
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            int first = stream.ReadByte() ^ 0x21;
+            int first = stream.PeekByte() ^ 0x21;
             if (first != 0x78) // doesn't look like zlib stream
                 return null;
 
-            stream.Position = 0;
             using (var input = new XoredStream (stream.AsStream, 0x21, true))
             using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
             using (var bmp = new BinaryStream (zstream, stream.Name))
