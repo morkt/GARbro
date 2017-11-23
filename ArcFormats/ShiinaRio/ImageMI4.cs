@@ -53,13 +53,25 @@ namespace GameRes.Formats.ShiinaRio
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var reader = new Reader (stream, (int)info.Width, (int)info.Height);
-            reader.Unpack();
+            try
+            {
+                reader.Unpack (MaiVersion.First);
+            }
+            catch
+            {
+                reader.Unpack (MaiVersion.Second);
+            }
             return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("Mi4Format.Write not implemented");
+        }
+
+        internal enum MaiVersion
+        {
+            First, Second
         }
 
         internal sealed class Reader
@@ -78,12 +90,15 @@ namespace GameRes.Formats.ShiinaRio
                 m_output = new byte[m_stride*height];
             }
 
-            public void Unpack ()
+            public void Unpack (MaiVersion version = MaiVersion.First)
             {
                 m_input.Position = 0x10;
                 m_bit_count = 0;
                 LoadBits();
-                UnpackV2();
+                if (MaiVersion.First == version)
+                    UnpackV1();
+                else
+                    UnpackV2();
             }
 
             int  m_bit_count;
