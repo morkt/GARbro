@@ -96,6 +96,8 @@
     <Compile Include="Artemis\ArcMJA.cs" />
     <Compile Include="BeF\AudioVZY.cs" />
     <Compile Include="BeF\ImageALO.cs" />
+    <Compile Include="BellDa\ArcDAT.cs" />
+    <Compile Include="BellDa\AudioPW.cs" />
     <Compile Include="BlackRainbow\ArcCCF.cs" />
     <Compile Include="BlackRainbow\ArcIMP.cs" />
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
@@ -141,6 +143,7 @@
     <Compile Include="rUGP\AudioRHA.cs" />
     <Compile Include="Lilim\ArcFGA.cs" />
     <Compile Include="ScenePlayer\ArcPMX.cs" />
+    <Compile Include="Silky\ImageGRD.cs" />
     <Compile Include="Slg\ArcSPD.cs" />
     <Compile Include="Software House Parsley\ArcCG.cs" />
     <Compile Include="Artemis\ArcPFS.cs" />
@@ -394,6 +397,9 @@
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="SuperNekoX\ArcGPC.cs" />
+    <Compile Include="SysD\ArcDPK.cs" />
+    <Compile Include="SysD\AudioDWV.cs" />
+    <Compile Include="SysD\ImageDBM.cs" />
     <Compile Include="Tactics\WidgetTactics.xaml.cs">
       <DependentUpon>WidgetTactics.xaml</DependentUpon>
     </Compile>
