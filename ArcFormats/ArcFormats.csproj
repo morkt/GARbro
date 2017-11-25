@@ -143,6 +143,7 @@
     <Compile Include="rUGP\AudioRHA.cs" />
     <Compile Include="Lilim\ArcFGA.cs" />
     <Compile Include="ScenePlayer\ArcPMX.cs" />
+    <Compile Include="Scoop\ArcGX.cs" />
     <Compile Include="Silky\ImageGRD.cs" />
     <Compile Include="Slg\ArcSPD.cs" />
     <Compile Include="Software House Parsley\ArcCG.cs" />
@@ -616,7 +617,7 @@
     <Compile Include="Zyx\ArcBDF.cs" />
     <Compile Include="Zyx\ImageSPL.cs" />
     <EmbeddedResource Include="Strings\arcStrings.zh-Hans.resx" />
-    <None Include="Seraphim\ArcSeraph.cs" />
+    <Compile Include="Seraphim\ArcSeraph.cs" />
     <Compile Include="ArcSPack.cs" />
     <Compile Include="NitroPlus\ArcSteinsGate.cs" />
     <Compile Include="Triangle\ArcSUD.cs" />
