@@ -32,40 +32,35 @@ using GameRes.Compression;
 
 namespace GameRes.Formats.Seraphim
 {
-    internal class ArchPacEntry : Entry
-    {
-    }
-
+    /// <summary>
+    /// this archive format has different index offsets hardcoded into game executable.
+    /// </summary>
     [Export(typeof(ArchiveFormat))]
-    public class DatOpener : ArchiveFormat
+    public class ArchPacOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "DAT"; } }
+        public override string         Tag { get { return "SERAPH/ARCH"; } }
         public override string Description { get { return "Seraphim engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
-        public override bool     CanCreate { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
         public          bool   IsAmbiguous { get { return true; } }
 
-        static readonly Regex   VoiceRe = new Regex (@"^Voice\d\.dat$", RegexOptions.IgnoreCase);
+        public ArchPacOpener ()
+        {
+            Extensions = new string[] { "dat" };
+        }
+
+//        const long ArchPacOffset = 0x0C23659F;
+        const long ArchPacOffset = 0x0A0B0AEA;
 
         public override ArcFile TryOpen (ArcView file)
         {
             if (file.MaxOffset > uint.MaxValue)
                 return null;
             string name = Path.GetFileName (file.Name);
-            if (name.Equals ("ArchPac.dat", StringComparison.InvariantCultureIgnoreCase))
-                return OpenArchPac (file);
-            else if (VoiceRe.Match (name).Success)
-                return OpenVoice (file);
-//            else if (name.Equals ("ArchCash.dat", StringComparison.InvariantCultureIgnoreCase))
-//                return OpenArchCash (file);
-            return null;
-        }
+            if (!name.Equals ("ArchPac.dat", StringComparison.InvariantCultureIgnoreCase))
+                return null;
 
-        const long ArchPacOffset = 0x0C23659F;
-
-        private ArcFile OpenArchPac (ArcView file)
-        {
             long index_offset = ArchPacOffset;
             int base_count = file.View.ReadInt32 (index_offset);
             int file_count = file.View.ReadInt32 (index_offset + 4);
@@ -95,7 +90,7 @@ namespace GameRes.Formats.Seraphim
                 index_offset += 4;
                 for (int i = 0; i < base_offsets[j].Item2; ++i)
                 {
-                    var entry = new ArchPacEntry { Name = string.Format ("{0}-{1:D5}.cts", j, i), Type = "image" };
+                    var entry = new PackedEntry { Name = string.Format ("{0}-{1:D5}.cts", j, i), Type = "image" };
                     entry.Offset = next_offset;
                     next_offset = file.View.ReadUInt32 (index_offset);
                     index_offset += 4;
@@ -105,42 +100,12 @@ namespace GameRes.Formats.Seraphim
                     entry.Offset += base_offsets[j].Item1;
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
-                    dir.Add (entry);
+                    if (entry.Size > 0)
+                        dir.Add (entry);
                 }
             }
-            return new ArcFile (file, this, dir);
-        }
-
-        private ArcFile OpenVoice (ArcView file)
-        {
-            int count = file.View.ReadInt16 (0);
-            if (!IsSaneCount (count))
+            if (0 == dir.Count)
                 return null;
-            uint data_offset = 2 + 4 * (uint)count;
-            if (data_offset > file.View.Reserve (0, data_offset))
-                return null;
-
-            int index_offset = 2;
-            uint next_offset = file.View.ReadUInt32 (index_offset);
-            if (next_offset < data_offset)
-                return null;
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
-            {
-                index_offset += 4;
-                var entry = new Entry { Name = string.Format ("{0:D5}.wav", i), Type = "audio" };
-                entry.Offset = next_offset;
-                if (i + 1 == count)
-                    next_offset = (uint)file.MaxOffset;
-                else
-                    next_offset = file.View.ReadUInt32 (index_offset);
-                if (next_offset <= entry.Offset)
-                    return null;
-                entry.Size = next_offset - (uint)entry.Offset;
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-            }
             return new ArcFile (file, this, dir);
         }
 
@@ -149,7 +114,7 @@ namespace GameRes.Formats.Seraphim
             if (0 == entry.Size)
                 return Stream.Null;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (!(entry is ArchPacEntry))
+            if (!(entry is PackedEntry))
                 return input;
             int signature = arc.File.View.ReadUInt16 (entry.Offset);
             if (0x9C78 != signature)
