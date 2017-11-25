@@ -34,7 +34,7 @@ namespace GameRes.Formats.SysD
     public class DbmFormat : ImageFormat
     {
         public override string         Tag { get { return "DBM"; } }
-        public override string Description { get { return "SYSD enging bitmap format"; } }
+        public override string Description { get { return "SYSD engine bitmap format"; } }
         public override uint     Signature { get { return 0x4D44; } } // 'DM'
 
         public DbmFormat ()
