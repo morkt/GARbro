@@ -99,7 +99,7 @@ namespace GameRes
         }
 
         public static ImageData Create (ImageMetaData info, PixelFormat format, BitmapPalette palette,
-                                        byte[] pixel_data, int stride)
+                                        Array pixel_data, int stride)
         {
             var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, DefaultDpiX, DefaultDpiY,
                                               format, palette, pixel_data, stride);
@@ -108,13 +108,13 @@ namespace GameRes
         }
 
         public static ImageData Create (ImageMetaData info, PixelFormat format, BitmapPalette palette,
-                                        byte[] pixel_data)
+                                        Array pixel_data)
         {
             return Create (info, format, palette, pixel_data, (int)info.Width*((format.BitsPerPixel+7)/8));
         }
 
         public static ImageData CreateFlipped (ImageMetaData info, PixelFormat format, BitmapPalette palette,
-                                        byte[] pixel_data, int stride)
+                                               Array pixel_data, int stride)
         {
             var bitmap = BitmapSource.Create ((int)info.Width, (int)info.Height, DefaultDpiX, DefaultDpiY,
                                               format, palette, pixel_data, stride);
