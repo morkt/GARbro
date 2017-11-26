@@ -85,6 +85,7 @@
     <Compile Include="AliceSoft\ArcALK.cs" />
     <Compile Include="AliceSoft\ImageAJP.cs" />
     <Compile Include="AliceSoft\ImageDCF.cs" />
+    <Compile Include="AliceSoft\ImagePMS.cs" />
     <Compile Include="AnimeGameSystem\ArcANI.cs" />
     <Compile Include="AnimeGameSystem\WidgetAGS.xaml.cs">
       <DependentUpon>WidgetAGS.xaml</DependentUpon>
