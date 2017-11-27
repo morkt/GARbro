@@ -104,6 +104,8 @@
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
     <Compile Include="Cadath\ArcDAF.cs" />
     <Compile Include="Cadath\ImageCGF.cs" />
+    <Compile Include="Cmvs\CpzHeader.cs" />
+    <Compile Include="Cmvs\HuffmanDecoder.cs" />
     <Compile Include="Crowd\ImageCRZ.cs" />
     <Compile Include="CsWare\ImageBPC.cs" />
     <Compile Include="Cyberworks\ArcApp.cs" />

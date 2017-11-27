@@ -27,7 +27,7 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Cmvs
 {
-    public enum Md5Variant { A, B, Chrono, Memoria, Natsu }
+    public enum Md5Variant { A, B, Chrono, Memoria, Natsu, Aoi }
 
     public abstract class MD5 : Cryptography.MD5Base
     {
@@ -45,6 +45,7 @@ namespace GameRes.Formats.Cmvs
             case Md5Variant.Chrono: return new Md5Chrono();
             case Md5Variant.Memoria: return new Md5Memoria();
             case Md5Variant.Natsu: return new Md5Natsu();
+            case Md5Variant.Aoi: return new Md5Aoi();
             default: throw new System.ArgumentException ("Unknown MD5 variant", "variant");
             }
         }
@@ -149,6 +150,25 @@ namespace GameRes.Formats.Cmvs
             data[1] = m_state[2] ^ 0x54F36D6C;
             data[2] = m_state[3] + 0x4387A749;
             data[3] = m_state[0] ^ 0xE3F9A742;
+        }
+    }
+
+    public class Md5Aoi : MD5
+    {
+        protected override void InitState ()
+        {
+            m_state[0] = 0xC74A2B02;
+            m_state[1] = 0xE7C8AB8F;
+            m_state[2] = 0x38BEBC4E;
+            m_state[3] = 0x7531A4C3;
+        }
+
+        protected override void SetResult (uint[] data)
+        {
+            data[0] = m_state[2] ^ 0x53A76D2E;
+            data[1] = m_state[1] + 0x5BB17FDA;
+            data[2] = m_state[0] + 0x6853E14D;
+            data[3] = m_state[3] ^ 0xF5C6A9A3;
         }
     }
 }
