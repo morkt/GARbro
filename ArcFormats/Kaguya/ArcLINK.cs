@@ -427,10 +427,12 @@ namespace GameRes.Formats.Kaguya
     {
         protected IBinaryStream     m_input;
         protected string            m_title;
+        protected Version           m_version;
 
-        protected ParamsDeserializer (IBinaryStream input)
+        protected ParamsDeserializer (IBinaryStream input, Version version)
         {
             m_input = input;
+            m_version = version;
         }
 
         public static ParamsDeserializer Create (IBinaryStream input)
@@ -438,10 +440,12 @@ namespace GameRes.Formats.Kaguya
             var header = input.ReadHeader (0x11);
             if (header.AsciiEqual ("[SCR-PARAMS]"))
             {
+                var version = Version.Parse (header.GetCString (13, 4));
                 if (header.AsciiEqual (12, "v02"))
-                    return new ParamsV2Deserializer (input);
-                else if (header.AsciiEqual (12, "v05.5") || header.AsciiEqual (12, "v05.6"))
-                    return new ParamsV5Deserializer (input);
+                    return new ParamsV2Deserializer (input, version);
+                else if (header.AsciiEqual (12, "v05.4") || header.AsciiEqual (12, "v05.5") ||
+                         header.AsciiEqual (12, "v05.6"))
+                    return new ParamsV5Deserializer (input, version);
             }
             throw new UnknownEncryptionScheme();
         }
@@ -500,7 +504,7 @@ namespace GameRes.Formats.Kaguya
 
     internal class ParamsV2Deserializer : ParamsDeserializer
     {
-        public ParamsV2Deserializer (IBinaryStream input) : base (input)
+        public ParamsV2Deserializer (IBinaryStream input, Version version) : base (input, version)
         {
         }
 
@@ -564,7 +568,7 @@ namespace GameRes.Formats.Kaguya
 
     internal class ParamsV5Deserializer : ParamsDeserializer
     {
-        public ParamsV5Deserializer (IBinaryStream input) : base (input)
+        public ParamsV5Deserializer (IBinaryStream input, Version version) : base (input, version)
         {
         }
 
@@ -581,7 +585,7 @@ namespace GameRes.Formats.Kaguya
             SkipString();
             SkipDict();
 
-            Skip (0x11);
+            Skip (m_version.Minor <= 4 ? 0x10 : 0x11);
             for (int i = 0; i < 3; ++i)
             {
                 if (0 != m_input.ReadUInt8())
