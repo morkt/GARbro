@@ -178,6 +178,8 @@ namespace GameRes.Formats.YuRis
         YpfScheme QueryEncryptionScheme (string arc_name, uint version)
         {
             var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (string.IsNullOrEmpty (title))
+                title = FormatCatalog.Instance.LookupGame (arc_name, @"..\*.exe");
             YpfScheme scheme;
             if (!string.IsNullOrEmpty (title) && KnownSchemes.TryGetValue (title, out scheme))
                 return scheme;
