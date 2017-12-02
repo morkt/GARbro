@@ -49,12 +49,22 @@ namespace GameRes.Formats.YaneSDK
         {
             if (!file.Name.HasExtension (".dat"))
                 return null;
-            int count = (short)(file.View.ReadUInt16 (0) ^ 0x8080);
+            int count = ReadCount (file);
             if (!IsSaneCount (count))
                 return null;
             var scheme = QueryScheme (file.Name);
             if (null == scheme)
                 return null;
+            return TryOpenWithScheme (file, count, scheme);
+        }
+
+        int ReadCount (ArcView file)
+        {
+            return (short)(file.View.ReadUInt16 (0) ^ 0x8080);
+        }
+
+        ArcFile TryOpenWithScheme (ArcView file, int count, HibikiDatScheme scheme)
+        {
             var dat_name = Path.GetFileName (file.Name).ToLowerInvariant();
             IList<HibikiTocRecord> toc_table = null;
             if (scheme.ArcMap != null && scheme.ArcMap.TryGetValue (dat_name, out toc_table))
@@ -62,17 +72,12 @@ namespace GameRes.Formats.YaneSDK
                 if (toc_table.Count != count)
                     toc_table = null;
             }
-            var lst_name = Path.ChangeExtension (file.Name, ".lst");
-            Stream input;
-            if (VFS.FileExists (lst_name))
-                input = VFS.OpenStream (lst_name);
-            else
-                input = file.CreateStream();
-
+            using (var input = OpenLstIndex (file, dat_name, scheme))
             using (var dec = new XoredStream (input, 0x80))
             using (var index = new BinaryReader (dec))
             {
                 const int name_length = 0x100;
+                int data_offset = 2 + (name_length + 10) * count;
                 index.BaseStream.Position = 2;
                 Func<int, Entry> read_entry;
                 if (null == toc_table)
@@ -105,11 +110,39 @@ namespace GameRes.Formats.YaneSDK
                 for (int i = 0; i < count; ++i)
                 {
                     var entry = read_entry (i);
-                    if (!entry.CheckPlacement (file.MaxOffset))
+                    if (null == entry || string.IsNullOrWhiteSpace (entry.Name)
+                        || entry.Offset < data_offset || entry.Size > file.MaxOffset)
                         return null;
                     dir.Add (entry);
                 }
                 return new HibikiArchive (file, this, dir, scheme.ContentKey);
+            }
+        }
+
+        Stream OpenLstIndex (ArcView file, string dat_name, HibikiDatScheme scheme)
+        {
+            var lst_name = Path.ChangeExtension (file.Name, ".lst");
+            if (VFS.FileExists (lst_name))
+                return VFS.OpenStream (lst_name);
+            else if ("init.dat" == dat_name)
+                return file.CreateStream();
+            // try to open 'init.dat' archive in the same directory
+            var init_dat = VFS.CombinePath (VFS.GetDirectoryName (file.Name), "init.dat");
+            if (!VFS.FileExists (init_dat))
+                return file.CreateStream();
+            try
+            {
+                using (var init = VFS.OpenView (init_dat))
+                using (var init_arc = TryOpenWithScheme (init, ReadCount (init), scheme))
+                {
+                    lst_name = Path.GetFileName (lst_name);
+                    var lst_entry = init_arc.Dir.First (e => e.Name == lst_name);
+                    return init_arc.OpenEntry (lst_entry);
+                }
+            }
+            catch
+            {
+                return file.CreateStream();
             }
         }
 
