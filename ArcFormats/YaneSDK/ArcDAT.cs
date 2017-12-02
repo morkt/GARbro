@@ -56,6 +56,7 @@ namespace GameRes.Formats.YaneSDK
             using (var index = new BinaryReader (dec))
             {
                 index.BaseStream.Position = 2;
+                int data_offset = 2 + 0x2C * count;
                 var name_buf = new byte[0x22];
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
@@ -63,11 +64,13 @@ namespace GameRes.Formats.YaneSDK
                     if (0x22 != index.Read (name_buf, 0, 0x22))
                         return null;
                     var name = Binary.GetCString (name_buf, 0);
+                    if (string.IsNullOrWhiteSpace (name))
+                        return null;
                     var entry = FormatCatalog.Instance.Create<YaneEntry> (name);
                     entry.EncryptedSize = index.ReadUInt16();
                     entry.Size = index.ReadUInt32();
                     entry.Offset = index.ReadUInt32();
-                    if (!entry.CheckPlacement (file.MaxOffset))
+                    if (!entry.CheckPlacement (file.MaxOffset) || entry.Offset <= data_offset)
                         return null;
                     dir.Add (entry);
                 }
