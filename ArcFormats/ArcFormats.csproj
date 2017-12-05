@@ -117,6 +117,7 @@
     <Compile Include="Foster\ImageC25.cs" />
     <Compile Include="GameSystem\ArcPureMail.cs" />
     <Compile Include="GameSystem\AudioADP4.cs" />
+    <Compile Include="ImagePIC.cs" />
     <Compile Include="ImagePNX.cs" />
     <Compile Include="ImagePSM.cs" />
     <Compile Include="Kaas\ArcPB.cs" />
@@ -409,6 +410,8 @@
     <Compile Include="Tactics\WidgetTactics.xaml.cs">
       <DependentUpon>WidgetTactics.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tail\ArcCAF.cs" />
+    <Compile Include="Tail\ImageCFP.cs" />
     <Compile Include="Tamamo\ArcPCK.cs" />
     <Compile Include="Tamamo\WidgetPCK.xaml.cs">
       <DependentUpon>WidgetPCK.xaml</DependentUpon>
