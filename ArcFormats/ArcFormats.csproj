@@ -124,6 +124,7 @@
     <Compile Include="Kaas\AudioKAAS.cs" />
     <Compile Include="Kaguya\ArcAN21.cs" />
     <Compile Include="Kaguya\ArcUF.cs" />
+    <Compile Include="KiriKiri\ArcXPK.cs" />
     <Compile Include="KiriKiri\CzCrypt.cs" />
     <Compile Include="Kurumi\ImageGRA.cs" />
     <Compile Include="Leaf\ArcPX.cs" />
