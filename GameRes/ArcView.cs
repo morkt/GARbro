@@ -311,6 +311,22 @@ namespace GameRes
                     throw new ArgumentException ("Not enough bytes to read in the memory mapped file view.", "offset");
             }
 
+            public bool BytesEqual (long offset, byte[] data)
+            {
+                if (Reserve (offset, (uint)data.Length) < (uint)data.Length)
+                    return false;
+                unsafe
+                {
+                    byte* ptr = m_mem + (offset - m_offset);
+                    for (int i = 0; i < data.Length; ++i)
+                    {
+                        if (ptr[i] != data[i])
+                            return false;
+                    }
+                    return true;
+                }
+            }
+
             public bool AsciiEqual (long offset, string data)
             {
                 if (Reserve (offset, (uint)data.Length) < (uint)data.Length)
