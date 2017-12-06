@@ -92,8 +92,6 @@ namespace GameRes.Formats.KiriKiri
             Signatures = new uint[] { 0x0d335058, 0 };
         }
         
-        static readonly string SignatureBytes = "XP3\x0d\x0a\x20\x0a\x1a\x8b\x67\x01";
-
         static readonly byte[] s_xp3_header = {
             (byte)'X', (byte)'P', (byte)'3', 0x0d, 0x0a, 0x20, 0x0a, 0x1a, 0x8b, 0x67, 0x01
         };
@@ -106,8 +104,8 @@ namespace GameRes.Formats.KiriKiri
         {
             long base_offset = 0;
             if (0x5a4d == file.View.ReadUInt16 (0)) // 'MZ'
-                base_offset = SkipExeHeader (file);
-            if (!file.View.AsciiEqual (base_offset, SignatureBytes))
+                base_offset = SkipExeHeader (file, s_xp3_header);
+            if (!file.View.BytesEqual (base_offset, s_xp3_header))
                 return null;
             long dir_offset = base_offset + file.View.ReadInt64 (base_offset+0x0b);
             if (dir_offset < 0x13 || dir_offset >= file.MaxOffset)
@@ -302,22 +300,22 @@ NextEntry:
             entry.UnpackedSize = entry.Segments[0].Size;
         }
 
-        private long SkipExeHeader (ArcView file)
+        internal static long SkipExeHeader (ArcView file, byte[] signature)
         {
             var exe = new ExeFile (file);
             if (exe.ContainsSection (".rsrc"))
             {
-                var offset = exe.FindString (exe.Sections[".rsrc"], s_xp3_header);
-                if (offset != -1 && 0 != file.View.ReadUInt32 (offset+s_xp3_header.Length))
+                var offset = exe.FindString (exe.Sections[".rsrc"], signature);
+                if (offset != -1 && 0 != file.View.ReadUInt32 (offset+signature.Length))
                     return offset;
             }
             var section = exe.Overlay;
             while (section.Offset < file.MaxOffset)
             {
-                var offset = exe.FindString (section, s_xp3_header, 0x10);
+                var offset = exe.FindString (section, signature, 0x10);
                 if (-1 == offset)
                     break;
-                if (0 != file.View.ReadUInt32 (offset+s_xp3_header.Length))
+                if (0 != file.View.ReadUInt32 (offset+signature.Length))
                     return offset;
                 section.Offset = offset + 0x10;
                 section.Size = (uint)(file.MaxOffset - section.Offset);
