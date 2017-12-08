@@ -110,6 +110,7 @@
     <Compile Include="CsWare\ImageBPC.cs" />
     <Compile Include="Cyberworks\ArcApp.cs" />
     <Compile Include="DirectDraw\DxtDecoder.cs" />
+    <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />
     <Compile Include="Foster\ArcC24.cs" />
     <Compile Include="Foster\ArcFA2.cs" />
@@ -117,6 +118,7 @@
     <Compile Include="Foster\ImageC25.cs" />
     <Compile Include="GameSystem\ArcPureMail.cs" />
     <Compile Include="GameSystem\AudioADP4.cs" />
+    <Compile Include="ImageLZS.cs" />
     <Compile Include="ImagePIC.cs" />
     <Compile Include="ImagePNX.cs" />
     <Compile Include="ImagePSM.cs" />
