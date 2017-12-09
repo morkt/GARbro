@@ -153,6 +153,7 @@
     <Compile Include="Scoop\ArcGX.cs" />
     <Compile Include="Seraphim\ArcSCN.cs" />
     <Compile Include="Seraphim\ArcVoice.cs" />
+    <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
     <Compile Include="Silky\ImageGRD.cs" />
     <Compile Include="Slg\ArcSPD.cs" />
     <Compile Include="Software House Parsley\ArcCG.cs" />
