@@ -27,12 +27,14 @@ using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
 namespace GameRes.Formats.NeXAS
 {
     internal class GrpMetaData : ImageMetaData
     {
+        public int  Version;
         public int  UnpackedSize;
     }
 
@@ -45,28 +47,35 @@ namespace GameRes.Formats.NeXAS
 
         public GrpFormat ()
         {
+            Signatures = new uint[] { 0x18335247, 0x08325247, 0x10325247, 0x18325247, 0 };
             Extensions = new string[] { "grp" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x11);
-            return new GrpMetaData
-            {
+            int version = header[2] - '0';
+            if (!header.AsciiEqual ("GR") || version < 1 || version > 3)
+                return null;
+            var info = new GrpMetaData {
                 Width   = header.ToUInt32 (5),
                 Height  = header.ToUInt32 (9),
                 BPP     = header.ToUInt16 (3),
-                UnpackedSize = header.ToInt32 (0xD),
+                Version = version
             };
+            if (version > 1)
+                info.UnpackedSize = header.ToInt32 (0xD);
+            else
+                info.UnpackedSize = (int)info.Width * (int)info.Height * info.BPP / 8
+                                  + (info.BPP == 8 ? 0x300 : 0);
+            return info;
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            using (var reader = new GrpReader (stream, (GrpMetaData)info))
-            {
-                reader.Unpack();
-                return ImageData.Create (info, reader.Format, null, reader.Data);
-            }
+            var reader = new GrpReader (stream, (GrpMetaData)info);
+            var pixels = reader.Unpack();
+            return ImageData.Create (info, reader.Format, reader.Palette, reader.Data);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -75,27 +84,55 @@ namespace GameRes.Formats.NeXAS
         }
     }
 
-    internal sealed class GrpReader : IDisposable
+    internal sealed class GrpReader
     {
         IBinaryStream   m_input;
         byte[]          m_output;
+        GrpMetaData     m_info;
+        readonly int    m_count_bits;
+        readonly int    m_count_mask;
 
-        public byte[]        Data { get { return m_output; } }
-        public PixelFormat Format { get; private set; }
+        public byte[]           Data { get { return m_output; } }
+        public PixelFormat    Format { get; private set; }
+        public BitmapPalette Palette { get; private set; }
 
         public GrpReader (IBinaryStream input, GrpMetaData info)
         {
             m_input = input;
             m_output = new byte[info.UnpackedSize];
-            if (24 == info.BPP)
-                Format = PixelFormats.Bgr24;
-            else if (32 == info.BPP)
-                Format = PixelFormats.Bgr32;
-            else
-                throw new NotSupportedException ("Not supported GRP image color depth");
+            m_info = info;
+            switch (info.BPP)
+            {
+            case 8:  Format = PixelFormats.Indexed8; break;
+            case 16: Format = PixelFormats.Bgr555; break;
+            case 24: Format = PixelFormats.Bgr24; break;
+            case 32: Format = PixelFormats.Bgr32; break;
+            default: throw new NotSupportedException ("Not supported GRP image color depth");
+            }
+            m_count_bits = info.Version > 2 ? 3 : 5;
+            m_count_mask = ~(-1 << m_count_bits);
         }
 
-        public void Unpack ()
+        public byte[] Unpack ()
+        {
+            if (m_info.Version < 2)
+            {
+                m_input.Position = 0xD;
+                m_input.Read (m_output, 0, m_output.Length);
+            }
+            else
+            {
+                Decompress();
+            }
+            if (8 == m_info.BPP)
+            {
+                using (var input = new MemoryStream (m_output, m_output.Length-0x300, 0x300))
+                    Palette = ImageFormat.ReadPalette (input, 0x100, PaletteFormat.Rgb);
+            }
+            return m_output;
+        }
+
+        void Decompress ()
         {
             m_input.Position = 0x11;
             int ctl_length = (m_input.ReadInt32() + 7) / 8;
@@ -117,19 +154,13 @@ namespace GameRes.Formats.NeXAS
                     else
                     {
                         int offset = m_input.ReadUInt16();
-                        int count = (offset & 7) + 1;
-                        offset = (offset >> 3) + 1;
+                        int count = (offset & m_count_mask) + 1;
+                        offset = (offset >> m_count_bits) + 1;
                         Binary.CopyOverlapped (m_output, dst - offset, dst, count);
                         dst += count;
                     }
                 }
             }
         }
-
-        #region IDisposable Members
-        public void Dispose ()
-        {
-        }
-        #endregion
     }
 }
