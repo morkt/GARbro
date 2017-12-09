@@ -65,6 +65,8 @@
     <Compile Include="Sceplay\ArcPAK.cs" />
     <Compile Include="Sceplay\ImageG24.cs" />
     <Compile Include="ShapeShifter\ArcBND.cs" />
+    <Compile Include="System21\ArcPAK.cs" />
+    <Compile Include="System21\ImageBET.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ArcFormats\ArcFormats.csproj">
