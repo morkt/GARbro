@@ -65,6 +65,11 @@ namespace GameRes.Formats.Marble
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public MblOpener ()
+        {
+            Extensions = new string[] { "mbl", "dns" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
@@ -81,7 +86,8 @@ namespace GameRes.Formats.Marble
             return arc;
         }
 
-        static readonly Lazy<ImageFormat> PrsFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PRS"));
+        static readonly ResourceInstance<ImageFormat> PrsFormat = new ResourceInstance<ImageFormat> ("PRS");
+        static readonly ResourceInstance<ImageFormat> YpFormat  = new ResourceInstance<ImageFormat> ("PRS/YP");
 
         private ArcFile ReadIndex (ArcView file, int count, uint filename_len, uint index_offset)
         {
@@ -121,8 +127,10 @@ namespace GameRes.Formats.Marble
                     {
                         entry = new AutoEntry (name, () => {
                             uint signature = file.View.ReadUInt32 (offset);
-                            if (0x4259 == (0xffff & signature))
+                            if (0x4259 == (0xFFFF & signature))
                                 return PrsFormat.Value;
+                            else if (0x5059 == (0xFFFF & signature))
+                                return YpFormat.Value;
                             else if (0 != signature)
                                 return FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
                             else
