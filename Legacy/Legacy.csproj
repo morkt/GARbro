@@ -67,6 +67,7 @@
     <Compile Include="ShapeShifter\ArcBND.cs" />
     <Compile Include="System21\ArcPAK.cs" />
     <Compile Include="System21\ImageBET.cs" />
+    <Compile Include="Tsd\ArcMCD.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ArcFormats\ArcFormats.csproj">
