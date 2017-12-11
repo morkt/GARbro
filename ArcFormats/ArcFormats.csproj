@@ -99,6 +99,7 @@
     <Compile Include="BeF\ImageALO.cs" />
     <Compile Include="BellDa\ArcDAT.cs" />
     <Compile Include="BellDa\AudioPW.cs" />
+    <Compile Include="Bishop\ArcPK.cs" />
     <Compile Include="BlackRainbow\ArcCCF.cs" />
     <Compile Include="BlackRainbow\ArcIMP.cs" />
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
@@ -111,6 +112,7 @@
     <Compile Include="Cyberworks\ArcApp.cs" />
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
+    <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />
     <Compile Include="Foster\ArcC24.cs" />
     <Compile Include="Foster\ArcFA2.cs" />
