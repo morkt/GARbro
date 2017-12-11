@@ -56,6 +56,9 @@
     <Compile Include="ApplePie\ImageGT.cs" />
     <Compile Include="Clio\ArcPAC.cs" />
     <Compile Include="Clio\ImageEXP.cs" />
+    <Compile Include="Dice\ArcRLZ.cs" />
+    <Compile Include="Dice\AudioKWF.cs" />
+    <Compile Include="Dice\ImageRBP.cs" />
     <Compile Include="Factor\ArcRES.cs" />
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
