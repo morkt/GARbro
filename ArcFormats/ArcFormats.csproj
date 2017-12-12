@@ -100,6 +100,7 @@
     <Compile Include="BellDa\ArcDAT.cs" />
     <Compile Include="BellDa\AudioPW.cs" />
     <Compile Include="Bishop\ArcPK.cs" />
+    <Compile Include="Bishop\ImageGSA.cs" />
     <Compile Include="BlackRainbow\ArcCCF.cs" />
     <Compile Include="BlackRainbow\ArcIMP.cs" />
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
