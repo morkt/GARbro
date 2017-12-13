@@ -27,6 +27,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Formats.Abogado;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Megu
 {
@@ -49,11 +51,10 @@ namespace GameRes.Formats.Megu
 
         public override ArcFile TryOpen (ArcView file)
         {
-            uint signature = file.View.ReadUInt32 (0);
-            if (0x53474d != (signature & 0xffffff)) // 'MGS'
+            if (!file.View.AsciiEqual (0, "MGS"))
                 return null;
             int count = file.View.ReadInt16 (0x20);
-            if (count <= 0)
+            if (!IsSaneCount (count))
                 return null;
             int flag = file.View.ReadUInt16 (3);
             var dir = new List<Entry> (count);
@@ -97,20 +98,37 @@ namespace GameRes.Formats.Megu
             var went = entry as MgsEntry;
             if (null == went || went.Format != 0)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
+            var format = new WaveFormat {
+                FormatTag = 1,
+                Channels = (ushort)(went.Channels & 0x7FFF),
+                SamplesPerSecond = went.SamplesPerSecond,
+            };
+            Stream pcm;
+            uint pcm_size;
+            if (0 != (went.Channels & 0x8000))
+            {
+                format.BitsPerSample = 0x10;
+                var decoder = new PcmDecoder (went);
+                using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
+                {
+                    var data = decoder.Decode (input);
+                    pcm = new MemoryStream (data);
+                    pcm_size = (uint)data.Length;
+                }
+            }
+            else
+            {
+                format.BitsPerSample = went.BitsPerSample;
+                pcm = arc.File.CreateStream (entry.Offset, entry.Size);
+                pcm_size = entry.Size;
+            }
             using (var riff = new MemoryStream (0x2C))
             {
-                ushort align = (ushort)(went.Channels * went.BitsPerSample / 8);
-                var format = new WaveFormat {
-                    FormatTag = 1,
-                    Channels = went.Channels,
-                    SamplesPerSecond = went.SamplesPerSecond,
-                    AverageBytesPerSecond = went.SamplesPerSecond * align,
-                    BlockAlign = align,
-                    BitsPerSample = went.BitsPerSample,
-                };
-                WaveAudio.WriteRiffHeader (riff, format, entry.Size);
-                var input = arc.File.CreateStream (entry.Offset, entry.Size);
-                return new PrefixStream (riff.ToArray(), input);
+                ushort align = (ushort)(format.Channels * format.BitsPerSample / 8);
+                format.AverageBytesPerSecond = went.SamplesPerSecond * align;
+                format.BlockAlign = align;
+                WaveAudio.WriteRiffHeader (riff, format, pcm_size);
+                return new PrefixStream (riff.ToArray(), pcm);
             }
         }
 
@@ -122,6 +140,89 @@ namespace GameRes.Formats.Megu
             case 1: return "mid";
             default: return null;
             }
+        }
+
+    }
+
+    internal sealed class PcmDecoder
+    {
+        int     Channels;
+        int     BytesPerChunk;
+        byte[]  m_output;
+        int     m_dst;
+
+        public PcmDecoder (MgsEntry went)
+        {
+            Channels = went.Channels & 0x7FFF;
+            BytesPerChunk = went.BitsPerSample;
+            int output_size;
+            if (1 == Channels)
+                output_size = (int)went.Size / BytesPerChunk * ((BytesPerChunk - 4) * 4 + 2);
+            else
+                output_size = (int)went.Size / BytesPerChunk * ((BytesPerChunk - 8) * 4 + 4);
+            m_output = new byte[output_size];
+        }
+
+        void PutSample (short sample)
+        {
+            LittleEndian.Pack (sample, m_output, m_dst);
+            m_dst += 2;
+        }
+
+        public byte[] Decode (IBinaryStream input)
+        {
+            m_dst = 0;
+            if (1 == Channels)
+            {
+                var adp = new AdpDecoder();
+                while (input.PeekByte() != -1)
+                {
+                    short sample = input.ReadInt16();
+                    PutSample (sample);
+                    int quant_idx = input.ReadUInt16() & 0xFF;
+                    adp.Reset (sample, quant_idx);
+
+                    for (int j = 0; j < BytesPerChunk - 4; ++j)
+                    {
+                        byte octet = input.ReadUInt8();
+                        PutSample (adp.DecodeSample (octet));
+                        PutSample (adp.DecodeSample (octet >> 4));
+                    }
+                }
+
+            }
+            else
+            {
+                var first = new AdpDecoder();
+                var second = new AdpDecoder();
+                int samples_per_chunk = (BytesPerChunk - 8) / 8;
+                while (input.PeekByte() != -1)
+                {
+                    short sample = input.ReadInt16();
+                    PutSample (sample);
+                    int quant_idx = input.ReadUInt16() & 0xFF;
+                    first.Reset (sample, quant_idx);
+
+                    sample = input.ReadInt16();
+                    PutSample (sample);
+                    quant_idx = input.ReadUInt16() & 0xFF;
+                    second.Reset (sample, quant_idx);
+
+                    for (int j = 0; j < samples_per_chunk; ++j)
+                    {
+                        uint first_code = input.ReadUInt32();
+                        uint second_code = input.ReadUInt32();
+                        for (int i = 0; i < 8; ++i)
+                        {
+                            PutSample (first.DecodeSample ((byte)first_code));
+                            PutSample (second.DecodeSample ((byte)second_code));
+                            first_code >>= 4;
+                            second_code >>= 4;
+                        }
+                    }
+                }
+            }
+            return m_output;
         }
     }
 }
