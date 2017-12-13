@@ -72,19 +72,19 @@ namespace GameRes.Formats.Yuka
             using (var img = new BinaryStream (reg, file.Name))
             {
                 var img_header = img.ReadHeader (4);
-                if (header.AsciiEqual ("BM"))
+                if (img_header.AsciiEqual ("BM"))
                 {
                     img.Position = 0;
                     info = Bmp.ReadMetaData (img);
                     ykg.Format = YkgImage.Bmp;
                 }
-                else if (header.AsciiEqual ("\x89PNG"))
+                else if (img_header.AsciiEqual ("\x89PNG"))
                 {
                     img.Position = 0;
                     info = Png.ReadMetaData (img);
                     ykg.Format = YkgImage.Png;
                 }
-                else if (header.AsciiEqual ("\x89GNP"))
+                else if (img_header.AsciiEqual ("\x89GNP"))
                 {
                     using (var body = new StreamRegion (file.AsStream, ykg.DataOffset+4, ykg.DataSize-4, true))
                     using (var pre = new PrefixStream (PngPrefix, body))
