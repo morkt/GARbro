@@ -130,6 +130,14 @@ namespace GameRes.Formats.Ankh
                 {
                     entry.ChangeType (ImageFormat.Bmp);
                 }
+                else if (file.View.AsciiEqual (entry.Offset, "RIFF"))
+                {
+                    entry.ChangeType (AudioFormat.Wav);
+                }
+                else if (file.View.AsciiEqual (entry.Offset, "\x89PNG"))
+                {
+                    entry.ChangeType (ImageFormat.Png);
+                }
                 else if (entry.Size > 0x16 && IsAudioEntry (file, entry))
                 {
                     entry.Type = "audio";
