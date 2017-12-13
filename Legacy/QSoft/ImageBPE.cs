@@ -25,6 +25,7 @@
 
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Utility;
 
 namespace GameRes.Formats.QSoft
 {
@@ -95,7 +96,7 @@ namespace GameRes.Formats.QSoft
                         break;
                     ctl = input.ReadByte() & 0xFF;
                 }
-                int chunk_size = Binary.BigEndian (input.ReadUInt16())
+                int chunk_size = Binary.BigEndian (input.ReadUInt16());
                 int x = 0;
                 for (;;)
                 {
