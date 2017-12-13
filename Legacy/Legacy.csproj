@@ -60,9 +60,11 @@
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
     <Compile Include="Factor\ArcRES.cs" />
+    <Compile Include="Nabe\ImageYPF.cs" />
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QSoft\ImageBPE.cs" />
     <Compile Include="Rain\ArcBIN.cs" />
     <Compile Include="Saiki\ImageJPX.cs" />
     <Compile Include="Sceplay\ArcPAK.cs" />
