@@ -91,8 +91,19 @@ namespace GameRes.Formats.Abogado
 
     internal class AdpDecoder
     {
-        int prev_sample = 0;
+        int prev_sample;
         int quant_idx = 0;
+
+        public AdpDecoder (int init_sample = 0)
+        {
+            prev_sample = init_sample;
+        }
+
+        public void Reset (short s, int q)
+        {
+            prev_sample = s;
+            quant_idx = q;
+        }
 
         public short DecodeSample (int sample)
         {
@@ -103,13 +114,14 @@ namespace GameRes.Formats.Abogado
                 quant_idx = 0;
             else if (quant_idx > 0x58)
                 quant_idx = 0x58;
+            int step = (2 * (sample & 7) + 1) * quant >> 3;
             if (sample < 8)
             {
-                sample = Math.Min (0x7FFF, prev_sample + (((2 * sample + 1) * quant) >> 3));
+                sample = Math.Min (0x7FFF, prev_sample + step);
             }
             else
             {
-                sample = Math.Max (-32768, prev_sample - ((2 * (sample & 7) + 1) * quant >> 3));
+                sample = Math.Max (-32768, prev_sample - step);
             }
             prev_sample = sample;
             return (short)sample;
