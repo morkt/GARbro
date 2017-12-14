@@ -2,7 +2,7 @@
 //! \date       Fri Jul 17 13:47:34 2015
 //! \brief      Seraphim engine resource archives.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,11 +27,45 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Linq;
+using System.Windows.Media;
 using GameRes.Compression;
 
 namespace GameRes.Formats.Seraphim
 {
+    internal class ArchEntry : PackedEntry
+    {
+        public short    DirIndex;
+        public short    FileIndex;
+    }
+
+    [Serializable]
+    public class SeraphScheme : ResourceScheme
+    {
+        public IDictionary<string, ArchPacScheme>   KnownSchemes;
+    }
+
+    [Serializable]
+    public class ArchPacScheme
+    {
+        public long     IndexOffset;
+        public short    EventDir;
+        public IDictionary<short, short> EventMap;
+    }
+
+    internal class SeraphArchive : ArcFile
+    {
+        public readonly short                       EventDir;
+        public readonly IDictionary<short, short>   EventMap;
+
+        public SeraphArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, ArchPacScheme scheme)
+            : base (arc, impl, dir)
+        {
+            EventDir = scheme.EventDir;
+            EventMap = scheme.EventMap;
+        }
+    }
+
     /// <summary>
     /// this archive format has different index offsets hardcoded into game executable.
     /// </summary>
@@ -50,9 +84,6 @@ namespace GameRes.Formats.Seraphim
             Extensions = new string[] { "dat" };
         }
 
-//        const long ArchPacOffset = 0x0C23659F;
-        const long ArchPacOffset = 0x0A0B0AEA;
-
         public override ArcFile TryOpen (ArcView file)
         {
             if (file.MaxOffset > uint.MaxValue)
@@ -61,7 +92,23 @@ namespace GameRes.Formats.Seraphim
             if (!name.Equals ("ArchPac.dat", StringComparison.InvariantCultureIgnoreCase))
                 return null;
 
-            long index_offset = ArchPacOffset;
+            foreach (var scheme in KnownSchemes.Values.Where (s => s.IndexOffset < file.MaxOffset))
+            {
+                var dir = ReadIndex (file, scheme);
+                if (dir != null)
+                {
+                    if (scheme.EventMap != null)
+                        return new SeraphArchive (file, this, dir, scheme);
+                    else
+                        return new ArcFile (file, this, dir);
+                }
+            }
+            return null;
+        }
+
+        List<Entry> ReadIndex (ArcView file, ArchPacScheme scheme)
+        {
+            long index_offset = scheme.IndexOffset;
             int base_count = file.View.ReadInt32 (index_offset);
             int file_count = file.View.ReadInt32 (index_offset + 4);
             index_offset += 8;
@@ -90,8 +137,13 @@ namespace GameRes.Formats.Seraphim
                 index_offset += 4;
                 for (int i = 0; i < base_offsets[j].Item2; ++i)
                 {
-                    var entry = new PackedEntry { Name = string.Format ("{0}-{1:D5}.cts", j, i), Type = "image" };
-                    entry.Offset = next_offset;
+                    var entry = new ArchEntry {
+                        Name = FormatEntryName (j, i),
+                        Type = "image",
+                        DirIndex = (short)j,
+                        FileIndex = (short)i,
+                        Offset = next_offset,
+                    };
                     next_offset = file.View.ReadUInt32 (index_offset);
                     index_offset += 4;
                     if (next_offset < entry.Offset)
@@ -106,7 +158,7 @@ namespace GameRes.Formats.Seraphim
             }
             if (0 == dir.Count)
                 return null;
-            return new ArcFile (file, this, dir);
+            return dir;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -120,6 +172,96 @@ namespace GameRes.Formats.Seraphim
             if (0x9C78 != signature)
                 return input;
             return new ZLibStream (input, CompressionMode.Decompress);
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var sarc = arc as SeraphArchive;
+            var aent = entry as ArchEntry;
+            if (null == sarc || null == aent || null == sarc.EventMap
+                || aent.DirIndex != sarc.EventDir || !sarc.EventMap.ContainsKey (aent.FileIndex))
+                return base.OpenImage (arc, entry);
+            var base_index = sarc.EventMap[aent.FileIndex];
+            var base_entry = sarc.Dir.Cast<ArchEntry>()
+                .FirstOrDefault (e => e.DirIndex == sarc.EventDir && e.FileIndex == base_index);
+            if (null == base_entry)
+                return base.OpenImage (arc, entry);
+            var base_img = OpenCtImage (arc, base_entry);
+            if (null == base_img)
+                return base.OpenImage (arc, entry);
+            var input = arc.OpenBinaryEntry (entry);
+            return new CtOverlayDecoder (input, base_img);
+        }
+
+        SeraphReader OpenCtImage (ArcFile arc, Entry entry)
+        {
+            using (var input = arc.OpenBinaryEntry (entry))
+            {
+                if (input.Signature != CtFormat.Value.Signature)
+                    return null;
+                var info = CtFormat.Value.ReadMetaData (input) as SeraphMetaData;
+                if (null == info)
+                    return null;
+                var reader = new SeraphReader (input.AsStream, info);
+                reader.UnpackCt();
+                return reader;
+            }
+        }
+
+        internal static string FormatEntryName (int dir_index, int file_index)
+        {
+            return string.Format ("{0}-{1:D5}.cts", dir_index, file_index);
+        }
+
+        internal static ResourceInstance<ImageFormat> CtFormat = new ResourceInstance<ImageFormat> ("CT");
+
+        SeraphScheme m_scheme = new SeraphScheme { KnownSchemes = new Dictionary<string, ArchPacScheme>() };
+
+        public override ResourceScheme Scheme
+        {
+            get { return m_scheme; }
+            set { m_scheme = (SeraphScheme)value; }
+        }
+
+        public IDictionary<string, ArchPacScheme> KnownSchemes { get { return m_scheme.KnownSchemes; } }
+    }
+
+    internal class CtOverlayDecoder : BinaryImageDecoder
+    {
+        SeraphReader    m_baseline;
+
+        public CtOverlayDecoder (IBinaryStream input, SeraphReader baseline)
+            : base (input, baseline.Info)
+        {
+            m_baseline = baseline;
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            var info = ArchPacOpener.CtFormat.Value.ReadMetaData (m_input) as SeraphMetaData;
+            if (null == info)
+                return ImageFormat.Read (m_input);
+            var overlay = new SeraphReader (m_input.AsStream, info);
+            overlay.UnpackCt();
+            var dst = m_baseline.Data;
+            var src = overlay.Data;
+            if (dst.Length != src.Length)
+                return ImageData.Create (overlay.Info, PixelFormats.Bgra32, null, src);
+            for (int i = 0; i < src.Length; i += 4)
+            {
+                if (src[i+3] != 0)
+                {
+                    dst[i  ] = src[i  ];
+                    dst[i+1] = src[i+1];
+                    dst[i+2] = src[i+2];
+                    dst[i+3] = src[i+3];
+                }
+                else
+                {
+                    dst[i+3] = 0xFF;
+                }
+            }
+            return ImageData.Create (Info, PixelFormats.Bgra32, null, dst);
         }
     }
 }
