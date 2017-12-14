@@ -2,7 +2,7 @@
 //! \date       Fri Apr 14 07:34:50 2017
 //! \brief      DXT decompressor.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -44,6 +44,18 @@ namespace GameRes.Formats.DirectDraw
             m_output = new byte[m_output_stride*m_height];
         }
 
+        public byte[] UnpackDXT1 ()
+        {
+            int src = 0;
+            for (int y = 0; y < m_height; y += 4)
+            for (int x = 0; x < m_width; x += 4)
+            {
+                DecompressDXT1Block (m_input, src, y, x);
+                src += 8;
+            }
+            return m_output;
+        }
+
         public byte[] UnpackDXT5 ()
         {
             int src = 0;
@@ -56,14 +68,60 @@ namespace GameRes.Formats.DirectDraw
             return m_output;
         }
 
-        byte[] m_dxt5_alpha = new byte[16];
+        byte[] m_dxt_buffer = new byte[16];
+
+        void DecompressDXT1Block (byte[] input, int src, int block_y, int block_x)
+        {
+            ReadDXT1Color (input, src, 0);
+            ReadDXT1Color (input, src+2, 4);
+            bool has_alpha = m_dxt_buffer[0] <= m_dxt_buffer[4]
+                          && m_dxt_buffer[1] <= m_dxt_buffer[5]
+                          && m_dxt_buffer[2] <= m_dxt_buffer[6];
+            for (int i = 0; i < 4; ++i)
+            {
+                if (has_alpha)
+                {
+                    m_dxt_buffer[8+i]  = (byte)((m_dxt_buffer[i] + m_dxt_buffer[4+i]) >> 1);
+                    m_dxt_buffer[12+i] = 0;
+                }
+                else
+                {
+                    m_dxt_buffer[8+i]  = (byte)(((m_dxt_buffer[i] << 1) + m_dxt_buffer[4+i]) / 3);
+                    m_dxt_buffer[12+i] = (byte)(((m_dxt_buffer[4+i] << 1) + m_dxt_buffer[i]) / 3);
+                }
+            }
+            uint map = LittleEndian.ToUInt32 (input, src+4);
+            for (int y = 0; y < 4 && (block_y + y) < m_height; ++y)
+            for (int x = 0; x < 4 && (block_x + x) < m_width; ++x)
+            {
+                int color = (int)(map & 3) << 2;
+                int dst = m_output_stride * (block_y + y) + (block_x + x) * 4;
+                m_output[dst]   = m_dxt_buffer[color];
+                m_output[dst+1] = m_dxt_buffer[color+1];
+                m_output[dst+2] = m_dxt_buffer[color+2];
+                m_output[dst+3] = m_dxt_buffer[color+3];
+                map >>= 2;
+            }
+        }
+
+        void ReadDXT1Color (byte[] input, int src, int idx)
+        {
+            int b = input[src] & 0x1F;
+            int g = (input[src] >> 5 | input[src+1] << 3) & 0x3F;
+            int r = input[src+1] >> 3;
+
+            m_dxt_buffer[idx  ] = (byte)(b << 3 | b >> 2);
+            m_dxt_buffer[idx+1] = (byte)(g << 2 | g >> 4);
+            m_dxt_buffer[idx+2] = (byte)(r << 3 | r >> 2);
+            m_dxt_buffer[idx+3] = 0xFF;
+        }
 
         void DecompressDXT5Block (byte[] input, int src, int block_y, int block_x)
         {
             byte alpha0 = input[src];
             byte alpha1 = input[src+1];
 
-            DecompressDXT5Alpha (input, src+2, m_dxt5_alpha);
+            DecompressDXT5Alpha (input, src+2, m_dxt_buffer);
 
             ushort color0 = LittleEndian.ToUInt16 (input, src+8);
             ushort color1 = LittleEndian.ToUInt16 (input, src+10);
@@ -87,7 +145,7 @@ namespace GameRes.Formats.DirectDraw
             for (int y = 0; y < 4 && (block_y + y) < m_height; ++y)
             for (int x = 0; x < 4 && (block_x + x) < m_width; ++x)
             {
-                int alpha_code = m_dxt5_alpha[4 * y + x];
+                int alpha_code = m_dxt_buffer[4 * y + x];
                 byte alpha;
                 if (0 == alpha_code)
                     alpha = alpha0;
