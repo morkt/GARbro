@@ -27,6 +27,7 @@ using System;
 using System.IO;
 using System.Windows.Media;
 using GameRes.Formats.DirectDraw;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Unity
 {
@@ -64,10 +65,7 @@ namespace GameRes.Formats.Unity
         public int      m_LightFormat;
         public int      m_ColorSpace;
         public byte[]   m_Data;
-        // StreamingInfo m_StreamData
-        // uint offset
-        // uint size
-        // string path
+        public StreamingInfo m_StreamData;
 
         public void Load (AssetReader reader)
         {
@@ -91,6 +89,11 @@ namespace GameRes.Formats.Unity
             m_ColorSpace = reader.ReadInt32();
             int length = reader.ReadInt32();
             m_Data = reader.ReadBytes (length);
+            if (0 == length)
+            {
+                m_StreamData = new StreamingInfo();
+                m_StreamData.Load (reader);
+            }
         }
     }
 
@@ -125,6 +128,17 @@ namespace GameRes.Formats.Unity
             };
             SetFormat (m_texture.m_TextureFormat);
             m_reader.Position = 0;
+        }
+
+        public Texture2DDecoder (Texture2D texture, AssetReader input)
+        {
+            m_reader = input;
+            m_texture = texture;
+            Info = new ImageMetaData {
+                Width   = (uint)m_texture.m_Width,
+                Height  = (uint)m_texture.m_Height,
+            };
+            SetFormat (m_texture.m_TextureFormat);
         }
 
         void SetFormat (TextureFormat format)
@@ -163,6 +177,12 @@ namespace GameRes.Formats.Unity
             byte[] pixels;
             switch (m_texture.m_TextureFormat)
             {
+            case TextureFormat.DXT1:
+                {
+                    var decoder = new DxtDecoder (m_texture.m_Data, Info);
+                    pixels = decoder.UnpackDXT1();
+                    break;
+                }
             case TextureFormat.DXT5:
                 {
                     var decoder = new DxtDecoder (m_texture.m_Data, Info);
@@ -177,10 +197,40 @@ namespace GameRes.Formats.Unity
                 pixels = m_texture.m_Data;
                 break;
 
+            case TextureFormat.ARGB32:
+                pixels = ConvertArgb (m_texture.m_Data);
+                break;
+
+            case TextureFormat.RGBA32:
+                pixels = ConvertRgba (m_texture.m_Data);
+                break;
+
             default:
-                throw new NotImplementedException ("Not supported Unity Texture2D format.");
+                throw new NotImplementedException (string.Format ("Not supported Unity Texture2D format '{0}'.", m_texture.m_TextureFormat));
             }
             return ImageData.CreateFlipped (Info, Format, null, pixels, (int)Info.Width*((Format.BitsPerPixel+7)/8));
+        }
+
+        byte[] ConvertArgb (byte[] data)
+        {
+            // XXX conversion performed in-place.
+            for (int i = 0; i < data.Length; i += 4)
+            {
+                uint x = BigEndian.ToUInt32 (data, i);
+                LittleEndian.Pack (x, data, i);
+            }
+            return data;
+        }
+
+        byte[] ConvertRgba (byte[] data)
+        {
+            for (int i = 0; i < data.Length; i += 4)
+            {
+                byte r = data[i];
+                data[i] = data[i+2];
+                data[i+2] = r;
+            }
+            return data;
         }
 
         bool m_disposed = false;
