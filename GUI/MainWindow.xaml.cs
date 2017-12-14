@@ -736,6 +736,7 @@ namespace GARbro.GUI
             if (e.Key != Key.Return)
                 return;
             string path = (sender as AutoCompleteBox).Text;
+            path = path.Trim (' ', '"');
             if (string.IsNullOrEmpty (path))
                 return;
             if (FullpathRe.IsMatch (path))
