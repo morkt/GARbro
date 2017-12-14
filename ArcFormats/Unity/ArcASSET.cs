@@ -46,6 +46,10 @@ namespace GameRes.Formats.Unity
             uint file_size = Binary.BigEndian (file.View.ReadUInt32 (4));
             if (file_size != file.MaxOffset || header_size > file_size || 0 == header_size)
                 return null;
+            int format = Binary.BigEndian (file.View.ReadInt32 (8));
+            uint data_offset = Binary.BigEndian (file.View.ReadUInt32 (12));
+            if (format <= 0 || format > 0x100 || data_offset >= file_size || data_offset < header_size)
+                return null;
             using (var stream = file.CreateStream())
             using (var input = new AssetReader (stream))
             {
@@ -170,7 +174,6 @@ namespace GameRes.Formats.Unity
                                 Offset = tex.m_StreamData.Offset,
                                 Size = tex.m_StreamData.Size,
                                 Bundle = GetBundle (tex.m_StreamData.Path),
-                                AssetObject = obj,
                             };
                         }
                         break;
@@ -187,7 +190,6 @@ namespace GameRes.Formats.Unity
                                 Offset = clip.m_Offset,
                                 Size = (uint)clip.m_Size,
                                 Bundle = GetBundle (clip.m_Source),
-                                AssetObject = obj,
                             };
                         }
                         break;
@@ -201,7 +203,6 @@ namespace GameRes.Formats.Unity
                             Name =  name,
                             Offset = input.Position,
                             Size = size,
-                            AssetObject = obj,
                         };
                         break;
                     }
@@ -210,14 +211,14 @@ namespace GameRes.Formats.Unity
                         entry = new AssetEntry {
                             Offset = obj.Offset,
                             Size = obj.Size,
-                            AssetObject = obj,
                         };
                         break;
                     }
                 }
                 if (entry != null)
                 {
-                    if (string.IsNullOrEmpty (entry.Name)
+                    entry.AssetObject = obj;
+                    if (string.IsNullOrEmpty (entry.Name))
                         entry.Name = string.Format ("{0:D4} [{1}]", obj.PathId, obj.TypeId);
                     else if (!used_names.Add (entry.Name))
                         entry.Name = string.Format ("{0}-{1}", entry.Name, obj.PathId);
