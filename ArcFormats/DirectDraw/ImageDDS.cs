@@ -91,26 +91,29 @@ namespace GameRes.Formats.DirectDraw
             var meta = (DdsMetaData)info;
             if (meta.PixelFlags.HasFlag (DdsPF.Yuv | DdsPF.Luminance))
                 throw new NotSupportedException ("Not supported DDS texture color format");
+            stream.Position = meta.DataOffset;
             byte[] pixels;
-            PixelFormat format;
+            PixelFormat format = PixelFormats.Bgra32;
             if (string.IsNullOrEmpty (meta.FourCC))
             {
                 if (meta.PixelFlags.HasFlag (DdsPF.Rgb)
                     && (0 == meta.RBitMask || 0 == meta.GBitMask || 0 == meta.BBitMask))
                     throw new InvalidFormatException();
                 pixels = ReadPixelData (stream.AsStream, meta);
-                if (meta.PixelFlags.HasFlag (DdsPF.AlphaPixels) && meta.ABitMask != 0)
-                    format = PixelFormats.Bgra32;
-                else
+                if (!meta.PixelFlags.HasFlag (DdsPF.AlphaPixels) || meta.ABitMask == 0)
                     format = PixelFormats.Bgr32;
             }
             else if ("DXT5" == meta.FourCC)
             {
-                stream.Position = meta.DataOffset;
                 var input = stream.ReadBytes ((int)meta.Width * (int)meta.Height);
                 var dxt = new DxtDecoder (input, meta);
                 pixels = dxt.UnpackDXT5();
-                format = PixelFormats.Bgra32;
+            }
+            else if ("DXT1" == meta.FourCC)
+            {
+                var input = stream.ReadBytes ((int)meta.Width * (int)meta.Height / 2);
+                var dxt = new DxtDecoder (input, meta);
+                pixels = dxt.UnpackDXT1();
             }
             else
                 throw new NotImplementedException ("Compressed DDS textures not implemented");
