@@ -45,6 +45,11 @@ namespace GameRes.Formats.Seraphim
         public override string Description { get { return "Seraphim engine image format"; } }
         public override uint     Signature { get { return 0x4643; } }
 
+        public SeraphCfImage ()
+        {
+            Extensions = new string[] { "cts" };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x10);
@@ -166,9 +171,11 @@ namespace GameRes.Formats.Seraphim
         public byte[]           Data { get { return m_output; } }
         public PixelFormat    Format { get; private set; }
         public BitmapPalette Palette { get; private set; }
+        public ImageMetaData    Info { get; private set; }
 
         public SeraphReader (Stream input, SeraphMetaData info, int pixel_size = 3)
         {
+            Info = info;
             m_input = input;
             m_input.Position = 0x10;
             m_width = (int)info.Width;
@@ -235,33 +242,33 @@ namespace GameRes.Formats.Seraphim
             while (dst < m_output.Length)
             {
                 int count;
-                int v1 = m_input.ReadByte();
-                if (-1 == v1)
+                int ctl = m_input.ReadByte();
+                if (-1 == ctl)
                     break;
-                if ((v1 & 0xF0) == 0xF0)
+                if ((ctl & 0xF0) == 0xF0)
                     throw new InvalidFormatException();
 
-                if (0 == (v1 & 0x80))
+                if (0 == (ctl & 0x80))
                 {
-                    if (0 != (v1 & 0x40))
+                    if (0 != (ctl & 0x40))
                     {
-                        count = (v1 & 0x3F) + 2;
+                        count = (ctl & 0x3F) + 2;
                         int v2 = m_input.ReadByte();
                         for (int i = 0; i < count; ++i)
                             m_output[dst+i] = (byte)v2;
                     }
                     else
                     {
-                        count = (v1 & 0x3F) + 1;
+                        count = (ctl & 0x3F) + 1;
                         if (count != m_input.Read (m_output, dst, count))
                             break;
                     }
                 }
-                else if (0 == (v1 & 0x40))
+                else if (0 == (ctl & 0x40))
                 {
                     int v2 = m_input.ReadByte();
-                    count = v2 | ((v1 & 0xF) << 8);
-                    switch ((v1 >> 4) & 3)
+                    count = v2 | ((ctl & 0xF) << 8);
+                    switch ((ctl >> 4) & 3)
                     {
                     case 0:
                         count += 2;
@@ -283,12 +290,11 @@ namespace GameRes.Formats.Seraphim
                         break;
                     }
                 }
-                else if (0 == (v1 & 0x30))
+                else if (0 == (ctl & 0x30))
                 {
                     int v2 = m_input.ReadByte();
-                    int v19 = (v1 >> 3) & 1;
-                    count = v2 + ((v1 & 7) << 8) + 1;
-                    if (0 != v19)
+                    count = v2 + ((ctl & 7) << 8) + 1;
+                    if (0 != (ctl & 8))
                     {
                         m_input.Read (m_output, dst, 6);
                         Binary.CopyOverlapped (m_output, dst, dst+6, count*6);
@@ -303,19 +309,18 @@ namespace GameRes.Formats.Seraphim
                         count *= 3;
                     }
                 }
-                else if (0 == (v1 & 0x20))
+                else if (0 == (ctl & 0x20))
                 {
-                    int v30 = m_input.ReadByte();
-                    int v31 = v30 + ((v1 & 0xF) << 8);
+                    int offset = m_input.ReadByte() + ((ctl & 0xF) << 8);
                     count = m_input.ReadByte() + 1;
-                    int src = dst - 3 - 3 * v31; // auto v34 = &unpacked[dst - 3] - 3 * v31;
+                    int src = dst - 3 - 3 * offset; // auto v34 = &unpacked[dst - 3] - 3 * offset;
                     count *= 3;
                     Binary.CopyOverlapped (m_output, src, dst, count);
                 }
                 else
                 {
                     int v37 = m_input.ReadByte();
-                    int v38 = v37 + ((v1 & 0xF) << 8);
+                    int v38 = v37 + ((ctl & 0xF) << 8);
                     count = m_input.ReadByte() + 1;
                     int src = dst - 1 - v38; // auto v40 = &unpacked[dst - 1] - v38;
                     Binary.CopyOverlapped (m_output, src, dst, count);
