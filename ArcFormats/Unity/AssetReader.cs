@@ -46,9 +46,13 @@ namespace GameRes.Formats.Unity
             set { m_input.Position = value; }
         }
 
-        public AssetReader (Stream input, string name)
+        public AssetReader (Stream input, string name) : this (BinaryStream.FromStream (input, name))
         {
-            m_input = BinaryStream.FromStream (input, name);
+        }
+
+        public AssetReader (IBinaryStream input)
+        {
+            m_input = input;
             SetupReaders (0, false);
         }
 

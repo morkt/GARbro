@@ -124,7 +124,6 @@ namespace GameRes.Formats.Unity
                     Trace.WriteLine ("Unknown type id", obj.ClassId.ToString());
                     m_types[obj.TypeId] = null;
                 }
-                throw new ApplicationException (string.Format ("Unknwon type id {0}", obj.ClassId));
             }
             if (m_objects.ContainsKey (obj.PathId))
                 throw new ApplicationException (string.Format ("Duplicate asset object {0} (PathId: {1})", obj, obj.PathId));
@@ -390,6 +389,7 @@ namespace GameRes.Formats.Unity
 
     internal class AudioClip
     {
+        public string   m_Name;
         public int      m_LoadType;
         public int      m_Channels;
         public int      m_Frequency;
@@ -407,7 +407,7 @@ namespace GameRes.Formats.Unity
 
         public void Load (AssetReader reader)
         {
-            var name = reader.ReadString();
+            m_Name = reader.ReadString();
             reader.Align();
             m_LoadType = reader.ReadInt32();
             m_Channels = reader.ReadInt32();
@@ -426,6 +426,20 @@ namespace GameRes.Formats.Unity
             m_Offset = reader.ReadInt64();
             m_Size = reader.ReadInt64();
             m_CompressionFormat = reader.ReadInt32();
+        }
+    }
+
+    internal class StreamingInfo
+    {
+        public uint     Offset;
+        public uint     Size;
+        public string   Path;
+
+        public void Load (AssetReader reader)
+        {
+            Offset = reader.ReadUInt32();
+            Size = reader.ReadUInt32();
+            Path = reader.ReadString();
         }
     }
 }
