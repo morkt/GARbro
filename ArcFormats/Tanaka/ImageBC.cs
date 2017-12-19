@@ -96,7 +96,7 @@ namespace GameRes.Formats.Will
                 throw new InvalidFormatException();
             var reader = new TxReader (file, meta);
             var pixels = reader.Unpack();
-            return ImageData.CreateFlipped (info, format, palette, pixels, reader.Stride);
+            return ImageData.CreateFlipped (info, format, palette, pixels, (reader.Stride + 3) & ~3);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -118,7 +118,7 @@ namespace GameRes.Formats.Will
         {
             m_input = input;
             m_info = info;
-            m_output = new byte[m_info.Stride * (int)m_info.Height];
+            m_output = new byte[((m_info.Stride + 3) & ~3) * (int)m_info.Height];
         }
 
         public byte[] Unpack ()
@@ -128,7 +128,8 @@ namespace GameRes.Formats.Will
             int pixel_size = m_info.BPP / 8;
             if (pixel_size > 1)
             {
-                for (int row = 0; row < m_output.Length; row += m_info.Stride)
+                int length = m_info.Stride * (int)m_info.Height;
+                for (int row = 0; row < length; row += m_info.Stride)
                 {
                     int dst = row;
                     for (uint x = 1; x < m_info.Width; ++x)
