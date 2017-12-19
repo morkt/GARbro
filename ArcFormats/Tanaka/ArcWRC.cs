@@ -31,11 +31,16 @@ namespace GameRes.Formats.Will
     [Export(typeof(ArchiveFormat))]
     public class WrcOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "WRC"; } }
+        public override string         Tag { get { return "WVX"; } }
         public override string Description { get { return "Tanaka Tatsuhiro's engine audio archive"; } }
         public override uint     Signature { get { return 0x30585657; } } // 'WVX0'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
+
+        public WrcOpener ()
+        {
+            Extensions = new string[] { "wvx", "wrc" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {

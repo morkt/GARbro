@@ -40,6 +40,7 @@ namespace GameRes.Formats.Will
         public Arc0Opener ()
         {
             Extensions = new string[] { "arc" };
+            Signatures = new uint[] { 0x30435241, 0x30414654 };
         }
 
         public override ArcFile TryOpen (ArcView file)
