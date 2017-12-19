@@ -111,6 +111,8 @@
     <Compile Include="Crowd\ImageCRZ.cs" />
     <Compile Include="CsWare\ImageBPC.cs" />
     <Compile Include="Cyberworks\ArcApp.cs" />
+    <Compile Include="Cyberworks\ArcP8.cs" />
+    <Compile Include="Cyberworks\ImageTB1.cs" />
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
