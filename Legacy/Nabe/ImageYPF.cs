@@ -39,6 +39,7 @@ namespace GameRes.Formats.Nabe
         public YpfFormat ()
         {
             Signatures = new uint[] { 0, 1, 2, 3 };
+            Extensions = new string[] { "" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
