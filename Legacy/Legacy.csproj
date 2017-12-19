@@ -56,6 +56,8 @@
     <Compile Include="ApplePie\ImageGT.cs" />
     <Compile Include="Clio\ArcPAC.cs" />
     <Compile Include="Clio\ImageEXP.cs" />
+    <Compile Include="CocktailSoft\ArcPAK.cs" />
+    <Compile Include="CocktailSoft\ImageWMK.cs" />
     <Compile Include="Dice\ArcRLZ.cs" />
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
@@ -72,7 +74,12 @@
     <Compile Include="ShapeShifter\ArcBND.cs" />
     <Compile Include="System21\ArcPAK.cs" />
     <Compile Include="System21\ImageBET.cs" />
+    <Compile Include="SystemAqua\ArcDAT.cs" />
     <Compile Include="Tsd\ArcMCD.cs" />
+    <Compile Include="WestGate\ArcUCA.cs" />
+    <Compile Include="WestGate\ArcUSF.cs" />
+    <Compile Include="WestGate\ArcUWF.cs" />
+    <Compile Include="WestGate\ImageNBMP.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ArcFormats\ArcFormats.csproj">
