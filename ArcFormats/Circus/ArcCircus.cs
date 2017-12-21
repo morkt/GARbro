@@ -50,7 +50,9 @@ namespace GameRes.Formats.Circus
             int count = file.View.ReadInt32 (0);
             if (count <= 1 || count > 0xfffff)
                 return null;
-            var dir = ReadIndex (file, count, 0x30);
+            var dir = ReadIndex (file, count, 0x24);
+            if (null == dir)
+                dir = ReadIndex (file, count, 0x30);
             if (null == dir)
                 dir = ReadIndex (file, count, 0x3C);
             if (null == dir)
