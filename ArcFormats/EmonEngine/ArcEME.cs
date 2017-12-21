@@ -2,7 +2,7 @@
 //! \date       Tue Mar 15 08:13:00 2016
 //! \brief      Emon Engine (えもんエンジン) resource archives.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Text;
 using GameRes.Compression;
 using GameRes.Utility;
 
@@ -91,8 +90,6 @@ namespace GameRes.Formats.EmonEngine
                 return base.OpenEntry (arc, entry);
             if (3 == ement.SubType)
                 return OpenScript (emarc, ement);
-            else if (4 == ement.SubType)
-                return OpenImage (emarc, ement);
             else if (5 == ement.SubType && entry.Size > 4)
                 return OpenT5 (emarc, ement);
             else
@@ -140,20 +137,32 @@ namespace GameRes.Formats.EmonEngine
             }
         }
 
-        Stream OpenImage (EmeArchive arc, EmEntry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            var header = new byte[40];
-            Encoding.ASCII.GetBytes ("EMBM", 0, 4, header, 0);
-            LittleEndian.Pack ((ushort)entry.LzssFrameSize, header, 4);
-            LittleEndian.Pack ((ushort)entry.LzssInitPos, header, 6);
-            arc.File.View.Read (entry.Offset, header, 8, 32);
-            Decrypt (header, 8, 32, arc.Key);
-            uint entry_size = entry.Size;
-            uint colors = LittleEndian.ToUInt16 (header, 14);
-            if (0 != colors && header[0] != 7)
-                entry_size += Math.Max (colors, 3u) * 4;
-            var input = arc.File.CreateStream (entry.Offset+32, entry_size);
-            return new PrefixStream (header, input);
+            const int header_size = 32;
+            var ement = (EmEntry)entry;
+            if (ement.SubType != 4)
+                return base.OpenImage (arc, entry);
+            var emarc = (EmeArchive)arc;
+            var header = arc.File.View.ReadBytes (entry.Offset, header_size);
+            Decrypt (header, 0, header_size, emarc.Key);
+            var info = new EmMetaData {
+                LzssFrameSize = ement.LzssFrameSize,
+                LzssInitPos = ement.LzssInitPos,
+                BPP = header.ToUInt16 (0) & 0xFF,
+                Width = header.ToUInt16 (2),
+                Height = header.ToUInt16 (4),
+                Colors = header.ToUInt16 (6),
+                Stride = header.ToInt32 (8),
+                OffsetX = header.ToInt32 (0xC),
+                OffsetY = header.ToInt32 (0x10),
+                DataOffset = header_size,
+            };
+            uint entry_size = entry.Size + header_size;
+            if (0 != info.Colors && header[0] != 7)
+                entry_size += (uint)Math.Max (info.Colors, 3) * 4;
+            var input = arc.File.CreateStream (entry.Offset, entry_size);
+            return new EmeImageDecoder (input, info);
         }
 
         Stream OpenT5 (EmeArchive arc, EmEntry entry)

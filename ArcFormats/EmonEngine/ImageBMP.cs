@@ -2,7 +2,7 @@
 //! \date       Wed Mar 16 01:08:47 2016
 //! \brief      Emon Engine compressed images.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2017 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -24,7 +24,6 @@
 //
 
 using System;
-using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -41,47 +40,23 @@ namespace GameRes.Formats.EmonEngine
         public int DataOffset;
     }
 
-    [Export(typeof(ImageFormat))]
-    public class EmFormat : ImageFormat
+    internal class EmeImageDecoder : BinaryImageDecoder
     {
-        public override string         Tag { get { return "EM/BMP"; } }
-        public override string Description { get { return "Emon Engine image format"; } }
-        // this is an artificial prefix embedded into stream by EmeOpener.OpenImage
-        public override uint     Signature { get { return 0x4D424D45; } } // 'EMBM'
-
-        public EmFormat ()
+        public EmeImageDecoder (IBinaryStream input, EmMetaData info) : base (input, info)
         {
-            Extensions = new string[] { "bmp" };
         }
 
-        public override ImageMetaData ReadMetaData (IBinaryStream stream)
+        protected override ImageData GetImageData ()
         {
-            stream.ReadInt32();
-            var info = new EmMetaData();
-            info.LzssFrameSize = stream.ReadUInt16();
-            info.LzssInitPos = stream.ReadUInt16();
-            info.BPP = stream.ReadUInt16() & 0xFF;
-            info.Width = stream.ReadUInt16();
-            info.Height = stream.ReadUInt16();
-            info.Colors = stream.ReadUInt16();
-            info.Stride = stream.ReadInt32();
-            info.OffsetX = stream.ReadInt32();
-            info.OffsetY = stream.ReadInt32();
-            info.DataOffset = 40;
-            return info;
-        }
-
-        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
-        {
-            var meta = (EmMetaData)info;
-            stream.Position = meta.DataOffset;
+            var meta = (EmMetaData)Info;
+            m_input.Position = meta.DataOffset;
             BitmapPalette palette = null;
             if (meta.Colors != 0)
-                palette = ReadPalette (stream.AsStream, Math.Max (meta.Colors, 3), PaletteFormat.RgbX);
-            var pixels = new byte[meta.Stride * (int)info.Height];
+                palette = ImageFormat.ReadPalette (m_input.AsStream, Math.Max (meta.Colors, 3), PaletteFormat.RgbX);
+            var pixels = new byte[meta.Stride * (int)meta.Height];
             if (meta.LzssFrameSize != 0)
             {
-                using (var lzss = new LzssStream (stream.AsStream, LzssMode.Decompress, true))
+                using (var lzss = new LzssStream (m_input.AsStream, LzssMode.Decompress, true))
                 {
                     lzss.Config.FrameSize = meta.LzssFrameSize;
                     lzss.Config.FrameInitPos = meta.LzssInitPos;
@@ -91,11 +66,11 @@ namespace GameRes.Formats.EmonEngine
             }
             else
             {
-                if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
+                if (pixels.Length != m_input.Read (pixels, 0, pixels.Length))
                     throw new EndOfStreamException();
             }
             if (7 == meta.BPP)
-                return ImageData.Create (info, PixelFormats.Gray8, palette, pixels, meta.Stride);
+                return ImageData.Create (Info, PixelFormats.Gray8, palette, pixels, meta.Stride);
 
             PixelFormat format;
             if (32 == meta.BPP)
@@ -104,12 +79,7 @@ namespace GameRes.Formats.EmonEngine
                 format = PixelFormats.Bgr24;
             else
                 format = PixelFormats.Indexed8;
-            return ImageData.CreateFlipped (info, format, palette, pixels, meta.Stride);
-        }
-
-        public override void Write (Stream file, ImageData image)
-        {
-            throw new System.NotImplementedException ("EmFormat.Write not implemented");
+            return ImageData.CreateFlipped (Info, format, palette, pixels, meta.Stride);
         }
     }
 }
