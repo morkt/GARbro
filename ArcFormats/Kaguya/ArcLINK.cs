@@ -438,13 +438,12 @@ namespace GameRes.Formats.Kaguya
         public static ParamsDeserializer Create (IBinaryStream input)
         {
             var header = input.ReadHeader (0x11);
-            if (header.AsciiEqual ("[SCR-PARAMS]"))
+            if (header.AsciiEqual ("[SCR-PARAMS]v0"))
             {
                 var version = Version.Parse (header.GetCString (13, 4));
-                if (header.AsciiEqual (12, "v02"))
+                if (2 == version.Major)
                     return new ParamsV2Deserializer (input, version);
-                else if (header.AsciiEqual (12, "v05.4") || header.AsciiEqual (12, "v05.5") ||
-                         header.AsciiEqual (12, "v05.6"))
+                else if (5 == version.Major && (version.Minor >= 4 && version.Minor <= 7))
                     return new ParamsV5Deserializer (input, version);
             }
             throw new UnknownEncryptionScheme();
