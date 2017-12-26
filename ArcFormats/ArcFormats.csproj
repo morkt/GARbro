@@ -157,6 +157,7 @@
     <Compile Include="RPM\ArcZENOS.cs" />
     <Compile Include="rUGP\AudioRHA.cs" />
     <Compile Include="Lilim\ArcFGA.cs" />
+    <Compile Include="ScenePlayer\ArcPMA.cs" />
     <Compile Include="ScenePlayer\ArcPMX.cs" />
     <Compile Include="Scoop\ArcGX.cs" />
     <Compile Include="Seraphim\ArcSCN.cs" />
@@ -415,6 +416,7 @@
     <Compile Include="Softpal\ImagePIC.cs" />
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
+    <Compile Include="Succubus\ArcARC.cs" />
     <Compile Include="SuperNekoX\ArcGPC.cs" />
     <Compile Include="SysD\ArcDPK.cs" />
     <Compile Include="SysD\AudioDWV.cs" />
@@ -568,6 +570,7 @@
     <Compile Include="Ucom\ImageGPC.cs" />
     <Compile Include="uGOS\ArcDET.cs" />
     <Compile Include="uGOS\ImageBMP.cs" />
+    <Compile Include="AdvSys\ArcGR2.cs" />
     <Compile Include="UMeSoft\ArcPK.cs" />
     <Compile Include="Qlie\ArcQLIE.cs" />
     <Compile Include="RenPy\ArcRPA.cs" />
