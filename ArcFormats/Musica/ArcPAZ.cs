@@ -159,7 +159,7 @@ namespace GameRes.Formats.Musica
 
         public PazOpener ()
         {
-            Signatures = new uint[] { 0x858F8493, 0 };
+            Signatures = new uint[] { 0x858F8493, 0x8F889395, 0x6E656465, 0 };
         }
 
         static readonly ISet<string> AudioPazNames = new HashSet<string> {
