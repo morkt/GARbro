@@ -94,7 +94,7 @@ namespace GameRes.Formats.Maika
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             ushort signature = arc.File.View.ReadUInt16 (entry.Offset);
-            if (0x3146 != signature && 0x3143 != signature && 0x3144 != signature)
+            if (0x3146 != signature && 0x3143 != signature && 0x3144 != signature && 0x3145 != signature)
                 return base.OpenEntry (arc, entry);
             uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+2);
             if (packed_size < 14 || packed_size > entry.Size-10)
