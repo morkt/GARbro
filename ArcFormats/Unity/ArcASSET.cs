@@ -91,8 +91,7 @@ namespace GameRes.Formats.Unity
                 {
                     tex.m_Data = new byte[entry.Size];
                     input.Read (tex.m_Data, 0, tex.m_Data.Length);
-                    var bin_input = BinaryStream.FromStream (input, entry.Name);
-                    var tex_reader = new AssetReader (bin_input);
+                    var tex_reader = new AssetReader (input, entry.Name);
                     tex_reader.SetupReaders (obj.Asset);
                     return new Texture2DDecoder (tex, tex_reader);
                 }
