@@ -193,7 +193,7 @@ namespace GameRes.Formats.TmrHiro
                     for (int i = 0; i < count; ++i)
                         m_channel[dst++] = v;
                 }
-                else
+                else if (count > 0)
                 {
                     input.Read (m_channel, dst, count);
                     src += count;
