@@ -31,6 +31,11 @@ using System.Windows.Media;
 
 namespace GameRes.Formats.uGOS
 {
+    internal class DetBmpMetaData : ImageMetaData
+    {
+        public int  Method;
+    }
+
     [Export(typeof(ImageFormat))]
     public class DetBmpFormat : ImageFormat
     {
@@ -41,17 +46,26 @@ namespace GameRes.Formats.uGOS
         public DetBmpFormat ()
         {
             Extensions = new string[] { "bmp" };
-            Signatures = new uint[] { 0x206546, 0x186546 };
+            Signatures = new uint[] { 0x206546, 0x186546, 0x01186446, 0 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x10);
-            return new ImageMetaData
+            if (header[0] != 'F')
+                return null;
+            var type = header[1] & 0x5F;
+            if (type != 'D' && type != 'E')
+                return null;
+            int bpp = header[2];
+            if (bpp != 0x18 && bpp != 0x20)
+                return null;
+            return new DetBmpMetaData
             {
                 Width   = header.ToUInt16 (4),
                 Height  = header.ToUInt16 (6),
-                BPP     = header[2],
+                BPP     = bpp,
+                Method  = type,
             };
         }
 
