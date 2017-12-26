@@ -77,7 +77,7 @@ namespace GameRes.Formats.RealLive
             if (0 == width || width > 0x8000 || 0 == height || height > 0x8000)
                 return null;
             int count = file.View.ReadInt16 (5);
-            if (count <= 1 || count > 0x100)
+            if (count <= 1 || count > 0x1000)
                 return null;
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
 

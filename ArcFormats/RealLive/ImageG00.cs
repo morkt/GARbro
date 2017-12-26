@@ -58,7 +58,7 @@ namespace GameRes.Formats.RealLive
             if (2 == type)
             {
                 int count = file.ReadInt32();
-                if (count <= 0 || count > 0x100)
+                if (count <= 0 || count > 0x1000)
                     return null;
             }
             else
