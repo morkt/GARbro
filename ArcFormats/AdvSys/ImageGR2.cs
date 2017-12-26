@@ -61,7 +61,7 @@ namespace GameRes.Formats.AdvSys
             {
             case 32: format = PixelFormats.Bgra32; break;
             case 24: format = PixelFormats.Bgr24; break;
-            case 16: format = PixelFormats.Bgr565; break;
+            case 16: format = PixelFormats.Bgr555; break;
             default: throw new NotSupportedException ("Not supported image bitdepth");
             }
             return ImageData.Create (info, format, null, pixels, stride);
