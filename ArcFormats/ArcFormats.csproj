@@ -135,6 +135,7 @@
     <Compile Include="KiriKiri\ArcXPK.cs" />
     <Compile Include="KiriKiri\CzCrypt.cs" />
     <Compile Include="Kurumi\ImageGRA.cs" />
+    <Compile Include="Lambda\ArcCLS.cs" />
     <Compile Include="Leaf\ArcPX.cs" />
     <Compile Include="Littlewitch\ArcDAT.cs" />
     <Compile Include="LunaSoft\ArcPAC.cs" />
