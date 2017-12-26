@@ -1,6 +1,6 @@
-//! \file       ArcPMX.cs
-//! \date       2017 Nov 23
-//! \brief      ScenePlayer scripts archive.
+//! \file       ArcPMA.cs
+//! \date       2017 Dec 26
+//! \brief      ScenePlayer animation resource.
 //
 // Copyright (C) 2017 by morkt
 //
@@ -23,28 +23,29 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using GameRes.Compression;
 
 namespace GameRes.Formats.ScenePlayer
 {
     [Export(typeof(ArchiveFormat))]
-    public class PmxOpener : ArchiveFormat
+    public class PmaOpener : PmxOpener
     {
-        public override string         Tag { get { return "PMX"; } }
-        public override string Description { get { return "ScenePlayer scripts archive"; } }
+        public override string         Tag { get { return "PMA"; } }
+        public override string Description { get { return "ScenePlayer animation resource"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.HasExtension (".pmx")
+            if (!file.Name.HasExtension (".pma")
                 || file.View.ReadByte (0) != (0x78^0x21))
                 return null;
 
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
             var input = CreatePmxStream (file);
             bool index_complete = false;
             try
@@ -55,22 +56,21 @@ namespace GameRes.Formats.ScenePlayer
                     if (!IsSaneCount (count))
                         return null;
                     var dir = new List<Entry> (count);
-                    uint data_offset = 4 + (uint)count * 0x24;
                     for (int i = 0; i < count; ++i)
                     {
-                        var name = index.ReadCString (0x20);
-                        // IsPathRooted throws on invalid filename characters
-                        if (string.IsNullOrWhiteSpace (name) || Path.IsPathRooted (name))
+                        index.ReadByte();
+                        var offset = index.Position;
+                        if (index.ReadUInt16() != 0x4D42) // 'BM'
                             return null;
                         uint size = index.ReadUInt32();
                         var entry = new Entry {
-                            Name = name,
-                            Type = "script",
-                            Offset = data_offset,
+                            Name = string.Format ("{0}#{1}.bmp", base_name, i),
+                            Type = "image",
+                            Offset = offset,
                             Size =  size,
                         };
                         dir.Add (entry);
-                        data_offset += size;
+                        index.Position = offset + size;
                     }
                     index_complete = true;
                     return new PmxArchive (file, this, dir, input);
@@ -80,42 +80,6 @@ namespace GameRes.Formats.ScenePlayer
             {
                 if (!index_complete)
                     input.Dispose();
-            }
-        }
-
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            var parc = (PmxArchive)arc;
-            return new StreamRegion (parc.BaseStream, entry.Offset, entry.Size, true);
-        }
-
-        internal Stream CreatePmxStream (ArcView file)
-        {
-            Stream input = file.CreateStream();
-            input = new XoredStream (input, 0x21);
-            input = new ZLibStream (input, CompressionMode.Decompress);
-            return new SeekableStream (input);
-        }
-    }
-
-    internal class PmxArchive : ArcFile
-    {
-        public readonly Stream BaseStream;
-
-        public PmxArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, Stream base_stream)
-            : base (arc, impl, dir)
-        {
-            BaseStream = base_stream;
-        }
-
-        bool m_disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!m_disposed)
-            {
-                if (disposing)
-                    BaseStream.Dispose();
-                m_disposed = true;
             }
         }
     }
