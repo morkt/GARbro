@@ -931,16 +931,27 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class SmileCrypt : ICrypt
     {
+        readonly uint   m_key_xor;
+        readonly byte   m_first_xor;
+        readonly byte   m_zero_xor;
+
+        public SmileCrypt (uint key_xor, byte first_xor, byte zero_xor)
+        {
+            m_key_xor = key_xor;
+            m_first_xor = first_xor;
+            m_zero_xor = zero_xor;
+        }
+
         public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
-            uint hash = entry.Hash ^ 0xD0F0BA7B;
+            uint hash = entry.Hash ^ m_key_xor;
             byte key = (byte)(hash ^ (hash >> 8) ^ (hash >> 16) ^ (hash >> 24));
             if (0 == key)
-                key = 0x5E;
+                key = m_zero_xor;
             if (0 == offset && count > 0)
             {
                 if (0 == (hash & 0xFF))
-                    hash = 0x7B;
+                    hash = m_first_xor;
                 values[pos] ^= (byte)hash;
             }
             for (int i = 0; i < count; ++i)
