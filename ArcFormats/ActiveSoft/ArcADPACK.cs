@@ -50,6 +50,8 @@ namespace GameRes.Formats.AdPack
             int count = file.View.ReadInt16 (0);
             if (count <= 1)
                 return null;
+            if (0x4000 == count)
+                return TryOpenVoiceArchive (file);
             long index_offset = 2;
             uint index_size = (uint)(0x10 * count);
             if (index_size > file.View.Reserve (index_offset, index_size))
@@ -58,12 +60,9 @@ namespace GameRes.Formats.AdPack
             var dir = new List<Entry> (count);
             for (uint i = 0; i < count; ++i)
             {
-                string name = file.View.ReadString (index_offset, 8).TrimEnd (null);
-                if (0 == name.Length)
+                string name = ReadName (file, index_offset);
+                if (string.IsNullOrEmpty (name))
                     return null;
-                string ext  = file.View.ReadString (index_offset+8, 4).TrimEnd (null);
-                if (0 != ext.Length)
-                    name += '.'+ext;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 uint offset = file.View.ReadUInt32 (index_offset+12);
                 uint next_offset = file.View.ReadUInt32 (index_offset+0x10+12);
@@ -75,6 +74,50 @@ namespace GameRes.Formats.AdPack
                 index_offset += 0x10;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        ArcFile TryOpenVoiceArchive (ArcView file)
+        {
+            int count = file.View.ReadInt16 (2);
+            if (!IsSaneCount (count))
+                return null;
+            uint index_offset = 4;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                uint offset = file.View.ReadUInt32 (index_offset+4);
+                index_offset += 8;
+                if (offset == file.MaxOffset && i+1 == count)
+                    break;
+                if (offset > file.MaxOffset)
+                    return null;
+                var entry = new Entry { Offset = offset };
+                dir.Add (entry);
+            }
+            foreach (var entry in dir)
+            {
+                var name = ReadName (file, index_offset);
+                if (string.IsNullOrEmpty (name))
+                    return null;
+                entry.Name = name;
+                entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                entry.Size = file.View.ReadUInt32 (index_offset+0xC);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                index_offset += 0x10;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        string ReadName (ArcView file, long offset)
+        {
+            string name = file.View.ReadString (offset, 8).TrimEnd (null);
+            if (0 == name.Length)
+                return null;
+            string ext  = file.View.ReadString (offset+8, 4).TrimEnd (null);
+            if (0 != ext.Length)
+                name += '.'+ext;
+            return name;
         }
     }
 
