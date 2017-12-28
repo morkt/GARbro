@@ -23,11 +23,9 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Ail
@@ -54,6 +52,7 @@ namespace GameRes.Formats.Ail
             long offset = 4+count*4;
             if (offset >= file.MaxOffset)
                 return null;
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
             uint index_offset = 4;
             var dir = new List<Entry>();
             for (int i = 0; i < count; ++i)
@@ -63,7 +62,7 @@ namespace GameRes.Formats.Ail
                 {
                     var entry = new PackedEntry
                     {
-                        Name = i.ToString ("D5"),
+                        Name = string.Format ("{0}#{1:D5}", base_name, i),
                         Offset = offset,
                         Size = size,
                         IsPacked = false,
@@ -84,15 +83,18 @@ namespace GameRes.Formats.Ail
                 uint extra = 6;
                 if (extra > entry.Size)
                     continue;
-                int label = file.View.ReadUInt16 (entry.Offset);
-                if (1 == label)
+                uint signature = file.View.ReadUInt32 (entry.Offset);
+                if (1 == (signature & 0xFFFF))
                 {
                     entry.IsPacked = true;
                     entry.UnpackedSize = file.View.ReadUInt32 (entry.Offset+2);
                 }
+                else if (0 == signature)
+                {
+                    extra = 4;
+                }
                 entry.Offset += extra;
                 entry.Size   -= extra;
-                uint signature;
                 if (entry.IsPacked)
                 {
                     file.View.Read (entry.Offset, preview, 0, (uint)preview.Length);
@@ -128,14 +130,9 @@ namespace GameRes.Formats.Ail
 
         static void SetEntryType (Entry entry, uint signature)
         {
-            var res = FormatCatalog.Instance.LookupSignature (signature).FirstOrDefault();
+            var res = AutoEntry.DetectFileType (signature);
             if (null != res)
-            {
-                entry.Type = res.Type;
-                var ext = res.Extensions.FirstOrDefault();
-                if (!string.IsNullOrEmpty (ext))
-                    entry.Name += '.' + ext;
-            }
+                entry.ChangeType (res);
         }
 
         /// <summary>
