@@ -45,6 +45,11 @@ namespace GameRes.Formats.Ikura
         public override uint     Signature { get { return 0x46504747u; } } // 'GGPF'
         public override bool      CanWrite { get { return false; } }
 
+        public GgpFormat ()
+        {
+            Extensions = new string[] { "ggp", "gg" };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x24);
