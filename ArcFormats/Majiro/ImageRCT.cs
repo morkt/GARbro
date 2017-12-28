@@ -45,7 +45,8 @@ namespace GameRes.Formats.Majiro
         public bool IsEncrypted;
         public uint DataOffset;
         public int  DataSize;
-        public int  AddSize;
+        public int  BaseNameLength;
+        public int  BaseRecursionDepth;
     }
 
     internal class RctOptions : ResourceOptions
@@ -69,6 +70,7 @@ namespace GameRes.Formats.Majiro
 
         public bool OverlayFrames = true;
         public bool ApplyMask = true;
+        public const int BaseRecursionLimit = 8;
 
         public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
 
@@ -117,7 +119,7 @@ namespace GameRes.Formats.Majiro
                 IsEncrypted = is_encrypted,
                 DataOffset = (uint)stream.Position,
                 DataSize = data_size,
-                AddSize = additional_size,
+                BaseNameLength = additional_size,
             };
         }
 
@@ -126,15 +128,7 @@ namespace GameRes.Formats.Majiro
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (RctMetaData)info;
-
-            byte[] base_image = null;
-            if (meta.FileName != null && meta.AddSize > 0 && OverlayFrames)
-                base_image = ReadBaseImage (file, meta);
-
             var pixels = ReadPixelsData (file, meta);
-            if (base_image != null)
-                pixels = CombineImage (base_image, pixels);
-
             if (ApplyMask)
             {
                 var base_name = Path.GetFileNameWithoutExtension (meta.FileName);
@@ -201,7 +195,12 @@ namespace GameRes.Formats.Majiro
 
         byte[] ReadPixelsData (IBinaryStream file, RctMetaData meta)
         {
-            file.Position = meta.DataOffset + meta.AddSize;
+            byte[] base_image = null;
+            if (meta.FileName != null && meta.BaseNameLength > 0 && OverlayFrames
+                && meta.BaseRecursionDepth < BaseRecursionLimit)
+                base_image = ReadBaseImage (file, meta);
+
+            file.Position = meta.DataOffset + meta.BaseNameLength;
             if (meta.IsEncrypted)
                 file = OpenEncryptedStream (file, meta.DataSize);
             try
@@ -209,6 +208,8 @@ namespace GameRes.Formats.Majiro
                 using (var reader = new Reader (file, meta))
                 {
                     reader.Unpack();
+                    if (base_image != null)
+                        return CombineImage (base_image, reader.Data);
                     return reader.Data;
                 }
             }
@@ -222,13 +223,10 @@ namespace GameRes.Formats.Majiro
 
         byte[] ReadBaseImage (IBinaryStream file, RctMetaData meta)
         {
-            file.Position = meta.DataOffset;
-            byte[] name_bin = file.ReadBytes (meta.AddSize);
-            if (name_bin.Length != meta.AddSize)
-                throw new EndOfStreamException();
             try
             {
-                string name = Encodings.cp932.GetString (name_bin, 0, name_bin.Length-1);
+                file.Position = meta.DataOffset;
+                var name = file.ReadCString (meta.BaseNameLength);
                 string dir_name = VFS.GetDirectoryName (meta.FileName);
                 name = VFS.CombinePath (dir_name, name);
                 if (VFS.FileExists (name))
@@ -236,9 +234,10 @@ namespace GameRes.Formats.Majiro
                     using (var base_file = VFS.OpenBinaryStream (name))
                     {
                         var base_info = ReadMetaData (base_file) as RctMetaData;
-                        if (null != base_info && 0 == base_info.AddSize
+                        if (null != base_info
                             && meta.Width == base_info.Width && meta.Height == base_info.Height)
                         {
+                            base_info.BaseRecursionDepth = meta.BaseRecursionDepth + 1;
                             base_info.FileName = name;
                             return ReadPixelsData (base_file, base_info);
                         }
