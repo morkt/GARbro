@@ -117,6 +117,8 @@
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
+    <Compile Include="Otemoto\ArcTLZ.cs" />
+    <Compile Include="Otemoto\ImageMAG.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />
     <Compile Include="Foster\ArcC24.cs" />
     <Compile Include="Foster\ArcFA2.cs" />
@@ -150,6 +152,7 @@
     <Compile Include="MicroVision\ArcGSD.cs" />
     <Compile Include="MicroVision\AudioIKM.cs" />
     <Compile Include="MicroVision\ImageGPC.cs" />
+    <Compile Include="Morning\ArcPAK.cs" />
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
@@ -422,6 +425,7 @@
     <Compile Include="SysD\ArcDPK.cs" />
     <Compile Include="SysD\AudioDWV.cs" />
     <Compile Include="SysD\ImageDBM.cs" />
+    <Compile Include="Tactics\ArcYU.cs" />
     <Compile Include="Tactics\WidgetTactics.xaml.cs">
       <DependentUpon>WidgetTactics.xaml</DependentUpon>
     </Compile>
