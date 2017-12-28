@@ -39,6 +39,11 @@ namespace GameRes.Formats.SystemAqua
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public DatOpener ()
+        {
+            Extensions = new string[] { "dat", "cat" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0x10);
@@ -83,7 +88,7 @@ namespace GameRes.Formats.SystemAqua
                     file.View.Read (entry.Offset+0xC, type, 0, 3);
                     if (type.AsciiEqual ("000"))
                     {
-                        entry.ChangeType (AudioFormat.Wav);
+                        entry.Type = "audio"; // either WAV or MIDI
                     }
                     else
                     {
