@@ -23,9 +23,11 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Ivory
@@ -37,6 +39,11 @@ namespace GameRes.Formats.Ivory
         public override string Description { get { return "Ivory image format"; } }
         public override uint     Signature { get { return 0; } }
 
+        public MoeFormat ()
+        {
+            Extensions = new string[] { "moe", "shw" };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var wh = stream.Signature;
@@ -44,16 +51,18 @@ namespace GameRes.Formats.Ivory
             uint height = wh >> 16;
             if (0 == width || width > 800 || 0 == height || height > 600)
                 return null;
+            int bpp = stream.Name.HasExtension (".SHW") ? 8 : 24;
             stream.Position = 4;
-            if (!IsValidInput (stream.AsStream, width, height))
+            if (!IsValidInput (stream.AsStream, width, height, bpp / 8))
                 return null;
-            return new ImageMetaData { Width = width, Height = height, BPP = 24 };
+            return new ImageMetaData { Width = width, Height = height, BPP = bpp };
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 4;
-            var pixels = new byte[3 * info.Width * info.Height];
+            int pixel_size = info.BPP / 8;
+            var pixels = new byte[pixel_size * (int)info.Width * (int)info.Height];
             int dst = 0;
             while (dst < pixels.Length)
             {
@@ -62,25 +71,36 @@ namespace GameRes.Formats.Ivory
                     throw new EndOfStreamException();
                 if (0 != (count & 0x80))
                 {
-                    count = 3 * (count & 0x7F);
+                    count = Math.Min (pixel_size * (count & 0x7F), pixels.Length - dst);
                     stream.Read (pixels, dst, count);
                     dst += count;
                 }
                 else
                 {
-                    count *= 3;
-                    stream.Read (pixels, dst, 3);
-                    Binary.CopyOverlapped (pixels, dst, dst+3, count-3);
+                    count *= pixel_size;
+                    stream.Read (pixels, dst, pixel_size);
+                    Binary.CopyOverlapped (pixels, dst, dst+pixel_size, count-pixel_size);
                     dst += count;
                 }
             }
-            return ImageData.Create (info, PixelFormats.Bgr24, null, pixels);
+            if (24 == info.BPP)
+                return ImageData.Create (info, PixelFormats.Bgr24, null, pixels);
+
+            const int MaxAlpha = 0x10;
+            var colors = new Color[MaxAlpha+1];
+            for (int i = 0; i <= MaxAlpha; ++i)
+            {
+                byte g = (byte)(i * 0xFF / MaxAlpha);
+                colors[i] = Color.FromRgb (g, g, g);
+            }
+            var palette = new BitmapPalette (colors);
+            return ImageData.Create (info, PixelFormats.Indexed8, palette, pixels);
         }
 
         /// <summary>
         /// Try to interpret input stream as a compressed image.
         /// </summary>
-        bool IsValidInput (Stream input, uint width, uint height)
+        bool IsValidInput (Stream input, uint width, uint height, int pixel_size)
         {
             int total = (int)width * (int)height;
             int dst = 0;
@@ -91,12 +111,12 @@ namespace GameRes.Formats.Ivory
                     return false;
                 if (0 != (count & 0x80))
                 {
-                    count &= 0x7F;
-                    input.Seek (count * 3, SeekOrigin.Current);
+                    count = Math.Min (count & 0x7F, total - dst);
+                    input.Seek (count * pixel_size, SeekOrigin.Current);
                 }
                 else
                 {
-                    input.Seek (3, SeekOrigin.Current);
+                    input.Seek (pixel_size, SeekOrigin.Current);
                 }
                 dst += count;
                 if (dst > total)
