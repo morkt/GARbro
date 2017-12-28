@@ -34,6 +34,7 @@ namespace GameRes.Formats.RealLive
 {
     internal class PdtMetaData : ImageMetaData
     {
+        public int  Version;
         public uint AlphaOffset;
     }
 
@@ -47,13 +48,15 @@ namespace GameRes.Formats.RealLive
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (32);
-            if (!header.AsciiEqual ("PDT10\0"))
+            int version = header[4] - '0';
+            if (version < 0 || version > 1)
                 return null;
             return new PdtMetaData
             {
                 Width   = header.ToUInt32 (0x0C),
                 Height  = header.ToUInt32 (0x10),
                 BPP     = 32,
+                Version     = version,
                 AlphaOffset = header.ToUInt32 (0x1C),
             };
         }
@@ -87,16 +90,27 @@ namespace GameRes.Formats.RealLive
         {
             m_input = input;
             m_info = info;
-            m_output = new byte[m_info.Width * m_info.Height * 4];
-            if (0 == m_info.AlphaOffset)
-                Format = PixelFormats.Bgr32;
-            else
+            if (0 != m_info.AlphaOffset)
                 Format = PixelFormats.Bgra32;
+            else if (1 == m_info.Version)
+                Format = PixelFormats.Indexed8;
+            else
+                Format = PixelFormats.Bgr32;
+
+            m_output = new byte[m_info.Width * m_info.Height * Format.BitsPerPixel / 8];
         }
 
         public void Unpack ()
         {
             m_input.Position = 0x20;
+            if (0 == m_info.Version)
+                UnpackV0();
+            else
+                UnpackV1();
+        }
+
+        void UnpackV0 ()
+        {
             Unpack24();
             if (0 != m_info.AlphaOffset)
             {
@@ -107,6 +121,21 @@ namespace GameRes.Formats.RealLive
                 {
                     m_output[i] = alpha[src++];
                 }
+            }
+        }
+
+        void UnpackV1 ()
+        {
+            Palette = ImageFormat.ReadPalette (m_input.AsStream);
+            var offsets = new int[16];
+            for (int i = 0; i < offsets.Length; ++i)
+                offsets[i] = m_input.ReadInt32();
+            LzUnpack (offsets);
+
+            if (0 != m_info.AlphaOffset)
+            {
+                m_input.Position = m_info.AlphaOffset;
+                var alpha = Unpack8();
             }
         }
 
@@ -166,6 +195,43 @@ namespace GameRes.Formats.RealLive
                 }
             }
             return output;
+        }
+
+        void LzUnpack (int[] offsets)
+        {
+            int dst = 0;
+            int bits = 0;
+            int mask = 0;
+            while (dst < m_output.Length)
+            {
+                mask >>= 1;
+                if (0 == mask)
+                {
+                    bits = m_input.ReadUInt8();
+                    mask = 0x80;
+                }
+                if (0 != (bits & mask))
+                {
+                    m_output[dst++] = m_input.ReadUInt8();
+                }
+                else
+                {
+                    int offset = m_input.ReadUInt8();
+                    int count = Math.Min (2 + (offset >> 4), m_output.Length - dst);
+                    offset = offsets[offset & 0xF];
+                    if (dst < offset)
+                    {
+                        int gap = Math.Min (offset - dst, count);
+                        dst += gap;
+                        count -= gap;
+                    }
+                    if (count > 0)
+                    {
+                        Binary.CopyOverlapped (m_output, dst-offset, dst, count);
+                        dst += count;
+                    }
+                }
+            }
         }
 
         #region IDisposable Members
