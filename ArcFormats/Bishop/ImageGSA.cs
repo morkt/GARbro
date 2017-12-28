@@ -48,7 +48,8 @@ namespace GameRes.Formats.Bishop
 
         public GsaFormat ()
         {
-            var ext_list = Enumerable.Range (1, 12).Select (x => string.Format ("g{0:D2}", x));
+            var ext_list = Enumerable.Range (1, 12).Select (x => string.Format ("g{0:D2}", x))
+                    .Concat (Enumerable.Range (1, 9).Select (x => string.Format ("gs{0}", x)));
             Extensions = Extensions.Concat (ext_list).ToArray();
         }
 
@@ -70,7 +71,7 @@ namespace GameRes.Formats.Bishop
             };
         }
 
-        static readonly Regex PartFileNameRe = new Regex (@"\.G\d\d$", RegexOptions.IgnoreCase);
+        static readonly Regex PartFileNameRe = new Regex (@"\.G[01S]\d$", RegexOptions.IgnoreCase);
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
@@ -210,7 +211,8 @@ namespace GameRes.Formats.Bishop
             Format = PixelFormats.Bgr24;
             m_bpp = 3;
             m_stride = (m_width * 3 + 3) & ~3;
-            m_output = new byte[m_stride * m_height];
+            int reserved_lines = (m_height + 1) & ~1;
+            m_output = new byte[m_stride * reserved_lines];
             UnpackRgb();
         }
 
@@ -219,7 +221,8 @@ namespace GameRes.Formats.Bishop
             Format = PixelFormats.Bgra32;
             m_bpp = 4;
             m_stride = m_width * 4;
-            m_output = new byte[m_stride * m_height];
+            int reserved_lines = (m_height + 1) & ~1;
+            m_output = new byte[m_stride * reserved_lines];
             ReadPlane (3);
             UnpackRgb();
         }
