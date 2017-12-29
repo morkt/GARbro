@@ -83,6 +83,7 @@
     <Compile Include="System21\ImageBET.cs" />
     <Compile Include="SystemAqua\ArcDAT.cs" />
     <Compile Include="Tsd\ArcMCD.cs" />
+    <Compile Include="Uran\ArcPHS.cs" />
     <Compile Include="WestGate\ArcUCA.cs" />
     <Compile Include="WestGate\ArcUSF.cs" />
     <Compile Include="WestGate\ArcUWF.cs" />
