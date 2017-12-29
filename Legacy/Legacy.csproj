@@ -52,17 +52,24 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnotherRoom\AudioWAZ.cs" />
+    <Compile Include="AnotherRoom\ImageGR1.cs" />
     <Compile Include="ApplePie\ArcARC.cs" />
     <Compile Include="ApplePie\ImageGT.cs" />
     <Compile Include="Clio\ArcPAC.cs" />
     <Compile Include="Clio\ImageEXP.cs" />
     <Compile Include="CocktailSoft\ArcPAK.cs" />
     <Compile Include="CocktailSoft\ImageWMK.cs" />
+    <Compile Include="CrossNet\AudioADP.cs" />
+    <Compile Include="CrossNet\ImageGRB.cs" />
     <Compile Include="Dice\ArcRLZ.cs" />
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
     <Compile Include="Factor\ArcRES.cs" />
+    <Compile Include="Kurumi\ArcMPK.cs" />
+    <Compile Include="Mink\ImageGDF.cs" />
     <Compile Include="Nabe\ImageYPF.cs" />
+    <Compile Include="Nanami\ArcBMM.cs" />
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
