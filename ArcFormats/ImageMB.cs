@@ -52,7 +52,7 @@ namespace GameRes.Formats
                 return base.Read (bmp, info);
         }
 
-        IBinaryStream OpenAsBitmap (IBinaryStream input)
+        protected IBinaryStream OpenAsBitmap (IBinaryStream input)
         {
             var header = new byte[2] { (byte)'B', (byte)'M' };
             Stream stream = new StreamRegion (input.AsStream, 2, true);
