@@ -130,17 +130,17 @@ namespace GameRes.Formats.CrossNet
             }
             var row_data = m_input.ReadBytes (m_height);
 
-            int blocks = m_width >> 2;
+            int blocks = m_stride >> 2;
             m_input.Position = m_info.BitsOffset;
             var ctl_data = m_input.ReadBytes (m_height * blocks);
 
             int src = 0;
             int dst = 0;
             var offsets = new int[4,4] {
-                { 0, -1, -m_width, -m_width-1 },
+                { 0, -1, -m_stride, -m_stride-1 },
                 { 0, -1, -2, -3 },
-                { 0, -m_width, -m_width * 2, -m_width * 3 },
-                { 0, -m_width-1, -m_width, -m_width+1 }
+                { 0, -m_stride, -m_stride * 2, -m_stride * 3 },
+                { 0, -m_stride-1, -m_stride, -m_stride+1 }
             };
             m_input.Position = m_info.DataOffset;
 
