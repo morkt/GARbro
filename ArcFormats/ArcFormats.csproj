@@ -117,6 +117,7 @@
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
+    <Compile Include="LiveMaker\ImageGALX.cs" />
     <Compile Include="Otemoto\ArcTLZ.cs" />
     <Compile Include="Otemoto\ImageMAG.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />

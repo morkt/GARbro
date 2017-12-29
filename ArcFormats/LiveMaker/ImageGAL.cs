@@ -153,7 +153,7 @@ namespace GameRes.Formats.LiveMaker
             return new GUI.WidgetGAL();
         }
 
-        uint QueryKey ()
+        internal uint QueryKey ()
         {
             if (!KnownKeys.Any())
                 return 0;
@@ -169,13 +169,13 @@ namespace GameRes.Formats.LiveMaker
         }
     }
 
-    internal sealed class GalReader : IDisposable
+    internal class GalReader : IDisposable
     {
-        IBinaryStream   m_input;
-        GalMetaData     m_info;
-        byte[]          m_output;
-        List<Frame>     m_frames;
-        uint            m_key;
+        protected IBinaryStream   m_input;
+        protected GalMetaData     m_info;
+        protected byte[]          m_output;
+        protected List<Frame>     m_frames;
+        protected uint            m_key;
 
         public byte[]           Data { get { return m_output; } }
         public PixelFormat    Format { get; private set; }
@@ -205,6 +205,14 @@ namespace GameRes.Formats.LiveMaker
             public Frame (int layer_count)
             {
                 Layers = new List<Layer> (layer_count);
+            }
+
+            public void SetStride ()
+            {
+                Stride = (Width * BPP + 7) / 8;
+                AlphaStride = (Width + 3) & ~3;
+                if (BPP >= 8)
+                    Stride = (Stride + 3) & ~3;
             }
         }
 
@@ -237,28 +245,23 @@ namespace GameRes.Formats.LiveMaker
                 throw new InvalidFormatException();
             if (frame.BPP <= 8)
                 frame.Palette = ImageFormat.ReadColorMap (m_input.AsStream, 1 << frame.BPP);
-            frame.Stride = (frame.Width * frame.BPP + 7) / 8;
-            frame.AlphaStride = (frame.Width + 3) & ~3;
-            if (frame.BPP >= 8)
-                frame.Stride = (frame.Stride + 3) & ~3;
+            frame.SetStride();
             m_frames.Add (frame);
             for (int i = 0; i < layer_count; ++i)
             {
-                m_input.ReadInt32();
-                m_input.ReadInt32();
+                m_input.ReadInt32();    // left
+                m_input.ReadInt32();    // top
                 m_input.ReadByte();     // visibility
-                m_input.ReadInt32();    // -1
-                m_input.ReadInt32();    // 0xFF
-                m_input.ReadByte();
+                m_input.ReadInt32();    // (-1) TransColor
+                m_input.ReadInt32();    // (0xFF) alpha
+                m_input.ReadByte();     // AlphaOn
                 name_length = m_input.ReadUInt32();
                 m_input.Seek (name_length, SeekOrigin.Current);
                 if (m_info.Version >= 107)
-                    m_input.ReadByte();
+                    m_input.ReadByte(); // lock
                 var layer = new Layer();
                 int layer_size = m_input.ReadInt32();
-                long layer_end = m_input.Position + layer_size;
                 layer.Pixels = UnpackLayer (frame, layer_size);
-                m_input.Position = layer_end;
                 int alpha_size = m_input.ReadInt32();
                 if (alpha_size != 0)
                 {
@@ -269,15 +272,23 @@ namespace GameRes.Formats.LiveMaker
             Flatten (0);
         }
 
-        byte[] UnpackLayer (Frame frame, int length, bool is_alpha = false)
+        protected byte[] UnpackLayer (Frame frame, int length, bool is_alpha = false)
         {
-            using (var packed = new StreamRegion (m_input.AsStream, m_input.Position, length, true))
+            var layer_start = m_input.Position;
+            var layer_end = layer_start + length;
+            var packed = new StreamRegion (m_input.AsStream, layer_start, length, true);
+            try
             {
                 if (0 == m_info.Compression || 2 == m_info.Compression && is_alpha)
                     return ReadZlib (frame, packed, is_alpha);
                 if (2 == m_info.Compression)
                     return ReadJpeg (frame, packed);
                 return ReadBlocks (frame, packed, is_alpha);
+            }
+            finally
+            {
+                packed.Dispose();
+                m_input.Position = layer_end;
             }
         }
 
@@ -383,7 +394,7 @@ namespace GameRes.Formats.LiveMaker
             return pixels;
         }
 
-        void Flatten (int frame_num)
+        protected void Flatten (int frame_num)
         {
             // XXX only first layer is considered.
 
@@ -550,8 +561,20 @@ namespace GameRes.Formats.LiveMaker
         }
 
         #region IDisposable Members
+        bool m_disposed = false;
+
         public void Dispose ()
         {
+            Dispose (true);
+            GC.SuppressFinalize (this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (!m_disposed)
+            {
+                m_disposed = true;
+            }
         }
         #endregion
     }
