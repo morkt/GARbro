@@ -135,10 +135,56 @@ namespace GameRes.Formats.BGI
                 var res = AutoEntry.DetectFileType (signature);
                 if (res != null)
                     entry.Type = res.Type;
+                else if (file.View.AsciiEqual (entry.Offset, "BSE 1."))
+                    entry.Type = "image";
                 else if (file.View.AsciiEqual (entry.Offset+4, "bw  "))
                     entry.Type = "audio";
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry.Size < 0x50 || !arc.File.View.AsciiEqual (entry.Offset, "BSE 1."))
+                return base.OpenEntry (arc, entry);
+            int version = arc.File.View.ReadUInt16 (entry.Offset+8);
+            if (version != 0x100 && version != 0x101)
+                return base.OpenEntry (arc, entry);
+
+            ushort checksum = arc.File.View.ReadUInt16 (entry.Offset+0xA);
+            uint key = arc.File.View.ReadUInt32 (entry.Offset+0xC);
+            var header = arc.File.View.ReadBytes (entry.Offset+0x10, 0x40);
+            if (0x101 == version)
+                DecryptBse (header, new BseGenerator101 (key));
+            else
+                DecryptBse (header, new BseGenerator100 (key));
+            var body = arc.File.CreateStream (entry.Offset+0x50, entry.Size-0x50);
+            return new PrefixStream (header, body);
+        }
+
+        void DecryptBse (byte[] data, IBseGenerator decoder)
+        {
+            var decoded = new bool[0x40];
+            for (int i = 0; i < decoded.Length; ++i)
+            {
+                int dst = decoder.NextKey() & 0x3F;
+                while (decoded[dst])
+                {
+                    dst = (dst + 1) & 0x3F;
+                }
+                int shift = decoder.NextKey() & 7;
+                bool right_shift = (decoder.NextKey() & 1) == 0;
+                byte symbol = (byte)(data[dst] - decoder.NextKey());
+                if (right_shift)
+                {
+                    data[dst] = Binary.RotByteR (symbol, shift);
+                }
+                else
+                {
+                    data[dst] = Binary.RotByteL (symbol, shift);
+                }
+                decoded[dst] = true;
+            }
         }
     }
 
@@ -293,6 +339,45 @@ namespace GameRes.Formats.BGI
                     m_output[dst_ptr++] = (byte)code;
             }
             return dst_ptr;
+        }
+    }
+
+    internal interface IBseGenerator
+    {
+        int NextKey ();
+    }
+
+    internal class BseGenerator100 : IBseGenerator
+    {
+        int    m_key;
+
+        public BseGenerator100 (uint key)
+        {
+            m_key = (int)key;
+        }
+
+        public int NextKey ()
+        {
+            uint v = (uint)(((m_key * 257 >> 8) + m_key * 97 + 23) ^ 0xA6CD9B75);
+            m_key = (int)Binary.RotR (v, 16);
+            return m_key;
+        }
+    }
+
+    internal class BseGenerator101 : IBseGenerator
+    {
+        int    m_key;
+
+        public BseGenerator101 (uint key)
+        {
+            m_key = (int)key;
+        }
+
+        public int NextKey ()
+        {
+	        uint v = (uint)((m_key * 127 >> 7) + m_key * 83 + 53) ^ 0xB97A7E5C;
+            m_key = (int)Binary.RotR (v, 16);
+            return m_key;
         }
     }
 }
