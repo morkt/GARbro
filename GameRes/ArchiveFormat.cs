@@ -133,6 +133,14 @@ namespace GameRes
         {
             return count > 0 && count < 0x20000;
         }
+
+        /// <summary>
+        /// Whether <paramref name="name"/> represents a valid archive entry name.
+        /// </summary>
+        public static bool IsValidEntryName (string name)
+        {
+            return !string.IsNullOrWhiteSpace (name) && !Path.IsPathRooted (name);
+        }
     }
 
     public enum ArchiveOperation
