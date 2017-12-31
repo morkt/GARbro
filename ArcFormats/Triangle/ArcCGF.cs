@@ -76,6 +76,8 @@ namespace GameRes.Formats.Triangle
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, entry_size-4);
+                if (!IsValidEntryName (name))
+                    return null;
                 uint flags = next_offset >> 30;
                 Entry entry;
                 if (1 == flags || name.HasExtension (".iaf"))
