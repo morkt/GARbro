@@ -39,6 +39,11 @@ namespace GameRes.Formats.UMeSoft
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public Gr2Opener ()
+        {
+            Extensions = new string[] { "gr2", "vic" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
