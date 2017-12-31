@@ -44,7 +44,7 @@ namespace GARbro
 
         void PrintMetaData (string filename)
         {
-            using (var file = File.Open (filename, FileMode.Open, FileAccess.Read))
+            using (var file = BinaryStream.FromFile (filename))
             {
                 var format = ImageFormat.FindFormat (file);
                 if (null == format)
@@ -60,7 +60,7 @@ namespace GARbro
         void ConvertFile (string filename, ImageFormat format)
         {
             ImageData image;
-            using (var file = File.Open (filename, FileMode.Open, FileAccess.Read))
+            using (var file = BinaryStream.FromFile (filename))
             {
                 image = ImageFormat.Read (file);
                 if (null == image)
