@@ -1,20 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.4.32</Version>
+        <Version>1.4.33</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
         <Notes>New formats:
-- LunaSoft PAC archives
-- FGA archives
-- 'RepiPack' archives
-- ALO images and VZY audio
-- 'fPK2' archives
-- updated RPA archives support
-- more KiriKiri and Csystem encryption schemes
+- CPZ7 archives
+- Unity resource assets
+- RPG Maker archives
+- Tamamo PCK archives
+- 'UK' archives and GPC images
+- DPK archives and DBM images
+- AliceSoft PMS images
+- Bishop PK archives and GSA images
+- CAF archives and CFP images
+- XPK1 archives
+- DNS archives and YP images
+- TLZ archives and MAG images
+- DDS DXT1 textures
+- More KiriKiri and ShiinaRio encryption schemes
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>92</FileVersion>
+        <FileVersion>94</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.36.1546"/>
