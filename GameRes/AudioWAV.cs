@@ -113,8 +113,10 @@ namespace GameRes
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = file.ReadHeader (12);
+            var header = file.ReadHeader (0x16);
             if (!header.AsciiEqual (8, "WAVE"))
+                return null;
+            if (header.ToUInt16 (0x14) == 0xFFFF)
                 return null;
             file.Position = 0;
             SoundInput sound = new WaveInput (file.AsStream);
