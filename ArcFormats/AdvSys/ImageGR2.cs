@@ -52,7 +52,7 @@ namespace GameRes.Formats.AdvSys
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             stream.Position = 0x10;
-            int stride = ((int)info.Width * info.BPP/8 + 3) & ~3;
+            int stride = GetStride (info);
             var pixels = new byte[stride * info.Height];
             if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
                 throw new InvalidFormatException ("Unexpected end of file");
@@ -67,6 +67,11 @@ namespace GameRes.Formats.AdvSys
             return ImageData.Create (info, format, null, pixels, stride);
         }
 
+        internal int GetStride (ImageMetaData info)
+        {
+            return ((int)info.Width * info.BPP/8 + 3) & ~3;
+        }
+
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("Gr2Format.Write not implemented");
@@ -75,7 +80,8 @@ namespace GameRes.Formats.AdvSys
 
     internal class PolaMetaData : ImageMetaData
     {
-        public int UnpackedSize;
+        public uint DataOffset;
+        public int  UnpackedSize;
     }
 
     [Export(typeof(ImageFormat))]
@@ -93,38 +99,40 @@ namespace GameRes.Formats.AdvSys
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (20);
-            if (!header.AsciiEqual ("*Pola*  "))
+            if (!header.AsciiEqual ("*Pola"))
                 return null;
+            bool new_version = header.AsciiEqual (5, "*  ");
+            uint data_offset = new_version ? 20u : 13u;
             int unpacked_size = header.ToInt32 (8);
-            using (var reader = new PolaReader (stream, 64))
+            stream.Position = data_offset;
+            var reader = new PolaReader (stream, 64);
+            reader.Unpack();
+            using (var temp = BinaryStream.FromArray (reader.Data, stream.Name))
             {
-                reader.Unpack();
-                using (var temp = BinaryStream.FromArray (reader.Data, stream.Name))
+                var info = base.ReadMetaData (temp);
+                if (null == info)
+                    return null;
+                if (!new_version)
+                    unpacked_size = 0x10 + GetStride (info) * (int)info.Height;
+                return new PolaMetaData
                 {
-                    var info = base.ReadMetaData (temp);
-                    if (null == info)
-                        return null;
-                    return new PolaMetaData
-                    {
-                        Width   = info.Width,
-                        Height  = info.Height,
-                        BPP     = info.BPP,
-                        UnpackedSize = unpacked_size,
-                    };
-                }
+                    Width   = info.Width,
+                    Height  = info.Height,
+                    BPP     = info.BPP,
+                    DataOffset = data_offset,
+                    UnpackedSize = unpacked_size,
+                };
             }
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (PolaMetaData)info;
-            stream.Position = 0x14;
-            using (var reader = new PolaReader (stream, meta.UnpackedSize))
-            {
-                reader.Unpack();
-                using (var temp = BinaryStream.FromArray (reader.Data, stream.Name))
-                    return base.Read (temp, info);
-            }
+            stream.Position = meta.DataOffset;
+            var reader = new PolaReader (stream, meta.UnpackedSize);
+            reader.Unpack();
+            using (var temp = BinaryStream.FromArray (reader.Data, stream.Name))
+                return base.Read (temp, info);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -133,7 +141,7 @@ namespace GameRes.Formats.AdvSys
         }
     }
 
-    internal sealed class PolaReader : IDisposable
+    internal sealed class PolaReader
     {
         IBinaryStream   m_input;
         byte[]          m_output;
@@ -259,24 +267,17 @@ namespace GameRes.Formats.AdvSys
             }
         }
 
-        int m_flag = 2;
+        int m_bits = 2;
 
         int NextBit ()
         {
-            int bit = m_flag & 1;
-            m_flag >>= 1;
-            if (1 == m_flag)
+            int bit = m_bits & 1;
+            m_bits >>= 1;
+            if (1 == m_bits)
             {
-                m_flag = m_input.ReadUInt16() | 0x10000;
+                m_bits  = m_input.ReadUInt16() | 0x10000;
             }
             return bit;
         }
-
-        #region IDisposable Members
-        public void Dispose ()
-        {
-        }
-        #endregion
     }
 }
-
