@@ -42,7 +42,7 @@ namespace GameRes.Formats.UMeSoft
 
         public PkOpener ()
         {
-            Extensions = new string[] { "pk", "gpk", "tpk", "wpk", "mpk" };
+            Extensions = new string[] { "pk", "gpk", "tpk", "wpk", "mpk", "pke" };
         }
 
         public override ArcFile TryOpen (ArcView file)
