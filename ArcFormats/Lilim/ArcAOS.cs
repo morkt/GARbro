@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Compression;
 
 namespace GameRes.Formats.Lilim
 {
@@ -94,12 +95,9 @@ namespace GameRes.Formats.Lilim
                 return base.OpenEntry (arc, entry);
 
             aent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset);
-            var packed = arc.File.View.ReadBytes (entry.Offset+4, entry.Size-4);
-            var unpacked = new byte[aent.UnpackedSize];
-
-            var decoder = new HuffmanDecoder (packed, unpacked);
-            decoder.Unpack();
-            return new BinMemoryStream (unpacked, entry.Name);
+            var packed = arc.File.CreateStream (entry.Offset+4, entry.Size-4);
+            var unpacked = new HuffmanStream (packed);
+            return new LimitStream (unpacked, aent.UnpackedSize);
         }
     }
 
