@@ -988,17 +988,19 @@ namespace GARbro.GUI
                     }
                     CurrentAudio = new WaveStreamImpl (sound);
                     AudioDevice = new WaveOutEvent();
-                    if ("wav" == sound.SourceFormat)
+                    // conversion to sample provider somehow removes crackling at the end of WAV sound clips.
+                    if ("wav" == sound.SourceFormat || 8 == sound.Format.BitsPerSample)
                         AudioDevice.Init (CurrentAudio.ToSampleProvider());
                     else
                         AudioDevice.Init (CurrentAudio);
                     AudioDevice.PlaybackStopped += OnPlaybackStopped;
                     AudioDevice.Play();
-                    input = null;
+                    appPlaybackControl.Visibility = Visibility.Visible;
                     var fmt = CurrentAudio.WaveFormat;
                     SetResourceText (string.Format (guiStrings.MsgPlaying, entry.Name,
                                                     fmt.SampleRate, sound.SourceBitrate / 1000,
                                                     CurrentAudio.TotalTime.ToString ("m':'ss")));
+                    input = null;
                 }
                 finally
                 {
@@ -1014,12 +1016,19 @@ namespace GARbro.GUI
             }
         }
 
+        private void StopPlaybackExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            if (AudioDevice != null)
+                AudioDevice.Stop();
+        }
+
         private void OnPlaybackStopped (object sender, StoppedEventArgs e)
         {
             try
             {
                 SetResourceText ("");
                 CurrentAudio = null;
+                appPlaybackControl.Visibility = Visibility.Collapsed;
             }
             catch (Exception X)
             {
@@ -1298,6 +1307,11 @@ namespace GARbro.GUI
             e.CanExecute = CurrentDirectory.SelectedIndex != -1;
         }
 
+        private void CanExecutePlaybackControl (object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = CurrentAudio != null;
+        }
+
         private void CanExecuteConvertMedia (object sender, CanExecuteRoutedEventArgs e)
         {
             if (CurrentDirectory.SelectedItems.Count >= 1)
@@ -1504,5 +1518,6 @@ namespace GARbro.GUI
         public static readonly RoutedCommand SetFileType = new RoutedCommand();
         public static readonly RoutedCommand NextItem = new RoutedCommand();
         public static readonly RoutedCommand CopyNames = new RoutedCommand();
+        public static readonly RoutedCommand StopPlayback = new RoutedCommand();
     }
 }

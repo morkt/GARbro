@@ -251,6 +251,12 @@
                     <TextBlock x:Name="appStatusText"/>
                 </StatusBarItem>
                 <Separator Width="1"/>
+                <StatusBarItem x:Name="appPlaybackControl" Visibility="Collapsed">
+                    <Button Width="19" Height="19" HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Command="{x:Static local:Commands.StopPlayback}">
+                        <Rectangle Stretch="Fill" Fill="Black" Width="8" Height="8"/>
+                    </Button>
+                </StatusBarItem>
                 <StatusBarItem>
                     <TextBlock x:Name="appResourceText"/>
                 </StatusBarItem>
@@ -404,6 +410,7 @@
         <CommandBinding Command="{x:Static local:Commands.HideToolBar}" Executed="HideToolBarExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.About}"      Executed="AboutExec"      CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.CheckUpdates}" Executed="CheckUpdatesExec" CanExecute="CanExecuteUpdate"/>
+        <CommandBinding Command="{x:Static local:Commands.StopPlayback}" Executed="StopPlaybackExec" CanExecute="CanExecutePlaybackControl"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
 </Window>
