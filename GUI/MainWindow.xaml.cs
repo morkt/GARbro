@@ -965,54 +965,52 @@ namespace GARbro.GUI
 
         private void PlayFile (Entry entry)
         {
+            IBinaryStream input = null;
             SoundInput sound = null;
             try
             {
                 SetBusyState();
-                var input = VFS.OpenBinaryStream (entry);
-                try
+                input = VFS.OpenBinaryStream (entry);
+                FormatCatalog.Instance.LastError = null;
+                sound = AudioFormat.Read (input);
+                if (null == sound)
                 {
-                    FormatCatalog.Instance.LastError = null;
-                    sound = AudioFormat.Read (input);
-                    if (null == sound)
-                    {
-                        if (null != FormatCatalog.Instance.LastError)
-                            throw FormatCatalog.Instance.LastError;
-                        return;
-                    }
+                    if (null != FormatCatalog.Instance.LastError)
+                        throw FormatCatalog.Instance.LastError;
+                    return;
+                }
 
-                    if (AudioDevice != null)
-                    {
-                        AudioDevice.PlaybackStopped -= OnPlaybackStopped;
-                        AudioDevice = null;
-                    }
-                    CurrentAudio = new WaveStreamImpl (sound);
-                    AudioDevice = new WaveOutEvent();
-                    // conversion to sample provider somehow removes crackling at the end of WAV sound clips.
-                    if ("wav" == sound.SourceFormat || 8 == sound.Format.BitsPerSample)
-                        AudioDevice.Init (CurrentAudio.ToSampleProvider());
-                    else
-                        AudioDevice.Init (CurrentAudio);
-                    AudioDevice.PlaybackStopped += OnPlaybackStopped;
-                    AudioDevice.Play();
-                    appPlaybackControl.Visibility = Visibility.Visible;
-                    var fmt = CurrentAudio.WaveFormat;
-                    SetResourceText (string.Format (guiStrings.MsgPlaying, entry.Name,
-                                                    fmt.SampleRate, sound.SourceBitrate / 1000,
-                                                    CurrentAudio.TotalTime.ToString ("m':'ss")));
-                    input = null;
-                }
-                finally
+                if (AudioDevice != null)
                 {
-                    if (input != null)
-                        input.Dispose();
+                    AudioDevice.PlaybackStopped -= OnPlaybackStopped;
+                    AudioDevice = null;
                 }
+                CurrentAudio = new WaveStreamImpl (sound);
+                AudioDevice = new WaveOutEvent();
+                // conversion to sample provider somehow removes crackling at the end of WAV sound clips.
+                if ("wav" == sound.SourceFormat || 8 == sound.Format.BitsPerSample)
+                    AudioDevice.Init (CurrentAudio.ToSampleProvider());
+                else
+                    AudioDevice.Init (CurrentAudio);
+                AudioDevice.PlaybackStopped += OnPlaybackStopped;
+                AudioDevice.Play();
+                appPlaybackControl.Visibility = Visibility.Visible;
+                var fmt = CurrentAudio.WaveFormat;
+                SetResourceText (string.Format (guiStrings.MsgPlaying, entry.Name,
+                                                fmt.SampleRate, sound.SourceBitrate / 1000,
+                                                CurrentAudio.TotalTime.ToString ("m':'ss")));
+                input = null;
             }
             catch (Exception X)
             {
                 SetStatusText (X.Message);
                 if (null != sound)
                     sound.Dispose();
+            }
+            finally
+            {
+                if (input != null)
+                    input.Dispose();
             }
         }
 
