@@ -2,6 +2,8 @@
 //! \date       2017 Dec 31
 //! \brief      Generic class representing compressed stream.
 //
+// Copyright (C) 2017-2018 by morkt
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
 // deal in the Software without restriction, including without limitation the
@@ -103,6 +105,8 @@ namespace GameRes.Compression
             m_reader = new TDecompressor();
             m_reader.Initialize (input);
         }
+
+        protected TDecompressor Reader { get { return m_reader; } }
 
         public override bool CanSeek  { get { return false; } }
         public override long Length
