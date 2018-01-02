@@ -44,7 +44,8 @@ namespace GameRes.Formats.Parsley
 
         public CgOpener ()
         {
-            Extensions = new string[] { "" };
+            Extensions = new string[] { "", "dat" };
+            Signatures = new uint[] { 0, 0x656E6179 };
         }
 
         public override ArcFile TryOpen (ArcView file)
