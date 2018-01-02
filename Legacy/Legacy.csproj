@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GameRes.Legacy</RootNamespace>
     <AssemblyName>ArcLegacy</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -53,6 +54,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EbgSystem\ArcBIN.cs" />
     <Compile Include="AnotherRoom\AudioWAZ.cs" />
     <Compile Include="AnotherRoom\ImageGR1.cs" />
     <Compile Include="ApplePie\ArcARC.cs" />
@@ -67,6 +69,7 @@
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
     <Compile Include="Factor\ArcRES.cs" />
+    <Compile Include="hmp\ImageMBP.cs" />
     <Compile Include="Kurumi\ArcMPK.cs" />
     <Compile Include="Melody\ImageMGO.cs" />
     <Compile Include="Mink\ImageGDF.cs" />
