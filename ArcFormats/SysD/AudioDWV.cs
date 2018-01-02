@@ -54,8 +54,8 @@ namespace GameRes.Formats.SysD
                 SamplesPerSecond = header.ToUInt32 (0xC),
                 AverageBytesPerSecond = header.ToUInt32 (0x10),
                 BlockAlign      = header.ToUInt16 (0x14),
-            format.BitsPerSample = (ushort)(format.AverageBytesPerSecond * 8 / format.SamplesPerSecond / format.Channels);
             };
+            format.BitsPerSample = (ushort)(format.AverageBytesPerSecond * 8 / format.SamplesPerSecond / format.Channels);
             uint pcm_size = header.ToUInt32 (0x18);
             var pcm = new StreamRegion (file.AsStream, file.Position, pcm_size);
             return new RawPcmInput (pcm, format);
