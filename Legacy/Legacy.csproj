@@ -78,6 +78,7 @@
     <Compile Include="Nanami\ArcBMM.cs" />
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
+    <Compile Include="ProjectMyu\ImageKGR.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QSoft\ImageBPE.cs" />
     <Compile Include="Rain\ArcBIN.cs" />
@@ -94,6 +95,8 @@
     <Compile Include="WestGate\ArcUSF.cs" />
     <Compile Include="WestGate\ArcUWF.cs" />
     <Compile Include="WestGate\ImageNBMP.cs" />
+    <Compile Include="YellowCap\ImageGEF.cs" />
+    <Compile Include="YellowCap\ImageGGF.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ArcFormats\ArcFormats.csproj">
