@@ -44,46 +44,31 @@ namespace GameRes.Compression
         public int  FrameInitPos { get; set; }
     }
 
-    internal sealed class LzssCoroutine : LzssSettings, IDisposable
+    public sealed class LzssCoroutine : Decompressor
     {
-        byte[] m_buffer;
-        int    m_offset;
-        int    m_length;
+        Stream          m_input;
+        LzssSettings    m_settings;
 
-        Stream  m_input;
+        public LzssSettings Settings { get { return m_settings; } }
 
-        IEnumerator<int> m_unpack;
-
-        public bool          Eof { get; private set; }
-
-        public LzssCoroutine (Stream input)
+        public override void Initialize (Stream input)
         {
             m_input = input;
-
-            FrameSize = 0x1000;
-            FrameFill = 0;
-            FrameInitPos = 0xfee;
+            m_settings = new LzssSettings {
+                FrameSize = 0x1000,
+                FrameFill = 0,
+                FrameInitPos = 0xFEE,
+            };
         }
 
-        public int Continue (byte[] buffer, int offset, int count)
+        protected override IEnumerator<int> Unpack ()
         {
-            m_buffer = buffer;
-            m_offset = offset;
-            m_length = count;
-            if (null == m_unpack)
-                m_unpack = Unpack();
-            Eof = !m_unpack.MoveNext();
-            return m_offset - offset;
-        }
-
-        private IEnumerator<int> Unpack ()
-        {
-            byte[] frame = new byte[FrameSize];
-            if (FrameFill != 0)
+            byte[] frame = new byte[Settings.FrameSize];
+            if (Settings.FrameFill != 0)
                 for (int i = 0; i < frame.Length; ++i)
-                    frame[i] = FrameFill;
-            int frame_pos = FrameInitPos;
-            int frame_mask = FrameSize-1;
+                    frame[i] = Settings.FrameFill;
+            int frame_pos = Settings.FrameInitPos;
+            int frame_mask = Settings.FrameSize-1;
             for (;;)
             {
                 int ctl = m_input.ReadByte();
@@ -96,11 +81,10 @@ namespace GameRes.Compression
                         int b = m_input.ReadByte();
                         if (-1 == b)
                             yield break;
-                        frame[frame_pos++] = (byte)b;
-                        frame_pos &= frame_mask;
-                        m_buffer[m_offset++] = (byte)b;
+                        frame[frame_pos++ & frame_mask] = (byte)b;
+                        m_buffer[m_pos++] = (byte)b;
                         if (0 == --m_length)
-                            yield return m_offset;
+                            yield return m_pos;
                     }
                     else
                     {
@@ -113,87 +97,28 @@ namespace GameRes.Compression
                         int offset = (hi & 0xf0) << 4 | lo;
                         for (int count = 3 + (hi & 0xF); count != 0; --count)
                         {
-                            byte v = frame[offset++];
-                            offset &= frame_mask;
-                            frame[frame_pos++] = v;
-                            frame_pos &= frame_mask;
-                            m_buffer[m_offset++] = v;
+                            byte v = frame[offset++ & frame_mask];
+                            frame[frame_pos++ & frame_mask] = v;
+                            m_buffer[m_pos++] = v;
                             if (0 == --m_length)
-                                yield return m_offset;
+                                yield return m_pos;
                         }
                     }
                 }
             }
         }
-
-        #region IDisposable Members
-        bool _disposed = false;
-        public void Dispose ()
-        {
-            if (!_disposed)
-            {
-                if (m_unpack != null)
-                    m_unpack.Dispose();
-                _disposed = true;
-            }
-            GC.SuppressFinalize (this);
-        }
-        #endregion
     }
 
-    public class LzssStream : GameRes.Formats.InputProxyStream
+    public class LzssStream : PackedStream<LzssCoroutine>
     {
-        LzssCoroutine   m_reader;
-
         public LzssStream (Stream input, LzssMode mode = LzssMode.Decompress, bool leave_open = false)
             : base (input, leave_open)
         {
             if (mode != LzssMode.Decompress)
                 throw new NotImplementedException ("LzssStream compression not implemented");
-            m_reader = new LzssCoroutine (input);
         }
 
-        public LzssSettings   Config  { get { return m_reader; } }
-
-        public override bool CanSeek  { get { return false; } }
-        public override long Length
-        {
-            get { throw new NotSupportedException ("LzssStream.Length property is not supported"); }
-        }
-        public override long Position
-        {
-            get { throw new NotSupportedException ("LzssStream.Position property is not supported"); }
-            set { throw new NotSupportedException ("LzssStream.Position property is not supported"); }
-        }
-
-        public override int Read (byte[] buffer, int offset, int count)
-        {
-            if (!m_reader.Eof && count > 0)
-                return m_reader.Continue (buffer, offset, count);
-            return 0;
-        }
-
-        public override void Flush()
-        {
-        }
-
-        public override long Seek (long offset, SeekOrigin origin)
-        {
-            throw new NotSupportedException ("LzssStream.Seek method is not supported");
-        }
-
-        #region IDisposable Members
-        bool m_disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!m_disposed)
-            {
-                m_reader.Dispose();
-                m_disposed = true;
-                base.Dispose (disposing);
-            }
-        }
-        #endregion
+        public LzssSettings   Config  { get { return Reader.Settings; } }
     }
 
     public class LzssReader : IDisposable
