@@ -53,16 +53,16 @@ namespace GameRes.Formats.Eushully
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
+            uint id = stream.Signature;
+            if (Signature != id && 0 != id)
+                return null;
             var header = new byte[0x20];
             if (0x18 != stream.Read (header, 0, 0x18))
-                return null;
-            uint id = LittleEndian.ToUInt32 (header, 0);
-            if (Signature != id && 0 != id)
                 return null;
             int type = LittleEndian.ToInt32 (header, 4);
             if (type != 1 && type != 2)
                 return null;
-            int unpacked_size = LittleEndian.ToInt32 (header, 0x10);
+            int unpacked_size = LittleEndian.ToInt32 (header, 0xC);
             int packed_size = LittleEndian.ToInt32 (header, 0x14);
             using (var unpacked = AgfReader.OpenSection (stream.AsStream, unpacked_size, packed_size))
             using (var reader = new BinaryReader (unpacked))
@@ -79,7 +79,7 @@ namespace GameRes.Formats.Eushully
                 };
                 if (0 == info.SourceBPP)
                     return null;
-                if (8 == info.SourceBPP)
+                if (info.SourceBPP <= 8)
                 {
                     reader.Read (header, 0, 0x18); // skip rest of the header
                     info.Palette = ReadColorMap (reader.BaseStream);
@@ -156,17 +156,19 @@ namespace GameRes.Formats.Eushully
                     m_bpp = 24;
             }
             Format = 32 == m_bpp ? PixelFormats.Bgra32 : PixelFormats.Bgr24;
-            int src_pixel_size = m_source_bpp / 8;
+            int src_pixel_size = m_source_bpp / 8; // not used for 4bpp bitmaps
             int dst_pixel_size = m_bpp / 8;
-            int src_stride = (m_width * src_pixel_size + 3) & ~3;
+            int src_stride = (m_width * m_source_bpp / 8 + 3) & ~3;
             int dst_stride = m_width * dst_pixel_size;
 
             int src_row = (m_height - 1) * src_stride;
             int dst_row = 0;
             int src_alpha = 0;
             RowUnpacker repack_row = RepackRowTrue;
-            if (1 == src_pixel_size)
+            if (8 == m_source_bpp)
                 repack_row = RepackRow8;
+            else if (4 == m_source_bpp)
+                repack_row = RepackRow4;
             while (src_row >= 0)
             {
                 repack_row (bmp_data, src_row, src_pixel_size, dst_row, dst_pixel_size, alpha, src_alpha);
@@ -177,6 +179,27 @@ namespace GameRes.Formats.Eushully
         }
 
         delegate void RowUnpacker (byte[] bmp, int src, int src_pixel_size, int dst, int dst_pixel_size, byte[] alpha, int src_alpha);
+
+        void RepackRow4 (byte[] bmp, int src, int src_pixel_size, int dst, int dst_pixel_size, byte[] alpha, int src_alpha)
+        {
+            for (int x = 0; x < m_width; )
+            {
+                byte px = bmp[src++];
+                for (int j = 0; j < 2; ++j)
+                {
+                    var color = m_palette[(px >> 4) & 0xF];
+                    m_output[dst] = color.B;
+                    m_output[dst+1] = color.G;
+                    m_output[dst+2] = color.R;
+                    if (null != alpha)
+                        m_output[dst+3] = alpha[src_alpha++];
+                    dst += dst_pixel_size;
+                    if (++x >= m_width)
+                        break;
+                    px <<= 4;
+                }
+            }
+        }
 
         void RepackRow8 (byte[] bmp, int src, int src_pixel_size, int dst, int dst_pixel_size, byte[] alpha, int src_alpha)
         {
