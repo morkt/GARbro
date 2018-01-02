@@ -45,7 +45,7 @@ namespace GameRes.Formats.WestGate
         public override ArcFile TryOpen (ArcView file)
         {
             uint first_offset = file.View.ReadUInt32 (0xC);
-            if (first_offset >= file.MaxOffset)
+            if (first_offset >= file.MaxOffset || 0 != (first_offset & 0xF))
                 return null;
             int count = (int)(first_offset / 0x10);
             if (!IsSaneCount (count))
