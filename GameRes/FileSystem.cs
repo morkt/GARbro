@@ -806,6 +806,15 @@ namespace GameRes
             int filename_portion_length = path.Length - filename_index;
             return filename.Length == filename_portion_length;
         }
+
+        /// <summary>
+        /// Change filename portion of the <paramref name="path"/> to <paramref name="target"/>.
+        /// </summary>
+        public static string ChangeFileName (string path, string target)
+        {
+            var dir_name = GetDirectoryName (path);
+            return CombinePath (dir_name, target);
+        }
     }
 
     public class FileNameGlob
