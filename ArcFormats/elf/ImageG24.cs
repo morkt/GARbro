@@ -40,7 +40,7 @@ namespace GameRes.Formats.Elf
 
         public G24Format ()
         {
-            Extensions = new string[] { "G24", "G16" };
+            Extensions = new string[] { "g24", "g16" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream input)
