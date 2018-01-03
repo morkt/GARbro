@@ -121,6 +121,7 @@
     <Compile Include="HuffmanCompression.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Maika\ArcBK.cs" />
+    <Compile Include="Nekopunch\ImagePBM.cs" />
     <Compile Include="Nexas\ArcTPF.cs" />
     <Compile Include="LiveMaker\ImageGALX.cs" />
     <Compile Include="Otemoto\ArcTLZ.cs" />
