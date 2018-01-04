@@ -98,7 +98,7 @@ namespace GameRes.Formats.KiriKiri
 
         public bool ForceEncryptionQuery = true;
 
-        private static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
+        internal static readonly ICrypt NoCryptAlgorithm = new NoCrypt();
 
         public override ArcFile TryOpen (ArcView file)
         {
