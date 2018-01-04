@@ -124,6 +124,11 @@ namespace GameRes
                     return null;
                 size = (uint)file.Length;
             }
+            else if (file.AsStream.CanSeek)
+            {
+                if (size > file.Length)
+                    size = (uint)file.Length;
+            }
             uint width, height;
             if (0xC == header_size)
             {
