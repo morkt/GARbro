@@ -43,11 +43,12 @@ namespace GameRes.Formats.FVP
         public BinOpener ()
         {
             Extensions = new string[] { "bin" };
+            Signatures = new uint[] { 0x58504341, 0x5F504341 };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (4, "PK01"))
+            if (!file.View.AsciiEqual (3, "XPK01") && !file.View.AsciiEqual (3, "_PK.1"))
                 return null;
             int count = file.View.ReadInt32 (8);
             if (!IsSaneCount (count))
