@@ -85,10 +85,6 @@ namespace GameRes
         static public Stream CreateFile (string filename)
         {
             filename = CreatePath (filename);
-            if (File.Exists (filename))
-            {
-                // query somehow whether to overwrite existing file or not.
-            }
             return File.Create (filename);
         }
 
@@ -151,10 +147,4 @@ namespace GameRes
     }
 
     public delegate ArchiveOperation EntryCallback (int num, Entry entry, string description);
-
-    public class OverwriteEventArgs : EventArgs
-    {
-        public string Filename { get; set; }
-        public bool  Overwrite { get; set; }
-    }
 }
