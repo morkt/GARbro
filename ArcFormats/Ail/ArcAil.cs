@@ -49,16 +49,37 @@ namespace GameRes.Formats.Ail
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
                 return null;
-            long offset = 4+count*4;
+            var dir = ReadIndex (file, 4, count);
+            if (null == dir)
+                return null;
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            var pentry = entry as PackedEntry;
+            if (null == pentry || !pentry.IsPacked)
+                return input;
+            using (input)
+            {
+                byte[] data = new byte[pentry.UnpackedSize];
+                LzssUnpack (input, data);
+                return new BinMemoryStream (data, entry.Name);
+            }
+        }
+
+        internal List<Entry> ReadIndex (ArcView file, uint index_offset, int count)
+        {
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
+            long offset = index_offset + count*4;
             if (offset >= file.MaxOffset)
                 return null;
-            var base_name = Path.GetFileNameWithoutExtension (file.Name);
-            uint index_offset = 4;
-            var dir = new List<Entry>();
+            var dir = new List<Entry> (count/2);
             for (int i = 0; i < count; ++i)
             {
                 uint size = file.View.ReadUInt32 (index_offset);
-                if (0 != size)
+                if (size != 0 && size != uint.MaxValue)
                 {
                     var entry = new PackedEntry
                     {
@@ -74,8 +95,14 @@ namespace GameRes.Formats.Ail
                 }
                 index_offset += 4;
             }
-            if (offset != file.MaxOffset || 0 == dir.Count)
+            if (0 == dir.Count)
                 return null;
+            DetectFileTypes (file, dir);
+            return dir;
+        }
+
+        internal void DetectFileTypes (ArcView file, List<Entry> dir)
+        {
             byte[] preview = new byte[16];
             byte[] sign_buf = new byte[4];
             foreach (PackedEntry entry in dir)
@@ -110,21 +137,6 @@ namespace GameRes.Formats.Ail
                 }
                 if (0 != signature)
                     SetEntryType (entry, signature);
-            }
-            return new ArcFile (file, this, dir);
-        }
-
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            var pentry = entry as PackedEntry;
-            if (null == pentry || !pentry.IsPacked)
-                return input;
-            using (input)
-            {
-                byte[] data = new byte[pentry.UnpackedSize];
-                LzssUnpack (input, data);
-                return new BinMemoryStream (data, entry.Name);
             }
         }
 

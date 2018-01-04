@@ -81,6 +81,7 @@
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="AdvSys\ArcAdvSys3.cs" />
     <Compile Include="AdvSys\ImageGWD.cs" />
+    <Compile Include="Ail\ArcLNK2.cs" />
     <Compile Include="AliceSoft\ArcAAR.cs" />
     <Compile Include="AliceSoft\ArcAFA.cs" />
     <Compile Include="AliceSoft\ArcALK.cs" />
@@ -506,7 +507,7 @@
     <Compile Include="AdvSys\ArcAdvSysT.cs" />
     <Compile Include="Cri\ArcAFS.cs" />
     <Compile Include="elf\ArcAi5Win.cs" />
-    <Compile Include="ArcAil.cs" />
+    <Compile Include="Ail\ArcAil.cs" />
     <Compile Include="AliceSoft\ArcALD.cs" />
     <Compile Include="Amaterasu\ArcAMI.cs" />
     <Compile Include="Lilim\ArcAOS.cs" />
@@ -1003,7 +1004,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Bonk\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)
