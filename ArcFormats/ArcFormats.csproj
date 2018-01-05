@@ -106,6 +106,7 @@
     <Compile Include="BlackRainbow\ArcCCF.cs" />
     <Compile Include="BlackRainbow\ArcIMP.cs" />
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
+    <Compile Include="Bonk\ArcPACK.cs" />
     <Compile Include="Cadath\ArcDAF.cs" />
     <Compile Include="Cadath\ImageCGF.cs" />
     <Compile Include="Cmvs\CpzHeader.cs" />
@@ -1003,9 +1004,6 @@
       <LastGenOutput>arcStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Strings\arcStrings.ru-RU.resx" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Bonk\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
