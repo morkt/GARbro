@@ -43,7 +43,7 @@ namespace GameRes.Formats.GameSystem
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            if (file.Signature != file.Length)
+            if (file.Signature != file.Length && file.Signature != file.Length-0x10)
                 return null;
             var header = file.ReadHeader (0x10);
             uint width = header.ToUInt32 (4);
