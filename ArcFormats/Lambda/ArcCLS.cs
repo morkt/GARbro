@@ -50,16 +50,37 @@ namespace GameRes.Formats.Lambda
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                var name = file.View.ReadString (index_offset, 0x28);
-                uint offset = file.View.ReadUInt32 (index_offset+0x2C);
-                var entry = AutoEntry.Create (file, offset, name);
-                entry.Size = file.View.ReadUInt32 (index_offset+0x30);
+                var entry = new Entry {
+                    Name = file.View.ReadString (index_offset, 0x28),
+                    Offset = file.View.ReadUInt32 (index_offset+0x2C),
+                    Size = file.View.ReadUInt32 (index_offset+0x30),
+                };
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 0x40;
             }
+            DetectFileTypes (file, dir);
             return new ArcFile (file, this, dir);
+        }
+
+        void DetectFileTypes (ArcView file, IEnumerable<Entry> dir)
+        {
+            foreach (var entry in dir)
+            {
+                uint signature = file.View.ReadUInt32 (entry.Offset);
+                if (0x5F534C43 == signature) // 'CLS_'
+                {
+                    if (file.View.AsciiEqual (entry.Offset+4, "TEXFILE"))
+                        entry.Type = "image";
+                }
+                else
+                {
+                    var res = AutoEntry.DetectFileType (signature);
+                    if (res != null)
+                        entry.ChangeType (res);
+                }
+            }
         }
     }
 }
