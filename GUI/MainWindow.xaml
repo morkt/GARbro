@@ -252,7 +252,8 @@
                 </StatusBarItem>
                 <Separator Width="1"/>
                 <StatusBarItem x:Name="appPlaybackControl" Visibility="Collapsed">
-                    <Button Width="19" Height="19" HorizontalAlignment="Left" VerticalAlignment="Top"
+                    <Button Width="18" Height="18"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                             Command="{x:Static local:Commands.StopPlayback}">
                         <Rectangle Stretch="Fill" Fill="Black" Width="8" Height="8"/>
                     </Button>
