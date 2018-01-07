@@ -61,9 +61,12 @@ namespace GameRes.Formats.RealLive
                 entry.Size          = file.View.ReadUInt32 (index_offset+0x14);
                 entry.UnpackedSize  = file.View.ReadUInt32 (index_offset+0x18);
                 entry.IsPacked      = file.View.ReadUInt32 (index_offset+0x1C) != 0;
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
+                if (entry.Size > 0)
+                {
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                }
                 index_offset += 0x20;
             }
             return new ArcFile (file, this, dir);
