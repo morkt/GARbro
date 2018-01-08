@@ -110,6 +110,7 @@ namespace GARbro.GUI
         {
             try
             {
+                FormatCatalog.Instance.SaveSettings();
                 Settings.Default.Save();
             }
             catch (Exception X)

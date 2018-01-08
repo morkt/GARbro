@@ -102,7 +102,10 @@ namespace GameRes
         /// <summary>Filename extensions peculiar to the resource.</summary>
         public IEnumerable<string> Extensions { get; protected set; }
 
-        /// <summary>Resource settings suitable for serialization.</summary>
+        /// <summary>Persistent resource settings.</summary>
+        public IEnumerable<IResourceSetting> Settings { get; protected set; }
+
+        /// <summary>Resource access scheme suitable for serialization.</summary>
         public virtual ResourceScheme Scheme { get; set; }
 
         /// <summary>

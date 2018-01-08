@@ -107,6 +107,11 @@ namespace GameRes
             }
         }
 
+        public void SaveSettings ()
+        {
+            Properties.Settings.Default.Save();
+        }
+
         private void AddResourceImpl (IEnumerable<IResource> formats, CompositionContainer container)
         {
             foreach (var impl in formats)

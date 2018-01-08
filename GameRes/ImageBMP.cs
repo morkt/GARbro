@@ -46,24 +46,33 @@ namespace GameRes
     }
 
     [Export(typeof(ImageFormat))]
-    public class BmpFormat : ImageFormat
+    public sealed class BmpFormat : ImageFormat
     {
         public override string         Tag { get { return "BMP"; } }
         public override string Description { get { return "Windows device independent bitmap"; } }
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return true; } }
 
+        public BmpFormat ()
+        {
+            Settings = new[] { EnableExtensions };
+        }
+
         #pragma warning disable 649
         [ImportMany(typeof(IBmpExtension))]
         private IEnumerable<IBmpExtension>  m_extensions;
         #pragma warning restore 649
 
-        bool EnableExtensions = true;
+        LocalResourceSetting EnableExtensions = new LocalResourceSetting {
+            Name        = "BMPEnableExtensions",
+            Text        = "Enable BMP format extensions",
+            Description = "Enables various extensions, such as transparency support.",
+        };
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var bmp_info = info as BmpMetaData;
-            if (bmp_info != null && EnableExtensions && file.AsStream.CanSeek)
+            if (bmp_info != null && EnableExtensions.Get<bool>() && file.AsStream.CanSeek)
             {
                 foreach (var ext in m_extensions)
                 {
