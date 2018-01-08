@@ -681,5 +681,29 @@ namespace GameRes.Formats.Properties {
                 this["PCKTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool RCTOverlayFrames {
+            get {
+                return ((bool)(this["RCTOverlayFrames"]));
+            }
+            set {
+                this["RCTOverlayFrames"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool RCTApplyMask {
+            get {
+                return ((bool)(this["RCTApplyMask"]));
+            }
+            set {
+                this["RCTApplyMask"] = value;
+            }
+        }
     }
 }

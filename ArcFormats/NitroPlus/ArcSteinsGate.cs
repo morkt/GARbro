@@ -30,7 +30,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
-using GameRes.Formats.Properties;
 
 namespace GameRes.Formats
 {
@@ -138,7 +137,7 @@ namespace GameRes.Formats
         public override ResourceOptions GetDefaultOptions ()
         {
             return new SteinsGateOptions {
-                FileNameEncoding    = GetEncoding (Settings.Default.SGFileNameEncoding),
+                FileNameEncoding = GetEncoding (Properties.Settings.Default.SGFileNameEncoding),
             };
         }
 

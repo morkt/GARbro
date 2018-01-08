@@ -29,7 +29,7 @@ using System.IO;
 namespace GameRes.Formats
 {
     [Export(typeof(ImageFormat))]
-    public class MbImageFormat : BmpFormat
+    public class MbImageFormat : ImageFormat
     {
         public override string         Tag { get { return "BMP/MB"; } }
         public override string Description { get { return "Obfuscated bitmap"; } }
@@ -43,13 +43,13 @@ namespace GameRes.Formats
             if ('M' != c1 || 'B' != c2)
                 return null;
             using (var bmp = OpenAsBitmap (stream))
-                return base.ReadMetaData (bmp);
+                return Bmp.ReadMetaData (bmp);
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var bmp = OpenAsBitmap (stream))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
 
         protected IBinaryStream OpenAsBitmap (IBinaryStream input)
@@ -64,7 +64,7 @@ namespace GameRes.Formats
         {
             using (var bmp = new MemoryStream())
             {
-                base.Write (bmp, image);
+                Bmp.Write (bmp, image);
                 file.WriteByte ((byte)'M');
                 file.WriteByte ((byte)'B');
                 bmp.Position = 2;

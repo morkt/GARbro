@@ -38,7 +38,7 @@ namespace GameRes.Formats.Eagls
     }
 
     [Export(typeof(ImageFormat))]
-    public class GrFormat : BmpFormat
+    public class GrFormat : ImageFormat
     {
         public override string         Tag { get { return "GR"; } }
         public override string Description { get { return "EAGLS engine compressed bitmap"; } }
@@ -78,7 +78,7 @@ namespace GameRes.Formats.Eagls
             using (var bmp = new BinaryStream (lzs, file.Name))
             {
                 if (32 != info.BPP)
-                    return base.Read (bmp, info);
+                    return Bmp.Read (bmp, info);
                 int stride = (int)info.Width*4;
                 var pixels = new byte[Math.Max (0x36, stride*info.Height)];
                 bmp.Read (pixels, 0, 0x36); // skip header

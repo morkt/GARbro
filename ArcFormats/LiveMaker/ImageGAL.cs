@@ -31,7 +31,6 @@ using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Compression;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -145,7 +144,7 @@ namespace GameRes.Formats.LiveMaker
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new GalOptions { Key = KeyFromString (Settings.Default.GALKey) };
+            return new GalOptions { Key = KeyFromString (Properties.Settings.Default.GALKey) };
         }
 
         public override object GetAccessWidget ()

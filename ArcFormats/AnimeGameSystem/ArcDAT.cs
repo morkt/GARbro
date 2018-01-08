@@ -27,9 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Ags
 {
@@ -101,7 +99,7 @@ namespace GameRes.Formats.Ags
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new AgsOptions { Scheme = GetScheme (Settings.Default.AGSTitle) };
+            return new AgsOptions { Scheme = GetScheme (Properties.Settings.Default.AGSTitle) };
         }
 
         public override object GetAccessWidget ()

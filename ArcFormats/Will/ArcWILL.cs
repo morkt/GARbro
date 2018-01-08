@@ -28,7 +28,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -145,7 +144,7 @@ namespace GameRes.Formats.Will
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new ArcOptions { NameLength = Settings.Default.ARCNameLength };
+            return new ArcOptions { NameLength = Properties.Settings.Default.ARCNameLength };
         }
 
         public override object GetCreationWidget ()

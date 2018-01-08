@@ -32,7 +32,6 @@ using System.ComponentModel.Composition;
 using System.Globalization;
 using GameRes.Compression;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 
 namespace GameRes.Formats.Amaterasu
 {
@@ -322,8 +321,8 @@ namespace GameRes.Formats.Amaterasu
         public override ResourceOptions GetDefaultOptions ()
         {
             return new AmiOptions {
-                UseBaseArchive = Settings.Default.AMIUseBaseArchive,
-                BaseArchive    = Settings.Default.AMIBaseArchive,
+                UseBaseArchive = Properties.Settings.Default.AMIUseBaseArchive,
+                BaseArchive    = Properties.Settings.Default.AMIBaseArchive,
             };
         }
 

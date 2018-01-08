@@ -28,12 +28,10 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Cryptography;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.Tamamo
@@ -209,7 +207,7 @@ namespace GameRes.Formats.Tamamo
         public override ResourceOptions GetDefaultOptions ()
         {
             return new PckOptions {
-                Key = GetKeyForTitle (Settings.Default.PCKTitle)
+                Key = GetKeyForTitle (Properties.Settings.Default.PCKTitle)
             };
         }
 

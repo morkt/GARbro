@@ -32,7 +32,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.ScenePlayer
 {
     [Export(typeof(ImageFormat))]
-    public class PmpFormat : BmpFormat
+    public class PmpFormat : ImageFormat
     {
         public override string         Tag { get { return "PMP"; } }
         public override string Description { get { return "ScenePlayer compressed bitmap format"; } }
@@ -43,7 +43,7 @@ namespace GameRes.Formats.ScenePlayer
         {
             using (var output = new XoredStream (file, 0x21, true))
             using (var zstream = new ZLibStream (output, CompressionMode.Compress, CompressionLevel.Level9))
-                base.Write (zstream, image);
+                Bmp.Write (zstream, image);
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -55,7 +55,7 @@ namespace GameRes.Formats.ScenePlayer
             using (var input = new XoredStream (stream.AsStream, 0x21, true))
             using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
             using (var bmp = new BinaryStream (zstream, stream.Name))
-                return base.ReadMetaData (bmp);
+                return Bmp.ReadMetaData (bmp);
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
@@ -63,7 +63,7 @@ namespace GameRes.Formats.ScenePlayer
             using (var input = new XoredStream (stream.AsStream, 0x21, true))
             using (var zstream = new ZLibStream (input, CompressionMode.Decompress))
             using (var bmp = new BinaryStream (zstream, stream.Name))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
     }
 }

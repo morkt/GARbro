@@ -26,10 +26,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using GameRes.Compression;
 using GameRes.Cryptography;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -358,7 +356,7 @@ namespace GameRes.Formats.Musica
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new PazOptions { Scheme = GetScheme (Settings.Default.PAZTitle) };
+            return new PazOptions { Scheme = GetScheme (Properties.Settings.Default.PAZTitle) };
         }
 
         public override object GetAccessWidget ()

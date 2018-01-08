@@ -29,7 +29,6 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.NScripter
@@ -150,14 +149,14 @@ namespace GameRes.Formats.NScripter
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new NsaOptions { Password = Settings.Default.NSAPassword };
+            return new NsaOptions { Password = Properties.Settings.Default.NSAPassword };
         }
 
         public override ResourceOptions GetOptions (object widget)
         {
             var w = widget as GUI.WidgetNSA;
             if (null != w)
-                Settings.Default.NSAPassword = w.Password.Text;
+                Properties.Settings.Default.NSAPassword = w.Password.Text;
             return GetDefaultOptions();
         }
 

@@ -37,7 +37,6 @@ using System.Diagnostics;
 using GameRes.Compression;
 using GameRes.Utility;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 
 namespace GameRes.Formats.KiriKiri
 {
@@ -348,11 +347,11 @@ NextEntry:
         public override ResourceOptions GetDefaultOptions ()
         {
             return new Xp3Options {
-                Version             = Settings.Default.XP3Version,
-                Scheme              = GetScheme (Settings.Default.XP3Scheme),
-                CompressIndex       = Settings.Default.XP3CompressHeader,
-                CompressContents    = Settings.Default.XP3CompressContents,
-                RetainDirs          = Settings.Default.XP3RetainStructure,
+                Version             = Properties.Settings.Default.XP3Version,
+                Scheme              = GetScheme (Properties.Settings.Default.XP3Scheme),
+                CompressIndex       = Properties.Settings.Default.XP3CompressHeader,
+                CompressContents    = Properties.Settings.Default.XP3CompressContents,
+                RetainDirs          = Properties.Settings.Default.XP3RetainStructure,
             };
         }
 

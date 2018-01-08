@@ -28,9 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using GameRes.Compression;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -384,10 +382,10 @@ namespace GameRes.Formats.Tactics
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            string title = Settings.Default.TacticsArcTitle;
+            string title = Properties.Settings.Default.TacticsArcTitle;
             ArcScheme scheme = null;
-            if (!KnownSchemes.TryGetValue (title, out scheme) && !string.IsNullOrEmpty (Settings.Default.TacticsArcPassword))
-                scheme = new ArcScheme (Settings.Default.TacticsArcPassword);
+            if (!KnownSchemes.TryGetValue (title, out scheme) && !string.IsNullOrEmpty (Properties.Settings.Default.TacticsArcPassword))
+                scheme = new ArcScheme (Properties.Settings.Default.TacticsArcPassword);
             return new TacticsOptions { Scheme = scheme };
         }
 

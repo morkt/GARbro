@@ -29,7 +29,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Text;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 using GameRes.Utility;
 
 namespace GameRes.Formats.NScripter
@@ -203,8 +202,8 @@ namespace GameRes.Formats.NScripter
         public override ResourceOptions GetDefaultOptions ()
         {
             return new NsaOptions {
-                CompressionType = Settings.Default.ONSCompression,
-                Password        = Settings.Default.NSAPassword,
+                CompressionType = Properties.Settings.Default.ONSCompression,
+                Password        = Properties.Settings.Default.NSAPassword,
             };
         }
 
@@ -212,7 +211,7 @@ namespace GameRes.Formats.NScripter
         {
             var w = widget as GUI.WidgetNSA;
             if (null != w)
-                Settings.Default.NSAPassword = w.Password.Text;
+                Properties.Settings.Default.NSAPassword = w.Password.Text;
             return GetDefaultOptions();
         }
 

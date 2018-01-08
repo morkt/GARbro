@@ -29,7 +29,6 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -118,7 +117,7 @@ namespace GameRes.Formats.NSystem
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new FjsysOptions { MsdPassword = Settings.Default.FJSYSPassword };
+            return new FjsysOptions { MsdPassword = Properties.Settings.Default.FJSYSPassword };
         }
 
         public override object GetAccessWidget ()

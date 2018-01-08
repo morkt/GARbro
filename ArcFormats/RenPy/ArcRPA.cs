@@ -33,7 +33,6 @@ using System.Numerics;
 using System.IO;
 using System.Text;
 using GameRes.Compression;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.RenPy
@@ -134,7 +133,7 @@ namespace GameRes.Formats.RenPy
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new RpaOptions { Key = Settings.Default.RPAKey };
+            return new RpaOptions { Key = Properties.Settings.Default.RPAKey };
         }
 
         public override object GetCreationWidget ()

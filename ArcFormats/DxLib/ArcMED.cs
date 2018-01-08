@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -168,7 +167,7 @@ namespace GameRes.Formats.DxLib
         public override ResourceOptions GetDefaultOptions ()
         {
             return new MedOptions {
-                Encryption = GetEncryption (Settings.Default.MEDScriptScheme),
+                Encryption = GetEncryption (Properties.Settings.Default.MEDScriptScheme),
             };
         }
 

@@ -30,7 +30,6 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using GameRes.Utility;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Formats.Borland;
 
@@ -281,7 +280,7 @@ namespace GameRes.Formats.Qlie
         public override ResourceOptions GetDefaultOptions ()
         {
             return new QlieOptions {
-                GameKeyData = GetKeyData (Settings.Default.QLIEScheme)
+                GameKeyData = GetKeyData (Properties.Settings.Default.QLIEScheme)
             };
         }
 

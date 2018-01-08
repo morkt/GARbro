@@ -32,7 +32,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Crowd
 {
     [Export(typeof(ImageFormat))]
-    public class ZbmFormat : BmpFormat
+    public class ZbmFormat : ImageFormat
     {
         public override string         Tag { get { return "ZBM"; } }
         public override string Description { get { return "Crowd LZ-compressed bitmap"; } }
@@ -52,7 +52,7 @@ namespace GameRes.Formats.Crowd
                 for (int i = 0; i < 54; ++i)
                     header[i] ^= 0xff;
                 using (var bmp = new BinMemoryStream (header, stream.Name))
-                    return base.ReadMetaData (bmp);
+                    return Bmp.ReadMetaData (bmp);
             }
         }
 
@@ -74,7 +74,7 @@ namespace GameRes.Formats.Crowd
                 for (int i = 0; i < count; ++i)
                     data[i] ^= 0xff;
                 using (var bmp = new BinMemoryStream (data, stream.Name))
-                    return base.Read (bmp, info);
+                    return Bmp.Read (bmp, info);
             }
         }
 

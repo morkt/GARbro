@@ -30,7 +30,7 @@ using System.IO;
 namespace GameRes.Formats.Misc
 {
     [Export(typeof(ImageFormat))]
-    public class PtiFormat : BmpFormat
+    public class PtiFormat : ImageFormat
     {
         public override string         Tag { get { return "PTI"; } }
         public override string Description { get { return "Custom BMP image"; } }
@@ -43,7 +43,7 @@ namespace GameRes.Formats.Misc
             if (null == header)
                 return null;
             using (var bmp = new BinMemoryStream (header, stream.Name))
-                return base.ReadMetaData (bmp);
+                return Bmp.ReadMetaData (bmp);
         }
 
         byte[] ReadHeader (IBinaryStream stream)
@@ -72,7 +72,7 @@ namespace GameRes.Formats.Misc
             }
             LittleEndian.Pack (length+0x36, image, 2);
             using (var bmp = new BinMemoryStream (image, stream.Name))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
 
         public override void Write (Stream file, ImageData image)

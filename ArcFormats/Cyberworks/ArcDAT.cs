@@ -31,7 +31,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using GameRes.Compression;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -321,7 +320,7 @@ namespace GameRes.Formats.Cyberworks
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new BellOptions { Scheme = GetScheme (Settings.Default.BELLTitle) };
+            return new BellOptions { Scheme = GetScheme (Properties.Settings.Default.BELLTitle) };
         }
 
         public override object GetAccessWidget ()

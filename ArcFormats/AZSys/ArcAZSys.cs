@@ -28,7 +28,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -161,7 +160,7 @@ namespace GameRes.Formats.AZSys
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new AsbOptions { AsbKey = GetAsbKey (Settings.Default.AZScriptScheme) };
+            return new AsbOptions { AsbKey = GetAsbKey (Properties.Settings.Default.AZScriptScheme) };
         }
 
         public override object GetAccessWidget ()

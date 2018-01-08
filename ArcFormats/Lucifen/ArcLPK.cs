@@ -30,7 +30,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using GameRes.Compression;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -342,7 +341,7 @@ namespace GameRes.Formats.Lucifen
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new LuciOptions { Scheme = Settings.Default.LPKScheme };
+            return new LuciOptions { Scheme = Properties.Settings.Default.LPKScheme };
         }
 
         public override object GetAccessWidget ()

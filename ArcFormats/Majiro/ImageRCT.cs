@@ -33,7 +33,6 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -61,15 +60,26 @@ namespace GameRes.Formats.Majiro
     }
 
     [Export(typeof(ImageFormat))]
-    public class RctFormat : ImageFormat
+    public sealed class RctFormat : ImageFormat
     {
         public override string         Tag { get { return "RCT"; } }
         public override string Description { get { return "Majiro game engine RGB image format"; } }
         public override uint     Signature { get { return 0x9a925a98; } }
         public override bool      CanWrite { get { return true; } }
 
-        public bool OverlayFrames = true;
-        public bool ApplyMask = true;
+        public RctFormat ()
+        {
+            Settings = new[] { OverlayFrames, ApplyMask };
+        }
+
+        LocalResourceSetting OverlayFrames = new LocalResourceSetting {
+            Name = "RCTOverlayFrames",
+            Text = "Automatically combine incremental frames",
+        };
+        LocalResourceSetting ApplyMask = new LocalResourceSetting {
+            Name = "RCTApplyMask",
+            Text = "Automatically load alpha-channel",
+        };
         public const int BaseRecursionLimit = 8;
 
         public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
@@ -129,11 +139,10 @@ namespace GameRes.Formats.Majiro
         {
             var meta = (RctMetaData)info;
             var pixels = ReadPixelsData (file, meta);
-            if (ApplyMask)
+            if (ApplyMask.Get<bool>())
             {
-                var base_name = Path.GetFileNameWithoutExtension (meta.FileName);
-                var mask_name = base_name + "_.rc8";
-                mask_name = VFS.CombinePath (VFS.GetDirectoryName (meta.FileName), mask_name);
+                var mask_name = Path.GetFileNameWithoutExtension (meta.FileName) + "_.rc8";
+                mask_name = VFS.ChangeFileName (meta.FileName, mask_name);
                 if (VFS.FileExists (mask_name))
                 {
                     try
@@ -196,7 +205,7 @@ namespace GameRes.Formats.Majiro
         byte[] ReadPixelsData (IBinaryStream file, RctMetaData meta)
         {
             byte[] base_image = null;
-            if (meta.FileName != null && meta.BaseNameLength > 0 && OverlayFrames
+            if (meta.FileName != null && meta.BaseNameLength > 0 && OverlayFrames.Get<bool>()
                 && meta.BaseRecursionDepth < BaseRecursionLimit)
                 base_image = ReadBaseImage (file, meta);
 
@@ -379,14 +388,14 @@ namespace GameRes.Formats.Majiro
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new RctOptions { Password = Settings.Default.RCTPassword };
+            return new RctOptions { Password = Properties.Settings.Default.RCTPassword };
         }
 
         public override ResourceOptions GetOptions (object widget)
         {
             var w = widget as GUI.WidgetRCT;
             if (null != w)
-                Settings.Default.RCTPassword = w.Password.Text;
+                Properties.Settings.Default.RCTPassword = w.Password.Text;
             return GetDefaultOptions();
         }
 

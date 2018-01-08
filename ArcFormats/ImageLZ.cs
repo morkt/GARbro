@@ -31,7 +31,7 @@ using GameRes.Compression;
 namespace GameRes.Formats
 {
     [Export(typeof(ImageFormat))]
-    public class Bm_Format : BmpFormat
+    public class Bm_Format : ImageFormat
     {
         public override string         Tag { get { return "BM_"; } }
         public override string Description { get { return "LZ-compressed bitmap"; } }
@@ -52,7 +52,7 @@ namespace GameRes.Formats
                 lz.Config.FrameFill = 0x20;
                 lz.Config.FrameInitPos = 0x1000 - 0x10;
                 using (var bmp = new BinaryStream (lz, stream.Name))
-                    return base.ReadMetaData (bmp);
+                    return Bmp.ReadMetaData (bmp);
             }
         }
 
@@ -65,7 +65,7 @@ namespace GameRes.Formats
                 lz.Config.FrameFill = 0x20;
                 lz.Config.FrameInitPos = 0x1000 - 0x10;
                 using (var bmp = new BinaryStream (lz, stream.Name))
-                    return base.Read (bmp, info);
+                    return Bmp.Read (bmp, info);
             }
         }
 

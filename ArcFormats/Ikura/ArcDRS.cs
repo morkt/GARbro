@@ -31,7 +31,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using GameRes.Utility;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 
 namespace GameRes.Formats.Ikura
 {
@@ -219,7 +218,7 @@ namespace GameRes.Formats.Ikura
         public override ResourceOptions GetDefaultOptions ()
         {
             return new IsfOptions {
-                Secret = GetSecret (Settings.Default.ISFScheme) ?? new byte[0]
+                Secret = GetSecret (Properties.Settings.Default.ISFScheme) ?? new byte[0]
             };
         }
 

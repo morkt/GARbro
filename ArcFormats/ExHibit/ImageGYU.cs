@@ -34,7 +34,6 @@ using GameRes.Utility;
 using GameRes.Compression;
 using GameRes.Cryptography;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 
 namespace GameRes.Formats.ExHibit
 {
@@ -130,7 +129,7 @@ namespace GameRes.Formats.ExHibit
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new GyuOptions { Scheme = GetScheme (Settings.Default.GYUTitle) };
+            return new GyuOptions { Scheme = GetScheme (Properties.Settings.Default.GYUTitle) };
         }
 
         public override object GetAccessWidget ()

@@ -41,7 +41,7 @@ namespace GameRes.Formats.Triangle
     }
 
     [Export(typeof(ImageFormat))]
-    public class IafFormat : BmpFormat
+    public class IafFormat : ImageFormat
     {
         public override string         Tag { get { return "IAF"; } }
         public override string Description { get { return "Triangle compressed bitmap format"; } }
@@ -152,7 +152,7 @@ namespace GameRes.Formats.Triangle
                 }
             }
             using (var bmp = new BinMemoryStream (bitmap, stream.Name))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
 
         internal static byte[] UnpackBitmap (Stream stream, int pack_type, int packed_size, int unpacked_size)

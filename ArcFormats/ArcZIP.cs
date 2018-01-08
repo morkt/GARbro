@@ -30,7 +30,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.PkWare
@@ -154,14 +153,14 @@ namespace GameRes.Formats.PkWare
             Encoding enc;
             try
             {
-                enc = Encoding.GetEncoding (Settings.Default.ZIPEncodingCP);
+                enc = Encoding.GetEncoding (Properties.Settings.Default.ZIPEncodingCP);
             }
             catch
             {
                 enc = Encodings.cp932;
             }
             return new ZipOptions {
-                CompressionLevel = Settings.Default.ZIPCompression,
+                CompressionLevel = Properties.Settings.Default.ZIPCompression,
                 FileNameEncoding = enc,
             };
         }

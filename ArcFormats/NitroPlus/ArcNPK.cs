@@ -29,7 +29,6 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -202,7 +201,7 @@ namespace GameRes.Formats.NitroPlus
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new Npk2Options { Key = GetKey (Settings.Default.NPKScheme) };
+            return new Npk2Options { Key = GetKey (Properties.Settings.Default.NPKScheme) };
         }
 
         public override object GetAccessWidget ()

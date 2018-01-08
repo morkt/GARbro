@@ -29,7 +29,6 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using GameRes.Formats.Properties;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -102,7 +101,7 @@ namespace GameRes.Formats.FC01
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (McgMetaData)info;
-            byte key = Settings.Default.MCGLastKey;
+            byte key = Properties.Settings.Default.MCGLastKey;
             if (101 == meta.Version)
             {
                 if (null == LastKey)
@@ -127,14 +126,14 @@ namespace GameRes.Formats.FC01
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            return new McgOptions { Key = Settings.Default.MCGLastKey };
+            return new McgOptions { Key = Properties.Settings.Default.MCGLastKey };
         }
 
         public override ResourceOptions GetOptions (object widget)
         {
             var w = widget as GUI.WidgetMCG;
             if (null != w)
-                Settings.Default.MCGLastKey = w.GetKey();
+                Properties.Settings.Default.MCGLastKey = w.GetKey ();
             return GetDefaultOptions();
         }
 
@@ -272,10 +271,10 @@ namespace GameRes.Formats.FC01
                     continue;
                 }
                 Transform();
-                Settings.Default.MCGLastKey = m_key;
+                Properties.Settings.Default.MCGLastKey = m_key;
                 return;
             }
-            while (m_key != Settings.Default.MCGLastKey);
+            while (m_key != Properties.Settings.Default.MCGLastKey);
             throw new UnknownEncryptionScheme();
         }
 

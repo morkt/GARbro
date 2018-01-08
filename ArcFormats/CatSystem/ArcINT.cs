@@ -32,7 +32,6 @@ using System.ComponentModel.Composition;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 using GameRes.Cryptography;
 using GameRes.Utility;
 
@@ -249,7 +248,7 @@ namespace GameRes.Formats.CatSystem
         public override ResourceOptions GetDefaultOptions ()
         {
             return new IntOptions {
-                EncryptionInfo = Settings.Default.INTEncryption ?? new IntEncryptionInfo(),
+                EncryptionInfo = Properties.Settings.Default.INTEncryption ?? new IntEncryptionInfo(),
             };
         }
 
@@ -258,7 +257,7 @@ namespace GameRes.Formats.CatSystem
             var widget = w as GUI.WidgetINT;
             if (null != widget)
             {
-                Settings.Default.INTEncryption = widget.Info;
+                Properties.Settings.Default.INTEncryption = widget.Info;
                 return new IntOptions { EncryptionInfo = widget.Info };
             }
             return this.GetDefaultOptions();

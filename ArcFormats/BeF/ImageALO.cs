@@ -29,7 +29,7 @@ using System.IO;
 namespace GameRes.Formats.BeF
 {
     [Export(typeof(ImageFormat))]
-    public class AloFormat : BmpFormat
+    public class AloFormat : ImageFormat
     {
         public override string         Tag { get { return "ALO"; } }
         public override string Description { get { return "Obfuscated bitmap"; } }
@@ -44,13 +44,13 @@ namespace GameRes.Formats.BeF
             if (0 != header[0] || 0 != header[1])
                 return null;
             using (var bmp = OpenAsBitmap (stream))
-                return base.ReadMetaData (bmp);
+                return Bmp.ReadMetaData (bmp);
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             using (var bmp = OpenAsBitmap (stream))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
 
         IBinaryStream OpenAsBitmap (IBinaryStream input)
@@ -65,7 +65,7 @@ namespace GameRes.Formats.BeF
         {
             using (var bmp = new MemoryStream())
             {
-                base.Write (bmp, image);
+                Bmp.Write (bmp, image);
                 file.WriteByte (0);
                 file.WriteByte (0);
                 bmp.Position = 2;

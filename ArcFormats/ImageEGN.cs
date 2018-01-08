@@ -42,7 +42,7 @@ namespace GameRes.Formats.Unknown
     }
 
     [Export(typeof(ImageFormat))]
-    public class EgnFormat : BmpFormat
+    public class EgnFormat : ImageFormat
     {
         public override string         Tag { get { return "EGN"; } }
         public override string Description { get { return "LZSS-compressed BMP image"; } }
@@ -73,7 +73,7 @@ namespace GameRes.Formats.Unknown
             reader.Unpack();
             using (var bmp = new BinMemoryStream (reader.Data, stream.Name))
             {
-                var info = base.ReadMetaData (bmp);
+                var info = Bmp.ReadMetaData (bmp);
                 if (null == info)
                     return null;
                 return new EgnMetaData
@@ -96,7 +96,7 @@ namespace GameRes.Formats.Unknown
             var reader = new Reader (stream, meta.UnpackedSize, meta.Mode, meta.Flag);
             reader.Unpack();
             using (var bmp = new BinMemoryStream (reader.Data, stream.Name))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
 
         internal class Reader

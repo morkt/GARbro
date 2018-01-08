@@ -86,7 +86,7 @@ namespace GameRes.Formats.Mokopro
     }
 
     [Export(typeof(ImageFormat))]
-    public class NNNNBmpFormat : BmpFormat
+    public class NNNNBmpFormat : ImageFormat
     {
         public override string         Tag { get { return "BMP/NNNN"; } }
         public override string Description { get { return "Mokopro compressed bitmap"; } }
@@ -104,7 +104,7 @@ namespace GameRes.Formats.Mokopro
             using (var lzss = moko.UnpackStream())
             using (var bmp = new BinaryStream (lzss, stream.Name))
             {
-                var info = base.ReadMetaData (bmp);
+                var info = Bmp.ReadMetaData (bmp);
                 if (null == info)
                     return null;
                 return new NNNNMetaData
@@ -123,7 +123,7 @@ namespace GameRes.Formats.Mokopro
             var meta = (NNNNMetaData)info;
             using (var lzss = meta.Input.UnpackStream())
             using (var bmp = new BinaryStream (lzss, stream.Name))
-                return base.Read (bmp, meta.BmpInfo);
+                return Bmp.Read (bmp, meta.BmpInfo);
         }
 
         public override void Write (Stream file, ImageData image)

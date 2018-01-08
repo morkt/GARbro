@@ -40,7 +40,7 @@ namespace GameRes.Formats.Abel
     }
 
     [Export(typeof(ImageFormat))]
-    public class GpsFormat : BmpFormat
+    public class GpsFormat : ImageFormat
     {
         public override string         Tag { get { return "GPS"; } }
         public override string Description { get { return "ADVEngine compressed bitmap"; } }
@@ -69,7 +69,7 @@ namespace GameRes.Formats.Abel
             using (var stream = OpenGpsStream (file, gps.Compression, 0x54))
             using (var input = BinaryStream.FromStream (stream, file.Name))
             {
-                var bmp_info = base.ReadMetaData (input);
+                var bmp_info = Bmp.ReadMetaData (input);
                 if (null == bmp_info)
                     return null;
                 gps.BPP = bmp_info.BPP;
@@ -83,7 +83,7 @@ namespace GameRes.Formats.Abel
             file.Position = 0x29;
             using (var stream = OpenGpsStream (file, gps.Compression, gps.UnpackedSize))
             using (var input = BinaryStream.FromStream (stream, file.Name))
-                return base.Read (input, info);
+                return Bmp.Read (input, info);
         }
 
         public override void Write (Stream file, ImageData image)

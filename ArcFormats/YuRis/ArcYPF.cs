@@ -30,7 +30,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using GameRes.Compression;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 using GameRes.Utility;
 
 namespace GameRes.Formats.YuRis
@@ -159,9 +158,9 @@ namespace GameRes.Formats.YuRis
         {
             return new YpfOptions
             {
-                Key     = Settings.Default.YPFKey,
-                Version = Settings.Default.YPFVersion,
-                Scheme  = Settings.Default.YPFScheme,
+                Key     = Properties.Settings.Default.YPFKey,
+                Version = Properties.Settings.Default.YPFVersion,
+                Scheme  = Properties.Settings.Default.YPFScheme,
             };
         }
 

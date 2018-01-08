@@ -30,7 +30,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Sprite
 {
     [Export(typeof(ImageFormat))]
-    public class PicFormat : BmpFormat
+    public class PicFormat : ImageFormat
     {
         public override string         Tag { get { return "PIC/SPRITE"; } }
         public override string Description { get { return "Soft House Sprite bitmap format"; } }
@@ -42,13 +42,13 @@ namespace GameRes.Formats.Sprite
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             using (var bmp = OpenAsBitmap (file))
-                return base.ReadMetaData (bmp);
+                return Bmp.ReadMetaData (bmp);
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             using (var bmp = OpenAsBitmap (file))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
 
         IBinaryStream OpenAsBitmap (IBinaryStream input)
@@ -66,7 +66,7 @@ namespace GameRes.Formats.Sprite
         {
             using (var bmp = new MemoryStream())
             {
-                base.Write (bmp, image);
+                Bmp.Write (bmp, image);
                 var header = new byte[HeaderSize];
                 header[0] = (byte)'P';
                 header[1] = (byte)'I';

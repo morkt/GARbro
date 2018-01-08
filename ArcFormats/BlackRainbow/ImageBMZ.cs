@@ -32,7 +32,7 @@ using GameRes.Compression;
 namespace GameRes.Formats.BlackRainbow
 {
     [Export(typeof(ImageFormat))]
-    public class BmzFormat : BmpFormat
+    public class BmzFormat : ImageFormat
     {
         public override string         Tag { get { return "BMZ"; } }
         public override string Description { get { return "Compressed bitmap format"; } }
@@ -43,7 +43,7 @@ namespace GameRes.Formats.BlackRainbow
         {
             using (var bmp = new MemoryStream())
             {
-                base.Write (bmp, image);
+                Bmp.Write (bmp, image);
                 using (var output = new BinaryWriter (file, Encoding.ASCII, true))
                 {
                     output.Write (Signature);
@@ -60,7 +60,7 @@ namespace GameRes.Formats.BlackRainbow
             var header = file.ReadHeader (8);
             using (var zstream = new ZLibStream (file.AsStream, CompressionMode.Decompress, true))
             using (var bmp = new BinaryStream (zstream, file.Name))
-                return base.ReadMetaData (bmp);
+                return Bmp.ReadMetaData (bmp);
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -69,7 +69,7 @@ namespace GameRes.Formats.BlackRainbow
             using (var zstream = new ZLibStream (file.AsStream, CompressionMode.Decompress, true))
             using (var input = new SeekableStream (zstream))
             using (var bmp = new BinaryStream (input, file.Name))
-                return base.Read (bmp, info);
+                return Bmp.Read (bmp, info);
         }
     }
 }

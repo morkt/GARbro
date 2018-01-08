@@ -30,7 +30,6 @@ using System.IO;
 using System.Text;
 using GameRes.Compression;
 using GameRes.Formats.Strings;
-using GameRes.Formats.Properties;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Rpm
@@ -126,7 +125,7 @@ namespace GameRes.Formats.Rpm
         public override ResourceOptions GetDefaultOptions ()
         {
             return new RpmOptions {
-                Scheme = GetScheme (Settings.Default.RPMScheme),
+                Scheme = GetScheme (Properties.Settings.Default.RPMScheme),
             };
         }
 
