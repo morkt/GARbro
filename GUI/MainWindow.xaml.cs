@@ -1289,6 +1289,13 @@ namespace GARbro.GUI
             about.ShowDialog();
         }
 
+        private void PreferencesExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var settings = new SettingsWindow();
+            settings.Owner = this;
+            settings.ShowDialog();
+        }
+
         private void CanExecuteAlways (object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = true;
@@ -1517,5 +1524,6 @@ namespace GARbro.GUI
         public static readonly RoutedCommand NextItem = new RoutedCommand();
         public static readonly RoutedCommand CopyNames = new RoutedCommand();
         public static readonly RoutedCommand StopPlayback = new RoutedCommand();
+        public static readonly RoutedCommand Preferences = new RoutedCommand();
     }
 }

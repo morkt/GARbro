@@ -135,6 +135,9 @@
                     <MenuItem Header="{x:Static s:guiStrings.MenuExit}" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuView}">
+                    <MenuItem Header="Preferences" InputGestureText="Ctrl+P"
+                              Command="{x:Static local:Commands.Preferences}"/>
+                    <Separator/>
                     <MenuItem Header="{x:Static s:guiStrings.MenuFitWindow}" InputGestureText="Ctrl+H"
                           Command="{x:Static local:Commands.FitWindow}"/>
                     <MenuItem Header="{x:Static s:guiStrings.CtxMenuRefresh}" InputGestureText="F5"
@@ -372,6 +375,7 @@
         <KeyBinding Gesture="Ctrl+Q" Command="{x:Static local:Commands.Exit}"/>
         <KeyBinding Gesture="Ctrl+H" Command="{x:Static local:Commands.FitWindow}"/>
         <KeyBinding Gesture="Ctrl+A" Command="{x:Static local:Commands.SelectAll}"/>
+        <KeyBinding Gesture="Ctrl+P" Command="{x:Static local:Commands.Preferences}"/>
         <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Left" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Right" Command="{x:Static local:Commands.GoForward}"/>
@@ -412,6 +416,7 @@
         <CommandBinding Command="{x:Static local:Commands.About}"      Executed="AboutExec"      CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.CheckUpdates}" Executed="CheckUpdatesExec" CanExecute="CanExecuteUpdate"/>
         <CommandBinding Command="{x:Static local:Commands.StopPlayback}" Executed="StopPlaybackExec" CanExecute="CanExecutePlaybackControl"/>
+        <CommandBinding Command="{x:Static local:Commands.Preferences}" Executed="PreferencesExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
 </Window>
