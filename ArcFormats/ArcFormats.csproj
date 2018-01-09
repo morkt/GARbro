@@ -78,6 +78,7 @@
     <Compile Include="Abogado\ArcDSK.cs" />
     <Compile Include="Abogado\AudioADP.cs" />
     <Compile Include="Abogado\ImageKG.cs" />
+    <Compile Include="Actgs\ArcCG.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
     <Compile Include="AdvSys\ArcAdvSys3.cs" />
     <Compile Include="AdvSys\ImageGWD.cs" />
