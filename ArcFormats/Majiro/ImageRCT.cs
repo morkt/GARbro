@@ -78,7 +78,7 @@ namespace GameRes.Formats.Majiro
         };
         LocalResourceSetting ApplyMask = new LocalResourceSetting {
             Name = "RCTApplyMask",
-            Text = "Automatically load alpha-channel",
+            Text = "Load transparency data from RC8 bitmap",
         };
         public const int BaseRecursionLimit = 8;
 
