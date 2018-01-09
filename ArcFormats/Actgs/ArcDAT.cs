@@ -64,7 +64,7 @@ namespace GameRes.Formats.Actgs
             Extensions = new string[] { "dat" };
         }
 
-        public static byte[][] KnownKeys = { };
+        internal static byte[][] KnownKeys = { };
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -74,40 +74,34 @@ namespace GameRes.Formats.Actgs
             if (0 != (file.View.ReadInt32 (4) | file.View.ReadInt32 (8) | file.View.ReadInt32 (12)))
                 return null;
             const int entry_size = 0x20;
-            var index = new byte[count * entry_size];
-            if (index.Length != file.View.Read (0x10, index, 0, (uint)index.Length))
-                return null;
-
-            uint first_offset = 0x10u + (uint)index.Length;
-            uint actual_offset = LittleEndian.ToUInt32 (index, 0);
-            byte[] key = null;
-            if (actual_offset != first_offset)
+            uint index_length = (uint)(count * entry_size);
+            IBinaryStream input = file.CreateStream (0x10, index_length);
+            try
             {
-                key = FindKey (first_offset, actual_offset);
+                uint first_offset = 0x10u + index_length;
+                uint actual_offset = input.Signature;
+                byte[] key = null;
+                if (actual_offset != first_offset)
+                {
+                    key = FindKey (first_offset, actual_offset);
+                    if (null == key)
+                        return null;
+                    var decrypted = new ByteStringEncryptedStream (input.AsStream, key);
+                    input = new BinaryStream (decrypted, file.Name);
+                }
+                var reader = new IndexReader (file.MaxOffset);
+                var dir = reader.Read (input, count);
+                if (null == dir)
+                    return null;
                 if (null == key)
-                    return null;
-                Decrypt (index, 0, index.Length, key);
+                    return new ArcFile (file, this, dir);
+                else
+                    return new ActressArchive (file, this, dir, key);
             }
-
-            int index_offset = 0;
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
+            finally
             {
-                var name = Binary.GetCString (index, index_offset+8, 0x18);
-                if (0 == name.Length)
-                    return null;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = LittleEndian.ToUInt32 (index, index_offset);
-                entry.Size   = LittleEndian.ToUInt32 (index, index_offset+4);
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
-                dir.Add (entry);
-                index_offset += 0x20;
+                input.Dispose();
             }
-            if (null == key)
-                return new ArcFile (file, this, dir);
-            else
-                return new ActressArchive (file, this, dir, key);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -148,7 +142,7 @@ namespace GameRes.Formats.Actgs
             return Array.Find (KnownKeys, k => k.Take (4).SequenceEqual (pattern));
         }
 
-        static void Decrypt (byte[] data, int index, int length, byte[] key)
+        internal static void Decrypt (byte[] data, int index, int length, byte[] key)
         {
             for (int i = 0; i < length; ++i)
             {
@@ -160,6 +154,44 @@ namespace GameRes.Formats.Actgs
         {
             get { return new ActressScheme { KnownKeys = KnownKeys }; }
             set { KnownKeys = ((ActressScheme)value).KnownKeys; }
+        }
+    }
+
+    internal sealed class IndexReader
+    {
+        long            m_arc_length;
+        List<Entry>     m_dir = new List<Entry>();
+
+        public IndexReader (long arc_length)
+        {
+            m_arc_length = arc_length;
+        }
+
+        public List<Entry> Read (IBinaryStream input, int count)
+        {
+            m_dir.Clear();
+            if (m_dir.Capacity < count)
+                m_dir.Capacity = count;
+            try
+            {
+                for (int i = 0; i < count; ++i)
+                {
+                    uint offset = input.ReadUInt32();
+                    uint size   = input.ReadUInt32();
+                    var name = input.ReadCString (0x18);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Offset = offset;
+                    entry.Size   = size;
+                    if (!entry.CheckPlacement (m_arc_length))
+                        return null;
+                    m_dir.Add (entry);
+                }
+                return m_dir;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
