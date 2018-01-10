@@ -169,7 +169,7 @@ IN THE SOFTWARE.
                           Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
                 <StackPanel Orientation="Vertical" DataContext="{Binding ElementName=SectionsPane,Path=SelectedItem}">
                     <TextBlock Text="{Binding SectionTitle}" Background="{StaticResource SectionTitleBackground}"
-                               FontWeight="Bold" FontSize="14" Padding="2,0,2,0"/>
+                               FontWeight="Bold" FontSize="14" Padding="2,0,2,0" Margin="0,0,0,4"/>
                     <StackPanel x:Name="SettingsPane"/>
                 </StackPanel>
             </ScrollViewer>

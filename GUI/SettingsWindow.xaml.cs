@@ -48,6 +48,8 @@ namespace GARbro.GUI
 
         SettingsViewModel ViewModel;
 
+        static string LastSelectedSection = null;
+
         private void OnSectionChanged (object sender, System.Windows.RoutedEventArgs e)
         {
             this.SettingsPane.Children.Clear();
@@ -65,6 +67,9 @@ namespace GARbro.GUI
         {
             ApplyChanges();
             DialogResult = true;
+            var section = SectionsPane.SelectedItem as SettingsSectionView;
+            if (section != null)
+                LastSelectedSection = section.Label;
         }
 
         private void ApplyChanges ()
@@ -84,13 +89,17 @@ namespace GARbro.GUI
                     Children = EnumerateFormatsSettings()
                 },
             };
-            list[0].IsSelected = true;
+            SettingsSectionView selected_section = null;
+            if (LastSelectedSection != null)
+                selected_section = EnumerateSections (list).FirstOrDefault (s => s.Label == LastSelectedSection);
+            if (null == selected_section)
+                selected_section = list[0];
+            selected_section.IsSelected = true;
             return new SettingsViewModel { Root = list };
         }
 
         IEnumerable<SettingsSectionView> EnumerateFormatsSettings ()
         {
-            var default_margin = new Thickness (2);
             var list = new List<SettingsSectionView>();
             foreach (var format in FormatCatalog.Instance.Formats.Where (f => f.Settings != null && f.Settings.Any()))
             {
@@ -121,6 +130,19 @@ namespace GARbro.GUI
                 }
             }
             return list;
+        }
+
+        static IEnumerable<SettingsSectionView> EnumerateSections (IEnumerable<SettingsSectionView> list)
+        {
+            foreach (var section in list)
+            {
+                yield return section;
+                if (section.Children != null)
+                {
+                    foreach (var child in EnumerateSections (section.Children))
+                        yield return child;
+                }
+            }
         }
 
         private void tvi_MouseRightButtonDown (object sender, MouseButtonEventArgs e)
