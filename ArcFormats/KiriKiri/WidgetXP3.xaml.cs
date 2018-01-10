@@ -15,11 +15,14 @@ namespace GameRes.Formats.GUI
     {
         public WidgetXP3 ()
         {
+            var last_selected = Properties.Settings.Default.XP3Scheme;
             InitializeComponent();
             var keys = new[] { new KeyValuePair<string, ICrypt> (arcStrings.ArcNoEncryption, Xp3Opener.NoCryptAlgorithm) };
             this.DataContext = keys.Concat (Xp3Opener.KnownSchemes.OrderBy (x => x.Key));
             this.Loaded += (s, e) => {
-                if (-1 == this.Scheme.SelectedIndex)
+                if (!string.IsNullOrEmpty (last_selected))
+                    this.Scheme.SelectedValue = last_selected;
+                else
                     this.Scheme.SelectedIndex = 0;
             };
         }
