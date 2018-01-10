@@ -127,7 +127,7 @@ namespace GameRes
         /// </summary>
         public static bool IsSaneCount (int count)
         {
-            return count > 0 && count < 0x20000;
+            return count > 0 && count < 0x40000;
         }
 
         /// <summary>
