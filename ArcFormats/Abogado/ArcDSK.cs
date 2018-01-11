@@ -51,6 +51,9 @@ namespace GameRes.Formats.Abogado
             { "SOUND",  "ADP" },
             { "PCM1",   "ADP" },
             { "PCM2",   "ADP" },
+            { "PCM",    "ADP" },
+            { "GRAPHIC", "KG" },
+            { "SCENARIO", "SCF" },
         };
 
         public override ArcFile TryOpen (ArcView file)
@@ -76,14 +79,17 @@ namespace GameRes.Formats.Abogado
                 for (int i = 0; i < count; ++i)
                 {
                     var name = pft.ReadCString (8);
-                    if (!string.IsNullOrEmpty (ext))
-                        name = Path.ChangeExtension (name, ext);
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
-                    entry.Offset = cluster_size * (long)pft.ReadUInt32();
-                    entry.Size   = pft.ReadUInt32();
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    dir.Add (entry);
+                    if (name.Length > 0)
+                    {
+                        if (!string.IsNullOrEmpty (ext))
+                            name = Path.ChangeExtension (name, ext);
+                        var entry = FormatCatalog.Instance.Create<Entry> (name);
+                        entry.Offset = cluster_size * (long)pft.ReadUInt32();
+                        entry.Size   = pft.ReadUInt32();
+                        if (!entry.CheckPlacement (file.MaxOffset))
+                            return null;
+                        dir.Add (entry);
+                    }
                 }
                 return new ArcFile (file, this, dir);
             }
