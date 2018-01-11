@@ -52,6 +52,23 @@ namespace GameRes
         object Value { get; set; }
     }
 
+    /// <summary>
+    /// Manage assembly settings during application session. Implementations of this interface are made
+    /// available to GameRes library by means of MEF.
+    /// </summary>
+    public interface ISettingsManager
+    {
+        /// <summary>
+        /// Called on application startup to check if settings need upgrading after assembly version change.
+        /// </summary>
+        void UpgradeSettings ();
+
+        /// <summary>
+        /// Called on application exit.
+        /// </summary>
+        void SaveSettings ();
+    }
+
     public abstract class ResourceSettingBase : IResourceSetting
     {
         public string        Name { get; set; }

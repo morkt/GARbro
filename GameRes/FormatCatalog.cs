@@ -49,6 +49,8 @@ namespace GameRes
         private IEnumerable<AudioFormat>    m_audio_formats;
         [ImportMany(typeof(ScriptFormat))]
         private IEnumerable<ScriptFormat>   m_script_formats;
+        [ImportMany(typeof(ISettingsManager))]
+        private IEnumerable<ISettingsManager> m_settings_managers;
         #pragma warning restore 649
 
         private MultiValueDictionary<string, IResource> m_extension_map = new MultiValueDictionary<string, IResource>();
@@ -107,11 +109,6 @@ namespace GameRes
             }
         }
 
-        public void SaveSettings ()
-        {
-            Properties.Settings.Default.Save();
-        }
-
         private void AddResourceImpl (IEnumerable<IResource> formats, CompositionContainer container)
         {
             foreach (var impl in formats)
@@ -134,6 +131,29 @@ namespace GameRes
                 {
                     m_signature_map.Add (signature, impl);
                 }
+            }
+        }
+
+        public void UpgradeSettings ()
+        {
+            if (Properties.Settings.Default.UpgradeRequired)
+            {
+                Properties.Settings.Default.Upgrade();
+                Properties.Settings.Default.UpgradeRequired = false;
+                Properties.Settings.Default.Save();
+            }
+            foreach (var mgr in m_settings_managers)
+            {
+                mgr.UpgradeSettings();
+            }
+        }
+
+        public void SaveSettings ()
+        {
+            Properties.Settings.Default.Save();
+            foreach (var mgr in m_settings_managers)
+            {
+                mgr.SaveSettings();
             }
         }
 
@@ -320,7 +340,7 @@ namespace GameRes
         }
 
         /// <summary>
-        /// Read text file <paramref name="filename"/> from data directory, performing <paramref name="process_line"/> action on each line.
+        /// Read text file <paramref name="filename"/> from data directory, performing <paramref name="process_line"/> action on each non-empty line.
         /// </summary>
         public void ReadFileList (string filename, Action<string> process_line)
         {
