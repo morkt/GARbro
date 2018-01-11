@@ -19,18 +19,6 @@ namespace GameRes.Formats.Properties {
             //
             // this.SettingsSaving += this.SettingsSavingEventHandler;
             //
-
-            if (null != Application.Current)
-            {
-                Application.Current.Dispatcher.BeginInvoke (DispatcherPriority.Normal, new Action(() => {
-                    Application.Current.Exit += ApplicationExitHandler;
-                }));
-            }
-        }
-
-        void ApplicationExitHandler (object sender, System.Windows.ExitEventArgs args)
-        {
-            Default.Save();
         }
         
         private void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e) {
