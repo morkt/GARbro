@@ -52,10 +52,10 @@ namespace GARbro.GUI
 
         private void OnSectionChanged (object sender, System.Windows.RoutedEventArgs e)
         {
-            this.SettingsPane.Children.Clear();
+            this.SettingsPane.Child = null;
             var section = SectionsPane.SelectedValue as SettingsSectionView;
             if (section != null && section.Panel != null)
-                this.SettingsPane.Children.Add (section.Panel);
+                this.SettingsPane.Child = section.Panel;
         }
 
         private void Button_ClickApply (object sender, System.Windows.RoutedEventArgs e)
@@ -86,7 +86,8 @@ namespace GARbro.GUI
             SettingsSectionView[] list = {
                 new SettingsSectionView {
                     Label = "Formats",
-                    Children = EnumerateFormatsSettings()
+                    Children = EnumerateFormatsSettings(),
+                    Panel = (UIElement)this.Resources["FormatsPanel"]
                 },
             };
             SettingsSectionView selected_section = null;

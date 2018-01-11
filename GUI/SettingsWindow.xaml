@@ -46,6 +46,7 @@ IN THE SOFTWARE.
             <CheckBox DataContext="{TemplateBinding DataContext}" IsChecked="{Binding Value}"
                       Content="{Binding Text}" ToolTip="{Binding Description}" Margin="2"/>
         </ControlTemplate>
+        <TextBlock x:Key="FormatsPanel" Text="Not much settings implemented so far."/>
 
         <Style x:Key="ExpandCollapseToggleStyle" TargetType="ToggleButton">
             <Setter Property="Focusable" Value="False"/>
@@ -170,7 +171,7 @@ IN THE SOFTWARE.
                 <StackPanel Orientation="Vertical" DataContext="{Binding ElementName=SectionsPane,Path=SelectedItem}">
                     <TextBlock Text="{Binding SectionTitle}" Background="{StaticResource SectionTitleBackground}"
                                FontWeight="Bold" FontSize="14" Padding="2,0,2,0" Margin="0,0,0,4"/>
-                    <StackPanel x:Name="SettingsPane"/>
+                    <Decorator x:Name="SettingsPane"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>
