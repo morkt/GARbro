@@ -118,6 +118,7 @@
     <Compile Include="Cyberworks\ArcApp.cs" />
     <Compile Include="Cyberworks\ArcP8.cs" />
     <Compile Include="Cyberworks\ImageTB1.cs" />
+    <Compile Include="DaiSystem\ArcPAC.cs" />
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
