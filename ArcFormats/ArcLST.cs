@@ -81,7 +81,7 @@ namespace GameRes.Formats.Nexton
             uint index_offset = 4;
             for (int i = 0; i < count; ++i)
             {
-                string name = ReadName (lst, index_offset+8, 0x24, 0xcccccccc, cp932);
+                string name = ReadName (lst, index_offset+8, 0x24, 0xcc, cp932);
                 if (0 == name.Length)
                     return null;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
@@ -112,7 +112,7 @@ namespace GameRes.Formats.Nexton
             uint index_offset = 4;
             for (int i = 0; i < count; ++i)
             {
-                string name = ReadName (lst, index_offset+8, 0x40, key, cp932);
+                string name = ReadName (lst, index_offset+8, 0x40, (byte)key, cp932);
                 if (0 == name.Length)
                     return null;
                 var entry = new NextonEntry {
@@ -153,7 +153,7 @@ namespace GameRes.Formats.Nexton
             return new BinMemoryStream (data, entry.Name);
         }
 
-        private static string ReadName (ArcView view, long offset, uint size, uint key, Encoding enc)
+        private static string ReadName (ArcView view, long offset, uint size, byte key, Encoding enc)
         {
             byte[] buffer = new byte[size];
             uint n;
@@ -162,7 +162,9 @@ namespace GameRes.Formats.Nexton
                 byte b = view.View.ReadByte (offset+n);
                 if (0 == b)
                     break;
-                buffer[n] = (byte)(b^key);
+                if (b != key)
+                    b ^= key;
+                buffer[n] = b;
             }
             return enc.GetString (buffer, 0, (int)n);
         }
