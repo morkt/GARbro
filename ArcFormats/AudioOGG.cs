@@ -131,9 +131,43 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0x5367674f; } } // 'OggS'
         public override bool      CanWrite { get { return false; } }
 
+        public OggAudio ()
+        {
+            Signatures = new uint[] { 0x5367674F, 0 };
+        }
+
         public override SoundInput TryOpen (IBinaryStream file)
         {
-            return new OggInput (file.AsStream);
+            Stream input = file.AsStream;
+            if (file.Signature == Wav.Signature)
+            {
+                var header = file.ReadHeader (0x14);
+                if (!header.AsciiEqual (8, "WAVEfmt "))
+                    return null;
+                uint fmt_size = header.ToUInt32 (0x10);
+                long fmt_pos = file.Position;
+                ushort format = file.ReadUInt16();
+                if (format != 0x6770 && format != 0x6771)
+                    return null;
+                // interpret WAVE 'data' section as Ogg stream
+                file.Position = fmt_pos + ((fmt_size + 1) & ~1);
+                for (;;) // ended by end-of-stream exception
+                {
+                    uint section_id = file.ReadUInt32();
+                    uint section_size = file.ReadUInt32();
+                    if (section_id == 0x61746164) // 'data'
+                    {
+                        long ogg_pos = file.Position;
+                        uint id = file.ReadUInt32();
+                        if (id != Signature)
+                            return null;
+                        input = new StreamRegion (input, ogg_pos, section_size);
+                        break;
+                    }
+                    file.Seek ((section_size + 1) & ~1, SeekOrigin.Current);
+                }
+            }
+            return new OggInput (input);
         }
 
         public static AudioFormat Instance { get { return s_OggFormat.Value; } }
