@@ -121,19 +121,20 @@ namespace GARbro.GUI
 
         void UpgradeSettings ()
         {
-            if (Settings.Default.UpgradeRequired)
+            try
             {
-                try
+                FormatCatalog.Instance.UpgradeSettings();
+                if (Settings.Default.UpgradeRequired)
                 {
                     Settings.Default.Upgrade();
                     Settings.Default.UpgradeRequired = false;
                     Settings.Default.Save();
                 }
-                catch (System.Exception X)
-                {
-                    Trace.WriteLine (string.Format ("Settings upgrade failed: {0}", X.Message), "[GARbro.GUI.App]");
-                }
-             }
+            }
+            catch (System.Exception X)
+            {
+                Trace.WriteLine (string.Format ("Settings upgrade failed: {0}", X.Message), "[GARbro.GUI.App]");
+            }
  
             // do not restore in minimized state
             if (Settings.Default.winState == System.Windows.WindowState.Minimized)
