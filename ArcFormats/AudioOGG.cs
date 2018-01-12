@@ -164,9 +164,11 @@ namespace GameRes.Formats
                         input = new StreamRegion (input, ogg_pos, section_size);
                         break;
                     }
-                    file.Seek ((section_size + 1) & ~1, SeekOrigin.Current);
+                    file.Seek ((section_size + 1) & ~1u, SeekOrigin.Current);
                 }
             }
+            else if (file.Signature != this.Signature)
+                return null;
             return new OggInput (input);
         }
 
