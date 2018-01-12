@@ -384,4 +384,12 @@
     <value>压缩文件包含已加密的脚本。
 请选择加密方式或输入密码。</value>
   </data>
+  <data name="RCTApplyMask" xml:space="preserve">
+    <value>Load transparency data from RC8 bitmap</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="RCTOverlayFrames" xml:space="preserve">
+    <value>Automatically combine incremental frames</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

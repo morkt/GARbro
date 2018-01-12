@@ -61,6 +61,24 @@ namespace GameRes.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enables various extensions, such as transparency support..
+        /// </summary>
+        public static string BMPExtensionsDesc {
+            get {
+                return ResourceManager.GetString("BMPExtensionsDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable BMP format extensions.
+        /// </summary>
+        public static string BMPExtensionsText {
+            get {
+                return ResourceManager.GetString("BMPExtensionsText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File is empty.
         /// </summary>
         public static string MsgFileIsEmpty {

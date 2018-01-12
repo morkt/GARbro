@@ -383,4 +383,12 @@
     <value>아카이브가 암호화된 스크립트를 포함함.
 암호체계를 고르거나 암호를 입력하세요.</value>
   </data>
+  <data name="RCTApplyMask" xml:space="preserve">
+    <value>Load transparency data from RC8 bitmap</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="RCTOverlayFrames" xml:space="preserve">
+    <value>Automatically combine incremental frames</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

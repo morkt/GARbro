@@ -386,4 +386,10 @@ Choose appropriate encryption scheme.</value>
     <value>Archive contains encrypted scripts.
 Choose encryption scheme or enter a passphrase.</value>
   </data>
+  <data name="RCTApplyMask" xml:space="preserve">
+    <value>Load transparency data from RC8 bitmap</value>
+  </data>
+  <data name="RCTOverlayFrames" xml:space="preserve">
+    <value>Automatically combine incremental frames</value>
+  </data>
 </root>

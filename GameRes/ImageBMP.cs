@@ -26,11 +26,12 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.ComponentModel.Composition;
-using System.Windows.Media.Imaging;
-using GameRes.Utility;
-using System.Windows.Media;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using GameRes.Strings;
+using GameRes.Utility;
 
 namespace GameRes
 {
@@ -65,8 +66,8 @@ namespace GameRes
 
         LocalResourceSetting EnableExtensions = new LocalResourceSetting {
             Name        = "BMPEnableExtensions",
-            Text        = "Enable BMP format extensions",
-            Description = "Enables various extensions, such as transparency support.",
+            Text        = garStrings.BMPExtensionsText,
+            Description = garStrings.BMPExtensionsDesc,
         };
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)

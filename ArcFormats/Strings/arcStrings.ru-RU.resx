@@ -291,8 +291,14 @@
   <data name="QLIEDefaultScheme" xml:space="preserve">
     <value>"Старый" метод шифрования</value>
   </data>
+  <data name="RCTApplyMask" xml:space="preserve">
+    <value>Подгружать прозрачность из одноимённого RC8 файла</value>
+  </data>
   <data name="RCTChoose" xml:space="preserve">
     <value>Выберите наименование или введите пароль</value>
+  </data>
+  <data name="RCTOverlayFrames" xml:space="preserve">
+    <value>Автоматически объединять мозаичные изображения</value>
   </data>
   <data name="RPALabelKey" xml:space="preserve">
     <value>32-битный ключ</value>

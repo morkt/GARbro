@@ -70,6 +70,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Apply.
+        /// </summary>
+        public static string ButtonApply {
+            get {
+                return ResourceManager.GetString("ButtonApply", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancel.
         /// </summary>
         public static string ButtonCancel {
@@ -543,6 +552,15 @@ namespace GARbro.GUI.Strings {
         public static string MenuOpen {
             get {
                 return ResourceManager.GetString("MenuOpen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Preferences.
+        /// </summary>
+        public static string MenuPreferences {
+            get {
+                return ResourceManager.GetString("MenuPreferences", resourceCulture);
             }
         }
         
@@ -1166,6 +1184,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Formats.
+        /// </summary>
+        public static string TextFormats {
+            get {
+                return ResourceManager.GetString("TextFormats", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Multimedia conversion error.
         /// </summary>
         public static string TextMediaConvertError {
@@ -1189,6 +1216,15 @@ namespace GARbro.GUI.Strings {
         public static string TextParametersTitle {
             get {
                 return ResourceManager.GetString("TextParametersTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Preferences.
+        /// </summary>
+        public static string TextPreferences {
+            get {
+                return ResourceManager.GetString("TextPreferences", resourceCulture);
             }
         }
         

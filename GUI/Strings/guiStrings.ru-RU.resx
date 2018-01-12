@@ -554,4 +554,16 @@
   <data name="TextVisitPage" xml:space="preserve">
     <value>Перейти на страницу загрузки</value>
   </data>
+  <data name="ButtonApply" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="MenuPreferences" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="TextFormats" xml:space="preserve">
+    <value>Форматы</value>
+  </data>
+  <data name="TextPreferences" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
 </root>

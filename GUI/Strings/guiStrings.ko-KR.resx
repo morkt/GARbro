@@ -529,4 +529,36 @@
   <data name="TextVisitPage" xml:space="preserve">
     <value>다운로드 페이지 방문</value>
   </data>
+  <data name="ButtonApply" xml:space="preserve">
+    <value>Apply</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="MenuPreferences" xml:space="preserve">
+    <value>Preferences</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextFormats" xml:space="preserve">
+    <value>Formats</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="TextPreferences" xml:space="preserve">
+    <value>Preferences</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="Type_archive" xml:space="preserve">
+    <value>archive</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="Type_audio" xml:space="preserve">
+    <value>audio</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="Type_image" xml:space="preserve">
+    <value>image</value>
+    <comment>translation pending</comment>
+  </data>
+  <data name="Type_script" xml:space="preserve">
+    <value>script</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

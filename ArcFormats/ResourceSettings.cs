@@ -4,6 +4,7 @@
 //
 
 using System.ComponentModel.Composition;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats
 {
@@ -12,6 +13,14 @@ namespace GameRes.Formats
         public override object Value {
             get { return Properties.Settings.Default[Name]; }
             set { Properties.Settings.Default[Name] = value; }
+        }
+
+        public LocalResourceSetting () { }
+
+        public LocalResourceSetting (string name)
+        {
+            Name = name;
+            Text = arcStrings.ResourceManager.GetString (name, arcStrings.Culture);
         }
     }
 

@@ -31,6 +31,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using GameRes;
+using GARbro.GUI.Strings;
 
 namespace GARbro.GUI
 {
@@ -85,7 +86,7 @@ namespace GARbro.GUI
         {
             SettingsSectionView[] list = {
                 new SettingsSectionView {
-                    Label = "Formats",
+                    Label = guiStrings.TextFormats,
                     Children = EnumerateFormatsSettings(),
                     Panel = (UIElement)this.Resources["FormatsPanel"]
                 },
@@ -124,7 +125,7 @@ namespace GARbro.GUI
                 {
                     var section = new SettingsSectionView {
                         Label = format.Tag,
-                        SectionTitle = "Formats :: "+format.Tag,
+                        SectionTitle = guiStrings.TextFormats+" :: "+format.Tag,
                         Panel = pane
                     };
                     list.Add (section);

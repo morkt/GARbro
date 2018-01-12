@@ -135,7 +135,7 @@
                     <MenuItem Header="{x:Static s:guiStrings.MenuExit}" Command="{x:Static local:Commands.Exit}" InputGestureText="Ctrl+Q"/>
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuView}">
-                    <MenuItem Header="Preferences" InputGestureText="Ctrl+P"
+                    <MenuItem Header="{x:Static s:guiStrings.MenuPreferences}" InputGestureText="Ctrl+P"
                               Command="{x:Static local:Commands.Preferences}"/>
                     <Separator/>
                     <MenuItem Header="{x:Static s:guiStrings.MenuFitWindow}" InputGestureText="Ctrl+H"

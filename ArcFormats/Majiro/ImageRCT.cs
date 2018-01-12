@@ -72,14 +72,9 @@ namespace GameRes.Formats.Majiro
             Settings = new[] { OverlayFrames, ApplyMask };
         }
 
-        LocalResourceSetting OverlayFrames = new LocalResourceSetting {
-            Name = "RCTOverlayFrames",
-            Text = "Automatically combine incremental frames",
-        };
-        LocalResourceSetting ApplyMask = new LocalResourceSetting {
-            Name = "RCTApplyMask",
-            Text = "Load transparency data from RC8 bitmap",
-        };
+        LocalResourceSetting OverlayFrames = new LocalResourceSetting ("RCTOverlayFrames");
+        LocalResourceSetting ApplyMask = new LocalResourceSetting ("RCTApplyMask");
+
         public const int BaseRecursionLimit = 8;
 
         public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();

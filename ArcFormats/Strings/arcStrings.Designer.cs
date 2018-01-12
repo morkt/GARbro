@@ -661,11 +661,29 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Load transparency data from RC8 bitmap.
+        /// </summary>
+        public static string RCTApplyMask {
+            get {
+                return ResourceManager.GetString("RCTApplyMask", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose title or enter a password.
         /// </summary>
         public static string RCTChoose {
             get {
                 return ResourceManager.GetString("RCTChoose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Automatically combine incremental frames.
+        /// </summary>
+        public static string RCTOverlayFrames {
+            get {
+                return ResourceManager.GetString("RCTOverlayFrames", resourceCulture);
             }
         }
         

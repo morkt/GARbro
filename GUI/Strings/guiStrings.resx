@@ -533,4 +533,16 @@ Overwrite?</value>
   <data name="MsgDownloadFailed" xml:space="preserve">
     <value>Update download failed.</value>
   </data>
+  <data name="ButtonApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="MenuPreferences" xml:space="preserve">
+    <value>_Preferences</value>
+  </data>
+  <data name="TextFormats" xml:space="preserve">
+    <value>Formats</value>
+  </data>
+  <data name="TextPreferences" xml:space="preserve">
+    <value>Preferences</value>
+  </data>
 </root>
