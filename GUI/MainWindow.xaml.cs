@@ -443,7 +443,7 @@ namespace GARbro.GUI
                 lv_SelectItem (ViewModel.Find (name));
         }
 
-        private void lv_Focus ()
+        public void ListViewFocus ()
         {
             if (CurrentDirectory.SelectedIndex != -1)
             {
@@ -747,7 +747,7 @@ namespace GARbro.GUI
             try
             {
                 PushViewModel (GetNewViewModel (path));
-                lv_Focus();
+                ListViewFocus();
             }
             catch (Exception X)
             {

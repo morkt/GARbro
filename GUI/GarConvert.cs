@@ -261,6 +261,7 @@ namespace GARbro.GUI
                     m_main.PopupError (m_pending_error.Message, guiStrings.TextMediaConvertError);
             }
             m_main.Activate();
+            m_main.ListViewFocus();
             m_main.RefreshView();
         }
     }

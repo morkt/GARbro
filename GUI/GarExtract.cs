@@ -419,6 +419,7 @@ namespace GARbro.GUI
             m_extract_in_progress = false;
             m_progress_dialog.Dispose();
             m_main.Activate();
+            m_main.ListViewFocus();
             if (!m_main.ViewModel.IsArchive)
             {
                 m_main.Dispatcher.Invoke (m_main.RefreshView);
