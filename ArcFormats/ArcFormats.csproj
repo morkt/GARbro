@@ -559,7 +559,7 @@
     <Compile Include="ArcKogado.cs" />
     <Compile Include="Malie\ArcLIB.cs" />
     <Compile Include="Lucifen\ArcLPK.cs" />
-    <Compile Include="ArcLST.cs" />
+    <Compile Include="Tactics\ArcLST.cs" />
     <Compile Include="MAI\ArcMAI.cs" />
     <Compile Include="Majiro\ArcMajiro.cs" />
     <Compile Include="Marble\ArcMBL.cs" />
