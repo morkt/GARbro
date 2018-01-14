@@ -213,12 +213,13 @@ namespace GameRes.Formats.FC01
 #if DEBUG
             else // bruteforce key *in debug build only*
             {
+                var copy = new byte[m_input.Length];
                 for (int key = 1; key < 256; ++key)
                 {
-                    var copy = m_input.Clone() as byte[];
+                    Buffer.BlockCopy (m_input, 0, copy, 0, m_input.Length);
                     MrgOpener.Decrypt (copy, 0, copy.Length-1, (byte)key);
                     using (var input = new BinMemoryStream (copy))
-                    using (var lzss = new MrgLzssReader (input, m_input.Length, Stride * m_height))
+                    using (var lzss = new MrgLzssReader (input, copy.Length, Stride * m_height))
                     {
                         lzss.Unpack();
                         if (input.Length - input.Position <= 1)
