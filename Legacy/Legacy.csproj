@@ -54,6 +54,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Aaru\ArcFL4.cs" />
     <Compile Include="EbgSystem\ArcBIN.cs" />
     <Compile Include="AnotherRoom\AudioWAZ.cs" />
     <Compile Include="AnotherRoom\ImageGR1.cs" />
@@ -70,6 +71,10 @@
     <Compile Include="Dice\ImageRBP.cs" />
     <Compile Include="Factor\ArcRES.cs" />
     <Compile Include="hmp\ImageMBP.cs" />
+    <Compile Include="Hyperspace\BmpExtension.cs" />
+    <Compile Include="Inspire\ArcIDA.cs" />
+    <Compile Include="Uncanny\AudioCWV.cs" />
+    <Compile Include="Uncanny\ImageCII.cs" />
     <Compile Include="Kurumi\ArcMPK.cs" />
     <Compile Include="Melody\ImageMGO.cs" />
     <Compile Include="Mink\ImageGDF.cs" />
@@ -78,6 +83,9 @@
     <Compile Include="Nanami\ArcBMM.cs" />
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
+    <Compile Include="PlanTech\ArcPAC.cs" />
+    <None Include="PlanTech\ImagePAC.cs" />
+    <Compile Include="Pochette\ImageGDT.cs" />
     <Compile Include="ProjectMyu\ImageKGR.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QSoft\ImageBPE.cs" />
@@ -90,7 +98,10 @@
     <Compile Include="System21\ImageBET.cs" />
     <Compile Include="SystemAqua\ArcDAT.cs" />
     <Compile Include="Tsd\ArcMCD.cs" />
+    <Compile Include="Uran\ArcNCL.cs" />
     <Compile Include="Uran\ArcPHS.cs" />
+    <Compile Include="Weapon\ArcDAT.cs" />
+    <Compile Include="Weapon\ArcVoice.cs" />
     <Compile Include="WestGate\ArcUCA.cs" />
     <Compile Include="WestGate\ArcUSF.cs" />
     <Compile Include="WestGate\ArcUWF.cs" />
@@ -108,7 +119,9 @@
       <Name>GameRes</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="PenguinWorks\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)
