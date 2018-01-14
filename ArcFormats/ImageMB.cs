@@ -40,7 +40,7 @@ namespace GameRes.Formats
         {
             int c1 = stream.ReadByte();
             int c2 = stream.ReadByte();
-            if ('M' != c1 || 'B' != c2)
+            if ('M' != c1 || ('B' != c2 && 'C' != c2))
                 return null;
             using (var bmp = OpenAsBitmap (stream))
                 return Bmp.ReadMetaData (bmp);
