@@ -183,12 +183,12 @@ namespace GARbro.GUI
         /// </summary>
         public void SetStatusText (string text)
         {
-            Dispatcher.Invoke (() => { appStatusText.Text = text; });
+            Dispatcher.Invoke (() => { appStatusText.Text = text.Trim(); });
         }
 
         public void SetResourceText (string text)
         {
-            Dispatcher.Invoke (() => { appResourceText.Text = text; });
+            Dispatcher.Invoke (() => { appResourceText.Text = text.Trim(); });
         }
 
         /// <summary>
