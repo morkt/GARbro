@@ -106,6 +106,7 @@
     <Compile Include="WestGate\ArcUSF.cs" />
     <Compile Include="WestGate\ArcUWF.cs" />
     <Compile Include="WestGate\ImageNBMP.cs" />
+    <Compile Include="Witch\ArcARC.cs" />
     <Compile Include="YellowCap\ImageGEF.cs" />
     <Compile Include="YellowCap\ImageGGF.cs" />
   </ItemGroup>
@@ -120,6 +121,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Mina\" />
     <Folder Include="PenguinWorks\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
