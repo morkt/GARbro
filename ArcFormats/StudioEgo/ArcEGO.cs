@@ -36,16 +36,11 @@ namespace GameRes.Formats.Ego
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "DAT/EGO"; } }
+        public override string         Tag { get { return "DAT/EGO/1"; } }
         public override string Description { get { return "Studio e.go! engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return true; } }
-
-        public DatOpener ()
-        {
-            Extensions = new string[] { "dat" };
-        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -150,6 +145,38 @@ namespace GameRes.Formats.Ego
             }
         }
     }
+
+    [Export(typeof(ArchiveFormat))]
+    public class OldDatOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "DAT/EGO/0"; } }
+        public override string Description { get { return "Studio e.go! engine resource archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            uint data_offset = 4 + file.View.ReadUInt32 (0);
+            if (data_offset <= 0x14 || data_offset >= file.MaxOffset)
+                return null;
+            var dir = new List<Entry>();
+            long index_offset = 4;
+            while (index_offset < data_offset)
+            {
+                uint entry_len = file.View.ReadUInt32 (index_offset);
+                if (entry_len <= 0xC || entry_len > 0x100 || index_offset + entry_len > data_offset)
+                    return null;
+                var name = file.View.ReadString (index_offset+0xC, entry_len-0xC);
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                entry.Offset = file.View.ReadUInt32 (index_offset+4);
+                entry.Size   = file.View.ReadUInt32 (index_offset+8);
+                if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += entry_len;
+            }
+            return new ArcFile (file, this, dir);
+        }
+    }
 }
-
-
