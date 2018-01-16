@@ -511,7 +511,7 @@
     <value>Что делать?</value>
   </data>
   <data name="TextErrorConverting" xml:space="preserve">
-    <value>Не удадось конвертировать файл
+    <value>Не удалось конвертировать файл
 {0}
 {1}</value>
   </data>

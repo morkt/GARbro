@@ -1,0 +1,21 @@
+﻿<Window x:Class="GARbro.GUI.TroubleShootingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:GARbro.GUI.Strings"
+        Title="Troubleshooting" Height="400" Width="340" ResizeMode="NoResize"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Bottom" Margin="10">
+            <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Content="Copy"
+                    Width="75" Height="25" Click="Button_Copy"/>
+            <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Content="{x:Static s:guiStrings.ButtonOK}"
+                    Width="75" Height="25" IsCancel="True"/>
+        </DockPanel>
+        <StackPanel Orientation="Vertical" DockPanel.Dock="Top">
+            <TextBlock Margin="10" TextWrapping="Wrap">If you experience troubles you may open an issue at <Hyperlink NavigateUri="{StaticResource DevIssuesLink}" RequestNavigate="Hyperlink_RequestNavigate">the developer's site</Hyperlink> (use English please).</TextBlock>
+            <TextBlock Margin="10,0,10,10">Following information might be useful in your report:</TextBlock>
+        </StackPanel>
+        <TextBox x:Name="EnvironmentInfo" DockPanel.Dock="Top" Margin="10,0,10,0" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
+    </DockPanel>
+</Window>

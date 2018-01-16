@@ -901,6 +901,21 @@ namespace GARbro.GUI
             OpenDirectoryEntry (ViewModel, entry);
         }
 
+        private void DescendExec (object control, ExecutedRoutedEventArgs e)
+        {
+            var entry = CurrentDirectory.SelectedItem as EntryViewModel;
+            if (entry != null)
+                OpenDirectoryEntry (ViewModel, entry);
+        }
+
+        private void AscendExec (object control, ExecutedRoutedEventArgs e)
+        {
+            var vm = ViewModel;
+            var parent_dir = vm.FirstOrDefault (entry => entry.Name == "..");
+            if (parent_dir != null)
+                OpenDirectoryEntry (vm, parent_dir);
+        }
+
         private void OpenDirectoryEntry (DirectoryViewModel vm, EntryViewModel entry)
         {
             string old_dir = null == vm ? "" : vm.Path.Last();
@@ -1296,6 +1311,13 @@ namespace GARbro.GUI
             settings.ShowDialog();
         }
 
+        private void TroubleShootingExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            var dialog = new TroubleShootingDialog();
+            dialog.Owner = this;
+            dialog.ShowDialog();
+        }
+
         private void CanExecuteAlways (object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = true;
@@ -1525,5 +1547,8 @@ namespace GARbro.GUI
         public static readonly RoutedCommand CopyNames = new RoutedCommand();
         public static readonly RoutedCommand StopPlayback = new RoutedCommand();
         public static readonly RoutedCommand Preferences = new RoutedCommand();
+        public static readonly RoutedCommand TroubleShooting = new RoutedCommand();
+        public static readonly RoutedCommand Descend = new RoutedCommand();
+        public static readonly RoutedCommand Ascend = new RoutedCommand();
     }
 }

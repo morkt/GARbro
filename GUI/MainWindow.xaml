@@ -154,6 +154,7 @@
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
                     <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
+                    <MenuItem Header="Troubleshooting..." Command="{x:Static local:Commands.TroubleShooting}"/>
                     <MenuItem Header="{x:Static s:guiStrings.MenuCheckUpdates}" Command="{x:Static local:Commands.CheckUpdates}"/>
                 </MenuItem>
             </Menu>
@@ -292,6 +293,8 @@
                     <KeyBinding Gesture="F2" Command="{x:Static local:Commands.RenameItem}"/>
                     <KeyBinding Gesture="Space" Command="{x:Static local:Commands.NextItem}"/>
                     <KeyBinding Gesture="Ctrl+Insert" Command="{x:Static local:Commands.CopyNames}"/>
+                    <KeyBinding Gesture="Ctrl+PageDown" Command="{x:Static local:Commands.Descend}"/>
+                    <KeyBinding Gesture="Ctrl+PageUp" Command="{x:Static local:Commands.Ascend}"/>
                     <MouseBinding Gesture="LeftDoubleClick" Command="{x:Static local:Commands.OpenItem}" />
                 </ListView.InputBindings>
                 <ListView.ItemContainerStyle>
@@ -417,6 +420,9 @@
         <CommandBinding Command="{x:Static local:Commands.CheckUpdates}" Executed="CheckUpdatesExec" CanExecute="CanExecuteUpdate"/>
         <CommandBinding Command="{x:Static local:Commands.StopPlayback}" Executed="StopPlaybackExec" CanExecute="CanExecutePlaybackControl"/>
         <CommandBinding Command="{x:Static local:Commands.Preferences}" Executed="PreferencesExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.TroubleShooting}" Executed="TroubleShootingExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.Descend}"     Executed="DescendExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.Ascend}"      Executed="AscendExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
     </Window.CommandBindings>
 </Window>
