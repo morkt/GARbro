@@ -45,7 +45,7 @@ namespace GameRes.Formats.Ikura
 
         public DrsOpener ()
         {
-            Extensions = Enumerable.Empty<string>(); // DRS archives have no extensions
+            Extensions = new string[] { "", "dat", "snr" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -56,7 +56,7 @@ namespace GameRes.Formats.Ikura
             if (dir_size < 0x20 || 0 != (dir_size & 0xf) || dir_size + 2 >= file.MaxOffset)
                 return null;
             byte first = file.View.ReadByte (2);
-            if (0 == first)
+            if (first <= 0x20)
                 return null;
             file.View.Reserve (0, (uint)dir_size + 2);
             int dir_offset = 2;
@@ -64,25 +64,19 @@ namespace GameRes.Formats.Ikura
             uint next_offset = file.View.ReadUInt32 (dir_offset+12);
             if (next_offset > file.MaxOffset || next_offset < dir_size+2)
                 return null;
-            var encoding = Encodings.cp932.WithFatalFallback();
-            byte[] name_raw = new byte[12];
 
             int count = dir_size / 0x10 - 1;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                file.View.Read (dir_offset, name_raw, 0, 12);
-                int name_length = name_raw.Length;
-                while (name_length > 0 && 0 == name_raw[name_length-1])
-                    --name_length;
-                if (0 == name_length)
+                var name = file.View.ReadString (dir_offset, 12);
+                if (string.IsNullOrEmpty (name))
                     return null;
                 uint offset = next_offset;
                 dir_offset += 0x10;
                 next_offset = file.View.ReadUInt32 (dir_offset+12);
                 if (next_offset > file.MaxOffset || next_offset < offset)
                     return null;
-                string name = encoding.GetString (name_raw, 0, name_length).ToLowerInvariant();
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = offset;
                 entry.Size = next_offset - offset;
@@ -138,21 +132,16 @@ namespace GameRes.Formats.Ikura
             uint index_size = file.View.ReadUInt32 (12);
             if (index_size > file.MaxOffset)
                 return null;
-            var encoding = Encodings.cp932.WithFatalFallback();
-            byte[] name_raw = new byte[12];
 
             long dir_offset = 0x20;
             var dir = new List<Entry> (count);
             bool has_scripts = false;
             for (int i = 0; i < count; ++i)
             {
-                file.View.Read (dir_offset, name_raw, 0, 12);
-                int name_length = name_raw.Length;
-                while (name_length > 0 && 0 == name_raw[name_length-1])
-                    --name_length;
-                if (0 == name_length)
+                var name = file.View.ReadString (dir_offset, 12);
+                if (string.IsNullOrEmpty (name))
                     return null;
-                string name = encoding.GetString (name_raw, 0, name_length).ToLowerInvariant();
+                name = name.ToLowerInvariant();
                 Entry entry;
                 if (name.EndsWith (".isf") || name.EndsWith (".snr"))
                 {

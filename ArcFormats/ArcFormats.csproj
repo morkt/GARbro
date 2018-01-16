@@ -123,6 +123,11 @@
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="HuffmanCompression.cs" />
+    <Compile Include="Ikura\ArcTAN.cs" />
+    <Compile Include="Ikura\ImageGGA.cs" />
+    <Compile Include="Ikura\ImageGGS.cs" />
+    <Compile Include="Ikura\ImageTAN.cs" />
+    <Compile Include="Ikura\ImageVRS.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Lambda\ImageCLS.cs" />
     <Compile Include="Maika\ArcBK.cs" />

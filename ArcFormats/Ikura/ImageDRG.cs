@@ -460,13 +460,13 @@ namespace GameRes.Formats.Ikura
     }
 
     [Export(typeof(ImageFormat))]
-    public class GgaFormat : ImageFormat
+    public class Gga0Format : ImageFormat
     {
         public override string         Tag { get { return "GG2"; } }
         public override string Description { get { return "IKURA GDL image format"; } }
         public override uint     Signature { get { return 0x30414747u; } } // 'GGA0'
 
-        public GgaFormat ()
+        public Gga0Format ()
         {
             Extensions = new string[] { "gg1", "gg2", "gg3", "gg0" };
         }
