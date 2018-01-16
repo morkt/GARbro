@@ -79,13 +79,11 @@ namespace GameRes.Formats
             return info;
         }
 
-        internal static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
-
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (MngMetaData)info;
             var body = new StreamRegion (file.AsStream, meta.PngOffset, true);
-            using (var png = new PrefixStream (PngHeader, body))
+            using (var png = new PrefixStream (PngFormat.HeaderBytes, body))
             {
                 var decoder = new PngBitmapDecoder (png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 var frame = decoder.Frames[0];
@@ -188,7 +186,7 @@ namespace GameRes.Formats
 
         public MngFrameDecoder (IBinaryStream input)
         {
-            var png = new PrefixStream (MngFormat.PngHeader, input.AsStream);
+            var png = new PrefixStream (PngFormat.HeaderBytes, input.AsStream);
             m_input = new BinaryStream (png, input.Name);
             try
             {

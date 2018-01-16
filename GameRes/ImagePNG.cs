@@ -41,6 +41,8 @@ namespace GameRes
         public override uint     Signature { get { return 0x474e5089; } }
         public override bool      CanWrite { get { return true; } }
 
+        public static readonly byte[] HeaderBytes = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var decoder = new PngBitmapDecoder (file.AsStream,

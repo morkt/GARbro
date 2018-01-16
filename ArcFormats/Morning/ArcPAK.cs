@@ -75,7 +75,6 @@ namespace GameRes.Formats.Morning
             return new ArcFile (file, this, dir);
         }
 
-        static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
         static readonly byte[] PngIHdr   = { 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52 };
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -83,7 +82,7 @@ namespace GameRes.Formats.Morning
             if (entry.Size <= 8 || !arc.File.View.BytesEqual (entry.Offset, PngIHdr))
                 return base.OpenEntry (arc, entry);
             Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new PrefixStream (PngHeader, input);
+            return new PrefixStream (PngFormat.HeaderBytes, input);
         }
 
         void DecryptIndex (byte[] data, byte[] key)

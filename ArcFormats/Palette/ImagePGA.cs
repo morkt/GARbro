@@ -63,7 +63,7 @@ namespace GameRes.Formats.Palette
             }
         }
 
-        public static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+        public static byte[] PngHeader { get { return HeaderBytes; } }
         public static readonly byte[] PngFooter = { 0, 0, 0, 0, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82 };
 
         IBinaryStream DeobfuscateStream (IBinaryStream stream)

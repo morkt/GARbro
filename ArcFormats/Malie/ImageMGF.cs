@@ -39,14 +39,12 @@ namespace GameRes.Formats.Malie
         public override uint     Signature { get { return 0x696C614D; } } // 'Mali'
         public override bool      CanWrite { get { return true; } }
 
-        static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
-
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (8).ToArray();
             if (!Binary.AsciiEqual (header, "MalieGF"))
                 return null;
-            Buffer.BlockCopy (PngHeader, 0, header, 0, 8);
+            Buffer.BlockCopy (HeaderBytes, 0, header, 0, 8);
 
             using (var data = new StreamRegion (stream.AsStream, 8, true))
             using (var pre = new PrefixStream (header, data))
@@ -56,7 +54,7 @@ namespace GameRes.Formats.Malie
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var header = PngHeader.Clone() as byte[];
+            var header = HeaderBytes.Clone() as byte[];
             using (var data = new StreamRegion (stream.AsStream, 8, true))
             using (var pre = new PrefixStream (header, data))
             using (var png = new BinaryStream (pre, stream.Name))
