@@ -11,7 +11,7 @@
         MinWidth="300">
     <DockPanel VerticalAlignment="Top" Margin="10">
         <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Margin="20,20,0,0">
-            <Button Name="ButtonOk" Content="{x:Static s:guiStrings.ButtonOK}" Click="Button_Click" IsDefault="True" Width="70" Height="25" Margin="0,0,10,0"/>
+            <Button Name="ButtonOk" Content="{x:Static s:guiStrings.ButtonOK}" Click="Button_Click" IsDefault="True" Width="70" Height="25" Margin="0,0,10,0" IsEnabled="{Binding ElementName=ArchiveFormat, Path=SelectedItem.CanWrite}"/>
             <Button Content="{x:Static s:guiStrings.ButtonCancel}" IsCancel="True" Width="70" Height="25" Margin="10,0,0,0"/>
         </StackPanel>
         <Grid DockPanel.Dock="Top">
