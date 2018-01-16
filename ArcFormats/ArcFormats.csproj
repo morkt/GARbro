@@ -128,8 +128,10 @@
     <Compile Include="Ikura\ImageGGS.cs" />
     <Compile Include="Ikura\ImageTAN.cs" />
     <Compile Include="Ikura\ImageVRS.cs" />
+    <Compile Include="ImageMNG.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Lambda\ImageCLS.cs" />
+    <Compile Include="Lilim\ImageIMG.cs" />
     <Compile Include="Maika\ArcBK.cs" />
     <Compile Include="Nekopunch\ImagePBM.cs" />
     <Compile Include="Nexas\ArcTPF.cs" />
