@@ -57,15 +57,11 @@ namespace GameRes.Formats.Ego
             {
                 while (dst < pixels.Length)
                 {
-                    int a = stream.ReadByte();
-                    if (-1 == a)
-                        throw new EndOfStreamException();
-                    else if (0 == a)
+                    byte a = stream.ReadUInt8();
+                    if (0 == a)
                     {
-                        int count = stream.ReadByte();
-                        if (-1 == count)
-                            throw new EndOfStreamException();
-                        else if (0 == count)
+                        byte count = stream.ReadUInt8();
+                        if (0 == count)
                             break;
                         dst += count * 4;
                     }
