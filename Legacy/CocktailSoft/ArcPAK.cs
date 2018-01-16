@@ -44,6 +44,10 @@ namespace GameRes.Formats.Cocktail
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+//        static readonly uint[] KnownKeyCode = { 0x385AB4BA, 0x52CCCF4E };
+//        static readonly uint[] KnownKeyCode = { 0x33C074B5, 0xB6744357 };
+        static readonly uint[] KnownKeyCode = { 0xBBB64423, 0x4D765A33 };
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);

@@ -1,8 +1,8 @@
-//! \file       ArcALH.cs
-//! \date       2017 Dec 15
-//! \brief      West Gate resource archive.
+//! \file       ArcVoice.cs
+//! \date       2018 Jan 04
+//! \brief      Weapon audio archive.
 //
-// Copyright (C) 2017 by morkt
+// Copyright (C) 2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,39 +23,55 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 
-namespace GameRes.Formats.WestGate
+namespace GameRes.Formats.Weapon
 {
 #if DEBUG
     [Export(typeof(ArchiveFormat))]
 #endif
-    public class UsfOpener : ArchiveFormat
+    public class VoiceOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "USF"; } }
-        public override string Description { get { return "West Gate resource archive"; } }
+        public override string         Tag { get { return "DAT/W/VOICE"; } }
+        public override string Description { get { return "Weapon audio archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        public UsfOpener ()
-        {
-            Extensions = new string[] { "alh", "usf", "udc", "uwb" };
-        }
-
         public override ArcFile TryOpen (ArcView file)
         {
-            uint first_offset = file.View.ReadUInt32 (0xC);
-            if (first_offset >= file.MaxOffset || 0 != (first_offset & 0xF))
-                return null;
-            int count = (int)(first_offset / 0x10);
+            int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
                 return null;
-
-            var dir = UcaTool.ReadIndex (file, 0, count, "");
-            if (null == dir)
+            uint index_size = (uint)count * 4 + 8;
+            if (index_size > file.View.Reserve (0, index_size))
                 return null;
+            if (file.View.ReadUInt32 (index_size-4) != file.MaxOffset)
+                return null;
+
+            uint index_offset = 4;
+            uint offset = file.View.ReadUInt32 (index_offset);
+            if (offset < index_size)
+                return null;
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                index_offset += 4;
+                var entry = new Entry {
+                    Name = string.Format ("{0}#{1:D4}.wav", base_name, i),
+                    Type = "audio",
+                    Offset = offset,
+                };
+                offset = file.View.ReadUInt32 (index_offset);
+                entry.Size = (uint)(offset - entry.Offset);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+            }
             return new ArcFile (file, this, dir);
         }
     }

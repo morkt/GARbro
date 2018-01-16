@@ -28,7 +28,9 @@ using System.ComponentModel.Composition;
 
 namespace GameRes.Formats.WestGate
 {
+#if DEBUG
     [Export(typeof(ArchiveFormat))]
+#endif
     public class UcaOpener : ArchiveFormat
     {
         public override string         Tag { get { return "UCA"; } }

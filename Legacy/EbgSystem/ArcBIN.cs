@@ -29,7 +29,9 @@ using System.Windows.Media;
 
 namespace GameRes.Formats.EbgSystem
 {
+#if DEBUG
     [Export(typeof(ArchiveFormat))]
+#endif
     public class BinOpener : ArchiveFormat
     {
         public override string         Tag { get { return "BIN/EBG_SYSTEM"; } }

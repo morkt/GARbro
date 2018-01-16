@@ -27,6 +27,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [000630][STONE HEADS] Sei Cosplay Gakuen ~Game Bunkou~
+
 namespace GameRes.Formats.Nekotaro
 {
     [Export(typeof(ArchiveFormat))]

@@ -1,8 +1,8 @@
-//! \file       ArcALH.cs
-//! \date       2017 Dec 15
-//! \brief      West Gate resource archive.
+//! \file       ArcPAC.cs
+//! \date       2018 Jan 03
+//! \brief      PLANTECH bitmap packages.
 //
-// Copyright (C) 2017 by morkt
+// Copyright (C) 2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -25,37 +25,38 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 
-namespace GameRes.Formats.WestGate
+namespace GameRes.Formats.PlanTech
 {
 #if DEBUG
     [Export(typeof(ArchiveFormat))]
 #endif
-    public class UsfOpener : ArchiveFormat
+    public class PacOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "USF"; } }
-        public override string Description { get { return "West Gate resource archive"; } }
+        public override string         Tag { get { return "PAC/PLANTECH"; } }
+        public override string Description { get { return "PLANTECH engine bitmap package"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        public UsfOpener ()
-        {
-            Extensions = new string[] { "alh", "usf", "udc", "uwb" };
-        }
-
         public override ArcFile TryOpen (ArcView file)
         {
-            uint first_offset = file.View.ReadUInt32 (0xC);
-            if (first_offset >= file.MaxOffset || 0 != (first_offset & 0xF))
+            if (file.View.ReadInt32 (0) != 0)
                 return null;
-            int count = (int)(first_offset / 0x10);
-            if (!IsSaneCount (count))
+            if (!file.View.AsciiEqual (8, "BM"))
+                return null;
+            if (file.View.ReadUInt32 (4) != file.View.ReadUInt32 (10))
                 return null;
 
-            var dir = UcaTool.ReadIndex (file, 0, count, "");
-            if (null == dir)
-                return null;
+            var dir = new List<Entry> (1);
+            var entry = new Entry {
+                Name = Path.GetFileNameWithoutExtension (file.Name) + ".BMP",
+                Type = "image",
+                Offset = 8,
+                Size = (uint)(file.MaxOffset - 8),
+            };
+            dir.Add (entry);
             return new ArcFile (file, this, dir);
         }
     }

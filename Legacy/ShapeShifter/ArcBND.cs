@@ -31,7 +31,9 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.ShapeShifter
 {
+#if DEBUG
     [Export(typeof(ArchiveFormat))]
+#endif
     public class BndOpener : ArchiveFormat
     {
         public override string         Tag { get { return "BND"; } }

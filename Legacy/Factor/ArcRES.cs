@@ -31,7 +31,9 @@ using System.Text.RegularExpressions;
 
 namespace GameRes.Formats.Factor
 {
+#if DEBUG
     [Export(typeof(ArchiveFormat))]
+#endif
     public class PackOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PACK/FACTOR"; } }

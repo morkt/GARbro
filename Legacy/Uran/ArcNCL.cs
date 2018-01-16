@@ -36,7 +36,9 @@ namespace GameRes.Formats.Uran
         public byte     Method;
     }
 
+#if DEBUG
     [Export(typeof(ArchiveFormat))]
+#endif
     public class NclOpener : ArchiveFormat
     {
         public override string         Tag { get { return "NCL"; } }

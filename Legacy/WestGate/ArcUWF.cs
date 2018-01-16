@@ -29,7 +29,9 @@ using System.IO;
 
 namespace GameRes.Formats.WestGate
 {
+#if DEBUG
     [Export(typeof(ArchiveFormat))]
+#endif
     public class UwfOpener : ArchiveFormat
     {
         public override string         Tag { get { return "UWF"; } }

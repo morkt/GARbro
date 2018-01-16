@@ -29,7 +29,9 @@ using System.Windows.Media;
 
 namespace GameRes.Formats.Nabe
 {
+#if DEBUG
     [Export(typeof(ImageFormat))]
+#endif
     public class YpfFormat : ImageFormat
     {
         public override string         Tag { get { return "YPF/NABE"; } }
