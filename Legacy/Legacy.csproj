@@ -73,6 +73,9 @@
     <Compile Include="hmp\ImageMBP.cs" />
     <Compile Include="Hyperspace\BmpExtension.cs" />
     <Compile Include="Inspire\ArcIDA.cs" />
+    <Compile Include="Iris\ArcFPACK.cs" />
+    <Compile Include="Mina\ArcML2.cs" />
+    <Compile Include="Mina\ImageMD.cs" />
     <Compile Include="Uncanny\AudioCWV.cs" />
     <Compile Include="Uncanny\ImageCII.cs" />
     <Compile Include="Kurumi\ArcMPK.cs" />
@@ -121,7 +124,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Mina\" />
     <Folder Include="PenguinWorks\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
