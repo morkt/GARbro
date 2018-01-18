@@ -119,7 +119,7 @@ namespace GameRes.Formats.ScrPlayer
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_stride = m_width * 4;
-            m_output = new byte[m_stride * m_height];
+            m_output = new byte[m_stride * (m_height + 1)];
             m_has_alpha = 32 == info.BPP;
             Format = m_has_alpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
         }
@@ -135,7 +135,8 @@ namespace GameRes.Formats.ScrPlayer
 
         void Unpack24bpp ()
         {
-            var rows = new int[3];
+            int extra_row = m_output.Length-m_stride;
+            var rows = new int[3] { 0, extra_row, extra_row };
             var offset_table = OffsetTable.Clone() as int[];
             for (int y = 0; y < m_height; ++y)
             {
@@ -187,9 +188,13 @@ namespace GameRes.Formats.ScrPlayer
 
         void Unpack32bpp ()
         {
+            int extra_row = m_output.Length-m_stride;
             for (int i = 3; i < m_stride; i += 4)
+            {
                 m_output[i] = 0xFF;
-            var rows = new int[3];
+                m_output[extra_row+i] = 0xFF;
+            }
+            var rows = new int[3] { 0, extra_row, extra_row };
             var offset_table = OffsetTable.Clone() as int[];
             for (int y = 0; y < m_height; ++y)
             {
