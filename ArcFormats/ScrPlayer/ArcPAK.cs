@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
@@ -37,34 +38,71 @@ namespace GameRes.Formats.ScrPlayer
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public PakOpener ()
+        {
+            Signatures = new uint[] { 0x6B636170, 0x32636170 }; // 'pack', 'pac2'
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             uint index_size = file.View.ReadUInt32 (4);
             if (index_size < 0x10 || index_size >= file.MaxOffset)
                 return null;
-
-            uint index_offset = 8;
-            uint index_end = index_offset + index_size;
-            var dir = new List<Entry>();
-            while (index_offset < index_end)
+            IBinaryStream index;
+            bool is_encrypted = file.View.ReadByte (3) == '2';
+            if (is_encrypted)
             {
-                uint offset = file.View.ReadUInt32 (index_offset);
-                if (0 == offset)
-                    break;
-                uint size   = file.View.ReadUInt32 (index_offset+4);
-                byte name_length = file.View.ReadByte (index_offset+8);
-                var name = file.View.ReadString (index_offset+9, name_length);
-                index_offset += ((9u + name_length) & ~7u) + 8u;
-                if (index_offset > index_end)
-                    return null;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = offset;
-                entry.Size   = size;
-                dir.Add (entry);
+                var index_bytes = new byte[(index_size + 3) & ~3u];
+                file.View.Read (8, index_bytes, 0, index_size);
+                DecryptIndex (index_bytes, (int)index_size);
+                index = new BinMemoryStream (index_bytes, 0, (int)index_size, file.Name);
             }
-            if (0 == dir.Count)
-                return null;
-            return new ArcFile (file, this, dir);
+            else
+                index = file.CreateStream (8, index_size);
+            using (index)
+            {
+                uint index_pos = 0;
+                var dir = new List<Entry>();
+                while (index_pos < index_size)
+                {
+                    index.Position = index_pos;
+                    uint offset = index.ReadUInt32();
+                    if (0 == offset)
+                        break;
+                    uint size   = index.ReadUInt32();
+                    byte name_length = index.ReadUInt8 ();
+                    var name = index.ReadCString (name_length);
+                    index_pos += ((5u + name_length) & ~3u) + 8u;
+
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Offset = offset;
+                    entry.Size   = size;
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                }
+                if (0 == dir.Count)
+                    return null;
+                return new ArcFile (file, this, dir);
+            }
         }
+
+        unsafe void DecryptIndex (byte[] data, int length)
+        {
+            int aligned_count = ((length - 1) >> 2) + 1;
+            if (aligned_count * 4 > length)
+                throw new ArgumentException ("Can't decrypt non-aligned array.");
+            fixed (byte* data8 = data)
+            {
+                uint* data32 = (uint*)data8;
+                for (int i = 0; i < aligned_count; ++i)
+                    *data32++ ^= EncryptionKey[i & 7];
+            }
+        }
+
+        static readonly uint[] EncryptionKey = {
+            0x305325A0, 0x306F308C, 0x672C5742, 0x5C0B5343,
+            0x8457306E, 0x72694F5C, 0x30423067, 0x0000308B,
+        };
     }
 }
