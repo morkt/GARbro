@@ -74,8 +74,7 @@ namespace GameRes.Formats.C4
         {
             var reader = new GdReader (file, (GdMetaData)info);
             var pixels = reader.Unpack();
-            int stride = 3 * (int)info.Width;
-            return ImageData.CreateFlipped (info, PixelFormats.Bgr24, null, pixels, stride);
+            return ImageData.CreateFlipped (info, PixelFormats.Bgr24, null, pixels, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -84,11 +83,48 @@ namespace GameRes.Formats.C4
         }
     }
 
+    [Export(typeof(ImageFormat))]
+    public class XexGdFormat : ImageFormat
+    {
+        public override string         Tag { get { return "GD/XEX"; } }
+        public override string Description { get { return "Complets XEX engine image format"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
+        {
+            if (!file.Name.HasExtension (".GD"))
+                return null;
+            var header = file.ReadHeader (2);
+            int compression = header[0];
+            if (compression != 'l' && compression != 'p' || header[1] != 0x1A)
+                return null;
+            return new GdMetaData {
+                Width = 640, Height = 480, BPP = 24,
+                Compression = compression,
+                DataOffset = 2,
+            };
+        }
+
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
+        {
+            var reader = new GdReader (file, (GdMetaData)info);
+            var pixels = reader.Unpack();
+            return ImageData.CreateFlipped (info, PixelFormats.Bgr24, null, pixels, reader.Stride);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new NotImplementedException ("XexGdFormat.Write not implemented");
+        }
+    }
+
     internal sealed class GdReader
     {
         IBinaryStream   m_input;
         GdMetaData      m_info;
         byte[]          m_output;
+
+        public int Stride { get { return (int)m_info.Width * 3; } }
 
         public GdReader (IBinaryStream input, GdMetaData info)
         {
