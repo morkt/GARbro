@@ -197,6 +197,7 @@ namespace GameRes.Formats
             catch
             {
                 m_input.Dispose();
+                throw;
             }
         }
 
