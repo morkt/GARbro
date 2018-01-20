@@ -386,7 +386,7 @@ namespace GameRes
             if (!string.IsNullOrEmpty (root_dir))
                 root_dir += PathDelimiter;
 
-            var subdirs = new HashSet<string>();
+            var subdirs = new HashSet<string> (StringComparer.InvariantCultureIgnoreCase);
             foreach (var entry in dir)
             {
                 var match = path_re.Match (entry.Name, root_dir.Length);
@@ -412,7 +412,7 @@ namespace GameRes
                 return m_arc.Dir;
             var path = m_cwd + PathDelimiter;
             return from file in m_arc.Dir
-                   where file.Name.StartsWith (path)
+                   where file.Name.StartsWith (path, StringComparison.InvariantCultureIgnoreCase)
                    select file;
         }
 
@@ -430,7 +430,8 @@ namespace GameRes
             else
             {
                 path += PathDelimiter;
-                return m_arc.Dir.Where (f => f.Name.StartsWith (path) && glob.IsMatch (Path.GetFileName (f.Name)));
+                return m_arc.Dir.Where (f => f.Name.StartsWith (path, StringComparison.InvariantCultureIgnoreCase)
+                                             && glob.IsMatch (Path.GetFileName (f.Name)));
             }
         }
 
@@ -447,7 +448,7 @@ namespace GameRes
                 {
                     var dir_name = entry.Name+PathDelimiter;
                     result.AddRange (from file in m_arc.Dir
-                                     where file.Name.StartsWith (dir_name)
+                                     where file.Name.StartsWith (dir_name, StringComparison.InvariantCultureIgnoreCase)
                                      select file);
                 }
             }
@@ -492,7 +493,7 @@ namespace GameRes
             if (0 != new_path.Length)
             {
                 var dir_name = new_path + PathDelimiter;
-                var entry = m_arc.Dir.FirstOrDefault (e => e.Name.StartsWith (dir_name));
+                var entry = m_arc.Dir.FirstOrDefault (e => e.Name.StartsWith (dir_name, StringComparison.InvariantCultureIgnoreCase));
                 if (null == entry)
                     throw new DirectoryNotFoundException();
             }
