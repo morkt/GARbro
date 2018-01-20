@@ -122,6 +122,7 @@
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
+    <Compile Include="Groover\ArcPCG.cs" />
     <Compile Include="HuffmanCompression.cs" />
     <Compile Include="Ikura\ArcTAN.cs" />
     <Compile Include="Ikura\ImageGGA.cs" />
@@ -133,6 +134,7 @@
     <Compile Include="Lambda\ImageCLS.cs" />
     <Compile Include="Lilim\ImageIMG.cs" />
     <Compile Include="Maika\ArcBK.cs" />
+    <Compile Include="Misc\ArcBIN.cs" />
     <Compile Include="Nekopunch\ImagePBM.cs" />
     <Compile Include="Nexas\ArcTPF.cs" />
     <Compile Include="LiveMaker\ImageGALX.cs" />
