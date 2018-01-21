@@ -157,8 +157,6 @@ namespace GameRes.Formats.Neko
                 var res = AutoEntry.DetectFileType (signature);
                 if (res != null)
                     entry.ChangeType (res);
-                else if (0x474E4D8A == signature)
-                    entry.Name = Path.ChangeExtension (entry.Name, "mng");
                 else if (entry.Name.StartsWith ("script/"))
                     entry.Type = "script";
             }
