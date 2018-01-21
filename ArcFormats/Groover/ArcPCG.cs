@@ -198,9 +198,8 @@ namespace GameRes.Formats.Groover
         {
             m_input.Position = 0x18;
             var output = new byte[m_unpacked_size];
-            int src = 0;
             int dst = 0;
-            while (src < m_packed_size && dst < m_unpacked_size)
+            for (int src = 0; src < m_packed_size && dst < m_unpacked_size; ++src)
             {
                 m_input.Read (output, dst, 3);
                 int count = m_input.ReadUInt8();
