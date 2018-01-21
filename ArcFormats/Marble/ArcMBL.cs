@@ -95,7 +95,7 @@ namespace GameRes.Formats.Marble
                 return null;
             try
             {
-                bool contains_scripts = false;
+                bool contains_scripts = Path.GetFileNameWithoutExtension (file.Name).EndsWith ("_data");
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
                 {
@@ -112,10 +112,9 @@ namespace GameRes.Formats.Marble
                     index_offset += (uint)filename_len;
                     uint offset = file.View.ReadUInt32 (index_offset);
                     string type = null;
-                    if (name.EndsWith (".s"))
+                    if (contains_scripts || name.EndsWith (".s"))
                     {
                         type = "script";
-                        contains_scripts = true;
                     }
                     else if (4 == Path.GetExtension (name).Length)
                     {
@@ -149,6 +148,7 @@ namespace GameRes.Formats.Marble
                 }
                 if (0 == dir.Count || (1 == dir.Count && count > 1))
                     return null;
+                contains_scripts = contains_scripts || dir.Any (e => e.Name.EndsWith (".s"));
                 if (contains_scripts)
                 {
                     var password = QueryPassPhrase (file.Name);
