@@ -216,7 +216,7 @@ namespace GameRes
         public ArchiveFileSystem (ArcFile arc)
         {
             m_arc = arc;
-            m_dir = new Dictionary<string, Entry> (arc.Dir.Count, StringComparer.InvariantCultureIgnoreCase);
+            m_dir = new Dictionary<string, Entry> (arc.Dir.Count, StringComparer.OrdinalIgnoreCase);
             foreach (var entry in arc.Dir)
             {
                 if (!m_dir.ContainsKey (entry.Name))
@@ -386,7 +386,7 @@ namespace GameRes
             if (!string.IsNullOrEmpty (root_dir))
                 root_dir += PathDelimiter;
 
-            var subdirs = new HashSet<string> (StringComparer.InvariantCultureIgnoreCase);
+            var subdirs = new HashSet<string> (StringComparer.OrdinalIgnoreCase);
             foreach (var entry in dir)
             {
                 var match = path_re.Match (entry.Name, root_dir.Length);
@@ -412,7 +412,7 @@ namespace GameRes
                 return m_arc.Dir;
             var path = m_cwd + PathDelimiter;
             return from file in m_arc.Dir
-                   where file.Name.StartsWith (path, StringComparison.InvariantCultureIgnoreCase)
+                   where file.Name.StartsWith (path, StringComparison.OrdinalIgnoreCase)
                    select file;
         }
 
@@ -430,7 +430,7 @@ namespace GameRes
             else
             {
                 path += PathDelimiter;
-                return m_arc.Dir.Where (f => f.Name.StartsWith (path, StringComparison.InvariantCultureIgnoreCase)
+                return m_arc.Dir.Where (f => f.Name.StartsWith (path, StringComparison.OrdinalIgnoreCase)
                                              && glob.IsMatch (Path.GetFileName (f.Name)));
             }
         }
@@ -448,7 +448,7 @@ namespace GameRes
                 {
                     var dir_name = entry.Name+PathDelimiter;
                     result.AddRange (from file in m_arc.Dir
-                                     where file.Name.StartsWith (dir_name, StringComparison.InvariantCultureIgnoreCase)
+                                     where file.Name.StartsWith (dir_name, StringComparison.OrdinalIgnoreCase)
                                      select file);
                 }
             }
@@ -493,7 +493,7 @@ namespace GameRes
             if (0 != new_path.Length)
             {
                 var dir_name = new_path + PathDelimiter;
-                var entry = m_arc.Dir.FirstOrDefault (e => e.Name.StartsWith (dir_name, StringComparison.InvariantCultureIgnoreCase));
+                var entry = m_arc.Dir.FirstOrDefault (e => e.Name.StartsWith (dir_name, StringComparison.OrdinalIgnoreCase));
                 if (null == entry)
                     throw new DirectoryNotFoundException();
             }
@@ -796,7 +796,7 @@ namespace GameRes
         public static bool IsPathEqualsToFileName (string path, string filename)
         {
             // first, filter out completely different paths
-            if (!path.EndsWith (filename, StringComparison.InvariantCultureIgnoreCase))
+            if (!path.EndsWith (filename, StringComparison.OrdinalIgnoreCase))
                 return false;
             // now, compare length of filename portion of the path
             int filename_index = path.LastIndexOfAny (PathSeparatorChars);
