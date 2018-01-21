@@ -2,7 +2,7 @@
 //! \date       Thu Aug 04 05:11:20 2016
 //! \brief      MAIKA resource archives.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -94,11 +94,14 @@ namespace GameRes.Formats.Maika
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             ushort signature = arc.File.View.ReadUInt16 (entry.Offset);
+            // C1/D1/E1/F1
             if (0x3146 != signature && 0x3143 != signature && 0x3144 != signature && 0x3145 != signature)
                 return base.OpenEntry (arc, entry);
             uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+2);
             if (packed_size < 14 || packed_size > entry.Size-10)
                 return base.OpenEntry (arc, entry);
+
+            // XXX scrambling might be applicable for 'E1' signatures only
             var prefix = arc.File.View.ReadBytes (entry.Offset+10, 14);
             byte t = prefix[7];
             prefix[7] = prefix[11];
@@ -106,49 +109,89 @@ namespace GameRes.Formats.Maika
             t = prefix[9];
             prefix[9] = prefix[12];
             prefix[12] = t;
+
             Stream input = arc.File.CreateStream (entry.Offset+24, packed_size-14);
             input = new PrefixStream (prefix, input);
             input = new LzssStream (input);
+
             var header = new byte[5];
             input.Read (header, 0, 5);
-            if (!Binary.AsciiEqual (header, "BPR02"))
-                return new PrefixStream (header, input);
-            using (input)
-                return Unpack (input);
+            if (Binary.AsciiEqual (header, "BPR02"))
+                return new PackedStream<Bpr02Decompressor> (input);
+            if (Binary.AsciiEqual (header, "BPR01"))
+                return new PackedStream<Bpr01Decompressor> (input);
+            return new PrefixStream (header, input);
+        }
+    }
+
+    internal abstract class BprDecompressor : Decompressor
+    {
+        readonly byte   m_rle_code;
+        IBinaryStream   m_input;
+
+        protected BprDecompressor (byte rle_code)
+        {
+            m_rle_code = rle_code;
         }
 
-        Stream Unpack (Stream input)
+        public override void Initialize (Stream input)
         {
-            using (var reader = new ArcView.Reader (input))
+            m_input = new BinaryStream (input, "");
+        }
+
+        protected override IEnumerator<int> Unpack ()
+        {
+            for (;;)
             {
-                var output = new MemoryStream();
-                var buffer = new byte[0x10000];
-                for (;;)
+                int ctl = m_input.ReadByte();
+                if (-1 == ctl || 0xFF == ctl)
+                    yield break;
+                int count = m_input.ReadInt32();
+                if (m_rle_code == ctl)
                 {
-                    int ctl = input.ReadByte();
-                    if (-1 == ctl || 0xFF == ctl)
-                        break;
-                    int count = reader.ReadInt32();
-                    if (3 == ctl)
+                    byte b = m_input.ReadUInt8();
+                    while (count --> 0)
                     {
-                        byte b = reader.ReadByte();
-                        for (int i = 0; i < count; ++i)
-                            output.WriteByte (b);
-                    }
-                    else
-                    {
-                        while (count > 0)
-                        {
-                            int chunk = Math.Min (count, buffer.Length);
-                            int read = reader.Read (buffer, 0, chunk);
-                            output.Write (buffer, 0, read);
-                            count -= chunk;
-                        }
+                        m_buffer[m_pos++] = b;
+                        if (0 == --m_length)
+                            yield return m_pos;
                     }
                 }
-                output.Position = 0;
-                return output;
+                else
+                {
+                    while (count > 0)
+                    {
+                        int chunk = Math.Min (count, m_length);
+                        int read = m_input.Read (m_buffer, m_pos, chunk);
+                        count -= chunk;
+                        m_pos += chunk;
+                        m_length -= chunk;
+                        if (0 == m_length)
+                            yield return m_pos;
+                    }
+                }
             }
         }
+
+        bool m_disposed = false;
+        protected override void Dispose (bool disposing)
+        {
+            if (!m_disposed)
+            {
+                if (m_input != null)
+                    m_input.Dispose();
+                m_disposed = true;
+            }
+        }
+    }
+
+    internal class Bpr02Decompressor : BprDecompressor
+    {
+        public Bpr02Decompressor () : base (3) { }
+    }
+
+    internal class Bpr01Decompressor : BprDecompressor
+    {
+        public Bpr01Decompressor () : base (1) { }
     }
 }
