@@ -64,7 +64,7 @@ namespace GameRes.Formats.Emote
 
         public PsbOpener ()
         {
-            Extensions = new string[] { "psb", "pimg" };
+            Extensions = new string[] { "psb", "pimg", "dpak" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -94,6 +94,8 @@ namespace GameRes.Formats.Emote
             var dir = reader.GetTextures();
             if (null == dir)
                 dir = reader.GetLayers();
+            if (null == dir)
+                dir = reader.GetChunks();
             if (null == dir || 0 == dir.Count)
                 return null;
             return new ArcFile (file, this, dir);
@@ -101,7 +103,9 @@ namespace GameRes.Formats.Emote
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
-            var tex = (TexEntry)entry;
+            var tex = entry as TexEntry;
+            if (null == tex)
+                return base.OpenImage (arc, entry);
             if ("TLG" == tex.TexType)
                 return OpenTlg (arc, tex);
             var info = new PsbTexMetaData
@@ -257,6 +261,31 @@ namespace GameRes.Formats.Emote
                     AddIconEntry (dir, item.Key, item_value["icon"] as IDictionary);
                 }
             }
+            return dir;
+        }
+
+        public List<Entry> GetChunks ()
+        {
+            var dict = GetDict (m_root);
+            if (0 == dict.Count)
+                return null;
+            var dir = new List<Entry> (dict.Count);
+            foreach (DictionaryEntry item in dict)
+            {
+                var name = item.Key.ToString();
+                var data = item.Value as EmChunk;
+                if (string.IsNullOrEmpty (name) || null == data)
+                    continue;
+                var entry = new Entry {
+                    Name   = name,
+                    Type   = FormatCatalog.Instance.GetTypeFromName (name),
+                    Offset = DataOffset + data.Offset,
+                    Size   = (uint)data.Length,
+                };
+                dir.Add (entry);
+            }
+            if (0 == dir.Count)
+                return null;
             return dir;
         }
 
