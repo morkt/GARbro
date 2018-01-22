@@ -151,6 +151,49 @@ namespace GameRes.Formats
             else
                 return ext_start + 1;
         }
+
+        /// <summary>
+        /// Returns copy of this string with ASCII characters converted to lower case.
+        /// </summary>
+        public static string ToLowerAscii (this string str)
+        {
+            int i;
+            for (i = 0; i < str.Length; ++i)
+            {
+                if (str[i] >= 'A' && str[i] <= 'Z')
+                    break;
+            }
+            if (i == str.Length)
+                return str;
+            var builder = new System.Text.StringBuilder (str, 0, i, str.Length);
+            builder.Append ((char)(str[i++] | 0x20));
+            while (i < str.Length)
+            {
+                char c = str[i];
+                if (c >= 'A' && c <= 'Z')
+                    c = (char)(c | 0x20);
+                builder.Append (c);
+                ++i;
+            }
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Returns string in Shift-JIS encoding with ASCII characters converted to lower case.
+        /// </summary>
+        public static byte[] ToLowerShiftJis (this string text)
+        {
+            var text_bytes = Encodings.cp932.GetBytes (text);
+            for (int i = 0; i < text_bytes.Length; ++i)
+            {
+                byte c = text_bytes[i];
+                if (c >= 'A' && c <= 'Z')
+                    text_bytes[i] += 0x20;
+                else if (c > 0x7F && c < 0xA1 || c > 0xDF)
+                    ++i;
+            }
+            return text_bytes;
+        }
     }
 
     /// <summary>
