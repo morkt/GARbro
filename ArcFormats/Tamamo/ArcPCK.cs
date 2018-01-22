@@ -33,6 +33,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Cryptography;
 using GameRes.Formats.Strings;
+using ICSharpCode.SharpZipLib.BZip2;
 
 namespace GameRes.Formats.Tamamo
 {
@@ -126,7 +127,7 @@ namespace GameRes.Formats.Tamamo
                 }
                 else
                 {
-//                    input = new Bzip2InputStream (input); // requires #ZipLib/DonNetZip
+                    input = new BZip2InputStream (input);
                 }
             }
             return input;
