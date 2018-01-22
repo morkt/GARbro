@@ -56,6 +56,18 @@ namespace GameRes.Formats.DirectDraw
             return m_output;
         }
 
+        public byte[] UnpackDXT3 ()
+        {
+            int src = 0;
+            for (int y = 0; y < m_height; y += 4)
+            for (int x = 0; x < m_width; x += 4)
+            {
+                DecompressDXT3Block (m_input, src, y, x);
+                src += 16;
+            }
+            return m_output;
+        }
+
         public byte[] UnpackDXT5 ()
         {
             int src = 0;
@@ -114,6 +126,38 @@ namespace GameRes.Formats.DirectDraw
             m_dxt_buffer[idx+1] = (byte)(g << 2 | g >> 4);
             m_dxt_buffer[idx+2] = (byte)(r << 3 | r >> 2);
             m_dxt_buffer[idx+3] = 0xFF;
+        }
+
+        byte[] m_alpha_data = new byte[16];
+
+        void DecompressDXT3Block (byte[] input, int src, int block_y, int block_x)
+        {
+            int alpha_pos = 0;
+            for (int i = 0; i < 8; ++i)
+            {
+                byte a = input[src++];
+                m_alpha_data[alpha_pos++] = (byte)((a & 0xF) * 17);
+                m_alpha_data[alpha_pos++] = (byte)((a >> 4) * 17);
+            }
+            ReadDXT1Color (input, src, 0);
+            ReadDXT1Color (input, src+2, 4);
+            for (int i = 0; i < 4; ++i)
+            {
+                m_dxt_buffer[8+i]  = (byte)(((m_dxt_buffer[i] << 1) + m_dxt_buffer[4+i]) / 3);
+                m_dxt_buffer[12+i] = (byte)(((m_dxt_buffer[4+i] << 1) + m_dxt_buffer[i]) / 3);
+            }
+            uint map = LittleEndian.ToUInt32 (input, src+4);
+            for (int y = 0; y < 4 && (block_y + y) < m_height; ++y)
+            for (int x = 0; x < 4 && (block_x + x) < m_width; ++x)
+            {
+                int color = (int)(map & 3) << 2;
+                int dst = m_output_stride * (block_y + y) + (block_x + x) * 4;
+                m_output[dst]   = m_dxt_buffer[color];
+                m_output[dst+1] = m_dxt_buffer[color+1];
+                m_output[dst+2] = m_dxt_buffer[color+2];
+                m_output[dst+3] = m_alpha_data[y*4+x];
+                map >>= 2;
+            }
         }
 
         void DecompressDXT5Block (byte[] input, int src, int block_y, int block_x)

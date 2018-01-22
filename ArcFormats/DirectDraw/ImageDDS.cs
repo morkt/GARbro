@@ -109,6 +109,12 @@ namespace GameRes.Formats.DirectDraw
                 var dxt = new DxtDecoder (input, meta);
                 pixels = dxt.UnpackDXT5();
             }
+            else if ("DXT3" == meta.FourCC)
+            {
+                var input = stream.ReadBytes ((int)meta.Width * (int)meta.Height);
+                var dxt = new DxtDecoder (input, meta);
+                pixels = dxt.UnpackDXT3();
+            }
             else if ("DXT1" == meta.FourCC)
             {
                 var input = stream.ReadBytes ((int)meta.Width * (int)meta.Height / 2);
