@@ -89,29 +89,36 @@ namespace GameRes.Formats.PkWare
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return true; } }
 
+        static readonly byte[] PkDirSignature = { (byte)'P', (byte)'K', 5, 6 };
+
         public override ArcFile TryOpen (ArcView file)
         {
-            if (-1 == SearchForSignature (file))
+            if (-1 == SearchForSignature (file, PkDirSignature))
                 return null;
             var input = file.CreateStream();
             try
             {
-                var zip = new ZipArchive (input, ZipArchiveMode.Read, false, Encodings.cp932);
-                try
-                {
-                    var dir = zip.Entries.Where (z => !z.FullName.EndsWith ("/"))
-                        .Select (z => new ZipEntry (z) as Entry).ToList();
-                    return new PkZipArchive (file, this, dir, zip);
-                }
-                catch
-                {
-                    zip.Dispose();
-                    throw;
-                }
+                return OpenZipArchive (file, input);
             }
             catch
             {
                 input.Dispose();
+                throw;
+            }
+        }
+
+        internal ArcFile OpenZipArchive (ArcView file, Stream input)
+        {
+            var zip = new ZipArchive (input, ZipArchiveMode.Read, false, Encodings.cp932);
+            try
+            {
+                var dir = zip.Entries.Where (z => !z.FullName.EndsWith ("/"))
+                    .Select (z => new ZipEntry (z) as Entry).ToList();
+                return new PkZipArchive (file, this, dir, zip);
+            }
+            catch
+            {
+                zip.Dispose();
                 throw;
             }
         }
@@ -125,26 +132,27 @@ namespace GameRes.Formats.PkWare
         /// Search for ZIP 'End of central directory record' near the end of file.
         /// Returns offset of 'PK' signature or -1 if no signature was found.
         /// </summary>
-        private unsafe long SearchForSignature (ArcView file)
+        internal unsafe long SearchForSignature (ArcView file, byte[] signature)
         {
+            if (signature.Length < 4)
+                throw new ArgumentException ("Invalid ZIP file signature", "signature");
+
             uint tail_size = (uint)Math.Min (file.MaxOffset, 0x10016L);
             if (tail_size < 0x16)
                 return -1;
             var start_offset = file.MaxOffset - tail_size;
             using (var view = file.CreateViewAccessor (start_offset, tail_size))
+            using (var pointer = new ViewPointer (view, start_offset))
             {
-                byte* ptr_end = view.GetPointer (start_offset);
+                byte* ptr_end = pointer.Value;
                 byte* ptr = ptr_end + tail_size-0x16;
-                try {
-                    for (; ptr >= ptr_end; --ptr)
-                    {
-                        if (6 == ptr[3] && 5 == ptr[2] && 'K' == ptr[1] && 'P' == ptr[0])
-                            return start_offset + (ptr-ptr_end);
-                    }
-                    return -1;
-                } finally {
-                    view.SafeMemoryMappedViewHandle.ReleasePointer();
+                for (; ptr >= ptr_end; --ptr)
+                {
+                    if (signature[3] == ptr[3] && signature[2] == ptr[2] &&
+                        signature[1] == ptr[1] && signature[0] == ptr[0])
+                        return start_offset + (ptr-ptr_end);
                 }
+                return -1;
             }
         }
 
