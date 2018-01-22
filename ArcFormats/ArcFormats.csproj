@@ -178,6 +178,7 @@
     <Compile Include="MicroVision\ImageGPC.cs" />
     <Compile Include="Morning\ArcPAK.cs" />
     <Compile Include="PackedStream.cs" />
+    <Compile Include="PalmTree\ArcAR.cs" />
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
