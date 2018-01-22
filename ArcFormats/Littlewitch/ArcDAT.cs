@@ -47,7 +47,7 @@ namespace GameRes.Formats.Littlewitch
 
         public byte[] CreateKey ()
         {
-            var name_bytes = DatOpener.ToLowerAscii (Name);
+            var name_bytes = Name.ToLowerShiftJis();
             int name_length = name_bytes.Length;
             var md5 = new MD5();
             Array.Reverse (name_bytes);
@@ -208,7 +208,7 @@ namespace GameRes.Formats.Littlewitch
             {
                 var md5 = new MD5();
                 FormatCatalog.Instance.ReadFileList (ListFileName, name => {
-                    var name_bytes = ToLowerAscii (name);
+                    var name_bytes = name.ToLowerShiftJis();
                     var hash = md5.ComputeHash (name_bytes);
                     dict[hash] = name;
                 });
@@ -218,20 +218,6 @@ namespace GameRes.Formats.Littlewitch
                 System.Diagnostics.Trace.WriteLine (X.Message, "[RepiPack]");
             }
             return dict;
-        }
-
-        internal static byte[] ToLowerAscii (string text)
-        {
-            var text_bytes = Encodings.cp932.GetBytes (text);
-            for (int i = 0; i < text_bytes.Length; ++i)
-            {
-                byte c = text_bytes[i];
-                if (c >= 'A' && c <= 'Z')
-                    text_bytes[i] += 0x20;
-                else if (c > 0x7F && c < 0xA1 || c > 0xDF)
-                    ++i;
-            }
-            return text_bytes;
         }
     }
 
