@@ -135,29 +135,52 @@ namespace GameRes.Formats.Tamamo
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var decoder = base.OpenImage (arc, entry);
-//            if (!entry.Name.StartsWith ("ev"))    // XXX
-//                return decoder;
-            if (1024 != decoder.Info.Width || 512 != decoder.Info.Height)
+            if (1024 != decoder.Info.Width || 512 != decoder.Info.Height && 1024 != decoder.Info.Height)
                 return decoder;
             var source = decoder.Image.Bitmap;
-            if (PixelFormats.Bgra32 == source.Format)
-                return decoder;
-            using (decoder)
+            if (512 == decoder.Info.Height) // 1024x512 texture
             {
-                var ev_bitmap = new WriteableBitmap (800, 600, ImageData.DefaultDpiX, ImageData.DefaultDpiY,
-                                                     source.Format, source.Palette);
-                var rect = new Int32Rect (0, 0, 800, 512);
-                int buffer_size = ev_bitmap.BackBufferStride * ev_bitmap.PixelHeight;
-                ev_bitmap.Lock();
-                source.CopyPixels (rect, ev_bitmap.BackBuffer, buffer_size, ev_bitmap.BackBufferStride);
-                ev_bitmap.AddDirtyRect (rect);
-                ev_bitmap.Unlock();
-                CopyRegion (source, new Int32Rect (800, 0, 88, 400), ev_bitmap, 0, 512);
-                CopyRegion (source, new Int32Rect (888, 0, 88, 400), ev_bitmap, 400, 512);
-                return new BitmapSourceDecoder (ev_bitmap);
+                if (PixelFormats.Bgra32 == source.Format)
+                    return decoder;
+                using (decoder)
+                {
+                    var ev_bitmap = CreateCanvas (800, 600, source, new Int32Rect (0, 0, 800, 512));
+                    CopyRegion (source, new Int32Rect (800, 0, 88, 400), ev_bitmap, 0, 512);
+                    CopyRegion (source, new Int32Rect (888, 0, 88, 400), ev_bitmap, 400, 512);
+                    return new BitmapSourceDecoder (ev_bitmap);
+                }
+            }
+            else // 1024x1024 texture
+            {
+                // check if bottom-right pixel is black
+                var pixel = new byte[4];
+                source.CopyPixels (new Int32Rect (1023, 1023, 1, 1), pixel, 4, 0);
+                if (0 != pixel[0] || 0 != pixel[1] || 0 != pixel[2] || 0xFF != pixel[3])
+                    return decoder;
+                using (decoder)
+                {
+                    var ev_bitmap = CreateCanvas (1280, 720, source, new Int32Rect (0, 0, 1024, 720));
+                    CopyRegion (source, new Int32Rect (0, 720, 720, 256), ev_bitmap, 1024, 0);
+                    return new BitmapSourceDecoder (ev_bitmap);
+                }
             }
         }
 
+        WriteableBitmap CreateCanvas (int width, int height, BitmapSource src_bitmap, Int32Rect base_region)
+        {
+            var canvas = new WriteableBitmap (width, height, ImageData.DefaultDpiX, ImageData.DefaultDpiY,
+                                              src_bitmap.Format, src_bitmap.Palette);
+            int buffer_size = canvas.BackBufferStride * canvas.PixelHeight;
+            canvas.Lock();
+            src_bitmap.CopyPixels (base_region, canvas.BackBuffer, buffer_size, canvas.BackBufferStride);
+            canvas.AddDirtyRect (base_region);
+            canvas.Unlock();
+            return canvas;
+        }
+
+        /// <summary>
+        /// Copy pixels from source region, rotating by 90 degrees counter-clockwise.
+        /// </summary>
         void CopyRegion (BitmapSource source, Int32Rect rect, WriteableBitmap target, int dst_x, int dst_y)
         {
             int bpp = source.Format.BitsPerPixel / 8;
