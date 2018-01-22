@@ -126,6 +126,7 @@
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
+    <Compile Include="Emote\ImageDREF.cs" />
     <Compile Include="Groover\ArcPCG.cs" />
     <Compile Include="HuffmanCompression.cs" />
     <Compile Include="Ikura\ArcTAN.cs" />
