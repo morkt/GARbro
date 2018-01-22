@@ -59,19 +59,19 @@ namespace GameRes.Formats.NonColor
 
             bool is_script = VFS.IsPathEqualsToFileName (file.Name, "script.dat");
 
-            var dir = new List<Entry> (count);
-            using (var input = file.CreateStream (8, (uint)count * 0x15))
+            using (var index = new NcIndexReader (file, count, key) { IndexPosition = 8 })
             {
-                foreach (var entry in ReadIndex (input, count, scheme, key))
+                var file_map = ReadFilenameMap (scheme);
+                var dir = index.Read (file_map);
+                if (null == dir)
+                    return null;
+                if (is_script)
                 {
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    if (is_script)
+                    foreach (ArcDatEntry entry in dir)
                         entry.Hash ^= scheme.Hash;
-                    dir.Add (entry);
                 }
+                return new ArcFile (file, this, dir);
             }
-            return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
