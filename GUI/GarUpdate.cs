@@ -68,9 +68,7 @@ namespace GARbro.GUI
         public Version  ReleaseVersion { get; set; }
         public Uri          ReleaseUrl { get; set; }
         public string     ReleaseNotes { get; set; }
-        public int      FormatsVersion { get; set; }
-        public Uri          FormatsUrl { get; set; }
-        public IDictionary<string, Version> Assemblies { get; set; }
+        public IEnumerable<FormatsDbInfo> FormatsData { get; set; }
 
         public static GarUpdateInfo Parse (XmlDocument xml)
         {
@@ -82,12 +80,23 @@ namespace GARbro.GUI
                 ReleaseVersion = Version.Parse (GetInnerText (root.SelectSingleNode ("Release/Version"))),
                 ReleaseUrl = new Uri (GetInnerText (root.SelectSingleNode ("Release/Url"))),
                 ReleaseNotes = GetInnerText (root.SelectSingleNode ("Release/Notes")),
-
-                FormatsVersion = Int32.Parse (GetInnerText (root.SelectSingleNode ("FormatsData/FileVersion"))),
-                FormatsUrl = new Uri (GetInnerText (root.SelectSingleNode ("FormatsData/Url"))),
-                Assemblies = ParseAssemblies (root.SelectNodes ("FormatsData/Requires/Assembly")),
+                FormatsData = root.SelectNodes ("FormatsData").Cast<XmlNode>()
+                    .Select (node => new FormatsDbInfo {
+                        Version = Int32.Parse (GetInnerText (node.SelectSingleNode ("FileVersion"))),
+                        Url = new Uri (GetInnerText (node.SelectSingleNode ("Url"))),
+                        Assemblies = ParseAssemblies (node.SelectNodes ("Requires/Assembly")),
+                    }),
             };
             return info;
+        }
+
+        public FormatsDbInfo FindMatchingFormatsData (int current_version, IEnumerable<Assembly> assemblies)
+        {
+            var loaded = assemblies.Select (a => a.GetName()).ToDictionary (a => a.Name, a => a.Version);
+            // select first formats db that has greater version number and no new assemblies
+            return FormatsData.Where (f => f.Version > current_version)
+                              .OrderByDescending (f => f.Version)
+                              .FirstOrDefault (f => f.Assemblies.All (a => loaded.ContainsKey (a.Key) && loaded[a.Key] >= a.Value));
         }
 
         static string GetInnerText (XmlNode node)
@@ -109,6 +118,13 @@ namespace GARbro.GUI
             }
             return dict;
         }
+    }
+
+    public class FormatsDbInfo
+    {
+        public int Version { get; set; }
+        public Uri     Url { get; set; }
+        public IDictionary<string, Version> Assemblies { get; set; }
     }
 
     internal sealed class GarUpdate : ICommand, IDisposable
@@ -180,20 +196,22 @@ namespace GARbro.GUI
         }
 
         UpdateDialog    m_dialog;
-        Uri             m_formats_url;
+        FormatsDbInfo   m_formats_db;
 
         private void ShowUpdateResult (GarUpdateInfo result)
         {
             var app_version = Assembly.GetExecutingAssembly().GetName().Version;
-            var db_version = FormatCatalog.Instance.CurrentSchemeVersion;
             bool has_app_update = app_version < result.ReleaseVersion;
-            bool has_db_update = db_version < result.FormatsVersion && CheckAssemblies (result.Assemblies);
+
+            var loaded_assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            m_formats_db = result.FindMatchingFormatsData (FormatCatalog.Instance.CurrentSchemeVersion, loaded_assemblies);
+            bool has_db_update = m_formats_db != null;
+
             if (!has_app_update && !has_db_update)
             {
                 m_main.SetStatusText (guiStrings.MsgUpToDate);
                 return;
             }
-            m_formats_url = result.FormatsUrl;
             m_dialog = new UpdateDialog (result, has_app_update, has_db_update);
             m_dialog.Owner = m_main;
             m_dialog.FormatsDownload.Click += StartFormatsDownload;
@@ -202,6 +220,8 @@ namespace GARbro.GUI
 
         private async void StartFormatsDownload (object control, RoutedEventArgs e)
         {
+            if (null == m_formats_db || null == m_formats_db.Url)
+                return;
             var dialog = m_dialog;
             try
             {
@@ -212,7 +232,7 @@ namespace GARbro.GUI
                 using (var tmp_file = new GARbro.Shell.TemporaryFile (app_data_folder, Path.GetRandomFileName()))
                 {
                     client.Timeout = RequestTimeout;
-                    await client.DownloadFileTaskAsync (m_formats_url, tmp_file.Name);
+                    await client.DownloadFileTaskAsync (m_formats_db.Url, tmp_file.Name);
 
                     m_main.App.DeserializeScheme (tmp_file.Name);
                     var local_formats_dat = Path.Combine (app_data_folder, App.FormatsDat);
@@ -248,14 +268,7 @@ namespace GARbro.GUI
         {
             var loaded = AppDomain.CurrentDomain.GetAssemblies().Select (a => a.GetName())
                          .ToDictionary (a => a.Name, a => a.Version);
-            foreach (var item in assemblies)
-            {
-                if (!loaded.ContainsKey (item.Key))
-                    return false;
-                if (loaded[item.Key] < item.Value)
-                    return false;
-            }
-            return true;
+            return assemblies.All (a => loaded.ContainsKey (a.Key) && loaded[a.Key] >= a.Value);
         }
 
         GarUpdateInfo Check (Uri version_url)
