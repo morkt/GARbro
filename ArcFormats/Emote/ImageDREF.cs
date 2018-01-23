@@ -26,10 +26,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -51,6 +53,7 @@ namespace GameRes.Formats.Emote
 
         public DrefFormat ()
         {
+            // 'psb:' string with possible byte-order-mark prepended
             Signatures = new uint[] { 0x0070FEFF, 0x70BFBBEF, 0x3A627370, 0x00730070 };
         }
 
@@ -152,49 +155,61 @@ namespace GameRes.Formats.Emote
             BitmapSource source = layer.Bitmap;
             if (source.Format.BitsPerPixel != 32)
                 source = new FormatConvertedBitmap (source, PixelFormats.Bgra32, null, 0);
-            int src_height = layer.Bitmap.PixelHeight;
-            int src_width  = layer.Bitmap.PixelWidth;
-            int src_stride = src_width * 4;
-            var pixels = new byte[src_stride * src_height];
-            layer.Bitmap.CopyPixels (pixels, src_stride, 0);
 
+            // determine coordinates of the intersection of layer and canvas
+            var src_rect = new Int32Rect (0, 0, source.PixelWidth, source.PixelHeight);
+            if (layer.OffsetX < 0)
+            {
+                src_rect.X = -layer.OffsetX;
+                src_rect.Width += layer.OffsetX;
+            }
+            if (layer.OffsetY < 0)
+            {
+                src_rect.Y = -layer.OffsetY;
+                src_rect.Height += layer.OffsetY;
+            }
+            if (!src_rect.HasArea)
+                return;
+            var layer_rect = new Rectangle (layer.OffsetX, layer.OffsetY, source.PixelWidth, source.PixelHeight);
+            var canvas_rect = new Rectangle (0, 0, canvas.PixelWidth, canvas.PixelHeight);
+            layer_rect.Intersect (canvas_rect);
+            if (layer_rect.Width <= 0 || layer_rect.Height <= 0)
+                return;
+
+            // copy out layer area
+            int src_stride = src_rect.Width * 4;
+            var pixels = new byte[src_stride * src_rect.Height];
+            source.CopyPixels (src_rect, pixels, src_stride, 0);
+
+            // perform blending within established coordinates
             int pixel_size = (canvas.Format.BitsPerPixel + 7) / 8;
             int canvas_stride = canvas.BackBufferStride;
-            int dst_row = layer.OffsetY * canvas_stride + layer.OffsetX * pixel_size;
-            if (dst_row < 0)
-                throw new InvalidFormatException();
-            // FIXME
-            // check layer dimensions more thoroughly before entering unsafe block
+            int dst_row = layer_rect.Y * canvas_stride + layer_rect.X * pixel_size;
             canvas.Lock();
             unsafe
             {
-                int src = 0;
                 byte* buffer = (byte*)canvas.BackBuffer;
-                for (int y = 0; y < src_height; ++y)
+                for (int src = 0; src < pixels.Length; src += src_stride)
                 {
-                    int dst = dst_row;
+                    byte* dst = buffer+dst_row;
                     for (int x = 0; x < src_stride; x += 4)
                     {
                         byte src_alpha = pixels[src+x+3];
                         if (0xFF == src_alpha)
                         {
                             for (int i = 0; i < pixel_size; ++i)
-                                buffer[dst+i] = pixels[src+x+i];
+                                dst[i] = pixels[src+x+i];
                         }
                         else if (src_alpha > 0)
                         {
-                            buffer[dst+0] = (byte)((pixels[src+x+0] * src_alpha
-                                          + buffer[dst+0] * (0xFF - src_alpha)) / 0xFF);
-                            buffer[dst+1] = (byte)((pixels[src+x+1] * src_alpha
-                                          + buffer[dst+1] * (0xFF - src_alpha)) / 0xFF);
-                            buffer[dst+2] = (byte)((pixels[src+x+2] * src_alpha
-                                          + buffer[dst+2] * (0xFF - src_alpha)) / 0xFF);
+                            dst[0] = (byte)((pixels[src+x+0] * src_alpha + dst[0] * (0xFF - src_alpha)) / 0xFF);
+                            dst[1] = (byte)((pixels[src+x+1] * src_alpha + dst[1] * (0xFF - src_alpha)) / 0xFF);
+                            dst[2] = (byte)((pixels[src+x+2] * src_alpha + dst[2] * (0xFF - src_alpha)) / 0xFF);
                             if (pixel_size > 3)
-                                buffer[dst+3] = (byte)Math.Max (src_alpha, buffer[dst+3]);
+                                dst[3] = (byte)Math.Max (src_alpha, dst[3]);
                         }
                         dst += pixel_size;
                     }
-                    src += src_stride;
                     dst_row += canvas_stride;
                 }
             }
