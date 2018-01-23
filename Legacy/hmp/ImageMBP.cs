@@ -27,6 +27,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
+// [000623][Sweet] Depaga ~Service Angel~
+
 namespace GameRes.Formats.Hmp
 {
     [Export(typeof(ImageFormat))]

@@ -1,30 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.4.33</Version>
+        <Version>1.5.34</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
-        <Notes>New formats:
-- CPZ7 archives
-- Unity resource assets
-- RPG Maker archives
-- Tamamo PCK archives
-- 'UK' archives and GPC images
-- DPK archives and DBM images
-- AliceSoft PMS images
-- Bishop PK archives and GSA images
-- CAF archives and CFP images
-- XPK1 archives
-- DNS archives and YP images
-- TLZ archives and MAG images
-- DDS DXT1 textures
+        <Notes>Lifted .Net framework requirement up to v4.6.
+Added GUI preferences window.
+New formats:
+- DAI_SYSTEM archives
+- PCG archives
+- LAX archives and 'CLS_TEXFILE' images
+- TPF archives
+- DREF images
+- DDS DXT3 textures
 - More KiriKiri and ShiinaRio encryption schemes
 </Notes>
     </Release>
     <FormatsData>
         <FileVersion>100</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
+        <Url>https://github.com/morkt/GARbro/raw/c270574f52d4d509ada263df1e701d6eeeccd6d0/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.36.1546"/>
+            <Assembly Name="GameRes" Version="1.4.26.238"/>
+        </Requires>
+    </FormatsData>
+    <FormatsData>
+        <FileVersion>101</FileVersion>
+        <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
+        <Requires>
+            <Assembly Name="ArcFormats" Version="1.2.37.1617"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>

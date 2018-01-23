@@ -30,6 +30,7 @@ using System.IO;
 using System.Text;
 using GameRes.Compression;
 
+// [991001][Inspire] days innocent
 // [000707][inspire] ambience
 
 namespace GameRes.Formats.Inspire

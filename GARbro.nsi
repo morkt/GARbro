@@ -54,9 +54,12 @@ Section "install"
     File "${RELEASE_DIR}\ArcExtra.dll"
     File "${RELEASE_DIR}\ArcFormats.dll"
     File "${RELEASE_DIR}\ArcFormats.dll.config"
+    File "${RELEASE_DIR}\ArcLegacy.dll"
     File "${RELEASE_DIR}\Concentus.dll"
     File "${RELEASE_DIR}\Concentus.Oggfile.dll"
     File "${RELEASE_DIR}\GameRes.dll"
+    File "${RELEASE_DIR}\GameRes.dll.config"
+    File "${RELEASE_DIR}\ICSharpCode.SharpZipLib.dll"
     File "${RELEASE_DIR}\Microsoft.Deployment.Compression.dll"
     File "${RELEASE_DIR}\Microsoft.Deployment.Compression.Cab.dll"
     File "${RELEASE_DIR}\Microsoft.WindowsAPICodePack.dll"
@@ -106,9 +109,12 @@ Section "uninstall"
     Delete $INSTDIR\ArcExtra.dll
     Delete $INSTDIR\ArcFormats.dll
     Delete $INSTDIR\ArcFormats.dll.config
+    Delete $INSTDIR\ArcLegacy.dll
     Delete $INSTDIR\Concentus.dll
     Delete $INSTDIR\Concentus.Oggfile.dll
     Delete $INSTDIR\GameRes.dll
+    Delete $INSTDIR\GameRes.dll.config
+    Delete $INSTDIR\ICSharpCode.SharpZipLib.dll
     Delete $INSTDIR\Microsoft.Deployment.Compression.dll
     Delete $INSTDIR\Microsoft.Deployment.Compression.Cab.dll
     Delete $INSTDIR\Microsoft.WindowsAPICodePack.dll
