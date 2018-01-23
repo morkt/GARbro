@@ -101,6 +101,7 @@
     <Compile Include="System21\ImageBET.cs" />
     <Compile Include="SystemAqua\ArcDAT.cs" />
     <Compile Include="Tsd\ArcMCD.cs" />
+    <Compile Include="Unknown\ArcDAT.cs" />
     <Compile Include="Uran\ArcNCL.cs" />
     <Compile Include="Uran\ArcPHS.cs" />
     <Compile Include="Weapon\ArcDAT.cs" />
