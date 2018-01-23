@@ -2,7 +2,7 @@
 //! \date       Thu Oct 08 16:25:55 2015
 //! \brief      TopCat compressed image.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -36,7 +36,7 @@ namespace GameRes.Formats.TopCat
     {
         public Compression  Method;
         public uint         UnpackedSize;
-        public bool         IsSpd8;
+        public byte         SpdType;
     }
 
     internal enum Compression
@@ -59,7 +59,7 @@ namespace GameRes.Formats.TopCat
 
         public SpdFormat ()
         {
-            Signatures = new uint[] { 0x43445053, 0x38445053 }; // 'SPD8'
+            Signatures = new uint[] { 0x43445053, 0x38445053, 0x37445053 }; // 'SPD8', 'SPD7'
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -80,7 +80,7 @@ namespace GameRes.Formats.TopCat
                         BPP    = (int)(dw[1] >> 16),
                         Method = (Compression)(dw[1] & 0xFFFF),
                         UnpackedSize = dw[4],
-                        IsSpd8 = header[3] == '8',
+                        SpdType = header[3],
                     };
                 }
             }
@@ -172,9 +172,16 @@ namespace GameRes.Formats.TopCat
                     UnpackLz();
                     var rgb = new byte[m_info.Height * m_info.Width * 4];
                     if (Compression.LzRle == m_info.Method || Compression.LzRle2 == m_info.Method)
-                        UnpackRle (rgb);
-                    else if (m_info.IsSpd8)
-                        UnpackSpd8Alpha (rgb);
+                    {
+                        if ('7' == m_info.SpdType)
+                            UnpackRle (rgb, 4, 0, 8);
+                        else
+                            UnpackRle (rgb, 0, 8, 12);
+                    }
+                    else if ('8' == m_info.SpdType)
+                        UnpackSpdAlpha (rgb, 8);
+                    else if ('7' == m_info.SpdType)
+                        UnpackSpdAlpha (rgb, 4);
                     else
                         UnpackRleAlpha (rgb);
                     m_output = rgb;
@@ -220,11 +227,10 @@ namespace GameRes.Formats.TopCat
             }
         }
 
-        void UnpackRle (byte[] rgb)
+        void UnpackRle (byte[] rgb, int rgb_pos, int skip_pos, int ctl_src)
         {
-            int rgb_src = LittleEndian.ToInt32 (m_output, 0);
-            bool skip = 0 == LittleEndian.ToInt32 (m_output, 8);
-            int ctl_src = 12;
+            int rgb_src = LittleEndian.ToInt32 (m_output, rgb_pos);
+            bool skip = 0 == LittleEndian.ToInt32 (m_output, skip_pos);
             int dst = 0;
             while (dst < rgb.Length)
             {
@@ -280,10 +286,9 @@ namespace GameRes.Formats.TopCat
             }
         }
 
-        void UnpackSpd8Alpha (byte[] rgb)
+        void UnpackSpdAlpha (byte[] rgb, int ctl_src)
         {
             int rgb_src = LittleEndian.ToInt32 (m_output, 0);
-            int ctl_src = 8;
             int dst = 0;
             while (dst < rgb.Length)
             {
@@ -309,7 +314,7 @@ namespace GameRes.Formats.TopCat
                     rgb[dst++] = m_output[rgb_src++];
                     rgb[dst++] = m_output[rgb_src++];
                     rgb[dst++] = m_output[rgb_src++];
-                    rgb[dst++] = (byte)~(control - 1);
+                    rgb[dst++] = (byte)-control;
                 }
             }
         }

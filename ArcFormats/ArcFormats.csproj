@@ -598,6 +598,7 @@
     <Compile Include="Tmr-Hiro\ArcPAC.cs" />
     <Compile Include="Tmr-Hiro\AudioTmr.cs" />
     <Compile Include="Tmr-Hiro\ImageGRD.cs" />
+    <Compile Include="TopCat\ArcTCD1.cs" />
     <Compile Include="TopCat\ArcTCD3.cs" />
     <Compile Include="TopCat\ImageSPD.cs" />
     <Compile Include="Triangle\ArcCGF.cs" />

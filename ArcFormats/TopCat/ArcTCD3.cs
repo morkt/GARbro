@@ -136,7 +136,7 @@ namespace GameRes.Formats.TopCat
             header[1] -= header_key;
             header[2] -= header_key;
             header[3] -= header_key;
-            bool spdc_entry = Binary.AsciiEqual (header, "SPD") && (header[3] == 'C' || header[3] == '8');
+            bool spdc_entry = Binary.AsciiEqual (header, "SPD") && (header[3] == 'C' || header[3] == '8' || header[3] == '7');
             if (!spdc_entry)
             {
                 LittleEndian.Pack (signature, header, 0);
