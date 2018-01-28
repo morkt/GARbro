@@ -203,6 +203,8 @@ namespace GameRes.Formats.Unity
                             Offset = input.Position,
                             Size = size,
                         };
+                        if (name.HasAnyOfExtensions ("jpg", "png"))
+                            entry.Type = "image";
                         break;
                     }
                 case 128: // Font

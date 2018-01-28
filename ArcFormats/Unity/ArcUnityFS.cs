@@ -45,7 +45,7 @@ namespace GameRes.Formats.Unity
 
         public UnityFSOpener ()
         {
-            Extensions = new string[] { "" };
+            Extensions = new string[] { "", "unity3d" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -180,7 +180,7 @@ namespace GameRes.Formats.Unity
         public uint UnpackedSize;
         public int  Compression;
 
-        public bool IsCompressed { get { return Compression != 0; } }
+        public bool IsCompressed { get { return (Compression & 0x3F) != 0; } }
     }
 
     internal class AssetDeserializer
@@ -373,6 +373,11 @@ namespace GameRes.Formats.Unity
                     uint signature = reader.ReadUInt32();
                     if (0x0D15F641 == signature)
                         entry.Type = "image";
+                    else if (0x474E5089 == signature)
+                    {
+                        entry.Type = "image";
+                        entry.IsEncrypted = false;
+                    }
                 }
                 return entry;
             }
