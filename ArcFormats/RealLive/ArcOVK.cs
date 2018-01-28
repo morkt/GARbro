@@ -2,7 +2,7 @@
 //! \date       Mon Apr 18 14:59:12 2016
 //! \brief      RealLive engine audio archive.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -39,14 +39,31 @@ namespace GameRes.Formats.RealLive
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public OvkOpener ()
+        {
+            Extensions = new string[] { "ovk", "nwk" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.HasExtension (".ovk"))
+            uint entry_size;
+            string entry_ext;
+            if (file.Name.HasExtension (".ovk"))
+            {
+                entry_size = 0x10;
+                entry_ext = "ogg";
+            }
+            else if (file.Name.HasExtension (".nwk"))
+            {
+                entry_size = 0xC;
+                entry_ext = "nwa";
+            }
+            else
                 return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
                 return null;
-            uint data_offset = 4 + (uint)count * 0x10;
+            uint data_offset = 4 + (uint)count * entry_size;
             if (data_offset >= file.MaxOffset)
                 return null;
 
@@ -61,7 +78,7 @@ namespace GameRes.Formats.RealLive
                 if (offset < data_offset)
                     return null;
                 var entry = new Entry {
-                    Name = string.Format ("{0}#{1:D5}.ogg", base_name, id),
+                    Name = string.Format ("{0}#{1:D5}.{2}", base_name, id, entry_ext),
                     Type = "audio",
                     Offset = offset,
                     Size   = size,
@@ -69,7 +86,7 @@ namespace GameRes.Formats.RealLive
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
-                index_offset += 0x10;
+                index_offset += entry_size;
             }
             return new ArcFile (file, this, dir);
         }
