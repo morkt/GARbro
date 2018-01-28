@@ -142,6 +142,7 @@
     <Compile Include="Ikura\ImageTAN.cs" />
     <Compile Include="Ikura\ImageVRS.cs" />
     <Compile Include="ImageMNG.cs" />
+    <Compile Include="KiriKiri\MoreCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Lambda\ImageCLS.cs" />
     <Compile Include="Lilim\ImageIMG.cs" />
