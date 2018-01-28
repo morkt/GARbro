@@ -288,6 +288,38 @@ namespace GameRes.Formats.Purple
             }
         }
 
+        void EncryptIndexStage1(byte[] data, uint key, CmvsScheme scheme)
+        {
+            var secret = scheme.Cpz5Secret;
+            var secret_key = new uint[24];
+            int secret_length = Math.Min(24, secret.Length);
+            for (int i = 0; i < secret_length; ++i)
+                secret_key[i] = secret[i] - key;
+
+            int shift = (int)(((key >> 24) ^ (key >> 16) ^ (key >> 8) ^ key ^ 0xB) & 0xF) + 7;
+            unsafe
+            {
+                fixed (byte* raw = data)
+                {
+                    uint* data32 = (uint*)raw;
+                    int i = 5;
+                    for (int n = data.Length / 4; n > 0; --n)
+                    {
+                        *data32 = (Binary.RotL((*data32 - 0x01010101), shift) - scheme.IndexAddend) ^ secret_key[i];
+                        ++data32;
+                        i = (i + 1) % 24;
+                    }
+                    byte* data8 = (byte*)data32;
+                    for (int n = data.Length & 3; n > 0; --n)
+                    {
+                        *data8 = (byte)((*data8 + scheme.IndexSubtrahend) ^ (secret_key[i] >> (n * 4)));
+                        ++data8;
+                        i = (i + 1) % 24;
+                    }
+                }
+            }
+        }
+
         void DecryptIndexDirectory (byte[] data, int length, uint[] key)
         {
             uint seed = 0x76548AEF;
@@ -307,6 +339,31 @@ namespace GameRes.Formats.Purple
                     for (int j = length & 3; j > 0; --j)
                     {
                         *data8 = (byte)((*data8 ^ (key[i++ & 3] >> 6)) + 0x37);
+                        ++data8;
+                    }
+                }
+            }
+        }
+
+        void EncryptIndexDirectory(byte[] data, int length, uint[] key)
+        {
+            uint seed = 0x76548AEF;
+            unsafe
+            {
+                fixed (byte* raw = data)
+                {
+                    uint* data32 = (uint*)raw;
+                    int i;
+                    for (i = 0; i < length / 4; ++i)
+                    {
+                        *data32 = (Binary.RotR(*data32 + seed, 3) + 0x4A91C262) ^ key[i & 3];
+                        ++data32;
+                        seed += 0x10FB562A;
+                    }
+                    byte* data8 = (byte*)data32;
+                    for (int j = length & 3; j > 0; --j)
+                    {
+                        *data8 = (byte)((*data8 - 0x37) ^ (key[i++ & 3] >> 6));
                         ++data8;
                     }
                 }
@@ -335,6 +392,34 @@ namespace GameRes.Formats.Purple
                     for (int j = length & 3; j > 0; --j)
                     {
                         *data8 = (byte)((*data8 ^ (key[i++ & 3] >> 4)) + 5);
+                        ++data8;
+                    }
+                }
+            }
+        }
+
+        void EncryptIndexEntry(byte[] data, int offset, int length, uint[] key, uint seed)
+        {
+            if (offset < 0 || offset > data.Length)
+                throw new ArgumentOutOfRangeException("offset");
+            if (length < 0 || length > data.Length || length > data.Length - offset)
+                throw new ArgumentException("length");
+            unsafe
+            {
+                fixed (byte* raw = &data[offset])
+                {
+                    uint* data32 = (uint*)raw;
+                    int i;
+                    for (i = 0; i < length / 4; ++i)
+                    {
+                        *data32 = (Binary.RotR((*data32 - 0x37A19E8B), 2) + seed) ^ key[i & 3];
+                        ++data32;
+                        seed -= 0x139FA9B;
+                    }
+                    byte* data8 = (byte*)data32;
+                    for (int j = length & 3; j > 0; --j)
+                    {
+                        *data8 = (byte)((*data8 - 5) ^ (key[i++ & 3] >> 4));
                         ++data8;
                     }
                 }
@@ -411,6 +496,20 @@ namespace GameRes.Formats.Purple
                 data[i+1] -= data[src++];
             }
 		}
+
+        void EncryptPb3(byte[] data)
+        {
+            byte key1 = data[data.Length - 3];
+            byte key2 = data[data.Length - 2];
+            int src = data.Length - 0x2F;
+            for (int i = 8; i < 0x34; i += 2)
+            {
+                data[i] += data[src++];
+                data[i] ^= key1;
+                data[i + 1] += data[src++];
+                data[i + 1] ^= key2;
+            }
+        }
     }
 
     internal class Cpz5Decoder
@@ -455,6 +554,21 @@ namespace GameRes.Formats.Purple
                 data[offset+i] = m_decode_table[key ^ data[offset+i]];
         }
 
+        public void Encode(byte[] data, int offset, int length, byte key)
+        {
+            for (int i = 0; i < length; ++i)
+            {
+                for (int s = 0; s < m_decode_table.Length; s++)
+                {
+                    if (data[offset + i] == m_decode_table[s])
+                    {
+                        data[offset + i] = (byte)(key ^ s);
+                        break;
+                    }
+                }
+            }
+        }
+
         public void DecryptEntry (byte[] data, uint[] cmvs_md5, uint seed)
         {
             if (null == data)
@@ -492,6 +606,58 @@ namespace GameRes.Formats.Purple
                     for (int i = data.Length & 3; i > 0; --i)
                     {
                         *data8 = m_decode_table[*data8 ^ m_scheme.EntryTailKey];
+                        ++data8;
+                    }
+                }
+            }
+        }
+
+        public void EncryptEntry(byte[] data, uint[] cmvs_md5, uint seed)
+        {
+            if (null == data)
+                throw new ArgumentNullException("data");
+            if (null == cmvs_md5 || cmvs_md5.Length < 4)
+                throw new ArgumentException("cmvs_md5");
+
+            int secret_length = Math.Min(m_scheme.Cpz5Secret.Length, 0x10) * sizeof(uint);
+            byte[] key_bytes = new byte[secret_length];
+
+            uint key = cmvs_md5[1] >> 2;
+            Buffer.BlockCopy(m_scheme.Cpz5Secret, 0, key_bytes, 0, secret_length);
+            for (int i = 0; i < secret_length; ++i)
+                key_bytes[i] = (byte)(key ^ m_decode_table[key_bytes[i]]);
+
+            uint[] secret_key = new uint[0x10];
+            Buffer.BlockCopy(key_bytes, 0, secret_key, 0, secret_length);
+            for (int i = 0; i < secret_key.Length; ++i)
+                secret_key[i] ^= seed;
+
+            unsafe
+            {
+                fixed (byte* raw = data)
+                {
+                    uint* data32 = (uint*)raw;
+                    key = m_scheme.EntryInitKey;
+                    int k = m_scheme.EntryKeyPos;
+                    for (int i = data.Length / 4; i > 0; --i)
+                    {
+                        uint backup = *data32;
+                        *data32 = (((cmvs_md5[key & 3] ^ *data32) + seed) ^ (secret_key[k] >> 1)) ^ secret_key[(key >> 6) & 0xf];
+                        k = (k + 1) & 0xf;
+                        key += seed + backup;
+                        ++data32;
+                    }
+                    byte* data8 = (byte*)data32;
+                    for (int i = data.Length & 3; i > 0; --i)
+                    {
+                        for (int s = 0; s < m_decode_table.Length; s++)
+                        {
+                            if (*data8 == m_decode_table[s])
+                            {
+                                *data8 = (byte)(s ^ m_scheme.EntryTailKey);
+                                break;
+                            }
+                        }
                         ++data8;
                     }
                 }
