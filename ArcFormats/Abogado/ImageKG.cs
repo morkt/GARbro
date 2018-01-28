@@ -48,7 +48,7 @@ namespace GameRes.Formats.Abogado
 
         public KgFormat ()
         {
-            Signatures = new uint[] { 0x0202474B, 0x0102474B };
+            Signatures = new uint[] { 0x0202474B, 0x0102474B, 0x0100474B };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
@@ -61,7 +61,7 @@ namespace GameRes.Formats.Abogado
                 BPP     = header[3] == 2 ? 24 : 8,
                 PaletteOffset   = header.ToInt32 (0xC),
                 DataOffset      = header.ToInt32 (0x10),
-                AlphaOffset     = header.ToInt32 (0x2C),
+                AlphaOffset     = header[2] == 2 ? header.ToInt32 (0x2C) : 0,
             };
         }
 
