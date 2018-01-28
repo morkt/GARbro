@@ -44,6 +44,8 @@ namespace GameRes.Formats.Unity
         DXT5 = 12,
         RGBA4444 = 13,
         BGRA32 = 14,
+        DXT1Crunched = 28,
+        DXT5Crunched = 29,
     }
 
     internal class Texture2D
@@ -205,6 +207,10 @@ namespace GameRes.Formats.Unity
                 pixels = ConvertRgba (m_texture.m_Data);
                 break;
 
+            case TextureFormat.ARGB4444:
+                pixels = ConvertArgb16 (m_texture.m_Data);
+                break;
+
             default:
                 throw new NotImplementedException (string.Format ("Not supported Unity Texture2D format '{0}'.", m_texture.m_TextureFormat));
             }
@@ -220,6 +226,21 @@ namespace GameRes.Formats.Unity
                 LittleEndian.Pack (x, data, i);
             }
             return data;
+        }
+
+        byte[] ConvertArgb16 (byte[] data)
+        {
+            var output = new byte[data.Length * 2];
+            int dst = 0;
+            for (int i = 0; i < data.Length; i += 2)
+            {
+                ushort p = LittleEndian.ToUInt16 (data, i);
+                output[dst++] = (byte)( (p        & 0xF) * 0x11);
+                output[dst++] = (byte)(((p >>  4) & 0xF) * 0x11);
+                output[dst++] = (byte)(((p >>  8) & 0xF) * 0x11);
+                output[dst++] = (byte)(((p >> 12) & 0xF) * 0x11);
+            }
+            return output;
         }
 
         byte[] ConvertRgba (byte[] data)
