@@ -32,34 +32,37 @@ using System.Linq;
 using System.Text;
 using GameRes.Formats.Strings;
 
+using SharpZip = ICSharpCode.SharpZipLib.Zip;
+
 namespace GameRes.Formats.PkWare
 {
     internal class ZipEntry : PackedEntry
     {
-        public readonly ZipArchiveEntry NativeEntry;
+        public readonly SharpZip.ZipEntry NativeEntry;
 
-        public ZipEntry (ZipArchiveEntry zip_entry)
+        public ZipEntry (SharpZip.ZipEntry zip_entry)
         {
             NativeEntry = zip_entry;
-            Name = zip_entry.FullName;
-            Type = FormatCatalog.Instance.GetTypeFromName (zip_entry.FullName);
+            Name = zip_entry.Name;
+            Type = FormatCatalog.Instance.GetTypeFromName (zip_entry.Name);
             IsPacked = true;
             // design decision of having 32bit entry sizes was made early during GameRes
             // library development. nevertheless, large files will be extracted correctly
             // despite the fact that size is reported as uint.MaxValue, because extraction is
             // performed by .Net framework based on real size value.
-            Size = (uint)Math.Min (zip_entry.CompressedLength, uint.MaxValue);
-            UnpackedSize = (uint)Math.Min (zip_entry.Length, uint.MaxValue);
-            // offset is unknown and reported as '0' for all files.
-            Offset = 0;
+            Size = (uint)Math.Min (zip_entry.CompressedSize, uint.MaxValue);
+            UnpackedSize = (uint)Math.Min (zip_entry.Size, uint.MaxValue);
+            Offset = zip_entry.Offset;
         }
     }
 
     internal class PkZipArchive : ArcFile
     {
-        readonly ZipArchive m_zip;
+        readonly SharpZip.ZipFile m_zip;
 
-        public PkZipArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, ZipArchive native)
+        public SharpZip.ZipFile Native { get { return m_zip; } }
+
+        public PkZipArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, SharpZip.ZipFile native)
             : base (arc, impl, dir)
         {
             m_zip = native;
@@ -72,7 +75,7 @@ namespace GameRes.Formats.PkWare
             if (!_zip_disposed)
             {
                 if (disposing)
-                    m_zip.Dispose();
+                    m_zip.Close();
                 _zip_disposed = true;
             }
             base.Dispose (disposing);
@@ -109,23 +112,29 @@ namespace GameRes.Formats.PkWare
 
         internal ArcFile OpenZipArchive (ArcView file, Stream input)
         {
-            var zip = new ZipArchive (input, ZipArchiveMode.Read, false, Encodings.cp932);
+            SharpZip.ZipConstants.DefaultCodePage = Properties.Settings.Default.ZIPEncodingCP;
+            var zip = new SharpZip.ZipFile (input);
             try
             {
-                var dir = zip.Entries.Where (z => !z.FullName.EndsWith ("/"))
-                    .Select (z => new ZipEntry (z) as Entry).ToList();
+                var files = zip.Cast<SharpZip.ZipEntry>().Where (z => !z.IsDirectory);
+                bool has_encrypted = files.Any (z => z.IsCrypted);
+                if (has_encrypted)
+                    zip.Password = QueryPassword (file);
+                var dir = files.Select (z => new ZipEntry (z) as Entry).ToList();
                 return new PkZipArchive (file, this, dir, zip);
             }
             catch
             {
-                zip.Dispose();
+                zip.Close();
                 throw;
             }
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            return ((ZipEntry)entry).NativeEntry.Open();
+            var zarc = (PkZipArchive)arc;
+            var zent = (ZipEntry)entry;
+            return zarc.Native.GetInputStream (zent.NativeEntry);
         }
 
         /// <summary>
@@ -154,6 +163,11 @@ namespace GameRes.Formats.PkWare
                 }
                 return -1;
             }
+        }
+
+        string QueryPassword (ArcView file)
+        {
+            return ""; // TODO
         }
 
         public override ResourceOptions GetDefaultOptions ()
