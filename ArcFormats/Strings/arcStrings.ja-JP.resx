@@ -1,0 +1,494 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AMIBaseArchive" xml:space="preserve">
+    <value>ベースとなるアーカイブを指定する</value>
+    <comment>Base archive</comment>
+  </data>
+  <data name="AMIBaseTooltip" xml:space="preserve">
+    <value>新しいアーカイブには、ベースとなるアーカイブのエントリも含まれます。</value>
+    <comment>New archive will also contain entries from the base archive.</comment>
+  </data>
+  <data name="AMIChooseBase" xml:space="preserve">
+    <value>ベースとなるアーカイブを選択してください。</value>
+    <comment>Select base archive</comment>
+  </data>
+  <data name="AMIDescription" xml:space="preserve">
+    <value>Amaterasu Translations Muv-Luv archive</value>
+    <comment>Amaterasu Translations Muv-Luv archive</comment>
+  </data>
+  <data name="AMINoFiles" xml:space="preserve">
+    <value>AMIアーカイブに適切なファイルは見つかりませんでした。</value>
+    <comment>No files suitable for AMI archive found.</comment>
+  </data>
+  <data name="ArcEncryptedNotice" xml:space="preserve">
+    <value>アーカイブコンテンツは暗号化されています。
+タイトルもしくは適切な暗号化方式を選択してください。</value>
+    <comment>Archive content is encrypted.
+Choose appropriate encryption scheme.</comment>
+  </data>
+  <data name="ArcNoEncryption" xml:space="preserve">
+    <value>暗号化なし</value>
+    <comment>no encryption</comment>
+  </data>
+  <data name="ArcReset" xml:space="preserve">
+    <value>リセット</value>
+    <comment>Reset</comment>
+  </data>
+  <data name="GRPDescription" xml:space="preserve">
+    <value>独自のイメージ形式</value>
+    <comment>âge proprietary image format</comment>
+  </data>
+  <data name="GSCDescription" xml:space="preserve">
+    <value>Liar-soft proprietary script format</value>
+    <comment>Liar-soft proprietary script format</comment>
+  </data>
+  <data name="INTCreationNotice" xml:space="preserve">
+    <value>暗号化アーカイブの作成は実装されていません。</value>
+    <comment>Encrypted archives creation is not implemented.</comment>
+  </data>
+  <data name="INTDescription" xml:space="preserve">
+    <value>CatSystem2 engine resource archive</value>
+    <comment>CatSystem2 engine resource archive</comment>
+  </data>
+  <data name="INTKeyRequirement" xml:space="preserve">
+    <value>数値鍵は32ビットの16進数でなければなりません。</value>
+    <comment>Numeric key should be a 32-bit hexadecimal integer</comment>
+  </data>
+  <data name="INTLabelNumericKey" xml:space="preserve">
+    <value>数値鍵</value>
+    <comment>Numeric key</comment>
+  </data>
+  <data name="INTNotice" xml:space="preserve">
+    <value>アーカイブフォルダは暗号化されています。</value>
+    <comment>Archive directory is encrypted.</comment>
+  </data>
+  <data name="KogadoDescription" xml:space="preserve">
+    <value>Kogado game engine resource archive</value>
+    <comment>Kogado game engine resource archive</comment>
+  </data>
+  <data name="LabelPassphrase" xml:space="preserve">
+    <value>パスフレーズ</value>
+    <comment>Passphrase</comment>
+  </data>
+  <data name="LabelScheme" xml:space="preserve">
+    <value>方式</value>
+    <comment>Scheme</comment>
+  </data>
+  <data name="LWGDescription" xml:space="preserve">
+    <value>Liar-soft image archive</value>
+    <comment>Liar-soft image archive</comment>
+  </data>
+  <data name="MsgAddingFile" xml:space="preserve">
+    <value>ファイルを追加中</value>
+    <comment>Adding file</comment>
+  </data>
+  <data name="MsgCalculatingChecksum" xml:space="preserve">
+    <value>チェックサムの計算中...</value>
+    <comment>Calculating checksum...</comment>
+  </data>
+  <data name="MsgCompressingIndex" xml:space="preserve">
+    <value>インデックスの圧縮中...</value>
+    <comment>Compressing index...</comment>
+  </data>
+  <data name="MsgCreationKeyRequired" xml:space="preserve">
+    <value>アーカイブ作成に必要な暗号鍵。</value>
+    <comment>Encryption key required for archive creation.</comment>
+  </data>
+  <data name="MsgEncNotImplemented" xml:space="preserve">
+    <value>暗号化メソッドが実装されていません。</value>
+    <comment>Encryption method not implemented</comment>
+  </data>
+  <data name="MsgExtensionTooLong" xml:space="preserve">
+    <value>ファイル名の拡張子が長すぎます。</value>
+    <comment>File name extension too long.</comment>
+  </data>
+  <data name="MsgFileNameTooLong" xml:space="preserve">
+    <value>ファイル名が長すぎます。</value>
+    <comment>File name is too long</comment>
+  </data>
+  <data name="MsgIllegalCharacters" xml:space="preserve">
+    <value>ファイル名に不正な文字が含まれています。</value>
+    <comment>File name contains illegal characters</comment>
+  </data>
+  <data name="MsgInvalidImageFormat" xml:space="preserve">
+    <value>{0}: 認識できないイメージ形式です。</value>
+    <comment>{0}: image format not recognized.</comment>
+  </data>
+  <data name="MsgInvalidVersion" xml:space="preserve">
+    <value>指定されたアーカイブversionが無効です。</value>
+    <comment>Invalid archive version specified.</comment>
+  </data>
+  <data name="MsgNoExtension" xml:space="preserve">
+    <value>ファイル名に拡張子がありません。</value>
+    <comment>File name without extension.</comment>
+  </data>
+  <data name="MsgTooManyFiles" xml:space="preserve">
+    <value>ファイル数がアーカイブの上限を超えています。</value>
+    <comment>Number of files exceedes archive limit.</comment>
+  </data>
+  <data name="MsgUpdatingIndex" xml:space="preserve">
+    <value>インデックスの更新中...</value>
+    <comment>Updating index...</comment>
+  </data>
+  <data name="MsgWritingIndex" xml:space="preserve">
+    <value>インデックスを作成中...</value>
+    <comment>Writing index...</comment>
+  </data>
+  <data name="NPACompressContents" xml:space="preserve">
+    <value>コンテンツを圧縮する</value>
+    <comment>Compress contents</comment>
+  </data>
+  <data name="NPADescription" xml:space="preserve">
+    <value>Nitro+ resource archive</value>
+    <comment>Nitro+ resource archive</comment>
+  </data>
+  <data name="NPAKeys" xml:space="preserve">
+    <value>暗号鍵
+（コンテンツが暗号化されていなくても必要です）</value>
+    <comment>Encryption keys
+(required even if contents is not encrypted)</comment>
+  </data>
+  <data name="NPASteinsGateDescription" xml:space="preserve">
+    <value>Nitro+ Steins;Gate resource archive</value>
+    <comment>Nitro+ Steins;Gate resource archive</comment>
+  </data>
+  <data name="NSADescription" xml:space="preserve">
+    <value>NScripter アーカイブ形式</value>
+    <comment>NScripter game engine resource archive</comment>
+  </data>
+  <data name="ONSArchiveType" xml:space="preserve">
+    <value>アーカイブタイプ</value>
+    <comment>Archive type</comment>
+  </data>
+  <data name="ONSCompression" xml:space="preserve">
+    <value>圧縮</value>
+    <comment>Compression</comment>
+  </data>
+  <data name="ONSCompressionNone" xml:space="preserve">
+    <value>圧縮なし</value>
+    <comment>None</comment>
+  </data>
+  <data name="PDDescription" xml:space="preserve">
+    <value>Flying Shine resource archive</value>
+    <comment>Flying Shine resource archive</comment>
+  </data>
+  <data name="PDScrambleContents" xml:space="preserve">
+    <value>コンテンツのスクランブル化</value>
+    <comment>Scramble contents</comment>
+  </data>
+  <data name="RPADescription" xml:space="preserve">
+    <value>Ren'Py game engine archive</value>
+    <comment>Ren'Py game engine archive</comment>
+  </data>
+  <data name="RPALabelKey" xml:space="preserve">
+    <value>32ビットの暗号鍵</value>
+    <comment>32-bit key</comment>
+  </data>
+  <data name="SCRDescription" xml:space="preserve">
+    <value>Amaterasu Translations Muv-Luv script file</value>
+    <comment>Amaterasu Translations Muv-Luv script file</comment>
+  </data>
+  <data name="SGLabelEncoding" xml:space="preserve">
+    <value>ファイル名エンコーディング</value>
+    <comment>Filename encoding</comment>
+  </data>
+  <data name="TooltipHex" xml:space="preserve">
+    <value>16進数</value>
+    <comment>Hex number</comment>
+  </data>
+  <data name="WARCLabelLength" xml:space="preserve">
+    <value>最大ファイル名の長さ
+（拡張子を含まない）</value>
+    <comment>Maximum file name length
+(not including extension)</comment>
+  </data>
+  <data name="XFLDescription" xml:space="preserve">
+    <value>Liar-soft game resource archive</value>
+    <comment>Liar-soft game resource archive</comment>
+  </data>
+  <data name="XP3CompressContents" xml:space="preserve">
+    <value>コンテンツを圧縮する</value>
+    <comment>Compress contents</comment>
+  </data>
+  <data name="XP3CompressHeader" xml:space="preserve">
+    <value>フォルダを圧縮する</value>
+    <comment>Compress directory</comment>
+  </data>
+  <data name="XP3Description" xml:space="preserve">
+    <value>KiriKiri game engine resource archive</value>
+    <comment>KiriKiri game engine resource archive</comment>
+  </data>
+  <data name="XP3LabelVersion" xml:space="preserve">
+    <value>Version</value>
+    <comment>Version</comment>
+  </data>
+  <data name="XP3RetainStructure" xml:space="preserve">
+    <value>フォルダ構造を保持する</value>
+    <comment>Retain directory structure</comment>
+  </data>
+  <data name="YPFDescription" xml:space="preserve">
+    <value>Yu-Ris game engine resource archive</value>
+    <comment>Yu-Ris game engine resource archive</comment>
+  </data>
+  <data name="YPFLabelKey" xml:space="preserve">
+    <value>8ビットの暗号鍵</value>
+    <comment>8-bit encryption key</comment>
+  </data>
+  <data name="YPFLabelVersion" xml:space="preserve">
+    <value>アーカイブ Version</value>
+    <comment>Archive version</comment>
+  </data>
+  <data name="YPFNotice" xml:space="preserve">
+    <value>アーカイブフォルダは暗号化されています。
+適切な暗号化方式を選択してください。</value>
+    <comment>Archive directory is encrypted.
+Choose appropriate encryption scheme.</comment>
+  </data>
+  <data name="LabelEncScheme" xml:space="preserve">
+    <value>暗号化方式</value>
+    <comment>Encryption scheme</comment>
+  </data>
+  <data name="DPKKeys" xml:space="preserve">
+    <value>暗号鍵</value>
+    <comment>Encryption keys</comment>
+  </data>
+  <data name="ArcDefault" xml:space="preserve">
+    <value>デフォルト</value>
+    <comment>Default</comment>
+  </data>
+  <data name="ArcHex32Bit" xml:space="preserve">
+    <value>32ビットの16進数</value>
+    <comment>32-bit hex number</comment>
+  </data>
+  <data name="KCAPDefault" xml:space="preserve">
+    <value>デフォルト</value>
+    <comment>Default</comment>
+  </data>
+  <data name="MBLNotice" xml:space="preserve">
+    <value>アーカイブはスクリプトにより暗号化されています。
+暗号化方式を選択するか、パスフレーズを入力してください。</value>
+    <comment>Archive contains encrypted scripts.
+Choose encryption scheme or enter a passphrase.</comment>
+  </data>
+  <data name="RCTChoose" xml:space="preserve">
+    <value>タイトルを選択するか、パスワードを入力してください。</value>
+    <comment>Choose title or enter a password</comment>
+  </data>
+  <data name="NSAChoose" xml:space="preserve">
+    <value>タイトルを選択するか、パスワードを入力してください。</value>
+    <comment>Choose title or enter a password</comment>
+  </data>
+  <data name="RPMEncryptedNotice" xml:space="preserve">
+    <value>ファイルはRPMアーカイブ形式に近いですが、
+暗号鍵の推測は失敗しました。
+適切な暗号化方式を選択します。</value>
+    <comment>File resembles RPM resource archive,
+but encryption key guess failed.
+Choose appropriate encryption scheme.</comment>
+  </data>
+  <data name="QLIEDefaultScheme" xml:space="preserve">
+    <value>デフォルトの暗号化方式を使用する</value>
+    <comment>Use default encryption scheme</comment>
+  </data>
+  <data name="INTChooseExe" xml:space="preserve">
+    <value>ゲームの実行ファイルを選択してください。</value>
+    <comment>Choose game executable file</comment>
+  </data>
+  <data name="INTExeButton" xml:space="preserve">
+    <value>EXE確認</value>
+    <comment>Check EXE</comment>
+  </data>
+  <data name="INTExeFiles" xml:space="preserve">
+    <value>実行ファイル</value>
+    <comment>Executable Files</comment>
+  </data>
+  <data name="INTMessage1" xml:space="preserve">
+    <value>「EXE確認」ボタンを押してゲーム実行ファイル内の暗号鍵を探してください。</value>
+    <comment>Press "Check EXE" button to look for key within game executable file.</comment>
+  </data>
+  <data name="INTMessage2" xml:space="preserve">
+    <value>アーカイブ暗号鍵を入力するか、または定義済みの暗号化方式を選択します。</value>
+    <comment>Alternatively, enter archive encryption key or choose one of the predefined encryption schemes.</comment>
+  </data>
+  <data name="INTKeyNotFound" xml:space="preserve">
+    <value>{0} 内に暗号鍵が見つかりません。</value>
+    <comment>Key not found within {0}.</comment>
+  </data>
+  <data name="ArcIgnoreEncryption" xml:space="preserve">
+    <value>暗号化を無視する</value>
+    <comment>Ignore encryption</comment>
+  </data>
+  <data name="ArcImageEncrypted" xml:space="preserve">
+    <value>イメージは暗号化されています。</value>
+    <comment>Image is encrypted.</comment>
+  </data>
+  <data name="MCGChoose" xml:space="preserve">
+    <value>タイトルを選択するか、暗号鍵を入力してください。</value>
+    <comment>Choose title or enter a key</comment>
+  </data>
+  <data name="MCGLabelKey" xml:space="preserve">
+    <value>8ビットの暗号鍵</value>
+    <comment>8-bit encryption key</comment>
+  </data>
+  <data name="MCAEncryptedNotice" xml:space="preserve">
+    <value>アーカイブコンテンツは暗号化されています。</value>
+    <comment>Archive content is encrypted.</comment>
+  </data>
+  <data name="YPFTryGuess" xml:space="preserve">
+    <value>推測してください。</value>
+    <comment>Try to guess</comment>
+  </data>
+  <data name="AGSMightBeEncrypted" xml:space="preserve">
+    <value>アーカイブコンテンツは暗号化されている可能性があります。
+適切な暗号化方式を選択してください。</value>
+    <comment>Archive contents might be encrypted,
+choose appropriate encryption scheme.</comment>
+  </data>
+  <data name="XP3EncryptedNotice" xml:space="preserve">
+    <value>アーカイブコンテンツは暗号化されています。
+タイトルもしくは適切な暗号化方式を選択してください。</value>
+    <comment>Archive content could be encrypted.
+Choose appropriate encryption scheme.</comment>
+  </data>
+  <data name="GALChoose" xml:space="preserve">
+    <value>タイトルを選択するか、暗号鍵を入力してください。</value>
+    <comment>Choose title or enter a key</comment>
+  </data>
+  <data name="GYUImageEncrypted" xml:space="preserve">
+    <value>イメージは暗号化されています。
+適切な暗号化方式を選択してください。</value>
+    <comment>Image is encrypted.
+Choose appropriate encryption scheme.</comment>
+  </data>
+  <data name="FJSYSNotice" xml:space="preserve">
+    <value>アーカイブはスクリプトにより暗号化されています。
+暗号化方式を選択するか、パスフレーズを入力してください。</value>
+    <comment>Archive contains encrypted scripts.
+Choose encryption scheme or enter a passphrase.</comment>
+  </data>
+  <data name="RCTApplyMask" xml:space="preserve">
+    <value>RC8ビットマップから透過データをロードする</value>
+    <comment>Load transparency data from RC8 bitmap</comment>
+  </data>
+  <data name="RCTOverlayFrames" xml:space="preserve">
+    <value>増分フレームを自動的に結合する</value>
+    <comment>Automatically combine incremental frames</comment>
+  </data>
+</root>
