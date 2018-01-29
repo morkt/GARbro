@@ -641,6 +641,7 @@
     <Compile Include="VnEngine\ArcAXR.cs" />
     <Compile Include="VnEngine\ImageZAW.cs" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Strings\arcStrings.ja-JP.resx" />
     <EmbeddedResource Include="Unity\strings.dat" />
     <None Include="WebP\Alpha.cs" />
     <None Include="WebP\Decoder.cs">

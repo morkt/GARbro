@@ -266,6 +266,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <EmbeddedResource Include="Strings\guiStrings.ja-JP.resx" />
     <EmbeddedResource Include="Strings\guiStrings.ko-KR.resx" />
     <EmbeddedResource Include="Strings\guiStrings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

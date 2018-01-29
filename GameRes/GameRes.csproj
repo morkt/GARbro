@@ -105,6 +105,7 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Strings\garStrings.ja-JP.resx" />
     <EmbeddedResource Include="Strings\garStrings.ko-KR.resx" />
     <EmbeddedResource Include="Strings\garStrings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
