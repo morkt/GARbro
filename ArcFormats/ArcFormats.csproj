@@ -306,7 +306,7 @@
     <Compile Include="Leaf\ImageLGF.cs" />
     <Compile Include="Leaf\ImagePX.cs" />
     <Compile Include="LiveMaker\ArcVF.cs" />
-    <Compile Include="ArcZIP.cs" />
+    <Compile Include="PkWare\ArcZIP.cs" />
     <Compile Include="AudioVOC.cs" />
     <Compile Include="AZSys\WidgetAZ.xaml.cs">
       <DependentUpon>WidgetAZ.xaml</DependentUpon>
