@@ -94,19 +94,26 @@ namespace GameRes.Formats.PalmTree
                 this.Position = pos;
             }
             count = BaseStream.Read (buffer, offset, count);
+            if (0 == count)
+                return count;
             long buf_pos = pos;
             long buf_end = buf_pos + count;
-            foreach (long ar_pos in m_ar_blocks)
+            int index = m_ar_blocks.BinarySearch (buf_pos-1);
+            if (index < 0)
+                index = ~index;
+            for (; index < m_ar_blocks.Count; ++index)
             {
+                var ar_pos = m_ar_blocks[index];
                 if (buf_end <= ar_pos)
                     break;
                 if (buf_pos >= ar_pos+2)
                     continue;
                 int signature_pos = (int)(ar_pos - pos);
                 if (signature_pos >= 0)
-                    buffer[offset+signature_pos  ] = (byte)'P';
-                if (signature_pos + 1 >= 0)
-                    buffer[offset+signature_pos+1] = (byte)'K';
+                    buffer[offset+signature_pos] = (byte)'P';
+                ++signature_pos;
+                if (signature_pos >= 0 && signature_pos < count)
+                    buffer[offset+signature_pos] = (byte)'K';
                 buf_pos = ar_pos + 2;
             }
             return count;
