@@ -20,7 +20,7 @@ namespace GameRes.Formats
         public LocalResourceSetting (string name)
         {
             Name = name;
-            Text = arcStrings.ResourceManager.GetString (name, arcStrings.Culture);
+            Text = arcStrings.ResourceManager.GetString (name, arcStrings.Culture) ?? name;
         }
     }
 
