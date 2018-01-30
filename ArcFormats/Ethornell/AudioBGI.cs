@@ -30,7 +30,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.BGI
 {
     [Export(typeof(AudioFormat))]
-    public class BgiAudio : OggAudio
+    public class BgiAudio : AudioFormat
     {
         public override string         Tag { get { return "BW"; } }
         public override string Description { get { return "BGI/Ethornell engine audio (Ogg/Vorbis)"; } }

@@ -30,7 +30,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.ShiinaRio
 {
     [Export(typeof(AudioFormat))]
-    public class OgvAudio : OggAudio
+    public class OgvAudio : AudioFormat
     {
         public override string         Tag { get { return "OGV"; } }
         public override string Description { get { return "ShiinaRio audio format (Ogg/Vorbis)"; } }

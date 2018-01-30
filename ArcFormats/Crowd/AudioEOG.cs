@@ -30,7 +30,7 @@ using System.IO;
 namespace GameRes.Formats.Crowd
 {
     [Export(typeof(AudioFormat))]
-    public class EogAudio : OggAudio
+    public class EogAudio : AudioFormat
     {
         public override string         Tag { get { return "EOG"; } }
         public override string Description { get { return "Crowd engine audio format (Ogg/Vorbis)"; } }
