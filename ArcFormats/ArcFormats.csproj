@@ -135,6 +135,8 @@
     <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="Emote\ImageDREF.cs" />
     <Compile Include="Groover\ArcPCG.cs" />
+    <Compile Include="HCSystem\ArcPAK.cs" />
+    <Compile Include="HCSystem\ImageOPF.cs" />
     <Compile Include="HuffmanCompression.cs" />
     <Compile Include="Ikura\ArcTAN.cs" />
     <Compile Include="Ikura\ImageGGA.cs" />
