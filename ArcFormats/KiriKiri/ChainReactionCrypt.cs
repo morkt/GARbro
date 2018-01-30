@@ -2,7 +2,7 @@
 //! \date       Mon Mar 07 15:59:47 2016
 //! \brief      KiriKiri XP3 ecryption filter used in some games.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -60,10 +60,14 @@ namespace GameRes.Formats.KiriKiri
         public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
             uint limit = GetEncryptionLimit (entry);
+            if (offset >= limit)
+                return;
+            count = Math.Min ((int)(limit - offset), count);
             uint key = entry.Hash;
-            for (int i = 0; i < count && offset < limit; ++i, ++offset)
+            int ofs = (int)offset;
+            for (int i = 0; i < count; ++i)
             {
-                values[pos+i] ^= (byte)(offset ^ (key >> (((int)offset & 3) << 3)));
+                values[pos+i] ^= (byte)((ofs+i) ^ (byte)(key >> (((ofs+i) & 3) << 3)));
             }
         }
 
@@ -75,7 +79,7 @@ namespace GameRes.Formats.KiriKiri
 //            Decrypt (entry, offset, values, pos, count);
         }
 
-        internal uint GetEncryptionLimit (Xp3Entry entry)
+        protected virtual uint GetEncryptionLimit (Xp3Entry entry)
         {
             uint limit;
             if (EncryptionThresholdMap != null && EncryptionThresholdMap.TryGetValue (entry.Hash, out limit))
@@ -234,20 +238,36 @@ namespace GameRes.Formats.KiriKiri
             StartupTjsNotEncrypted = true;
         }
 
-        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        protected override uint GetEncryptionLimit (Xp3Entry entry)
         {
-            uint limit = GetEncryptionLimit (entry);
+            uint limit = base.GetEncryptionLimit (entry);
             switch (limit)
             {
-            case 0: return;
-            case 1: limit = 0x100; break;
-            case 2: limit = 0x200; break;
-            case 3: limit = entry.Size; break;
+            case 0: return 0;
+            case 1: return 0x100;
+            case 2: return 0x200;
+            case 3: return entry.Size;
+            default: return limit;
             }
-            uint key = entry.Hash;
-            for (int i = 0; i < count && offset < limit; ++i, ++offset)
+        }
+    }
+
+    [Serializable]
+    public class ChocolatCrypt : ChainReactionCrypt
+    {
+        public ChocolatCrypt () : base ("plugins/list.txt")
+        {
+            StartupTjsNotEncrypted = true;
+        }
+
+        protected override uint GetEncryptionLimit (Xp3Entry entry)
+        {
+            uint limit = base.GetEncryptionLimit (entry);
+            switch (limit)
             {
-                values[pos+i] ^= (byte)(offset ^ (key >> (((int)offset & 3) << 3)));
+            case 0: return 0;
+            case 2: return entry.Size;
+            default: return 0x100;
             }
         }
     }
