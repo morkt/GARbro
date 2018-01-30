@@ -69,18 +69,14 @@ namespace GARbro.GUI
 
         internal static string GetOSVersion ()
         {
-            string id = Registry.GetValue (@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ReleaseId", "").ToString();
+            string id = Registry.GetValue (@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString();
             if (string.IsNullOrEmpty (id))
+                id = Environment.OSVersion.VersionString;
+            else
             {
-                id = Registry.GetValue (@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString();
-                if (string.IsNullOrEmpty (id))
-                    id = Environment.OSVersion.VersionString;
-                else
-                {
-                    string sp = Environment.OSVersion.ServicePack;
-                    if (!string.IsNullOrEmpty (sp))
-                        id += ' '+sp;
-                }
+                string sp = Environment.OSVersion.ServicePack;
+                if (!string.IsNullOrEmpty (sp))
+                    id += ' '+sp;
             }
             return id;
         }
