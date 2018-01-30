@@ -8,7 +8,7 @@
         <RowDefinition/>
         <RowDefinition/>
     </Grid.RowDefinitions>
-    <Label Content="{x:Static s:arcStrings.NSAChoose}" Grid.Row="0" HorizontalAlignment="Left"/>
+    <Label Content="{x:Static s:arcStrings.ArcTitleOrPassword}" Grid.Row="0" HorizontalAlignment="Left"/>
     <ComboBox Name="Title" ItemsSource="{Binding}"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=NSATitle, Mode=TwoWay}"
               SelectedValuePath="Key" DisplayMemberPath="Key" SelectionChanged="Title_SelectionChanged"

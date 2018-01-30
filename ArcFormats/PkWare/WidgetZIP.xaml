@@ -5,7 +5,7 @@
             xmlns:p="clr-namespace:GameRes.Formats.Properties"
             xmlns:zip="clr-namespace:GameRes.Formats.PkWare"
             Orientation="Vertical">
-    <Label Content="{x:Static s:arcStrings.ZIPChoose}" HorizontalAlignment="Left"/>
+    <Label Content="{x:Static s:arcStrings.ArcTitleOrPassword}" HorizontalAlignment="Left"/>
     <ComboBox Name="Title" Width="200" HorizontalAlignment="Left"
               ItemsSource="{Binding RelativeSource={RelativeSource Self}, Path=DataContext}"
               SelectedValue="{Binding ElementName=Password, Path=Text, Mode=TwoWay}" SelectedValuePath="Value"

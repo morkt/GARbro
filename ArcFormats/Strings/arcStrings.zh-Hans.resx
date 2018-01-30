@@ -317,10 +317,7 @@
     <value>压缩文件包含已加密的脚本。
 请选择加密方式或输入密码。</value>
   </data>
-  <data name="RCTChoose" xml:space="preserve">
-    <value>请选择游戏名称或输入密码</value>
-  </data>
-  <data name="NSAChoose" xml:space="preserve">
+  <data name="ArcTitleOrPassword" xml:space="preserve">
     <value>请选择游戏名称或输入密码</value>
   </data>
   <data name="RPMEncryptedNotice" xml:space="preserve">
@@ -394,8 +391,5 @@
   </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>压缩文件的内容已被加密。</value>
-  </data>
-  <data name="ZIPChoose" xml:space="preserve">
-    <value>请选择游戏名称或输入密码</value>
   </data>
 </root>

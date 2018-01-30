@@ -317,10 +317,7 @@ Choose appropriate encryption scheme.</value>
     <value>Archive contains encrypted scripts.
 Choose encryption scheme or enter a passphrase.</value>
   </data>
-  <data name="RCTChoose" xml:space="preserve">
-    <value>Choose title or enter a password</value>
-  </data>
-  <data name="NSAChoose" xml:space="preserve">
+  <data name="ArcTitleOrPassword" xml:space="preserve">
     <value>Choose title or enter a password</value>
   </data>
   <data name="RPMEncryptedNotice" xml:space="preserve">
@@ -391,9 +388,6 @@ Choose encryption scheme or enter a passphrase.</value>
   </data>
   <data name="RCTOverlayFrames" xml:space="preserve">
     <value>Automatically combine incremental frames</value>
-  </data>
-  <data name="ZIPChoose" xml:space="preserve">
-    <value>Choose title or enter a password</value>
   </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>Archive content is encrypted.</value>

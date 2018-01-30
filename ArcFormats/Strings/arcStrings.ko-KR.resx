@@ -317,10 +317,7 @@
     <value>아카이브가 암호화된 스크립트를 포함함.
 암호체계를 고르거나 암호를 입력하세요.</value>
   </data>
-  <data name="RCTChoose" xml:space="preserve">
-    <value>제목을 선택하거나 암호를 입력하세요</value>
-  </data>
-  <data name="NSAChoose" xml:space="preserve">
+  <data name="ArcTitleOrPassword" xml:space="preserve">
     <value>제목을 선택하거나 암호를 입력하세요</value>
   </data>
   <data name="RPMEncryptedNotice" xml:space="preserve">
@@ -390,9 +387,6 @@
   <data name="RCTOverlayFrames" xml:space="preserve">
     <value>Automatically combine incremental frames</value>
     <comment>translation pending</comment>
-  </data>
-  <data name="ZIPChoose" xml:space="preserve">
-    <value>제목을 선택하거나 암호를 입력하세요</value>
   </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>아카이브 내용이 암호화됨.</value>

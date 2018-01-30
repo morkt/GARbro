@@ -387,11 +387,7 @@ Choose appropriate encryption scheme.</comment>
     <comment>Archive contains encrypted scripts.
 Choose encryption scheme or enter a passphrase.</comment>
   </data>
-  <data name="RCTChoose" xml:space="preserve">
-    <value>タイトルを選択するか、パスワードを入力してください。</value>
-    <comment>Choose title or enter a password</comment>
-  </data>
-  <data name="NSAChoose" xml:space="preserve">
+  <data name="ArcTitleOrPassword" xml:space="preserve">
     <value>タイトルを選択するか、パスワードを入力してください。</value>
     <comment>Choose title or enter a password</comment>
   </data>
@@ -490,10 +486,6 @@ Choose encryption scheme or enter a passphrase.</comment>
   <data name="RCTOverlayFrames" xml:space="preserve">
     <value>増分フレームを自動的に結合する</value>
     <comment>Automatically combine incremental frames</comment>
-  </data>
-  <data name="ZIPChoose" xml:space="preserve">
-    <value>タイトルを選択するか、パスワードを入力してください。</value>
-    <comment>Choose title or enter a password</comment>
   </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>アーカイブコンテンツは暗号化されています。</value>

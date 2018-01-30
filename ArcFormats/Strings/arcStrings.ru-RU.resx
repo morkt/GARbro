@@ -155,6 +155,9 @@
   <data name="ArcReset" xml:space="preserve">
     <value>Сбросить</value>
   </data>
+  <data name="ArcTitleOrPassword" xml:space="preserve">
+    <value>Выберите наименование или введите пароль</value>
+  </data>
   <data name="DPKKeys" xml:space="preserve">
     <value>Ключи шифрования</value>
   </data>
@@ -273,9 +276,6 @@
     <value>Ключи шифрования
 (требуются даже если содержимое не шифруется)</value>
   </data>
-  <data name="NSAChoose" xml:space="preserve">
-    <value>Выберите наименование или введите пароль</value>
-  </data>
   <data name="ONSArchiveType" xml:space="preserve">
     <value>Тип архива</value>
   </data>
@@ -293,9 +293,6 @@
   </data>
   <data name="RCTApplyMask" xml:space="preserve">
     <value>Подгружать прозрачность из одноимённого RC8 файла</value>
-  </data>
-  <data name="RCTChoose" xml:space="preserve">
-    <value>Выберите наименование или введите пароль</value>
   </data>
   <data name="RCTOverlayFrames" xml:space="preserve">
     <value>Автоматически объединять мозаичные изображения</value>
@@ -346,9 +343,6 @@
   </data>
   <data name="YPFTryGuess" xml:space="preserve">
     <value>Попытаться подобрать</value>
-  </data>
-  <data name="ZIPChoose" xml:space="preserve">
-    <value>Выберите наименование или введите пароль</value>
   </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>Содержимое архива зашифровано.</value>

@@ -180,6 +180,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Choose title or enter a password.
+        /// </summary>
+        public static string ArcTitleOrPassword {
+            get {
+                return ResourceManager.GetString("ArcTitleOrPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encryption keys.
         /// </summary>
         public static string DPKKeys {
@@ -589,15 +598,6 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Choose title or enter a password.
-        /// </summary>
-        public static string NSAChoose {
-            get {
-                return ResourceManager.GetString("NSAChoose", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to NScripter game engine resource archive.
         /// </summary>
         public static string NSADescription {
@@ -666,15 +666,6 @@ namespace GameRes.Formats.Strings {
         public static string RCTApplyMask {
             get {
                 return ResourceManager.GetString("RCTApplyMask", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Choose title or enter a password.
-        /// </summary>
-        public static string RCTChoose {
-            get {
-                return ResourceManager.GetString("RCTChoose", resourceCulture);
             }
         }
         
@@ -860,15 +851,6 @@ namespace GameRes.Formats.Strings {
         public static string YPFTryGuess {
             get {
                 return ResourceManager.GetString("YPFTryGuess", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Choose title or enter a password.
-        /// </summary>
-        public static string ZIPChoose {
-            get {
-                return ResourceManager.GetString("ZIPChoose", resourceCulture);
             }
         }
         
