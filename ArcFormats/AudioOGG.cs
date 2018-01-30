@@ -27,6 +27,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Utility;
 using NVorbis;
 
 namespace GameRes.Formats
@@ -124,16 +125,19 @@ namespace GameRes.Formats
     }
 
     [Export(typeof(AudioFormat))]
-    public class OggAudio : AudioFormat
+    public sealed class OggAudio : AudioFormat
     {
         public override string         Tag { get { return "OGG"; } }
         public override string Description { get { return "Ogg/Vorbis audio format"; } }
         public override uint     Signature { get { return 0x5367674f; } } // 'OggS'
         public override bool      CanWrite { get { return false; } }
 
+        LocalResourceSetting FixCrc = new LocalResourceSetting ("OGGFixCrc");
+
         public OggAudio ()
         {
             Signatures = new uint[] { 0x5367674F, 0 };
+            Settings = new[] { FixCrc };
         }
 
         public override SoundInput TryOpen (IBinaryStream file)
@@ -169,11 +173,98 @@ namespace GameRes.Formats
             }
             else if (file.Signature != this.Signature)
                 return null;
+            if (FixCrc.Get<bool>())
+                input = new SeekableStream (new OggRestoreStream (input));
             return new OggInput (input);
         }
 
         public static AudioFormat Instance { get { return s_OggFormat.Value; } }
 
         static readonly ResourceInstance<AudioFormat> s_OggFormat = new ResourceInstance<AudioFormat> ("OGG");
+    }
+
+    /// <summary>
+    /// Restore CRC checksums of the OGG stream pages.
+    /// </summary>
+    internal class OggRestoreStream : InputProxyStream
+    {
+        bool                m_eof;
+        bool                m_ogg_ended;
+
+        byte[]              m_page = new byte[0x10000];
+        int                 m_page_pos = 0;
+        int                 m_page_length = 0;
+
+        public override bool CanSeek { get { return false; } }
+
+        public OggRestoreStream (Stream input) : base (input)
+        {
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            int total_read = 0;
+            while (count > 0 && !m_eof)
+            {
+                if (m_page_pos == m_page_length)
+                {
+                    if (m_ogg_ended)
+                    {
+                        int read = BaseStream.Read (buffer, offset, count);
+                        total_read += read;
+                        m_eof = 0 == read;
+                        break;
+                    }
+                    NextPage();
+                }
+                if (m_eof)
+                    break;
+                int available = Math.Min (m_page_length - m_page_pos, count);
+                Buffer.BlockCopy (m_page, m_page_pos, buffer, offset, available);
+                m_page_pos += available;
+                offset += available;
+                count -= available;
+                total_read += available;
+            }
+            return total_read;
+        }
+
+        void NextPage ()
+        {
+            m_page_pos = 0;
+            m_page_length = BaseStream.Read (m_page, 0, 0x1B);
+            if (0 == m_page_length)
+            {
+                m_eof = true;
+                return;
+            }
+            if (m_page_length < 0x1B || !m_page.AsciiEqual ("OggS"))
+            {
+                m_ogg_ended = true;
+                return;
+            }
+            int segment_count = m_page[0x1A];
+            m_page[0x16] = 0;
+            m_page[0x17] = 0;
+            m_page[0x18] = 0;
+            m_page[0x19] = 0;
+            if (segment_count != 0)
+            {
+                int table_length = BaseStream.Read (m_page, 0x1B, segment_count);
+                m_page_length += table_length;
+                if (table_length != segment_count)
+                {
+                    m_ogg_ended = true;
+                    return;
+                }
+                int segments_length = 0;
+                int segment_table = 0x1B;
+                for (int i = 0; i < segment_count; ++i)
+                    segments_length += m_page[segment_table++];
+                m_page_length += BaseStream.Read (m_page, 0x1B+segment_count, segments_length);
+            }
+            uint crc = Crc32Normal.UpdateCrc (0, m_page, 0, m_page_length);
+            LittleEndian.Pack (crc, m_page, 0x16);
+        }
     }
 }

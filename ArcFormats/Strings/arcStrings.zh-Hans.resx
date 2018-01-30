@@ -392,4 +392,8 @@
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>压缩文件的内容已被加密。</value>
   </data>
+  <data name="OGGFixCrc" xml:space="preserve">
+    <value>Fix Ogg files checksums</value>
+    <comment>Translation pending</comment>
+  </data>
 </root>

@@ -729,5 +729,17 @@ namespace GameRes.Formats.Properties {
                 this["ZIPPassword"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool OGGFixCrc {
+            get {
+                return ((bool)(this["OGGFixCrc"]));
+            }
+            set {
+                this["OGGFixCrc"] = value;
+            }
+        }
     }
 }

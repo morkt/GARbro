@@ -391,4 +391,8 @@
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>아카이브 내용이 암호화됨.</value>
   </data>
+  <data name="OGGFixCrc" xml:space="preserve">
+    <value>Fix Ogg files checksums</value>
+    <comment>Translation pending</comment>
+  </data>
 </root>

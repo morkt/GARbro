@@ -607,6 +607,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Fix Ogg files checksums.
+        /// </summary>
+        public static string OGGFixCrc {
+            get {
+                return ResourceManager.GetString("OGGFixCrc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive type.
         /// </summary>
         public static string ONSArchiveType {

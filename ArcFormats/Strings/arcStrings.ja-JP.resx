@@ -491,4 +491,8 @@ Choose encryption scheme or enter a passphrase.</comment>
     <value>アーカイブコンテンツは暗号化されています。</value>
     <comment>Archive content is encrypted.</comment>
   </data>
+  <data name="OGGFixCrc" xml:space="preserve">
+    <value>Fix Ogg files checksums</value>
+    <comment>Translation pending</comment>
+  </data>
 </root>
