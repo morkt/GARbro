@@ -862,5 +862,23 @@ namespace GameRes.Formats.Strings {
                 return ResourceManager.GetString("YPFTryGuess", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose title or enter a password.
+        /// </summary>
+        public static string ZIPChoose {
+            get {
+                return ResourceManager.GetString("ZIPChoose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archive content is encrypted..
+        /// </summary>
+        public static string ZIPEncryptedNotice {
+            get {
+                return ResourceManager.GetString("ZIPEncryptedNotice", resourceCulture);
+            }
+        }
     }
 }

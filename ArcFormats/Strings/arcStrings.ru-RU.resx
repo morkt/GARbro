@@ -347,4 +347,10 @@
   <data name="YPFTryGuess" xml:space="preserve">
     <value>Попытаться подобрать</value>
   </data>
+  <data name="ZIPChoose" xml:space="preserve">
+    <value>Выберите наименование или введите пароль</value>
+  </data>
+  <data name="ZIPEncryptedNotice" xml:space="preserve">
+    <value>Содержимое архива зашифровано.</value>
+  </data>
 </root>

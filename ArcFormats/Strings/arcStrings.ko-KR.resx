@@ -391,4 +391,10 @@
     <value>Automatically combine incremental frames</value>
     <comment>translation pending</comment>
   </data>
+  <data name="ZIPChoose" xml:space="preserve">
+    <value>제목을 선택하거나 암호를 입력하세요</value>
+  </data>
+  <data name="ZIPEncryptedNotice" xml:space="preserve">
+    <value>아카이브 내용이 암호화됨.</value>
+  </data>
 </root>

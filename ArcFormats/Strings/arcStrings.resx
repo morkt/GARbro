@@ -392,4 +392,10 @@ Choose encryption scheme or enter a passphrase.</value>
   <data name="RCTOverlayFrames" xml:space="preserve">
     <value>Automatically combine incremental frames</value>
   </data>
+  <data name="ZIPChoose" xml:space="preserve">
+    <value>Choose title or enter a password</value>
+  </data>
+  <data name="ZIPEncryptedNotice" xml:space="preserve">
+    <value>Archive content is encrypted.</value>
+  </data>
 </root>

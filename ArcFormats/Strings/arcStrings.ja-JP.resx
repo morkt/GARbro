@@ -491,4 +491,12 @@ Choose encryption scheme or enter a passphrase.</comment>
     <value>増分フレームを自動的に結合する</value>
     <comment>Automatically combine incremental frames</comment>
   </data>
+  <data name="ZIPChoose" xml:space="preserve">
+    <value>タイトルを選択するか、パスワードを入力してください。</value>
+    <comment>Choose title or enter a password</comment>
+  </data>
+  <data name="ZIPEncryptedNotice" xml:space="preserve">
+    <value>アーカイブコンテンツは暗号化されています。</value>
+    <comment>Archive content is encrypted.</comment>
+  </data>
 </root>

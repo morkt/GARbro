@@ -83,6 +83,12 @@ namespace GameRes.Formats.PkWare
         #endregion
     }
 
+    [Serializable]
+    public class ZipScheme : ResourceScheme
+    {
+        public Dictionary<string, string> KnownKeys;
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class ZipOpener : ArchiveFormat
     {
@@ -167,7 +173,8 @@ namespace GameRes.Formats.PkWare
 
         string QueryPassword (ArcView file)
         {
-            return ""; // TODO
+            var options = Query<ZipOptions> (arcStrings.ZIPEncryptedNotice);
+            return options.Password;
         }
 
         public override ResourceOptions GetDefaultOptions ()
@@ -184,7 +191,20 @@ namespace GameRes.Formats.PkWare
             return new ZipOptions {
                 CompressionLevel = Properties.Settings.Default.ZIPCompression,
                 FileNameEncoding = enc,
+                Password = Properties.Settings.Default.ZIPPassword,
             };
+        }
+
+        public override ResourceOptions GetOptions (object widget)
+        {
+            if (widget is GUI.WidgetZIP)
+                Properties.Settings.Default.ZIPPassword = ((GUI.WidgetZIP)widget).Password.Text;
+            return GetDefaultOptions();
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetZIP (DefaultScheme.KnownKeys);
         }
 
         // TODO: GUI widget for options
@@ -209,11 +229,20 @@ namespace GameRes.Formats.PkWare
                 }
             }
         }
+
+        ZipScheme DefaultScheme = new ZipScheme { KnownKeys = new Dictionary<string, string>() };
+
+        public override ResourceScheme Scheme
+        {
+            get { return DefaultScheme; }
+            set { DefaultScheme = (ZipScheme)value; }
+        }
     }
 
     public class ZipOptions : ResourceOptions
     {
         public CompressionLevel CompressionLevel { get; set; }
         public         Encoding FileNameEncoding { get; set; }
+        public           string         Password { get; set; }
     }
 }
