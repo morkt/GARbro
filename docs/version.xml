@@ -25,9 +25,17 @@ New formats:
     </FormatsData>
     <FormatsData>
         <FileVersion>101</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
+        <Url>https://github.com/morkt/GARbro/raw/6c0f4657ac22b5cf038c4f71f7caf148a3b603d2/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.37.1617"/>
+            <Assembly Name="GameRes" Version="1.4.26.238"/>
+        </Requires>
+    </FormatsData>
+    <FormatsData>
+        <FileVersion>102</FileVersion>
+        <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
+        <Requires>
+            <Assembly Name="ArcFormats" Version="1.2.38.1643"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>
