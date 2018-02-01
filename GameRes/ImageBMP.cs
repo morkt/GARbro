@@ -183,9 +183,11 @@ namespace GameRes
                     {
                         return ReadBitmapBGRA (file, info);
                     }
-                    else if (0x18 == info.BPP && (info.ImageLength + width_x_height) == file.Length)
+                    else if (0x18 == info.BPP)
                     {
-                        return ReadBitmapWithAlpha (file, info);
+                        uint length_with_alpha = info.ImageLength + width_x_height;
+                        if (length_with_alpha == file.Length || length_with_alpha + info.Width == file.Length)
+                            return ReadBitmapWithAlpha (file, info);
                     }
                 }
             }
