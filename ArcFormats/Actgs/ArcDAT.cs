@@ -125,10 +125,7 @@ namespace GameRes.Formats.Actgs
                 var input = arc.File.CreateStream (entry.Offset+12, packed_size);
                 return new LzssStream (input);
             }
-            uint length = Math.Min (entry.Size, 0x20u);
-            var header = new byte[length];
-            arc.File.View.Read (entry.Offset, header, 0, length);
-            Decrypt (header, 0, (int)length, actarc.Key);
+            var header = ReadEntryHeader (actarc, entry);
             if (entry.Size <= 0x20)
                 return new BinMemoryStream (header, entry.Name);
             var rest = arc.File.CreateStream (entry.Offset+0x20, entry.Size-0x20);
@@ -148,6 +145,14 @@ namespace GameRes.Formats.Actgs
             {
                 data[index+i] ^= key[i % key.Length];
             }
+        }
+
+        internal byte[] ReadEntryHeader (ActressArchive arc, Entry entry)
+        {
+            uint length = Math.Min (entry.Size, 0x20u);
+            var header = arc.File.View.ReadBytes (entry.Offset, length);
+            Decrypt (header, 0, header.Length, arc.Key);
+            return header;
         }
 
         public override ResourceScheme Scheme
