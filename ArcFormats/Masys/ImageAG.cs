@@ -135,7 +135,7 @@ namespace GameRes.Formats.Megu
 
         public void Unpack ()
         {
-            int v20 = 1;
+            int bit_mask = 1;
             int src1 = 0;
             uint v25 = LittleEndian.ToUInt32 (in1, src1);
             src1 += 4;
@@ -166,7 +166,7 @@ namespace GameRes.Formats.Megu
                 int dst = y * stride;
                 for (int x = 0; x < stride; x += m_pixel_size)
                 {
-                    if (0 != (v20 & v25))
+                    if (0 != (bit_mask & v25))
                     {
                         B = (byte)(v21 >> v19);
                         v19 += 8;
@@ -214,14 +214,14 @@ namespace GameRes.Formats.Megu
                             src3 += 4;
                         }
                     }
-                    v20 <<= 1;
-                    if (0 == v20)
+                    bit_mask <<= 1;
+                    if (0 == bit_mask)
                     {
                         v25 = LittleEndian.ToUInt32 (in1, src1);
                         src1 += 4;
-                        v20 = 1;
+                        bit_mask = 1;
                     }
-                    if (0 != (v20 & v25))
+                    if (0 != (bit_mask & v25))
                     {
                         G = (byte)(v21 >> v19);
                         v19 += 8;
@@ -269,14 +269,14 @@ namespace GameRes.Formats.Megu
                             src3 += 4;
                         }
                     }
-                    v20 <<= 1;
-                    if (0 == v20)
+                    bit_mask <<= 1;
+                    if (0 == bit_mask)
                     {
                         v25 = LittleEndian.ToUInt32 (in1, src1);
                         src1 += 4;
-                        v20 = 1;
+                        bit_mask = 1;
                     }
-                    if (0 != (v20 & v25))
+                    if (0 != (bit_mask & v25))
                     {
                         R = (byte)(v21 >> v19);
                         v19 += 8;
@@ -324,12 +324,12 @@ namespace GameRes.Formats.Megu
                             src3 += 4;
                         }
                     }
-                    v20 <<= 1;
-                    if (0 == v20)
+                    bit_mask <<= 1;
+                    if (0 == bit_mask)
                     {
                         v25 = LittleEndian.ToUInt32 (in1, src1);
                         src1 += 4;
-                        v20 = 1;
+                        bit_mask = 1;
                     }
                     m_output[dst+x] = B;
                     m_output[dst+x+1] = G;
