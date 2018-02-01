@@ -66,6 +66,7 @@ namespace GameRes.Formats.Ikura
             var info = new TanMetaData {
                 Width  = file.View.ReadUInt16 (index_pos),
                 Height = file.View.ReadUInt16 (index_pos+2),
+                BPP    = 8,
                 DataOffset = index_pos + 4,
             };
             index_pos += 0x404;
