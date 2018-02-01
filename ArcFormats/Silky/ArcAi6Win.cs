@@ -38,7 +38,7 @@ namespace GameRes.Formats.Silky
         public override string         Tag { get { return "ARC/AI6WIN"; } }
         public override string Description { get { return "AI6WIN engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public Ai6Opener ()
@@ -69,7 +69,8 @@ namespace GameRes.Formats.Silky
                 for (int j = 0; j < name_length; ++j)
                 {
                     name_buffer[j] -= key--;
-                    if (VFS.InvalidFileNameChars.Contains ((char)name_buffer[j])) // XXX
+                    char c = (char)name_buffer[j];
+                    if (VFS.InvalidFileNameChars.Contains (c) && c != '/')
                         return null;
                 }
                 var name = Encodings.cp932.GetString (name_buffer, 0, name_length);
