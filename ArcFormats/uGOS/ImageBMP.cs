@@ -46,7 +46,7 @@ namespace GameRes.Formats.uGOS
         public DetBmpFormat ()
         {
             Extensions = new string[] { "bmp" };
-            Signatures = new uint[] { 0x206546, 0x186546, 0x01186446, 0 };
+            Signatures = new uint[] { 0x206546, 0x186546, 0x01186446, 0x186446, 0 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -71,7 +71,7 @@ namespace GameRes.Formats.uGOS
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            using (var reader = new Reader (file, info))
+            using (var reader = new Reader (file, (DetBmpMetaData)info))
             {
                 reader.Unpack();
                 return ImageData.CreateFlipped (info, reader.Format, null, reader.Data, reader.Stride);
@@ -95,7 +95,7 @@ namespace GameRes.Formats.uGOS
             public byte[]        Data { get { return m_output; } }
             public int         Stride { get; private set; }
 
-            public Reader (IBinaryStream input, ImageMetaData info)
+            public Reader (IBinaryStream input, DetBmpMetaData info)
             {
                 m_input = input;
                 m_width = (int)info.Width;
@@ -300,28 +300,25 @@ namespace GameRes.Formats.uGOS
             byte sub_415530 (int a3)
             {
                 m_bits &= 0xFF;
-                uint v3 = m_bits;
                 int v4 = byte_4CBA80[m_bits];
                 int v5 = a3 - v4;
                 uint alpha; // eax@5
-                if (a3 - v4 <= 0)
+                if (v5 <= 0)
                 {
-                    alpha = v3 >> (8 - a3);
-                    m_bits = (byte)(v3 << a3);
+                    alpha = m_bits >> (8 - a3);
+                    m_bits = (m_bits << a3) & 0xFF;
                 }
                 else
                 {
-                    int v6 = (int)(v3 >> (8 - v4));
-                    if ((uint)v5 > 8)
+                    int v6 = (int)(m_bits >> (8 - v4));
+                    if (v5 > 8)
                     {
-                        uint v7 = ((uint)(v5 - 9) >> 3) + 1;
-                        do
+                        int count = ((v5 - 9) >> 3) + 1;
+                        while (count --> 0)
                         {
                             v6 = m_input.ReadUInt8() + (v6 << 8);
                             v5 -= 8;
-                            --v7;
                         }
-                        while (0 != v7);
                     }
                     m_bits = m_input.ReadUInt8();
                     alpha = (uint)((v6 << v5) + (m_bits >> (8 - v5)));
