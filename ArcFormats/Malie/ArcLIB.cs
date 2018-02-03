@@ -134,7 +134,7 @@ namespace GameRes.Formats.Malie
         public DatOpener ()
         {
             Extensions = new string[] { "lib", "dat" };
-            Signatures = new uint[] { 0, 0x3F503FB1, 0xC237434E, 0x8CD11522 };
+            Signatures = new uint[] { 0, 0x3F503FB1, 0xC237434E, 0x8CD11522, 0x09D411A7 };
         }
 
         public override ArcFile TryOpen (ArcView file)
