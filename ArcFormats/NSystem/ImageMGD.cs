@@ -138,7 +138,7 @@ namespace GameRes.Formats.NSystem
                 if (count < 0)
                 {
                     count = (count & 0x7FFF) + 1;
-                    byte a = (byte)~m_input.ReadUInt8();
+                    byte a = m_input.ReadUInt8();
                     length--;
                     for (int i = 0; i < count; ++i)
                     {
@@ -150,7 +150,7 @@ namespace GameRes.Formats.NSystem
                 {
                     for (int i = 0; i < count; ++i)
                     {
-                        m_output[dst] = (byte)~m_input.ReadUInt8();
+                        m_output[dst] = m_input.ReadUInt8();
                         dst += 4;
                     }
                     length -= count;
