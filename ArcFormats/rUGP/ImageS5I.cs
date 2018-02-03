@@ -29,6 +29,11 @@ using System.Windows.Media;
 
 namespace GameRes.Formats.Rugp
 {
+    internal class S5iMetaData : RioMetaData
+    {
+        public int  Schema;
+    }
+
     [Export(typeof(ImageFormat))]
     public class S5iFormat : ImageFormat
     {
@@ -47,7 +52,7 @@ namespace GameRes.Formats.Rugp
             if ("CS5i" != class_ref)
                 return null;
             file.Seek (8, SeekOrigin.Current);
-            return new RioMetaData
+            return new S5iMetaData
             {
                 Width   = file.ReadUInt16(),
                 Height  = file.ReadUInt16(),
@@ -59,7 +64,7 @@ namespace GameRes.Formats.Rugp
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = (RioMetaData)info;
+            var meta = (S5iMetaData)info;
             file.Position = meta.ObjectOffset + 0x14;
             int size;
             if (meta.Schema != 0)
