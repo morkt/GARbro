@@ -120,6 +120,13 @@ namespace GameRes.Formats.NSystem
             return new FjsysOptions { MsdPassword = Properties.Settings.Default.FJSYSPassword };
         }
 
+        public override ResourceOptions GetOptions (object widget)
+        {
+            if (widget is GUI.WidgetMSD)
+                Properties.Settings.Default.FJSYSPassword = ((GUI.WidgetMSD)widget).Password.Text;
+            return GetDefaultOptions();
+        }
+
         public override object GetAccessWidget ()
         {
             return new GUI.WidgetMSD();

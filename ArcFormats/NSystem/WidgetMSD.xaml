@@ -3,9 +3,9 @@
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
             xmlns:p="clr-namespace:GameRes.Formats.Properties">
     <ComboBox Name="Title" ItemsSource="{Binding}"
-              SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=FJSYSPassword, Mode=OneWay}"
-              SelectedValuePath="Value" DisplayMemberPath="Key" SelectionChanged="Title_SelectionChanged"
+              SelectedValue="{Binding ElementName=Password, Path=Text, Mode=TwoWay}"
+              SelectedValuePath="Value" DisplayMemberPath="Key"
               Width="250" HorizontalAlignment="Left"/>
-    <TextBox Name="Password" Text="{Binding Source={x:Static p:Settings.Default}, Path=FJSYSPassword, Mode=TwoWay}"
+    <TextBox Name="Password" Text="{Binding Source={x:Static p:Settings.Default}, Path=FJSYSPassword, Mode=OneWay}"
              Width="250" HorizontalAlignment="Left" Margin="0,5,0,0"/>
 </StackPanel>
