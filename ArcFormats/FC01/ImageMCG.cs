@@ -39,6 +39,7 @@ namespace GameRes.Formats.FC01
         public int DataOffset;
         public int PackedSize;
         public int Version;
+        public int ChannelsCount;
     }
 
     internal class McgOptions : ResourceOptions
@@ -79,7 +80,7 @@ namespace GameRes.Formats.FC01
             if (header_size < 0x40)
                 return null;
             int bpp = header.ToInt32 (0x24);
-            if (24 != bpp && 8 != bpp)
+            if (24 != bpp && 8 != bpp && 16 != bpp)
                 throw new NotSupportedException ("Not supported MCG image bitdepth");
             int packed_size = header.ToInt32 (0x38);
             return new McgMetaData
@@ -92,6 +93,7 @@ namespace GameRes.Formats.FC01
                 DataOffset = header_size,
                 PackedSize = packed_size,
                 Version = version,
+                ChannelsCount = header.ToInt32 (0x34),
             };
         }
 
@@ -175,6 +177,8 @@ namespace GameRes.Formats.FC01
                 Stride = (Stride + 3) & -4;
             if (24 == m_info.BPP)
                 Format = PixelFormats.Bgr24;
+            else if (16 == m_info.BPP)
+                Format = PixelFormats.Bgr555;
             else if (8 == m_info.BPP)
                 Format = PixelFormats.Indexed8;
             else
@@ -194,6 +198,18 @@ namespace GameRes.Formats.FC01
             {
                 Palette = ImageFormat.ReadPalette (m_file.AsStream);
                 input_size -= 0x400;
+            }
+            else if (m_info.ChannelsCount > 0)
+            {
+                var masks = new int[m_info.ChannelsCount];
+                for (int i = 0; i < masks.Length; ++i)
+                    masks[i] = m_file.ReadInt32();
+                if (16 == m_info.BPP && 3 == m_info.ChannelsCount)
+                {
+                    if (0x7E0 == masks[1])
+                        Format = PixelFormats.Bgr565;
+                }
+                input_size -= m_info.ChannelsCount * 4;
             }
             m_input = m_file.ReadBytes (input_size);
             if (m_input.Length != input_size)
