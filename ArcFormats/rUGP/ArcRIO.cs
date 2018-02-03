@@ -55,6 +55,7 @@ namespace GameRes.Formats.Rugp
             { "CIcon",      "image" },
             { "CRsa",       "script" },
             { "CVmFunc",    "script" },
+            { "CWaveAudio", "audio" },
             { "CrelicHicompAudio", "audio" },
         };
 
@@ -277,6 +278,7 @@ namespace GameRes.Formats.Rugp
         public ArrayList LoadArray { get { return m_LoadArray; } }
         public  bool   IsEncrypted { get { return 0 != (m_field_4C & 4); } }
         private bool    m_field_5C { get { return IsEncrypted; } }
+        public int          Schema { get; private set; }
 
         public const uint EncryptedSignature    = 0x1EDB927C;
         public const uint ObjectSignature       = 0x29F6CBA4;
@@ -382,13 +384,17 @@ namespace GameRes.Formats.Rugp
             if (!CoreSignatures.Contains (signature))
                 throw new InvalidFormatException ("[RIO] invalid signature");
             int version = ReadUInt16();
-            if (version < 0x10 || version > 0x3FFF)
-                throw new InvalidFormatException ("[RIO] invalid version");
-            if (version >= 0x11)
+            if (version >= 0x10 && version <= 0x3FFF)
             {
-                m_field_4C &= 0xFFFF;
-                m_field_4C |= ReadUInt16() << 16;
+                Schema = version;
+                if (version >= 0x11)
+                {
+                    m_field_4C &= 0xFFFF;
+                    m_field_4C |= ReadUInt16() << 16;
+                }
             }
+            else
+                m_input.Seek (-2, SeekOrigin.Current);
             if (EncryptedSignature == signature)
                 m_field_4C |= 0xC;
 
@@ -1316,7 +1322,7 @@ namespace GameRes.Formats.Rugp
             {
                 field_24 = arc.ReadInt32();
             }
-            else
+            else if (Version >= 2)
             {
                 if (field_28.ToUInt16 (0) < 0x7D3)
                     field_24 = 2;

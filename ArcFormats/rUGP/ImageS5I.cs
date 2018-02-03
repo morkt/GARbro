@@ -53,6 +53,7 @@ namespace GameRes.Formats.Rugp
                 Height  = file.ReadUInt16(),
                 BPP     = 32,
                 ObjectOffset = object_pos,
+                Schema  = rio.Schema,
             };
         }
 
@@ -60,7 +61,11 @@ namespace GameRes.Formats.Rugp
         {
             var meta = (RioMetaData)info;
             file.Position = meta.ObjectOffset + 0x14;
-            int size = file.ReadInt32();
+            int size;
+            if (meta.Schema != 0)
+                size = file.ReadInt32();
+            else
+                size = (int)meta.Width * (int)meta.Height * 4;
             var pixels = file.ReadBytes (size);
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
