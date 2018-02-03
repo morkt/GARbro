@@ -104,13 +104,13 @@ namespace GameRes.Formats.Rugp
             Version = arc.ReadInt32();
             m_x = arc.ReadUInt16();
             m_y = arc.ReadUInt16();
-            m_w = arc.ReadUInt16();
-            m_h = arc.ReadUInt16();
             m_width = arc.ReadUInt16();
             m_height = arc.ReadUInt16();
+            m_w = arc.ReadUInt16();
+            m_h = arc.ReadUInt16();
             m_flags = arc.ReadInt32();
             int size = arc.ReadInt32();
-            arc.ReadInt32();
+            arc.ReadInt32(); // field_34
             var data = arc.ReadBytes (size);
             m_pixels = Uncompress (data);
         }
@@ -121,19 +121,31 @@ namespace GameRes.Formats.Rugp
             arc.ReadInt32();
             int x = arc.ReadUInt16();
             int y = arc.ReadUInt16();
-            arc.ReadInt32();
-            uint w = arc.ReadUInt16();
-            uint h = arc.ReadUInt16();
+            uint w1 = arc.ReadUInt16();
+            uint h1 = arc.ReadUInt16();
+            uint w2 = arc.ReadUInt16();
+            uint h2 = arc.ReadUInt16();
             int flags = arc.ReadInt32() & 0xFF;
             if (flags < 1 || flags > 3)
                 return null;
+            uint width, height;
+            if (3 == flags)
+            {
+                width = w2;
+                height = h2;
+            }
+            else
+            {
+                width = w1;
+                height = h1;
+            }
             return new RioMetaData
             {
                 OffsetX = x,
                 OffsetY = y,
-                Width = w,
-                Height = h,
-                BPP = 1 == flags ? 8 : 2 == flags ? 24 : 32,
+                Width = width,
+                Height = height,
+                BPP = 1 == flags ? 8 : 32,
                 ObjectOffset = object_pos,
                 Rip = this,
             };
@@ -141,29 +153,33 @@ namespace GameRes.Formats.Rugp
 
         byte[] Uncompress (byte[] data)
         {
-            byte[] pixels = null;
-            switch (m_flags & 0xFF)
-            {
-            case 1:
+            int flags = m_flags & 0xFF;
+            if (1 == flags)
                 return UncompressSia (data);
-            case 2:
-                Format = PixelFormats.Bgr32;
-                pixels = new byte[4 * m_width * m_height];
-                switch ((m_flags >> 8) & 0xFF)
+            byte[] pixels = null;
+            if (2 == flags)
+            {
+                using (var mem = new MemoryStream (data))
+                using (var input = new MsbBitStream (mem))
                 {
-                case 1: UncompressRgb1 (data, pixels); break;
-                case 2: UncompressRgb2 (data, pixels); break;
-                case 3: UncompressRgb3 (data, pixels); break;
+                    Format = PixelFormats.Bgr32;
+                    pixels = new byte[4 * m_width * m_height];
+                    switch ((m_flags >> 16) & 0xFF)
+                    {
+                    case 1: UncompressRgb1 (input, pixels); break;
+                    case 2: UncompressRgb2 (input, pixels); break;
+                    case 3: UncompressRgb3 (input, pixels); break;
+                    }
                 }
-                break;
-            case 3:
-                if (2 == ((m_flags >> 8) & 0xFF))
+            }
+            else if (3 == flags)
+            {
+                if (2 == ((m_flags >> 16) & 0xFF))
                 {
                     Format = PixelFormats.Bgra32;
-                    pixels = new byte[4 * m_width * m_height];
+                    pixels = new byte[4 * m_w * m_h];
                     UncompressRgba (data, pixels);
                 }
-                break;
             }
             if (null == pixels)
                 throw new InvalidFormatException();
@@ -199,24 +215,245 @@ namespace GameRes.Formats.Rugp
             return output;
         }
 
-        void UncompressRgb1 (byte[] input, byte[] output)
+        void UncompressRgb1 (IBitStream input, byte[] output)
         {
-            throw new NotImplementedException();
+            int stride = m_width * 4;
+            int rgb = 0;
+            for (int dst_row = output.Length - stride; dst_row >= 0; dst_row -= stride)
+            {
+                int dst = dst_row;
+                for (int x = 0; x < m_width; ++x)
+                {
+                    if (input.GetNextBit() != 0)
+                    {
+                        int b = ReadLong (input, rgb);
+                        int g = ReadLong (input, rgb >> 8);
+                        int r = ReadLong (input, rgb >> 16);
+                        rgb = r << 16 | g << 8 | b;
+                    }
+                    LittleEndian.Pack (rgb, output, dst);
+                    dst += 4;
+                }
+            }
         }
 
-        void UncompressRgb2 (byte[] input, byte[] output)
+        void UncompressRgb2 (IBitStream input, byte[] output)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException ("CRip.UncompressRgb2 not implemented.");
         }
 
-        void UncompressRgb3 (byte[] input, byte[] output)
+        void UncompressRgb3 (IBitStream input, byte[] output)
         {
-            throw new NotImplementedException();
+            int stride = m_width * 4;
+            int rgb = 0;
+            for (int dst_row = output.Length - stride; dst_row >= 0; dst_row -= stride)
+            {
+                int dst = dst_row;
+                for (int x = 0; x < m_width; ++x)
+                {
+                    if (input.GetNextBit() != 0)
+                    {
+                        int b = ReadLong  (input, rgb) + 3;
+                        int g = ReadShort (input, rgb >> 8) + 1;
+                        int r = ReadLong  (input, rgb >> 16) + 3;
+                        rgb = r << 16 | g << 8 | b;
+                    }
+                    LittleEndian.Pack (rgb, output, dst);
+                    dst += 4;
+                }
+            }
         }
 
         void UncompressRgba (byte[] input, byte[] output)
         {
-            throw new NotImplementedException();
+            int src = input.ToInt32 (0);
+            using (var mem = new MemoryStream (input, 4, src - 4))
+            using (var bits = new MsbBitStream (mem))
+            {
+                int dst = 0;
+                for (int y = 0; y < m_h; ++y)
+                {
+                    int rgb = 0;
+                    int alpha = 0;
+                    int x = 0;
+                    while (x < m_w)
+                    {
+                        int len = input[src++];
+                        if (alpha != 0)
+                        {
+                            for (int i = 0; i < len; ++i)
+                            {
+                                if (bits.GetNextBit() != 0)
+                                {
+                                    int b = ReadABits (bits, rgb)       + 3;
+                                    int g = ReadABits (bits, rgb >> 8)  + 3;
+                                    int r = ReadABits (bits, rgb >> 16) + 3;
+                                    rgb = r << 16 | g << 8 | b;
+                                }
+                                LittleEndian.Pack (rgb | alpha << 24, output, dst);
+                                dst += 4;
+                            }
+                        }
+                        else
+                        {
+                            dst += 4 * len;
+                        }
+                        x += len;
+                        if (x >= m_w)
+                            break;
+                        if (bits.GetNextBit() != 0)
+                            alpha = (bits.GetBits (7) << 1) + 1;
+                        else if (bits.GetNextBit() != 0)
+                            alpha = 0xFF;
+                        else
+                            alpha = 0;
+                    }
+                }
+            }
+        }
+
+        int ReadLong (IBitStream input, int prev)
+        {
+            prev &= 0xFC;
+            if ((prev >> 2) == 0)
+            {
+                if (input.GetNextBit() == 0)
+                    return prev;
+                else if (input.GetNextBit() == 0)
+                    return input.GetBits (6) << 2;
+                else if (input.GetNextBit() == 0)
+                    return 4;
+                else if (input.GetNextBit() == 0)
+                    return 8;
+                else
+                    return 12;
+            }
+            else if ((prev >> 2) == 1)
+            {
+                if (input.GetNextBit() == 0)
+                    return input.GetNextBit() << 2;
+                else if (input.GetNextBit() == 0)
+                    return input.GetBits (6) << 2;
+                else if (input.GetNextBit() == 0)
+                    return 8;
+                else if (input.GetNextBit() == 0)
+                    return 12;
+                else
+                    return 16;
+            }
+            else if ((prev >> 2) == 0x3F)
+            {
+                if (input.GetNextBit() == 0)
+                    return 0xFC;
+                else if (input.GetNextBit() == 0)
+                    return input.GetBits (6) << 2;
+                else if (input.GetNextBit() != 0)
+                    return 0xF4 + (-input.GetNextBit() & 0xFC);
+                else
+                    return 0xF8;
+            }
+            else
+            {
+                if (input.GetNextBit() == 0)
+                {
+                    if (input.GetNextBit() == 0)
+                        return prev;
+                    return input.GetBits (6) << 2;
+                }
+                if (input.GetNextBit() == 0)
+                {
+                    if (input.GetNextBit() != 0)
+                        return prev - 4;
+                    else
+                        return prev + 4;
+                }
+                if (input.GetNextBit() == 0)
+                {
+                    if (input.GetNextBit() != 0)
+                        return prev - 8;
+                    else
+                        return prev + 8;
+                }
+                switch (input.GetBits (2))
+                {
+                case 0:  return Math.Min (prev + 16, 0xFC);
+                case 1:  return Math.Max (prev - 16, 0);
+                case 2:  return Math.Min (prev + 24, 0xFC);
+                default: return Math.Max (prev - 24, 0);
+                }
+            }
+        }
+
+        int ReadShort (IBitStream input, int prev)
+        {
+            prev &= 0xFE;
+            if (input.GetNextBit() == 0)
+            {
+                if (input.GetNextBit() == 0)
+                    return prev;
+                else
+                    return input.GetBits (6) << 2;
+            }
+            else if (input.GetNextBit() == 0)
+            {
+                if (input.GetNextBit() == 0)
+                    return prev + 2;
+                else
+                    return prev - 2;
+            }
+            else if (input.GetNextBit() == 0)
+            {
+                if (input.GetNextBit() == 0)
+                    return prev + 4;
+                else
+                    return prev - 4;
+            }
+            else
+            {
+                switch (input.GetBits (2))
+                {
+                case 0:  return Math.Min (prev + 8, 0xFE);
+                case 1:  return Math.Max (prev - 8, 0);
+                case 2:  return Math.Min (prev + 12, 0xFE);
+                default: return Math.Max (prev - 12, 0);
+                }
+            }
+        }
+
+        int ReadABits (IBitStream input, int prev)
+        {
+            prev &= 0xFC;
+            if (input.GetNextBit() == 0)
+            {
+                if (input.GetNextBit() == 0)
+                    return prev;
+                else
+                    return input.GetBits (6) << 2;
+            }
+            else if (input.GetNextBit() == 0)
+            {
+                if (input.GetNextBit() == 0)
+                    return prev + 4;
+                else
+                    return prev - 4;
+            }
+            else if (input.GetNextBit() == 0)
+            {
+                if (input.GetNextBit() == 0)
+                    return prev + 8;
+                else
+                    return prev - 8;
+            }
+            else
+            {
+                switch (input.GetBits (2))
+                {
+                case 0:  return Math.Min (prev + 16, 0xFC);
+                case 1:  return Math.Max (prev - 16, 0);
+                case 2:  return Math.Min (prev + 24, 0xFC);
+                default: return Math.Max (prev - 24, 0);
+                }
+            }
         }
     }
 
