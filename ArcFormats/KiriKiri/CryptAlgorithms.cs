@@ -1023,26 +1023,24 @@ namespace GameRes.Formats.KiriKiri
         {
         }
 
-        public override void Init (ArcFile arc)
+        public override string ReadName (BinaryReader header)
         {
             if (null == KnownNames)
                 ReadNames();
-            foreach (var entry in arc.Dir)
-            {
-                string name;
-                if (KnownNames.TryGetValue (entry.Name, out name))
-                {
-                    entry.Name = name;
-                    entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
-                }
-            }
+            var hash = base.ReadName (header);
+            string name;
+            if (null == hash || !KnownNames.TryGetValue (hash, out name))
+                return hash;
+            if (string.IsNullOrEmpty (name))
+                return null;
+            return name;
         }
 
         void ReadNames ()
         {
             var dir = FormatCatalog.Instance.DataDirectory;
             var names_file = Path.Combine (dir, FileMapName);
-            var names = new Dictionary<string, string>();
+            var names = new Dictionary<string, string> { { "$", "startup.tjs" } };
             try
             {
                 var hash_buf = new char[32];
