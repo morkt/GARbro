@@ -57,6 +57,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aaru\ArcFL4.cs" />
+    <Compile Include="Akatombo\ArcX.cs" />
+    <Compile Include="Akatombo\ImageFB.cs" />
+    <Compile Include="Discovery\ArcDAT.cs" />
     <Compile Include="EbgSystem\ArcBIN.cs" />
     <Compile Include="AnotherRoom\AudioWAZ.cs" />
     <Compile Include="AnotherRoom\ImageGR1.cs" />
@@ -76,8 +79,12 @@
     <Compile Include="Hyperspace\BmpExtension.cs" />
     <Compile Include="Inspire\ArcIDA.cs" />
     <Compile Include="Iris\ArcFPACK.cs" />
+    <Compile Include="Jupiter\ArcLB5.cs" />
+    <Compile Include="Lune\ArcPACK.cs" />
     <Compile Include="Mina\ArcML2.cs" />
     <Compile Include="Mina\ImageMD.cs" />
+    <Compile Include="Mink\ArcMINK.cs" />
+    <Compile Include="Mutation\ArcDPF.cs" />
     <Compile Include="Uncanny\AudioCWV.cs" />
     <Compile Include="Uncanny\ImageCII.cs" />
     <Compile Include="Kurumi\ArcMPK.cs" />
