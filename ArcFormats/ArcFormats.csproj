@@ -91,6 +91,7 @@
     <Compile Include="Abogado\ImageKG.cs" />
     <Compile Include="Actgs\ArcCG.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
+    <Compile Include="AdvScripter\ArcPAK.cs" />
     <Compile Include="AdvSys\ArcAdvSys3.cs" />
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
@@ -144,6 +145,7 @@
     <Compile Include="Ikura\ImageTAN.cs" />
     <Compile Include="Ikura\ImageVRS.cs" />
     <Compile Include="ImageMNG.cs" />
+    <Compile Include="Ivory\ArcSG.cs" />
     <Compile Include="KiriKiri\MoreCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Lambda\ImageCLS.cs" />
@@ -636,6 +638,7 @@
     <Compile Include="Unity\BundleStream.cs" />
     <Compile Include="Unity\OggStream.cs" />
     <Compile Include="Unity\Texture2D.cs" />
+    <Compile Include="Unity\Utage\ImageUTAGE.cs" />
     <Compile Include="Unity\Vorbis.cs" />
     <Compile Include="Valkyria\ArcDAT.cs" />
     <Compile Include="Valkyria\ArcODN.cs" />
