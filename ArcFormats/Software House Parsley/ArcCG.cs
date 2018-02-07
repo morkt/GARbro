@@ -27,9 +27,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using GameRes.Compression;
 
 namespace GameRes.Formats.Parsley
 {
@@ -96,7 +96,8 @@ namespace GameRes.Formats.Parsley
             if (!IsSaneCount (count))
                 return null;
             var arc_name = Path.GetFileName (file.Name);
-            bool is_cg = arc_name == "CG";
+            bool is_ucg = arc_name.StartsWith ("UCG", StringComparison.OrdinalIgnoreCase);
+            bool is_cg = is_ucg || arc_name == "CG";
 
             using (var index = file.CreateStream())
             {
@@ -107,23 +108,27 @@ namespace GameRes.Formats.Parsley
                     var name = index.ReadCString();
                     if (string.IsNullOrWhiteSpace (name) || name.Length > 0x100)
                         return null;
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                     entry.Offset = index.ReadUInt32();
-                    if (entry.Offset >= file.MaxOffset || entry.Offset < index.Position)
+                    if (entry.Offset >= file.MaxOffset)
                         return null;
+                    entry.IsPacked = is_ucg;
                     dir.Add (entry);
                 }
+                long index_end = index.Position;
                 for (int i = 0; i < count; ++i)
                 {
                     var entry = dir[i];
+                    if (entry.Offset < index_end)
+                        return null;
                     long next_offset = i+1 < count ? dir[i+1].Offset : file.MaxOffset;
                     entry.Size = (uint)(next_offset - entry.Offset);
                     if (is_cg)
                         entry.Type = "image";
                 }
-                if (is_cg)
+                if (is_cg && !is_ucg)
                 {
-                    var palette_entry = dir.FirstOrDefault (e => e.Name.Equals ("Palette", StringComparison.InvariantCultureIgnoreCase));
+                    var palette_entry = dir.Find (e => e.Name.Equals ("Palette", StringComparison.OrdinalIgnoreCase));
                     if (palette_entry != null && 1 == file.View.ReadByte (palette_entry.Offset+8))
                     {
                         var palette = ImageFormat.ReadPalette (file, palette_entry.Offset+9, 0x100, PaletteFormat.Rgb);
@@ -139,17 +144,22 @@ namespace GameRes.Formats.Parsley
             int type = arc.File.View.ReadByte (entry.Offset+8);
             if (type > 1)
                 return base.OpenImage (arc, entry);
+            var pent = entry as PackedEntry;
+            bool packed = pent != null && pent.IsPacked;
             var info = new CgMetaData {
                 Width = arc.File.View.ReadUInt32 (entry.Offset),
                 Height = arc.File.View.ReadUInt32 (entry.Offset+4),
-                BPP = 8,
+                BPP = packed ? 16 : 8,
                 HasPalette = type == 1,
             };
             var cg_arc = arc as CgArchive;
             if (cg_arc != null)
                 info.DefaultPalette = cg_arc.DefaultPalette;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new CgDecoder (input, info);
+            if (packed)
+                return new UCgDecoder (input, info);
+            else
+                return new CgDecoder (input, info);
         }
     }
 
@@ -197,6 +207,26 @@ namespace GameRes.Formats.Parsley
         {
             m_palette = ImageFormat.ReadPalette (m_input.AsStream, 0x100, PaletteFormat.Rgb);
             m_input.Position = 0x20909;
+        }
+    }
+
+    internal class UCgDecoder : BinaryImageDecoder
+    {
+        public UCgDecoder (IBinaryStream input, CgMetaData info) : base (input, info)
+        {
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = 0x10;
+            using (var lz = new LzssStream (m_input.AsStream, LzssMode.Decompress, true))
+            {
+                int stride = (int)Info.Width * 2;
+                var pixels = new byte[stride * (int)Info.Height];
+                if (pixels.Length != lz.Read (pixels, 0, pixels.Length))
+                    throw new InvalidFormatException();
+                return ImageData.Create (Info, PixelFormats.Bgr565, null, pixels, stride);
+            }
         }
     }
 }
