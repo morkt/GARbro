@@ -134,7 +134,7 @@ namespace GameRes.Formats.Malie
         public DatOpener ()
         {
             Extensions = new string[] { "lib", "dat" };
-            Signatures = new uint[] { 0, 0x3F503FB1, 0xC237434E, 0x8CD11522, 0x09D411A7 };
+            Signatures = new uint[] { 0, 0x3F503FB1, 0xC237434E, 0x8CD11522, 0x09D411A7, 0xAAC48CAA };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -256,7 +256,7 @@ namespace GameRes.Formats.Malie
                     uint size   = LittleEndian.ToUInt32 (m_index, current_offset+0x1c);
                     current_offset += 0x20;
                     name = Path.Combine (root, name);
-                    if (0 == (flags & 0x10000))
+                    if (0 == (flags & 0x30000))
                     {
                         if (offset > entry_index)
                             ReadDir (name, (int)offset, (int)size);
