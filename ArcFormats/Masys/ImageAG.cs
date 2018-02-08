@@ -2,7 +2,7 @@
 //! \date       Sun May 10 23:53:34 2015
 //! \brief      Masys Enhanced Game Unit image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,7 +27,6 @@ using System;
 using System.ComponentModel.Composition;
 using System.Windows.Media;
 using System.IO;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Megu
 {
@@ -65,11 +64,11 @@ namespace GameRes.Formats.Megu
 
     internal class AgReader
     {
-        byte[] in1;
-        byte[] in2;
-        byte[] in3;
-        byte[] in4;
-        byte[] in5;
+        AgBitStream in1;
+        AgBitStream in2;
+        AgBitStream in3;
+        AgBitStream in4;
+        AgBitStream in5;
         byte[] m_alpha;
         byte[] m_output;
         int m_width;
@@ -99,15 +98,15 @@ namespace GameRes.Formats.Megu
             int  size6   = input.ReadInt32();
             input.Read (m_first, 0, 3);
             if (size1 != 0)
-                in1 = ReadSection (input, offset1, size1);
+                in1 = new AgBitStream (input, offset1, size1);
             if (size2 != 0)
-                in2 = ReadSection (input, offset2, size2);
+                in2 = new AgBitStream (input, offset2, size2);
             if (size3 != 0)
-                in3 = ReadSection (input, offset3, size3);
+                in3 = new AgBitStream (input, offset3, size3);
             if (size4 != 0)
-                in4 = ReadSection (input, offset4, size4);
+                in4 = new AgBitStream (input, offset4, size4);
             if (size5 != 0)
-                in5 = ReadSection (input, offset5, size5);
+                in5 = new AgBitStream (input, offset5, size5);
             if (size6 != 0)
             {
                 input.Position = offset6;
@@ -124,7 +123,7 @@ namespace GameRes.Formats.Megu
             m_output = new byte[m_width*m_height*m_pixel_size];
         }
 
-        static private byte[] ReadSection (IBinaryStream input, long offset, int size)
+        static internal byte[] ReadSection (IBinaryStream input, long offset, int size)
         {
             input.Position = offset;
             var buf = new byte[size + 4];
@@ -135,203 +134,16 @@ namespace GameRes.Formats.Megu
 
         public void Unpack ()
         {
-            int bit_mask = 1;
-            int src1 = 0;
-            uint v25 = LittleEndian.ToUInt32 (in1, src1);
-            src1 += 4;
-            int v5 = 1;
-            int src2 = 0;
-            uint v24 = LittleEndian.ToUInt32 (in2, src2);
-            src2 += 4;
-            int v4 = 1;
-            int src3 = 0;
-            uint v23 = LittleEndian.ToUInt32 (in3, src3);
-            src3 += 4;
-            int v3 = 0;
-            int src4 = 0;
-            uint v22 = LittleEndian.ToUInt32 (in4, src4);
-            src4 += 4;
-            int v19 = 0;
-            int src5 = 0;
-            uint v21 = LittleEndian.ToUInt32 (in5, src5);
-            src5 += 4;
-
-            byte B;
-            byte G;
-            byte R;
-
+            int dst = 0;
             int stride = m_width * m_pixel_size;
             for (int y = 0; y < m_height; ++y)
             {
-                int dst = y * stride;
                 for (int x = 0; x < stride; x += m_pixel_size)
                 {
-                    if (0 != (bit_mask & v25))
-                    {
-                        B = (byte)(v21 >> v19);
-                        v19 += 8;
-                        if (32 == v19)
-                        {
-                            v21 = LittleEndian.ToUInt32 (in5, src5);
-                            src5 += 4;
-                            v19 = 0;
-                        }
-                    }
-                    else
-                    {
-                        if (0 != (v4 & v23))
-                        {
-                            B = m_first[0];
-                        }
-                        else
-                        {
-                            B = (byte)((v22 >> v3) & 0xF);
-                            v3 += 4;
-                            if (32 == v3)
-                            {
-                                v22 = LittleEndian.ToUInt32 (in4, src4);
-                                src4 += 4;
-                                v3 = 0;
-                            }
-                            ++B;
-                            if (0 != (v5 & v24))
-                                B = (byte)(m_first[0] - B);
-                            else
-                                B += m_first[0];
-                            v5 <<= 1;
-                            if (0 == v5)
-                            {
-                                v5 = 1;
-                                v24 = LittleEndian.ToUInt32 (in2, src2);
-                                src2 += 4;
-                            }
-                        }
-                        v4 <<= 1;
-                        if (0 == v4)
-                        {
-                            v4 = 1;
-                            v23 = LittleEndian.ToUInt32 (in3, src3);
-                            src3 += 4;
-                        }
-                    }
-                    bit_mask <<= 1;
-                    if (0 == bit_mask)
-                    {
-                        v25 = LittleEndian.ToUInt32 (in1, src1);
-                        src1 += 4;
-                        bit_mask = 1;
-                    }
-                    if (0 != (bit_mask & v25))
-                    {
-                        G = (byte)(v21 >> v19);
-                        v19 += 8;
-                        if (32 == v19)
-                        {
-                            v21 = LittleEndian.ToUInt32 (in5, src5);
-                            src5 += 4;
-                            v19 = 0;
-                        }
-                    }
-                    else
-                    {
-                        if (0 != (v4 & v23))
-                        {
-                            G = m_first[1];
-                        }
-                        else
-                        {
-                            G = (byte)((v22 >> v3) & 0xF);
-                            v3 += 4;
-                            if (32 == v3)
-                            {
-                                v22 = LittleEndian.ToUInt32 (in4, src4);
-                                src4 += 4;
-                                v3 = 0;
-                            }
-                            ++G;
-                            if (0 != (v5 & v24))
-                                G = (byte)(m_first[1] - G);
-                            else
-                                G += m_first[1];
-                            v5 <<= 1;
-                            if (0 == v5)
-                            {
-                                v5 = 1;
-                                v24 = LittleEndian.ToUInt32 (in2, src2);
-                                src2 += 4;
-                            }
-                        }
-                        v4 <<= 1;
-                        if (0 == v4)
-                        {
-                            v4 = 1;
-                            v23 = LittleEndian.ToUInt32 (in3, src3);
-                            src3 += 4;
-                        }
-                    }
-                    bit_mask <<= 1;
-                    if (0 == bit_mask)
-                    {
-                        v25 = LittleEndian.ToUInt32 (in1, src1);
-                        src1 += 4;
-                        bit_mask = 1;
-                    }
-                    if (0 != (bit_mask & v25))
-                    {
-                        R = (byte)(v21 >> v19);
-                        v19 += 8;
-                        if (32 == v19)
-                        {
-                            v21 = LittleEndian.ToUInt32 (in5, src5);
-                            src5 += 4;
-                            v19 = 0;
-                        }
-                    }
-                    else
-                    {
-                        if (0 != (v4 & v23))
-                        {
-                            R = m_first[2];
-                        }
-                        else
-                        {
-                            R = (byte)((v22 >> v3) & 0xF);
-                            v3 += 4;
-                            if (32 == v3)
-                            {
-                                v22 = LittleEndian.ToUInt32 (in4, src4);
-                                src4 += 4;
-                                v3 = 0;
-                            }
-                            ++R;
-                            if (0 != (v5 & v24))
-                                R = (byte)(m_first[2] - R);
-                            else
-                                R += m_first[2];
-                            v5 <<= 1;
-                            if (0 == v5)
-                            {
-                                v5 = 1;
-                                v24 = LittleEndian.ToUInt32 (in2, src2);
-                                src2 += 4;
-                            }
-                        }
-                        v4 <<= 1;
-                        if (0 == v4)
-                        {
-                            v4 = 1;
-                            v23 = LittleEndian.ToUInt32 (in3, src3);
-                            src3 += 4;
-                        }
-                    }
-                    bit_mask <<= 1;
-                    if (0 == bit_mask)
-                    {
-                        v25 = LittleEndian.ToUInt32 (in1, src1);
-                        src1 += 4;
-                        bit_mask = 1;
-                    }
-                    m_output[dst+x] = B;
+                    byte B = ReadColor (0);
+                    byte G = ReadColor (1);
+                    byte R = ReadColor (2);
+                    m_output[dst+x  ] = B;
                     m_output[dst+x+1] = G;
                     m_output[dst+x+2] = R;
                     m_first[0] = B;
@@ -341,9 +153,32 @@ namespace GameRes.Formats.Megu
                 m_first[0] = m_output[dst];
                 m_first[1] = m_output[dst+1];
                 m_first[2] = m_output[dst+2];
+                dst += stride;
             }
             if (m_alpha != null)
                 ApplyAlpha();
+        }
+
+        private byte ReadColor (int channel)
+        {
+            byte c;
+            if (0 != in1.GetBit())
+            {
+                c = in5.GetByte();
+            }
+            else if (0 != in3.GetBit())
+            {
+                c = m_first[channel];
+            }
+            else
+            {
+                c = (byte)(in4.GetNibble() + 1);
+                if (0 != in2.GetBit())
+                    c = (byte)(m_first[channel] - c);
+                else
+                    c += m_first[channel];
+            }
+            return c;
         }
 
         private void ApplyAlpha ()
@@ -380,6 +215,45 @@ namespace GameRes.Formats.Megu
                 }
                 remaining -= count;
             }
+        }
+    }
+
+    internal class AgBitStream
+    {
+        byte[]      m_input;
+        int         m_src = 0;
+        int         m_bits = 1;
+
+        public AgBitStream (IBinaryStream input, long offset, int size)
+        {
+            m_input = AgReader.ReadSection (input, offset, size);
+        }
+
+        public int GetBit ()
+        {
+            if (1 == m_bits)
+            {
+                m_bits = m_input[m_src++] | 0x100;
+            }
+            int bit = m_bits & 1;
+            m_bits >>= 1;
+            return bit;
+        }
+
+        public int GetNibble ()
+        {
+            if (1 == m_bits)
+            {
+                m_bits = m_input[m_src++] | 0x100;
+            }
+            int bits = m_bits & 0xF;
+            m_bits >>= 4;
+            return bits;
+        }
+
+        public byte GetByte ()
+        {
+            return m_input[m_src++];
         }
     }
 }
