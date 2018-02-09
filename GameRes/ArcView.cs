@@ -290,6 +290,8 @@ namespace GameRes
                 {
                     if (offset > m_arc.MaxOffset)
                         throw new ArgumentOutOfRangeException ("offset", "Too large offset specified for memory mapped file view.");
+                    if (disposed)
+                        throw new ObjectDisposedException (null);
                     if (size < ArcView.PageSize)
                         size = (uint)ArcView.PageSize;
                     if (size > m_arc.MaxOffset-offset)
@@ -353,6 +355,8 @@ namespace GameRes
                     throw new ArgumentNullException ("buf", "Buffer cannot be null.");
                 if (buf_offset < 0)
                     throw new ArgumentOutOfRangeException ("buf_offset", "Buffer offset should be non-negative.");
+                if (disposed)
+                    throw new ObjectDisposedException (null);
 
                 int total = (int)Math.Min (Reserve (offset, count), count);
                 if (buf.Length - buf_offset < total)
@@ -481,6 +485,7 @@ namespace GameRes
                     }
                     m_arc = null;
                     m_view = null;
+                    m_size = 0;
                     disposed = true;
                 }
             }
@@ -516,7 +521,7 @@ namespace GameRes
                 if (!_disposed)
                     return m_ptr;
                 else
-                    throw new ObjectDisposedException ("Access to disposed ViewPointer object failed.");
+                    throw new ObjectDisposedException (null, "Access to disposed ViewPointer object failed.");
             }
         }
 
