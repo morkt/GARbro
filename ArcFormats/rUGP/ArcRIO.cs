@@ -40,7 +40,7 @@ namespace GameRes.Formats.Rugp
         public override string         Tag { get { return "RIO"; } }
         public override string Description { get { return "rUGP engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
         
         public RioOpener ()
@@ -71,7 +71,7 @@ namespace GameRes.Formats.Rugp
                 var dir = from node in nodes
                           where SupportedClasses.ContainsKey (node.ClassName)
                           select new Entry {
-                            Name    = node.Name,
+                            Name    = node.GetPathName(),
                             Type    = SupportedClasses[node.ClassName],
                             Offset  = node.Offset,
                             Size    = node.Size
@@ -956,6 +956,7 @@ namespace GameRes.Formats.Rugp
             { "CObjectArcMan", new CObjectFactory<CObjectArcMan>() },
             { "CrelicUnitedGameProject", new CObjectFactory<CrelicUnitedGameProject>() },
             { "CStdb", new CObjectFactory<CStdb>() },
+            { "CObjectOcean", new CObjectFactory<CObjectOcean>() },
         };
     }
 
@@ -1358,6 +1359,13 @@ namespace GameRes.Formats.Rugp
         }
     }
 
+    internal class CObjectOcean : CObject
+    {
+        public override void Deserialize (CRioArchive arc)
+        {
+        }
+    }
+
     internal class COceanNode : CObject
     {
         public string   Name;
@@ -1373,6 +1381,21 @@ namespace GameRes.Formats.Rugp
         public override void Deserialize (CRioArchive arc)
         {
             throw new NotImplementedException ("COceanNode.Deserialize not impelemented");
+        }
+
+        public string GetPathName ()
+        {
+            return string.Join ("/", TraversePath().Reverse());
+        }
+
+        private IEnumerable<string> TraversePath ()
+        {
+            COceanNode node = this;
+            while (node != null && node.ClassName != null && !string.IsNullOrEmpty (node.Name))
+            {
+                yield return node.Name;
+                node = node.Parent as COceanNode;
+            }
         }
     }
 
