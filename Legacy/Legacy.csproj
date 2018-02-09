@@ -75,6 +75,8 @@
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
     <Compile Include="Factor\ArcRES.cs" />
+    <Compile Include="Gsx\ArcK3.cs" />
+    <Compile Include="Gsx\ImageK2.cs" />
     <Compile Include="hmp\ImageMBP.cs" />
     <Compile Include="Hyperspace\BmpExtension.cs" />
     <Compile Include="Inspire\ArcIDA.cs" />
