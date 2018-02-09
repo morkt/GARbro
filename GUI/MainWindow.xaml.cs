@@ -45,6 +45,12 @@ using Rnd.Windows;
 using Microsoft.Win32;
 using NAudio.Wave;
 
+#region ADL
+using Hardcodet.Wpf.TaskbarNotification;
+using System.Drawing;
+using Form = System.Windows.Forms;
+#endregion
+
 namespace GARbro.GUI
 {
     /// <summary>
@@ -58,8 +64,47 @@ namespace GARbro.GUI
 
         const StringComparison StringIgnoreCase = StringComparison.CurrentCultureIgnoreCase;
 
+        #region ADL
+        Icon app_icon = new Icon(Application.GetResourceStream(new Uri("pack://application:,,,/images/sample.ico")).Stream);
+        TaskbarIcon tray = new TaskbarIcon();
+        Form.Timer hide_timer = null;
+        private int counter = 0;
+        private void hide_timer_Tick(object sender, EventArgs e)
+        {
+            counter--;
+            if (counter == 0)
+            {
+                hide_timer.Stop();
+                tray.HideBalloonTip();
+            }
+        }
+        /// <summary>
+        /// Show a balloon tip in tray icon by given timeout.
+        /// </summary>
+        /// <param name="timeout">in seconds</param>
+        /// <param name="title"></param>
+        /// <param name="message"></param>
+        private void trayShowBalloonTip(int timeout, string title, string message)
+        {
+            if (timeout > 0)
+                counter = timeout;
+            tray.ShowBalloonTip(title, message, app_icon, true);
+            hide_timer = new Form.Timer();
+            hide_timer.Interval = 1000; //milliseconds
+            hide_timer.Tick += hide_timer_Tick;
+            hide_timer.Start();
+        }
+
+        private void trayUpdate(string msg)
+        {
+            tray.ToolTipText = msg;
+        }
+
+        #endregion
         public MainWindow()
         {
+
+
             m_app = Application.Current as App;
             InitializeComponent();
             if (this.Top < 0) this.Top = 0;
@@ -83,6 +128,51 @@ namespace GARbro.GUI
                 }
             };
             pathLine.EnterKeyDown += acb_OnKeyDown;
+
+            #region ADL
+            var ico = new Icon(Application.GetResourceStream(new Uri("pack://application:,,,/images/sample.ico")).Stream);
+            tray.Icon = app_icon;
+            tray.ToolTipText = guiStrings.MsgRunning;
+            // Init member
+
+            {
+                m_whiterect = new System.Windows.Shapes.Rectangle();
+                m_whiterect.Stretch = System.Windows.Media.Stretch.Fill;
+                m_whiterect.Fill = System.Windows.Media.Brushes.Black;
+                m_whiterect.Width = btn_appPauseControl.Width;
+                m_whiterect.Height = btn_appPauseControl.Width;
+            }
+            {
+                m_btnContinue_state_continue = new System.Windows.Shapes.Polygon();
+                m_btnContinue_state_continue.Stroke = System.Windows.Media.Brushes.Black;
+                m_btnContinue_state_continue.Stretch = System.Windows.Media.Stretch.None;
+                m_btnContinue_state_continue.Fill = System.Windows.Media.Brushes.Black;
+                m_btnContinue_state_continue.Points.Add(new System.Windows.Point(1, 1));
+                m_btnContinue_state_continue.Points.Add(new System.Windows.Point(1, 9));
+                m_btnContinue_state_continue.Points.Add(new System.Windows.Point(9, 5));
+            }
+            {
+                m_btnContinue_state_pause = new System.Windows.Shapes.Path();
+                m_btnContinue_state_pause.Stroke = System.Windows.Media.Brushes.Black;
+                m_btnContinue_state_pause.StrokeThickness = 3;
+                System.Windows.Media.PathGeometry pathGeometry = new System.Windows.Media.PathGeometry();
+
+                System.Windows.Media.PathFigure line0 = new System.Windows.Media.PathFigure();
+                System.Windows.Media.PathFigure line1 = new System.Windows.Media.PathFigure();
+                System.Windows.Media.LineSegment segment0 = new System.Windows.Media.LineSegment();
+                System.Windows.Media.LineSegment segment1 = new System.Windows.Media.LineSegment();
+                line0.StartPoint = new System.Windows.Point(2.0, 0.0);
+                line1.StartPoint = new System.Windows.Point(8.0, 0.0);
+                segment0.Point = new System.Windows.Point(2.0, 8.0);
+                segment1.Point = new System.Windows.Point(8.0, 8.0);
+                line0.Segments.Add(segment0);
+                line1.Segments.Add(segment1);
+                
+                pathGeometry.Figures.Add(line0);
+                pathGeometry.Figures.Add(line1);
+                m_btnContinue_state_pause.Data = pathGeometry;
+            }
+            #endregion
         }
 
         void WindowLoaded (object sender, RoutedEventArgs e)
@@ -895,7 +985,13 @@ namespace GARbro.GUI
                 return;
             if ("audio" == entry.Type)
             {
-                PlayFile (entry.Source);
+                #region ADL
+                if (AudioFileList.Count() > 0)
+                {
+                    AudioFileList.Clear();
+                }
+                #endregion
+                PlayFile(entry.Source);
                 return;
             }
             OpenDirectoryEntry (ViewModel, entry);
@@ -978,6 +1074,140 @@ namespace GARbro.GUI
             }
         }
 
+        #region ADL_PLAYBACK
+        List<Entry> AudioFileList = new List<Entry>();
+        bool isAudioLoop = false;
+        int CurrentAudioFileListIdx = 0;
+
+        /*
+        private T[] InitArray<T>(int count) where T : new()
+        {
+            T[] array = new T[count];
+            for (int i = 0; i < count; i++)
+                array[i] = new T();
+            return array;
+        }
+        */
+
+        System.Windows.Shapes.Rectangle m_whiterect = null;
+        System.Windows.Shapes.Polygon   m_btnContinue_state_continue = null;
+        System.Windows.Shapes.Path      m_btnContinue_state_pause = null;
+
+        
+        private void SetAppPauseControlIcon()
+        {
+            btn_appPauseControl.Content = m_whiterect;
+            if (AudioDevice.PlaybackState == PlaybackState.Paused)
+            {
+                btn_appPauseControl.Content = m_btnContinue_state_continue;
+            }
+            else if (AudioDevice.PlaybackState == PlaybackState.Playing)
+            {
+                btn_appPauseControl.Content = m_btnContinue_state_pause;
+            }
+        }
+
+        private void AudioPlayAllHelper(object control, ExecutedRoutedEventArgs e)
+        {
+            List<Entry> rawfilelist = null;
+
+            bool isRegionSelected = (CurrentDirectory.SelectedItems.Count > 0);
+            if (isRegionSelected)
+            {
+                rawfilelist = new List<Entry>(CurrentDirectory.SelectedItems.Count);
+                foreach (var it in CurrentDirectory.SelectedItems)
+                {
+                    rawfilelist.Add(((EntryViewModel)(it)).Source);
+                }
+            }
+            else
+            {
+                rawfilelist = VFS.GetFiles().ToList();
+            }
+
+            AudioFileList.Clear();
+            AudioFileList.Capacity = rawfilelist.Count();
+            CurrentAudioFileListIdx = 0;
+
+            foreach (var entry in rawfilelist)
+            {
+                if (entry.Type == "audio")
+                {
+                    AudioFileList.Add(entry);
+                }
+            }
+
+            if (AudioFileList.Count() > 0)
+            {
+                PlayFile(AudioFileList[0]);
+            }
+            else
+            {
+                string selected = isRegionSelected ? "selected items" : "current directory";
+                SetStatusText(string.Format("Files in {0} cannot be played.", selected));
+            }
+        }
+        private void AudioLoopAllExec(object control, ExecutedRoutedEventArgs e)
+        {
+            isAudioLoop = true;
+            AudioPlayAllHelper(control, e);
+        }
+        private void CanAudioLoopAllExec(object control, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+        private void AudioPlayAllExec(object control, ExecutedRoutedEventArgs e)
+        {
+            isAudioLoop = false;
+            AudioPlayAllHelper(control, e);
+        }
+        private void CanAudioPlayAllExec(object control, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+        private void AudioStopAllExec(object control, ExecutedRoutedEventArgs e)
+        {
+            if (AudioFileList.Count > 0)
+            {
+                AudioFileList.Clear();
+            }
+            AudioDevice.Stop();
+        }
+
+        private void CanAudioStopAllExec(object control, CanExecuteRoutedEventArgs e)
+        {
+            isAudioLoop = false;
+            e.CanExecute = (AudioDevice != null && AudioDevice.PlaybackState != PlaybackState.Stopped);
+        }
+        private void AudioPauseContinueExec(object control, ExecutedRoutedEventArgs e)
+        {
+            if (AudioDevice != null)
+            {
+                if (AudioDevice.PlaybackState == PlaybackState.Paused)
+                {
+                    trayUpdate(String.Format(guiStrings.MsgNowPlaying, AudioFileList[CurrentAudioFileListIdx].Name));
+                    AudioDevice.Play();
+                }
+                else if (AudioDevice.PlaybackState == PlaybackState.Playing)
+                {
+                    trayUpdate(String.Format(guiStrings.MsgPaused, AudioFileList[CurrentAudioFileListIdx].Name));
+                    AudioDevice.Pause();
+                }
+                SetAppPauseControlIcon();
+            }
+        }
+        private void CanAudioPauseContinueExec(object control, CanExecuteRoutedEventArgs e)
+        {
+            if ((AudioDevice != null) && (AudioDevice.PlaybackState != PlaybackState.Stopped))
+            {
+                e.CanExecute = true;
+            }
+            else e.CanExecute = false;
+        }
+
+
+        #endregion
+
         private void PlayFile (Entry entry)
         {
             IBinaryStream input = null;
@@ -1008,7 +1238,24 @@ namespace GARbro.GUI
                 else
                     AudioDevice.Init (CurrentAudio);
                 AudioDevice.PlaybackStopped += OnPlaybackStopped;
+                
                 AudioDevice.Play();
+
+                #region ADL
+                if (AudioFileList.Count == 0)
+                    AudioFileList.Add(entry);
+                appPauseControl.Visibility = Visibility.Visible;
+                SetAppPauseControlIcon();
+
+                //this.app_notify_icon.ShowBalloonTip(2000, "Now playing:", entry.Name, Form.ToolTipIcon.Info);
+                trayShowBalloonTip(
+                    4,
+                    guiStrings.MsgNowPlaying.Replace("{0}", ""),
+                    String.Format(guiStrings.MsgNowPlaying, entry.Name)
+                    );
+                trayUpdate(String.Format(guiStrings.MsgNowPlaying, entry.Name));
+                #endregion
+
                 appPlaybackControl.Visibility = Visibility.Visible;
                 var fmt = CurrentAudio.WaveFormat;
                 SetResourceText (string.Format (guiStrings.MsgPlaying, entry.Name,
@@ -1042,6 +1289,29 @@ namespace GARbro.GUI
                 SetResourceText ("");
                 CurrentAudio = null;
                 appPlaybackControl.Visibility = Visibility.Collapsed;
+
+                #region ADL
+                trayUpdate("");
+                if (AudioFileList.Count > 0 && AudioFileList.Count > ++CurrentAudioFileListIdx)
+                {
+                    PlayFile(AudioFileList[CurrentAudioFileListIdx]);
+                }
+                else
+                {
+                    CurrentAudioFileListIdx = 0;
+                    if (isAudioLoop && AudioFileList.Count > 0)
+                    {
+                        PlayFile(AudioFileList[CurrentAudioFileListIdx]);
+                    }
+                    else
+                    {
+                        appPauseControl.Visibility = Visibility.Collapsed;
+                        AudioFileList.Clear();
+                        trayUpdate(guiStrings.MsgRunning);
+                    }
+                }
+                #endregion
+
             }
             catch (Exception X)
             {
@@ -1550,5 +1820,13 @@ namespace GARbro.GUI
         public static readonly RoutedCommand TroubleShooting = new RoutedCommand();
         public static readonly RoutedCommand Descend = new RoutedCommand();
         public static readonly RoutedCommand Ascend = new RoutedCommand();
+        #region ADL
+        public static readonly RoutedCommand AudioPlayAll = new RoutedCommand();
+        public static readonly RoutedCommand AudioLoopAll = new RoutedCommand();
+        public static readonly RoutedCommand AudioStopAll = new RoutedCommand();
+        public static readonly RoutedCommand AudioPauseContinue = new RoutedCommand();
+        //public static readonly RoutedCommand AudioNext = new RoutedCommand();
+        //public static readonly RoutedCommand AudioPrevious = new RoutedCommand();
+        #endregion
     }
 }
