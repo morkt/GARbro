@@ -148,7 +148,7 @@ namespace GameRes.Formats.ShiinaRio
             {
                 a = (sbyte)data[index]   ^ (sbyte)data_length;
                 b = (sbyte)data[index+1] ^ (sbyte)(data_length / 2);
-                if (data_length != MaxIndexLength)
+                if (data_length != MaxIndexLength && (WarcVersion > 130 || m_scheme.Version > 2150))
                 {
                     // ... regular entry decryption
                     int idx = (int)((double)NextRand() * (m_scheme.ShiinaImage.Length / 4294967296.0));
