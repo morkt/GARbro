@@ -76,25 +76,38 @@ namespace GameRes.Formats.Rugp
                 {
                     ushort rha_header = Binary.BigEndian (input.ReadUInt16());
                     uint header;
+                    int add_len = 0;
+                    byte add_value = 0;
                     if (0 == schema)
                     {
                         header = 0xFFFB0000u | rha_header;
                     }
                     else
                     {
-                        if (0 != (rha_header & 0x3000))
+                        if (0 != (rha_header & 0x1000)) // RHAF_LASTZEROADD
                         {
-                            input.ReadUInt16();
+                            add_len = input.ReadUInt16();
+                            add_value = 0;
+                        }
+                        else if (0 != (rha_header & 0x2000)) // RHAF_LASTFULLADD
+                        {
+                            add_len = input.ReadUInt16();
+                            add_value = 0xFF;
                         }
                         header = RhaToMp3Header (rha_header);
                     }
                     int frame_length = GetFrameLength (header);
-                    if (0 == frame_length)
+                    if (0 == frame_length || add_len > frame_length)
                         return false;
                     if (null == frame_buffer || frame_length > frame_buffer.Length)
                         frame_buffer = new byte[frame_length];
-                    if (frame_length != input.Read (frame_buffer, 0, frame_length))
+
+                    int read_length = frame_length - add_len;
+                    if (read_length != input.Read (frame_buffer, 0, read_length))
                         break;
+                    for (int i = 0; i < add_len; ++i)
+                        frame_buffer[read_length+i] = add_value;
+
                     output.Write (Binary.BigEndian (header));
                     output.Write (frame_buffer, 0, frame_length);
                 }
@@ -127,8 +140,8 @@ namespace GameRes.Formats.Rugp
             int frame_length = BitRates[lsf, bitrate_index] * 144000;
             frame_length /= Mp3Freqs[freq] << lsf;
             frame_length += padding - 4;
-            if (0 == (header & (1 << 16)))
-                frame_length += 2;
+//            if (0 == (header & (1 << 16)))
+//                frame_length += 2;
             return frame_length;
         }
 
