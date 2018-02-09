@@ -109,6 +109,23 @@
             <MenuItem Header="{x:Static s:guiStrings.CtxMenuConvert}" InputGestureText="F6"
                       Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
                       Command="{x:Static local:Commands.ConvertMedia}" />
+            
+            <!-- ADL Play All or Stop All-->
+            <Separator/>
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuAudioLoopAll}" InputGestureText=""
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.AudioLoopAll}" />
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuAudioPlayAll}" InputGestureText=""
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.AudioPlayAll}" />
+            <!-- Following items are replaced with statusbar item
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuAudioStopAll}" InputGestureText=""
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.AudioStopAll}" />
+            <MenuItem Header="{x:Static s:guiStrings.CtxMenuAudioPauseContinue}" InputGestureText=""
+                      Visibility="{Binding Path=IsEnabled, RelativeSource={RelativeSource Self}, Mode=OneWay, Converter={StaticResource booleanToCollapsedVisibilityConverter}}"
+                      Command="{x:Static local:Commands.AudioPauseContinue}" />
+            -->
         </ContextMenu>
 
     </Window.Resources>
@@ -255,10 +272,74 @@
                     <TextBlock x:Name="appStatusText"/>
                 </StatusBarItem>
                 <Separator Width="1"/>
+                <!-- ADL -->
+                <StatusBarItem x:Name="appPreviousAudioControl" Visibility="Collapsed">
+                    <Button Width="18" Height="18"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Command="{x:Static local:Commands.AudioPrevious}">
+                        <Canvas HorizontalAlignment="Center" VerticalAlignment="Center" FlowDirection="RightToLeft">
+                            <Path Stroke="Black" StrokeThickness ="2" Canvas.Left="-5" Canvas.Top="-4">
+                                <Path.Data>
+                                    <PathGeometry>
+                                        <PathFigure StartPoint="2,0">
+                                            <LineSegment Point="2,8"></LineSegment>
+                                        </PathFigure>
+                                    </PathGeometry>
+                                </Path.Data>
+                            </Path>
+                            <Polygon Fill="Black" Stretch="None" Points="0,0 0,8 6,4" Canvas.Left="0" Canvas.Top="-4" />
+                        </Canvas>
+                    </Button>
+                </StatusBarItem>
+                <StatusBarItem x:Name="appNextAudioControl" Visibility="Collapsed">
+                    <Button Width="18" Height="18"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Command="{x:Static local:Commands.AudioNext}">
+                        <Canvas HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Path Stroke="Black" StrokeThickness ="2" Canvas.Left="-5" Canvas.Top="-4">
+                                <Path.Data>
+                                    <PathGeometry>
+                                        <PathFigure StartPoint="2,0">
+                                            <LineSegment Point="2,8"></LineSegment>
+                                        </PathFigure>
+                                    </PathGeometry>
+                                </Path.Data>
+                            </Path>
+                            <Polygon Fill="Black" Stretch="None" Points="0,0 0,8 6,4" Canvas.Left="0" Canvas.Top="-4" />
+                        </Canvas>
+                    </Button>
+                </StatusBarItem>
+                <StatusBarItem x:Name="appPauseAudioControl" Visibility="Collapsed">
+                    <Button x:Name="btn_appPauseControl" Width="18" Height="18"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Command="{x:Static local:Commands.AudioPauseContinue}">
+
+                        <!-- click to pause-->
+
+                        <Path Stroke="Black" StrokeThickness="3">
+                            <Path.Data>
+                                <PathGeometry>
+                                    <PathFigure StartPoint="2,0">
+                                        <LineSegment Point="2,8" />
+                                    </PathFigure>
+                                    <PathFigure StartPoint="8,0">
+                                        <LineSegment Point="8,8" />
+                                    </PathFigure>
+                                </PathGeometry>
+                            </Path.Data>
+                        </Path>
+                        <!-- Click to continue
+                        
+                        
+                        <Polygon Stroke="Black" Stretch="None" Fill="Black" Points="1,1 1,9 9,5"/>-->
+                    </Button>
+                </StatusBarItem>
+
                 <StatusBarItem x:Name="appPlaybackControl" Visibility="Collapsed">
                     <Button Width="18" Height="18"
                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            Command="{x:Static local:Commands.StopPlayback}">
+                            Command="{x:Static local:Commands.AudioStopAll}">
+                        <!--ADL-->
                         <Rectangle Stretch="Fill" Fill="Black" Width="8" Height="8"/>
                     </Button>
                 </StatusBarItem>
@@ -424,5 +505,13 @@
         <CommandBinding Command="{x:Static local:Commands.Descend}"     Executed="DescendExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Ascend}"      Executed="AscendExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Exit}"       Executed="ExitExec"       CanExecute="CanExecuteAlways"/>
+        <!--ADL-->
+        <CommandBinding Command="{x:Static local:Commands.AudioLoopAll}" Executed="AudioLoopAllExec" CanExecute="CanAudioLoopAllExec"/>
+        <CommandBinding Command="{x:Static local:Commands.AudioPlayAll}" Executed="AudioPlayAllExec" CanExecute="CanAudioPlayAllExec"/>
+        <CommandBinding Command="{x:Static local:Commands.AudioStopAll}" Executed="AudioStopAllExec" CanExecute="CanAudioStopAllExec"/>
+        <CommandBinding Command="{x:Static local:Commands.AudioPauseContinue}" Executed="AudioPauseContinueExec" CanExecute="CanAudioPauseContinueExec"/>
+        <CommandBinding Command="{x:Static local:Commands.AudioNext}" Executed="AudioNextExec" CanExecute="CanAudioNextExec"/>
+        <CommandBinding Command="{x:Static local:Commands.AudioPrevious}" Executed="AudioPreviousExec" CanExecute="CanAudioPreviousExec"/>
+
     </Window.CommandBindings>
 </Window>

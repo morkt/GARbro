@@ -19,7 +19,7 @@ namespace GARbro.GUI.Strings {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class guiStrings {
@@ -156,6 +156,42 @@ namespace GARbro.GUI.Strings {
         public static string ButtonSkip {
             get {
                 return ResourceManager.GetString("ButtonSkip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Looping....
+        /// </summary>
+        public static string CtxMenuAudioLoopAll {
+            get {
+                return ResourceManager.GetString("CtxMenuAudioLoopAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Continue / Pause.
+        /// </summary>
+        public static string CtxMenuAudioPauseContinue {
+            get {
+                return ResourceManager.GetString("CtxMenuAudioPauseContinue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Playing....
+        /// </summary>
+        public static string CtxMenuAudioPlayAll {
+            get {
+                return ResourceManager.GetString("CtxMenuAudioPlayAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stop playing....
+        /// </summary>
+        public static string CtxMenuAudioStopAll {
+            get {
+                return ResourceManager.GetString("CtxMenuAudioStopAll", resourceCulture);
             }
         }
         
@@ -835,6 +871,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Now Playing: {0}.
+        /// </summary>
+        public static string MsgNowPlaying {
+            get {
+                return ResourceManager.GetString("MsgNowPlaying", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File {0}
         ///already exists.
         ///
@@ -843,6 +888,15 @@ namespace GARbro.GUI.Strings {
         public static string MsgOverwrite {
             get {
                 return ResourceManager.GetString("MsgOverwrite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Paused: {0}.
+        /// </summary>
+        public static string MsgPaused {
+            get {
+                return ResourceManager.GetString("MsgPaused", resourceCulture);
             }
         }
         
@@ -861,6 +915,15 @@ namespace GARbro.GUI.Strings {
         public static string MsgReady {
             get {
                 return ResourceManager.GetString("MsgReady", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GARBro is running....
+        /// </summary>
+        public static string MsgRunning {
+            get {
+                return ResourceManager.GetString("MsgRunning", resourceCulture);
             }
         }
         
