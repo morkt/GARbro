@@ -65,6 +65,7 @@ namespace GARbro.GUI
         const StringComparison StringIgnoreCase = StringComparison.CurrentCultureIgnoreCase;
 
         #region ADL
+
         Icon app_icon = new Icon(Application.GetResourceStream(new Uri("pack://application:,,,/images/sample.ico")).Stream);
         TaskbarIcon tray = new TaskbarIcon();
         Form.Timer hide_timer = null;
@@ -100,7 +101,7 @@ namespace GARbro.GUI
             tray.ToolTipText = msg;
         }
 
-        #endregion
+#endregion
         public MainWindow()
         {
 
@@ -129,7 +130,7 @@ namespace GARbro.GUI
             };
             pathLine.EnterKeyDown += acb_OnKeyDown;
 
-            #region ADL
+#region ADL
             var ico = new Icon(Application.GetResourceStream(new Uri("pack://application:,,,/images/sample.ico")).Stream);
             tray.Icon = app_icon;
             tray.ToolTipText = guiStrings.MsgRunning;
@@ -172,7 +173,7 @@ namespace GARbro.GUI
                 pathGeometry.Figures.Add(line1);
                 m_btnContinue_state_pause.Data = pathGeometry;
             }
-            #endregion
+#endregion
         }
 
         void WindowLoaded (object sender, RoutedEventArgs e)
@@ -461,7 +462,7 @@ namespace GARbro.GUI
             }
         }
 
-        #region Refresh view on filesystem changes
+#region Refresh view on filesystem changes
 
         private FileSystemWatcher m_watcher = new FileSystemWatcher();
 
@@ -500,7 +501,7 @@ namespace GARbro.GUI
                 Dispatcher.Invoke (RefreshView);
             }
         }
-        #endregion
+#endregion
 
         /// <summary>
         /// Select specified item within CurrentDirectory and bring it into a view.
@@ -845,7 +846,7 @@ namespace GARbro.GUI
             }
         }
 
-        #region Navigation history implementation
+#region Navigation history implementation
 
         internal string CurrentPath { get { return ViewModel.Path.First(); } }
 
@@ -916,7 +917,7 @@ namespace GARbro.GUI
         {
             e.CanExecute = m_history.CanRedo();
         }
-        #endregion
+#endregion
 
         private void OpenFileExec (object control, ExecutedRoutedEventArgs e)
         {
@@ -985,12 +986,12 @@ namespace GARbro.GUI
                 return;
             if ("audio" == entry.Type)
             {
-                #region ADL
+#region ADL
                 if (AudioFileList.Count() > 0)
                 {
                     AudioFileList.Clear();
                 }
-                #endregion
+#endregion
                 PlayFile(entry.Source);
                 return;
             }
@@ -1074,7 +1075,7 @@ namespace GARbro.GUI
             }
         }
 
-        #region ADL_PLAYBACK
+#region ADL_PLAYBACK
         List<Entry> AudioFileList = new List<Entry>();
         bool isAudioLoop = false;
         int CurrentAudioFileListIdx = 0;
@@ -1147,6 +1148,26 @@ namespace GARbro.GUI
                 SetStatusText(string.Format("Files in {0} cannot be played.", selected));
             }
         }
+        private void CanAudioNextExec(object control, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = (AudioFileList.Count > 1) ? true : false;
+        }
+        private void AudioNextExec(object control, ExecutedRoutedEventArgs e)
+        {
+            ++CurrentAudioFileListIdx;
+            if (CurrentAudioFileListIdx >= AudioFileList.Count) CurrentAudioFileListIdx = 0;
+            PlayFile(AudioFileList[CurrentAudioFileListIdx]);
+        }
+        private void CanAudioPreviousExec(object control, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = (AudioFileList.Count > 1) ? true : false;
+        }
+        private void AudioPreviousExec(object control, ExecutedRoutedEventArgs e)
+        {
+            --CurrentAudioFileListIdx;
+            if (CurrentAudioFileListIdx < 0) CurrentAudioFileListIdx = AudioFileList.Count - 1;
+            PlayFile(AudioFileList[CurrentAudioFileListIdx]);
+        }
         private void AudioLoopAllExec(object control, ExecutedRoutedEventArgs e)
         {
             isAudioLoop = true;
@@ -1206,7 +1227,7 @@ namespace GARbro.GUI
         }
 
 
-        #endregion
+#endregion
 
         private void PlayFile (Entry entry)
         {
@@ -1241,10 +1262,10 @@ namespace GARbro.GUI
                 
                 AudioDevice.Play();
 
-                #region ADL
+#region ADL
                 if (AudioFileList.Count == 0)
                     AudioFileList.Add(entry);
-                appPauseControl.Visibility = Visibility.Visible;
+                appPauseAudioControl.Visibility = Visibility.Visible;
                 SetAppPauseControlIcon();
 
                 //this.app_notify_icon.ShowBalloonTip(2000, "Now playing:", entry.Name, Form.ToolTipIcon.Info);
@@ -1254,7 +1275,12 @@ namespace GARbro.GUI
                     String.Format(guiStrings.MsgNowPlaying, entry.Name)
                     );
                 trayUpdate(String.Format(guiStrings.MsgNowPlaying, entry.Name));
-                #endregion
+                if (AudioFileList.Count > 1)
+                {
+                    appNextAudioControl.Visibility = Visibility.Visible;
+                    appPreviousAudioControl.Visibility = Visibility.Visible;
+                }
+#endregion
 
                 appPlaybackControl.Visibility = Visibility.Visible;
                 var fmt = CurrentAudio.WaveFormat;
@@ -1290,7 +1316,7 @@ namespace GARbro.GUI
                 CurrentAudio = null;
                 appPlaybackControl.Visibility = Visibility.Collapsed;
 
-                #region ADL
+#region ADL
                 trayUpdate("");
                 if (AudioFileList.Count > 0 && AudioFileList.Count > ++CurrentAudioFileListIdx)
                 {
@@ -1305,12 +1331,14 @@ namespace GARbro.GUI
                     }
                     else
                     {
-                        appPauseControl.Visibility = Visibility.Collapsed;
+                        appPauseAudioControl.Visibility = Visibility.Collapsed;
+                        appNextAudioControl.Visibility = Visibility.Collapsed;
+                        appPreviousAudioControl.Visibility = Visibility.Collapsed;
                         AudioFileList.Clear();
                         trayUpdate(guiStrings.MsgRunning);
                     }
                 }
-                #endregion
+#endregion
 
             }
             catch (Exception X)
@@ -1749,6 +1777,11 @@ namespace GARbro.GUI
                 Trace.WriteLine (X.Message, "Drop event failed");
             }
         }
+
+        private void CommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+
+        }
     }
 
     public class SortModeToBooleanConverter : IValueConverter
@@ -1770,7 +1803,7 @@ namespace GARbro.GUI
 
     public class BooleanToCollapsedVisibilityConverter : IValueConverter
     {
-        #region IValueConverter Members
+#region IValueConverter Members
 
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -1784,7 +1817,7 @@ namespace GARbro.GUI
             throw new NotImplementedException();
         }
 
-        #endregion
+#endregion
     }
 
     public static class Commands
@@ -1820,13 +1853,13 @@ namespace GARbro.GUI
         public static readonly RoutedCommand TroubleShooting = new RoutedCommand();
         public static readonly RoutedCommand Descend = new RoutedCommand();
         public static readonly RoutedCommand Ascend = new RoutedCommand();
-        #region ADL
+#region ADL
         public static readonly RoutedCommand AudioPlayAll = new RoutedCommand();
         public static readonly RoutedCommand AudioLoopAll = new RoutedCommand();
         public static readonly RoutedCommand AudioStopAll = new RoutedCommand();
         public static readonly RoutedCommand AudioPauseContinue = new RoutedCommand();
-        //public static readonly RoutedCommand AudioNext = new RoutedCommand();
-        //public static readonly RoutedCommand AudioPrevious = new RoutedCommand();
-        #endregion
+        public static readonly RoutedCommand AudioNext = new RoutedCommand();
+        public static readonly RoutedCommand AudioPrevious = new RoutedCommand();
+#endregion
     }
 }
