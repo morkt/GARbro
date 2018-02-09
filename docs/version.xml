@@ -40,7 +40,7 @@ New formats:
         </Requires>
     </FormatsData>
     <FormatsData>
-        <FileVersion>103</FileVersion>
+        <FileVersion>104</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.38.1669"/>
