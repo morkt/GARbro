@@ -545,4 +545,25 @@ Overwrite?</value>
   <data name="TextPreferences" xml:space="preserve">
     <value>Preferences</value>
   </data>
+  <data name="CtxMenuAudioLoopAll" xml:space="preserve">
+    <value>Looping...</value>
+  </data>
+  <data name="CtxMenuAudioPauseContinue" xml:space="preserve">
+    <value>Continue / Pause</value>
+  </data>
+  <data name="CtxMenuAudioPlayAll" xml:space="preserve">
+    <value>Playing...</value>
+  </data>
+  <data name="CtxMenuAudioStopAll" xml:space="preserve">
+    <value>Stop playing...</value>
+  </data>
+  <data name="MsgNowPlaying" xml:space="preserve">
+    <value>Now Playing: {0}</value>
+  </data>
+  <data name="MsgPaused" xml:space="preserve">
+    <value>Paused: {0}</value>
+  </data>
+  <data name="MsgRunning" xml:space="preserve">
+    <value>GARBro is running...</value>
+  </data>
 </root>
