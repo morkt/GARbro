@@ -110,6 +110,9 @@ namespace GameRes.Formats.Rugp
 
                     output.Write (Binary.BigEndian (header));
                     output.Write (frame_buffer, 0, frame_length);
+
+                    if (0 == (header & (1 << 16))) // CRC bit
+                        output.Write (input.ReadUInt16());
                 }
             }
             return mp3.Length > 0;
@@ -140,8 +143,6 @@ namespace GameRes.Formats.Rugp
             int frame_length = BitRates[lsf, bitrate_index] * 144000;
             frame_length /= Mp3Freqs[freq] << lsf;
             frame_length += padding - 4;
-//            if (0 == (header & (1 << 16)))
-//                frame_length += 2;
             return frame_length;
         }
 
