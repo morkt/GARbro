@@ -2,7 +2,7 @@
 //! \date       Mon Jul 14 14:40:06 2014
 //! \brief      YPF resource format implementation.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -103,27 +103,42 @@ namespace GameRes.Formats.YuRis
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return true; } }
 
-        static public Dictionary<string, YpfScheme> KnownSchemes = new Dictionary<string, YpfScheme>();
+        public YpfOpener ()
+        {
+            Signatures = new uint[] { 0x00465059, 0 };
+        }
+
+        static public Dictionary<string, YpfScheme> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
+
+        static YuRisScheme DefaultScheme = new YuRisScheme { KnownSchemes = new Dictionary<string, YpfScheme>() };
 
         public override ResourceScheme Scheme
         {
-            get { return new YuRisScheme { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((YuRisScheme)value).KnownSchemes; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (YuRisScheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            uint version = file.View.ReadUInt32 (4);
-            uint count = file.View.ReadUInt32 (8);
-            uint dir_size = file.View.ReadUInt32 (12);
-            if (dir_size < count * 0x17 || count > 0xfffff)
+            long ypf_offset = 0;
+            if (file.View.AsciiEqual (0, "MZ"))
+            {
+                ypf_offset = FindYser (file);
+            }
+            if (!file.View.AsciiEqual (ypf_offset, "YPF\0"))
                 return null;
-            if (dir_size > file.View.Reserve (0x20, dir_size))
+
+            uint version  = file.View.ReadUInt32 (ypf_offset+4);
+            int count     = file.View.ReadInt32 (ypf_offset+8);
+            uint dir_size = file.View.ReadUInt32 (ypf_offset+12);
+            if (!IsSaneCount (count) || dir_size < count * 0x17)
+                return null;
+            if (dir_size > file.View.Reserve (ypf_offset+0x20, dir_size))
                 return null;
             var parser = new Parser (file, version, count, dir_size);
 
             var scheme = QueryEncryptionScheme (file.Name, version);
-            var dir = parser.ScanDir (scheme);
+            var dir = parser.ScanDir (scheme, ypf_offset);
             if (null == dir || 0 == dir.Count)
                 return null;
 
@@ -190,6 +205,16 @@ namespace GameRes.Formats.YuRis
                     ExtraHeaderSize = version >= 0x1D9 ? 4u : 0u,
                 };
             return scheme;
+        }
+
+        internal long FindYser (ArcView file)
+        {
+            var exe = new ExeFile (file);
+            var offset = exe.FindAsciiString (exe.Overlay, "YSER", 0x10);
+            if (-1 == offset)
+                return 0;
+            uint header_size = file.View.ReadUInt32 (offset+4);
+            return offset + header_size;
         }
 
         delegate uint ChecksumFunc (byte[] data);
@@ -358,7 +383,7 @@ namespace GameRes.Formats.YuRis
                 uint* header = (uint*)raw;
                 uint version = header[1];
                 int first_item, last_item;
-                if (version >= 0x1CE || 0x12C == version || 0x19A == version)
+                if (version >= 0x1CE || 0x12C == version || 0x19A == version || 0x1C3 == version)
                 {
                     first_item = 3;
                     last_item = 7;
@@ -404,10 +429,10 @@ namespace GameRes.Formats.YuRis
         {
             ArcView m_file;
             uint    m_version;
-            uint    m_count;
+            int     m_count;
             uint    m_dir_size;
             
-            public Parser (ArcView file, uint version, uint count, uint dir_size)
+            public Parser (ArcView file, uint version, int count, uint dir_size)
             {
                 m_file = file;
                 m_count = count;
@@ -417,15 +442,15 @@ namespace GameRes.Formats.YuRis
             // int32-name_checksum, byte-name_count, *-name, byte-file_type
 	        // byte-pack_flag, int32-size, int32-packed_size, int32-offset, int32-file_checksum
 
-            public List<Entry> ScanDir (YpfScheme scheme)
+            public List<Entry> ScanDir (YpfScheme scheme, long base_offset = 0)
             {
-                uint dir_offset = 0x20;
+                long dir_offset = base_offset + 0x20;
                 uint dir_remaining = m_dir_size;
-                var dir = new List<Entry> ((int)m_count);
+                var dir = new List<Entry> (m_count);
                 byte key = scheme.Key;
                 bool guess_key = scheme.GuessKey;
                 uint extra_size = 0x12 + scheme.ExtraHeaderSize;
-                for (uint num = 0; num < m_count; ++num)
+                for (int num = 0; num < m_count; ++num)
                 {
                     if (dir_remaining < 5+extra_size)
                         return null;
@@ -482,7 +507,7 @@ namespace GameRes.Formats.YuRis
                     entry.IsPacked      = 0 != m_file.View.ReadByte (dir_offset+1);
                     entry.UnpackedSize  = m_file.View.ReadUInt32 (dir_offset+2);
                     entry.Size          = m_file.View.ReadUInt32 (dir_offset+6);
-                    entry.Offset        = m_file.View.ReadUInt32 (dir_offset+10);
+                    entry.Offset        = m_file.View.ReadUInt32 (dir_offset+10) + base_offset;
                     if (entry.CheckPlacement (m_file.MaxOffset))
                         dir.Add (entry);
                     dir_offset += extra_size;
