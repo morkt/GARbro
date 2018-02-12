@@ -172,86 +172,19 @@ namespace GameRes.Formats.Circus
                     int line = 0;
                     for (int h = 0; h < m_height; h++)
                     {
-                        int shift = (h & 1) * 3;
-
                         for (int w = 0;	w < m_width; w++)
                         {
                             int pixel = line + w * 4;
-                            int alpha = m_output[pixel];
-                            int b = m_output[pixel+1];
-                            int g = m_output[pixel+2];
-                            int r = m_output[pixel+3];
-
-                            if (!is_diff && alpha != alpha_flip)
-                            {
-                                b += (w & 1) + shift;
-                                if (b < 0)
-                                    b = 0;
-                                else if (b > 0xff)
-                                    b = 0xff;
-
-                                g += (w & 1) + shift;
-                                if (g < 0)
-                                    g = 0;
-                                else if (g > 0xff)
-                                    g = 0xff;
-
-                                r += (w & 1) + shift;
-                                if (r < 0)
-                                    r = 0;
-                                else if (r > 0xff)
-                                    r = 0xff;
-                            }
-
-                            m_output[pixel]   = (byte)b;
-                            m_output[pixel+1] = (byte)g;
-                            m_output[pixel+2] = (byte)r;
+                            var alpha = m_output[pixel];
+                            var b = m_output[pixel+1];
+                            var g = m_output[pixel+2];
+                            var r = m_output[pixel+3];
+                            m_output[pixel]   = b;
+                            m_output[pixel+1] = g;
+                            m_output[pixel+2] = r;
                             m_output[pixel+3] = (byte)(alpha ^ alpha_flip);
-                            shift = -shift;
                         }
                         line += m_stride;
-                    }
-                }
-                else if (24 == m_bpp)
-                {
-                    int pixel = 0;
-
-                    for (int h = 0; h < m_height; h++)
-                    {
-                        int shift = (h & 1) * 3;
-
-                        for (int w = 0;	w < m_width; w++)
-                        {
-                            int b = m_output[pixel];
-                            int g = m_output[pixel+1];
-                            int r = m_output[pixel+2];
-                            if (b != 0xff || 0 != g || r != b)
-                            {
-                                b += (w & 1) + shift;
-                                if (b < 0)
-                                    b = 0;
-                                else if (b > 0xff)
-                                    b = 0xff;
-
-                                g += (w & 1) + shift;
-                                if (g < 0)
-                                    g = 0;
-                                else if (g > 0xff)
-                                    g = 0xff;
-
-                                r += (w & 1) + shift;
-                                if (r < 0)
-                                    r = 0;
-                                else if (r > 0xff)
-                                    r = 0xff;
-
-                                m_output[pixel]   = (byte)b;
-                                m_output[pixel+1] = (byte)g;
-                                m_output[pixel+2] = (byte)r;
-                            }
-                            shift = -shift;
-                            pixel += 3;
-                        }
                     }
                 }
             }
