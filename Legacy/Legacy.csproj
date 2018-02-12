@@ -87,6 +87,7 @@
     <Compile Include="Mina\ImageMD.cs" />
     <Compile Include="Mink\ArcMINK.cs" />
     <Compile Include="Mutation\ArcDPF.cs" />
+    <Compile Include="Sorciere\ImageBIZ.cs" />
     <Compile Include="Uncanny\AudioCWV.cs" />
     <Compile Include="Uncanny\ImageCII.cs" />
     <Compile Include="Kurumi\ArcMPK.cs" />
