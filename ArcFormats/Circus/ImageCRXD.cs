@@ -151,7 +151,7 @@ namespace GameRes.Formats.Circus
                                                    (int)base_info.Width, (int)base_info.Height);
                     diff_rect = Rectangle.Intersect (diff_rect, base_rect);
                     if (diff_rect.IsEmpty)
-                        throw new InvalidFormatException ("Empty diff region");
+                        return ImageData.Create (base_info, reader.Format, reader.Palette, reader.Data, reader.Stride);
 
                     int pixel_size = base_info.BPP / 8;
                     int x = diff_rect.X - base_rect.X;
