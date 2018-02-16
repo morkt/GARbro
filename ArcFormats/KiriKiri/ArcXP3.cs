@@ -662,6 +662,8 @@ NextEntry:
         {
             var title = FormatCatalog.Instance.LookupGame (file.Name);
             if (string.IsNullOrEmpty (title))
+                title = FormatCatalog.Instance.LookupGame (file.Name, @"..\*.exe");
+            if (string.IsNullOrEmpty (title))
                 return null;
             ICrypt algorithm;
             if (!KnownSchemes.TryGetValue (title, out algorithm) && NoCryptTitles.Contains (title))
