@@ -28,6 +28,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [000114][Excellents] Thanksgiving Special
+
 namespace GameRes.Formats.System21
 {
     [Export(typeof(ArchiveFormat))]

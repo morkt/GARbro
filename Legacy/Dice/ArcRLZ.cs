@@ -27,6 +27,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [000623][Marimo] Setsunai
+
 namespace GameRes.Formats.Dice
 {
     [Export(typeof(ArchiveFormat))]

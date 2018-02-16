@@ -29,6 +29,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
 
+// [000224][Uran] P.S. 3 ~Harem Night~
+
 namespace GameRes.Formats.Uran
 {
     internal class NclEntry : PackedEntry

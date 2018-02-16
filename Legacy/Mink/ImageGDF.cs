@@ -26,6 +26,8 @@
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [000225][Mink] Wonpara Wars
+
 namespace GameRes.Formats.Mink
 {
     [Export(typeof(ImageFormat))]

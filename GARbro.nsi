@@ -67,6 +67,8 @@ Section "install"
     File "${RELEASE_DIR}\NAudio.dll"
     File "${RELEASE_DIR}\NVorbis.dll"
     File "${RELEASE_DIR}\System.Data.SQLite.dll"
+    File "${RELEASE_DIR}\System.IO.FileSystem.dll"
+    File "${RELEASE_DIR}\System.Security.Cryptography.Primitives.dll"
     File "${RELEASE_DIR}\System.Windows.Controls.Input.Toolkit.dll"
     File "${RELEASE_DIR}\WPFToolkit.dll"
     File "${RELEASE_DIR}\README.txt"
@@ -74,6 +76,7 @@ Section "install"
     File "${RELEASE_DIR}\supported.html"
 
     !insertmacro InstallSubDir GameData
+    !insertmacro InstallSubDir ja-JP
     !insertmacro InstallSubDir ko-KR
     !insertmacro InstallSubDir ru-RU
     !insertmacro InstallSubDir zh-Hans
@@ -122,6 +125,8 @@ Section "uninstall"
     Delete $INSTDIR\NAudio.dll
     Delete $INSTDIR\NVorbis.dll
     Delete $INSTDIR\System.Data.SQLite.dll
+    Delete $INSTDIR\System.IO.FileSystem.dll
+    Delete $INSTDIR\System.Security.Cryptography.Primitives.dll
     Delete $INSTDIR\System.Windows.Controls.Input.Toolkit.dll
     Delete $INSTDIR\WPFToolkit.dll
     Delete $INSTDIR\README.txt
@@ -129,6 +134,7 @@ Section "uninstall"
     Delete $INSTDIR\supported.html
     Delete $INSTDIR\uninstall.exe
     RMDir /r $INSTDIR\GameData
+    RMDir /r $INSTDIR\ja-JP
     RMDir /r $INSTDIR\ko-KR
     RMDir /r $INSTDIR\ru-RU
     RMDir /r $INSTDIR\zh-Hans

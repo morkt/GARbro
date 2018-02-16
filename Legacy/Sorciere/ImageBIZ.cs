@@ -28,6 +28,8 @@ using System.IO;
 using System.Windows.Media;
 using GameRes.Compression;
 
+// [000225][Sorciere] Karei
+
 namespace GameRes.Formats.Sorciere
 {
     [Export(typeof(ImageFormat))]
