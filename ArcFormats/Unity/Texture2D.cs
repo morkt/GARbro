@@ -44,6 +44,7 @@ namespace GameRes.Formats.Unity
         DXT5 = 12,
         RGBA4444 = 13,
         BGRA32 = 14,
+        BC7 = 25,
         DXT1Crunched = 28,
         DXT5Crunched = 29,
     }
