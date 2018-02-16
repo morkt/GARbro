@@ -133,10 +133,10 @@ namespace GameRes.Formats.NonColor
         {
             var darc = arc as ArcDatArchive;
             var dent = entry as ArcDatEntry;
-            if (null == darc || null == dent || 0 == dent.Flags || 0 == dent.Size)
+            if (null == darc || null == dent || 0 == dent.Size)
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            if (2 == dent.Flags)
+            if (dent.IsPacked)
             {
                 if (darc.MasterKey != 0)
                     DecryptData (data, (uint)(dent.Hash ^ darc.MasterKey));
@@ -235,12 +235,14 @@ namespace GameRes.Formats.NonColor
             }
         }
 
-        public static Dictionary<string, Scheme> KnownSchemes = new Dictionary<string, Scheme>();
+        static ArcDatScheme DefaultScheme = new ArcDatScheme { KnownSchemes = new Dictionary<string, Scheme>() };
+
+        public static Dictionary<string, Scheme> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new ArcDatScheme { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((ArcDatScheme)value).KnownSchemes; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (ArcDatScheme)value; }
         }
 
         internal Scheme QueryScheme (string arc_name)
@@ -287,7 +289,7 @@ namespace GameRes.Formats.NonColor
 
         public List<Entry> Read (IDictionary<ulong, NameRecord> file_map)
         {
-            int skipped = 0;
+            int skipped = 0, last_reported = -1;
             string last_name = null;
             m_input.Position = IndexPosition;
             for (int i = 0; i < m_count; ++i)
@@ -304,7 +306,7 @@ namespace GameRes.Formats.NonColor
                 {
                     if (null == known_rec.Name)
                     {
-                        if (last_name != null)
+                        if (last_name != null && last_reported != i-1)
                             Trace.WriteLine (string.Format ("[{0}] {1}", i-1, last_name), "[noncolor]");
                         Trace.WriteLine (string.Format ("[{0}] Unknown hash {1:X8}", i, entry.Hash), "[noncolor]");
                         last_name = null;
@@ -315,7 +317,10 @@ namespace GameRes.Formats.NonColor
                     {
                         var raw_name = known_rec.NameBytes;
                         if (null == last_name && i > 0)
+                        {
                             Trace.WriteLine (string.Format ("[{0}] {1}", i, known_rec.Name), "[noncolor]");
+                            last_reported = i;
+                        }
                         entry.Offset        ^= raw_name[raw_name.Length >> 1];
                         entry.Size          ^= raw_name[raw_name.Length >> 2];
                         entry.UnpackedSize  ^= raw_name[raw_name.Length >> 3];
@@ -369,6 +374,7 @@ namespace GameRes.Formats.NonColor
             int flags  = m_input.ReadByte() ^ (byte)hash;
             return new ArcDatEntry {
                 Hash   = hash,
+                Flags  = flags,
                 Offset = m_input.ReadUInt32() ^ (uint)hash ^ m_master_key,
                 Size   = m_input.ReadUInt32() ^ (uint)hash,
                 UnpackedSize = m_input.ReadUInt32() ^ (uint)hash,
