@@ -83,6 +83,7 @@
     <Compile Include="Iris\ArcFPACK.cs" />
     <Compile Include="Jupiter\ArcLB5.cs" />
     <Compile Include="Lune\ArcPACK.cs" />
+    <Compile Include="Marron\ArcCPN.cs" />
     <Compile Include="Mina\ArcML2.cs" />
     <Compile Include="Mina\ImageMD.cs" />
     <Compile Include="Mink\ArcMINK.cs" />
