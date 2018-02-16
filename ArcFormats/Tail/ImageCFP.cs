@@ -48,12 +48,13 @@ namespace GameRes.Formats.Tail
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            file.Position = 0x1C;
             int stride = ((int)info.Width * 3 + 3) & -4;
             int width = ((int)info.Width + 1) & -2;
             int height = (int)info.Height;
             int total = width * height;
-            var input = file.ReadBytes (total * 3);
+            int packed_size = total * 3;
+            file.Position = file.Length - packed_size;
+            var input = file.ReadBytes (packed_size);
             var pixels = new byte[stride*height];
             int src1 = 0;
             int src2 = total / 2;
@@ -81,6 +82,68 @@ namespace GameRes.Formats.Tail
         public override void Write (Stream file, ImageData image)
         {
             throw new System.NotImplementedException ("CfpFormat.Write not implemented");
+        }
+    }
+
+    internal class CfpMetaData : ImageMetaData
+    {
+        public int  DataOffset;
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class Cfp2Format : ImageFormat
+    {
+        public override string         Tag { get { return "CFP/REB2"; } }
+        public override string Description { get { return "Tail transparent bitmap"; } }
+        public override uint     Signature { get { return 0x32424552; } } // 'REB2'
+
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
+        {
+            var header = file.ReadHeader (0x20);
+            int start_pos = header.ToInt32 (0x10);
+            int extra_length = header.ToInt32 (0x1C);
+            if (start_pos < 0x36)
+                return null;
+            return new CfpMetaData {
+                Width = header.ToUInt32 (0x14),
+                Height = header.ToUInt32 (0x18),
+                BPP = 32,
+                DataOffset = 0x20 + extra_length,
+            };
+        }
+
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
+        {
+            var meta = (CfpMetaData)info;
+            int width = (int)meta.Width;
+            int height = (int)meta.Height;
+            int stride = width * 4;
+            int total = width * height;
+            int packed_size = total * 4;
+            file.Position = meta.DataOffset;
+            var pixels = new byte[stride*height];
+            var input = file.ReadBytes (packed_size);
+            int b = 0;
+            int g = total;
+            int r = total * 2;
+            int a = total * 3;
+            for (int dst_row = stride * (height - 1); dst_row >= 0; dst_row -= stride)
+            {
+                int dst = dst_row;
+                for (int x = 0; x < width; ++x)
+                {
+                    pixels[dst++] = input[b++];
+                    pixels[dst++] = input[g++];
+                    pixels[dst++] = input[r++];
+                    pixels[dst++] = input[a++];
+                }
+            }
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, stride);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("Cfp2Format.Write not implemented");
         }
     }
 }
