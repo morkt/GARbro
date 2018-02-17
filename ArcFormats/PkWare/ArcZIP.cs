@@ -100,6 +100,13 @@ namespace GameRes.Formats.PkWare
 
         static readonly byte[] PkDirSignature = { (byte)'P', (byte)'K', 5, 6 };
 
+        public ZipOpener ()
+        {
+            Settings = new[] { ZipEncoding };
+        }
+
+        EncodingSetting ZipEncoding = new EncodingSetting ("ZIPEncodingCP");
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (-1 == SearchForSignature (file, PkDirSignature))
@@ -182,7 +189,7 @@ namespace GameRes.Formats.PkWare
             Encoding enc;
             try
             {
-                enc = Encoding.GetEncoding (Properties.Settings.Default.ZIPEncodingCP);
+                enc = ZipEncoding.Get<Encoding>();
             }
             catch
             {

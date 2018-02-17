@@ -347,6 +347,9 @@
   <data name="YPFTryGuess" xml:space="preserve">
     <value>Попытаться подобрать</value>
   </data>
+  <data name="ZIPEncodingCP" xml:space="preserve">
+    <value>Кодировка имён файлов</value>
+  </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>Содержимое архива зашифровано.</value>
   </data>

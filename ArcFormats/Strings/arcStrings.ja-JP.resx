@@ -495,4 +495,7 @@ Choose encryption scheme or enter a passphrase.</comment>
     <value>Fix Ogg files checksums</value>
     <comment>Translation pending</comment>
   </data>
+  <data name="ZIPEncodingCP" xml:space="preserve">
+    <value>Default file names encoding</value>
+  </data>
 </root>

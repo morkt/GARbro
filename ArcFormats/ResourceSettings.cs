@@ -4,6 +4,7 @@
 //
 
 using System.ComponentModel.Composition;
+using System.Text;
 using GameRes.Formats.Strings;
 
 namespace GameRes.Formats
@@ -22,6 +23,18 @@ namespace GameRes.Formats
             Name = name;
             Text = arcStrings.ResourceManager.GetString (name, arcStrings.Culture) ?? name;
         }
+    }
+
+    internal class EncodingSetting : LocalResourceSetting
+    {
+        public override object Value {
+            get { return Encoding.GetEncoding ((int)base.Value); }
+            set { base.Value = ((Encoding)value).CodePage; }
+        }
+
+        public EncodingSetting () { }
+
+        public EncodingSetting (string name) : base (name) { }
     }
 
     [Export(typeof(ISettingsManager))]

@@ -864,6 +864,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default file names encoding.
+        /// </summary>
+        public static string ZIPEncodingCP {
+            get {
+                return ResourceManager.GetString("ZIPEncodingCP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Archive content is encrypted..
         /// </summary>
         public static string ZIPEncryptedNotice {

@@ -396,4 +396,8 @@
     <value>Fix Ogg files checksums</value>
     <comment>Translation pending</comment>
   </data>
+  <data name="ZIPEncodingCP" xml:space="preserve">
+    <value>Default file names encoding</value>
+    <comment>translation pending</comment>
+  </data>
 </root>
