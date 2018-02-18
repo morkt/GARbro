@@ -88,6 +88,7 @@ namespace GameRes.Formats.Tail
     internal class CfpMetaData : ImageMetaData
     {
         public int  DataOffset;
+        public int  DataLength;
     }
 
     [Export(typeof(ImageFormat))]
@@ -101,15 +102,22 @@ namespace GameRes.Formats.Tail
         {
             var header = file.ReadHeader (0x20);
             int start_pos = header.ToInt32 (0x10);
-            int extra_length = header.ToInt32 (0x1C);
             if (start_pos < 0x36)
                 return null;
-            return new CfpMetaData {
+            int extra_length = header.ToInt32 (0x1C);
+            int width = header.ToInt32 (0x14);
+            int height = header.ToInt32 (0x18);
+            var info = new CfpMetaData {
                 Width = header.ToUInt32 (0x14),
                 Height = header.ToUInt32 (0x18),
                 BPP = 32,
-                DataOffset = 0x20 + extra_length,
             };
+            info.DataLength = width * height * 4;
+            if (0x20 + info.DataLength > file.Length)
+                info.DataOffset = 0x1C;
+            else
+                info.DataOffset = 0x20 + header.ToInt32 (0x1C);
+            return info;
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -119,10 +127,9 @@ namespace GameRes.Formats.Tail
             int height = (int)meta.Height;
             int stride = width * 4;
             int total = width * height;
-            int packed_size = total * 4;
             file.Position = meta.DataOffset;
+            var input = file.ReadBytes (meta.DataLength);
             var pixels = new byte[stride*height];
-            var input = file.ReadBytes (packed_size);
             int b = 0;
             int g = total;
             int r = total * 2;
