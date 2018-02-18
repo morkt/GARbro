@@ -87,6 +87,11 @@ namespace GameRes.Formats.KiriKiri
             TpmFileName = scheme.TpmFileName;
         }
 
+        public override string ToString ()
+        {
+            return string.Format ("{0}(0x{1:X}, 0x{2:X})", base.ToString(), m_mask, m_offset);
+        }
+
         static readonly byte[] s_ctl_block_signature = Encoding.ASCII.GetBytes (" Encryption control block");
 
         /// <summary>

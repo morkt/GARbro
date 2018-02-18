@@ -12,5 +12,5 @@
               DisplayMemberPath="Key" SelectedValuePath="Key"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=XP3Scheme, Mode=TwoWay}"/>
     <TextBlock Name="AlgorithmName" DataContext="{Binding ElementName=Scheme, Path=SelectedItem}" Margin="0,5,0,0"
-               Text="{Binding Path=Value, Mode=OneWay, Converter={StaticResource ClassNameConverter}}"/>
+               Text="{Binding Path=Value, Mode=OneWay}"/>
 </StackPanel>

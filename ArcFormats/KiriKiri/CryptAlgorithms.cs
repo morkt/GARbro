@@ -53,6 +53,11 @@ namespace GameRes.Formats.KiriKiri
         /// </summary>
         public bool ObfuscatedIndex { get; set; }
 
+        public override string ToString ()
+        {
+            return this.GetType().Name;
+        }
+
         public virtual byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
             byte[] buffer = new byte[1] { value };
@@ -306,6 +311,11 @@ namespace GameRes.Formats.KiriKiri
         public XorCrypt (uint key)
         {
             m_key = (byte)key;
+        }
+
+        public override string ToString ()
+        {
+            return string.Format ("{0}(0x{1:X02})", base.ToString(), m_key);
         }
 
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
@@ -814,6 +824,11 @@ namespace GameRes.Formats.KiriKiri
             m_seed = seed;
         }
 
+        public override string ToString ()
+        {
+            return string.Format ("{0}(0x{1:X08})", base.ToString(), m_seed);
+        }
+
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
         {
             int key_pos = (int)offset & 0x1F;
@@ -879,6 +894,11 @@ namespace GameRes.Formats.KiriKiri
         public StripeCrypt (byte key)
         {
             m_key = key;
+        }
+
+        public override string ToString ()
+        {
+            return string.Format ("{0}(0x{1:X02})", base.ToString(), m_key);
         }
 
         public override byte Decrypt (Xp3Entry entry, long offset, byte value)
