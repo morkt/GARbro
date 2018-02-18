@@ -38,6 +38,11 @@ namespace GameRes.Formats.Escude
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
+        public BinOpener ()
+        {
+            Signatures = new uint[] { 0x2D435345 };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "ARC"))
