@@ -99,7 +99,7 @@ namespace GARbro.GUI
         private IEnumerable<Encoding> m_encoding_list = GetEncodingList();
         public IEnumerable<Encoding> TextEncodings { get { return m_encoding_list; } }
 
-        private static IEnumerable<Encoding> GetEncodingList ()
+        internal static IEnumerable<Encoding> GetEncodingList (bool exclude_utf16 = false)
         {
             var list = new HashSet<Encoding>();
             list.Add (Encoding.Default);
@@ -108,8 +108,11 @@ namespace GARbro.GUI
             list.Add (Encoding.GetEncoding (932));
             list.Add (Encoding.GetEncoding (936));
             list.Add (Encoding.UTF8);
-            list.Add (Encoding.Unicode);
-            list.Add (Encoding.BigEndianUnicode);
+            if (!exclude_utf16)
+            {
+                list.Add (Encoding.Unicode);
+                list.Add (Encoding.BigEndianUnicode);
+            }
             return list;
         }
  
