@@ -104,12 +104,11 @@ namespace GameRes.Formats.Tail
             int start_pos = header.ToInt32 (0x10);
             if (start_pos < 0x36)
                 return null;
-            int extra_length = header.ToInt32 (0x1C);
             int width = header.ToInt32 (0x14);
             int height = header.ToInt32 (0x18);
             var info = new CfpMetaData {
-                Width = header.ToUInt32 (0x14),
-                Height = header.ToUInt32 (0x18),
+                Width = (uint)width,
+                Height = (uint)height,
                 BPP = 32,
             };
             info.DataLength = width * height * 4;
