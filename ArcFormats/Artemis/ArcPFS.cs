@@ -65,14 +65,14 @@ namespace GameRes.Formats.Artemis
             int count = file.View.ReadInt32 (7);
             if (!IsSaneCount (count) || 7L + index_size > file.MaxOffset)
                 return null;
-
+            var encoding = version >= 8 ? System.Text.Encoding.UTF8 : Encodings.cp932;
             var index = file.View.ReadBytes (7, index_size);
             int index_offset = 4;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
                 int name_length = index.ToInt32 (index_offset);
-                var name = Encodings.cp932.GetString (index, index_offset+4, name_length);
+                var name = encoding.GetString (index, index_offset+4, name_length);
                 index_offset += name_length + 8;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = index.ToUInt32 (index_offset);
