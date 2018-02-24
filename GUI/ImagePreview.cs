@@ -61,7 +61,7 @@ namespace GARbro.GUI
                 m_active_viewer = value;
                 m_active_viewer.Visibility = Visibility.Visible;
                 bool exists = false;
-                foreach (var c in PreviewPane.Children.Cast<UIElement>())
+                foreach (UIElement c in PreviewPane.Children)
                 {
                     if (c != m_active_viewer)
                         c.Visibility = Visibility.Collapsed;
@@ -163,11 +163,9 @@ namespace GARbro.GUI
             SetStatusText ("");
             var vm = ViewModel;
             m_current_preview = new PreviewFile { Path = vm.Path, Name = entry.Name, Entry = entry };
-            ImageCanvas.Source = null;
-            TextView.Clear();
             if (!IsPreviewPossible (entry))
             {
-                ActiveViewer = ImageView;
+                ResetPreviewPane();
                 return;
             }
             if ("image" != entry.Type)
@@ -216,6 +214,7 @@ namespace GARbro.GUI
             }
             catch (Exception X)
             {
+                ResetPreviewPane();
                 SetStatusText (X.Message);
             }
             finally
@@ -236,6 +235,7 @@ namespace GARbro.GUI
             }
             catch (Exception X)
             {
+                Dispatcher.Invoke (ResetPreviewPane);
                 SetStatusText (X.Message);
             }
         }
