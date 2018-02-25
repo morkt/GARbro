@@ -127,9 +127,14 @@ namespace GameRes.Formats.YaneSDK
             else if ("init.dat" == dat_name)
                 return file.CreateStream();
             // try to open 'init.dat' archive in the same directory
-            var init_dat = VFS.CombinePath (VFS.GetDirectoryName (file.Name), "init.dat");
+            var dir_name = VFS.GetDirectoryName (file.Name);
+            var init_dat = VFS.CombinePath (dir_name, "init.dat");
             if (!VFS.FileExists (init_dat))
-                return file.CreateStream();
+            {
+                init_dat = VFS.CombinePath (VFS.CombinePath (dir_name, "arc"), "init.dat");
+                if (!VFS.FileExists (init_dat))
+                    return file.CreateStream();
+            }
             try
             {
                 using (var init = VFS.OpenView (init_dat))
