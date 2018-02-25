@@ -29,6 +29,11 @@ using System.Text;
 
 namespace GameRes.Formats.Unity.Utage
 {
+    internal class UtageMetaData : ImageMetaData
+    {
+        public ImageFormat  UFormat;
+    }
+
     [Export(typeof(ImageFormat))]
     public class UtageFormat : ImageFormat
     {
@@ -36,18 +41,35 @@ namespace GameRes.Formats.Unity.Utage
         public override string Description { get { return "Utage engine encrypted image"; } }
         public override uint     Signature { get { return 0x323E3EC0; } }
 
+        public UtageFormat ()
+        {
+            Signatures = new uint[] { 0x323E3EC0, 0 };
+        }
+
         public static readonly byte[] KnownKey = Encoding.UTF8.GetBytes ("InputOriginalKey");
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             using (var input = OpenEncryptedStream (file, KnownKey))
-                return Png.ReadMetaData (input);
+            {
+                ImageFormat format = file.Signature == 0x323E3EC0 ? Png : Jpeg;
+                var info = format.ReadMetaData (input);
+                if (null == info)
+                    return null;
+                return new UtageMetaData {
+                    Width = info.Width, Height = info.Height,
+                    OffsetX = info.OffsetX, OffsetY = info.OffsetY,
+                    BPP = info.BPP,
+                    UFormat = format,
+                };
+            }
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
+            var meta = (UtageMetaData)info;
             using (var input = OpenEncryptedStream (file, KnownKey))
-                return Png.Read (input, info);
+                return meta.UFormat.Read (input, info);
         }
 
         internal IBinaryStream OpenEncryptedStream (IBinaryStream file, byte[] key)
