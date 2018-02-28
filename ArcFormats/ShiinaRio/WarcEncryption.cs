@@ -1181,4 +1181,41 @@ namespace GameRes.Formats.ShiinaRio
             data[index + 0x104] ^= count_FF;
         }
     }
+
+    [Serializable]
+    public class UshimitsuCrypt : IDecryptExtra
+    {
+        protected readonly uint m_key;
+
+        public UshimitsuCrypt (uint key)
+        {
+            m_key = key;
+        }
+
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if ((flags & 0x204) == 0x204)
+                DoCrypt (data, index, length);
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if ((flags & 0x104) == 0x104)
+                DoCrypt (data, index, length);
+        }
+
+        unsafe void DoCrypt (byte[] data, int index, uint length)
+        {
+            if (length < 0x100)
+                return;
+            fixed (byte* data8 = &data[index])
+            {
+                uint* data32 = (uint*)data8;
+                for (int i = 0; i < 0x40; ++i)
+                {
+                    data32[i] ^= m_key;
+                }
+            }
+        }
+    }
 }
