@@ -2,7 +2,7 @@
 //! \date       2017 Dec 29
 //! \brief      LiveMaker GaleX image format.
 //
-// Copyright (C) 2017 by morkt
+// Copyright (C) 2017-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,6 +27,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Windows.Media;
 using System.Xml;
 using GameRes.Compression;
 using GameRes.Utility;
@@ -67,7 +68,7 @@ namespace GameRes.Formats.LiveMaker
                     FrameCount  = Int32.Parse (attr["Count"].Value),
                     Shuffled    = attr["Randomized"].Value != "0",
                     Compression = Int32.Parse (attr["CompType"].Value),
-                    Mask        = UInt32.Parse (attr["BGColor"].Value),
+                    Mask        = (uint)Int32.Parse (attr["BGColor"].Value),
                     BlockWidth  = Int32.Parse (attr["BlockWidth"].Value),
                     BlockHeight = Int32.Parse (attr["BlockHeight"].Value),
                     DataOffset  = header_size + 12,
@@ -123,22 +124,13 @@ namespace GameRes.Formats.LiveMaker
         {
             m_input.Position = m_info.DataOffset;
             var layers = FrameXml.SelectSingleNode ("Frame/Layers");
-            var attr = layers.Attributes;
-            int layer_count = Int32.Parse (attr["Count"].Value);
-            var frame = new Frame (layer_count);
-            frame.Width = Int32.Parse (attr["Width"].Value);
-            frame.Height = Int32.Parse (attr["Height"].Value);
-            frame.BPP = Int32.Parse (attr["Bpp"].Value);
-            frame.SetStride();
-            if (frame.BPP <= 8)
-                frame.Palette = ImageFormat.ReadColorMap (m_input.AsStream, 1 << frame.BPP);
+            var frame = GetFrameFromLayers (layers);
             m_frames.Add (frame);
 
             var layer_nodes = layers.SelectNodes ("Layer");
             foreach (XmlNode node in layer_nodes)
             {
-                attr = node.Attributes;
-                bool alpha_on = attr["AlphaOn"].Value != "0";
+                bool alpha_on = node.Attributes["AlphaOn"].Value != "0";
                 int layer_size = m_input.ReadInt32();
                 var layer = new Layer();
                 layer.Pixels = UnpackLayer (frame, layer_size);
@@ -150,6 +142,43 @@ namespace GameRes.Formats.LiveMaker
                 frame.Layers.Add (layer);
             }
             Flatten (0);
+        }
+
+        internal Frame GetFrameFromLayers (XmlNode layers)
+        {
+            var attr = layers.Attributes;
+            int layer_count = Int32.Parse (attr["Count"].Value);
+            var frame = new Frame (layer_count);
+            frame.Width  = Int32.Parse (attr["Width"].Value);
+            frame.Height = Int32.Parse (attr["Height"].Value);
+            frame.BPP    = Int32.Parse (attr["Bpp"].Value);
+            frame.SetStride();
+            if (frame.BPP <= 8)
+                frame.Palette = ReadColorMap (layers.SelectSingleNode ("RGB").InnerText);
+            return frame;
+        }
+
+        internal static Color[] ReadColorMap (string rgb)
+        {
+            int colors = Math.Min (0x100, rgb.Length / 6);
+            var color_map = new Color[colors];
+            int pos = 0;
+            for (int i = 0; i < colors; ++i)
+            {
+                byte r = HexToByte (rgb, pos);
+                byte g = HexToByte (rgb, pos+2);
+                byte b = HexToByte (rgb, pos+4);
+                color_map[i] = Color.FromRgb (r, g, b);
+                pos += 6;
+            }
+            return color_map;
+        }
+
+        internal static byte HexToByte (string hex, int pos)
+        {
+            int hi = "0123456789ABCDEF".IndexOf (char.ToUpper (hex[pos]));
+            int lo = "0123456789ABCDEF".IndexOf (char.ToUpper (hex[pos+1]));
+            return (byte)(hi << 4 | lo);
         }
     }
 }

@@ -33,8 +33,8 @@ namespace GameRes.Formats.LiveMaker
 {
     internal class GalXEntry : Entry
     {
-        public GalReader.Frame  Frame;
         public GalXMetaData     Info;
+        public XmlNode          Layers;
         public bool             AlphaOn;
     }
 
@@ -42,7 +42,7 @@ namespace GameRes.Formats.LiveMaker
     public class GalXOpener : ArchiveFormat
     {
         public override string         Tag { get { return "GAL/X"; } }
-        public override string Description { get { return "LiveMaker engine  multi-frame image"; } }
+        public override string Description { get { return "LiveMaker engine multi-frame image"; } }
         public override uint     Signature { get { return 0x656C6147; } } // 'GaleX200'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
@@ -62,38 +62,24 @@ namespace GameRes.Formats.LiveMaker
                 foreach (XmlNode node in info.FrameXml.SelectNodes ("Frame"))
                 {
                     var layers = node.SelectSingleNode ("Layers");
-                    var attr = layers.Attributes;
-                    int layer_count = Int32.Parse (attr["Count"].Value);
-                    var frame = new GalReader.Frame (layer_count);
-                    frame.Width = Int32.Parse (attr["Width"].Value);
-                    frame.Height = Int32.Parse (attr["Height"].Value);
-                    frame.BPP = Int32.Parse (attr["Bpp"].Value);
-                    frame.SetStride();
                     var entry = new GalXEntry {
                         Name = string.Format ("{0}#{1:D4}", base_name, dir.Count),
                         Type = "image",
                         Offset = gal.Position,
-                        Frame = frame,
+                        Layers = layers,
                         Info = info,
                     };
-                    if (frame.BPP <= 8)
-                        gal.Seek ((1 << frame.BPP) * 4, SeekOrigin.Current);
-                    bool alpha_set = false;
-                    foreach (XmlNode layer in layers.SelectNodes ("Layer"))
+                    var nodes = layers.SelectNodes ("Layer");
+                    entry.AlphaOn = nodes.Count > 0 && nodes[0].Attributes["AlphaOn"].Value != "0";
+                    foreach (XmlNode layer in nodes)
                     {
-                        attr = layer.Attributes;
-                        bool alpha_on = attr["AlphaOn"].Value != "0";
+                        bool alpha_on = layer.Attributes["AlphaOn"].Value != "0";
                         uint layer_size = gal.ReadUInt32();
                         gal.Seek (layer_size, SeekOrigin.Current);
                         if (alpha_on)
                         {
                             uint alpha_size = gal.ReadUInt32();
                             gal.Seek (alpha_size, SeekOrigin.Current);
-                        }
-                        if (!alpha_set)
-                        {
-                            entry.AlphaOn = alpha_on;
-                            alpha_set = true;
                         }
                     }
                     entry.Size = (uint)(gal.Position - entry.Offset);
@@ -137,7 +123,7 @@ namespace GameRes.Formats.LiveMaker
 
         public GalXDecoder (IBinaryStream input, GalXEntry entry) : base (input, entry.Info, 0)
         {
-            m_frames.Add (entry.Frame);
+            m_frames.Add (GetFrameFromLayers (entry.Layers));
             m_alpha_on = entry.AlphaOn;
         }
 
@@ -146,8 +132,6 @@ namespace GameRes.Formats.LiveMaker
             var frame = m_frames[0];
             frame.Layers.Clear();
             m_input.Position = 0;
-            if (frame.BPP <= 8)
-                frame.Palette = ImageFormat.ReadColorMap (m_input.AsStream, 1 << frame.BPP);
             int layer_size = m_input.ReadInt32();
             var layer = new Layer();
             layer.Pixels = UnpackLayer (frame, layer_size);
