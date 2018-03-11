@@ -3,5 +3,5 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:p="clr-namespace:GameRes.Formats.Properties">
     <ComboBox Name="Scheme" Width="180" ItemsSource="{Binding}"
-              SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=AZScheme, Mode=TwoWay}"/>
+              SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=AZScriptScheme, Mode=TwoWay}"/>
 </StackPanel>

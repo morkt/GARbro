@@ -69,12 +69,14 @@ namespace GameRes.Formats.AZSys
             Extensions = new string[] { "arc" };
         }
 
-        public static Dictionary<string, uint> KnownKeys = new Dictionary<string, uint>();
+        static AsbScheme DefaultScheme = new AsbScheme { KnownKeys = new Dictionary<string, uint>() };
+
+        public static Dictionary<string, uint> KnownKeys { get { return DefaultScheme.KnownKeys; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new AsbScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((AsbScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (AsbScheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
