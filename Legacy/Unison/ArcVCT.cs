@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Utility;
 
 // [000225][Unison Shift] Moe ~Moegiiro no Machi~
 
@@ -126,12 +127,18 @@ namespace GameRes.Formats.Unison
 
         void FixBitmapAlpha (byte[] bmp)
         {
-            for (int pos = bmp.ToInt32 (0xA); pos < bmp.Length; pos += 4)
+            int img_start = bmp.ToInt32 (0xA);
+            for (int pos = img_start; pos < bmp.Length; pos += 4)
             {
                 byte r = bmp[pos];
                 bmp[pos] = bmp[pos+2];
                 bmp[pos+2] = r;
                 bmp[pos+3] ^= 0xFF;
+            }
+            if (img_start == 0x42 && bmp.ToInt32 (0x36) == 0xFF && bmp.ToInt32 (0x3E) == 0xFF0000)
+            {
+                LittleEndian.Pack (0xFF0000, bmp, 0x36);
+                LittleEndian.Pack (0x0000FF, bmp, 0x3E);
             }
         }
     }
