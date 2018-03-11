@@ -130,6 +130,7 @@ namespace GameRes.Formats.Qlie
             }
             var enc = QlieEncryption.Create (file, pack_version, arc_key);
 
+            bool read_pack_keyfile = 3 == pack_version.Major && use_pack_keyfile;
             var name_buffer = new byte[0x100];
             var dir = new List<Entry> (count);
             using (var index = file.CreateStream (index_offset))
@@ -157,10 +158,11 @@ namespace GameRes.Formats.Qlie
                     entry.EncryptionMethod = index.ReadInt32(); // [+14]
                     entry.Hash = index.ReadUInt32();            // [+18]
                     entry.KeyFile = key_file;
-                    if (3 == pack_version.Major && use_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
+                    if (read_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
                     {
                         // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
                         key_file = ReadEntryBytes (file, entry, enc);
+                        read_pack_keyfile = false;
                     }
                     dir.Add (entry);
                 }
