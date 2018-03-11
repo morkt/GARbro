@@ -661,6 +661,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default file names encoding.
+        /// </summary>
+        public static string PFSEncodingCP {
+            get {
+                return ResourceManager.GetString("PFSEncodingCP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Use default encryption scheme.
         /// </summary>
         public static string QLIEDefaultScheme {

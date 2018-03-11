@@ -400,4 +400,8 @@
     <value>Default file names encoding</value>
     <comment>translation pending</comment>
   </data>
+  <data name="PFSEncodingCP" xml:space="preserve">
+    <value>Default file names encoding</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

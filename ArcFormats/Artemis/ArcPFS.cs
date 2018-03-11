@@ -23,11 +23,11 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace GameRes.Formats.Artemis
 {
@@ -42,8 +42,11 @@ namespace GameRes.Formats.Artemis
 
         public PfsOpener ()
         {
-            Extensions = new string[] { "pfs", "000", "001", "002", "003" };
+            Extensions = new string[] { "pfs", "000", "001", "002", "003", "004", "005" };
+            Settings = new[] { PfsEncoding };
         }
+
+        EncodingSetting PfsEncoding = new EncodingSetting ("PFSEncodingCP");
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -65,7 +68,7 @@ namespace GameRes.Formats.Artemis
             int count = file.View.ReadInt32 (7);
             if (!IsSaneCount (count) || 7L + index_size > file.MaxOffset)
                 return null;
-            var encoding = version >= 8 ? System.Text.Encoding.UTF8 : Encodings.cp932;
+            var encoding = PfsEncoding.Get<Encoding>();
             var index = file.View.ReadBytes (7, index_size);
             int index_offset = 4;
             var dir = new List<Entry> (count);

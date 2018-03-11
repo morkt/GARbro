@@ -182,5 +182,8 @@
     <Setting Name="OGGFixCrc" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="PFSEncodingCP" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">65001</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

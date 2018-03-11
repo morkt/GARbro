@@ -498,4 +498,7 @@ Choose encryption scheme or enter a passphrase.</comment>
   <data name="ZIPEncodingCP" xml:space="preserve">
     <value>Default file names encoding</value>
   </data>
+  <data name="PFSEncodingCP" xml:space="preserve">
+    <value>Default file names encoding</value>
+  </data>
 </root>

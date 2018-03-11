@@ -741,5 +741,17 @@ namespace GameRes.Formats.Properties {
                 this["OGGFixCrc"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("65001")]
+        public int PFSEncodingCP {
+            get {
+                return ((int)(this["PFSEncodingCP"]));
+            }
+            set {
+                this["PFSEncodingCP"] = value;
+            }
+        }
     }
 }

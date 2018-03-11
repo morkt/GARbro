@@ -291,6 +291,9 @@
   <data name="PDScrambleContents" xml:space="preserve">
     <value>Шифровать содержимое</value>
   </data>
+  <data name="PFSEncodingCP" xml:space="preserve">
+    <value>Кодировка имён файлов</value>
+  </data>
   <data name="QLIEDefaultScheme" xml:space="preserve">
     <value>"Старый" метод шифрования</value>
   </data>
