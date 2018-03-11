@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Lambda
@@ -71,7 +72,7 @@ namespace GameRes.Formats.Lambda
                 entry.Offset       = index.ToUInt32 (pos+0x18) + data_offset;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.HasExtension (".bmx"))
+                if (name.HasAnyOfExtensions (".bmx", ".b32"))
                     entry.Type = "image";
                 dir.Add (entry);
                 pos += entry_length;
@@ -132,6 +133,7 @@ namespace GameRes.Formats.Lambda
             }
             if (!m_buffer.AsciiEqual ("_AF"))
                 throw new InvalidFormatException ("Invalid compressed LAX stream.");
+            int method = m_buffer[3];
             int chunk_size = m_buffer.ToUInt16 (4);
             int final_size = m_buffer.ToUInt16 (6);
             if (final_size != 0)
@@ -140,7 +142,6 @@ namespace GameRes.Formats.Lambda
             if (unpacked_size > m_buffer.Length)
                 m_buffer = new byte[unpacked_size];
 
-            int method = m_buffer[3];
             switch (method) // compression method
             {
             case '1':
@@ -203,7 +204,11 @@ namespace GameRes.Formats.Lambda
 
         int HuffmanUnpack (int unpacked_size)
         {
-            throw new NotImplementedException ("LAX compression method 2 not implemented.");
+            using (var input = new HuffmanDecompressor())
+            {
+                input.Initialize (BaseStream);
+                return input.Continue (m_buffer, 0, unpacked_size);
+            }
         }
 
         #region IO.Stream members
