@@ -691,4 +691,10 @@ Overwrite?</comment>
     <value>環境設定</value>
     <comment>Preferences</comment>
   </data>
+  <data name="TextViewer" xml:space="preserve">
+    <value>Image viewer</value>
+  </data>
+  <data name="winDownScaleImage" xml:space="preserve">
+    <value>Scale large images to fit window</value>
+  </data>
 </root>

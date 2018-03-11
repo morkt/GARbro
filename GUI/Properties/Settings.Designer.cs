@@ -357,5 +357,17 @@ namespace GARbro.GUI.Properties {
                 this["appLastDestination"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool winDownScaleImage {
+            get {
+                return ((bool)(this["winDownScaleImage"]));
+            }
+            set {
+                this["winDownScaleImage"] = value;
+            }
+        }
     }
 }

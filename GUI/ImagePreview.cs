@@ -2,7 +2,7 @@
 //! \date       Sun Jul 06 06:34:56 2014
 //! \brief      preview images.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -259,6 +259,7 @@ namespace GARbro.GUI
                 {
                     ActiveViewer = ImageView;
                     ImageCanvas.Source = bitmap;
+                    ApplyDownScaleSetting();
                     SetStatusText (string.Format (guiStrings.MsgImageSize, bitmap.PixelWidth,
                                                   bitmap.PixelHeight, bitmap.Format.BitsPerPixel));
                 }
@@ -288,6 +289,43 @@ namespace GARbro.GUI
                     ContentGrid.Height = double.NaN;
                 }, DispatcherPriority.ContextIdle);
             }
+        }
+
+        private void SetImageScaleMode (bool scale)
+        {
+            if (scale)
+            {
+                ImageCanvas.Stretch = Stretch.Uniform;
+                RenderOptions.SetBitmapScalingMode (ImageCanvas, BitmapScalingMode.HighQuality);
+                ImageView.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                ImageView.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+            }
+            else
+            {
+                ImageCanvas.Stretch = Stretch.None;
+                RenderOptions.SetBitmapScalingMode (ImageCanvas, BitmapScalingMode.NearestNeighbor);
+                ImageView.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+                ImageView.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
+            }
+        }
+
+        private void ApplyDownScaleSetting ()
+        {
+            bool image_need_scale = DownScaleImage.Get<bool>();
+            if (image_need_scale && ImageCanvas.Source != null)
+            {
+                var image = ImageCanvas.Source;
+                image_need_scale = image.Width > ImageView.ActualWidth || image.Height > ImageView.ActualHeight;
+            }
+            SetImageScaleMode (image_need_scale);
+        }
+
+        private void PreviewSizeChanged (object sender, SizeChangedEventArgs e)
+        {
+            var image = ImageCanvas.Source;
+            if (null == image || !DownScaleImage.Get<bool>())
+                return;
+            SetImageScaleMode (image.Width > e.NewSize.Width || image.Height > e.NewSize.Height);
         }
     }
 }

@@ -33,6 +33,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using GameRes;
+using GARbro.GUI.Properties;
 using GARbro.GUI.Strings;
 
 namespace GARbro.GUI
@@ -53,6 +54,10 @@ namespace GARbro.GUI
                     LastSelectedSection = section.Label;
             };
         }
+
+        static readonly IEnumerable<IResourceSetting> ViewerSettings = new [] {
+            MainWindow.DownScaleImage,
+        };
 
         SettingsViewModel ViewModel;
 
@@ -82,7 +87,7 @@ namespace GARbro.GUI
             if (!ViewModel.HasChanges)
                 return;
             if (OnApplyChanges != null)
-                OnApplyChanges (this, new EventArgs());
+                OnApplyChanges (this, EventArgs.Empty);
             ViewModel.HasChanges = false;
         }
 
@@ -90,9 +95,12 @@ namespace GARbro.GUI
         {
             SettingsSectionView[] list = {
                 new SettingsSectionView {
+                    Label = guiStrings.TextViewer,
+                    Panel = CreateSectionPanel (ViewerSettings)
+                },
+                new SettingsSectionView {
                     Label = guiStrings.TextFormats,
                     Children = EnumerateFormatsSettings(),
-                    Panel = (UIElement)this.Resources["FormatsPanel"]
                 },
             };
             SettingsSectionView selected_section = null;
@@ -110,13 +118,7 @@ namespace GARbro.GUI
             var formats = FormatCatalog.Instance.Formats.Where (f => f.Settings != null && f.Settings.Any());
             foreach (var format in formats.OrderBy (f => f.Tag))
             {
-                var pane = new WrapPanel();
-                foreach (var setting in format.Settings)
-                {
-                    var widget = CreateSettingWidget (setting, setting.Value as dynamic);
-                    if (widget != null)
-                        pane.Children.Add (widget);
-                }
+                var pane = CreateSectionPanel (format.Settings);
                 if (pane.Children.Count > 0)
                 {
                     var section = new SettingsSectionView {
@@ -130,7 +132,19 @@ namespace GARbro.GUI
             return list;
         }
 
-        UIElement CreateSettingWidget (IResourceSetting setting, bool value)
+        Panel CreateSectionPanel (IEnumerable<IResourceSetting> settings)
+        {
+            var pane = new WrapPanel();
+            foreach (var setting in settings)
+            {
+                var widget = CreateSettingWidget (setting, setting.Value);
+                if (widget != null)
+                    pane.Children.Add (widget);
+            }
+            return pane;
+        }
+
+        UIElement CreateCheckBoxWidget (IResourceSetting setting)
         {
             return new CheckBox {
                 Template = (ControlTemplate)this.Resources["BoundCheckBox"],
@@ -138,7 +152,7 @@ namespace GARbro.GUI
             };
         }
 
-        UIElement CreateSettingWidget (IResourceSetting setting, Encoding value)
+        UIElement CreateEncodingWidget (IResourceSetting setting)
         {
             var view = CreateSettingView<Encoding> (setting);
             // XXX make a control template in XAML instead
@@ -169,6 +183,10 @@ namespace GARbro.GUI
 
         UIElement CreateSettingWidget<TUnknown> (IResourceSetting setting, TUnknown value)
         {
+            if (value is bool)
+                return CreateCheckBoxWidget (setting);
+            if (value is Encoding)
+                return CreateEncodingWidget (setting);
             Trace.WriteLine (string.Format ("Unknown setting type {0}", value.GetType()), "[GUI]");
             return null;
         }
@@ -346,6 +364,38 @@ namespace GARbro.GUI
         public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             throw new System.NotImplementedException();
+        }
+    }
+
+    internal class GuiResourceSetting : ResourceSettingBase, INotifyPropertyChanged
+    {
+        public override object Value {
+            get { return Settings.Default[Name]; }
+            set {
+                if (!Settings.Default[Name].Equals (value))
+                {
+                    Settings.Default[Name] = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public GuiResourceSetting () { }
+
+        public GuiResourceSetting (string name)
+        {
+            Name = name;
+            Text = guiStrings.ResourceManager.GetString (name, guiStrings.Culture) ?? name;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        void OnPropertyChanged ([CallerMemberName] string propertyName = "")
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged (this, new PropertyChangedEventArgs (propertyName));
+            }
         }
     }
 }

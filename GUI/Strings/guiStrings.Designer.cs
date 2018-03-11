@@ -1274,6 +1274,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Image viewer.
+        /// </summary>
+        public static string TextViewer {
+            get {
+                return ResourceManager.GetString("TextViewer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Visit download page.
         /// </summary>
         public static string TextVisitPage {
@@ -1324,6 +1333,15 @@ namespace GARbro.GUI.Strings {
         public static string Type_NONE {
             get {
                 return ResourceManager.GetString("Type_NONE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Scale large images to fit window.
+        /// </summary>
+        public static string winDownScaleImage {
+            get {
+                return ResourceManager.GetString("winDownScaleImage", resourceCulture);
             }
         }
     }

@@ -566,4 +566,10 @@
   <data name="TextPreferences" xml:space="preserve">
     <value>Настройки</value>
   </data>
+  <data name="TextViewer" xml:space="preserve">
+    <value>Просмотр</value>
+  </data>
+  <data name="winDownScaleImage" xml:space="preserve">
+    <value>Масштабировать большие изображения</value>
+  </data>
 </root>

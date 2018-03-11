@@ -56,6 +56,8 @@ namespace GARbro.GUI
 
         public App App { get { return m_app; } }
 
+        internal static readonly GuiResourceSetting DownScaleImage = new GuiResourceSetting ("winDownScaleImage");
+
         const StringComparison StringIgnoreCase = StringComparison.CurrentCultureIgnoreCase;
 
         public MainWindow()
@@ -82,6 +84,7 @@ namespace GARbro.GUI
                     this.MinWidth = e.NewSize.Width+79;
                 }
             };
+            DownScaleImage.PropertyChanged += (s, e) => ApplyDownScaleSetting();
             pathLine.EnterKeyDown += acb_OnKeyDown;
         }
 
