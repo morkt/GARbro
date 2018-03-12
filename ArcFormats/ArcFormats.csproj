@@ -132,6 +132,7 @@
     <Compile Include="Cyberworks\ImageTB1.cs" />
     <Compile Include="DaiSystem\ArcPAC.cs" />
     <Compile Include="DirectDraw\DxtDecoder.cs" />
+    <Compile Include="DjSystem\ArcDAT.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="Emote\ImageDREF.cs" />
