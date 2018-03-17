@@ -186,18 +186,9 @@ namespace GameRes.Formats.PkWare
 
         public override ResourceOptions GetDefaultOptions ()
         {
-            Encoding enc;
-            try
-            {
-                enc = ZipEncoding.Get<Encoding>();
-            }
-            catch
-            {
-                enc = Encodings.cp932;
-            }
             return new ZipOptions {
                 CompressionLevel = Properties.Settings.Default.ZIPCompression,
-                FileNameEncoding = enc,
+                FileNameEncoding = ZipEncoding.Get<Encoding>(),
                 Password = Properties.Settings.Default.ZIPPassword,
             };
         }

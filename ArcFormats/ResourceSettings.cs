@@ -3,7 +3,9 @@
 //! \brief      Persistent resource settings implementation.
 //
 
+using System;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Text;
 using GameRes.Formats.Strings;
 
@@ -27,8 +29,20 @@ namespace GameRes.Formats
 
     internal class EncodingSetting : LocalResourceSetting
     {
+        static readonly Encoding DefaultEncoding = Encodings.cp932;
+
         public override object Value {
-            get { return Encoding.GetEncoding ((int)base.Value); }
+            get {
+                try
+                {
+                    return Encoding.GetEncoding ((int)base.Value);
+                }
+                catch // fallback to CP932
+                {
+                    Trace.WriteLine (string.Format ("Unknown encoding code page {0}", base.Value));
+                    return DefaultEncoding;
+                }
+            }
             set { base.Value = ((Encoding)value).CodePage; }
         }
 
