@@ -165,15 +165,22 @@ namespace GameRes.Formats.Unity
                     {
                         var tex = new Texture2D();
                         tex.Load (input);
-                        if (tex.m_StreamData != null && !string.IsNullOrEmpty (tex.m_StreamData.Path))
+                        if (null == tex.m_Data || 0 == tex.m_Data.Length)
                         {
-                            entry = new AssetEntry {
-                                Name = tex.m_Name,
-                                Type = "image",
-                                Offset = tex.m_StreamData.Offset,
-                                Size = tex.m_StreamData.Size,
-                                Bundle = GetBundle (tex.m_StreamData.Path),
-                            };
+                            if (asset.Tree.Version == "2017.2.0f3")
+                                input.ReadInt64();
+                            var stream_data = new StreamingInfo();
+                            stream_data.Load (input);
+                            if (!string.IsNullOrEmpty (stream_data.Path))
+                            {
+                                entry = new AssetEntry {
+                                    Name = tex.m_Name,
+                                    Type = "image",
+                                    Offset = stream_data.Offset,
+                                    Size = stream_data.Size,
+                                    Bundle = GetBundle (stream_data.Path),
+                                };
+                            }
                         }
                         break;
                     }

@@ -40,7 +40,6 @@ namespace GameRes.Formats.Unity
 {
     internal class Asset
     {
-        int                     m_header_size;
         int                     m_format;
         uint                    m_data_offset;
         bool                    m_is_little_endian;
@@ -58,7 +57,7 @@ namespace GameRes.Formats.Unity
 
         public void Load (AssetReader input)
         {
-            m_header_size  = input.ReadInt32();
+            input.ReadInt32();  // header_size
             input.ReadUInt32(); // file_size
             m_format = input.ReadInt32();
             m_data_offset  = input.ReadUInt32();
@@ -330,10 +329,12 @@ namespace GameRes.Formats.Unity
 
     internal class UnityTypeData
     {
+        string                      m_version;
         List<int>                   m_class_ids = new List<int> ();
         Dictionary<int, byte[]>     m_hashes = new Dictionary<int, byte[]> ();
         Dictionary<int, TypeTree>   m_type_trees = new Dictionary<int, TypeTree> ();
 
+        public string                       Version { get { return m_version; } }
         public IList<int>                  ClassIds { get { return m_class_ids; } }
         public IDictionary<int, byte[]>      Hashes { get { return m_hashes; } }
         public IDictionary<int, TypeTree> TypeTrees { get { return m_type_trees; } }
@@ -341,7 +342,7 @@ namespace GameRes.Formats.Unity
         public void Load (AssetReader reader)
         {
             int format = reader.Format;
-            var version = reader.ReadCString();
+            m_version = reader.ReadCString();
             var platform = reader.ReadInt32 ();
             if (format >= 13)
             {

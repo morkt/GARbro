@@ -68,7 +68,6 @@ namespace GameRes.Formats.Unity
         public int      m_LightFormat;
         public int      m_ColorSpace;
         public byte[]   m_Data;
-        public StreamingInfo m_StreamData;
 
         public void Load (AssetReader reader)
         {
@@ -92,11 +91,6 @@ namespace GameRes.Formats.Unity
             m_ColorSpace = reader.ReadInt32();
             int length = reader.ReadInt32();
             m_Data = reader.ReadBytes (length);
-            if (0 == length)
-            {
-                m_StreamData = new StreamingInfo();
-                m_StreamData.Load (reader);
-            }
         }
     }
 
