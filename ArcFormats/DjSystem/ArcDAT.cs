@@ -67,6 +67,8 @@ namespace GameRes.Formats.DjSystem
                     entry.Size   = end - start;
                     if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
+                    if (name.HasExtension (".vic"))
+                        entry.Type = "audio";
                     dir.Add (entry);
                 }
                 if (0 == dir.Count)
