@@ -380,6 +380,7 @@
         <KeyBinding Gesture="Ctrl+H" Command="{x:Static local:Commands.FitWindow}"/>
         <KeyBinding Gesture="Ctrl+A" Command="{x:Static local:Commands.SelectAll}"/>
         <KeyBinding Gesture="Ctrl+P" Command="{x:Static local:Commands.Preferences}"/>
+        <KeyBinding Gesture="Ctrl+S" Command="{x:Static local:Commands.ScaleImage}"/>
         <KeyBinding Gesture="Backspace" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Left" Command="{x:Static local:Commands.GoBack}"/>
         <KeyBinding Gesture="Alt+Right" Command="{x:Static local:Commands.GoForward}"/>
@@ -421,6 +422,7 @@
         <CommandBinding Command="{x:Static local:Commands.CheckUpdates}" Executed="CheckUpdatesExec" CanExecute="CanExecuteUpdate"/>
         <CommandBinding Command="{x:Static local:Commands.StopPlayback}" Executed="StopPlaybackExec" CanExecute="CanExecutePlaybackControl"/>
         <CommandBinding Command="{x:Static local:Commands.Preferences}" Executed="PreferencesExec" CanExecute="CanExecuteAlways"/>
+        <CommandBinding Command="{x:Static local:Commands.ScaleImage}"  Executed="ScaleImageExec" CanExecute="CanExecuteScaleImage"/>
         <CommandBinding Command="{x:Static local:Commands.TroubleShooting}" Executed="TroubleShootingExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Descend}"     Executed="DescendExec" CanExecute="CanExecuteAlways"/>
         <CommandBinding Command="{x:Static local:Commands.Ascend}"      Executed="AscendExec" CanExecute="CanExecuteAlways"/>

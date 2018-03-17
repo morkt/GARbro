@@ -1321,6 +1321,16 @@ namespace GARbro.GUI
             dialog.ShowDialog();
         }
 
+        private void ScaleImageExec (object sender, ExecutedRoutedEventArgs e)
+        {
+            DownScaleImage.Value = !DownScaleImage.Get<bool>();
+        }
+
+        private void CanExecuteScaleImage (object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = ImageCanvas.Source != null;
+        }
+
         private void CanExecuteAlways (object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = true;
@@ -1553,5 +1563,6 @@ namespace GARbro.GUI
         public static readonly RoutedCommand TroubleShooting = new RoutedCommand();
         public static readonly RoutedCommand Descend = new RoutedCommand();
         public static readonly RoutedCommand Ascend = new RoutedCommand();
+        public static readonly RoutedCommand ScaleImage = new RoutedCommand();
     }
 }
