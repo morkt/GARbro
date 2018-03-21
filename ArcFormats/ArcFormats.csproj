@@ -154,6 +154,7 @@
     <Compile Include="Lambda\ImageCLS.cs" />
     <Compile Include="Lilim\ImageIMG.cs" />
     <Compile Include="LiveMaker\ArcGALX.cs" />
+    <Compile Include="Aims\ArcPACK.cs" />
     <Compile Include="Maika\ArcBK.cs" />
     <Compile Include="Maika\ArcMIK01.cs" />
     <Compile Include="Maika\AudioWV5.cs" />
