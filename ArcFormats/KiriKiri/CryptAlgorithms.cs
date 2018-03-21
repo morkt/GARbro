@@ -1278,5 +1278,38 @@ namespace GameRes.Formats.KiriKiri
                 buffer[pos+i] ^= key[key_pos++ % 0x1F];
             }
         }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+    }
+
+    [Serializable]
+    public class SmxCrypt : ICrypt
+    {
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var key = new byte[6] {
+                (byte)(entry.Hash >> 5),
+                (byte)(entry.Hash >> 4),
+                (byte)(entry.Hash >> 3),
+                (byte)(entry.Hash >> 2),
+                (byte)(entry.Hash >> 2),
+                (byte)(entry.Hash >> 3),
+            };
+            for (int i = 0; i < count; ++i)
+            {
+                if ((offset + i) <= 100)
+                    buffer[pos+i] ^= key[3];
+                else
+                    buffer[pos+i] ^= key[(int)(offset + i) & 5];
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
     }
 }
