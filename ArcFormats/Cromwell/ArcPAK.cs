@@ -52,6 +52,9 @@ namespace GameRes.Formats.Cromwell
             int count = file.View.ReadInt32 (0x10);
             if (!IsSaneCount (count))
                 return null;
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
+            if (is_graphic && base_name.Equals ("VOICE", System.StringComparison.OrdinalIgnoreCase))
+                is_graphic = false;
             string type = is_graphic ? "image" : "audio";
 
             uint index_offset = 0x14;
