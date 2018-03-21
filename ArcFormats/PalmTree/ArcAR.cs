@@ -65,10 +65,7 @@ namespace GameRes.Formats.PalmTree
             }
         }
 
-        public override ResourceOptions GetDefaultOptions ()
-        {
-            return null;
-        }
+        public override ResourceScheme Scheme { get; set; }
     }
 
     /// <summary>
