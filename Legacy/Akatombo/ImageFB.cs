@@ -44,8 +44,8 @@ namespace GameRes.Formats.Akatombo
             if (!header.AsciiEqual ("FB"))
                 return null;
             return new ImageMetaData {
-                Width  = header.ToUInt32 (4),
-                Height = header.ToUInt32 (6),
+                Width  = header.ToUInt16 (4),
+                Height = header.ToUInt16 (6),
                 BPP = header.ToUInt16 (2),
             };
         }
@@ -99,7 +99,8 @@ namespace GameRes.Formats.Akatombo
                         pos = dst + 4 * (pos - m_width);
                     else
                         pos = dst + 4 * (-m_width & -pos) - 4;
-                    Buffer.BlockCopy (m_output, pos, m_output, dst, 4);
+                    if (pos >= 0)
+                        Buffer.BlockCopy (m_output, pos, m_output, dst, 4);
                 }
                 m_output[dst  ] += ReadDiff();
                 m_output[dst+1] += ReadDiff();
