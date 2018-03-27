@@ -51,7 +51,7 @@ namespace GameRes.Formats.Cocktail
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            file.Position = 0x10;
+            file.Position = 8;
             var pixels = file.ReadBytes ((int)info.Width * (int)info.Height);
             return ImageData.Create (info, PixelFormats.Gray8, null, pixels);
         }
