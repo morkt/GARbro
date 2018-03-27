@@ -106,6 +106,12 @@ namespace GameRes.Compression
             m_reader.Initialize (input);
         }
 
+        public PackedStream (Stream input, TDecompressor reader, bool leave_open = false) : base (input, leave_open)
+        {
+            m_reader = reader;
+            m_reader.Initialize (input);
+        }
+
         protected TDecompressor Reader { get { return m_reader; } }
 
         public override bool CanSeek  { get { return false; } }
