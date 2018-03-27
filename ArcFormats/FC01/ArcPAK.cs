@@ -125,7 +125,7 @@ namespace GameRes.Formats.FC01
             return input;
         }
 
-        protected Stream OpenEncryptedEntry (AgsiArchive arc, AgsiEntry entry)
+        internal Stream OpenEncryptedEntry (AgsiArchive arc, AgsiEntry entry)
         {
             uint enc_size = entry.Size;
             if (enc_size > 1024)
