@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -50,7 +51,7 @@ namespace GameRes.Formats.CaramelBox
 
         public Arc3Opener ()
         {
-            Extensions = new string[] { "bin", "ar3" };
+            Extensions = new string[] { "bin", "ar3", "ac3" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -134,6 +135,8 @@ namespace GameRes.Formats.CaramelBox
                 prev_entry = entry;
                 if (null == long_info && "longinfo.$$$" == name)
                     long_info = entry;
+                if (name.HasExtension ("lze"))
+                    entry.Type = "image";
             }
 
             // --- read attributes ---
@@ -214,7 +217,7 @@ namespace GameRes.Formats.CaramelBox
             var data = new byte[unpacked_size];
             var header = new byte[4];
             int dst = 0;
-            using (var bits = new MsbBitStream (input, true))
+            using (var bits = new LzBitStream (input, true))
             {
                 while (dst < data.Length)
                 {
@@ -303,6 +306,44 @@ namespace GameRes.Formats.CaramelBox
                 map[key] = Binary.GetCString (table, value_pos, table.Length - value_pos);
             }
             return map;
+        }
+    }
+
+    /// <summary>
+    /// like MsbBitStream, but input stream is consumed by 2 bytes at a time.
+    /// </summary>
+    internal class LzBitStream : BitStream, IBitStream
+    {
+        public LzBitStream (Stream file, bool leave_open = false)
+            : base (file, leave_open)
+        {
+        }
+
+        public int GetBits (int count)
+        {
+            Debug.Assert (count <= 24, "LzBitStream does not support sequences longer than 24 bits");
+            while (m_cached_bits < count)
+            {
+                int b = m_input.ReadByte();
+                if (-1 == b)
+                    return -1;
+                m_bits = (m_bits << 8) | b;
+                m_cached_bits += 8;
+                b = m_input.ReadByte();
+                if (b != -1)
+                {
+                    m_bits = (m_bits << 8) | b;
+                    m_cached_bits += 8;
+                }
+            }
+            int mask = (1 << count) - 1;
+            m_cached_bits -= count;
+            return (m_bits >> m_cached_bits) & mask;
+        }
+
+        public int GetNextBit ()
+        {
+            return GetBits (1);
         }
     }
 }
