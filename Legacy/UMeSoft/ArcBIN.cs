@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -68,9 +69,9 @@ namespace GameRes.Formats.UMeSoft
                 uint signature;
                 if (entry.Size > 13 && file.View.AsciiEqual (entry.Offset+2, "ike"))
                 {
-                    int unpacked_size = file.View.ReadByte (entry.Offset+11)
-                                      + ((file.View.ReadByte (entry.Offset+12)
-                                       + (file.View.ReadByte (entry.Offset+10) >> 2 << 8)) << 8);
+                    int unpacked_size = IkeReader.DecodeSize (file.View.ReadByte (entry.Offset+10),
+                                                              file.View.ReadByte (entry.Offset+11),
+                                                              file.View.ReadByte (entry.Offset+12));
                     entry.IsPacked = true;
                     entry.UnpackedSize = (uint)unpacked_size;
                     signature = file.View.ReadUInt32 (entry.Offset+0xF);
@@ -107,6 +108,19 @@ namespace GameRes.Formats.UMeSoft
         {
             m_input = input;
             m_output = new byte[unpacked_size];
+        }
+
+        public static int DecodeSize (byte a, byte b, byte c)
+        {
+            return b + ((c + (a >> 2 << 8)) << 8);
+        }
+
+        public static IBinaryStream CreateStream (IBinaryStream input, int unpacked_size)
+        {
+            input.Position = 0xD;
+            var ike = new IkeReader (input, unpacked_size);
+            var data = ike.Unpack();
+            return new BinMemoryStream (data);
         }
 
         public byte[] Unpack ()
@@ -214,6 +228,7 @@ namespace GameRes.Formats.UMeSoft
                     }
                     count = 2;
                 }
+                count = Math.Min (count, m_output.Length - dst);
                 Binary.CopyOverlapped (m_output, dst+offset, dst, count);
                 dst += count;
             }
