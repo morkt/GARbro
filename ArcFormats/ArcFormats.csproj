@@ -85,6 +85,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abel\ArcARC.cs" />
+    <Compile Include="Abel\ArcFPK.cs" />
+    <Compile Include="Abel\ImageCBF.cs" />
     <Compile Include="Abel\ImageGPS.cs" />
     <Compile Include="Abogado\ArcDSK.cs" />
     <Compile Include="Abogado\AudioADP.cs" />
