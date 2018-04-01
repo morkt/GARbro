@@ -23,7 +23,6 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -41,7 +40,7 @@ namespace GameRes.Formats.UMeSoft
 
         public Gr2Opener ()
         {
-            Extensions = new string[] { "gr2", "vic" };
+            Extensions = new string[] { "gr2", "vic", "pac" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -52,6 +51,7 @@ namespace GameRes.Formats.UMeSoft
             uint data_offset = file.View.ReadUInt32 (8);
             if (data_offset < 0x10 || data_offset >= file.MaxOffset)
                 return null;
+            bool is_gr2 = file.Name.HasExtension ("gr2");
 
             uint index_offset = 0x10;
             var dir = new List<Entry> (count);
@@ -63,10 +63,47 @@ namespace GameRes.Formats.UMeSoft
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x14); 
                 if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
                     return null;
+                if (is_gr2)
+                    entry.Type = "image";
                 dir.Add (entry);
                 index_offset += 0x18;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!arc.File.View.AsciiEqual (entry.Offset, "LL5\0"))
+                return base.OpenEntry (arc, entry);
+            using (var input = arc.File.CreateStream (entry.Offset+4, entry.Size-4))
+            {
+                var output = new MemoryStream();
+                LL5Decompress (input, output);
+                output.Position = 0;
+                return output;
+            }
+        }
+
+        void LL5Decompress (IBinaryStream input, Stream output)
+        {
+            var buffer = new byte[0x100];
+            while (input.PeekByte() != -1)
+            {
+                int count = input.ReadInt8();
+                if (count < 0)
+                {
+                    count = -count;
+                    input.Read (buffer, 0, count);
+                    output.Write (buffer, 0, count);
+                }
+                else
+                {
+                    byte v = input.ReadUInt8();
+                    for (int i = 0; i < count; ++i)
+                        buffer[i] = v;
+                    output.Write (buffer, 0, count);
+                }
+            }
         }
     }
 }
