@@ -797,16 +797,7 @@ namespace GameRes.Formats.ShiinaRio
                 return;
             if ((flags & 0x202) == 0x202)
             {
-                int sum = 0;
-                int bit = 0;
-                for (int i = 0; i < 0x100; ++i)
-                {
-                    byte v = data[index+i];
-                    sum += v >> 1;
-                    data[index+i] = (byte)(v >> 1 | bit);
-                    bit = v << 7;
-                }
-                data[index] |= (byte)bit;
+                int sum = RotateBytesRight (data, index, 0x100);
                 data[index + 0x104] ^= (byte)sum;
                 data[index + 0x105] ^= (byte)(sum >> 8);
             }
@@ -818,18 +809,67 @@ namespace GameRes.Formats.ShiinaRio
                 return;
             if ((flags & 0x102) == 0x102)
             {
-                int sum = 0;
-                int bit = 0;
-                for (int i = 0xFF; i >= 0; --i)
-                {
-                    byte v = data[index+i];
-                    sum += v & 0x7F;
-                    data[index+i] = (byte)(v << 1 | bit);
-                    bit = v >> 7;
-                }
-                data[index + 0xFF] |= (byte)bit;
+                int sum = RotateBytesLeft (data, index, 0x100);
                 data[index + 0x104] ^= (byte)sum;
                 data[index + 0x105] ^= (byte)(sum >> 8);
+            }
+        }
+
+        internal int RotateBytesRight (byte[] data, int index, int length)
+        {
+            int sum = 0;
+            int bit = 0;
+            for (int i = 0; i < length; ++i)
+            {
+                byte v = data[index+i];
+                sum += v >> 1;
+                data[index+i] = (byte)(v >> 1 | bit);
+                bit = v << 7;
+            }
+            data[index] |= (byte)bit;
+            return sum;
+        }
+
+        internal int RotateBytesLeft (byte[] data, int index, int length)
+        {
+            int sum = 0;
+            int bit = 0;
+            for (int i = length-1; i >= 0; --i)
+            {
+                byte v = data[index+i];
+                sum += v & 0x7F;
+                data[index+i] = (byte)(v << 1 | bit);
+                bit = v >> 7;
+            }
+            data[index + length-1] |= (byte)bit;
+            return sum;
+        }
+    }
+
+    [Serializable]
+    public class NyaruCrypt : MajimeCrypt, IDecryptExtra
+    {
+        new public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x204) == 0x204)
+            {
+                int sum = RotateBytesRight (data, index, 0x100);
+                data[index + 0x100] ^= (byte)sum;
+                data[index + 0x101] ^= (byte)(sum >> 8);
+            }
+        }
+
+        new public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length < 0x200)
+                return;
+            if ((flags & 0x104) == 0x104)
+            {
+                int sum = RotateBytesLeft (data, index, 0x100);
+                data[index + 0x100] ^= (byte)sum;
+                data[index + 0x101] ^= (byte)(sum >> 8);
             }
         }
     }
