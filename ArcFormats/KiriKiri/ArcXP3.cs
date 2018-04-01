@@ -250,6 +250,21 @@ namespace GameRes.Formats.KiriKiri
                             dir.Add (entry);
                         }
                     }
+                    else if (0x3A7A7579 == entry_signature) // "yuz:"
+                    {
+                        if (entry_size >= 0x10 && crypt_algorithm.Value is RiddleCxCrypt)
+                        {
+                            long offset = header.ReadInt64();
+                            header.ReadUInt32(); // unpacked size
+                            uint size = header.ReadUInt32();
+                            if (offset > 0 && offset + size <= file.MaxOffset)
+                            {
+                                var yuz = file.View.ReadBytes (offset, size);
+                                var crypt = crypt_algorithm.Value as RiddleCxCrypt;
+                                crypt.ReadYuzNames (yuz, filename_map);
+                            }
+                        }
+                    }
                     else if (entry_size > 7)
                     {
                         // 0x6E666E68 == entry_signature    // "hnfn"
@@ -836,6 +851,11 @@ NextEntry:
                 m_hash_map[hash] = filename;
 
             m_md5_map[GetMd5Hash (filename)] = filename;
+        }
+
+        public void AddShortcut (string shortcut, string filename)
+        {
+            m_md5_map[shortcut] = filename;
         }
 
         public string Get (uint hash, string md5)

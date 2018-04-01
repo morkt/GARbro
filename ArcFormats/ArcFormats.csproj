@@ -154,6 +154,7 @@
     <Compile Include="ImageMNG.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
     <Compile Include="KiriKiri\MoreCrypt.cs" />
+    <Compile Include="KiriKiri\YuzCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Lambda\ImageCLS.cs" />
     <Compile Include="Lilim\ImageIMG.cs" />
