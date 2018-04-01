@@ -117,7 +117,7 @@ namespace GameRes
             if (!header.AsciiEqual (8, "WAVE"))
                 return null;
             ushort tag = header.ToUInt16 (0x14);
-            if (0xFFFF == tag || 0x676F == tag || 0x6770 == tag)
+            if (0xFFFF == tag || 0x676F == tag || 0x6770 == tag || 0x674F == tag)
                 return null;
             file.Position = 0;
             SoundInput sound = new WaveInput (file.AsStream);

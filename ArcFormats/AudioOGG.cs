@@ -151,7 +151,7 @@ namespace GameRes.Formats
                 uint fmt_size = header.ToUInt32 (0x10);
                 long fmt_pos = file.Position;
                 ushort format = file.ReadUInt16();
-                if (format != 0x676F && format != 0x6770 && format != 0x6771)
+                if (format != 0x676F && format != 0x6770 && format != 0x6771 && format != 0x674F)
                     return null;
                 // interpret WAVE 'data' section as Ogg stream
                 file.Position = fmt_pos + ((fmt_size + 1) & ~1);
