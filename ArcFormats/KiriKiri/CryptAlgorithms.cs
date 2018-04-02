@@ -1035,12 +1035,20 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class SenrenCxCrypt : CxEncryption
+    public class NanaCxCrypt : CxEncryption
     {
+        uint m_random_seed;
+
         public string FileMapName { get; set; }
 
-        public SenrenCxCrypt (CxScheme scheme) : base (scheme)
+        public NanaCxCrypt (CxScheme scheme, uint seed) : base (scheme)
         {
+            m_random_seed = seed;
+        }
+
+        internal override CxProgram NewProgram (uint seed)
+        {
+            return new CxProgramNana (seed, m_random_seed, ControlBlock);
         }
 
         public override string ReadName (BinaryReader header)
@@ -1086,22 +1094,6 @@ namespace GameRes.Formats.KiriKiri
 
         [NonSerialized]
         Dictionary<string, string> KnownNames = null;
-    }
-
-    [Serializable]
-    public class NanaCxCrypt : SenrenCxCrypt
-    {
-        uint m_random_seed;
-
-        public NanaCxCrypt (CxScheme scheme, uint seed) : base (scheme)
-        {
-            m_random_seed = seed;
-        }
-
-        internal override CxProgram NewProgram (uint seed)
-        {
-            return new CxProgramNana (seed, m_random_seed, ControlBlock);
-        }
     }
 
     [Serializable]

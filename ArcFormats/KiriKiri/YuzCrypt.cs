@@ -32,7 +32,46 @@ using GameRes.Utility;
 namespace GameRes.Formats.KiriKiri
 {
     [Serializable]
-    public class RiddleCxCrypt : CxEncryption
+    public class SenrenCxCrypt : CxEncryption
+    {
+        public SenrenCxCrypt (CxScheme scheme) : base (scheme)
+        {
+        }
+
+        internal virtual void ReadYuzNames (byte[] yuz, FilenameMap filename_map)
+        {
+            using (var ystream = new MemoryStream (yuz))
+            using (var zstream = ZLibCompressor.DeCompress (ystream))
+            using (var input = new BinaryReader (zstream, Encoding.Unicode))
+            {
+                long dir_offset = 0;
+                while (-1 != input.PeekChar())
+                {
+                    uint entry_signature = input.ReadUInt32();
+                    long entry_size = input.ReadInt64();
+                    if (entry_size < 0)
+                        return;
+                    dir_offset += 12 + entry_size;
+                    uint hash = input.ReadUInt32();
+                    int name_size = input.ReadInt16();
+                    if (name_size > 0)
+                    {
+                        entry_size -= 6;
+                        if (name_size * 2 <= entry_size)
+                        {
+                            var filename = new string (input.ReadChars (name_size));
+                            filename_map.Add (hash, filename);
+                        }
+                    }
+                    input.BaseStream.Position = dir_offset;
+                }
+                filename_map.AddShortcut ("$", "startup.tjs");
+            }
+        }
+    }
+
+    [Serializable]
+    public class RiddleCxCrypt : SenrenCxCrypt
     {
         uint m_random_seed;
 
@@ -66,7 +105,7 @@ namespace GameRes.Formats.KiriKiri
             {
                 ulong key = GetKeyFromHash (entry.Hash);
                 key >>= (int)offset << 3;
-                int first_chunk = Math.Min (count, 8);
+                int first_chunk = Math.Min (count, 8 - (int)offset);
                 for (int i = 0; i < first_chunk; ++i)
                 {
                     buffer[pos+i] ^= (byte)key;
@@ -84,39 +123,13 @@ namespace GameRes.Formats.KiriKiri
             return (ulong)hi << 32 | lo;
         }
 
-        internal void ReadYuzNames (byte[] yuz, FilenameMap filename_map)
+        internal override void ReadYuzNames (byte[] yuz, FilenameMap filename_map)
         {
             if (null == YuzKey)
                 throw new InvalidEncryptionScheme();
             var decryptor = new YuzDecryptor (ControlBlock, YuzKey, YuzKey[4], YuzKey[5]);
             decryptor.Decrypt (yuz, Math.Min (yuz.Length, 0x100));
-            using (var ystream = new MemoryStream (yuz))
-            using (var zstream = ZLibCompressor.DeCompress (ystream))
-            using (var input = new BinaryReader (zstream, Encoding.Unicode))
-            {
-                long dir_offset = 0;
-                while (-1 != input.PeekChar())
-                {
-                    uint entry_signature = input.ReadUInt32();
-                    long entry_size = input.ReadInt64();
-                    if (entry_size < 0)
-                        return;
-                    dir_offset += 12 + entry_size;
-                    uint hash = input.ReadUInt32();
-                    int name_size = input.ReadInt16();
-                    if (name_size > 0)
-                    {
-                        entry_size -= 6;
-                        if (name_size * 2 <= entry_size)
-                        {
-                            var filename = new string (input.ReadChars (name_size));
-                            filename_map.Add (hash, filename);
-                        }
-                    }
-                    input.BaseStream.Position = dir_offset;
-                }
-                filename_map.AddShortcut ("$", "startup.tjs");
-            }
+            base.ReadYuzNames (yuz, filename_map);
         }
     }
 
