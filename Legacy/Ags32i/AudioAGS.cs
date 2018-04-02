@@ -44,6 +44,8 @@ namespace GameRes.Formats.Ags32i
         public override SoundInput TryOpen (IBinaryStream file)
         {
             uint key = file.Signature ^ 0x46464952u;
+            if (0 == key)
+                return null;
             Stream input = new InputCryptoStream (file.AsStream, new Ags32Transform (key));
             input = new SeekableStream (input);
             var header = new byte[12];
