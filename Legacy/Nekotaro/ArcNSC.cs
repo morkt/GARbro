@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [000331][Jam] Zetsumetsu King
 // [000630][STONE HEADS] Sei Cosplay Gakuen ~Game Bunkou~
 
 namespace GameRes.Formats.Nekotaro

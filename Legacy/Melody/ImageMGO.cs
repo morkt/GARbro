@@ -30,6 +30,8 @@ using System.IO;
 using System.Windows.Media.Imaging;
 using GameRes.Compression;
 
+// [000303][Melody] Rendezvous
+
 namespace GameRes.Formats.Melody
 {
     internal class MgoMetaData : ImageMetaData
