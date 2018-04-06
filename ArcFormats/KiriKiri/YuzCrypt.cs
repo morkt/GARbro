@@ -71,13 +71,13 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class RiddleCxCrypt : SenrenCxCrypt
+    public class NanaCxCrypt : SenrenCxCrypt
     {
         uint m_random_seed;
 
         public uint[] YuzKey;
 
-        public RiddleCxCrypt (CxScheme scheme, uint seed) : base (scheme)
+        public NanaCxCrypt (CxScheme scheme, uint seed) : base (scheme)
         {
             m_random_seed = seed;
         }
@@ -85,6 +85,28 @@ namespace GameRes.Formats.KiriKiri
         internal override CxProgram NewProgram (uint seed)
         {
             return new CxProgramNana (seed, m_random_seed, ControlBlock);
+        }
+
+        internal override void ReadYuzNames (byte[] yuz, FilenameMap filename_map)
+        {
+            if (null == YuzKey)
+                throw new InvalidEncryptionScheme();
+            var decryptor = CreateNameListDecryptor();
+            decryptor.Decrypt (yuz, Math.Min (yuz.Length, 0x100));
+            base.ReadYuzNames (yuz, filename_map);
+        }
+
+        internal virtual INameListDecryptor CreateNameListDecryptor ()
+        {
+            return new NanaDecryptor (YuzKey, YuzKey[4], YuzKey[5]);
+        }
+    }
+
+    [Serializable]
+    public class RiddleCxCrypt : NanaCxCrypt
+    {
+        public RiddleCxCrypt (CxScheme scheme, uint seed) : base (scheme, seed)
+        {
         }
 
         public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
@@ -97,6 +119,20 @@ namespace GameRes.Formats.KiriKiri
         {
             base.Encrypt (entry, offset, buffer, pos, count);
             ProcessFirstBytes (entry, offset, buffer, pos, count);
+        }
+
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            if (offset < 8)
+            {
+                var buffer = new byte[1] { value };
+                this.Decrypt (entry, offset, buffer, 0, 1);
+                return buffer[0];
+            }
+            else
+            {
+                return base.Decrypt (entry, offset, value);
+            }
         }
 
         internal void ProcessFirstBytes (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
@@ -118,22 +154,23 @@ namespace GameRes.Formats.KiriKiri
         {
             uint lo = hash ^ 0x55555555;
             uint hi = (hash << 13) ^ hash;
-            hi = (hi >> 17) ^ hi;
-            hi = hi ^ (hi << 5) ^ 0xAAAAAAAA;
+            hi ^= hi >> 17;
+            hi ^= (hi << 5) ^ 0xAAAAAAAA;
             return (ulong)hi << 32 | lo;
         }
 
-        internal override void ReadYuzNames (byte[] yuz, FilenameMap filename_map)
+        internal override INameListDecryptor CreateNameListDecryptor ()
         {
-            if (null == YuzKey)
-                throw new InvalidEncryptionScheme();
-            var decryptor = new YuzDecryptor (ControlBlock, YuzKey, YuzKey[4], YuzKey[5]);
-            decryptor.Decrypt (yuz, Math.Min (yuz.Length, 0x100));
-            base.ReadYuzNames (yuz, filename_map);
+            return new YuzDecryptor (ControlBlock, YuzKey, YuzKey[4], YuzKey[5]);
         }
     }
 
-    internal class YuzDecryptor
+    internal interface INameListDecryptor
+    {
+        void Decrypt (byte[] data, int length);
+    }
+
+    internal class YuzDecryptor : INameListDecryptor
     {
         byte[]  m_state;
 
@@ -253,6 +290,67 @@ namespace GameRes.Formats.KiriKiri
                 LittleEndian.Pack (x, target, pos);
                 pos += 4;
             }
+        }
+    }
+
+    internal class NanaDecryptor : INameListDecryptor
+    {
+        uint[]  m_state;
+        ulong   m_seed;
+
+        public NanaDecryptor (uint[] key, uint seed1, uint seed2)
+        {
+            m_state = new uint[27];
+            m_seed = (ulong)seed2 << 32 | seed1;
+            var s = new uint[3];
+            uint k = key[0];
+            s[0] = key[1];
+            s[1] = key[2];
+            s[2] = key[3];
+            m_state[0] = k;
+            int dst = 1;
+            for (uint i = 0; i < 26; ++i)
+            {
+                int src = (int)i % 3;
+                uint m = Binary.RotR (s[src], 8);
+                uint n = i ^ (k + m);
+                k = n ^ Binary.RotL (k, 3);
+                m_state[dst++] = k;
+                s[src] = n;
+            }
+        }
+
+        public void Decrypt (byte[] data, int length)
+        {
+            int i = 0;
+            ulong offset = 0;
+            while (length > 0)
+            {
+                ulong key = ++offset ^ m_seed;
+                key = TransformKey (key);
+                int count = Math.Min (8, length);
+                for (int j = 0; j < count; ++j)
+                {
+                    data[i++] ^= (byte)key;
+                    key >>= 8;
+                }
+                length -= count;
+            }
+        }
+
+        ulong TransformKey (ulong key)
+        {
+            uint lo = (uint)key;
+            uint hi = (uint)(key >> 32);
+            for (int i = 0; i < 27; ++i)
+            {
+                hi = Binary.RotR (hi, 8);
+                hi += lo;
+                hi ^= m_state[i];
+                lo = Binary.RotL (lo, 3);
+                lo ^= hi;
+            }
+            return (ulong)hi << 32 | lo;
         }
     }
 }

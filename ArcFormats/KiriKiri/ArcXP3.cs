@@ -250,7 +250,7 @@ namespace GameRes.Formats.KiriKiri
                             dir.Add (entry);
                         }
                     }
-                    else if (0x3A7A7579 == entry_signature || 0x3A6E6573 == entry_signature) // "yuz:" || "sen:"
+                    else if (0x3A == (entry_signature >> 24)) // "yuz:" || "sen:" || "dls:"
                     {
                         if (entry_size >= 0x10 && crypt_algorithm.Value is SenrenCxCrypt)
                         {

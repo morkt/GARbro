@@ -1035,68 +1035,6 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class NanaCxCrypt : CxEncryption
-    {
-        uint m_random_seed;
-
-        public string FileMapName { get; set; }
-
-        public NanaCxCrypt (CxScheme scheme, uint seed) : base (scheme)
-        {
-            m_random_seed = seed;
-        }
-
-        internal override CxProgram NewProgram (uint seed)
-        {
-            return new CxProgramNana (seed, m_random_seed, ControlBlock);
-        }
-
-        public override string ReadName (BinaryReader header)
-        {
-            if (null == KnownNames)
-                ReadNames();
-            var hash = base.ReadName (header);
-            string name;
-            if (null == hash || !KnownNames.TryGetValue (hash, out name))
-                return hash;
-            if (string.IsNullOrEmpty (name))
-                return null;
-            return name;
-        }
-
-        void ReadNames ()
-        {
-            var dir = FormatCatalog.Instance.DataDirectory;
-            var names_file = Path.Combine (dir, FileMapName);
-            var names = new Dictionary<string, string> { { "$", "startup.tjs" } };
-            try
-            {
-                var hash_buf = new char[32];
-                using (var reader = new StreamReader (names_file))
-                {
-                    while (32 == reader.Read (hash_buf, 0, 32))
-                    {
-                        if (',' != reader.Read())
-                            break;
-                        var name = reader.ReadLine();
-                        if (null == name)
-                            break;
-                        names[new string (hash_buf)] = name;
-                    }
-                }
-            }
-            catch (Exception X)
-            {
-                System.Diagnostics.Trace.WriteLine (X.Message, "[SenrenCxCrypt]");
-            }
-            KnownNames = names;
-        }
-
-        [NonSerialized]
-        Dictionary<string, string> KnownNames = null;
-    }
-
-    [Serializable]
     public class KissCrypt : CzCrypt
     {
         public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
