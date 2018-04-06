@@ -482,7 +482,7 @@ namespace GameRes
             {
                 m_source = input.GetBuffer();
                 if (null == m_source)
-                    m_source = new byte[0];
+                    m_source = Array.Empty<byte>();
             }
             catch (UnauthorizedAccessException)
             {

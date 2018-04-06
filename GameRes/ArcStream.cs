@@ -362,7 +362,7 @@ namespace GameRes
             }
             var current_pos = Position;
             if (0 == count || current_pos >= m_size)
-                return new byte[0];
+                return Array.Empty<byte>();
             var bytes = m_view.ReadBytes (m_start+current_pos, (uint)Math.Min (count, m_size - current_pos));
             Position = current_pos + bytes.Length;
             return bytes;
