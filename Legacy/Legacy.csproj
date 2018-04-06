@@ -76,6 +76,8 @@
     <Compile Include="Dice\ArcRLZ.cs" />
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
+    <Compile Include="Eve\ArcGM.cs" />
+    <Compile Include="Eve\AudioWV.cs" />
     <Compile Include="Mermaid\ImageMG1.cs" />
     <Compile Include="Pinky\ArcA5R.cs" />
     <Compile Include="Rune\ArcYK.cs" />
