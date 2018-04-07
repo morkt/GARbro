@@ -17,34 +17,18 @@ New formats
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>108</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/1229fd744b89ea3a86468802127378d2d57ed03b/ArcFormats/Resources/Formats.dat</Url>
-        <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.38.1669"/>
-            <Assembly Name="GameRes" Version="1.4.26.238"/>
-        </Requires>
-    </FormatsData>
-    <FormatsData>
-        <FileVersion>109</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/8e68bf1bc2bb0cd208ca2a926c9f9cd1ef09580b/ArcFormats/Resources/Formats.dat</Url>
-        <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.39.1699"/>
-            <Assembly Name="GameRes" Version="1.4.26.238"/>
-        </Requires>
-    </FormatsData>
-    <FormatsData>
-        <FileVersion>110</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/a3a196916cc0c7a2a6c2fb2fa72c92bf5c65f066/ArcFormats/Resources/Formats.dat</Url>
-        <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.39.1719"/>
-            <Assembly Name="GameRes" Version="1.4.26.238"/>
-        </Requires>
-    </FormatsData>
-    <FormatsData>
         <FileVersion>111</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
+        <Url>https://github.com/morkt/GARbro/raw/64ec99404ab859a322acd67771b957645ddf54db/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.39.1729"/>
+            <Assembly Name="GameRes" Version="1.4.26.238"/>
+        </Requires>
+    </FormatsData>
+    <FormatsData>
+        <FileVersion>112</FileVersion>
+        <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
+        <Requires>
+            <Assembly Name="ArcFormats" Version="1.2.40.1736"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>
