@@ -118,12 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BMPExtensionsDesc" xml:space="preserve">
-    <value>Enables various extensions, such as transparency support.</value>
-    <comment>translation pending</comment>
+    <value>启用各种扩展，如透明度支持</value>
   </data>
   <data name="BMPExtensionsText" xml:space="preserve">
-    <value>Enable BMP format extensions</value>
-    <comment>translation pending</comment>
+    <value>启用 BMP 格式扩展</value>
   </data>
   <data name="MsgFileIsEmpty" xml:space="preserve">
     <value>文件为空。</value>
