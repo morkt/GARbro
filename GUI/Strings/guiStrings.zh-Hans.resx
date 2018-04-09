@@ -531,43 +531,33 @@
     <value>访问下载页面</value>
   </data>
   <data name="ButtonApply" xml:space="preserve">
-    <value>Apply</value>
-    <comment>translation pending</comment>
+    <value>应用</value>
   </data>
   <data name="MenuPreferences" xml:space="preserve">
-    <value>Preferences</value>
-    <comment>translation pending</comment>
+    <value>偏好设置</value>
   </data>
   <data name="TextFormats" xml:space="preserve">
-    <value>Formats</value>
-    <comment>translation pending</comment>
+    <value>格式</value>
   </data>
   <data name="TextPreferences" xml:space="preserve">
-    <value>Preferences</value>
-    <comment>translation pending</comment>
+    <value>偏好设置</value>
   </data>
   <data name="Type_archive" xml:space="preserve">
-    <value>archive</value>
-    <comment>translation pending</comment>
+    <value>档案</value>
   </data>
   <data name="Type_audio" xml:space="preserve">
-    <value>audio</value>
-    <comment>translation pending</comment>
+    <value>音频</value>
   </data>
   <data name="Type_image" xml:space="preserve">
-    <value>image</value>
-    <comment>translation pending</comment>
+    <value>图像</value>
   </data>
   <data name="Type_script" xml:space="preserve">
-    <value>script</value>
-    <comment>translation pending</comment>
+    <value>脚本</value>
   </data>
   <data name="TextViewer" xml:space="preserve">
-    <value>Image viewer</value>
-    <comment>translation pending</comment>
+    <value>图像查看器</value>
   </data>
   <data name="winDownScaleImage" xml:space="preserve">
-    <value>Scale large images to fit window</value>
-    <comment>translation pending</comment>
+    <value>缩放大图以适应窗口</value>
   </data>
 </root>
