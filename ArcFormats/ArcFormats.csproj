@@ -213,6 +213,7 @@
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
     <Compile Include="RealLive\ArcSEEN.cs" />
+    <Compile Include="RealLive\ImageG00Jpeg.cs" />
     <Compile Include="ResourceSettings.cs" />
     <Compile Include="RPGMaker\ArcRGSS.cs" />
     <Compile Include="RPM\ArcZENOS.cs" />
