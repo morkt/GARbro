@@ -38,6 +38,8 @@ namespace GameRes.Formats.KiriKiri
         {
         }
 
+        public virtual string NamesSectionId { get { return "sen:"; } }
+
         internal virtual void ReadYuzNames (byte[] yuz, FilenameMap filename_map)
         {
             using (var ystream = new MemoryStream (yuz))
@@ -82,6 +84,8 @@ namespace GameRes.Formats.KiriKiri
             m_random_seed = seed;
         }
 
+        public override string NamesSectionId { get { return "dls:"; } }
+
         internal override CxProgram NewProgram (uint seed)
         {
             return new CxProgramNana (seed, m_random_seed, ControlBlock);
@@ -108,6 +112,8 @@ namespace GameRes.Formats.KiriKiri
         public RiddleCxCrypt (CxScheme scheme, uint seed) : base (scheme, seed)
         {
         }
+
+        public override string NamesSectionId { get { return "yuz:"; } }
 
         public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
         {
