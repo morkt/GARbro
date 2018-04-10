@@ -89,6 +89,7 @@
     <Compile Include="Abel\ImageCBF.cs" />
     <Compile Include="Abel\ImageGPS.cs" />
     <Compile Include="Abogado\ArcDSK.cs" />
+    <Compile Include="Abogado\ArcPAK.cs" />
     <Compile Include="Abogado\AudioADP.cs" />
     <Compile Include="Abogado\ImageKG.cs" />
     <Compile Include="Actgs\ArcCG.cs" />
@@ -138,8 +139,10 @@
     <Compile Include="DjSystem\ArcDAT.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
+    <Compile Include="EmbeddedResource.cs" />
     <Compile Include="Emote\ImageDREF.cs" />
     <Compile Include="FC01\ArcPAK.cs" />
+    <Compile Include="FC01\ImageWM2.cs" />
     <Compile Include="FC01\ImageWMK.cs" />
     <Compile Include="FrontWing\ArcVAV.cs" />
     <Compile Include="Groover\ArcPCG.cs" />
@@ -660,6 +663,7 @@
     <Compile Include="Vitamin\ImageSBI.cs" />
     <Compile Include="VnEngine\ArcAXR.cs" />
     <Compile Include="VnEngine\ImageZAW.cs" />
+    <EmbeddedResource Include="Abogado\keytable.dat" />
     <None Include="packages.config" />
     <EmbeddedResource Include="Strings\arcStrings.ja-JP.resx" />
     <EmbeddedResource Include="Unity\strings.dat" />
