@@ -57,7 +57,7 @@ namespace GameRes.Formats.Jupiter
                 {
                     uint offset = index.View.ReadUInt32 (idx_offset);
                     uint size   = index.View.ReadUInt32 (idx_offset + 4);
-                    var name = index.View.ReadString (idx_offset + 9, 0xB);
+                    var name = index.View.ReadString (idx_offset + 9, 0xF);
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = offset;
                     entry.Size   = size;
