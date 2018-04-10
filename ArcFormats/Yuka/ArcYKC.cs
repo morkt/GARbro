@@ -55,7 +55,8 @@ namespace GameRes.Formats.Yuka
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (0x3130 != file.View.ReadUInt32 (4))
+            if (0x3130 != file.View.ReadUInt32 (4) 
+                && 0x3230 != file.View.ReadUInt32(4)) // For 'YKC002'
                 return null;
             uint index_offset = file.View.ReadUInt32 (0x10);
             uint index_length = file.View.ReadUInt32 (0x14);
