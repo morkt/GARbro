@@ -262,16 +262,7 @@ namespace GameRes.Formats.ScrPlayer
 
         static byte[] LoadResource (string name)
         {
-            var type = typeof(Img2Reader);
-            var assembly = type.Assembly;
-            using (var stream = assembly.GetManifestResourceStream (type.Namespace+'.'+name))
-            {
-                if (null == stream)
-                    return null;
-                var data = new byte[stream.Length];
-                stream.Read (data, 0, data.Length);
-                return data;
-            }
+            return EmbeddedResource.Load (name, typeof(Img2Reader));
         }
 
         #region IDisposable Members

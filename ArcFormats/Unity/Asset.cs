@@ -305,25 +305,12 @@ namespace GameRes.Formats.Unity
             return Binary.GetCString (strings, offset, strings.Length-offset, Encoding.UTF8);
         }
 
-        internal static Stream OpenResource (string name)
-        {
-            var qualified_name = ".Unity." + name;
-            var assembly = Assembly.GetExecutingAssembly();
-            var res_name = assembly.GetManifestResourceNames().Single (r => r.EndsWith (qualified_name));
-            Stream stream = assembly.GetManifestResourceStream (res_name);
-            if (null == stream)
-                throw new FileNotFoundException ("Resource not found.", name);
-            return stream;
-        }
-
         internal static byte[] LoadResource (string name)
         {
-            using (var stream = OpenResource (name))
-            {
-                var res = new byte[stream.Length];
-                stream.Read (res, 0, res.Length);
-                return res;
-            }
+            var res = EmbeddedResource.Load (name, typeof(TypeTree));
+            if (null == res)
+                throw new FileNotFoundException ("Resource not found.", name);
+            return res;
         }
     }
 

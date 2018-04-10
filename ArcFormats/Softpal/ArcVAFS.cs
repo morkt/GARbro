@@ -368,18 +368,12 @@ namespace GameRes.Formats.Softpal
 
         static short[] LoadWaveTable (string name)
         {
-
-            var assembly = typeof(VafsOpener).Assembly;
-            using (var stream = assembly.GetManifestResourceStream ("GameRes.Formats.Softpal."+name))
-            {
-                if (null == stream)
-                    return null;
-                var src = new byte[stream.Length];
-                stream.Read (src, 0, src.Length);
-                var array = new short[src.Length/2];
-                Buffer.BlockCopy (src, 0, array, 0, src.Length);
-                return array;
-            }
+            var src = EmbeddedResource.Load (name, typeof(VafsOpener));
+            if (null == src)
+                return null;
+            var array = new short[src.Length/2];
+            Buffer.BlockCopy (src, 0, array, 0, src.Length);
+            return array;
         }
     }
 
