@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Text;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -55,7 +56,8 @@ namespace GameRes.Formats.Yuka
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (0x3130 != file.View.ReadUInt32 (4))
+            var version = file.View.ReadUInt32 (4);
+            if (version != 0x3130 && version != 0x3230)
                 return null;
             uint index_offset = file.View.ReadUInt32 (0x10);
             uint index_length = file.View.ReadUInt32 (0x14);
@@ -78,10 +80,11 @@ namespace GameRes.Formats.Yuka
                 dir.Add (entry);
                 index_offset += 0x14;
             }
+            Encoding encoding = 0x3130 == version ? Encodings.cp932 : Encoding.UTF8;
             // read in two cycles to avoid memory mapped file page switching when accessing names
             foreach (YukaEntry entry in dir)
             {
-                entry.Name = file.View.ReadString (entry.NameOffset, entry.NameLength);
+                entry.Name = file.View.ReadString (entry.NameOffset, entry.NameLength, encoding);
                 entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
             }
             return new ArcFile (file, this, dir);
