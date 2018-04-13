@@ -125,6 +125,10 @@
     <value>Enable BMP format extensions</value>
     <comment>translation pending</comment>
   </data>
+  <data name="JPEGQualityText" xml:space="preserve">
+    <value>JPEG compression quality</value>
+    <comment>translation pending</comment>
+  </data>
   <data name="MsgFileIsEmpty" xml:space="preserve">
     <value>파일이 비어있습니다</value>
   </data>

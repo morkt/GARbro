@@ -79,6 +79,15 @@ namespace GameRes.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to JPEG compression quality.
+        /// </summary>
+        public static string JPEGQualityText {
+            get {
+                return ResourceManager.GetString("JPEGQualityText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File is empty.
         /// </summary>
         public static string MsgFileIsEmpty {

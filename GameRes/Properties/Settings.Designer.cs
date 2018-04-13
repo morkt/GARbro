@@ -46,5 +46,17 @@ namespace GameRes.Properties {
                 this["UpgradeRequired"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int JPEGQuality {
+            get {
+                return ((int)(this["JPEGQuality"]));
+            }
+            set {
+                this["JPEGQuality"] = value;
+            }
+        }
     }
 }

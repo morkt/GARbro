@@ -23,6 +23,9 @@
 // IN THE SOFTWARE.
 //
 
+using System.Collections.Generic;
+using System.Configuration;
+
 namespace GameRes
 {
     /// <summary>
@@ -86,11 +89,34 @@ namespace GameRes
         }
     }
 
-    internal class LocalResourceSetting : ResourceSettingBase
+    public class ApplicationSetting : ResourceSettingBase
     {
+        public ApplicationSetting (ApplicationSettingsBase settings)
+        {
+            Settings = settings;
+        }
+
+        public ApplicationSettingsBase Settings { get; set; }
+
         public override object Value {
-            get { return GameRes.Properties.Settings.Default[Name]; }
-            set { GameRes.Properties.Settings.Default[Name] = value; }
+            get { return Settings[Name]; }
+            set { Settings[Name] = value; }
+        }
+    }
+
+    internal class LocalResourceSetting : ApplicationSetting
+    {
+        public LocalResourceSetting () : base (GameRes.Properties.Settings.Default) { }
+    }
+
+    public class FixedGaugeSetting : ApplicationSetting
+    {
+        public int  Min { get; set; }
+        public int  Max { get; set; }
+        public IEnumerable<int> ValuesSet { get; set; }
+
+        public FixedGaugeSetting (ApplicationSettingsBase settings) : base (settings)
+        {
         }
     }
 }

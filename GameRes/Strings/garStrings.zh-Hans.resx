@@ -123,6 +123,10 @@
   <data name="BMPExtensionsText" xml:space="preserve">
     <value>启用 BMP 格式扩展</value>
   </data>
+  <data name="JPEGQualityText" xml:space="preserve">
+    <value>JPEG compression quality</value>
+    <comment>translation pending</comment>
+  </data>
   <data name="MsgFileIsEmpty" xml:space="preserve">
     <value>文件为空。</value>
   </data>

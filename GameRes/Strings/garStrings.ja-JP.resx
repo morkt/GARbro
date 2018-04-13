@@ -125,6 +125,9 @@
     <value>BMP形式の拡張機能を有効にします。</value>
     <comment>Enable BMP format extensions</comment>
   </data>
+  <data name="JPEGQualityText" xml:space="preserve">
+    <value>JPEG compression quality</value>
+  </data>
   <data name="MsgFileIsEmpty" xml:space="preserve">
     <value>ファイルが空です。</value>
     <comment>File is empty</comment>

@@ -123,6 +123,9 @@
   <data name="BMPExtensionsText" xml:space="preserve">
     <value>Включить расширения формата BMP</value>
   </data>
+  <data name="JPEGQualityText" xml:space="preserve">
+    <value>Качество JPEG-компрессии</value>
+  </data>
   <data name="MsgFileIsEmpty" xml:space="preserve">
     <value>Файл пуст</value>
   </data>

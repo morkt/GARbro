@@ -123,6 +123,9 @@
   <data name="BMPExtensionsText" xml:space="preserve">
     <value>Enable BMP format extensions</value>
   </data>
+  <data name="JPEGQualityText" xml:space="preserve">
+    <value>JPEG compression quality</value>
+  </data>
   <data name="MsgFileIsEmpty" xml:space="preserve">
     <value>File is empty</value>
   </data>

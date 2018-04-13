@@ -28,6 +28,7 @@ using System.IO;
 using System.Text;
 using System.ComponentModel.Composition;
 using System.Windows.Media.Imaging;
+using GameRes.Strings;
 using GameRes.Utility;
 
 namespace GameRes
@@ -40,13 +41,18 @@ namespace GameRes
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return true; } }
 
-        public int Quality { get; set; }
+        readonly FixedGaugeSetting Quality = new FixedGaugeSetting (Properties.Settings.Default) {
+            Name = "JPEGQuality",
+            Text = garStrings.JPEGQualityText,
+            Min = 1, Max = 100,
+            ValuesSet = new[] { 1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 },
+        };
 
         public JpegFormat ()
         {
             Extensions = new string[] { "jpg", "jpeg" };
             Signatures = new uint[] { 0xe0ffd8ffu, 0 };
-            Quality = 100;
+            Settings = new[] { Quality };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -61,7 +67,7 @@ namespace GameRes
         public override void Write (Stream file, ImageData image)
         {
             var encoder = new JpegBitmapEncoder();
-            encoder.QualityLevel = Quality;
+            encoder.QualityLevel = Quality.Get<int>();
             encoder.Frames.Add (BitmapFrame.Create (image.Bitmap, null, null, null));
             encoder.Save (file);
         }
