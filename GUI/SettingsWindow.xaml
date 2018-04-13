@@ -46,7 +46,18 @@ IN THE SOFTWARE.
             <CheckBox DataContext="{TemplateBinding DataContext}" IsChecked="{Binding Value}"
                       Content="{Binding Text}" ToolTip="{Binding Description}" Margin="2"/>
         </ControlTemplate>
-        <TextBlock x:Key="FormatsPanel" Text="Not much settings implemented so far."/>
+        <ControlTemplate x:Key="BoundSlider" TargetType="Slider">
+            <StackPanel Orientation="Vertical" Margin="2" DataContext="{TemplateBinding DataContext}">
+                <TextBlock Text="{Binding Text}" ToolTip="{Binding Description}" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,0" VerticalAlignment="Center">
+                    <Slider Orientation="Horizontal" IsSnapToTickEnabled="True" Width="120" x:Name="GaugeSlider"
+                            TickPlacement="BottomRight" Ticks="{TemplateBinding Ticks}"
+                            Minimum="{Binding Path=Source.Min}" Maximum="{Binding Path=Source.Max}"
+                            Value="{Binding Value}"/>
+                    <TextBlock Text="{Binding ElementName=GaugeSlider,Path=Value}" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Margin="2,0,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </ControlTemplate>
 
         <Style x:Key="ExpandCollapseToggleStyle" TargetType="ToggleButton">
             <Setter Property="Focusable" Value="False"/>

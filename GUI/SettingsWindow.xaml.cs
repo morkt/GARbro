@@ -32,6 +32,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using GameRes;
 using GARbro.GUI.Properties;
 using GARbro.GUI.Strings;
@@ -181,8 +182,19 @@ namespace GARbro.GUI
             return container;
         }
 
+        UIElement CreateGaugeWidget (FixedGaugeSetting setting)
+        {
+            return new Slider {
+                Template = (ControlTemplate)this.Resources["BoundSlider"],
+                DataContext = CreateSettingView<int> (setting),
+                Ticks = new DoubleCollection (setting.ValuesSet.Select (x => (double)x)),
+            };
+        }
+
         UIElement CreateSettingWidget<TUnknown> (IResourceSetting setting, TUnknown value)
         {
+            if (setting is FixedGaugeSetting)
+                return CreateGaugeWidget (setting as FixedGaugeSetting);
             if (value is bool)
                 return CreateCheckBoxWidget (setting);
             if (value is Encoding)
