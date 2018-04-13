@@ -229,6 +229,7 @@
     <Compile Include="Seraphim\ArcVoice.cs" />
     <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
     <Compile Include="ShiinaRio\ImageCHD.cs" />
+    <Compile Include="StudioSakura\ArcDAT.cs" />
     <Compile Include="Silky\ImageGRD.cs" />
     <Compile Include="Slg\ArcSPD.cs" />
     <Compile Include="Software House Parsley\ArcCG.cs" />
