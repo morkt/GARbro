@@ -152,12 +152,13 @@ namespace GameRes.Formats.Musica
         public override string         Tag { get { return "PAZ"; } }
         public override string Description { get { return "Musica engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public PazOpener ()
         {
-            Signatures = new uint[] { 0x858F8493, 0x8F889395, 0x6E656465, 0x848F8486, 0 };
+            Extensions = new string[] { "paz", "dat" };
+            Signatures = new uint[] { 0x858F8493, 0x8F889395, 0x6E656465, 0x848F8486, 0x61657453, 0 };
         }
 
         static readonly ISet<string> AudioPazNames = new HashSet<string> {
@@ -167,11 +168,10 @@ namespace GameRes.Formats.Musica
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.HasExtension (".paz"))
-                return null;
             uint signature = file.View.ReadUInt32 (0);
-            // XXX encryption is queried for every .paz file
             var scheme = QueryEncryption (file.Name, signature);
+            if (null == scheme)
+                return null;
             uint start_offset = scheme.Version > 0 ? 0x20u : 0u;
             uint index_size = file.View.ReadUInt32 (start_offset);
             start_offset += 4;
@@ -344,6 +344,8 @@ namespace GameRes.Formats.Musica
                 scheme = GetScheme (title);
                 if (null == scheme)
                 {
+                    if (!arc_name.HasExtension (".paz"))
+                        return null;
                     var options = Query<PazOptions> (arcStrings.ArcEncryptedNotice);
                     scheme = options.Scheme;
                 }
