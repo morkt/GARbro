@@ -104,19 +104,6 @@ namespace GameRes
             encoder.Save (file);
         }
 
-        void SkipBytes (IBinaryStream file, uint num)
-        {
-            if (file.AsStream.CanSeek)
-                file.Seek (num, SeekOrigin.Current);
-            else
-            {
-                for (int i = 0; i < num / 4; ++i)
-                    file.ReadInt32();
-                for (int i = 0; i < num % 4; ++i)
-                    file.ReadByte();
-            }
-        }
-
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             int c1 = file.ReadByte();
