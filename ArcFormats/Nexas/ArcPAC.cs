@@ -130,11 +130,8 @@ namespace GameRes.Formats.NeXAS
                     index_packed[i] = (byte)~index_packed[i];
 
                 var index = HuffmanDecode (index_packed, unpacked_size);
-                using (var input = new MemoryStream (index))
-                    if (!ReadFromStream (input, 0x40))
-                        return false;
-
-                return true;
+                using (var input = new BinMemoryStream (index))
+                    return ReadFromStream (input, 0x40);
             }
 
             bool ReadOld ()
@@ -142,37 +139,31 @@ namespace GameRes.Formats.NeXAS
                 using (var input = m_file.CreateStream())
                 {
                     input.Position = 0xC;
-                    if (!ReadFromStream (input, 0x20))
-                        return false;
+                    if (ReadFromStream (input, 0x20))
+                        return true;
+                    input.Position = 0xC;
+                    return ReadFromStream (input, 0x40);
                 }
-                return true;
             }
 
-            byte[] m_name_buffer = new byte[MaxNameLength];
-
-            bool ReadFromStream (Stream input, int name_length)
+            bool ReadFromStream (IBinaryStream index, int name_length)
             {
                 m_dir.Clear();
-                using (var index = new ArcView.Reader (input))
+                for (int i = 0; i < m_count; ++i)
                 {
-                    for (int i = 0; i < m_count; ++i)
-                    {
-                        if (name_length != index.Read (m_name_buffer, 0, name_length))
-                            return false;
-                        var name = Binary.GetCString (m_name_buffer, 0, name_length);
-                        if (string.IsNullOrWhiteSpace (name))
-                            return false;
-                        var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                        entry.Offset        = index.ReadUInt32();
-                        entry.UnpackedSize  = index.ReadUInt32();
-                        entry.Size          = index.ReadUInt32();
-                        if (!entry.CheckPlacement (m_file.MaxOffset))
-                            return false;
-                        entry.IsPacked = m_pack_type != 0 && (m_pack_type != 4 || entry.Size != entry.UnpackedSize);
-                        m_dir.Add (entry);
-                    }
-                    return true;
+                    var name = index.ReadCString (name_length);
+                    if (string.IsNullOrWhiteSpace (name))
+                        return false;
+                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                    entry.Offset        = index.ReadUInt32();
+                    entry.UnpackedSize  = index.ReadUInt32();
+                    entry.Size          = index.ReadUInt32();
+                    if (!entry.CheckPlacement (m_file.MaxOffset))
+                        return false;
+                    entry.IsPacked = m_pack_type != 0 && (m_pack_type != 4 || entry.Size != entry.UnpackedSize);
+                    m_dir.Add (entry);
                 }
+                return true;
             }
         }
 
