@@ -30,6 +30,7 @@ using System.ComponentModel.Composition;
 using System.Text;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
+using ICSharpCode.SharpZipLib.BZip2;
 
 namespace GameRes.Formats.NScripter
 {
@@ -158,6 +159,8 @@ namespace GameRes.Formats.NScripter
                     case 4:  entry.CompressionType = Compression.NBZ; break;
                     default: entry.CompressionType = Compression.Unknown; break;
                     }
+                    if (name.HasExtension (".nbz"))
+                        entry.Type = "audio";
                     dir.Add (entry);
                 }
                 return dir;
@@ -179,9 +182,15 @@ namespace GameRes.Formats.NScripter
 
         protected Stream UnpackEntry (Stream input, NsaEntry nsa_entry)
         {
-            if (null == nsa_entry
-                || !(Compression.LZSS == nsa_entry.CompressionType ||
-                     Compression.SPB  == nsa_entry.CompressionType))
+            if (null == nsa_entry)
+                return input;
+            if (nsa_entry.Name.HasExtension (".nbz"))
+            {
+                input.Position = 4;
+                return new BZip2InputStream (input);
+            }
+            if (!(Compression.LZSS == nsa_entry.CompressionType ||
+                  Compression.SPB  == nsa_entry.CompressionType))
                 return input;
             using (input)
             {
@@ -335,7 +344,6 @@ namespace GameRes.Formats.NScripter
     internal class Unpacker : MsbBitStream
     {
         private byte[]          m_output;
-        private byte[]          m_read_buf = new byte[4096];
 
         public byte[] Output { get { return m_output; } }
 
