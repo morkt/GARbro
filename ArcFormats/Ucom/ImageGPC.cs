@@ -50,7 +50,7 @@ namespace GameRes.Formats.Ucom
             uint width = header.ToUInt32 (6);
             uint height = header.ToUInt32 (0xA);
             int bpp = header.ToUInt16 (0x10);
-            if (bpp != 8 && bpp != 24)
+            if (bpp != 8 && bpp != 24 && bpp != 32)
                 return null;
             int colors = 0;
             if (8 == bpp)
@@ -106,8 +106,10 @@ namespace GameRes.Formats.Ucom
             m_output = new byte[m_height * m_stride];
             if (1 == m_pixel_size)
                 Format = PixelFormats.Indexed8;
-            else
+            else if (3 == m_pixel_size)
                 Format = PixelFormats.Bgr24;
+            else
+                Format = PixelFormats.Bgra32;
         }
 
         public void Unpack ()
