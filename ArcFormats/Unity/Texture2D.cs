@@ -67,6 +67,7 @@ namespace GameRes.Formats.Unity
         public int      m_WrapMode;
         public int      m_LightFormat;
         public int      m_ColorSpace;
+        public int      m_DataLength;
         public byte[]   m_Data;
 
         public void Load (AssetReader reader)
@@ -89,8 +90,12 @@ namespace GameRes.Formats.Unity
             m_WrapMode = reader.ReadInt32();
             m_LightFormat = reader.ReadInt32();
             m_ColorSpace = reader.ReadInt32();
-            int length = reader.ReadInt32();
-            m_Data = reader.ReadBytes (length);
+            m_DataLength = reader.ReadInt32();
+        }
+
+        public void LoadData (AssetReader reader)
+        {
+            m_Data = reader.ReadBytes (m_DataLength);
         }
     }
 
@@ -100,7 +105,7 @@ namespace GameRes.Formats.Unity
         Texture2D       m_texture;
         ImageData       m_image;
 
-        public Stream            Source { get { return m_reader.Source; } }
+        public Stream            Source { get { m_reader.Position = 0; return m_reader.Source; } }
         public ImageFormat SourceFormat { get { return null; } }
         public PixelFormat       Format { get; private set; }
         public ImageMetaData       Info { get; private set; }
@@ -112,19 +117,6 @@ namespace GameRes.Formats.Unity
                 }
                 return m_image;
             }
-        }
-
-        public Texture2DDecoder (AssetReader input)
-        {
-            m_reader = input;
-            m_texture = new Texture2D();
-            m_texture.Load (m_reader);
-            Info = new ImageMetaData {
-                Width   = (uint)m_texture.m_Width,
-                Height  = (uint)m_texture.m_Height,
-            };
-            SetFormat (m_texture.m_TextureFormat);
-            m_reader.Position = 0;
         }
 
         public Texture2DDecoder (Texture2D texture, AssetReader input)
@@ -171,6 +163,7 @@ namespace GameRes.Formats.Unity
 
         ImageData Unpack ()
         {
+            m_texture.LoadData (m_reader);
             byte[] pixels;
             switch (m_texture.m_TextureFormat)
             {

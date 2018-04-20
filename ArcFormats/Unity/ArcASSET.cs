@@ -79,27 +79,29 @@ namespace GameRes.Formats.Unity
                 return base.OpenImage (arc, entry);
 
             var obj = aent.AssetObject;
-            using (var stream = arc.File.CreateStream (obj.Offset, obj.Size))
-            using (var reader = new AssetReader (stream))
+            var stream = arc.File.CreateStream (obj.Offset, obj.Size);
+            var reader = new AssetReader (stream);
+            try
             {
                 reader.SetupReaders (obj.Asset);
                 var tex = new Texture2D();
                 tex.Load (reader);
-
-                var input = OpenEntry (arc, entry);
-                try
+                if (0 == tex.m_DataLength)
                 {
-                    tex.m_Data = new byte[entry.Size];
-                    input.Read (tex.m_Data, 0, tex.m_Data.Length);
-                    var tex_reader = new AssetReader (input, entry.Name);
-                    tex_reader.SetupReaders (obj.Asset);
-                    return new Texture2DDecoder (tex, tex_reader);
+                    reader.Dispose();
+                    var input = OpenEntry (arc, entry);
+                    reader = new AssetReader (input, entry.Name);
+                    reader.SetupReaders (obj.Asset);
+                    tex.m_DataLength = (int)entry.Size;
                 }
-                catch
-                {
-                    input.Dispose();
-                    throw;
-                }
+                var decoder = new Texture2DDecoder (tex, reader);
+                reader = null;
+                return decoder;
+            }
+            finally
+            {
+                if (reader != null)
+                    reader.Dispose();
             }
         }
     }
@@ -165,7 +167,7 @@ namespace GameRes.Formats.Unity
                     {
                         var tex = new Texture2D();
                         tex.Load (input);
-                        if (null == tex.m_Data || 0 == tex.m_Data.Length)
+                        if (0 == tex.m_DataLength)
                         {
                             if (asset.Tree.Version == "2017.2.0f3")
                                 input.ReadInt64();
@@ -181,6 +183,15 @@ namespace GameRes.Formats.Unity
                                     Bundle = GetBundle (stream_data.Path),
                                 };
                             }
+                        }
+                        else
+                        {
+                            entry = new AssetEntry {
+                                Name = tex.m_Name,
+                                Type = "image",
+                                Offset = obj.Offset,
+                                Size = obj.Size,
+                            };
                         }
                         break;
                     }

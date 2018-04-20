@@ -120,7 +120,7 @@ namespace GameRes.Formats.Unity
                 else
                 */
                 {
-                    Trace.WriteLine ("Unknown type id", obj.ClassId.ToString());
+                    Trace.WriteLine (string.Format ("Unknown type id {0}", obj.ClassId.ToString()), "[Unity.Asset]");
                     m_types[obj.TypeId] = null;
                 }
             }

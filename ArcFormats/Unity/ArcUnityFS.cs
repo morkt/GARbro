@@ -130,7 +130,9 @@ namespace GameRes.Formats.Unity
             input = new StreamRegion (input, obj.Offset, obj.Size);
             var reader = new AssetReader (input, entry.Name);
             reader.SetupReaders (obj.Asset);
-            return new Texture2DDecoder (reader);
+            var tex = new Texture2D();
+            tex.Load (reader);
+            return new Texture2DDecoder (tex, reader);
         }
 
         internal static byte[] UnpackLzma (byte[] input, int unpacked_size)
