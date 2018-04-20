@@ -64,7 +64,7 @@ namespace GameRes.Formats.Emote
 
         public PsbOpener ()
         {
-            Extensions = new string[] { "psb", "pimg", "dpak" };
+            Extensions = new string[] { "psb", "pimg", "dpak", "psbz" };
         }
 
         public override ArcFile TryOpen (ArcView file)
