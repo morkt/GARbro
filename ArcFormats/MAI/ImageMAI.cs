@@ -168,30 +168,29 @@ namespace GameRes.Formats.MAI
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            if ('A' != stream.ReadByte() || 'M' != stream.ReadByte())
+            var header = stream.ReadHeader (0x30);
+            if ('A' != header[0] || 'M' != header[1])
                 return null;
-            var header = new byte[0x30];
-            if (0x2e != stream.Read (header, 2, 0x2e))
-                return null;
-            uint size = LittleEndian.ToUInt32 (header, 2);
+            uint size = header.ToUInt32 (2);
             if (size != stream.Length)
                 return null;
             int am_type = header[0x16];
             if (am_type != 2 && am_type != 1 || header[0x18] != 1)
                 return null;
-            var info = new AmMetaData();
-            info.Width = LittleEndian.ToUInt16 (header, 6);
-            info.Height = LittleEndian.ToUInt16 (header, 8);
-            info.MaskWidth = LittleEndian.ToUInt16 (header, 0x0a);
-            info.MaskHeight = LittleEndian.ToUInt16 (header, 0x0c);
-            info.Colors = LittleEndian.ToUInt16 (header, 0x12);
-            info.BPP = header[0x14];
-            info.IsCompressed = 0 != header[0x15];
-            info.DataOffset = LittleEndian.ToUInt32 (header, 0x1a);
-            info.DataLength = LittleEndian.ToUInt32 (header, 0x1e);
-            info.MaskOffset = LittleEndian.ToUInt32 (header, 0x22);
-            info.MaskLength = LittleEndian.ToUInt32 (header, 0x26);
-            info.IsMaskCompressed = 0 != header[0x2a];
+            var info = new AmMetaData {
+                Width = header.ToUInt16 (6),
+                Height = header.ToUInt16 (8),
+                MaskWidth = header.ToUInt16 (0x0A),
+                MaskHeight = header.ToUInt16 (0x0C),
+                Colors = header.ToUInt16 (0x12),
+                BPP = header[0x14],
+                IsCompressed = 0 != header[0x15],
+                DataOffset = header.ToUInt32 (0x1A),
+                DataLength = header.ToUInt32 (0x1E),
+                MaskOffset = header.ToUInt32 (0x22),
+                MaskLength = header.ToUInt32 (0x26),
+                IsMaskCompressed = 0 != header[0x2A],
+            };
             if (checked(info.DataLength + info.MaskLength) > size)
                 return null;
             return info;
@@ -238,9 +237,12 @@ namespace GameRes.Formats.MAI
 
             public void Unpack ()
             {
-                m_input.Position = m_info.DataOffset;
                 if (m_info.Colors > 0)
+                {
+                    m_input.Position = 0x30;
                     Palette = ImageFormat.ReadPalette (m_input, m_info.Colors, PaletteFormat.Bgr);
+                }
+                m_input.Position = m_info.DataOffset;
                 if (m_info.IsCompressed)
                     RleDecoder.Unpack (m_input, (int)m_info.DataLength, m_output, m_pixel_size);
                 else
