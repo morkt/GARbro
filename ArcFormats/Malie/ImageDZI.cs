@@ -135,7 +135,7 @@ namespace GameRes.Formats.Malie
             {
                 var image_entry = VFS.GetFiles (tile.FileName + ".*").FirstOrDefault();
                 if (null == image_entry)
-                    throw new FileNotFoundException ("Tile not found", tile.FileName);
+                    throw new FileNotFoundException (string.Format ("Tile '{0}' not found", tile.FileName));
                 using (var input = VFS.OpenBinaryStream (image_entry))
                 {
                     var image = Read (input);
