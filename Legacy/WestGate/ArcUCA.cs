@@ -25,6 +25,7 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 
 namespace GameRes.Formats.WestGate
 {
@@ -61,11 +62,12 @@ namespace GameRes.Formats.WestGate
             uint next_offset = file.View.ReadUInt32 (index_offset+0xC);
             if (next_offset < data_offset)
                 return null;
+            var invalid_chars = Path.GetInvalidFileNameChars();
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0xC);
-                if (string.IsNullOrWhiteSpace (name))
+                if (string.IsNullOrWhiteSpace (name) || name.IndexOfAny (invalid_chars) != -1)
                     return null;
                 index_offset += 0x10;
                 var entry = new Entry { Name = name, Type = entry_type };
