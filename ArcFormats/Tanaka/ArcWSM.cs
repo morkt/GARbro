@@ -237,7 +237,7 @@ namespace GameRes.Formats.Will
             var dir = new List<Entry> (count);
             for (int i = 0; i < table_count; ++i)
             {
-                var entry = new Entry { Type = "audio" };
+                var entry = new Entry { Name = i.ToString ("D4"), Type = "audio" };
                 entry.Offset = file.View.ReadUInt32 (table_offset);
                 entry.Size   = file.View.ReadUInt32 (table_offset+4);
                 if (!entry.CheckPlacement (file.MaxOffset))
