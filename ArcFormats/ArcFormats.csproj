@@ -110,6 +110,8 @@
     </Compile>
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="Ankh\AudioPCM.cs" />
+    <Compile Include="Antique\ArcDAT.cs" />
+    <Compile Include="Antique\ImageGPD.cs" />
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="ArcARCX.cs" />
     <Compile Include="Artemis\ArcMJA.cs" />
