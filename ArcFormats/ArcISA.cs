@@ -23,11 +23,8 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.IO;
-using GameRes.Utility;
 
 namespace GameRes.Formats.ISM
 {
@@ -44,24 +41,44 @@ namespace GameRes.Formats.ISM
         {
             if (!file.View.AsciiEqual (4, "ARCHIVED"))
                 return null;
-            int count = file.View.ReadInt16 (0x0c);
-            if (count <= 0)
+            int count = file.View.ReadInt16 (0x0C);
+            if (!IsSaneCount (count))
                 return null;
-            file.View.Reserve (0x10, (uint)count*0x20u);
-            int index_offset = 0x10;
+            int version = file.View.ReadUInt16 (0x0E);
+            bool is_encrypted = (version & 0x8000) != 0;
+            version &= 0x7FFF;
+            uint index_offset = 0x10;
+            uint name_length   = 1 == version ? 0x30u : 0x0Cu;
+            uint record_length = 1 == version ? 0x10u : 0x14u;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                var name = file.View.ReadString (index_offset, 0x0c);
+                var name = file.View.ReadString (index_offset, name_length);
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = file.View.ReadUInt32 (index_offset+0x10);
-                entry.Size = file.View.ReadUInt32 (index_offset+0x14);
+                index_offset += name_length;
+                entry.Offset = file.View.ReadUInt32 (index_offset+4);
+                entry.Size = file.View.ReadUInt32 (index_offset+8);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
-                index_offset += 0x20;
+                index_offset += record_length;
             }
             return new ArcFile (file, this, dir);
+        }
+
+        unsafe void DecryptIndex (byte[] data)
+        {
+            int length = data.Length / 4;
+            if (0 == length)
+                return;
+            fixed (byte* data8 = data)
+            {
+                int* data32 = (int*)data8;
+                for (int i = 0; i < length; ++i)
+                {
+                    data32[i] ^= ~(data.Length + length - i);
+                }
+            }
         }
     }
 }
