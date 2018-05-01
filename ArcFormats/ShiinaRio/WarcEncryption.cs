@@ -600,7 +600,7 @@ namespace GameRes.Formats.ShiinaRio
 
         uint GetMaxIndexLength (int version)
         {
-            int max_index_entries = version < 150 ? 8192 : 16384;
+            int max_index_entries = version < 150 || SchemeVersion < 2310 ? 8192 : 16384;
             return (uint)((m_scheme.EntryNameSize + 0x18) * max_index_entries);
         }
 
