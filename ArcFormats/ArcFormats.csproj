@@ -516,6 +516,7 @@
     <Compile Include="Tanaka\ArcWSM.cs" />
     <Compile Include="Tanaka\ImageBC.cs" />
     <Compile Include="TanukiSoft\ArcTAC.cs" />
+    <Compile Include="TanukiSoft\ImageAF.cs" />
     <Compile Include="Taskforce\ArcDAT.cs" />
     <Compile Include="TechnoBrain\AudioWAPE.cs" />
     <Compile Include="TechnoBrain\ImageIPF.cs" />

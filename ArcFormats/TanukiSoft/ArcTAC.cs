@@ -129,7 +129,7 @@ namespace GameRes.Formats.Tanuki
                             if (res != null)
                                 entry.ChangeType (res);
                         }
-                        if ("image" == entry.Type)
+                        if ("image" == entry.Type && !entry.Name.HasExtension (".af"))
                             entry.EncryptedSize = Math.Min (10240, entry.Size);
                         else
                             entry.EncryptedSize = entry.Size;
