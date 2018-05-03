@@ -1,39 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.5.36</Version>
+        <Version>1.5.37</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
-        <Notes>Added more GUI options
-- scale large images
-- file names encodings for some formats
+        <Notes>GUI:
+- updated Chinese translation
+- added JPEG compression option
 
-New formats
-- 'vav' archives
-- 'FILECMB' archives
-- AIMS engine 'PACK' archives
-- 'b5' images
-- CBF images and FPK archives
-- updated KiriKiri and ShiinaRio encryption schemes
+New formats:
+- 'YKC002' archives
+- ACHV archives and GPD images
+- YSK archives
+- Carriere archives and 'cgd' images
+- updated KiriKiri and Malie encryption schemes
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>111</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/64ec99404ab859a322acd67771b957645ddf54db/ArcFormats/Resources/Formats.dat</Url>
-        <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.39.1729"/>
-            <Assembly Name="GameRes" Version="1.4.26.238"/>
-        </Requires>
-    </FormatsData>
-    <FormatsData>
-        <FileVersion>112</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/53c1e589da2f653cb105db2a2ef3d83c0c95c29d/ArcFormats/Resources/Formats.dat</Url>
-        <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.40.1736"/>
-            <Assembly Name="GameRes" Version="1.4.26.238"/>
-        </Requires>
-    </FormatsData>
-    <FormatsData>
-        <FileVersion>113</FileVersion>
+        <FileVersion>114</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.40.1746"/>

@@ -59,6 +59,7 @@
     <Compile Include="Aaru\ArcFL4.cs" />
     <Compile Include="Ags32i\AudioAGS.cs" />
     <Compile Include="Ags32i\ImageGSS.cs" />
+    <Compile Include="Airyu\ArcCHR.cs" />
     <Compile Include="Akatombo\ArcX.cs" />
     <Compile Include="Akatombo\ImageFB.cs" />
     <Compile Include="Brownie\ArcNAF.cs" />
@@ -78,9 +79,15 @@
     <Compile Include="Dice\ImageRBP.cs" />
     <Compile Include="Eve\ArcGM.cs" />
     <Compile Include="Eve\AudioWV.cs" />
+    <Compile Include="GPlay\ArcYSK.cs" />
     <Compile Include="Mermaid\ImageMG1.cs" />
     <Compile Include="Pinky\ArcA5R.cs" />
+    <Compile Include="Pisckiss\Audio0.cs" />
+    <Compile Include="Pisckiss\Image1.cs" />
     <Compile Include="Rune\ArcYK.cs" />
+    <Compile Include="Tigerman\ArcCHR.cs" />
+    <Compile Include="Tigerman\ArcPAC.cs" />
+    <Compile Include="Tigerman\ImageCHR.cs" />
     <Compile Include="UMeSoft\AudioIKE.cs" />
     <Compile Include="UMeSoft\AudioSTR.cs" />
     <Compile Include="UMeSoft\ImageIKE.cs" />
