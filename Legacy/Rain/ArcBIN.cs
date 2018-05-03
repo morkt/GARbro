@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Windows.Media;
 using GameRes.Compression;
 
 namespace GameRes.Formats.Rain
@@ -87,6 +88,104 @@ namespace GameRes.Formats.Rain
             lzss.Config.FrameFill = 0x20;
             lzss.Config.FrameInitPos = 0xFF0;
             return lzss;
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            if (!entry.Name.HasExtension ("cgd"))
+                return base.OpenImage (arc, entry);
+
+            var input = OpenEntry (arc, entry);
+            return new CgdImageDecoder (new BinaryStream (input, entry.Name));
+        }
+    }
+
+    internal class CgdImageDecoder : BinaryImageDecoder
+    {
+        int     m_data_length;
+        int     m_blocks_offset;
+        int     m_rgb16_offset;
+        int     m_rgb24_offset;
+
+        int     m_blocks_w;
+        int     m_blocks_h;
+        int     m_stride;
+
+        public CgdImageDecoder (IBinaryStream input) : base (input)
+        {
+            var header = m_input.ReadBytes (0x2C);
+            Info = new ImageMetaData {
+                Width = header.ToUInt32 (4),
+                Height = header.ToUInt32 (8),
+                BPP = 24,
+            };
+            m_data_length = header.ToInt32 (0);
+            m_blocks_offset = header.ToInt32 (0x20);
+            m_rgb16_offset = header.ToInt32 (0x24);
+            m_rgb24_offset = header.ToInt32 (0x28);
+            m_blocks_w = (int)Info.Width / 8;
+            m_blocks_h = (int)Info.Height / 8;
+            m_stride = (int)Info.Width * 3;
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            int[] blocks;
+            byte[] pixels;
+            if (m_blocks_offset != 0)
+            {
+                blocks = new int[m_blocks_w * m_blocks_h * 2];
+                for (int i = 0; i < blocks.Length; ++i)
+                {
+                    blocks[i] = m_input.ReadInt32();
+                }
+                m_input.ReadBytes (m_rgb24_offset-m_rgb16_offset);
+                pixels = UnpackBlocks (blocks);
+            }
+            else
+            {
+                m_input.ReadBytes (m_rgb24_offset-m_rgb16_offset);
+                pixels = m_input.ReadBytes (m_data_length-m_rgb24_offset);
+            }
+            return ImageData.Create (Info, PixelFormats.Bgr24, null, pixels, m_stride);
+        }
+
+        byte[] UnpackBlocks (int[] blocks)
+        {
+            var output = new byte[m_stride * (int)Info.Height];
+            int i = 0;
+            for (int y = 0; y < m_blocks_h; ++y)
+            {
+                int dst = y * 8 * m_stride;
+                for (int x = 0; x < m_blocks_w; )
+                {
+                    int count = (blocks[i] >> 8) & 0xFF;
+                    int row_length = 0;
+                    switch (blocks[i] >> 16)
+                    {
+                    case 0: row_length = 0; break;
+                    case 1: row_length = 24; break;
+                    case 2:
+                    case 3: row_length = 32; break;
+                    }
+                    for (int j = 0; j < count; ++j)
+                    {
+                        if ((blocks[i] >> 16) != 0)
+                        {
+                            m_input.Read (output, dst, row_length);
+                            dst += row_length;
+                        }
+                        i += 2;
+                    }
+                    if (row_length != 0)
+                    {
+                        m_input.Read (output, dst, 7 * count * row_length);
+                        dst += 7 * count * row_length;
+                    }
+                    x += count;
+                }
+            }
+            return output;
         }
     }
 }
