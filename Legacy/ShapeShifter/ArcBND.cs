@@ -27,7 +27,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Compression;
 using GameRes.Utility;
+
+// [000407][Shape Shifter] Tsubasa no Hatameki
+// [040326][Glastonbury] Assassin Lesson
 
 namespace GameRes.Formats.ShapeShifter
 {
@@ -52,8 +56,10 @@ namespace GameRes.Formats.ShapeShifter
             if (first_offset != 4 +(uint)count * 12)
                 return null;
 
-            var base_name = Path.GetFileNameWithoutExtension (file.Name);
-            string default_type = base_name == "SCR" ? "script" : "";
+            var base_name = Path.GetFileNameWithoutExtension (file.Name).ToUpperInvariant();
+            string default_type = base_name == "SCR" ? "script" :
+                                  base_name == "VOICE" || base_name == "SE" ? "audio" :
+                                  base_name == "PICT" ? "image" : "";
             uint index_offset = 4;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
@@ -77,13 +83,23 @@ namespace GameRes.Formats.ShapeShifter
             return new ArcFile (file, this, dir);
         }
 
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
+            var pent = entry as PackedEntry;
+            if (null == pent || !pent.IsPacked)
+                return input;
+            return new LzssStream (input);
+        }
+
         void DetectFileTypes (ArcView file, List<Entry> dir)
         {
-            foreach (var entry in dir)
+            foreach (PackedEntry entry in dir)
             {
                 var offset = entry.Offset;
                 var signature = file.View.ReadUInt32 (offset);
-                if (0x4D42 == (signature & 0xFFFF)) // 'BM'
+                if (entry.IsPacked  && (0x4D42   == (signature & 0xFFFF)) || // 'BM'
+                    !entry.IsPacked && (0x4D4207 == (signature & 0xFFFF07)))
                 {
                     entry.Type = "image";
                     entry.Name = Path.ChangeExtension (entry.Name, "bmp");
