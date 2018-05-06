@@ -76,7 +76,7 @@ namespace GameRes.Formats.Seraphim
             var meta = (SeraphMetaData)info;
             var reader = new SeraphReader (stream.AsStream, meta);
             reader.UnpackCf();
-            return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data);
+            return ImageData.Create (info, reader.Format, null, reader.Data);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -94,7 +94,8 @@ namespace GameRes.Formats.Seraphim
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var info = base.ReadMetaData (stream);
-            info.BPP = 32;
+            if (info != null)
+                info.BPP = 32;
             return info;
         }
 
@@ -158,6 +159,33 @@ namespace GameRes.Formats.Seraphim
         }
     }
 
+    [Export(typeof(ImageFormat))]
+    public class SeraphCxImage : SeraphCfImage
+    {
+        public override string         Tag { get { return "CX"; } }
+        public override uint     Signature { get { return 0x5843; } } // 'CX'
+
+        public override ImageMetaData ReadMetaData (IBinaryStream stream)
+        {
+            var info = base.ReadMetaData (stream);
+            if (info != null)
+                info.BPP = 32;
+            return info;
+        }
+
+        public override ImageData Read (IBinaryStream stream, ImageMetaData info)
+        {
+            var reader = new SeraphReader (stream.AsStream, (SeraphMetaData)info, 4);
+            reader.UnpackCx();
+            return ImageData.Create (info, reader.Format, null, reader.Data);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new NotImplementedException ("SeraphCxImage.Write not implemented");
+        }
+    }
+
     internal class SeraphReader
     {
         Stream      m_input;
@@ -167,6 +195,7 @@ namespace GameRes.Formats.Seraphim
         int         m_stride;
         int         m_colors;
         int         m_packed_size;
+        int         m_pixel_size;
 
         public byte[]           Data { get { return m_output; } }
         public PixelFormat    Format { get; private set; }
@@ -184,6 +213,7 @@ namespace GameRes.Formats.Seraphim
             m_output = new byte[m_stride * m_height];
             m_packed_size = info.PackedSize;
             m_colors = info.Colors;
+            m_pixel_size = pixel_size;
             if (1 == pixel_size && m_colors > 0)
                 Palette = ReadPalette (m_colors);
         }
@@ -236,6 +266,13 @@ namespace GameRes.Formats.Seraphim
             Format = PixelFormats.Bgr24;
         }
 
+        public void UnpackCx ()
+        {
+            UnpackRgb();
+            FlipPixels();
+            Format = PixelFormats.Bgra32;
+        }
+
         private void UnpackRgb () // sub_404250
         {
             int dst = 0;
@@ -253,9 +290,7 @@ namespace GameRes.Formats.Seraphim
                     if (0 != (ctl & 0x40))
                     {
                         count = (ctl & 0x3F) + 2;
-                        int v2 = m_input.ReadByte();
-                        for (int i = 0; i < count; ++i)
-                            m_output[dst+i] = (byte)v2;
+                        FillBytes (dst, (byte)m_input.ReadByte(), count);
                     }
                     else
                     {
@@ -266,15 +301,12 @@ namespace GameRes.Formats.Seraphim
                 }
                 else if (0 == (ctl & 0x40))
                 {
-                    int v2 = m_input.ReadByte();
-                    count = v2 | ((ctl & 0xF) << 8);
+                    count = m_input.ReadByte() | ((ctl & 0xF) << 8);
                     switch ((ctl >> 4) & 3)
                     {
                     case 0:
                         count += 2;
-                        v2 = m_input.ReadByte();
-                        for (int i = 0; i < count; ++i)
-                            m_output[dst+i] = (byte)v2;
+                        FillBytes (dst, (byte)m_input.ReadByte(), count);
                         break;
                     case 1:
                         ++count;
@@ -292,37 +324,28 @@ namespace GameRes.Formats.Seraphim
                 }
                 else if (0 == (ctl & 0x30))
                 {
-                    int v2 = m_input.ReadByte();
-                    count = v2 + ((ctl & 7) << 8) + 1;
+                    count = m_input.ReadByte() + ((ctl & 7) << 8) + 1;
+                    int x = m_pixel_size;
                     if (0 != (ctl & 8))
-                    {
-                        m_input.Read (m_output, dst, 6);
-                        Binary.CopyOverlapped (m_output, dst, dst+6, count*6);
-                        ++count;
-                        count *= 6;
-                    }
-                    else
-                    {
-                        m_input.Read (m_output, dst, 3);
-                        Binary.CopyOverlapped (m_output, dst, dst+3, count*3);
-                        ++count;
-                        count *= 3;
-                    }
+                        x *= 2;
+                    m_input.Read (m_output, dst, x);
+                    Binary.CopyOverlapped (m_output, dst, dst+x, count*x);
+                    ++count;
+                    count *= x;
                 }
                 else if (0 == (ctl & 0x20))
                 {
-                    int offset = m_input.ReadByte() + ((ctl & 0xF) << 8);
+                    int offset = m_input.ReadByte() + ((ctl & 0xF) << 8) + 1;
                     count = m_input.ReadByte() + 1;
-                    int src = dst - 3 - 3 * offset; // auto v34 = &unpacked[dst - 3] - 3 * offset;
-                    count *= 3;
+                    int src = dst - m_pixel_size * offset;
+                    count *= m_pixel_size;
                     Binary.CopyOverlapped (m_output, src, dst, count);
                 }
                 else
                 {
-                    int v37 = m_input.ReadByte();
-                    int v38 = v37 + ((ctl & 0xF) << 8);
+                    int offset = m_input.ReadByte() + ((ctl & 0xF) << 8) + 1;
                     count = m_input.ReadByte() + 1;
-                    int src = dst - 1 - v38; // auto v40 = &unpacked[dst - 1] - v38;
+                    int src = dst - offset;
                     Binary.CopyOverlapped (m_output, src, dst, count);
                 }
                 if (0 == count)
@@ -350,9 +373,9 @@ namespace GameRes.Formats.Seraphim
                     if (0 != (next & 0x40))
                     {
                         count = (next & 0x3F) + 2;
-                        int v4 = m_input.ReadByte();
+                        byte v = (byte)m_input.ReadByte();
                         for (int i = 0; i < count; ++i)
-                            output[dst+i] = (byte)v4;
+                            output[dst+i] = v;
                     }
                     else
                     {
@@ -363,16 +386,17 @@ namespace GameRes.Formats.Seraphim
                 }
                 else if (0 == (next & 0x40))
                 {
-                    int v2 = m_input.ReadByte();
-                    count = v2 | ((next & 0xF) << 8);
+                    count = m_input.ReadByte() | ((next & 0xF) << 8);
                     switch ((next >> 4) & 3)
                     {
                     case 0:
-                        count += 2;
-                        v2 = m_input.ReadByte();
-                        for (int i = 0; i < count; ++i)
-                            output[dst+i] = (byte)v2;
-                        break;
+                        {
+                            count += 2;
+                            byte v = (byte)m_input.ReadByte();
+                            for (int i = 0; i < count; ++i)
+                                output[dst+i] = v;
+                            break;
+                        }
                     case 1:
                         ++count;
                         Binary.CopyOverlapped (output, dst-m_width, dst, count);
@@ -441,6 +465,12 @@ namespace GameRes.Formats.Seraphim
                 dst += m_stride;
             }
             m_output = pixels;
+        }
+
+        void FillBytes (int dst, byte value, int count)
+        {
+            for (int i = 0; i < count; ++i)
+                m_output[dst+i] = value;
         }
     }
 }
