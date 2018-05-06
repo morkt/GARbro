@@ -47,8 +47,7 @@ namespace GameRes.Formats.Seraphim
 
         public override ArcFile TryOpen (ArcView file)
         {
-            string name = Path.GetFileName (file.Name);
-            if (!name.Equals ("SCNPAC.DAT", StringComparison.InvariantCultureIgnoreCase))
+            if (!VFS.IsPathEqualsToFileName (file.Name, "SCNPAC.DAT"))
                 return null;
             int count = file.View.ReadInt32 (0);
             if (!IsSaneCount (count))
