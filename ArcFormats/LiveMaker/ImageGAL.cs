@@ -231,8 +231,6 @@ namespace GameRes.Formats.LiveMaker
             int layer_count = m_input.ReadInt32();
             if (layer_count < 1)
                 throw new InvalidFormatException();
-            if (layer_count > 1)
-                throw new NotImplementedException();
 
             // XXX only first frame is interpreted.
 
