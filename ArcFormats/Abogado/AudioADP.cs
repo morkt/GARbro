@@ -127,7 +127,7 @@ namespace GameRes.Formats.Abogado
             return (short)sample;
         }
 
-        static readonly ushort[] QuantizeTable = {
+        internal static readonly ushort[] QuantizeTable = {
             0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E,
             0x0010, 0x0011, 0x0013, 0x0015, 0x0017, 0x0019, 0x001C, 0x001F,
             0x0022, 0x0025, 0x0029, 0x002D, 0x0032, 0x0037, 0x003C, 0x0042,
@@ -141,6 +141,6 @@ namespace GameRes.Formats.Abogado
             0x3BB9, 0x41B2, 0x4844, 0x4F7E, 0x5771, 0x602F, 0x69CE, 0x7462, 0x7FFF,
         };
 
-        static int[] IncrementTable = { -1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8 };
+        internal static readonly int[] IncrementTable = { -1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8 };
     }
 }

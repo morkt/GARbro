@@ -127,6 +127,7 @@
     <Compile Include="BlackRainbow\ArcSPPAK.cs" />
     <Compile Include="Bonk\ArcPACK.cs" />
     <Compile Include="Cadath\ArcDAF.cs" />
+    <Compile Include="Cadath\AudioVWF.cs" />
     <Compile Include="Cadath\ImageCGF.cs" />
     <Compile Include="Carriere\ArcARC.cs" />
     <Compile Include="Carriere\ImageCGD.cs" />
