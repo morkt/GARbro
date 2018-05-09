@@ -55,11 +55,11 @@ namespace GameRes.Formats.ShiinaRio
             var reader = new Reader (stream, (int)info.Width, (int)info.Height);
             try
             {
-                reader.Unpack (MaiVersion.First);
+                reader.Unpack (MaiVersion.Second);
             }
             catch
             {
-                reader.Unpack (MaiVersion.Second);
+                reader.Unpack (MaiVersion.First);
             }
             return ImageData.Create (info, PixelFormats.Bgr24, null, reader.Data, reader.Stride);
         }
