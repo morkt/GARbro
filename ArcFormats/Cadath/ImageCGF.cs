@@ -48,7 +48,7 @@ namespace GameRes.Formats.Cadath
         {
             var header = file.ReadHeader (10);
             int method = header[4];
-            if (method != 1 && method != 2)
+            if (method < 1 || method > 3)
                 return null;
             return new CgfMetaData
             {
@@ -94,14 +94,16 @@ namespace GameRes.Formats.Cadath
         public byte[] Unpack ()
         {
             m_input.Position = 10;
-            int pixel_size = m_info.BPP / 8;
             Action<byte[], int, byte[]> unpack_channel;
             if (1 == m_info.Method)
-                unpack_channel = UnpackZLib;
+                unpack_channel = UnpackZLibV1;
             else if (2 == m_info.Method)
                 unpack_channel = UnpackRle;
+            else if (3 == m_info.Method)
+                unpack_channel = UnpackZLibV3;
             else
                 throw new NotSupportedException();
+            int pixel_size = m_info.BPP / 8;
             var channel = new byte[m_info.Width * m_info.Height];
             byte[] buffer = null;
             for (int i = 0; i < pixel_size; ++i)
@@ -124,9 +126,25 @@ namespace GameRes.Formats.Cadath
             return m_output;
         }
 
-        void UnpackZLib (byte[] input, int length, byte[] output)
+        void UnpackZLibV1 (byte[] input, int length, byte[] output)
         {
             Decrypt (input, length);
+            UnpackZLib (input, length, output);
+        }
+
+        void UnpackZLibV3 (byte[] input, int length, byte[] output)
+        {
+            UnpackZLib (input, length, output);
+            byte px = 0;
+            for (int i = 0; i < output.Length; ++i)
+            {
+                px ^= output[i];
+                output[i] = px;
+            }
+        }
+
+        void UnpackZLib (byte[] input, int length, byte[] output)
+        {
             using (var zinput = new MemoryStream (input, 4, length - 4))
             using (var z = new ZLibStream (zinput, CompressionMode.Decompress))
                 z.Read (output, 0, output.Length);
