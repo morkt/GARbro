@@ -30,6 +30,7 @@ using System.IO;
 using GameRes.Compression;
 
 // [030704][Error] Kakoi ~Zetsubou no Shojo Kangokujima~
+// [040227][Deko Pon!] Itsuka Furu Yuki
 
 namespace GameRes.Formats.Yaneurao
 {
@@ -39,7 +40,7 @@ namespace GameRes.Formats.Yaneurao
         public override string         Tag { get { return "DAT/yanepack"; } }
         public override string Description { get { return "Yaneurao resource archive"; } }
         public override uint     Signature { get { return 0x0C09140A; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public PackOpener ()
