@@ -41,6 +41,11 @@ namespace GameRes.Formats.EmonEngine
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public EmeOpener ()
+        {
+            Extensions = new string[] { "eme", "rre" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "ATA "))
@@ -106,7 +111,7 @@ namespace GameRes.Formats.EmonEngine
                 return new PrefixStream (header, input);
             }
             int unpacked_size = LittleEndian.ToInt32 (header, 4);
-            if (0 != unpacked_size)
+            if (0 != unpacked_size && unpacked_size < entry.UnpackedSize)
             {
                 uint packed_size = LittleEndian.ToUInt32 (header, 0);
                 int part1_size = (int)entry.UnpackedSize - unpacked_size;
