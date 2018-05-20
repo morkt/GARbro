@@ -37,7 +37,7 @@ namespace GameRes.Formats.Yaneurao
     [Export(typeof(ArchiveFormat))]
     public class PackOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "DAT/yanepack"; } }
+        public override string         Tag { get { return "DAT/yanepkDx"; } }
         public override string Description { get { return "Yaneurao resource archive"; } }
         public override uint     Signature { get { return 0x0C09140A; } }
         public override bool  IsHierarchic { get { return true; } }
@@ -87,6 +87,47 @@ namespace GameRes.Formats.Yaneurao
             if (null == pent || !pent.IsPacked)
                 return input;
             return new LzssStream (input);
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class PackExOpener : PackOpener
+    {
+        public override string         Tag { get { return "DAT/yanepkEx"; } }
+        public override string Description { get { return "Yaneurao resource archive"; } }
+        public override uint     Signature { get { return 0x656E6179; } } // 'yanepkEx'
+        public override bool  IsHierarchic { get { return true; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public PackExOpener ()
+        {
+            Signatures = new uint[] { 0x656E6179 };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (4, "pkEx"))
+                return null;
+            int count = file.View.ReadInt32 (8);
+            if (!IsSaneCount (count))
+                return null;
+            uint index_offset = 0xC;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                var name = file.View.ReadString (index_offset, 0x20);
+                index_offset += 0x20;
+                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                entry.Offset       = file.View.ReadUInt32 (index_offset);
+                entry.UnpackedSize = file.View.ReadUInt32 (index_offset+4);
+                entry.Size         = file.View.ReadUInt32 (index_offset+8);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                entry.IsPacked = entry.Size != entry.UnpackedSize;
+                dir.Add (entry);
+                index_offset += 0xC;
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 }
