@@ -194,7 +194,7 @@ namespace GameRes.Formats.NonColor
             {
                 var dict = new Dictionary<ulong, NameRecord>();
                 FormatCatalog.Instance.ReadFileList (scheme.FileListName, line => {
-                    var bytes = line.ToLowerShiftJis();
+                    var bytes = Encodings.cp932.GetBytes (line); // line.ToLowerShiftJis();
                     ulong hash = scheme.ComputeHash (bytes);
                     dict[hash] = new NameRecord { Name = line, NameBytes = bytes };
                 });
