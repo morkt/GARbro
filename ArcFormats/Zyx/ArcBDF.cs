@@ -23,11 +23,11 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Windows.Media;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Zyx
@@ -44,9 +44,17 @@ namespace GameRes.Formats.Zyx
     {
         public byte[] FirstFrame;
 
+        public ImageMetaData Info { get; private set; }
+
         public BdfArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
             : base (arc, impl, dir)
         {
+            var base_frame = dir.First() as BdfFrame;
+            Info = new ImageMetaData {
+                Width = (uint)base_frame.Width,
+                Height = (uint)base_frame.Height,
+                BPP = 24
+            };
         }
 
         public byte[] ReadFrame (BdfFrame frame)
@@ -84,7 +92,7 @@ namespace GameRes.Formats.Zyx
             return pixels;
         }
 
-        private void DecodeFrame (Stream input, byte[] output, bool incremental = false)
+        private void DecodeFrame (IBinaryStream input, byte[] output, bool incremental = false)
         {
             int v2 = incremental ? 6 : 4;
             int dst = 0;
@@ -119,10 +127,8 @@ namespace GameRes.Formats.Zyx
                     }
                 case 2:
                     {
-                        count = 3 * input.ReadByte();
-                        offset  = input.ReadByte();
-                        offset |= input.ReadByte() << 8;
-                        offset *= 3;
+                        count  = 3 * input.ReadByte();
+                        offset = 3 * input.ReadUInt16();
                         int src = dst - offset;
                         Binary.CopyOverlapped (output, src, dst, count);
                         dst += count;
@@ -139,9 +145,7 @@ namespace GameRes.Formats.Zyx
                     }
                 case 4:
                     {
-                        offset  = input.ReadByte();
-                        offset |= input.ReadByte() << 8;
-                        offset *= 3;
+                        offset = 3 * input.ReadUInt16();
                         int src = dst - offset;
                         output[dst++] = output[src++];
                         output[dst++] = output[src++];
@@ -163,8 +167,7 @@ namespace GameRes.Formats.Zyx
                         }
                         else
                         {
-                            count  = input.ReadByte();
-                            count |= input.ReadByte() << 8;
+                            count = input.ReadUInt16();
                         }
                         dst += 3 * count;
                     }
@@ -200,7 +203,7 @@ namespace GameRes.Formats.Zyx
             {
                 var entry = new BdfFrame {
                     Number = i,
-                    Name = string.Format ("{0}#{1:D2}.tga", base_name, i),
+                    Name = string.Format ("{0}#{1:D2}", base_name, i),
                     Type = "image",
                     Offset = base_offset + file.View.ReadUInt32 (index_offset),
                     Size = file.View.ReadUInt32 (index_offset+4),
@@ -217,23 +220,32 @@ namespace GameRes.Formats.Zyx
             return new BdfArchive (file, this, dir);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var bdf = arc as BdfArchive;
             var frame = entry as BdfFrame;
             if (null == bdf || null == frame)
-                return base.OpenEntry (arc, entry);
+                return base.OpenImage (arc, entry);
+            return new BdfImageDecoder (bdf, frame);
+        }
+    }
 
-            var pixels = bdf.ReadFrame (frame);
-            var header = new byte[0x12];
-            header[2] = 2;
-            if (frame.Incremental)
-                frame = bdf.Dir.First() as BdfFrame;
-            LittleEndian.Pack ((ushort)frame.Width,  header, 0xc);
-            LittleEndian.Pack ((ushort)frame.Height, header, 0xe);
-            header[0x10] = 24;
-            header[0x11] = 0x20;
-            return new PrefixStream (header, new MemoryStream (pixels));
+    internal sealed class BdfImageDecoder : BinaryImageDecoder
+    {
+        BdfArchive          m_bdf;
+        BdfFrame            m_frame;
+
+        public BdfImageDecoder (BdfArchive arc, BdfFrame entry)
+            : base (arc.File.CreateStream (entry.Offset, entry.Size), arc.Info)
+        {
+            m_bdf = arc;
+            m_frame = entry;
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            var pixels = m_bdf.ReadFrame (m_frame);
+            return ImageData.Create (Info, PixelFormats.Bgr24, null, pixels);
         }
     }
 }
