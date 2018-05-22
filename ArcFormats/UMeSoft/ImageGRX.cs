@@ -91,7 +91,7 @@ namespace GameRes.Formats.UMeSoft
             {
                 m_input = input;
                 m_info = info;
-                m_pixel_size = m_info.BPP / 8;
+                m_pixel_size = (m_info.BPP + 7) / 8;
                 switch (m_info.BPP)
                 {
                 case 32:
@@ -103,6 +103,9 @@ namespace GameRes.Formats.UMeSoft
                     break;
                 case 16:
                     Format = PixelFormats.Bgr565;
+                    break;
+                case 15:
+                    Format = PixelFormats.Bgr555;
                     break;
                 case 8:
                     Format = PixelFormats.Gray8;
@@ -121,7 +124,7 @@ namespace GameRes.Formats.UMeSoft
                 if (!m_info.IsPacked)
                     m_input.Read (m_output, 0, m_output.Length);
                 else
-                    UnpackColorData (m_output, m_info.BPP/8, m_pixel_size);
+                    UnpackColorData (m_output, (m_info.BPP + 7) / 8, m_pixel_size);
 
                 if (m_info.HasAlpha && m_info.AlphaOffset > 0)
                 {
