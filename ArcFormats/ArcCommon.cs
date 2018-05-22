@@ -184,6 +184,12 @@ namespace GameRes.Formats
         public static byte[] ToLowerShiftJis (this string text)
         {
             var text_bytes = Encodings.cp932.GetBytes (text);
+            text_bytes.ToLowerShiftJis();
+            return text_bytes;
+        }
+
+        public static void ToLowerShiftJis (this byte[] text_bytes)
+        {
             for (int i = 0; i < text_bytes.Length; ++i)
             {
                 byte c = text_bytes[i];
@@ -192,7 +198,6 @@ namespace GameRes.Formats
                 else if (c > 0x7F && c < 0xA1 || c > 0xDF)
                     ++i;
             }
-            return text_bytes;
         }
     }
 
