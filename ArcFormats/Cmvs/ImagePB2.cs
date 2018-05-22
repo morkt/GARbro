@@ -109,14 +109,57 @@ namespace GameRes.Formats.Purple
         {
             switch (m_info.Type)
             {
+            case 1: UnpackV1(); break;
             case 2: UnpackV2(); break;
             case 4: UnpackJbp (0x20, m_offset1); break;
             case 6: UnpackV6(); break;
-            case 1:
             case 3:
             case 5:
             case 7:
             default: throw new NotSupportedException(string.Format ("PB2 v{0} images not supported", m_info.Type));
+            }
+        }
+
+        void UnpackV1 ()
+        {
+            const int block_size = 8;
+            int width  = (int)m_info.Width;
+            int height = (int)m_info.Height;
+            int pixel_size = m_info.BPP / 8;
+
+            var block_data = new byte[m_stride * height];
+            LzssResetFrame();
+            LzssUnpack (m_offset1, m_offset2, block_data, block_data.Length);
+
+            m_output = new byte[block_data.Length];
+            int w_block_count = (width + (block_size - 1)) / block_size;
+            int h_block_count = (height + (block_size - 1)) / block_size;
+            int src = 0;
+            for (int c = 0; c < pixel_size; ++c)
+            {
+                int dst = c;
+                for (int block_y = 0; block_y < h_block_count; block_y++)
+                {
+                    int y = block_y * block_size;
+                    int dst_row = dst;
+                    int block_height = Math.Min (height - y, block_size);
+                    for (int block_x = 0; block_x < w_block_count; block_x++)
+                    {
+                        int x = block_x * block_size;
+                        int dst_pixel = dst_row;
+                        int block_width = Math.Min (width - x, block_size);
+                        for (int i = 0; i < block_height; i++)
+                        {
+                            for (int j = 0; j < block_width; j++)
+                            {
+                                m_output[dst_pixel + j * pixel_size] = block_data[src++];
+                            }
+                            dst_pixel += m_stride;
+                        }
+                        dst_row += block_size * pixel_size;
+                    }
+                    dst += m_stride * block_size;
+                }
             }
         }
 
