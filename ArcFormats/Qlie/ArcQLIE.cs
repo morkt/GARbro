@@ -124,7 +124,7 @@ namespace GameRes.Formats.Qlie
                 key_file = FindKeyFile (file);
                 use_pack_keyfile = key_file != null;
                 // currently, user is prompted to choose encryption scheme only if there's 'key.fkey' file found.
-                if (use_pack_keyfile)
+                if (use_pack_keyfile && pack_version.Minor == 0)
                     arc_key = QueryEncryption (file);
 //                use_pack_keyfile = null != arc_key;
             }
