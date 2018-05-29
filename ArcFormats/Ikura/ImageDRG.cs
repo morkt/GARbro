@@ -36,6 +36,11 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Ikura
 {
+    internal class DgdMetaData : ImageMetaData
+    {
+        public bool IsEncrypted;
+    }
+
     [Export(typeof(ImageFormat))]
     public class DrgFormat : ImageFormat
     {
@@ -44,9 +49,11 @@ namespace GameRes.Formats.Ikura
         public override uint     Signature { get { return ~0x4c4c5546u; } } // 'FULL'
         public override bool      CanWrite { get { return true; } }
 
+        static readonly byte[] DefaultKey = { 0x4D, 0x39, 0x38, 0x31, 0x31, 0x31, 0x33, 0x4D }; // "M981113M"
+
         public DrgFormat ()
         {
-            Extensions = new string[] { "drg", "ggd" };
+            Extensions = new string[] { "drg", "ggd", "dgd" };
             Signatures = new uint[] { ~0x4c4c5546u, ~0x45555254u, ~0x48474948u };
         }
 
@@ -72,27 +79,41 @@ namespace GameRes.Formats.Ikura
             stream.Position = 4;
             uint width = stream.ReadUInt16();
             uint height = stream.ReadUInt16();
-            return new ImageMetaData {
+            return new DgdMetaData {
                 Width  = width,
                 Height = height,
                 BPP    = bpp,
+                // DGD extensions doesn't always mean encrypted contents XXX
+//                IsEncrypted = stream.Name.HasExtension ("dgd"),
             };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            file.Position = 8;
             PixelFormat format;
             if (24 == info.BPP)
                 format = PixelFormats.Bgr24;
             else
                 format = PixelFormats.Bgr565;
 
+            file.Position = 8;
+            var meta = (DgdMetaData)info;
+            var input = file.AsStream;
+            if (meta.IsEncrypted)
+                input = OpenEcnryptedStream (input, DefaultKey);
+
             int stride = ((int)info.Width * info.BPP / 8 + 3) & ~3;
-            var pixel_data = DecodeStream (file.AsStream, stride*(int)info.Height);
+            var pixel_data = DecodeStream (input, stride*(int)info.Height);
             if (null == pixel_data)
                 throw new InvalidFormatException();
             return ImageData.Create (info, format, null, pixel_data, stride);
+        }
+
+        Stream OpenEcnryptedStream (Stream input, byte[] key)
+        {
+            if (key.Length != 8)
+                input = new StreamRegion (input, 8, true);
+            return new ByteStringEncryptedStream (input, key, true);
         }
 
         byte[] DecodeStream (Stream input, int pixel_count)
