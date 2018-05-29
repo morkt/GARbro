@@ -94,7 +94,7 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
-        const int SyncSearchThreshold = 0x280;
+        const int SyncSearchThreshold = 0x300;
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
