@@ -26,11 +26,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Formats.Strings;
-using GameRes.Utility;
 
 namespace GameRes.Formats.FC01
 {
@@ -240,6 +240,7 @@ namespace GameRes.Formats.FC01
                         lzss.Unpack();
                         if (input.Length - input.Position <= 1)
                         {
+                            Trace.WriteLine (string.Format ("Found matching key {0:X2}", key), "[MCG]");
                             m_output = lzss.Data;
                             m_key = (byte)key;
                             return;
