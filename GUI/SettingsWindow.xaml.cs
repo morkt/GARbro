@@ -191,10 +191,20 @@ namespace GARbro.GUI
             };
         }
 
+        UIElement CreateDropDownWidget (FixedSetSetting setting)
+        {
+            return new ComboBox {
+                Template = (ControlTemplate)this.Resources["BoundDropDownList"],
+                DataContext = CreateSettingView<object> (setting),
+            };
+        }
+
         UIElement CreateSettingWidget<TUnknown> (IResourceSetting setting, TUnknown value)
         {
             if (setting is FixedGaugeSetting)
                 return CreateGaugeWidget (setting as FixedGaugeSetting);
+            if (setting is FixedSetSetting)
+                return CreateDropDownWidget (setting as FixedSetSetting);
             if (value is bool)
                 return CreateCheckBoxWidget (setting);
             if (value is Encoding)

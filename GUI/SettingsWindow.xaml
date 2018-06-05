@@ -58,6 +58,12 @@ IN THE SOFTWARE.
                 </StackPanel>
             </StackPanel>
         </ControlTemplate>
+        <ControlTemplate x:Key="BoundDropDownList" TargetType="ComboBox">
+            <StackPanel Orientation="Vertical" Margin="2" DataContext="{TemplateBinding DataContext}">
+                <TextBlock Text="{Binding Text}" ToolTip="{Binding Description}" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                <ComboBox ItemsSource="{Binding Path=Source.ValuesSet}" SelectedItem="{Binding Value, Mode=TwoWay}" Margin="0,4,0,0"/>
+            </StackPanel>
+        </ControlTemplate>
 
         <Style x:Key="ExpandCollapseToggleStyle" TargetType="ToggleButton">
             <Setter Property="Focusable" Value="False"/>
