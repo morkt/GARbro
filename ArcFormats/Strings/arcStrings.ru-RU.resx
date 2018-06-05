@@ -276,6 +276,9 @@
     <value>Ключи шифрования
 (требуются даже если содержимое не шифруется)</value>
   </data>
+  <data name="ODNAudioSampleRate" xml:space="preserve">
+    <value>Частота дискретизации аудио</value>
+  </data>
   <data name="OGGFixCrc" xml:space="preserve">
     <value>Исправлять контрольные суммы в Ogg аудио файлах</value>
   </data>

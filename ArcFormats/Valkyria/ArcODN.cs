@@ -32,6 +32,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Media;
+using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Valkyria
@@ -55,13 +56,24 @@ namespace GameRes.Formats.Valkyria
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class OdnOpener : ArchiveFormat
+    sealed public class OdnOpener : ArchiveFormat
     {
         public override string         Tag { get { return "ODN"; } }
         public override string Description { get { return "Valkyria resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
+
+        public OdnOpener ()
+        {
+            Settings = new[] { AudioSampleRate };
+        }
+
+        FixedSetSetting AudioSampleRate = new FixedSetSetting (Properties.Settings.Default) {
+            Name = "ODNAudioSampleRate",
+            Text = arcStrings.ODNAudioSampleRate,
+            ValuesSet = new[] { 22050u, 44100u },
+        };
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -92,6 +104,7 @@ namespace GameRes.Formats.Valkyria
         internal static readonly Regex Image24NameRe = new Regex ("^(?:back|phii)");
         internal static readonly Regex Image32NameRe = new Regex ("^(?:data|codn|cccc)");
         internal static readonly Regex ScriptNameRe  = new Regex ("^(?:scrp|menu|sysm)");
+        internal static readonly Regex AudioNameRe   = new Regex ("^hime");
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
@@ -101,6 +114,24 @@ namespace GameRes.Formats.Valkyria
                 var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
                 Decrypt (data, data.Length, key);
                 return new BinMemoryStream (data);
+            }
+            if (AudioNameRe.IsMatch (entry.Name))
+            {
+                using (var wav = new MemoryStream (0x2C))
+                {
+                    var format = new WaveFormat {
+                        FormatTag = 1,
+                        Channels = 1,
+                        SamplesPerSecond = AudioSampleRate.Get<uint>(),
+                        BlockAlign = 2,
+                        BitsPerSample = 16,
+                    };
+                    format.SetBPS();
+                    WaveAudio.WriteRiffHeader (wav, format, entry.Size);
+                    var header = wav.ToArray();
+                    var data = arc.File.CreateStream (entry.Offset, entry.Size);
+                    return new PrefixStream (header, data);
+                }
             }
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (0x5E6A6A42 == input.Signature)
@@ -247,6 +278,11 @@ namespace GameRes.Formats.Valkyria
                 index_offset += 0x10;
                 if (m_entry_buf.AsciiEqual (0, "END_ffffffffffff"))
                     break;
+                else if (m_entry_buf.AsciiEqual (0, "HIME_END"))
+                {
+                    index_offset += 8;
+                    break;
+                }
                 var name = m_enc.GetString (m_entry_buf, 0, 8);
                 var offset = m_enc.GetString (m_entry_buf, 8, 8);
                 var entry = new Entry { Name = name, Offset = Convert.ToUInt32 (offset, 16) };
@@ -254,6 +290,8 @@ namespace GameRes.Formats.Valkyria
             }
             foreach (var entry in m_dir)
                 entry.Offset += index_offset;
+            if (m_dir.Any() && m_dir[m_dir.Count-1].Offset == m_file.MaxOffset)
+                m_dir.RemoveAt (m_dir.Count-1);
         }
 
         void ReadV2 (uint record_size)
@@ -320,6 +358,10 @@ namespace GameRes.Formats.Valkyria
                 else if (OdnOpener.ScriptNameRe.IsMatch (entry.Name))
                 {
                     entry.Type = "script";
+                }
+                else if (OdnOpener.AudioNameRe.IsMatch (entry.Name))
+                {
+                    entry.Type = "audio";
                 }
                 else if (entry.Size > 4)
                 {

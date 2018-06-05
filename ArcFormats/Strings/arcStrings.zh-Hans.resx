@@ -404,4 +404,8 @@
     <value>Default file names encoding</value>
     <comment>translation pending</comment>
   </data>
+  <data name="ODNAudioSampleRate" xml:space="preserve">
+    <value>Default audio sampling rate</value>
+    <comment>translation pending</comment>
+  </data>
 </root>

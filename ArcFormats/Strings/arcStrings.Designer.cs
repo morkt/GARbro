@@ -607,6 +607,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default audio sampling rate.
+        /// </summary>
+        public static string ODNAudioSampleRate {
+            get {
+                return ResourceManager.GetString("ODNAudioSampleRate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Fix Ogg files checksums.
         /// </summary>
         public static string OGGFixCrc {

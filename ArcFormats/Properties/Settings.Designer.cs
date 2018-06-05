@@ -753,5 +753,17 @@ namespace GameRes.Formats.Properties {
                 this["PFSEncodingCP"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("44100")]
+        public uint ODNAudioSampleRate {
+            get {
+                return ((uint)(this["ODNAudioSampleRate"]));
+            }
+            set {
+                this["ODNAudioSampleRate"] = value;
+            }
+        }
     }
 }
