@@ -102,9 +102,19 @@ namespace GARbro.GUI
         internal static IEnumerable<Encoding> GetEncodingList (bool exclude_utf16 = false)
         {
             var list = new HashSet<Encoding>();
-            list.Add (Encoding.Default);
-            var oem = CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
-            list.Add (Encoding.GetEncoding (oem));
+            try 
+            {
+                list.Add(Encoding.Default);
+                var oem = CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
+                list.Add(Encoding.GetEncoding(oem));
+            } 
+            catch (Exception X) 
+            {
+                if (X is ArgumentException || X is NotSupportedException) 
+                    list.Add(Encoding.GetEncoding(20127)); //default to US-ASCII
+                else 
+                    throw;
+            }
             list.Add (Encoding.GetEncoding (932));
             list.Add (Encoding.GetEncoding (936));
             list.Add (Encoding.UTF8);
