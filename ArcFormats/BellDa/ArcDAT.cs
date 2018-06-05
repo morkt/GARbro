@@ -68,6 +68,7 @@ namespace GameRes.Formats.BellDa
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
+            // XXX compression method identical to Maika.Mk2Opener
             var id_str = arc.File.View.ReadString (entry.Offset, 2);
             if (id_str != "B1" && id_str != "D1" && id_str != "E1")
                 return base.OpenImage (arc, entry);

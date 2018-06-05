@@ -41,6 +41,11 @@ namespace GameRes.Formats.Maika
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public Mk2Opener ()
+        {
+            Signatures = new uint[] { 0x2E324B4D, 0x2E324C42 }; // 'BL2.0'
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "0\0"))
