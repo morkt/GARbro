@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 
@@ -109,6 +110,9 @@ namespace GameRes
         public LocalResourceSetting () : base (GameRes.Properties.Settings.Default) { }
     }
 
+    /// <summary>
+    /// Application setting represented by integer range.
+    /// </summary>
     public class FixedGaugeSetting : ApplicationSetting
     {
         public int  Min { get; set; }
@@ -116,6 +120,18 @@ namespace GameRes
         public IEnumerable<int> ValuesSet { get; set; }
 
         public FixedGaugeSetting (ApplicationSettingsBase settings) : base (settings)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Application setting that has limited set of possible values.
+    /// </summary>
+    public class FixedSetSetting : ApplicationSetting
+    {
+        public IEnumerable ValuesSet { get; set; }
+
+        public FixedSetSetting (ApplicationSettingsBase settings) : base (settings)
         {
         }
     }
