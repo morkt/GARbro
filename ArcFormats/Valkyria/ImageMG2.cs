@@ -36,6 +36,7 @@ namespace GameRes.Formats.Valkyria
         public int          ImageLength;
         public int          AlphaLength;
         public IMg2Scheme   Scheme;
+        public ImageFormat  Format;
     }
 
     internal interface IMg2Scheme
@@ -62,9 +63,16 @@ namespace GameRes.Formats.Valkyria
             foreach (var scheme in KnownSchemes)
             {
                 using (var input = scheme.CreateStream (file.AsStream, 0x10, length))
-                using (var png = new BinaryStream (input, file.Name))
+                using (var img = new BinaryStream (input, file.Name))
                 {
-                    var info = Png.ReadMetaData (png);
+                    ImageFormat format;
+                    if (Png.Signature == img.Signature)
+                        format = Png;
+                    else if (0xE0FFD8FF == img.Signature)
+                        format = Jpeg;
+                    else
+                        continue;
+                    var info = format.ReadMetaData (img);
                     if (null == info)
                         continue;
                     return new Mg2MetaData
@@ -77,6 +85,7 @@ namespace GameRes.Formats.Valkyria
                         ImageLength = length,
                         AlphaLength = header.ToInt32 (12),
                         Scheme = scheme,
+                        Format = format,
                     };
                 }
             }
@@ -94,9 +103,10 @@ namespace GameRes.Formats.Valkyria
         {
             BitmapSource frame;
             using (var input = meta.Scheme.CreateStream (file, 0x10, meta.ImageLength))
+            using (var img = new BinaryStream (input, meta.FileName))
             {
-                var decoder = new PngBitmapDecoder (input, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                frame = decoder.Frames[0];
+                var image = meta.Format.Read (img, meta);
+                frame = image.Bitmap;
                 if (0 == meta.AlphaLength)
                     return frame;
             }
