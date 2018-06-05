@@ -163,6 +163,7 @@
     <Compile Include="Ikura\ImageTAN.cs" />
     <Compile Include="Ikura\ImageVRS.cs" />
     <Compile Include="ImageMNG.cs" />
+    <Compile Include="Interheart\ArcFPK2.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
     <Compile Include="KiriKiri\MoreCrypt.cs" />
     <Compile Include="KiriKiri\YuzCrypt.cs" />
@@ -668,6 +669,7 @@
     <Compile Include="Unity\Texture2D.cs" />
     <Compile Include="Unity\Utage\ImageUTAGE.cs" />
     <Compile Include="Unity\Vorbis.cs" />
+    <Compile Include="Valkyria\ArcAM2.cs" />
     <Compile Include="Valkyria\ArcDAT.cs" />
     <Compile Include="Valkyria\ArcODN.cs" />
     <Compile Include="Valkyria\ImageMAL.cs" />
