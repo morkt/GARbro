@@ -33,6 +33,7 @@ namespace GameRes.Formats.Yaneurao
     internal class YgaMetaData : ImageMetaData
     {
         public int  UnpackedSize;
+        public bool IsCompressed;
     }
 
     [Export(typeof(ImageFormat))]
@@ -45,13 +46,15 @@ namespace GameRes.Formats.Yaneurao
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x18);
-            if (header.ToInt32 (0xC) != 1)
+            int compression = header.ToInt32 (0xC);
+            if (compression > 1)
                 return null;
             return new YgaMetaData {
                 Width  = header.ToUInt32 (4),
                 Height = header.ToUInt32 (8),
                 BPP    = 32,
                 UnpackedSize = header.ToInt32 (0x10),
+                IsCompressed = compression != 0,
             };
         }
 
@@ -59,12 +62,15 @@ namespace GameRes.Formats.Yaneurao
         {
             var meta = (YgaMetaData)info;
             file.Position = 0x18;
-            using (var input = new LzssStream (file.AsStream, LzssMode.Decompress, true))
+            var pixels = new byte[meta.UnpackedSize];
+            if (meta.IsCompressed)
             {
-                var pixels = new byte[meta.UnpackedSize];
-                input.Read (pixels, 0, meta.UnpackedSize);
-                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
+                using (var input = new LzssStream (file.AsStream, LzssMode.Decompress, true))
+                    input.Read (pixels, 0, meta.UnpackedSize);
             }
+            else
+                file.Read (pixels, 0, meta.UnpackedSize);
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
 
         public override void Write (Stream file, ImageData image)
