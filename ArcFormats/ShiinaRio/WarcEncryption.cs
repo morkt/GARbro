@@ -156,7 +156,7 @@ namespace GameRes.Formats.ShiinaRio
                     {
                         fac = Rand + m_scheme.ShiinaImage[idx];
                         fac = DecryptHelper3 (fac) & 0xfffffff;
-                        if (effective_length > 0x80)
+                        if (effective_length > 0x80 && SchemeVersion > 2350)
                         {
                             DecryptHelper4 (data, index+4, m_scheme.HelperKey);
                             index += 0x80;
