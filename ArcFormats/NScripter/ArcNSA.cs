@@ -184,7 +184,7 @@ namespace GameRes.Formats.NScripter
         {
             if (null == nsa_entry)
                 return input;
-            if (nsa_entry.Name.HasExtension (".nbz"))
+            if (nsa_entry.Name.HasExtension (".nbz") || Compression.NBZ == nsa_entry.CompressionType)
             {
                 input.Position = 4;
                 return new BZip2InputStream (input);
