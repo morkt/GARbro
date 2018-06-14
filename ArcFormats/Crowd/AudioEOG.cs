@@ -36,6 +36,11 @@ namespace GameRes.Formats.Crowd
         public override string Description { get { return "Crowd engine audio format (Ogg/Vorbis)"; } }
         public override uint     Signature { get { return 0x004D5243; } } // 'CRM'
 
+        public EogAudio ()
+        {
+            Extensions = new string[] { "eog", "amb" };
+        }
+
         public override SoundInput TryOpen (IBinaryStream file)
         {
             var ogg = new StreamRegion (file.AsStream, 8);
