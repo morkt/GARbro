@@ -29,6 +29,7 @@ using System.IO;
 
 // [020426][Winters] Kiss x 200 To Aru Bunkou no Hanashi
 // [040528][Winters] Kiss x 300 Konna Sekai
+// [051216][Winters] Kiss x 400 Natsukashiki Hibi no Renzoku
 
 namespace GameRes.Formats.Winters
 {
@@ -67,7 +68,7 @@ namespace GameRes.Formats.Winters
                 switch (type)
                 {
                 case 0x0B: entry.ChangeType (ImageFormat.Bmp); break;
-                case 0x0C: entry.Type = "image"; break;
+                case 0x0C: entry.ChangeType (ImageFormat.Png); break;
                 case 0x0D: entry.ChangeType (ImageFormat.Jpeg); break;
                 case 0x15: entry.Type = "script"; break;
                 }
