@@ -123,7 +123,9 @@ namespace GameRes.Formats.AST
                     return new XoredStream (input, 0xFF);
                 return input;
             }
-            return new XoredStream (new LzssStream (input), 0xFF);
+            var lzss = new LzssStream (input);
+            lzss.Config.FrameFill = 0xFF;
+            return new XoredStream (lzss, 0xFF);
         }
     }
 }
