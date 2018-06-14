@@ -121,6 +121,7 @@
     <Compile Include="BeF\ImageALO.cs" />
     <Compile Include="BellDa\ArcDAT.cs" />
     <Compile Include="BellDa\AudioPW.cs" />
+    <Compile Include="BellDa\ImageCP.cs" />
     <Compile Include="Bishop\ArcPK.cs" />
     <Compile Include="Bishop\ImageGSA.cs" />
     <Compile Include="BlackRainbow\ArcCCF.cs" />
@@ -149,6 +150,8 @@
     <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="EmbeddedResource.cs" />
     <Compile Include="Emote\ImageDREF.cs" />
+    <Compile Include="Eternity\ImageSGF.cs" />
+    <Compile Include="Eushully\AudioAOG.cs" />
     <Compile Include="FC01\ArcPAK.cs" />
     <Compile Include="FC01\ImageWM2.cs" />
     <Compile Include="FC01\ImageWMK.cs" />
@@ -181,6 +184,7 @@
     <Compile Include="Nekopunch\ImagePBM.cs" />
     <Compile Include="Nexas\ArcTPF.cs" />
     <Compile Include="LiveMaker\ImageGALX.cs" />
+    <Compile Include="Origin\ArcDAT.cs" />
     <Compile Include="Otemoto\ArcTLZ.cs" />
     <Compile Include="Otemoto\ImageMAG.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />
