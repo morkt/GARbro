@@ -2,7 +2,7 @@
 //! \date       Thu Jun 11 13:43:41 2015
 //! \brief      Crowd engine image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -26,6 +26,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
@@ -40,15 +41,23 @@ namespace GameRes.Formats.Crowd
         public override uint     Signature { get { return 0x50445743; } } // 'CWDP'
         public override bool      CanWrite { get { return true; } }
 
+        public CwpFormat ()
+        {
+            Extensions = new string[] { "cwp", "amp" };
+            Signatures = new uint[] { 0x50445743, 0x504E4D41 }; // 'AMNP'
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream input)
         {
-            input.Position = 4;
-            uint width  = Binary.BigEndian (input.ReadUInt32());
-            uint height = Binary.BigEndian (input.ReadUInt32());
+            var header = input.ReadHeader (0x11);
+            uint width  = BigEndian.ToUInt32 (header, 4);
+            uint height = BigEndian.ToUInt32 (header, 8);
             if (0 == width || 0 == height)
                 return null;
-            int bpp = input.ReadByte();
-            int color_type = input.ReadByte();
+            int bpp = header[0xC];
+            if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8 && bpp != 16)
+                return null;
+            int color_type = header[0xD];
             switch (color_type)
             {
             case 2: bpp *= 3; break;
@@ -62,43 +71,46 @@ namespace GameRes.Formats.Crowd
             {
                 Width = width,
                 Height = height,
-                BPP = bpp,
+                BPP = 32, // always converted to 32bpp
             };
+        }
+
+        Stream OpenAsPng (IBinaryStream input)
+        {
+            var header = new byte[0x29];
+            Buffer.BlockCopy (PngFormat.HeaderBytes, 0, header, 0, PngFormat.HeaderBytes.Length);
+            header[0xB] = 0xD;
+            Encoding.ASCII.GetBytes ("IHDR", 0, 4, header, 0xC);
+            input.Position = 4;
+            input.Read (header, 0x10, 0x15);
+            Encoding.ASCII.GetBytes ("IDAT", 0, 4, header, 0x25);
+            var footer = new byte[] {
+                0, 0, 0, (byte)'I', (byte)'E', (byte)'N', (byte)'D', 0xAE, 0x42, 0x60, 0x82
+            };
+            Stream png = new StreamRegion (input.AsStream, 0x19, true);
+            Stream end = new MemoryStream (footer);
+            png = new ConcatStream (png, end);
+            return new PrefixStream (header, png);
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var header = new byte[0x15];
-            using (var mem = new MemoryStream((int)(0x14 + file.Length + 12)))
-            using (var png = new BinaryWriter (mem))
+            using (var png = OpenAsPng (file))
             {
-                png.Write (0x474E5089u); // png header
-                png.Write (0x0A1A0A0Du);
-                png.Write (0x0D000000u);
-                png.Write (0x52444849u); // 'IHDR'
-                file.Position = 4;
-                file.Read (header, 0, header.Length);
-                png.Write (header, 0, header.Length);
-                png.Write (0x54414449u); // 'IDAT'
-                file.AsStream.CopyTo (mem);
-                header[1] = 0;
-                header[2] = 0;
-                header[3] = 0;
-                LittleEndian.Pack (0x444E4549, header, 4);
-                LittleEndian.Pack (0x826042AE, header, 8);
-                png.Write (header, 1, 11);
-                mem.Position = 0;
-                var decoder = new PngBitmapDecoder (mem, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                var decoder = new PngBitmapDecoder (png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 BitmapSource frame = decoder.Frames[0];
-                var pixels = new byte[info.Width*info.Height*4];
-                frame.CopyPixels (pixels, (int)info.Width*4, 0);
+                if (frame.Format.BitsPerPixel != 32)
+                    frame = new FormatConvertedBitmap (frame, PixelFormats.Bgr32, null, 0);
+                int stride = (int)info.Width * 4;
+                var pixels = new byte[(int)info.Height * stride];
+                frame.CopyPixels (pixels, stride, 0);
                 for (int i = 0; i < pixels.Length; i += 4)
                 {
                     byte t = pixels[i];
                     pixels[i] = pixels[i+2];
                     pixels[i+2] = t;
                 }
-                return ImageData.Create (info, PixelFormats.Bgr32, null, pixels);
+                return ImageData.Create (info, PixelFormats.Bgr32, null, pixels, stride);
             }
         }
 
