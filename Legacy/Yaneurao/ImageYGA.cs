@@ -43,6 +43,12 @@ namespace GameRes.Formats.Yaneurao
         public override string Description { get { return "Yaneurao image format"; } }
         public override uint     Signature { get { return 0x616779; } } // 'yga'
 
+        public YgaFormat ()
+        {
+            Extensions = new string[] { "yga", "epf" };
+            Signatures = new uint[] { 0x616779, 0x667065 }; // 'epf'
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x18);
