@@ -42,7 +42,7 @@ namespace GameRes.Formats.Ankh
 
         public GrpOpener ()
         {
-            Extensions = new string[] { "grp", "bin" };
+            Extensions = new string[] { "grp", "bin", "dat", "vc" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -83,13 +83,15 @@ namespace GameRes.Formats.Ankh
 
         void DetectFileTypes (ArcView file, List<Entry> dir)
         {
+            var header = new byte[16];
             foreach (PackedEntry entry in dir)
             {
                 if (entry.Size <= 8)
                     continue;
-                if (file.View.AsciiEqual (entry.Offset, "TPW"))
+                file.View.Read (entry.Offset, header, 0, 16);
+                if (header.AsciiEqual ("TPW"))
                 {
-                    entry.IsPacked = file.View.ReadByte (entry.Offset+3) != 0;
+                    entry.IsPacked =header[3] != 0;
                     long start_offset = entry.Offset+4;
                     if (entry.IsPacked)
                     {
@@ -104,39 +106,47 @@ namespace GameRes.Formats.Ankh
                     if (file.View.AsciiEqual (start_offset, "BM"))
                         entry.ChangeType (ImageFormat.Bmp);
                 }
-                else if (file.View.AsciiEqual (entry.Offset+4, "HDJ\0"))
+                else if (header.AsciiEqual (4, "HDJ\0"))
                 {
-                    if (file.View.AsciiEqual (entry.Offset+12, "BM"))
+                    if (header.AsciiEqual (12, "BM"))
                         entry.ChangeType (ImageFormat.Bmp);
-                    else if (file.View.AsciiEqual (entry.Offset+12, "MThd"))
+                    else if (header.AsciiEqual (12, "MThd"))
                         entry.Name = Path.ChangeExtension (entry.Name, "mid");
 
-                    entry.UnpackedSize = file.View.ReadUInt32 (entry.Offset);
+                    entry.UnpackedSize = header.ToUInt32 (0);
                     entry.IsPacked = true;
                 }
-                else if (file.View.AsciiEqual (entry.Offset+4, "OggS"))
+                else if (header.AsciiEqual (4, "OggS"))
                 {
                     entry.ChangeType (OggAudio.Instance);
                     entry.Offset += 4;
                     entry.Size   -= 4;
                 }
-                else if (entry.Size > 12 && file.View.AsciiEqual (entry.Offset+8, "RIFF"))
+                else if (entry.Size > 12 && header.AsciiEqual (8, "RIFF"))
                 {
                     entry.ChangeType (AudioFormat.Wav);
-                    entry.UnpackedSize = file.View.ReadUInt32 (entry.Offset);
+                    entry.UnpackedSize = header.ToUInt32 (0);
                     entry.IsPacked = true;
                 }
-                else if (file.View.AsciiEqual (entry.Offset, "BM"))
+                else if (header.AsciiEqual ("BM"))
                 {
                     entry.ChangeType (ImageFormat.Bmp);
                 }
-                else if (file.View.AsciiEqual (entry.Offset, "RIFF"))
+                else if (header.AsciiEqual ("RIFF"))
                 {
                     entry.ChangeType (AudioFormat.Wav);
                 }
-                else if (file.View.AsciiEqual (entry.Offset, "\x89PNG"))
+                else if (header.AsciiEqual ("\x89PNG"))
                 {
                     entry.ChangeType (ImageFormat.Png);
+                }
+                else if (header.ToUInt32 (0) == 0xE0FFD8FF)
+                {
+                    entry.ChangeType (ImageFormat.Jpeg);
+                }
+                else if (header.ToUInt16 (0) == 0xFBFF)
+                {
+                    entry.ChangeType (Mp3Format.Value);
                 }
                 else if (entry.Size > 0x16 && IsAudioEntry (file, entry))
                 {
@@ -144,6 +154,8 @@ namespace GameRes.Formats.Ankh
                 }
             }
         }
+
+        internal static ResourceInstance<AudioFormat> Mp3Format = new ResourceInstance<AudioFormat> ("MP3");
 
         bool IsAudioEntry (ArcView file, Entry entry)
         {
