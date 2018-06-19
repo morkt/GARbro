@@ -703,6 +703,9 @@
     <Compile Include="Will\ArcPNA.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
     <Compile Include="Will\ArcWIP.cs" />
+    <Compile Include="Winters\ArcDAT.cs" />
+    <Compile Include="Winters\ArcIFP.cs" />
+    <Compile Include="Winters\ArcIFX.cs" />
     <Compile Include="Xuse\ArcBIN.cs" />
     <Compile Include="Xuse\ArcGD.cs" />
     <Compile Include="Xuse\ArcWAG.cs" />
