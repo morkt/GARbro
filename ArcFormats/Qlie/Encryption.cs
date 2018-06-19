@@ -56,7 +56,9 @@ namespace GameRes.Formats.Qlie
 
         public static IEncryption Create (ArcView file, Version version, byte[] arc_key)
         {
-            if (2 == version.Major || 1 == version.Major)
+            if (1 == version.Major)
+                return new EncryptionV1();
+            else if (2 == version.Major)
                 return new EncryptionV2();
             else if (3 == version.Major && 1 == version.Minor)
                 return new EncryptionV3_1 (file);
@@ -71,6 +73,55 @@ namespace GameRes.Formats.Qlie
         public abstract string DecryptName (byte[] name, int name_length);
 
         public abstract void DecryptEntry (byte[] data, int offset, int length, QlieEntry entry);
+    }
+
+    internal class EncryptionV1 : QlieEncryption
+    {
+        public EncryptionV1 ()
+        {
+            NameKey = 0xC4;
+            ArcKey = 0;
+        }
+
+        public override uint CalculateHash (byte[] data, int length)
+        {
+            return 0; // not implemented
+        }
+
+        public override string DecryptName (byte[] name, int name_length)
+        {
+            int key = NameKey ^ 0x3E;
+            for (int k = 0; k < name_length; ++k)
+                name[k] ^= (byte)(((k + 1) ^ key) + k + 1);
+
+            return Encodings.cp932.GetString (name, 0, name_length);
+        }
+
+        public override void DecryptEntry (byte[] data, int offset, int length, QlieEntry entry)
+        {
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException ("offset");
+            if (length > data.Length || offset > data.Length - length)
+                throw new ArgumentOutOfRangeException ("length");
+            uint arc_key = ArcKey;
+
+            ulong hash = 0xA73C5F9DA73C5F9Dul;
+            ulong xor = arc_key ^ 0xFEC9753Eu;
+            xor |= xor << 32;
+            unsafe
+            {
+                fixed (byte* raw = data)
+                {
+                    ulong* encoded = (ulong*)(raw + offset);
+                    for (int i = 0; i < length / 8; ++i)
+                    {
+                        hash = MMX.PAddD (hash, 0xCE24F523CE24F523ul) ^ xor;
+                        xor = *encoded ^ hash;
+                        *encoded++ = xor;
+                    }
+                }
+            }
+        }
     }
 
     internal class EncryptionV2 : QlieEncryption

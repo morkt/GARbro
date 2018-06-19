@@ -91,12 +91,14 @@ namespace GameRes.Formats.Qlie
         /// </summary>
         static readonly string[] KeyLocations = { ".", "..", @"..\DLL", "DLL" };
 
-        public static Dictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
+        static QlieScheme DefaultScheme = new QlieScheme { KnownKeys = new Dictionary<string, byte[]>() };
+
+        public static Dictionary<string, byte[]> KnownKeys { get { return DefaultScheme.KnownKeys; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new QlieScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((QlieScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (QlieScheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -156,7 +158,8 @@ namespace GameRes.Formats.Qlie
                     entry.UnpackedSize = index.ReadUInt32();    // [+0C]
                     entry.IsPacked    = 0 != index.ReadInt32(); // [+10]
                     entry.EncryptionMethod = index.ReadInt32(); // [+14]
-                    entry.Hash = index.ReadUInt32();            // [+18]
+                    if (pack_version.Major > 1)
+                        entry.Hash = index.ReadUInt32();            // [+18]
                     entry.KeyFile = key_file;
                     if (read_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
                     {
