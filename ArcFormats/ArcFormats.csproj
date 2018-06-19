@@ -157,6 +157,7 @@
     <Compile Include="FC01\ImageWMK.cs" />
     <Compile Include="FrontWing\ArcVAV.cs" />
     <Compile Include="Groover\ArcPCG.cs" />
+    <Compile Include="Gss\ArcARC.cs" />
     <Compile Include="HCSystem\ArcPAK.cs" />
     <Compile Include="HCSystem\ImageOPF.cs" />
     <Compile Include="HuffmanCompression.cs" />
@@ -228,6 +229,7 @@
     </Compile>
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
+    <Compile Include="Qlie\ImageABMP.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
     <Compile Include="RealLive\ArcSEEN.cs" />
     <Compile Include="RealLive\ImageG00Jpeg.cs" />
@@ -729,6 +731,7 @@
     </Compile>
     <Compile Include="YuRis\ImageYCG.cs" />
     <Compile Include="Zyx\ArcBDF.cs" />
+    <Compile Include="Zyx\ImageMTL.cs" />
     <Compile Include="Zyx\ImageSPL.cs" />
     <EmbeddedResource Include="Strings\arcStrings.zh-Hans.resx" />
     <Compile Include="Seraphim\ArcSeraph.cs" />
