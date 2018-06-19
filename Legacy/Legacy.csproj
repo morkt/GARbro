@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aaru\ArcFL4.cs" />
+    <Compile Include="Acme\ImageARD.cs" />
     <Compile Include="Ags32i\AudioAGS.cs" />
     <Compile Include="Ags32i\ImageGSS.cs" />
     <Compile Include="Airyu\ArcCHR.cs" />
@@ -77,10 +78,18 @@
     <Compile Include="Dice\ArcRLZ.cs" />
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
+    <Compile Include="Electriciteit\ArcDAT.cs" />
     <Compile Include="Eve\ArcGM.cs" />
     <Compile Include="Eve\AudioWV.cs" />
     <Compile Include="GPlay\ArcYSK.cs" />
+    <Compile Include="Hdl\ArcHOT.cs" />
+    <Compile Include="Hdl\ImageHOT.cs" />
+    <Compile Include="Logg\ArcMBM.cs" />
     <Compile Include="Mermaid\ImageMG1.cs" />
+    <Compile Include="Muse\ArcDAT.cs" />
+    <Compile Include="Pan\ArcPAN.cs" />
+    <Compile Include="Pan\AudioNSF.cs" />
+    <Compile Include="Pan\ImageTBL.cs" />
     <Compile Include="Pinky\ArcA5R.cs" />
     <Compile Include="Pisckiss\Audio0.cs" />
     <Compile Include="Pisckiss\Image1.cs" />
@@ -88,9 +97,14 @@
     <Compile Include="Tigerman\ArcCHR.cs" />
     <Compile Include="Tigerman\ArcPAC.cs" />
     <Compile Include="Tigerman\ImageCHR.cs" />
+    <Compile Include="Types\ArcARC.cs" />
+    <Compile Include="Types\ImageTPGF.cs" />
     <Compile Include="UMeSoft\AudioIKE.cs" />
     <Compile Include="UMeSoft\AudioSTR.cs" />
     <Compile Include="UMeSoft\ImageIKE.cs" />
+    <Compile Include="Unknown\ArcAQA.cs" />
+    <Compile Include="Unknown\AudioMSF.cs" />
+    <Compile Include="Unknown\ImageCTF.cs" />
     <Compile Include="Yaneurao\ArcDAT.cs" />
     <Compile Include="Factor\ArcRES.cs" />
     <Compile Include="Gsx\ArcK3.cs" />
@@ -144,8 +158,8 @@
     <Compile Include="WestGate\ArcUSF.cs" />
     <Compile Include="WestGate\ArcUWF.cs" />
     <Compile Include="WestGate\ImageNBMP.cs" />
-    <Compile Include="Winters\ArcIFX.cs" />
     <Compile Include="Witch\ArcARC.cs" />
+    <Compile Include="Yaneurao\ArcSDA.cs" />
     <Compile Include="Yaneurao\ImageYGA.cs" />
     <Compile Include="YellowCap\ImageGEF.cs" />
     <Compile Include="YellowCap\ImageGGF.cs" />
