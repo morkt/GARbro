@@ -15,12 +15,12 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetGAL : StackPanel
     {
-        public WidgetGAL()
+        public WidgetGAL (IDictionary<string, string> known_keys)
         {
             InitializeComponent();
             var first_item = new KeyValuePair<string, string> (arcStrings.ArcIgnoreEncryption, "");
             var items = new KeyValuePair<string, string>[] { first_item };
-            this.Title.ItemsSource = items.Concat (GalFormat.KnownKeys.OrderBy (x => x.Key));
+            this.Title.ItemsSource = items.Concat (known_keys.OrderBy (x => x.Key));
         }
     }
 }

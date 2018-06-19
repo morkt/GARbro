@@ -66,12 +66,14 @@ namespace GameRes.Formats.LiveMaker
         public override string Description { get { return "LiveMaker image format"; } }
         public override uint     Signature { get { return 0x656C6147; } } // 'Gale'
 
-        public static Dictionary<string, string> KnownKeys = new Dictionary<string, string>();
+        GalScheme DefaultScheme = new GalScheme { KnownKeys = new Dictionary<string, string>() };
+
+        public Dictionary<string, string> KnownKeys { get { return DefaultScheme.KnownKeys; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new GalScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((GalScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (GalScheme)value; }
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -82,29 +84,51 @@ namespace GameRes.Formats.LiveMaker
             int version = header[4] * 100 + header[5] * 10 + header[6] - 5328;
             if (version < 100 || version > 107)
                 return null;
-            int header_size = LittleEndian.ToInt32 (header, 7);
-            if (header_size < 0x28 || header_size > 0x100)
-                return null;
-            if (header_size > header.Length)
-                header = new byte[header_size];
-            if (header_size != stream.Read (header, 0, header_size))
-                return null;
-            if (version != LittleEndian.ToInt32 (header, 0))
-                return null;
-            return new GalMetaData
+            if (version > 102)
             {
-                Width   = LittleEndian.ToUInt32 (header, 4),
-                Height  = LittleEndian.ToUInt32 (header, 8),
-                BPP     = LittleEndian.ToInt32 (header, 0xC),
-                Version = version,
-                FrameCount = LittleEndian.ToInt32 (header, 0x10),
-                Shuffled = header[0x15] != 0,
-                Compression = header[0x16],
-                Mask = LittleEndian.ToUInt32 (header, 0x18),
-                BlockWidth  = LittleEndian.ToInt32 (header, 0x1C),
-                BlockHeight = LittleEndian.ToInt32 (header, 0x20),
-                DataOffset = header_size + 11,
-            };
+                int header_size = LittleEndian.ToInt32 (header, 7);
+                if (header_size < 0x28 || header_size > 0x100)
+                    return null;
+                if (header_size > header.Length)
+                    header = new byte[header_size];
+                if (header_size != stream.Read (header, 0, header_size))
+                    return null;
+                if (version != LittleEndian.ToInt32 (header, 0))
+                    return null;
+                return new GalMetaData
+                {
+                    Width   = LittleEndian.ToUInt32 (header, 4),
+                    Height  = LittleEndian.ToUInt32 (header, 8),
+                    BPP     = LittleEndian.ToInt32 (header, 0xC),
+                    Version = version,
+                    FrameCount = LittleEndian.ToInt32 (header, 0x10),
+                    Shuffled = header[0x15] != 0,
+                    Compression = header[0x16],
+                    Mask = LittleEndian.ToUInt32 (header, 0x18),
+                    BlockWidth  = LittleEndian.ToInt32 (header, 0x1C),
+                    BlockHeight = LittleEndian.ToInt32 (header, 0x20),
+                    DataOffset = header_size + 11,
+                };
+            }
+            else
+            {
+                var old_header = stream.ReadHeader (0x10);
+                uint name_length = stream.ReadUInt32();
+                stream.Seek (name_length+17, SeekOrigin.Current);
+                uint width  = stream.ReadUInt32();
+                uint height = stream.ReadUInt32();
+                int  bpp    = stream.ReadInt32();
+                return new GalMetaData
+                {
+                    Width   = width,
+                    Height  = height,
+                    BPP     = bpp,
+                    Version = version,
+                    FrameCount = 1,
+                    Mask = old_header.ToUInt32 (0xC),
+                    DataOffset = 0x10,
+                };
+            }
         }
 
         uint? LastKey = null;
@@ -149,7 +173,7 @@ namespace GameRes.Formats.LiveMaker
 
         public override object GetAccessWidget ()
         {
-            return new GUI.WidgetGAL();
+            return new GUI.WidgetGAL (KnownKeys);
         }
 
         internal uint QueryKey ()
@@ -271,6 +295,8 @@ namespace GameRes.Formats.LiveMaker
 
         protected byte[] UnpackLayer (Frame frame, int length, bool is_alpha = false)
         {
+            if (m_info.Version < 103)
+                return m_input.ReadBytes (length);
             var layer_start = m_input.Position;
             var layer_end = layer_start + length;
             var packed = new StreamRegion (m_input.AsStream, layer_start, length, true);
