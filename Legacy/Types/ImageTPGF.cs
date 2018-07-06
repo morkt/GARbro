@@ -30,6 +30,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
+// [991218][Types] Ichou no Mau Koro 2
+
 namespace GameRes.Formats.Types
 {
     [Export(typeof(ImageFormat))]
@@ -75,6 +77,7 @@ namespace GameRes.Formats.Types
         byte[]          m_output;
         ImageMetaData   m_info;
         int             m_stride;
+        byte[]          m_scanline;
 
         public byte[]           Data { get { return m_output; } }
         public PixelFormat    Format { get; private set; }
@@ -82,37 +85,102 @@ namespace GameRes.Formats.Types
 
         public TpgfReader (IBinaryStream input, ImageMetaData info)
         {
-            if (8 == info.BPP)
-                throw new NotImplementedException();
             m_input = new BitStreamEx (input.AsStream, true);
             m_info = info;
-            m_stride = (int)m_info.Height * (info.BPP + 7) / 8;
-            m_output = new byte[m_stride * (int)m_info.Width];
-            Format = PixelFormats.Bgr24;
+            int bpp = m_info.BPP;
+            if (24 == bpp)
+                bpp = 32;
+            m_stride = (int)m_info.Width * (bpp / 8);
+            m_output = new byte[m_stride * (int)m_info.Height];
+            m_scanline = new byte[m_info.Width];
         }
 
         public byte[] Unpack ()
         {
             m_input.Reset();
             m_input.Input.Position = 13;
-            var scanline = new byte[m_info.Width];
+            if (8 == m_info.BPP)
+            {
+                Unpack8bpp (m_output);
+                Format = PixelFormats.Gray8;
+                return m_output; // alpha channel ignored for 8bpp bitmaps
+            }
+            else
+            {
+                Unpack24bpp (m_output);
+                Format = PixelFormats.Bgr32;
+            }
+            if (m_input.Input.ReadByte() == 1) // alpha data
+            {
+                var header = new byte[13];
+                m_input.Input.Read (header, 0, 13);
+                if (header.AsciiEqual (4, "TPGF"))
+                {
+                    uint width  = BigEndian.ToUInt16 (header, 8);
+                    uint height = BigEndian.ToUInt16 (header, 10);
+                    int bpp = header[12];
+                    if (width == m_info.Width && height == m_info.Height && bpp == 8)
+                    {
+                        m_input.Reset();
+                        UnpackAlpha (m_output);
+                        Format = PixelFormats.Bgra32;
+                    }
+                }
+            }
+            return m_output;
+        }
+
+        void Unpack24bpp (byte[] output)
+        {
             int dst_line = 0;
             for (uint y = 0; y < m_info.Height; ++y)
             {
                 for (int i = 0; i < 3; ++i)
                 {
-                    ReadScanLine (scanline);
-                    TransformLine (scanline);
+                    ReadScanLine (m_scanline);
+                    TransformLine (m_scanline);
                     int dst = dst_line + i;
                     for (uint x = 0; x < m_info.Width; ++x)
                     {
-                        m_output[dst] = scanline[x];
-                        dst += 3;
+                        output[dst] = m_scanline[x];
+                        dst += 4;
                     }
                 }
                 dst_line += m_stride;
             }
-            return m_output;
+        }
+
+        void Unpack8bpp (byte[] output)
+        {
+            int width = (int)m_info.Width;
+            int dst = 0;
+            for (uint y = 0; y < m_info.Height; ++y)
+            {
+                ReadScanLine (m_scanline);
+                TransformLine (m_scanline);
+                for (int x = 0; x < width; ++x)
+                {
+                    output[dst + x] = m_scanline[x];
+                }
+                dst += m_stride;
+            }
+        }
+
+        void UnpackAlpha (byte[] output)
+        {
+            int dst_line = 3;
+            for (uint y = 0; y < m_info.Height; ++y)
+            {
+                ReadScanLine (m_scanline);
+                TransformLine (m_scanline);
+                int dst = dst_line;
+                for (uint x = 0; x < m_info.Width; ++x)
+                {
+                    output[dst] = (byte)~m_scanline[x];
+                    dst += 4;
+                }
+                dst_line += m_stride;
+            }
         }
 
         void ReadScanLine (byte[] line)
@@ -145,10 +213,9 @@ namespace GameRes.Formats.Types
 
         void TransformLine (byte[] line)
         {
-            var tmp = line.Clone() as byte[];
             for (int i = 1; i < line.Length; ++i)
             {
-                byte a = tmp[i];
+                byte a = line[i];
                 byte b = line[i-1];
                 line[i] = TransformMap[a, b];
             }
@@ -164,7 +231,7 @@ namespace GameRes.Formats.Types
             {
                 int v;
                 if (j >= 128)
-                    v = -1 - j;
+                    v = (-1 - j) & 0xFF;
                 else
                     v = j;
                 if (2 * v < i)
