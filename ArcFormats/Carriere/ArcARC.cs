@@ -133,7 +133,6 @@ namespace GameRes.Formats.Carriere
             {
                 input = new XoredStream (input, 0xFF);
             }
-            var output = new byte[unpacked_size];
             if ((flags & 2) != 0)
             {
                 input = new LzssStream (input);
