@@ -58,6 +58,7 @@ namespace GameRes.Formats.NonColor
         public string   Title;
         public ulong    Hash;
         public string   FileListName;
+        public bool     LowCaseNames;
 
         public Scheme(string title)
         {
@@ -69,6 +70,14 @@ namespace GameRes.Formats.NonColor
         public virtual ulong ComputeHash (byte[] name)
         {
             return Crc64.Compute (name, 0, name.Length);
+        }
+
+        public byte[] GetBytes (string name)
+        {
+            if (LowCaseNames)
+                return name.ToLowerShiftJis();
+            else
+                return Encodings.cp932.GetBytes (name);
         }
     }
 
@@ -194,7 +203,7 @@ namespace GameRes.Formats.NonColor
             {
                 var dict = new Dictionary<ulong, NameRecord>();
                 FormatCatalog.Instance.ReadFileList (scheme.FileListName, line => {
-                    var bytes = Encodings.cp932.GetBytes (line); // line.ToLowerShiftJis();
+                    var bytes = scheme.GetBytes (line);
                     ulong hash = scheme.ComputeHash (bytes);
                     dict[hash] = new NameRecord { Name = line, NameBytes = bytes };
                 });

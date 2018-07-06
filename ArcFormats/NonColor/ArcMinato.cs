@@ -38,7 +38,9 @@ namespace GameRes.Formats.Minato
 
         public override ulong ComputeHash (byte[] name)
         {
-            return Crc32.Compute (name, 0, name.Length);
+            var bytes = name.Clone() as byte[];
+            bytes.ToLowerShiftJis();
+            return Crc32.Compute (bytes, 0, bytes.Length);
         }
     }
 
