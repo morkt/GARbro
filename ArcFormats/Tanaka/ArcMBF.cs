@@ -49,7 +49,7 @@ namespace GameRes.Formats.Will
                 return null;
             uint data_offset = file.View.ReadUInt32 (8);
             uint index_offset = 0x20;
-            if (0 != (file.View.ReadByte (0xC) & 1))
+            if (0 != (file.View.ReadByte (0xC) & 1) && count > 1)
             {
                 index_offset += file.View.ReadUInt16 (index_offset);
                 --count;
