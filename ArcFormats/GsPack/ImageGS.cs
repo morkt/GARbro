@@ -40,6 +40,7 @@ namespace GameRes.Formats.Gs
         public uint PackedSize;
         public uint UnpackedSize;
         public uint HeaderSize;
+        public int  Extra;
     }
 
     [Export(typeof(ImageFormat))]
@@ -69,7 +70,7 @@ namespace GameRes.Formats.Gs
             info.BPP = file.ReadInt32();
             if (info.HeaderSize >= 0x2C)
             {
-                file.ReadInt32();
+                info.Extra = file.ReadInt32();
                 info.OffsetX = file.ReadInt32();
                 info.OffsetY = file.ReadInt32();
             }
@@ -99,7 +100,7 @@ namespace GameRes.Formats.Gs
                 int stride = (int)meta.Width*((info.BPP+7)/8);
                 var pixels = new byte[stride*meta.Height];
                 input.Read (pixels, 0, pixels.Length);
-                if (32 == meta.BPP)
+                if (32 == meta.BPP && meta.Extra != 0)
                 {
                     for (int i = 3; i < pixels.Length; i += 4)
                     {
