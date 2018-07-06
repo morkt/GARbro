@@ -46,7 +46,7 @@ namespace GameRes.Formats.uGOS
         public DetBmpFormat ()
         {
             Extensions = new string[] { "bmp" };
-            Signatures = new uint[] { 0x206546, 0x186546, 0x01186446, 0x186446, 0 };
+            Signatures = new uint[] { 0x206546, 0x186546, 0x086546, 0x01186446, 0x186446, 0 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -58,7 +58,7 @@ namespace GameRes.Formats.uGOS
             if (type != 'D' && type != 'E')
                 return null;
             int bpp = header[2];
-            if (bpp != 0x18 && bpp != 0x20)
+            if (bpp != 8 && bpp != 0x18 && bpp != 0x20)
                 return null;
             return new DetBmpMetaData
             {
@@ -253,15 +253,26 @@ namespace GameRes.Formats.uGOS
                     dst = 3;
                     while (dst < m_output.Length)
                     {
-                        byte alpha = sub_415530(8);
-                        int count = sub_415440() + 1;
-                        while (count > 0)
+                        byte alpha = ReadBits (8);
+                        int count = ReadCount() + 1;
+                        while (count --> 0)
                         {
                             m_output[dst] = alpha;
                             dst += 4;
-                            --count;
                         }
                     }
+                }
+                else if (8 == m_bpp)
+                {
+                    var pixels = new byte[m_width * m_height];
+                    dst = 0;
+                    for (int src = 0; src < m_output.Length; src += 4)
+                    {
+                        pixels[dst++] = m_output[src];
+                    }
+                    m_output = pixels;
+                    Format = PixelFormats.Gray8;
+                    Stride = m_width;
                 }
             }
 
@@ -297,7 +308,7 @@ namespace GameRes.Formats.uGOS
                 return (int)(m_bits >> 8);
             }
 
-            byte sub_415530 (int a3)
+            byte ReadBits (int a3)
             {
                 m_bits &= 0xFF;
                 int v4 = byte_4CBA80[m_bits];
@@ -327,7 +338,7 @@ namespace GameRes.Formats.uGOS
                 return (byte)alpha;
             }
 
-            int sub_415440 ()
+            int ReadCount ()
             {
                 m_bits &= 0xFF;
                 int v2 = (int)m_bits;
