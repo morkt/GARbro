@@ -52,8 +52,6 @@ namespace GameRes.Formats.NonColor
             if (null == scheme)
                 return null;
 
-            bool is_script = VFS.IsPathEqualsToFileName (file.Name, "script.dat");
-
             using (var index = new NcIndexReader (file, count, key) { IndexPosition = 8 })
             {
                 var file_map = ReadFilenameMap (scheme);
