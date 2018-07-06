@@ -43,7 +43,7 @@ namespace GameRes.Formats.Maika
 
         public Mk2Opener ()
         {
-            Signatures = new uint[] { 0x2E324B4D, 0x2E324C42 }; // 'BL2.0'
+            Signatures = new uint[] { 0x2E324B4D, 0x2E324C42, 0x2E314C53 }; // 'BL2.0'. 'SL1.0'
         }
 
         public override ArcFile TryOpen (ArcView file)
