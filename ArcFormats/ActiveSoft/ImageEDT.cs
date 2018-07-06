@@ -43,7 +43,7 @@ namespace GameRes.Formats.AdPack
 
     internal class Ed8MetaData : ImageMetaData
     {
-        public uint PaletteSize;
+        public int  PaletteSize;
         public uint CompSize;
     }
 
@@ -277,7 +277,7 @@ namespace GameRes.Formats.AdPack
                 return null;
             uint width  = header.ToUInt16 (0x0e);
             uint height = header.ToUInt16 (0x10);
-            uint palette_size = header.ToUInt32 (0x12);
+            int  palette_size = header.ToInt32 (0x12);
             uint comp_size  = header.ToUInt32 (0x16);
             if (palette_size > 0x100)
                 return null;
@@ -295,7 +295,6 @@ namespace GameRes.Formats.AdPack
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (Ed8MetaData)info;
-            stream.Position = 0x1a;
             var reader = new Reader (stream.AsStream, meta);
             reader.Unpack();
             var palette = new BitmapPalette (reader.Palette);
@@ -322,21 +321,14 @@ namespace GameRes.Formats.AdPack
             public Reader (Stream file, Ed8MetaData info)
             {
                 m_width = (int)info.Width;
-                int palette_size = (int)info.PaletteSize*3;
-                var palette_data = new byte[Math.Max (0x300, palette_size)];
-                if (palette_size != file.Read (palette_data, 0, palette_size))
-                    throw new InvalidFormatException();
-                m_palette = new Color[0x100];
-                for (int i = 0; i < m_palette.Length; ++i)
-                {
-                    m_palette[i] = Color.FromRgb (palette_data[i*3+2], palette_data[i*3+1], palette_data[i*3]);
-                }
                 m_input = file;
                 m_data = new byte[info.Width * info.Height];
             }
 
             public void Unpack ()
             {
+                m_input.Position = 0x1A;
+                m_palette = ReadColorMap (m_input, 0x100, PaletteFormat.Bgr);
                 int data_pos = 0;
                 while (data_pos < m_data.Length)
                 {
