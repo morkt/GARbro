@@ -3,8 +3,7 @@
     <Release>
         <Version>1.5.38</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
-        <Notes>GUI:
-New formats:
+        <Notes>New formats:
 - IGA archives
 - MPF2 archives
 - PKD archives
