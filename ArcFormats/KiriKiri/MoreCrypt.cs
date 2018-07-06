@@ -36,7 +36,9 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class PureMoreCrypt : NoCrypt
     {
-        public string FileListName { get; set; }
+        public string    FileListName { get; set; }
+        public string         CharMap { get; set; }
+        public string LayerNameSuffix { get; set; }
 
         [NonSerialized]
         Lazy<Dictionary<string, string>> KnownNames;
@@ -44,6 +46,7 @@ namespace GameRes.Formats.KiriKiri
         public PureMoreCrypt ()
         {
             KnownNames = new Lazy<Dictionary<string, string>> (ReadFileList);
+            CharMap = DefaultCharMap;
         }
 
         [OnDeserialized()]
@@ -74,11 +77,17 @@ namespace GameRes.Formats.KiriKiri
                 {
                     var str = new StringBuilder (36);
                     var bytes = new byte[0x100];
-                    FormatCatalog.Instance.ReadFileList (FileListName, name => {
+                    var comma = new char[] {','};
+                    string layer_suffix = LayerNameSuffix ?? "";
+                    FormatCatalog.Instance.ReadFileList (FileListName, line => {
+                        var parts = line.Split (comma, 2);
+                        string name = parts[0];
                         int ext = name.LastIndexOf ('.');
-                        if (-1 == ext)
-                            ext = name.Length;
-                        int len = Encoding.Unicode.GetBytes (name, 0, ext, bytes, 0);
+                        if (ext != -1)
+                            name = name.Substring (0, ext);
+                        if (2 == parts.Length)
+                            name += layer_suffix;
+                        int len = Encoding.Unicode.GetBytes (name, 0, name.Length, bytes, 0);
                         var hash = sha.ComputeHash (bytes, 0, len);
                         str.Clear();
                         foreach (byte b in hash)
@@ -86,7 +95,7 @@ namespace GameRes.Formats.KiriKiri
                             str.Append (CharMap[b]);
                         }
                         str.Append (".tlg");
-                        dict[str.ToString()] = name;
+                        dict[str.ToString()] = parts[0];
                     });
                 }
             }
@@ -98,7 +107,7 @@ namespace GameRes.Formats.KiriKiri
         }
 
         [NonSerialized]
-        static readonly string CharMap =
+        static readonly string DefaultCharMap =
             "0123456789abcdefghijklmnopqrstuvwxyz"+
             "０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ"+
             "ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただ"+
