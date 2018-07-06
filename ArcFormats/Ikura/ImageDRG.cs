@@ -85,6 +85,7 @@ namespace GameRes.Formats.Ikura
                 BPP    = bpp,
                 // DGD extensions doesn't always mean encrypted contents XXX
 //                IsEncrypted = stream.Name.HasExtension ("dgd"),
+                IsEncrypted = false,
             };
         }
 
