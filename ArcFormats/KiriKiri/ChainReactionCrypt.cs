@@ -93,10 +93,15 @@ namespace GameRes.Formats.KiriKiri
 
         public override void Init (ArcFile arc)
         {
-            var bin = ReadListBin (arc);
+            var bin = ReadListBin (arc, m_list_bin);
             if (null == bin || bin.Length <= 0x30)
                 return;
 
+            Init (bin);
+        }
+
+        internal void Init (byte[] bin)
+        {
             if (!Binary.AsciiEqual (bin, "\"\x0D\x0A"))
             {
                 for (int i = 0; i < 3; ++i)
@@ -114,9 +119,9 @@ namespace GameRes.Formats.KiriKiri
             ParseListBin (bin);
         }
 
-        internal byte[] ReadListBin (ArcFile arc)
+        internal byte[] ReadListBin (ArcFile arc, string list_name)
         {
-            var list_bin = arc.Dir.FirstOrDefault (e => e.Name == m_list_bin) as Xp3Entry;
+            var list_bin = arc.Dir.FirstOrDefault (e => e.Name == list_name) as Xp3Entry;
             if (null == list_bin)
                 return null;
             var bin = new byte[list_bin.UnpackedSize];
@@ -268,6 +273,74 @@ namespace GameRes.Formats.KiriKiri
             case 0: return 0;
             case 2: return entry.UnpackedSize;
             default: return 0x100;
+            }
+        }
+    }
+
+    [Serializable]
+    public class XanaduCrypt : ChainReactionCrypt
+    {
+        public XanaduCrypt () : base ("plugins/list.txt")
+        {
+            StartupTjsNotEncrypted = true;
+        }
+
+        public override void Init (ArcFile arc)
+        {
+            var bin = ReadListBin (arc, "list2.txt");
+            if (null == bin)
+                bin = ReadListBin (arc, "plugins/list.txt");
+            if (null == bin)
+                return;
+
+            Init (bin);
+        }
+
+        protected override uint GetEncryptionLimit (Xp3Entry entry)
+        {
+            uint limit = base.GetEncryptionLimit (entry);
+            switch (limit)
+            {
+            case 0: return 0;
+            case 2: return entry.UnpackedSize;
+            default: return 0x100;
+            }
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            uint limit = GetEncryptionLimit (entry);
+            if (offset >= limit)
+                return;
+            count = Math.Min ((int)(limit - offset), count);
+            uint key = entry.Hash ^ ~0x03020100u;
+            int ofs = (int)offset;
+            byte extra = (byte)(((ofs & 0xFF) >> 2) << 2);
+            for (int i = 0; i < count; ++i)
+            {
+                if (((ofs + i) & 0xFF) == 0)
+                    extra = 0;
+                else if (((ofs + i) & 3) == 0)
+                    extra += 4;
+                values[pos+i] ^= (byte)((key >> (((ofs+i) & 3) << 3)) ^ extra);
+            }
+        }
+    }
+
+    [Serializable]
+    public class SisMikoCrypt : XanaduCrypt
+    {
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
+        {
+            uint limit = GetEncryptionLimit (entry);
+            if (offset >= limit)
+                return;
+            count = Math.Min ((int)(limit - offset), count);
+            uint key = ~Binary.RotR (entry.Hash, 16);
+            int ofs = (int)offset;
+            for (int i = 0; i < count; ++i)
+            {
+                values[pos+i] ^= (byte)(key >> (((ofs+i) & 3) << 3));
             }
         }
     }
