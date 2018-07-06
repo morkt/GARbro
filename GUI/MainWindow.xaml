@@ -228,8 +228,9 @@
                 <local:ExtAutoCompleteBox x:Name="pathLine" Height="22" Width="100" Margin="0" BorderThickness="1,1,0,1"/>
                 <Button ToolTip="{x:Static s:guiStrings.CtxMenuRefresh}" Height="22" Width="22" Margin="0"
                         Background="{Binding ElementName=pathLine, Path=Background}"
-                        BorderBrush="{Binding ElementName=pathLine, Path=BorderBrush}" BorderThickness="1">
-                    <Image Source="Images/48x48/refresh.png" Height="16" Width="16"/>
+                        BorderBrush="{Binding ElementName=pathLine, Path=BorderBrush}" BorderThickness="1"
+                        Command="{x:Static local:Commands.Refresh}">
+                    <Image Source="{StaticResource Icon48x48Refresh}" Height="16" Width="16"/>
                 </Button>
             </StackPanel>
             <StackPanel Orientation="Horizontal" x:Name="EncodingWidget" Visibility="{Binding ElementName=TextView, Path=Visibility}">
