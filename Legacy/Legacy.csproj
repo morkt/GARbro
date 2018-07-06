@@ -94,6 +94,7 @@
     <Compile Include="Pisckiss\Audio0.cs" />
     <Compile Include="Pisckiss\Image1.cs" />
     <Compile Include="Rune\ArcYK.cs" />
+    <Compile Include="Tetratech\ArcBND.cs" />
     <Compile Include="Tigerman\ArcCHR.cs" />
     <Compile Include="Tigerman\ArcPAC.cs" />
     <Compile Include="Tigerman\ImageCHR.cs" />

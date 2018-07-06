@@ -29,6 +29,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 
 // [020927][Tigerman Project] Hotaruko
+// [040403][Image-Works] Famires Senshi Pudding
+// [040723][Image-Works] Black Gate -Kanin no Gakuen-
 
 namespace GameRes.Formats.Tigerman
 {

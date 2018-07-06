@@ -117,6 +117,7 @@
     <Compile Include="Apricot\ArcDAT.cs" />
     <Compile Include="ArcARCX.cs" />
     <Compile Include="Artemis\ArcMJA.cs" />
+    <None Include="AudioAIFF.cs" />
     <Compile Include="BeF\AudioVZY.cs" />
     <Compile Include="BeF\ImageALO.cs" />
     <Compile Include="BellDa\ArcDAT.cs" />
@@ -179,6 +180,8 @@
     <Compile Include="Maika\ArcBK.cs" />
     <Compile Include="Maika\ArcMIK01.cs" />
     <Compile Include="Maika\AudioWV5.cs" />
+    <Compile Include="Mixwill\ImageMWP.cs" />
+    <Compile Include="Mnp\ArcMMA.cs" />
     <Compile Include="Noesis\ArcIGA.cs" />
     <Compile Include="NonColor\ArcMinato.cs" />
     <Compile Include="Misc\ArcBIN.cs" />
