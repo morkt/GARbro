@@ -23,7 +23,6 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
@@ -47,7 +46,7 @@ namespace GameRes.Formats.NSystem
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = file.ReadHeader (0x1A);
+            var header = file.ReadHeader (0x1C);
             int header_size = header.ToUInt16 (4);
             uint width      = header.ToUInt16 (0xC);
             uint height     = header.ToUInt16 (0xE);
@@ -74,14 +73,25 @@ namespace GameRes.Formats.NSystem
             switch (meta.Mode)
             {
             case 0:
-                var pixels = file.ReadBytes (data_size);
-                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
+                {
+                    var pixels = file.ReadBytes (data_size);
+                    var format = PixelFormats.Bgr32;
+                    for (int i = 3; i < data_size; i += 4)
+                    {
+                        if (pixels[i] != 0)
+                        {
+                            format = PixelFormats.Bgra32;
+                            break;
+                        }
+                    }
+                    return ImageData.Create (info, format, null, pixels);
+                }
 
             case 1:
                 {
                     var decoder = new MgdDecoder (file, meta, data_size);
                     decoder.Unpack();
-                    return ImageData.Create (info, PixelFormats.Bgra32, null, decoder.Data);
+                    return ImageData.Create (info, decoder.Format, null, decoder.Data);
                 }
 
             case 2:
@@ -113,23 +123,28 @@ namespace GameRes.Formats.NSystem
 
         public byte[] Data { get { return m_output; } }
 
+        public PixelFormat Format { get; private set; }
+
         public MgdDecoder (IBinaryStream input, MgdMetaData info, int packed_size)
         {
             m_input = input;
             m_info = info;
             m_output = new byte[m_info.UnpackedSize];
+            Format = PixelFormats.Bgra32;
         }
 
         public void Unpack ()
         {
             int alpha_size = m_input.ReadInt32();
-            UnpackAlpha (alpha_size);
+            if (!UnpackAlpha (alpha_size))
+                Format = PixelFormats.Bgr32;
             int rgb_size = m_input.ReadInt32();
             UnpackColor (rgb_size);
         }
 
-        void UnpackAlpha (int length)
+        bool UnpackAlpha (int length)
         {
+            bool has_alpha = false;
             int dst = 3;
             while (length > 0)
             {
@@ -139,6 +154,7 @@ namespace GameRes.Formats.NSystem
                 {
                     count = (count & 0x7FFF) + 1;
                     byte a = m_input.ReadUInt8();
+                    has_alpha = has_alpha || a != 0;
                     length--;
                     for (int i = 0; i < count; ++i)
                     {
@@ -150,13 +166,15 @@ namespace GameRes.Formats.NSystem
                 {
                     for (int i = 0; i < count; ++i)
                     {
-                        m_output[dst] = m_input.ReadUInt8();
+                        byte a = m_input.ReadUInt8();
+                        has_alpha = has_alpha || a != 0;
+                        m_output[dst] = a;
                         dst += 4;
                     }
                     length -= count;
                 }
-
             }
+            return has_alpha;
         }
 
         void UnpackColor (int length)
