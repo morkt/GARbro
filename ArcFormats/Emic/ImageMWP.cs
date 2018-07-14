@@ -39,7 +39,7 @@ namespace GameRes.Formats.Emic
 
         public MwpFormat ()
         {
-            Extensions = new string[] { "bmp" };
+            Extensions = new string[] { "mwp", "bmp" };
             Signatures = new uint[] { 0x1050574D, 0x4C594554 }; // 'TEYL'
         }
 
