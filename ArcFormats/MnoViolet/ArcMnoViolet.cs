@@ -62,6 +62,8 @@ namespace GameRes.Formats.MnoViolet
                 {
                     if (null == dir)
                         dir = new List<Entry> (count);
+                    else
+                        dir.Clear();
                     long index_offset = 4;
                     for (int i = 0; i < count; ++i)
                     {
