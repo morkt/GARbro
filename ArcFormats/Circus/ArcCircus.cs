@@ -70,6 +70,10 @@ namespace GameRes.Formats.Circus
             uint next_offset = file.View.ReadUInt32 (index_offset+name_length);
             if (next_offset < 4+index_size)
                 return null;
+            uint first_size    = file.View.ReadUInt32 (index_offset+name_length-4);
+            uint second_offset = file.View.ReadUInt32 (index_offset+name_length*2+4);
+            if (second_offset - next_offset == first_size)
+                return null;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
