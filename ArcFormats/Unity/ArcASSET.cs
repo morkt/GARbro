@@ -169,7 +169,7 @@ namespace GameRes.Formats.Unity
                         tex.Load (input);
                         if (0 == tex.m_DataLength)
                         {
-                            if (asset.Tree.Version == "2017.2.0f3")
+                            if (asset.Tree.Version.StartsWith ("2017.")) // "2017.2.0f3" || "2017.1.1p1"
                                 input.ReadInt64();
                             var stream_data = new StreamingInfo();
                             stream_data.Load (input);
