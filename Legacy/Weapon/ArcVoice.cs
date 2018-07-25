@@ -30,9 +30,7 @@ using System.IO;
 
 namespace GameRes.Formats.Weapon
 {
-#if DEBUG
-    [Export(typeof(ArchiveFormat))]
-#endif
+//    [Export(typeof(ArchiveFormat))]
     public class VoiceOpener : ArchiveFormat
     {
         public override string         Tag { get { return "DAT/W/VOICE"; } }
