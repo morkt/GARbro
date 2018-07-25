@@ -161,7 +161,7 @@ namespace GameRes.Formats.Triangle
             {
                 using (var reader = new RleReader (stream, packed_size, unpacked_size))
                 {
-                    reader.UnpackV2();
+                    reader.Unpack();
                     return reader.Data;
                 }
             }
