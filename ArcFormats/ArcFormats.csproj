@@ -156,6 +156,7 @@
     <Compile Include="Emote\ImageDREF.cs" />
     <Compile Include="Eternity\ImageSGF.cs" />
     <Compile Include="Eushully\AudioAOG.cs" />
+    <Compile Include="FC01\ArcMRG0.cs" />
     <Compile Include="FC01\ArcPAK.cs" />
     <Compile Include="FC01\ImageWM2.cs" />
     <Compile Include="FC01\ImageWMK.cs" />
@@ -183,6 +184,7 @@
     <Compile Include="Maika\ArcBK.cs" />
     <Compile Include="Maika\ArcMIK01.cs" />
     <Compile Include="Maika\AudioWV5.cs" />
+    <Compile Include="MangaGamer\ArcSHA.cs" />
     <Compile Include="Mnp\ArcMMA.cs" />
     <Compile Include="Noesis\ArcIGA.cs" />
     <Compile Include="NonColor\ArcMinato.cs" />
@@ -654,8 +656,11 @@
     <Compile Include="TopCat\ArcTCD1.cs" />
     <Compile Include="TopCat\ArcTCD3.cs" />
     <Compile Include="TopCat\ImageSPD.cs" />
+    <Compile Include="Triangle\ArcBMX.cs" />
     <Compile Include="Triangle\ArcCGF.cs" />
+    <Compile Include="Triangle\ArcDAT.cs" />
     <Compile Include="Triangle\ArcIAF.cs" />
+    <Compile Include="Triangle\ImageTRI.cs" />
     <Compile Include="Ucom\ArcDATA.cs" />
     <Compile Include="Ucom\ArcUK.cs" />
     <Compile Include="Ucom\ImageGPC.cs" />
