@@ -166,7 +166,8 @@ namespace GameRes.Formats.FC01
 
         protected IDictionary<string, byte[]> QueryScheme (ArcView file)
         {
-            var title = FormatCatalog.Instance.LookupGame (file.Name, @"..\*.sb");
+            var title = FormatCatalog.Instance.LookupGame (file.Name, "*.sb")
+                     ?? FormatCatalog.Instance.LookupGame (file.Name, @"..\*.sb");
             if (string.IsNullOrEmpty (title) || !KnownSchemes.ContainsKey (title))
                 return null;
             return KnownSchemes[title];
