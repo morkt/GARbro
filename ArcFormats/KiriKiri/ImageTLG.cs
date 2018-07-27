@@ -154,6 +154,9 @@ namespace GameRes.Formats.KiriKiri
             meta.OffsetY    = tags.GetInt (3) & 0xFFFF;
             if (string.IsNullOrEmpty (base_name))
                 return null;
+            int method = 1;
+            if (tags.HasKey (4))
+                method = tags.GetInt (4);
 
             base_name = VFS.CombinePath (VFS.GetDirectoryName (meta.FileName), base_name);
             if (base_name == meta.FileName)
@@ -169,12 +172,12 @@ namespace GameRes.Formats.KiriKiri
                 base_info.FileName = base_name;
                 base_image = ReadTlg (base_file, base_info);
             }
-            var pixels = BlendImage (base_image, base_info, image, meta);
+            var pixels = BlendImage (base_image, base_info, image, meta, method);
             PixelFormat format = 32 == base_info.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             return ImageData.Create (base_info, format, null, pixels, (int)base_info.Width*4);
         }
 
-        byte[] BlendImage (byte[] base_image, ImageMetaData base_info, byte[] overlay, ImageMetaData overlay_info)
+        byte[] BlendImage (byte[] base_image, ImageMetaData base_info, byte[] overlay, ImageMetaData overlay_info, int method)
         {
             int dst_stride = (int)base_info.Width * 4;
             int src_stride = (int)overlay_info.Width * 4;
@@ -186,7 +189,14 @@ namespace GameRes.Formats.KiriKiri
                 for (uint x = 0; x < overlay_info.Width; ++x)
                 {
                     byte src_alpha = overlay[src+3];
-                    if (src_alpha != 0)
+                    if (2 == method)
+                    {
+                        base_image[dst]   ^= overlay[src];
+                        base_image[dst+1] ^= overlay[src+1];
+                        base_image[dst+2] ^= overlay[src+2];
+                        base_image[dst+3] ^= src_alpha;
+                    }
+                    else if (src_alpha != 0)
                     {
                         if (0xFF == src_alpha || 0 == base_image[dst+3])
                         {
@@ -1127,6 +1137,11 @@ namespace GameRes.Formats.KiriKiri
             var len_str = Encoding.ASCII.GetString (m_tags, m_offset, colon-m_offset);
             m_offset = colon + 1;
             return Int32.Parse (len_str);
+        }
+
+        public bool HasKey (int key)
+        {
+            return m_map.ContainsKey (key);
         }
 
         public int GetInt (int key)
