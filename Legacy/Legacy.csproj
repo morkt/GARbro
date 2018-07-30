@@ -41,6 +41,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
@@ -81,12 +82,17 @@
     <Compile Include="Electriciteit\ArcDAT.cs" />
     <Compile Include="Eve\ArcGM.cs" />
     <Compile Include="Eve\AudioWV.cs" />
+    <Compile Include="Gaia\ImageJPG.cs" />
     <Compile Include="GPlay\ArcYSK.cs" />
     <Compile Include="Hdl\ArcHOT.cs" />
     <Compile Include="Hdl\ImageHOT.cs" />
+    <Compile Include="Libido\ArcARC.cs" />
     <Compile Include="Logg\ArcMBM.cs" />
+    <Compile Include="MayBeSoft\ImageHHP.cs" />
     <Compile Include="Mermaid\ImageMG1.cs" />
+    <Compile Include="Mink\ImageDAT.cs" />
     <Compile Include="Muse\ArcDAT.cs" />
+    <Compile Include="Ocarina\ImageRED.cs" />
     <Compile Include="Pan\ArcPAN.cs" />
     <Compile Include="Pan\AudioNSF.cs" />
     <Compile Include="Pan\ImageTBL.cs" />
@@ -94,6 +100,8 @@
     <Compile Include="Pisckiss\Audio0.cs" />
     <Compile Include="Pisckiss\Image1.cs" />
     <Compile Include="Rune\ArcYK.cs" />
+    <Compile Include="Sogna\ArcSGS.cs" />
+    <Compile Include="Speed\ImageDAT.cs" />
     <Compile Include="Tetratech\ArcBND.cs" />
     <Compile Include="Tigerman\ArcCHR.cs" />
     <Compile Include="Tigerman\ArcPAC.cs" />
@@ -176,7 +184,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Ark\" />
     <Folder Include="Bom\" />
+    <Folder Include="StudioJikkenshitsu\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
