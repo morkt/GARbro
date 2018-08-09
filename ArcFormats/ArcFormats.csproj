@@ -186,6 +186,7 @@
     <Compile Include="Maika\AudioWV5.cs" />
     <Compile Include="MangaGamer\ArcSHA.cs" />
     <Compile Include="Mnp\ArcMMA.cs" />
+    <Compile Include="MultiFileArchive.cs" />
     <Compile Include="Noesis\ArcIGA.cs" />
     <Compile Include="NonColor\ArcMinato.cs" />
     <Compile Include="Misc\ArcBIN.cs" />
