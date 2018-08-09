@@ -30,6 +30,7 @@ using System.IO;
 using GameRes.Compression;
 
 // [021025][Aaru] Kokoro... II
+// [030530][Aaru] Naked Edge
 
 namespace GameRes.Formats.Aaru
 {
@@ -72,6 +73,8 @@ namespace GameRes.Formats.Aaru
                 entry.Size   = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
+                if (name.HasExtension (".BM2"))
+                    entry.Type = "image";
                 dir.Add (entry);
                 pos += name_length;
             }
@@ -85,7 +88,12 @@ namespace GameRes.Formats.Aaru
             var pent = entry as PackedEntry;
             if (null == pent || !pent.IsPacked)
             {
-                if (arc.File.View.AsciiEqual (entry.Offset, "PD"))
+                if (arc.File.View.AsciiEqual (entry.Offset, "PD2A"))
+                {
+                    pent.IsPacked = true;
+                    pent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset+12);
+                }
+                else if (arc.File.View.AsciiEqual (entry.Offset, "PD"))
                 {
                     pent.IsPacked = true;
                     pent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset+6);
@@ -97,7 +105,12 @@ namespace GameRes.Formats.Aaru
                 if (!pent.IsPacked)
                     return base.OpenEntry (arc, entry);
             }
-            if (arc.File.View.AsciiEqual (entry.Offset, "PD"))
+            if (arc.File.View.AsciiEqual (entry.Offset, "PD2A"))
+            {
+                var input = arc.File.CreateStream (entry.Offset+16, entry.Size-16);
+                return new LzssStream (input);
+            }
+            else if (arc.File.View.AsciiEqual (entry.Offset, "PD"))
             {
                 var input = arc.File.CreateStream (entry.Offset+10, entry.Size-10);
                 return new LzssStream (input);
