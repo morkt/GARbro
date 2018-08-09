@@ -32,10 +32,15 @@ namespace GameRes.Formats.Eve
     [Export(typeof(AudioFormat))]
     public sealed class Wv3Audio : AudioFormat
     {
-        public override string         Tag { get { return "WAV/WV3"; } }
+        public override string         Tag { get { return "WV3"; } }
         public override string Description { get { return "Eve compressed audio format"; } }
         public override uint     Signature { get { return 0x2E335657; } } // 'WV3.0'
         public override bool      CanWrite { get { return false; } }
+
+        public Wv3Audio ()
+        {
+            Extensions = new string[] { "wv3", "wav" };
+        }
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
