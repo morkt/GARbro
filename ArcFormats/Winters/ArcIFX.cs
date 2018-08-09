@@ -57,7 +57,6 @@ namespace GameRes.Formats.Winters
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
-                index_offset += 0x10;
             }
             if (0 == dir.Count)
                 return null;
