@@ -103,6 +103,7 @@ namespace GameRes.Formats.PkWare
         public ZipOpener ()
         {
             Settings = new[] { ZipEncoding };
+            Extensions = new string[] { "zip", "vndat" };
         }
 
         EncodingSetting ZipEncoding = new EncodingSetting ("ZIPEncodingCP");
