@@ -2,7 +2,7 @@
 //! \date       Wed Jun 08 00:27:36 2016
 //! \brief      LiveMaker resource archive.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -51,13 +51,14 @@ namespace GameRes.Formats.LiveMaker
         {
             uint base_offset = 0;
             ArcView index_file = file;
-            ArcView extra_file = null;
             try
             {
                 // possible filesystem structure:
                 //   game.dat  -- main archive body
-                //   game.001  -- [optional] extra part
                 //   game.ext  -- [optional] separate index (could be included into the main body)
+                //   game.001  -- [optional] extra parts
+                //   game.002
+                //   ...
 
                 uint signature = index_file.View.ReadUInt32 (0);
                 if (file.Name.HasExtension (".exe")
@@ -88,36 +89,29 @@ namespace GameRes.Formats.LiveMaker
                 if (null == dir)
                     return null;
                 long max_offset = file.MaxOffset;
-                for (int i = 0; i < dir.Count; ++i)
+                var parts = new List<ArcView>();
+                try
                 {
-                    if (!dir[i].CheckPlacement (max_offset))
+                    for (int i = 1; i < 100; ++i)
                     {
-                        if (extra_file != null)
-                        {
-                            // remove entries that don't fit into game.dat+game.001
-                            int discard = dir.Count - i;
-                            Trace.WriteLine (string.Format ("{0} entries didn't fit and were discarded", discard), "[vff]");
-                            dir.RemoveRange (i, discard);
+                        var ext = string.Format (".{0:D3}", i);
+                        var part_filename = Path.ChangeExtension (file.Name, ext);
+                        if (!VFS.FileExists (part_filename))
                             break;
-                        }
-                        var extra_filename = Path.ChangeExtension (file.Name, ".001");
-                        if (!VFS.FileExists (extra_filename))
-                            return null;
-                        extra_file = VFS.OpenView (extra_filename);
-                        max_offset += extra_file.MaxOffset;
-                        if (!dir[i].CheckPlacement (max_offset))
-                            return null;
+                        var arc_file = VFS.OpenView (part_filename);
+                        max_offset += arc_file.MaxOffset;
+                        parts.Add (arc_file);
                     }
                 }
-                if (null == extra_file)
+                catch
+                {
+                    foreach (var part in parts)
+                        part.Dispose();
+                    throw;
+                }
+                if (0 == parts.Count)
                     return new ArcFile (file, this, dir);
-                return new VffArchive (file, this, dir, extra_file);
-            }
-            catch
-            {
-                if (extra_file != null)
-                    extra_file.Dispose();
-                throw;
+                return new MultiFileArchive (file, this, dir, parts);
             }
             finally
             {
@@ -128,7 +122,7 @@ namespace GameRes.Formats.LiveMaker
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var vff = arc as VffArchive;
+            var vff = arc as MultiFileArchive;
             Stream input = null;
             if (vff != null)
                 input = vff.OpenStream (entry);
@@ -216,45 +210,6 @@ namespace GameRes.Formats.LiveMaker
         public void Reset ()
         {
             m_current = 0;
-        }
-    }
-
-    internal class VffArchive : ArcFile
-    {
-        readonly ArcView ExtraFile;
-
-        public VffArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, ArcView extra_file)
-            : base (arc, impl, dir)
-        {
-            ExtraFile = extra_file;
-        }
-
-        internal Stream OpenStream (Entry entry)
-        {
-            if (entry.Offset < File.MaxOffset && entry.Offset+entry.Size > File.MaxOffset)
-            {
-                var first_part = File.View.ReadBytes (entry.Offset, entry.Size);
-                var second_part = ExtraFile.CreateStream (0, entry.Size - (uint)first_part.Length);
-                return new PrefixStream (first_part, second_part);
-            }
-            else if (entry.Offset >= File.MaxOffset)
-            {
-                return ExtraFile.CreateStream (entry.Offset, entry.Size);
-            }
-            else
-                return File.CreateStream (entry.Offset, entry.Size);
-        }
-
-        bool _vff_disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (!_vff_disposed)
-            {
-                if (disposing && ExtraFile != null)
-                    ExtraFile.Dispose();
-                _vff_disposed = true;
-            }
-            base.Dispose (disposing);
         }
     }
 }
