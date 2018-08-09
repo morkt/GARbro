@@ -39,7 +39,7 @@ namespace GameRes.Formats.Abogado
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        static readonly IDictionary<string, string> ExtensionMap = new Dictionary<string, string> (StringComparer.InvariantCultureIgnoreCase)
+        static readonly IDictionary<string, string> ExtensionMap = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase)
         {
             { "BACK",   "KG"  },
             { "BUST",   "KG"  },
@@ -47,6 +47,7 @@ namespace GameRes.Formats.Abogado
             { "SYSTEM", "KG"  },
             { "VISUAL", "KG"  },
             { "SETTEI", "KG"  },
+            { "THUMB",  "KG"  },
             { "SCENE",  "SCF" },
             { "SOUND",  "ADP" },
             { "PCM1",   "ADP" },
