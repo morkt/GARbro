@@ -40,7 +40,7 @@ namespace GameRes.Formats.Maika
 
         public Wv5Audio ()
         {
-            Extensions = new string[] { "wav" };
+            Extensions = new string[] { "wv5", "wav" };
         }
 
         public override SoundInput TryOpen (IBinaryStream file)
