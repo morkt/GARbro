@@ -47,6 +47,7 @@ namespace GameRes.Formats.PalmTree
         public ArcOpener ()
         {
             Settings = null;
+            Extensions = new string[] { "arc" };
         }
 
         public override ArcFile TryOpen (ArcView file)
