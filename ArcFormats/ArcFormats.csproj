@@ -158,6 +158,7 @@
     <Compile Include="Eushully\AudioAOG.cs" />
     <Compile Include="FC01\ArcMRG0.cs" />
     <Compile Include="FC01\ArcPAK.cs" />
+    <Compile Include="FC01\ImageTIL.cs" />
     <Compile Include="FC01\ImageWM2.cs" />
     <Compile Include="FC01\ImageWMK.cs" />
     <Compile Include="FrontWing\ArcVAV.cs" />
