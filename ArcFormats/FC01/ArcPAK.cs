@@ -101,10 +101,12 @@ namespace GameRes.Formats.FC01
             var aent = (AgsiEntry)entry;
             var aarc = arc as AgsiArchive;
             Stream input;
-            if (aent.IsEncrypted && aarc != null && aarc.Key != null)
+            if (!aent.IsEncrypted)
+                input = arc.File.CreateStream (entry.Offset, entry.Size);
+            else if (aarc != null && aarc.Key != null)
                 input = OpenEncryptedEntry (aarc, aent);
             else
-                input = arc.File.CreateStream (entry.Offset, entry.Size);
+                return base.OpenEntry (arc, entry);
             switch (aent.Method)
             {
             case 0: // no compression
