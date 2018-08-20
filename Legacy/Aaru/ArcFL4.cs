@@ -73,8 +73,6 @@ namespace GameRes.Formats.Aaru
                 entry.Size   = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                if (name.HasExtension (".BM2"))
-                    entry.Type = "image";
                 dir.Add (entry);
                 pos += name_length;
             }
