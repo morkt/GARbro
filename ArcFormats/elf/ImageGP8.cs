@@ -43,7 +43,9 @@ namespace GameRes.Formats.Elf
         {
             if (file.Length <= 0x408)
                 return null;
-            if (0 != file.ReadInt32())
+            int x = file.ReadInt16();
+            int y = file.ReadInt16();
+            if (x < 0 || y < 0 || x > 0x300 || y > 0x300)
                 return null;
             int w = file.ReadInt16();
             int h = file.ReadInt16();
