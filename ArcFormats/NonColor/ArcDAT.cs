@@ -286,6 +286,7 @@ namespace GameRes.Formats.NonColor
 
         public long IndexPosition { get; set; }
         public long     MaxOffset { get { return m_max_offset; } }
+        public bool ExtendByteSign { get; protected set; }
 
         protected NcIndexReaderBase (ArcView file, int count)
         {
@@ -330,21 +331,31 @@ namespace GameRes.Formats.NonColor
                             Trace.WriteLine (string.Format ("[{0}] {1}", i, known_rec.Name), "[noncolor]");
                             last_reported = i;
                         }
-                        entry.Offset        ^= raw_name[raw_name.Length >> 1];
-                        entry.Size          ^= raw_name[raw_name.Length >> 2];
-                        entry.UnpackedSize  ^= raw_name[raw_name.Length >> 3];
+                        entry.Offset        ^= Extend8Bit (raw_name[raw_name.Length >> 1]);
+                        entry.Size          ^= Extend8Bit (raw_name[raw_name.Length >> 2]);
+                        entry.UnpackedSize  ^= Extend8Bit (raw_name[raw_name.Length >> 3]);
                     }
                 }
                 last_name = known_rec.Name;
                 if (!entry.CheckPlacement (MaxOffset))
-                    return null;
+                {
+                    Trace.WriteLine (string.Format ("{0}: invalid placement [key:{1:X8}] [{2:X8}:{3:X8}]", entry.Name, entry.Hash, entry.Offset, entry.Size));
+                    continue;
+                }
                 if (string.IsNullOrEmpty (entry.Name))
                     entry.Name = string.Format ("{0:D5}#{1:X8}", i, entry.Hash);
                 m_dir.Add (entry);
             }
             if (skipped != 0)
                 Trace.WriteLine (string.Format ("Missing {0} names", skipped), "[noncolor]");
+            if (0 == m_dir.Count)
+                return null;
             return m_dir;
+        }
+
+        uint Extend8Bit (byte v)
+        {
+            return ExtendByteSign ? (uint)(int)(sbyte)v : v;
         }
 
         protected abstract ArcDatEntry ReadEntry ();

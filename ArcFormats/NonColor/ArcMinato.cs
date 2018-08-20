@@ -82,7 +82,10 @@ namespace GameRes.Formats.Minato
 
     internal class MinatoIndexReader : NcIndexReaderBase
     {
-        public MinatoIndexReader (ArcView file, int count) : base (file, count) { }
+        public MinatoIndexReader (ArcView file, int count) : base (file, count)
+        {
+            ExtendByteSign = true;
+        }
 
         protected override ArcDatEntry ReadEntry ()
         {
