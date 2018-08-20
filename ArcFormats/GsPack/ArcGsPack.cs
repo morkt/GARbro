@@ -33,6 +33,14 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Gs
 {
+    internal class GsPackArchive : ArcFile
+    {
+        public GsPackArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
+            : base (arc, impl, dir)
+        {
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
@@ -60,37 +68,94 @@ namespace GameRes.Formats.Gs
             int count = file.View.ReadInt32 (0x3c);
             if (!IsSaneCount (count) || index_size > 0xffffff)
                 return null;
-            uint crypt_key = file.View.ReadUInt32 (0x38);
+            uint is_encrypted = file.View.ReadUInt32 (0x38);
             long data_offset = file.View.ReadUInt32 (0x40);
             int index_offset = file.View.ReadInt32 (0x44);
             int entry_size = version_major < 5 ? 0x48 : 0x68;
             int unpacked_size = count * entry_size;
-            byte[] packed_index = file.View.ReadBytes (index_offset, index_size);
-            if (index_size != packed_index.Length)
-                return null;
-            if (0 != crypt_key)
-                for (int i = 0; i != packed_index.Length; ++i)
-                    packed_index[i] ^= (byte)(i & crypt_key);
-            using (var stream = new MemoryStream (packed_index))
-            using (var reader = new LzssReader (stream, packed_index.Length, unpacked_size))
+            byte[] index;
+            if (index_size != 0)
             {
-                reader.Unpack();
-                var index = reader.Data;
-                index_offset = 0;
-                var dir = new List<Entry> (count);
-                for (int i = 0; i < count; ++i)
+                byte[] packed_index = file.View.ReadBytes (index_offset, index_size);
+                if (index_size != packed_index.Length)
+                    return null;
+                if (0 != (is_encrypted & 1))
+                    for (int i = 0; i != packed_index.Length; ++i)
+                        packed_index[i] ^= (byte)i;
+                using (var stream = new MemoryStream (packed_index))
+                using (var reader = new LzssReader (stream, packed_index.Length, unpacked_size))
                 {
-                    string name = Binary.GetCString (index, index_offset, 0x40);
-                    if (0 != name.Length)
-                    {
-                        long offset = data_offset + LittleEndian.ToUInt32 (index, index_offset+0x40);
-                        var entry = AutoEntry.Create (file, offset, name);
-                        entry.Size = LittleEndian.ToUInt32 (index, index_offset+0x44);
-                        dir.Add (entry);
-                    }
-                    index_offset += entry_size;
+                    reader.Unpack();
+                    index = reader.Data;
                 }
-                return new ArcFile (file, this, dir);
+            }
+            else
+            {
+                index = file.View.ReadBytes (index_offset, (uint)unpacked_size);
+            }
+            index_offset = 0;
+            string default_type = "";
+            var arc_name = Path.GetFileNameWithoutExtension (file.Name);
+            if (arc_name.StartsWith ("image", StringComparison.OrdinalIgnoreCase))
+                default_type = "image";
+            else if (arc_name.StartsWith ("voice", StringComparison.OrdinalIgnoreCase))
+                default_type = "audio";
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                string name = Binary.GetCString (index, index_offset, 0x40);
+                if (0 != name.Length)
+                {
+                    var entry = new Entry {
+                        Name = name,
+                        Type = default_type,
+                        Offset = data_offset + LittleEndian.ToUInt32 (index, index_offset+0x40),
+                        Size = LittleEndian.ToUInt32 (index, index_offset+0x44),
+                    };
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    dir.Add (entry);
+                }
+                index_offset += entry_size;
+            }
+            if (0 != (is_encrypted & 2))
+                return new GsPackArchive (file, this, dir);
+
+            if (string.IsNullOrEmpty (default_type))
+            {
+                foreach (var entry in dir)
+                {
+                    uint signature = file.View.ReadUInt32 (entry.Offset);
+                    var res = AutoEntry.DetectFileType (signature);
+                    entry.ChangeType (res);
+                }
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var garc = arc as GsPackArchive;
+            if (null == garc)
+                return base.OpenEntry (arc, entry);
+            var data = garc.File.View.ReadBytes (entry.Offset, entry.Size);
+            DecryptData (data, entry.Name);
+            return new BinMemoryStream (data, entry.Name);
+        }
+
+        void DecryptData (byte[] data, string key)
+        {
+            int numkey = 0;
+            for (int i = 0; i < key.Length; ++i)
+                numkey = numkey * 37 + (key[i] | 0x20);
+            unsafe
+            {
+                fixed (byte* data8 = data)
+                {
+                    int* data32 = (int*)data8;
+                    for (int count = data.Length / 4; count > 0; --count)
+                        *data32++ ^= numkey;
+                }
             }
         }
     }
