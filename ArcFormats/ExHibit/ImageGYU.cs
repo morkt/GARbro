@@ -34,6 +34,7 @@ using GameRes.Utility;
 using GameRes.Compression;
 using GameRes.Cryptography;
 using GameRes.Formats.Strings;
+using System.Collections;
 
 namespace GameRes.Formats.ExHibit
 {
@@ -50,7 +51,8 @@ namespace GameRes.Formats.ExHibit
     [Serializable]
     public class GyuMap : ResourceScheme
     {
-        public Dictionary<string, Dictionary<int, uint>> KnownKeys;
+        public Dictionary<string, Dictionary<int, uint>>    NumericKeys;
+        public Dictionary<string, Dictionary<string, uint>> StringKeys;
     }
 
     [Export(typeof(ImageFormat))]
@@ -60,12 +62,15 @@ namespace GameRes.Formats.ExHibit
         public override string Description { get { return "ExHIBIT engine image format"; } }
         public override uint     Signature { get { return 0x1A555947; } } // 'GYU'
 
-        public static Dictionary<string, Dictionary<int, uint>> KnownKeys = new Dictionary<string, Dictionary<int, uint>>();
+        GyuMap DefaultScheme = new GyuMap {
+            NumericKeys = new Dictionary<string, Dictionary<int, uint>>(),
+            StringKeys  = new Dictionary<string, Dictionary<string, uint>>(),
+        };
 
         public override ResourceScheme Scheme
         {
-            get { return new GyuMap { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((GyuMap)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (GyuMap)value; }
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -85,27 +90,31 @@ namespace GameRes.Formats.ExHibit
             };
         }
 
-        IDictionary<int, uint> CurrentMap = null;
+        IDictionary CurrentMap = null;
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (GyuMetaData)info;
             if (0 == meta.Key)
             {
-                bool got_key = false;
-                var name = Path.GetFileNameWithoutExtension (meta.FileName);
-                int num;
-                if (int.TryParse (name, out num))
+                object token = null;
+                if (null == CurrentMap)
+                    CurrentMap = QueryScheme();
+                if (CurrentMap != null)
                 {
-                    if (null == CurrentMap)
-                        CurrentMap = QueryScheme();
-                    got_key = CurrentMap != null && CurrentMap.TryGetValue (num, out meta.Key);
+                    var name = Path.GetFileNameWithoutExtension (meta.FileName);
+                    int num;
+                    if (int.TryParse (name, out num) && CurrentMap.Contains (num))
+                        token = num;
+                    else if (CurrentMap.Contains (name))
+                        token = name;
                 }
-                if (!got_key)
+                if (null == token)
                 {
                     CurrentMap = null;
                     throw new UnknownEncryptionScheme ("Unknown image encryption key");
                 }
+                meta.Key = (uint)CurrentMap[token];
             }
             var reader = new GyuReader (stream.AsStream, meta);
             reader.Unpack();
@@ -117,12 +126,8 @@ namespace GameRes.Formats.ExHibit
             throw new System.NotImplementedException ("GyuFormat.Write not implemented");
         }
 
-        private IDictionary<int, uint> QueryScheme ()
+        private IDictionary QueryScheme ()
         {
-            if (0 == KnownKeys.Count)
-                return null;
-            if (1 == KnownKeys.Count)
-                return KnownKeys.First().Value;
             var options = Query<GyuOptions> (arcStrings.GYUImageEncrypted);
             return options.Scheme;
         }
@@ -134,14 +139,18 @@ namespace GameRes.Formats.ExHibit
 
         public override object GetAccessWidget ()
         {
-            return new GUI.WidgetGYU();
+            var titles = DefaultScheme.NumericKeys.Keys.Concat (DefaultScheme.StringKeys.Keys).OrderBy (x => x);
+            return new GUI.WidgetGYU (titles);
         }
 
-        Dictionary<int, uint> GetScheme (string title)
+        IDictionary GetScheme (string title)
         {
-            Dictionary<int, uint> scheme = null;
-            KnownKeys.TryGetValue (title, out scheme);
-            return scheme;
+            Dictionary<int, uint> num_scheme = null;
+            if (DefaultScheme.NumericKeys.TryGetValue (title, out num_scheme))
+                return num_scheme;
+            Dictionary<string, uint> str_scheme = null;
+            DefaultScheme.StringKeys.TryGetValue (title, out str_scheme);
+            return str_scheme;
         }
     }
 
@@ -330,6 +339,6 @@ namespace GameRes.Formats.ExHibit
 
     public class GyuOptions : ResourceOptions
     {
-        public IDictionary<int, uint> Scheme;
+        public IDictionary Scheme;
     }
 }

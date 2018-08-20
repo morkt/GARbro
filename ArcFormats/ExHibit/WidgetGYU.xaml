@@ -3,8 +3,7 @@
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
             xmlns:p="clr-namespace:GameRes.Formats.Properties"
             xmlns:ex="clr-namespace:GameRes.Formats.ExHibit">
-    <ComboBox Name="Title" ItemsSource="{Binding Source={x:Static ex:GyuFormat.KnownKeys}, Mode=OneWay}"
+    <ComboBox Name="Title"
               SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=GYUTitle, Mode=TwoWay}"
-              SelectedValuePath="Key" DisplayMemberPath="Key"
               Width="200" Grid.Row="1" HorizontalAlignment="Left"/>
 </StackPanel>

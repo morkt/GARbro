@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.Collections.Generic;
+using System.Windows.Controls;
 
 namespace GameRes.Formats.GUI
 {
@@ -7,9 +8,10 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetGYU : StackPanel
     {
-        public WidgetGYU()
+        public WidgetGYU (IEnumerable<string> titles)
         {
             InitializeComponent();
+            Title.ItemsSource = titles;
         }
     }
 }
