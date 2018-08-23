@@ -71,6 +71,10 @@
     <Compile Include="Akatombo\ArcX.cs" />
     <Compile Include="Akatombo\ImageFB.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
+    <Compile Include="KeroQ\ArcDAT.cs" />
+    <Compile Include="KeroQ\ImageCBM.cs" />
+    <Compile Include="KeroQ\ImageKGD.cs" />
+    <Compile Include="KeroQ\ImageKGD1.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
     <Compile Include="Brownie\ArcNAF.cs" />
