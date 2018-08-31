@@ -27,8 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Linq;
-using GameRes.Utility;
 using GameRes.Compression;
 
 namespace GameRes.Formats.Cherry
@@ -104,8 +102,7 @@ namespace GameRes.Formats.Cherry
             if (0 == text_size || text_offset+text_size > entry.Size)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
 
-            var data = new byte[entry.Size];
-            arc.File.View.Read (entry.Offset, data, 0, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (uint i = 0; i < text_size; ++i)
             {
                 data[text_offset+i] ^= (byte)i;
@@ -146,9 +143,8 @@ namespace GameRes.Formats.Cherry
             int count = file.View.ReadInt32 (0x14);
             long base_offset = file.View.ReadUInt32 (0x18);
             bool is_encrypted = false;
-            int min_offset = 0x1C + count * 0x18;
             while (!IsSaneCount (count) || base_offset >= file.MaxOffset
-                   || (2 == version && !is_compressed && base_offset != min_offset))
+                   || (2 == version && !is_compressed && base_offset != (0x1C + count * 0x18)))
             {
                 if (is_encrypted)
                     return null;
