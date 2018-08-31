@@ -465,7 +465,7 @@ namespace GameRes.Formats.Purple
         }
     }
 
-    internal sealed class JbpReader
+    public sealed class JbpReader
     {
         byte[]  m_input;
         byte[]  m_output;
