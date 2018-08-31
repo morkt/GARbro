@@ -382,30 +382,24 @@
 请选择加密方式或输入密码。</value>
   </data>
   <data name="RCTApplyMask" xml:space="preserve">
-    <value>Load transparency data from RC8 bitmap</value>
-    <comment>translation pending</comment>
+    <value>从RC8位图中加载透明度数据</value>
   </data>
   <data name="RCTOverlayFrames" xml:space="preserve">
-    <value>Automatically combine incremental frames</value>
-    <comment>translation pending</comment>
+    <value>自动组合增量帧</value>
   </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>压缩文件的内容已被加密。</value>
   </data>
   <data name="OGGFixCrc" xml:space="preserve">
-    <value>Fix Ogg files checksums</value>
-    <comment>Translation pending</comment>
+    <value>修复Ogg文件校验和</value>
   </data>
   <data name="ZIPEncodingCP" xml:space="preserve">
-    <value>Default file names encoding</value>
-    <comment>translation pending</comment>
+    <value>默认文件名编码</value>
   </data>
   <data name="PFSEncodingCP" xml:space="preserve">
-    <value>Default file names encoding</value>
-    <comment>translation pending</comment>
+    <value>默认文件名编码</value>
   </data>
   <data name="ODNAudioSampleRate" xml:space="preserve">
-    <value>Default audio sampling rate</value>
-    <comment>translation pending</comment>
+    <value>默认音频采样率</value>
   </data>
 </root>
