@@ -81,7 +81,7 @@ namespace GameRes.Formats.Ankh
             return new ArcFile (file, this, dir);
         }
 
-        void DetectFileTypes (ArcView file, List<Entry> dir)
+        internal void DetectFileTypes (ArcView file, List<Entry> dir)
         {
             var header = new byte[16];
             foreach (PackedEntry entry in dir)
@@ -128,29 +128,22 @@ namespace GameRes.Formats.Ankh
                     entry.UnpackedSize = header.ToUInt32 (0);
                     entry.IsPacked = true;
                 }
-                else if (header.AsciiEqual ("BM"))
+                else
                 {
-                    entry.ChangeType (ImageFormat.Bmp);
-                }
-                else if (header.AsciiEqual ("RIFF"))
-                {
-                    entry.ChangeType (AudioFormat.Wav);
-                }
-                else if (header.AsciiEqual ("\x89PNG"))
-                {
-                    entry.ChangeType (ImageFormat.Png);
-                }
-                else if (header.ToUInt32 (0) == 0xE0FFD8FF)
-                {
-                    entry.ChangeType (ImageFormat.Jpeg);
-                }
-                else if (header.ToUInt16 (0) == 0xFBFF)
-                {
-                    entry.ChangeType (Mp3Format.Value);
-                }
-                else if (entry.Size > 0x16 && IsAudioEntry (file, entry))
-                {
-                    entry.Type = "audio";
+                    uint signature = header.ToUInt32 (0);
+                    var res = AutoEntry.DetectFileType (signature);
+                    if (res != null)
+                    {
+                        entry.ChangeType (res);
+                    }
+                    else if ((signature & 0xFFFF) == 0xFBFF)
+                    {
+                        entry.ChangeType (Mp3Format.Value);
+                    }
+                    else if (entry.Size > 0x16 && IsAudioEntry (file, entry))
+                    {
+                        entry.Type = "audio";
+                    }
                 }
             }
         }
