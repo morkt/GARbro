@@ -79,9 +79,12 @@ namespace GameRes.Formats.Unity
             m_CompleteImageSize = reader.ReadInt32();
             m_TextureFormat = (TextureFormat)reader.ReadInt32();
             m_MipCount = reader.ReadInt32();
-            m_IsReadable = reader.ReadBool();
-            m_ReadAllowed = reader.ReadBool();
-            reader.Align();
+            if (reader.Format > 9)
+            {
+                m_IsReadable = reader.ReadBool();
+                m_ReadAllowed = reader.ReadBool();
+                reader.Align();
+            }
             m_ImageCount = reader.ReadInt32();
             m_TextureDimension = reader.ReadInt32();
             m_FilterMode = reader.ReadInt32();
