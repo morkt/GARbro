@@ -67,15 +67,7 @@ namespace GameRes
         public virtual IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var input = arc.OpenBinaryEntry (entry);
-            try
-            {
-                return new ImageFormatDecoder (input);
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
-            }
+            return ImageFormatDecoder.Create (input);
         }
 
         /// <summary>
