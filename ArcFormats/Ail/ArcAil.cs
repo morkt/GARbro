@@ -95,7 +95,7 @@ namespace GameRes.Formats.Ail
                 }
                 index_offset += 4;
             }
-            if (0 == dir.Count)
+            if (0 == dir.Count || (file.MaxOffset - offset) > 0x80000)
                 return null;
             DetectFileTypes (file, dir);
             return dir;
