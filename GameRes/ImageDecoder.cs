@@ -87,6 +87,23 @@ namespace GameRes
             Info = info;
         }
 
+        /// <summary>
+        /// Create instance of ImageFormatDecoder from input binary stream.
+        /// In case of error input stream is disposed.
+        /// </summary>
+        public static ImageFormatDecoder Create (IBinaryStream input)
+        {
+            try
+            {
+                return new ImageFormatDecoder (input);
+            }
+            catch
+            {
+                input.Dispose();
+                throw;
+            }
+        }
+
         bool m_disposed = false;
         public void Dispose ()
         {
