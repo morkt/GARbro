@@ -31,8 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using GameRes.Utility;
 
@@ -246,7 +244,20 @@ namespace GameRes.Formats.Unity
 
         void LoadRaw (AssetReader reader)
         {
-            throw new NotImplementedException();
+            Type = reader.ReadCString();
+            Name = reader.ReadCString();
+            Size = reader.ReadInt32();
+            Index = reader.ReadUInt32();
+            IsArray = reader.ReadInt32() != 0;
+            Version = reader.ReadInt32();
+            Flags = reader.ReadInt32();
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; ++i)
+            {
+                var child = new TypeTree (m_format);
+                child.Load (reader);
+                Children.Add (child);
+            }
         }
 
         byte[] m_data;
@@ -372,62 +383,6 @@ namespace GameRes.Formats.Unity
                     m_type_trees[class_id] = tree;
                 }
             }
-        }
-    }
-
-    internal class AudioClip
-    {
-        public string   m_Name;
-        public int      m_LoadType;
-        public int      m_Channels;
-        public int      m_Frequency;
-        public int      m_BitsPerSample;
-        public float    m_Length;
-        public bool     m_IsTrackerFormat;
-        public int      m_SubsoundIndex;
-        public bool     m_PreloadAudioData;
-        public bool     m_LoadInBackground;
-        public bool     m_Legacy3D;
-        public string   m_Source;
-        public long     m_Offset;
-        public long     m_Size;
-        public int      m_CompressionFormat;
-
-        public void Load (AssetReader reader)
-        {
-            m_Name = reader.ReadString();
-            reader.Align();
-            m_LoadType = reader.ReadInt32();
-            m_Channels = reader.ReadInt32();
-            m_Frequency = reader.ReadInt32();
-            m_BitsPerSample = reader.ReadInt32();
-            m_Length = reader.ReadFloat();
-            m_IsTrackerFormat = reader.ReadBool();
-            reader.Align();
-            m_SubsoundIndex = reader.ReadInt32();
-            m_PreloadAudioData = reader.ReadBool();
-            m_LoadInBackground = reader.ReadBool();
-            m_Legacy3D = reader.ReadBool();
-            reader.Align();
-            m_Source = reader.ReadString();
-            reader.Align();
-            m_Offset = reader.ReadInt64();
-            m_Size = reader.ReadInt64();
-            m_CompressionFormat = reader.ReadInt32();
-        }
-    }
-
-    internal class StreamingInfo
-    {
-        public uint     Offset;
-        public uint     Size;
-        public string   Path;
-
-        public void Load (AssetReader reader)
-        {
-            Offset = reader.ReadUInt32();
-            Size = reader.ReadUInt32();
-            Path = reader.ReadString();
         }
     }
 }
