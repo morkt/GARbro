@@ -135,6 +135,20 @@ namespace GameRes.Formats.Marble
                 Decode3 (input, output, 0);
         }
 
+        private void Decode2Alt (IBinaryStream input, Stream output)
+        {
+            if (1 != Format.Channels)
+            {
+                int channel_size = input.ReadInt32();
+                Decode3Alt (input, output, 2);
+                input.Position = 0x38 + channel_size;
+                output.Position = 2;
+                Decode3Alt (input, output, 2);
+            }
+            else
+                Decode3Alt (input, output, 0);
+        }
+
         private void Decode3 (IBinaryStream input, Stream output, int step)
         {
             input.ReadInt32(); // unpacked_size
@@ -179,7 +193,45 @@ namespace GameRes.Formats.Marble
             }
         }
 
+        private void Decode3Alt (IBinaryStream input, Stream output, int step)
+        {
+            int output_size = input.ReadInt32();
+            int count = input.ReadInt32();
+            using (var buffer = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                short sample = input.ReadInt16();
+                buffer.Write (sample);
+                int output_count = 1;
+                for (int i = 0; i < count; ++i)
+                {
+                    short v = input.ReadInt16();
+                    int repeat = SizeTableAlt[v & 7];
+                    output_count += repeat;
+                    short end = (short)(v & 0xFFF8);
+                    short inc = (short)((end - sample) / repeat);
+                    for (int j = 0; j < repeat; ++j)
+                    {
+                        sample += inc;
+                        buffer.Write (sample);
+                        if (step != 0)
+                            buffer.BaseStream.Seek (step, SeekOrigin.Current);
+                    }
+                    sample = end;
+                }
+                if (step != 0)
+                    output_size /= step;
+                while (output_count++ < output_size)
+                {
+                    sample = input.ReadInt16();
+                    buffer.Write (sample);
+                    if (step != 0)
+                        buffer.BaseStream.Seek (step, SeekOrigin.Current);
+                }
+            }
+        }
+
         static readonly int[] SizeTable = new int[] { 3, 4, 5, 6, 8, 0x10, 0x20, 0x100 };
+        static readonly int[] SizeTableAlt = new int[] { 2, 3, 4, 5, 6, 8, 0x10, 0x20 };
 
         static readonly ushort[] SampleTable = new ushort[] {
             0x0000, 0x0002, 0x0004, 0x0006, 0x0008, 0x000A, 0x000C, 0x000F,
