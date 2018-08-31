@@ -91,20 +91,22 @@ namespace GameRes.Formats.Unity
                 ReadInt32 = () => Binary.BigEndian (m_input.ReadInt32());
                 ReadInt64 = () => Binary.BigEndian (m_input.ReadInt64());
             }
-            if (m_format >= 14)
+            if (m_format >= 14 || m_format == 9)
             {
                 Align = () => {
                     long pos = m_input.Position;
                     if (0 != (pos & 3))
                         m_input.Position = (pos + 3) & ~3L;
                 };
-                ReadId = ReadInt64;
             }
             else
             {
                 Align = () => {};
-                ReadId = () => ReadInt32();
             }
+            if (m_format >= 14)
+                ReadId = ReadInt64;
+            else
+                ReadId = () => ReadInt32();
         }
 
         /// <summary>
