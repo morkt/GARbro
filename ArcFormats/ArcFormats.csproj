@@ -109,8 +109,11 @@
     <Compile Include="AnimeGameSystem\WidgetAGS.xaml.cs">
       <DependentUpon>WidgetAGS.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Ankh\ArcDAT.cs" />
     <Compile Include="Ankh\ArcGRP.cs" />
     <Compile Include="Ankh\AudioPCM.cs" />
+    <Compile Include="Ankh\ImageGPD.cs" />
+    <Compile Include="Ankh\ImageMSK.cs" />
     <Compile Include="Antique\ArcDAT.cs" />
     <Compile Include="Antique\ImageGPD.cs" />
     <Compile Include="Aoi\ImageAGF.cs" />
@@ -155,6 +158,7 @@
     <Compile Include="EmbeddedResource.cs" />
     <Compile Include="Emote\ImageDREF.cs" />
     <Compile Include="Eternity\ImageSGF.cs" />
+    <Compile Include="Ethornell\ImageCBG.cs" />
     <Compile Include="Eushully\AudioAOG.cs" />
     <Compile Include="FC01\ArcMRG0.cs" />
     <Compile Include="FC01\ArcPAK.cs" />
@@ -174,6 +178,7 @@
     <Compile Include="Ikura\ImageVRS.cs" />
     <Compile Include="ImageMNG.cs" />
     <Compile Include="Interheart\ArcFPK2.cs" />
+    <Compile Include="Interheart\ImageCandy.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
     <Compile Include="KiriKiri\MoreCrypt.cs" />
     <Compile Include="KiriKiri\YuzCrypt.cs" />
@@ -683,6 +688,7 @@
     <Compile Include="Unity\AssetReader.cs" />
     <Compile Include="Unity\AudioFSB5.cs" />
     <Compile Include="Unity\BundleStream.cs" />
+    <Compile Include="Unity\Gx4Lib\ArcDAT.cs" />
     <Compile Include="Unity\OggStream.cs" />
     <Compile Include="Unity\Texture2D.cs" />
     <Compile Include="Unity\Utage\ImageUTAGE.cs" />
@@ -919,6 +925,10 @@
     <ProjectReference Include="..\GameRes\GameRes.csproj">
       <Project>{453c087f-e416-4ae9-8c03-d8760da0574b}</Project>
       <Name>GameRes</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Net20\Net20.csproj">
+      <Project>{73b6c693-9846-4d33-8300-a80239fcfff9}</Project>
+      <Name>Net20</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
