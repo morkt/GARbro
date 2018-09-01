@@ -99,11 +99,78 @@ namespace GameRes.Formats.Cadath
         {
             switch (m_mode)
             {
+            case 0: UnpackV0(); break;
+            case 1: UnpackV1(); break;
+            case 2: UnpackV2(); break;
+            case 3: UnpackV3(); break;
+            case 4: UnpackV4(); break;
             case 5: UnpackV5(); break;
-            case 0:
-            case 1:
-            case 2: throw new NotImplementedException (string.Format ("KGF image type {0} not implemented", m_mode));
             default: throw new InvalidFormatException();
+            }
+        }
+
+        void UnpackV0 ()
+        {
+            m_input.Position = 0x1C;
+            m_input.Read (m_output, 0, m_output.Length);
+        }
+
+        void UnpackV1 ()
+        {
+            m_input.Position = 0x1C;
+            var data = m_input.ReadBytes (m_output.Length);
+            CopyChannels (data);
+        }
+
+        void UnpackV2 ()
+        {
+            m_input.Position = 0x1C;
+            int bits_size = m_input.ReadInt32();
+            int ctl_size = m_input.ReadInt32();
+            int data_size = m_input.ReadInt32();
+            var bits = m_input.ReadBytes (ctl_size);
+            int dst = 0;
+            var data = new byte[m_output.Length];
+            for (int i = 0; i < bits_size; ++i)
+            {
+                if (0 != (bits[i >> 3] & 1))
+                {
+                    byte v = m_input.ReadUInt8();
+                    int count = m_input.ReadUInt8() + 3;
+                    for (int j = 0; j < count; ++j)
+                        data[dst++] = v;
+                }
+                else
+                {
+                    data[dst++] = m_input.ReadUInt8();
+                }
+                bits[i >> 3] >>= 1;
+            }
+            CopyChannels (data);
+        }
+
+        void UnpackV3 ()
+        {
+            m_input.Position = 0x24;
+            int packed_size = m_input.ReadInt32();
+            m_output = Decompress (0x100);
+        }
+
+        void UnpackV4 ()
+        {
+            m_input.Position = 0x24;
+            int packed_size = m_input.ReadInt32();
+            var data = Decompress (0x100);
+            CopyChannels (data);
+        }
+
+        void CopyChannels (byte[] data)
+        {
+            int src = 0;
+            for (int i = 0; i < m_pixel_size; ++i)
+            for (int dst = i; dst < m_output.Length; dst += m_pixel_size)
+            {
+                m_output[dst] = data[src++];
             }
         }
 
@@ -111,7 +178,7 @@ namespace GameRes.Formats.Cadath
         {
             m_input.Position = 0x24;
             int packed_size = m_input.ReadInt32();
-            var data = Decompress (packed_size);
+            var data = Decompress (0x200);
             var line = new byte[m_width];
             int channel_size = m_width * m_height;
             int src = 0;
@@ -132,12 +199,11 @@ namespace GameRes.Formats.Cadath
             }
         }
 
-        byte[] Decompress (int input_size)
+        byte[] Decompress (int buffer_size)
         {
             var output = new byte[m_output.Length];
-            var buf0 = new InputBuffer (0x200);
-            var buf1 = new InputBuffer (0x200 >> 3);
-
+            var buf0 = new InputBuffer (buffer_size);
+            var buf1 = new InputBuffer (buffer_size >> 3);
             var bits_buf = new byte[buf1.Length + 1];
             int dst = 0;
             while (dst < output.Length)
