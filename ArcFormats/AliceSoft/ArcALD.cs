@@ -37,7 +37,7 @@ namespace GameRes.Formats.AliceSoft
         public override string         Tag { get { return "ALD"; } }
         public override string Description { get { return "AliceSoft System engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
@@ -83,5 +83,3 @@ namespace GameRes.Formats.AliceSoft
         }
     }
 }
-
-
