@@ -2,7 +2,7 @@
 //! \date       Thu Apr 09 21:37:18 2015
 //! \brief      AliceSoft RGB image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -35,6 +35,7 @@ namespace GameRes.Formats.AliceSoft
     {
         public uint RGBSize;
         public uint AlphaSize;
+        public int  HeaderSize;
     }
 
     [Export(typeof(ImageFormat))]
@@ -51,12 +52,25 @@ namespace GameRes.Formats.AliceSoft
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = stream.ReadHeader (0x44);
+            var header = stream.ReadHeader (0x30);
             int version = header.ToInt32 (4);
-            if (version <= 0 || version > 2)
+            if (version < 0 || version > 2)
                 return null;
-            if (0x44 != header.ToUInt32 (8))
-                return null;
+            if (0 == version)
+            {
+                return new QntMetaData
+                {
+                    Width = header.ToUInt32 (0x10),
+                    Height = header.ToUInt32 (0x14),
+                    OffsetX = header.ToInt32 (0x08),
+                    OffsetY = header.ToInt32 (0x0C),
+                    BPP = header.ToInt32 (0x18),
+                    RGBSize = header.ToUInt32 (0x20),
+                    AlphaSize = header.ToUInt32 (0x24),
+                    HeaderSize = 0x30,
+                };
+            }
+            int header_size = header.ToInt32 (8);
             uint width = header.ToUInt32 (0x14);
             uint height = header.ToUInt32 (0x18);
             if (0 == width || 0 == height)
@@ -70,12 +84,14 @@ namespace GameRes.Formats.AliceSoft
                 BPP = header.ToInt32 (0x1c),
                 RGBSize = header.ToUInt32 (0x24),
                 AlphaSize = header.ToUInt32 (0x28),
+                HeaderSize = header_size,
             };
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            stream.Position = 0x44;
+            var meta = (QntMetaData)info;
+            stream.Position = meta.HeaderSize;
             var reader = new Reader (stream.AsStream, (QntMetaData)info);
             reader.Unpack();
             int stride = (int)info.Width * (reader.BPP / 8);
