@@ -355,6 +355,7 @@ namespace GameRes.Formats.NonColor
 
         uint Extend8Bit (byte v)
         {
+            // 0xFF -> -1 -> 0xFFFFFFFF
             return ExtendByteSign ? (uint)(int)(sbyte)v : v;
         }
 

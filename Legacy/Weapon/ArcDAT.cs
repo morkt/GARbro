@@ -29,6 +29,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
+// [000331][WEAPON] Seido Techou
+
 namespace GameRes.Formats.Weapon
 {
     internal class CgEntry : Entry

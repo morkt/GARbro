@@ -28,6 +28,8 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+// [010719][Studio Jikkenshitsu] Shin Gekka Bijin ~Hitori Shizuka
+
 namespace GameRes.Formats.Speed
 {
     internal class SpMetaData : ImageMetaData
@@ -46,7 +48,7 @@ namespace GameRes.Formats.Speed
         public SpDatFormat ()
         {
             Extensions = new string[0];
-            Signatures = new uint[] { 0x010003, 0x010007, 0 };
+            Signatures = new uint[] { 0x010003, 0x010007, 0x01000B, 0 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
@@ -55,7 +57,7 @@ namespace GameRes.Formats.Speed
             if (header.ToInt32 (4) != 0)
                 return null;
             int flags = header.ToUInt16 (0);
-            if ((flags & ~7) != 0)
+            if ((flags & ~0xF) != 0)
                 return null;
             return new SpMetaData {
                 Width = header.ToUInt16 (0x16),

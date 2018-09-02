@@ -127,8 +127,8 @@ namespace GameRes.Formats.KeroQ
                     Buffer.BlockCopy (buffer, 1, pixels, dst, stride);
                     dst += stride;
                 }
-                PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgr32;
-                return ImageData.Create (info, PixelFormats.Bgr24, null, pixels);
+                PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+                return ImageData.Create (info, PixelFormats.Bgr24, null, pixels, stride);
             }
         }
 

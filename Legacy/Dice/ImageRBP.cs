@@ -27,6 +27,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
+// [000623][Marimo] Setsunai
+
 namespace GameRes.Formats.Dice
 {
     internal class RbpMetaData : ImageMetaData

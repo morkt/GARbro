@@ -27,6 +27,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
+// [000421][Sepia] Rinjin Mousou ~Danchizoku no Hirusagari~
 // [000623][Sweet] Depaga ~Service Angel~
 
 namespace GameRes.Formats.Hmp
