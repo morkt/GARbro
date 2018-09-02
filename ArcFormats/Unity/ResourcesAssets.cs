@@ -33,9 +33,9 @@ namespace GameRes.Formats.Unity
         string                          m_res_name;
         Dictionary<string, BundleEntry> m_bundles;
 
-        public ResourcesAssetsDeserializer (ArcView file)
+        public ResourcesAssetsDeserializer (string arc_name)
         {
-            m_res_name = file.Name;
+            m_res_name = arc_name;
         }
 
         public List<Entry> Parse (AssetReader input, long base_offset = 0)
@@ -50,8 +50,11 @@ namespace GameRes.Formats.Unity
             {
                 input.Position = obj.Offset + base_offset;
                 AssetEntry entry = null;
-                switch (obj.TypeId)
+                int id = obj.TypeId > 0 ? obj.TypeId : obj.ClassId;
+                switch (id)
                 {
+                case 48: // Shader
+                case 114: // MonoBehaviour
                 default:
                     break;
 
@@ -126,7 +129,6 @@ namespace GameRes.Formats.Unity
                             entry.Type = "image";
                         break;
                     }
-                case 114: // MonoBehaviour
                 case 128: // Font
                     {
                         entry = new AssetEntry {

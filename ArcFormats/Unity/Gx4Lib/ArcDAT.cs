@@ -135,7 +135,7 @@ namespace GameRes.Formats.Unity.Gx4Lib
                 long base_pos = asset_pos + header_size - 4;
 
                 input.Position = base_pos;
-                var index = new ResourcesAssetsDeserializer (arc.File);
+                var index = new ResourcesAssetsDeserializer (arc.File.Name);
                 var dir = index.Parse (input, base_pos);
                 if (null == dir || 0 == dir.Count)
                     return base.OpenEntry (arc, entry);;
