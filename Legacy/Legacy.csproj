@@ -70,11 +70,16 @@
     <Compile Include="Airyu\ArcCHR.cs" />
     <Compile Include="Akatombo\ArcX.cs" />
     <Compile Include="Akatombo\ImageFB.cs" />
+    <Compile Include="Hayashigumi\ArcPKZ.cs" />
+    <Compile Include="Hayashigumi\AudioKOG.cs" />
+    <Compile Include="Hayashigumi\ImageGBP.cs" />
+    <Compile Include="Hayashigumi\ImageJBP.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
     <Compile Include="KeroQ\ImageCBM.cs" />
     <Compile Include="KeroQ\ImageKGD.cs" />
     <Compile Include="KeroQ\ImageKGD1.cs" />
+    <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
     <Compile Include="Brownie\ArcNAF.cs" />
@@ -115,6 +120,7 @@
     <Compile Include="Pisckiss\Audio0.cs" />
     <Compile Include="Pisckiss\Image1.cs" />
     <Compile Include="Rune\ArcYK.cs" />
+    <Compile Include="Sarang\ImageABC.cs" />
     <Compile Include="Sogna\ArcSGS.cs" />
     <Compile Include="Speed\ImageDAT.cs" />
     <Compile Include="Tako\ArcMPK.cs" />
