@@ -52,7 +52,7 @@ namespace GameRes.Formats.Unity
             using (var stream = file.CreateStream())
             using (var input = new AssetReader (stream))
             {
-                var index = new ResourcesAssetsDeserializer (file);
+                var index = new ResourcesAssetsDeserializer (file.Name);
                 var dir = index.Parse (input);
                 if (null == dir || 0 == dir.Count)
                     return null;
