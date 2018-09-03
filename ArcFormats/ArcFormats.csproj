@@ -171,6 +171,7 @@
     <Compile Include="HCSystem\ArcPAK.cs" />
     <Compile Include="HCSystem\ImageOPF.cs" />
     <Compile Include="HuffmanCompression.cs" />
+    <Compile Include="Ikura\ArcGAN.cs" />
     <Compile Include="Ikura\ArcTAN.cs" />
     <Compile Include="Ikura\ImageGGA.cs" />
     <Compile Include="Ikura\ImageGGS.cs" />
