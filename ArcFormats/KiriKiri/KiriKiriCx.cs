@@ -188,7 +188,7 @@ namespace GameRes.Formats.KiriKiri
             uint key2 = ret.Item2 & 0xffff;
             byte key3 = (byte)(ret.Item1);
             if (key1 == key2)
-                key2 = (key2+1) & 0xffff;
+                key2 += 1;
             if (0 == key3)
                 key3 = 1;
 
