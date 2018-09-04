@@ -138,6 +138,7 @@
     <Compile Include="Unknown\ArcAQA.cs" />
     <Compile Include="Unknown\AudioMSF.cs" />
     <Compile Include="Unknown\ImageCTF.cs" />
+    <Compile Include="Wing\ImageGEM.cs" />
     <Compile Include="Witch\ArcDAT.cs" />
     <Compile Include="Witch\ArcPCD.cs" />
     <Compile Include="Witch\ArcVBD.cs" />
