@@ -24,7 +24,7 @@
         </Requires>
     </FormatsData>
     <FormatsData>
-        <FileVersion>123</FileVersion>
+        <FileVersion>124</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.42.1850"/>
