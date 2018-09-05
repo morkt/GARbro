@@ -47,8 +47,7 @@ namespace GameRes.Formats.Sviu
             uint signature = file.ReadUInt32();
             if (signature != OggAudio.Instance.Signature)
                 return null;
-            var input = new StreamRegion (file.AsStream, header_size);
-            var ogg = new BinaryStream (input, file.Name);
+            var ogg = new StreamRegion (file.AsStream, header_size);
             return new OggInput (ogg);
         }
     }
