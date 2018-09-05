@@ -140,4 +140,11 @@ namespace GameRes.Formats.Wing
             }
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "CGR")]
+    [ExportMetadata("Target", "PSD")]
+    public class CgrFormat : ResourceAlias
+    {
+    }
 }
