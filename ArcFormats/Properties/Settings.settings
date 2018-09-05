@@ -188,5 +188,8 @@
     <Setting Name="ODNAudioSampleRate" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">44100</Value>
     </Setting>
+    <Setting Name="NOAEncodingCP" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">932</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

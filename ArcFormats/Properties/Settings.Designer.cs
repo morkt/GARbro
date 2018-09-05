@@ -765,5 +765,17 @@ namespace GameRes.Formats.Properties {
                 this["ODNAudioSampleRate"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("932")]
+        public int NOAEncodingCP {
+            get {
+                return ((int)(this["NOAEncodingCP"]));
+            }
+            set {
+                this["NOAEncodingCP"] = value;
+            }
+        }
     }
 }

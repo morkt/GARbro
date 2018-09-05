@@ -78,7 +78,10 @@ namespace GameRes.Formats.Entis
         public NoaOpener ()
         {
             Extensions = new string[] { "noa", "dat", "rsa" };
+            Settings = new[] { NoaEncoding };
         }
+
+        EncodingSetting NoaEncoding = new EncodingSetting ("NOAEncodingCP", "DefaultEncoding");
 
         public static Dictionary<string, Dictionary<string, string>> KnownKeys =
             new Dictionary<string, Dictionary<string, string>>();
@@ -90,7 +93,7 @@ namespace GameRes.Formats.Entis
             uint id = file.View.ReadUInt32 (8);
             if (0x02000400 != id)
                 return null;
-            var reader = new IndexReader (file);
+            var reader = new IndexReader (file, NoaEncoding.Get<Encoding>());
             if (!reader.ParseRoot() || 0 == reader.Dir.Count)
                 return null;
             if (!reader.HasEncrypted)
@@ -275,9 +278,12 @@ namespace GameRes.Formats.Entis
 
             public bool HasEncrypted { get { return m_found_encrypted; } }
 
-            public IndexReader (ArcView file)
+            public Encoding Encoding { get; set; }
+
+            public IndexReader (ArcView file, Encoding enc)
             {
                 m_file = file;
+                Encoding = enc;
             }
 
             public bool ParseRoot ()
@@ -332,7 +338,7 @@ namespace GameRes.Formats.Entis
                     uint name_length = m_file.View.ReadUInt32 (dir_offset);
                     dir_offset += 4;
 
-                    string name = m_file.View.ReadString (dir_offset, name_length);
+                    string name = m_file.View.ReadString (dir_offset, name_length, Encoding);
                     dir_offset += name_length;
 
                     if (string.IsNullOrEmpty (cur_dir))
