@@ -40,7 +40,7 @@ namespace GameRes.Formats
 
         public Bm_Format ()
         {
-            Extensions = new string[] { "bm_", "gpp", "meh" };
+            Extensions = new string[] { "bm_", "gpp", "meh", "gr_" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
