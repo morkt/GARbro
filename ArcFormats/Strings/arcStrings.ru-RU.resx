@@ -158,6 +158,9 @@
   <data name="ArcTitleOrPassword" xml:space="preserve">
     <value>Выберите наименование или введите пароль</value>
   </data>
+  <data name="DefaultEncoding" xml:space="preserve">
+    <value>Кодировка имён файлов</value>
+  </data>
   <data name="DPKKeys" xml:space="preserve">
     <value>Ключи шифрования</value>
   </data>
@@ -294,9 +297,6 @@
   <data name="PDScrambleContents" xml:space="preserve">
     <value>Шифровать содержимое</value>
   </data>
-  <data name="PFSEncodingCP" xml:space="preserve">
-    <value>Кодировка имён файлов</value>
-  </data>
   <data name="QLIEDefaultScheme" xml:space="preserve">
     <value>"Старый" метод шифрования</value>
   </data>
@@ -352,9 +352,6 @@
   </data>
   <data name="YPFTryGuess" xml:space="preserve">
     <value>Попытаться подобрать</value>
-  </data>
-  <data name="ZIPEncodingCP" xml:space="preserve">
-    <value>Кодировка имён файлов</value>
   </data>
   <data name="ZIPEncryptedNotice" xml:space="preserve">
     <value>Содержимое архива зашифровано.</value>

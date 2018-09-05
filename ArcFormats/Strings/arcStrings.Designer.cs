@@ -189,6 +189,15 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Default file names encoding.
+        /// </summary>
+        public static string DefaultEncoding {
+            get {
+                return ResourceManager.GetString("DefaultEncoding", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encryption keys.
         /// </summary>
         public static string DPKKeys {
@@ -670,15 +679,6 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Default file names encoding.
-        /// </summary>
-        public static string PFSEncodingCP {
-            get {
-                return ResourceManager.GetString("PFSEncodingCP", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Use default encryption scheme.
         /// </summary>
         public static string QLIEDefaultScheme {
@@ -878,15 +878,6 @@ namespace GameRes.Formats.Strings {
         public static string YPFTryGuess {
             get {
                 return ResourceManager.GetString("YPFTryGuess", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Default file names encoding.
-        /// </summary>
-        public static string ZIPEncodingCP {
-            get {
-                return ResourceManager.GetString("ZIPEncodingCP", resourceCulture);
             }
         }
         

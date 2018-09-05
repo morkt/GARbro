@@ -395,10 +395,7 @@ Choose encryption scheme or enter a passphrase.</value>
   <data name="OGGFixCrc" xml:space="preserve">
     <value>Fix Ogg files checksums</value>
   </data>
-  <data name="ZIPEncodingCP" xml:space="preserve">
-    <value>Default file names encoding</value>
-  </data>
-  <data name="PFSEncodingCP" xml:space="preserve">
+  <data name="DefaultEncoding" xml:space="preserve">
     <value>Default file names encoding</value>
   </data>
   <data name="ODNAudioSampleRate" xml:space="preserve">

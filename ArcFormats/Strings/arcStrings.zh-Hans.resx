@@ -393,10 +393,7 @@
   <data name="OGGFixCrc" xml:space="preserve">
     <value>修复Ogg文件校验和</value>
   </data>
-  <data name="ZIPEncodingCP" xml:space="preserve">
-    <value>默认文件名编码</value>
-  </data>
-  <data name="PFSEncodingCP" xml:space="preserve">
+  <data name="DefaultEncoding" xml:space="preserve">
     <value>默认文件名编码</value>
   </data>
   <data name="ODNAudioSampleRate" xml:space="preserve">
