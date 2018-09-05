@@ -46,7 +46,7 @@ namespace GameRes.Formats.Artemis
             Settings = new[] { PfsEncoding };
         }
 
-        EncodingSetting PfsEncoding = new EncodingSetting ("PFSEncodingCP");
+        EncodingSetting PfsEncoding = new EncodingSetting ("PFSEncodingCP", "DefaultEncoding");
 
         public override ArcFile TryOpen (ArcView file)
         {

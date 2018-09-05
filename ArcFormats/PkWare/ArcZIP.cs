@@ -106,7 +106,7 @@ namespace GameRes.Formats.PkWare
             Extensions = new string[] { "zip", "vndat" };
         }
 
-        EncodingSetting ZipEncoding = new EncodingSetting ("ZIPEncodingCP");
+        EncodingSetting ZipEncoding = new EncodingSetting ("ZIPEncodingCP", "DefaultEncoding");
 
         public override ArcFile TryOpen (ArcView file)
         {
