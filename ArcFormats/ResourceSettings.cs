@@ -20,10 +20,12 @@ namespace GameRes.Formats
 
         public LocalResourceSetting () { }
 
-        public LocalResourceSetting (string name)
+        public LocalResourceSetting (string name) : this (name, name) { }
+
+        public LocalResourceSetting (string name, string text)
         {
             Name = name;
-            Text = arcStrings.ResourceManager.GetString (name, arcStrings.Culture) ?? name;
+            Text = arcStrings.ResourceManager.GetString (text, arcStrings.Culture) ?? text;
         }
     }
 
@@ -49,6 +51,8 @@ namespace GameRes.Formats
         public EncodingSetting () { }
 
         public EncodingSetting (string name) : base (name) { }
+
+        public EncodingSetting (string name, string text) : base (name, text) { }
     }
 
     [Export(typeof(ISettingsManager))]
