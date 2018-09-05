@@ -2,7 +2,7 @@
 //! \date       Mon Jun 30 20:12:13 2014
 //! \brief      game resources browser.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -26,6 +26,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.ComponentModel;
 using GameRes.Strings;
 
 namespace GameRes
@@ -177,6 +178,21 @@ namespace GameRes
     [Serializable]
     public class ResourceScheme
     {
+    }
+
+    public class ResourceAlias
+    {
+    }
+
+    /// <summary>
+    /// Link filename extension to specific resource.
+    /// </summary>
+    public interface IResourceAliasMetadata
+    {
+        string Extension { get; }
+        string    Target { get; }
+        [DefaultValue(null)]
+        string      Type { get; }
     }
 
     public delegate void ParametersRequestEventHandler (object sender, ParametersRequestEventArgs e);

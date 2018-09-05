@@ -2,7 +2,7 @@
 //! \date       Wed Sep 16 22:51:11 2015
 //! \brief      game resources formats catalog class.
 //
-// Copyright (C) 2014-2015 by morkt
+// Copyright (C) 2014-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -106,10 +106,12 @@ namespace GameRes
                 AddResourceImpl (m_arc_formats, container);
                 AddResourceImpl (m_audio_formats, container);
                 AddResourceImpl (m_script_formats, container);
+
+                AddAliases (container);
             }
         }
 
-        private void AddResourceImpl (IEnumerable<IResource> formats, CompositionContainer container)
+        private void AddResourceImpl (IEnumerable<IResource> formats, ICompositionService container)
         {
             foreach (var impl in formats)
             {
@@ -130,6 +132,35 @@ namespace GameRes
                 foreach (var signature in impl.Signatures)
                 {
                     m_signature_map.Add (signature, impl);
+                }
+            }
+        }
+
+        private void AddAliases (ExportProvider provider)
+        {
+            foreach (var alias in provider.GetExports<ResourceAlias, IResourceAliasMetadata>())
+            {
+                var metadata = alias.Metadata;
+                IEnumerable<IResource> target_list;
+                if (string.IsNullOrEmpty (metadata.Type))
+                    target_list = Formats;
+                else if ("archive" == metadata.Type)
+                    target_list = ArcFormats;
+                else if ("image" == metadata.Type)
+                    target_list = ImageFormats;
+                else if ("audio" == metadata.Type)
+                    target_list = AudioFormats;
+                else if ("script" == metadata.Type)
+                    target_list = ScriptFormats;
+                else
+                    continue;
+                var ext    = metadata.Extension;
+                var target = metadata.Target;
+                if (!string.IsNullOrEmpty (ext) && !string.IsNullOrEmpty (target))
+                {
+                    var target_res = target_list.FirstOrDefault (f => f.Tag == target);
+                    if (target_res != null)
+                        m_extension_map.Add (ext.ToUpperInvariant(), target_res);
                 }
             }
         }
