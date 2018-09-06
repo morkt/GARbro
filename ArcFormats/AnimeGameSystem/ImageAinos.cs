@@ -38,6 +38,7 @@ namespace GameRes.Formats.Ags
     }
 
     [Export(typeof(ImageFormat))]
+    [ExportMetadata("Priority", -1)]
     public class CgFormat : ImageFormat
     {
         public override string         Tag { get { return "CG"; } }

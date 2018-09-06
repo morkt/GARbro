@@ -31,6 +31,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Ail
 {
     [Export(typeof(ArchiveFormat))]
+    [ExportMetadata("Priority", -1)]
     public class DatOpener : ArchiveFormat
     {
         public override string         Tag { get { return "DAT/Ail"; } }
