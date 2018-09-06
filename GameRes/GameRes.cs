@@ -195,6 +195,12 @@ namespace GameRes
         string      Type { get; }
     }
 
+    public interface IResourceMetadata
+    {
+        [DefaultValue(0)]
+        int Priority { get; }
+    }
+
     public delegate void ParametersRequestEventHandler (object sender, ParametersRequestEventArgs e);
 
     public class ParametersRequestEventArgs : EventArgs

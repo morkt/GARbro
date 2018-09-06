@@ -41,11 +41,8 @@ namespace GameRes
         private static readonly FormatCatalog m_instance = new FormatCatalog();
 
         #pragma warning disable 649
-        [ImportMany(typeof(ArchiveFormat))]
         private IEnumerable<ArchiveFormat>  m_arc_formats;
-        [ImportMany(typeof(ImageFormat))]
         private IEnumerable<ImageFormat>    m_image_formats;
-        [ImportMany(typeof(AudioFormat))]
         private IEnumerable<AudioFormat>    m_audio_formats;
         [ImportMany(typeof(ScriptFormat))]
         private IEnumerable<ScriptFormat>   m_script_formats;
@@ -100,8 +97,12 @@ namespace GameRes
             //Create the CompositionContainer with the parts in the catalog
             using (var container = new CompositionContainer (catalog))
             {
+                m_arc_formats = ImportWithPriorities<ArchiveFormat> (container);
+                m_image_formats = ImportWithPriorities<ImageFormat> (container);
+                m_audio_formats = ImportWithPriorities<AudioFormat> (container);
                 //Fill the imports of this object
                 container.ComposeParts (this);
+
                 AddResourceImpl (m_image_formats, container);
                 AddResourceImpl (m_arc_formats, container);
                 AddResourceImpl (m_audio_formats, container);
@@ -134,6 +135,14 @@ namespace GameRes
                     m_signature_map.Add (signature, impl);
                 }
             }
+        }
+
+        private IEnumerable<Format> ImportWithPriorities<Format> (ExportProvider provider)
+        {
+            return provider.GetExports<Format, IResourceMetadata>()
+                    .OrderByDescending (f => f.Metadata.Priority)
+                    .Select (f => f.Value)
+                    .ToArray();
         }
 
         private void AddAliases (ExportProvider provider)
