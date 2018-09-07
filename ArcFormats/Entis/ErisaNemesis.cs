@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace GameRes.Formats.Entis
 {
@@ -64,17 +65,16 @@ namespace GameRes.Formats.Entis
 
         public override uint DecodeBytes (Array ptrDst, uint nCount)
         {
-            return DecodeNemesisCodeBytes (ptrDst as byte[], nCount);
+            return DecodeNemesisCodeBytes (ptrDst as byte[], 0, nCount);
         }
 
-        public uint DecodeNemesisCodeBytes (byte[] ptrDst, uint nCount)
+        public uint DecodeNemesisCodeBytes (byte[] ptrDst, int dst, uint nCount)
         {
             if (m_flagEOF)
                 return 0;
 
             ErisaProbBase pBase = m_pProbERISA;
             uint nDecoded = 0;
-            int dst = 0;
             byte bytSymbol;
             while (nDecoded < nCount)
             {
@@ -150,7 +150,6 @@ namespace GameRes.Formats.Entis
                         if (nSymbol != ErisaProbModel.EscCode)
                         {
                             pModel.AddSymbol ((short)nSymbol);
-                            iSym = -1;
                         }
                         else
                         {
@@ -214,7 +213,7 @@ namespace GameRes.Formats.Entis
 
                 if ((pBase.dwWorkUsed < ErisaProbBase.SlotMax) && (iDeg < 4))
                 {
-                    int iSymbol = ((byte)nSymbol) >> ErisaProbBase.m_nShiftCount[iDeg];
+                    int iSymbol = bytSymbol >> ErisaProbBase.m_nShiftCount[iDeg];
                     if (iSymbol >= ErisaProbModel.SubSortMax)
                         throw new InvalidFormatException ("Invalid Nemesis encoding sequence");
                     if (++pModel.SubModel[iSymbol].Occured >= ErisaProbBase.m_nNewProbLimit[iDeg])
@@ -294,5 +293,46 @@ namespace GameRes.Formats.Entis
     {
         public uint     first;
         public uint[]   index = new uint[Nemesis.IndexLimit];
+    }
+
+    internal class ErisaNemesisStream : InputProxyStream
+    {
+        NemesisDecodeContext    m_decoder;
+        int                     m_remaining;
+        bool                    m_eof = false;
+
+        public ErisaNemesisStream (Stream input, int output_length = 0) : base (input)
+        {
+            m_decoder = new NemesisDecodeContext();
+            m_decoder.AttachInputFile (input);
+            m_decoder.PrepareToDecodeERISANCode();
+            m_remaining = output_length > 0 ? output_length : int.MaxValue;
+        }
+
+        public override int Read (byte[] buffer, int offset, int count)
+        {
+            int read = 0;
+            if (!m_eof && m_remaining > 0)
+            {
+                uint chunk_size = (uint)Math.Min (count, m_remaining);
+                read = (int)m_decoder.DecodeNemesisCodeBytes (buffer, offset, chunk_size);
+                m_eof = read < count;
+                m_remaining -= read;
+            }
+            return read;
+        }
+
+        public override bool CanSeek  { get { return false; } }
+        public override long Length   { get { throw new NotSupportedException(); } }
+
+        public override long Position {
+            get { throw new NotSupportedException(); }
+            set { throw new NotSupportedException(); }
+        }
+
+        public override long Seek (long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException();
+        }
     }
 }

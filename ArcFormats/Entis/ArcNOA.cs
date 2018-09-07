@@ -2,7 +2,7 @@
 //! \date       Thu Apr 23 15:57:17 2015
 //! \brief      Entis GLS engine archives implementation.
 //
-// Copyright (C) 2015-2016 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -77,7 +77,7 @@ namespace GameRes.Formats.Entis
 
         public NoaOpener ()
         {
-            Extensions = new string[] { "noa", "dat", "rsa" };
+            Extensions = new string[] { "noa", "dat", "rsa", "arc" };
             Settings = new[] { NoaEncoding };
         }
 
@@ -96,13 +96,13 @@ namespace GameRes.Formats.Entis
             var reader = new IndexReader (file, NoaEncoding.Get<Encoding>());
             if (!reader.ParseRoot() || 0 == reader.Dir.Count)
                 return null;
-            if (!reader.HasEncrypted)
-                return new ArcFile (file, this, reader.Dir);
-
-            var password = GetArcPassword (file.Name);
-            if (string.IsNullOrEmpty (password))
-                return new ArcFile (file, this, reader.Dir);
-            return new NoaArchive (file, this, reader.Dir, password);
+            if (reader.HasEncrypted)
+            {
+                var password = GetArcPassword (file.Name);
+                if (!string.IsNullOrEmpty (password))
+                    return new NoaArchive (file, this, reader.Dir, password);
+            }
+            return new ArcFile (file, this, reader.Dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -118,8 +118,8 @@ namespace GameRes.Formats.Entis
 
             if (EncType.ERISACode == nent.Encryption)
             {
-                using (var enc = arc.File.CreateStream (entry.Offset+0x10, (uint)size-4))
-                    return DecodeNemesis (enc);
+                var enc = arc.File.CreateStream (entry.Offset+0x10, (uint)size-4);
+                return new ErisaNemesisStream (enc, (int)entry.Size);
             }
 
             var narc = arc as NoaArchive;
@@ -183,7 +183,7 @@ namespace GameRes.Formats.Entis
                         if (null == cotomi)
                             continue;
                         using (var res = new MemoryStream (cotomi))
-                        using (var input = DecodeNemesis (res))
+                        using (var input = new ErisaNemesisStream (res))
                         {
                             var xml = new XmlDocument();
                             xml.Load (input);
@@ -208,24 +208,6 @@ namespace GameRes.Formats.Entis
                     return attr["key"].Value;
             }
             return null;
-        }
-
-        Stream DecodeNemesis (Stream input)
-        {
-            var decoder = new NemesisDecodeContext();
-            decoder.AttachInputFile (input);
-            decoder.PrepareToDecodeERISANCode();
-            var file = new MemoryStream ((int)input.Length);
-            var buffer = new byte[0x10000];
-            for (;;)
-            {
-                int read = (int)decoder.DecodeNemesisCodeBytes (buffer, 0x10000);
-                if (0 == read)
-                    break;
-                file.Write (buffer, 0, read);
-            }
-            file.Position = 0;
-            return file;
         }
 
         Stream DecodeBSHF (Stream input, string password)
@@ -317,10 +299,11 @@ namespace GameRes.Formats.Entis
 
                     entry.Encryption = m_file.View.ReadUInt32 (dir_offset);
                     m_found_encrypted = m_found_encrypted || (EncType.Raw != entry.Encryption && EncType.ERISACode != entry.Encryption);
+                    bool is_packed = EncType.ERISACode == entry.Encryption;
                     dir_offset += 4;
 
                     entry.Offset = base_offset + m_file.View.ReadInt64 (dir_offset);
-                    if (!entry.CheckPlacement (m_file.MaxOffset))
+                    if (!is_packed && !entry.CheckPlacement (m_file.MaxOffset))
                     {
                         entry.Size = (uint)(m_file.MaxOffset - entry.Offset);
                     }
