@@ -2,7 +2,7 @@
 //! \date       Mon Sep 12 21:25:27 2016
 //! \brief      AliceSoft JPEG image.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,6 +27,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.AliceSoft
@@ -37,6 +38,7 @@ namespace GameRes.Formats.AliceSoft
         public uint ImageSize;
         public uint AlphaOffset;
         public uint AlphaSize;
+        public uint AlphaUnpacked;
     }
 
     [Export(typeof(ImageFormat))]
@@ -52,20 +54,23 @@ namespace GameRes.Formats.AliceSoft
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            var header = new byte[0x18];
-            stream.Position = 0xC;
-            if (header.Length != stream.Read (header, 0, header.Length))
+            var header = stream.ReadHeader (0x24);
+            int version = header.ToInt32 (4);
+            if (version < 0)
                 return null;
-            return new AjpMetaData
+            var info = new AjpMetaData
             {
-                Width   = LittleEndian.ToUInt32 (header, 0),
-                Height  = LittleEndian.ToUInt32 (header, 4),
+                Width   = header.ToUInt32 (0xC),
+                Height  = header.ToUInt32 (0x10),
                 BPP     = 32,
-                ImageOffset = LittleEndian.ToUInt32 (header, 8),
-                ImageSize   = LittleEndian.ToUInt32 (header, 0xC),
-                AlphaOffset = LittleEndian.ToUInt32 (header, 0x10),
-                AlphaSize   = LittleEndian.ToUInt32 (header, 0x14),
+                ImageOffset = header.ToUInt32 (0x14),
+                ImageSize   = header.ToUInt32 (0x18),
+                AlphaOffset = header.ToUInt32 (0x1C),
+                AlphaSize   = header.ToUInt32 (0x20),
             };
+            if (version > 0)
+                info.AlphaUnpacked = stream.ReadUInt32();
+            return info;
         }
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
@@ -89,16 +94,29 @@ namespace GameRes.Formats.AliceSoft
                 pixels = new byte[stride * (int)meta.Height];
                 bitmap.CopyPixels (pixels, stride, 0);
             }
-            using (var mask = DecryptStream (stream.AsStream, meta.AlphaOffset, meta.AlphaSize))
+            Stream mask = DecryptStream (stream.AsStream, meta.AlphaOffset, meta.AlphaSize);
+            byte[] alpha;
+            if (meta.AlphaUnpacked != 0)
             {
-                var alpha = ReadMask (mask);
-                int src = 0;
-                for (int dst = 3; dst < pixels.Length; dst += 4)
+                using (mask = new ZLibStream (mask, CompressionMode.Decompress))
                 {
-                    pixels[dst] = alpha[src++];
+                    alpha = new byte[meta.AlphaUnpacked];
+                    mask.Read (alpha, 0, alpha.Length);
                 }
-                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, stride);
             }
+            else
+            {
+                using (mask)
+                {
+                    alpha = ReadMask (mask);
+                }
+            }
+            int src = 0;
+            for (int dst = 3; dst < pixels.Length; dst += 4)
+            {
+                pixels[dst] = alpha[src++];
+            }
+            return ImageData.Create (info, PixelFormats.Bgra32, null, pixels, stride);
         }
 
         Stream DecryptStream (Stream input, uint offset, uint size)
