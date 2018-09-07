@@ -162,7 +162,10 @@ namespace GameRes
                 else if ("script" == metadata.Type)
                     target_list = ScriptFormats;
                 else
+                {
+                    System.Diagnostics.Trace.WriteLine ("Unknown resource type specified", metadata.Extension);
                     continue;
+                }
                 var ext    = metadata.Extension;
                 var target = metadata.Target;
                 if (!string.IsNullOrEmpty (ext) && !string.IsNullOrEmpty (target))
