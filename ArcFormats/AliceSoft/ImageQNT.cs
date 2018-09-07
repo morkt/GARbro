@@ -90,8 +90,6 @@ namespace GameRes.Formats.AliceSoft
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = (QntMetaData)info;
-            stream.Position = meta.HeaderSize;
             var reader = new Reader (stream.AsStream, (QntMetaData)info);
             reader.Unpack();
             int stride = (int)info.Width * (reader.BPP / 8);
@@ -120,7 +118,8 @@ namespace GameRes.Formats.AliceSoft
                 int rgb_size = h * w * 3;
                 m_bpp = info.AlphaSize != 0 ? 4 : 3;
                 m_input = new byte[rgb_size];
-                var alpha_pos = stream.Position + info.RGBSize;
+                stream.Position = info.HeaderSize;
+                var alpha_pos = info.HeaderSize + info.RGBSize;
                 using (var zstream = new ZLibStream (stream, CompressionMode.Decompress, true))
                     if (rgb_size != zstream.Read (m_input, 0, rgb_size))
                         throw new InvalidFormatException ("Unexpected end of file");

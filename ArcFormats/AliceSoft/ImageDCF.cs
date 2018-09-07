@@ -2,7 +2,7 @@
 //! \date       Fri Jul 29 14:07:15 2016
 //! \brief      AliceSoft incremental image format.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -137,29 +137,29 @@ namespace GameRes.Formats.AliceSoft
             long qnt_pos = m_input.Position;
             if (m_input.ReadUInt32() != Qnt.Signature)
                 throw new InvalidFormatException();
-            QntMetaData qnt_info;
             using (var reg = new StreamRegion (m_input.AsStream, qnt_pos, true))
             using (var qnt = new BinaryStream (reg, m_input.Name))
-                qnt_info = Qnt.ReadMetaData (qnt) as QntMetaData;
-            if (null == qnt_info)
-                throw new InvalidFormatException();
-
-            m_input.Position = qnt_pos + 0x44;
-            var overlay = new QntFormat.Reader (m_input.AsStream, qnt_info);
-            overlay.Unpack();
-            m_overlay_bpp = overlay.BPP;
-            if (m_mask != null)
-                ReadBaseImage();
-
-            if (m_base != null)
             {
-                m_output = ApplyOverlay (overlay.Data);
-                SetFormat ((int)m_info.Width, m_base_bpp);
-            }
-            else
-            {
-                m_output = overlay.Data;
-                SetFormat ((int)qnt_info.Width, m_overlay_bpp);
+                var qnt_info = Qnt.ReadMetaData (qnt) as QntMetaData;
+                if (null == qnt_info)
+                    throw new InvalidFormatException();
+
+                var overlay = new QntFormat.Reader (reg, qnt_info);
+                overlay.Unpack();
+                m_overlay_bpp = overlay.BPP;
+                if (m_mask != null)
+                    ReadBaseImage();
+
+                if (m_base != null)
+                {
+                    m_output = ApplyOverlay (overlay.Data);
+                    SetFormat ((int)m_info.Width, m_overlay_bpp);
+                }
+                else
+                {
+                    m_output = overlay.Data;
+                    SetFormat ((int)qnt_info.Width, m_overlay_bpp);
+                }
             }
         }
 
@@ -181,31 +181,31 @@ namespace GameRes.Formats.AliceSoft
             for (int y = 0; y < blocks_y; ++y)
             {
                 int base_pos = y * 0x10 * base_stride;
-                int src_pos  = y * 0x10 * overlay_stride;
+                int dst_pos  = y * 0x10 * overlay_stride;
                 for (int x = 0; x < blocks_x; ++x)
                 {
-                    if (0 != m_mask[mask_pos++])
+                    if (0 == m_mask[mask_pos++])
                         continue;
                     for (int by = 0; by < 0x10; ++by)
                     {
-                        int dst = base_pos + by * base_stride    + x * 0x10 * base_step;
-                        int src = src_pos  + by * overlay_stride + x * 0x10 * overlay_step;
+                        int src = base_pos + by * base_stride    + x * 0x10 * base_step;
+                        int dst = dst_pos  + by * overlay_stride + x * 0x10 * overlay_step;
                         for (int bx = 0; bx < 0x10; ++bx)
                         {
-                            m_base[dst  ] = overlay[src  ];
-                            m_base[dst+1] = overlay[src+1];
-                            m_base[dst+2] = overlay[src+2];
-                            if (4 == base_step)
+                            overlay[dst  ] = m_base[src  ];
+                            overlay[dst+1] = m_base[src+1];
+                            overlay[dst+2] = m_base[src+2];
+                            if (4 == overlay_step)
                             {
-                                m_base[dst+3] = 4 == overlay_step ? overlay[src+3] : (byte)0xFF;
+                                overlay[dst+3] = 4 == base_step ? m_base[src+3] : (byte)0xFF;
                             }
-                            dst += base_step;
-                            src += overlay_step;
+                            src += base_step;
+                            dst += overlay_step;
                         }
                     }
                 }
             }
-            return m_base;
+            return overlay;
         }
 
         void ReadBaseImage ()
