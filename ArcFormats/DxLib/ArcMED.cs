@@ -98,14 +98,17 @@ namespace GameRes.Formats.DxLib
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        static readonly Lazy<ImageFormat> PrsFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PRS"));
+        static readonly ResourceInstance<ImageFormat> PrsFormat = new ResourceInstance<ImageFormat> ("PRS");
 
-        public static Dictionary<string, IScriptEncryption> KnownSchemes = new Dictionary<string, IScriptEncryption>();
+        static ScrMedScheme DefaultScheme = new ScrMedScheme {
+            KnownSchemes = new Dictionary<string, IScriptEncryption>()
+        };
+        public static Dictionary<string, IScriptEncryption> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new ScrMedScheme { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((ScrMedScheme)value).KnownSchemes; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (ScrMedScheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -140,12 +143,12 @@ namespace GameRes.Formats.DxLib
                 index_offset += 8;
             }
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
-            if (base_name.EndsWith ("_scr", StringComparison.InvariantCultureIgnoreCase)
+            if (base_name.EndsWith ("_scr", StringComparison.OrdinalIgnoreCase)
                 && KnownSchemes.Count > 0)
             {
-                var options = Query<MedOptions> (arcStrings.ArcEncryptedNotice);
-                if (options.Encryption != null)
-                    return new ScrMedArchive (file, this, dir, options.Encryption);
+                var encryption = QueryEncryption (file.Name);
+                if (encryption != null)                                        
+                    return new ScrMedArchive (file, this, dir, encryption);
             }
             return new ArcFile (file, this, dir);
         }
@@ -182,6 +185,15 @@ namespace GameRes.Formats.DxLib
             if (string.IsNullOrEmpty (scheme) || !KnownSchemes.TryGetValue (scheme, out enc))
                 return null;
             return enc;
+        }
+
+        IScriptEncryption QueryEncryption (string arc_name)
+        {
+            var title = FormatCatalog.Instance.LookupGame (arc_name);
+            if (!string.IsNullOrEmpty (title) && KnownSchemes.ContainsKey (title))
+                return KnownSchemes[title];
+            var options = Query<MedOptions> (arcStrings.ArcEncryptedNotice);
+            return options.Encryption;
         }
     }
 }
