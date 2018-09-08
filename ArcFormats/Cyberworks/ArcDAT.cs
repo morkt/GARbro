@@ -76,7 +76,7 @@ namespace GameRes.Formats.Cyberworks
 
     internal class ArcNameParser : ArchiveNameParser
     {
-        public ArcNameParser () : base (@"^.+0(?<id>(?<num>\d)(?<idx>[a-z])?)(?:|\..*)$") { }
+        public ArcNameParser () : base (@"^.+0?(?<id>(?<num>\d)(?<idx>[a-z])?)(?:|\..*)$") { }
 
         protected override string ParseMatch (Match match, out int arc_idx)
         {
@@ -148,6 +148,22 @@ namespace GameRes.Formats.Cyberworks
         }
     }
 
+    internal class PatchNameParser : ArchiveNameParser
+    {
+        public PatchNameParser () : base (@"^patch0(?<num>[2468])\.dat$") { }
+
+        protected override string ParseMatch (Match match, out int arc_idx)
+        {
+            arc_idx = 0;
+            int index_num = match.Groups["num"].Value[0] - '0' - 1;
+            var toc_name_builder = new StringBuilder (match.Value);
+            var num_pos = match.Groups["num"].Index;
+            toc_name_builder.Remove (num_pos, match.Groups["num"].Length);
+            toc_name_builder.Insert (num_pos, index_num);
+            return toc_name_builder.ToString();
+        }
+    }
+
     internal class InKyouParser : ArchiveNameParser
     {
         public InKyouParser () : base (@"^inyoukyou_kuon\.app$") { }
@@ -176,7 +192,10 @@ namespace GameRes.Formats.Cyberworks
         public bool BlendOverlayImages = true;
 
         static readonly ArchiveNameParser[] s_name_parsers = {
-            new ArcNameParser(), new DatNameParser(), new InKyouParser()
+            new ArcNameParser(),
+            new DatNameParser(),
+            new PatchNameParser(),
+            new InKyouParser()
         };
 
         public override ArcFile TryOpen (ArcView file)
@@ -336,12 +355,16 @@ namespace GameRes.Formats.Cyberworks
             return scheme;
         }
 
-        public static Dictionary<string, AImageScheme> KnownSchemes = new Dictionary<string, AImageScheme>();
+        static SchemeMap DefaultScheme = new SchemeMap {
+            KnownSchemes = new Dictionary<string, AImageScheme>()
+        };
+
+        public static Dictionary<string, AImageScheme> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new SchemeMap { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((SchemeMap)value).KnownSchemes; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (SchemeMap)value; }
         }
     }
 
@@ -576,21 +599,21 @@ namespace GameRes.Formats.Cyberworks
             int count = (int)m_index.Length / (entry_size + 4);
             if (!ArchiveFormat.IsSaneCount (count))
                 return false;
-            m_index.Position = 0;
+            long next_pos = 0;
             m_dir = new List<Entry> (count);
-            while (m_index.Position < m_index.Length)
+            while (next_pos < m_index.Length)
             {
+                m_index.Position = next_pos;
                 entry_size = m_index.ReadInt32();
                 if (entry_size <= 0)
                     return false;
-                var next_pos = m_index.Position + entry_size;
+                next_pos += 4 + entry_size;
                 var entry = ReadEntryInfo();
                 if (ReadEntryType (entry, entry_size))
                 {
                     if (entry.CheckPlacement (MaxOffset))
                         m_dir.Add (entry);
                 }
-                m_index.Position = next_pos;
             }
             return true;
         }
