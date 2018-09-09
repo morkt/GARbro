@@ -32,6 +32,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Ankh
 {
     [Export(typeof(ArchiveFormat))]
+    [ExportMetadata("Priority", -1)]
     public class GrpOpener : ArchiveFormat
     {
         public override string         Tag { get { return "GRP/ICE"; } }
