@@ -120,6 +120,12 @@ namespace GameRes.Formats.Seraphim
         public override string Description { get { return "Seraphim engine image format"; } }
         public override uint     Signature { get { return 0; } }
 
+        public SeraphCbImage ()
+        {
+            // common case for 256-colors images
+            Signatures = new uint[] { 0x01004243, 0 };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x10);
