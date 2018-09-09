@@ -60,14 +60,23 @@ namespace GameRes.Formats.Seraphim
             int count = file.View.ReadInt16 (0);
             if (!IsSaneCount (count))
                 return null;
-            uint data_offset = 2 + 4 * (uint)count;
-            if (data_offset > file.View.Reserve (0, data_offset))
-                return null;
 
+            uint data_offset = 2 + 4 * (uint)count;
+            uint next_offset = file.View.ReadUInt32 (2);
+            List<Entry> dir = null;
+            if (next_offset < data_offset || next_offset >= file.MaxOffset)
+                dir = ReadV2 (file, count);
+            else
+                dir = ReadV1 (file, count);
+            if (null == dir)
+                return null;
+            return new ArcFile (file, this, dir);
+        }
+
+        List<Entry> ReadV1 (ArcView file, int count)
+        {
             int index_offset = 2;
             uint next_offset = file.View.ReadUInt32 (index_offset);
-            if (next_offset < data_offset)
-                return null;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
@@ -85,7 +94,27 @@ namespace GameRes.Formats.Seraphim
                     return null;
                 dir.Add (entry);
             }
-            return new ArcFile (file, this, dir);
+            return dir;
+        }
+
+        List<Entry> ReadV2 (ArcView file, int count)
+        {
+            int index_offset = 6;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                var entry = new Entry {
+                    Name = string.Format ("{0:D5}.ogg", i),
+                    Type = "audio",
+                    Offset = file.View.ReadUInt32 (index_offset),
+                    Size   = file.View.ReadUInt32 (index_offset+4),
+                };
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                index_offset += 12;
+            }
+            return dir;
         }
     }
 }

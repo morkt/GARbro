@@ -103,6 +103,9 @@ namespace GameRes.Formats.Seraphim
             return null;
         }
 
+        // 3 @ ScnPac.Dat : FF 18 05 XX XX XX XX
+        //                  FF 16 05 XX XX XX XX
+
         List<Entry> ReadIndex (ArcView file, ArchPacScheme scheme)
         {
             long index_offset = scheme.IndexOffset;
@@ -165,9 +168,14 @@ namespace GameRes.Formats.Seraphim
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (!(entry is PackedEntry))
                 return input;
-            if (0x9C78 != (input.Signature & 0xFFFF))
-                return input;
-            return new ZLibStream (input, CompressionMode.Decompress);
+            if (0x9C78 == (input.Signature & 0xFFFF))
+                return new ZLibStream (input, CompressionMode.Decompress);
+            if (1 == input.Signature && arc.File.View.ReadByte (entry.Offset+4) == 0x78)
+            {
+                input.Position = 4;
+                return new ZLibStream (input, CompressionMode.Decompress);
+            }
+            return input;
         }
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
@@ -196,7 +204,7 @@ namespace GameRes.Formats.Seraphim
             {
                 uint width  = input.ReadUInt16();
                 uint height = input.ReadUInt16();
-                if (0x4243 == width || 0 == width || 0 == height || width * height * 3 + 4 != input.Length)
+                if (width > 0x4300 || 0 == width || 0 == height || width * height * 3 + 4 != input.Length)
                 {
                     input.Position = 0;
                     return new ImageFormatDecoder (input);

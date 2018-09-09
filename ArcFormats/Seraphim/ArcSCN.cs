@@ -23,10 +23,10 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Seraphim
@@ -79,8 +79,15 @@ namespace GameRes.Formats.Seraphim
         {
             if (0 == entry.Size)
                 return Stream.Null;
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (0 == input.Signature || 0 != (input.Signature & 0xFF000000))
+            uint signature = arc.File.View.ReadUInt32 (entry.Offset);
+            ArcViewStream input;
+            if (1 == signature && 0x78 == arc.File.View.ReadByte (entry.Offset+4))
+            {
+                input = arc.File.CreateStream (entry.Offset+4, entry.Size-4);
+                return new ZLibStream (input, CompressionMode.Decompress);
+            }
+            input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (signature < 4 || 0 != (signature & 0xFF000000))
                 return input;
             try
             {
