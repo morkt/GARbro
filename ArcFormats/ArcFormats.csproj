@@ -256,6 +256,7 @@
     <Compile Include="ScenePlayer\ArcPMA.cs" />
     <Compile Include="ScenePlayer\ArcPMX.cs" />
     <Compile Include="Scoop\ArcGX.cs" />
+    <Compile Include="Seraphim\ArcMC.cs" />
     <Compile Include="Seraphim\ArcSCN.cs" />
     <Compile Include="Seraphim\ArcVoice.cs" />
     <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
