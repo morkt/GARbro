@@ -204,7 +204,7 @@ namespace GameRes.Formats.Seraphim
             {
                 uint width  = input.ReadUInt16();
                 uint height = input.ReadUInt16();
-                if (width > 0x4300 || 0 == width || 0 == height || width * height * 3 + 4 != input.Length)
+                if (width > 0x4100 || 0 == width || 0 == height || width * height * 3 + 4 != input.Length)
                 {
                     input.Position = 0;
                     return new ImageFormatDecoder (input);
