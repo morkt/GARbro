@@ -61,30 +61,52 @@ namespace GameRes.Formats.ScrPlayer
                 index = file.CreateStream (8, index_size);
             using (index)
             {
-                uint index_pos = 0;
-                var dir = new List<Entry>();
-                while (index_pos < index_size)
-                {
-                    index.Position = index_pos;
-                    uint offset = index.ReadUInt32();
-                    if (0 == offset)
-                        break;
-                    uint size   = index.ReadUInt32();
-                    byte name_length = index.ReadUInt8 ();
-                    var name = index.ReadCString (name_length);
-                    index_pos += ((5u + name_length) & ~3u) + 8u;
-
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
-                    entry.Offset = offset;
-                    entry.Size   = size;
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    dir.Add (entry);
-                }
-                if (0 == dir.Count)
+                int align = TestAlign (index, 8) ? 8 : 4;
+                var dir = ReadIndex (index, file.MaxOffset, align);
+                if (null == dir && 8 == align)
+                    dir = ReadIndex (index, file.MaxOffset, 4);
+                if (null == dir || 0 == dir.Count)
                     return null;
                 return new ArcFile (file, this, dir);
             }
+        }
+
+        bool TestAlign (IBinaryStream index, int align)
+        {
+            int first_offset = index.ReadInt32();
+            int size = index.ReadInt32();
+            int second_offset = (first_offset + size + 7) & -8;
+            int name_length = index.ReadUInt8();
+            index.Position = ((align + 1 + name_length) & -align) + 8;
+            return second_offset == index.ReadInt32();
+        }
+
+        List<Entry> ReadIndex (IBinaryStream index, long max_offset, int align)
+        {
+            var index_length = index.Length;
+            int index_pos = 0;
+            var dir = new List<Entry>();
+            while (index_pos < index_length)
+            {
+                index.Position = index_pos;
+                uint offset = index.ReadUInt32();
+                if (0 == offset)
+                    break;
+                uint size        = index.ReadUInt32();
+                byte name_length = index.ReadUInt8();
+                var name = index.ReadCString (name_length);
+                index_pos += ((align + 1 + name_length) & -align) + 8;
+//                index_pos += ((9 + name_length) & ~7) + 8;
+//                index_pos += ((5 + name_length) & ~3) + 8;
+
+                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                entry.Offset = offset;
+                entry.Size   = size;
+                if (!entry.CheckPlacement (max_offset))
+                    return null;
+                dir.Add (entry);
+            }
+            return dir;
         }
 
         unsafe void DecryptIndex (byte[] data, int length)
