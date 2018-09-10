@@ -56,20 +56,20 @@ namespace GameRes.Formats.Patisserie
                 return null;
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
             string content_ext = "", content_type = "";
-            if (base_name.EndsWith ("flac", StringComparison.InvariantCultureIgnoreCase))
+            if (base_name.EndsWith ("flac", StringComparison.OrdinalIgnoreCase))
             {
                 content_ext = "flac";
                 content_type = "audio";
                 base_name = base_name.Substring (0, base_name.Length-4);
             }
-            else if (base_name.EndsWith ("ogg", StringComparison.InvariantCultureIgnoreCase))
+            else if (base_name.EndsWith ("ogg", StringComparison.OrdinalIgnoreCase))
             {
                 content_ext = "ogg";
                 content_type = "audio";
                 base_name = base_name.Substring (0, base_name.Length-3);
             }
 
-            var filenames = GetFileNames (VFS.GetDirectoryName (file.Name), base_name);
+            var filenames = GetFileNames (file.Name);
             if (null == filenames)
                 filenames = new List<string> (count);
             for (int i = filenames.Count; i < count; ++i)
@@ -137,17 +137,23 @@ namespace GameRes.Formats.Patisserie
             return new ZLibStream (input, CompressionMode.Decompress);
         }
 
-        IList<string> GetArcNames (string lst_name)
+        IList<string> ReadListFile (string lst_name)
         {
             return File.ReadAllLines (lst_name, Encodings.cp932);
         }
 
-        IList<string> GetFileNames (string dir_name, string base_name)
+        IList<string> GetFileNames (string arc_name)
         {
+            var dir_name = VFS.GetDirectoryName (arc_name);
+            var lst_name = Path.ChangeExtension (arc_name, ".lst");
+            if (VFS.FileExists (lst_name))
+                return ReadListFile (lst_name);
+
             var lists_lst_name = VFS.CombinePath (dir_name, "lists.lst");
             if (!VFS.FileExists (lists_lst_name))
                 return null;
-            var arcs = GetArcNames (lists_lst_name);
+            var base_name = Path.GetFileNameWithoutExtension (arc_name);
+            var arcs = ReadListFile (lists_lst_name);
             var arc_no = arcs.IndexOf (base_name);
             if (-1 == arc_no)
                 return null;
