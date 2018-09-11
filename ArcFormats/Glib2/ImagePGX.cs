@@ -125,38 +125,7 @@ namespace GameRes.Formats.Glib2
 
         static void LzssUnpack (IBinaryStream input, byte[] output)
         {
-            var frame = new byte[0x1000];
-            int frame_pos = 0xFEE;
-            int dst = 0;
-            int bits = 1;
-            while (dst < output.Length)
-            {
-                if (1 == bits)
-                    bits = input.ReadUInt8() | 0x100;
-
-                if (0 != (bits & 1))
-                {
-                    byte b = input.ReadUInt8();
-                    output[dst++] = b;
-                    frame[frame_pos++] = b;
-                    frame_pos &= 0xFFF;
-                }
-                else
-                {
-                    byte lo = input.ReadUInt8();
-                    byte hi = input.ReadUInt8();
-                    int offset = (hi & 0xF0) << 4 | lo;
-                    int count = Math.Min ((~hi & 0xF) + 3, output.Length-dst);
-                    for (int i = 0; i < count; ++i)
-                    {
-                        byte b = frame[offset++ & 0xFFF];
-                        output[dst++] = b;
-                        frame[frame_pos++] = b;
-                        frame_pos &= 0xFFF;
-                    }
-                }
-                bits >>= 1;
-            }
+            GLib.GOpener.LzssUnpack (input.AsStream, output);
         }
     }
 
