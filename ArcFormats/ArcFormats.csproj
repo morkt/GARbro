@@ -166,6 +166,7 @@
     <Compile Include="FC01\ImageWM2.cs" />
     <Compile Include="FC01\ImageWMK.cs" />
     <Compile Include="FrontWing\ArcVAV.cs" />
+    <Compile Include="GLib\ArcG.cs" />
     <Compile Include="Groover\ArcPCG.cs" />
     <Compile Include="Gss\ArcARC.cs" />
     <Compile Include="HCSystem\ArcPAK.cs" />
