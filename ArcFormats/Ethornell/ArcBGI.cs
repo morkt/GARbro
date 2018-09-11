@@ -61,7 +61,7 @@ namespace GameRes.Formats.BGI
             for (uint i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x10);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                 entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x10);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x14);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -69,29 +69,44 @@ namespace GameRes.Formats.BGI
                 dir.Add (entry);
                 index_offset += 0x20;
             }
+            foreach (var entry in dir)
+            {
+                if (entry.Name.HasExtension ("_bp"))
+                    entry.Type = "script";
+                else if (file.View.AsciiEqual (entry.Offset, "CompressedBG"))
+                    entry.Type = "image";
+                else if (file.View.AsciiEqual (entry.Offset+4, "bw  "))
+                    entry.Type = "audio";
+            }
             return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var entry_offset = entry.Offset;
-            var input = new ArcView.Frame (arc.File, entry_offset, entry.Size);
+            var input = arc.File.CreateStream (entry_offset, entry.Size);
+            var pent = entry as PackedEntry;
+            if (null == pent)
+                return input;
+            if (!pent.IsPacked)
+            {
+                if (pent.Size <= 0x220 || !arc.File.View.AsciiEqual (entry_offset, "DSC FORMAT 1.00\0"))
+                    return input;
+                pent.IsPacked = true;
+                pent.UnpackedSize = arc.File.View.ReadUInt32 (entry_offset+0x14);
+            }
             try
             {
-                if (entry.Size > 0x220 && input.AsciiEqual (entry_offset, "DSC FORMAT 1.00\0"))
+                using (var decoder = new DscDecoder (input))
                 {
-                    using (var decoder = new DscDecoder (input))
-                    {
-                        decoder.Unpack();
-                        return new BinMemoryStream (decoder.Output, entry.Name);
-                    }
+                    decoder.Unpack();
+                    return new BinMemoryStream (decoder.Output, entry.Name);
                 }
-                return new ArcViewStream (input, entry_offset, entry.Size);
             }
             catch (Exception X)
             {
                 System.Diagnostics.Trace.WriteLine (X.Message, "BgiOpener");
-                return arc.File.CreateStream (entry.Offset, entry.Size);
+                return arc.File.CreateStream (entry_offset, entry.Size);
             }
         }
     }
@@ -122,7 +137,7 @@ namespace GameRes.Formats.BGI
             {
                 string name = file.View.ReadString (index_offset, 0x60);
                 var offset = base_offset + file.View.ReadUInt32 (index_offset+0x60);
-                var entry = new Entry { Name = name, Offset = offset };
+                var entry = new PackedEntry { Name = name, Offset = offset };
                 entry.Size = file.View.ReadUInt32 (index_offset+0x64);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
@@ -211,24 +226,23 @@ namespace GameRes.Formats.BGI
     internal sealed class DscDecoder : BgiDecoderBase
     {
         byte[]    m_output;
-        uint      m_dst_size;
         uint      m_dec_count;
 
         public byte[] Output { get { return m_output; } }
-        public uint   Length { get { return m_dst_size; } }
 
-        public DscDecoder (ArcView.Frame input)
-            : base (new ArcViewStream (input, input.Offset+0x20, input.Reserved-0x20))
+        public DscDecoder (IBinaryStream input) : base (input.AsStream)
         {
-            m_magic = (uint)input.ReadUInt16 (input.Offset) << 16;
-            m_key = input.ReadUInt32 (input.Offset+0x10);
-            m_dst_size = input.ReadUInt32 (input.Offset+0x14);
-            m_dec_count = input.ReadUInt32 (input.Offset+0x18);
-            m_output = new byte[m_dst_size];
+            m_magic = (uint)input.ReadUInt16() << 16;
+            input.Position = 0x10;
+            m_key = input.ReadUInt32();
+            int output_size = input.ReadInt32();
+            m_dec_count = input.ReadUInt32();
+            m_output = new byte[output_size];
         }
 
         public void Unpack ()
         {
+            Input.Position = 0x20;
             HuffmanCode[] hcodes = new HuffmanCode[512];
             HuffmanNode[] hnodes = new HuffmanNode[1023];
 
