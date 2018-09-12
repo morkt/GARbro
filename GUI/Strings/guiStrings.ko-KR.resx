@@ -312,6 +312,7 @@
   <data name="MsgOverwrite" xml:space="preserve">
     <value>파일 {0}이
 이미 존재합니다.
+
 덮어쓰시겠습니까?</value>
   </data>
   <data name="TextConfirmOverwrite" xml:space="preserve">
@@ -455,6 +456,9 @@
     <value>{0} 재생중 / {3} / {2}bps / {1}Hz</value>
     <comment>{0}=파일이름, {1}=sampling rate, {2}=bitrate, {3}=총 시간 </comment>
   </data>
+  <data name="LabelDevSite" xml:space="preserve">
+    <value>개발 사이트</value>
+  </data>
   <data name="CtxMenuSelectByMask" xml:space="preserve">
     <value>마스크로 파일 선택...</value>
   </data>
@@ -502,9 +506,6 @@
   <data name="MenuCheckUpdates" xml:space="preserve">
     <value>업데이트 확인...</value>
   </data>
-  <data name="MsgDownloadFailed" xml:space="preserve">
-    <value>업데이트 다운로드에 실패했습니다.</value>
-  </data>
   <data name="MsgNoUpdates" xml:space="preserve">
     <value>현재 사용가능한 업데이트가 없습니다.</value>
   </data>
@@ -529,44 +530,37 @@
   <data name="TextVisitPage" xml:space="preserve">
     <value>다운로드 페이지 방문</value>
   </data>
+  <data name="MsgDownloadFailed" xml:space="preserve">
+    <value>업데이트 다운로드에 실패했습니다.</value>
+  </data>
   <data name="ButtonApply" xml:space="preserve">
-    <value>Apply</value>
-    <comment>translation pending</comment>
+    <value>적용</value>
   </data>
   <data name="MenuPreferences" xml:space="preserve">
-    <value>Preferences</value>
-    <comment>translation pending</comment>
+    <value>환경설정</value>
   </data>
   <data name="TextFormats" xml:space="preserve">
-    <value>Formats</value>
-    <comment>translation pending</comment>
+    <value>포맷</value>
   </data>
   <data name="TextPreferences" xml:space="preserve">
-    <value>Preferences</value>
-    <comment>translation pending</comment>
+    <value>환경설정</value>
   </data>
   <data name="Type_archive" xml:space="preserve">
-    <value>archive</value>
-    <comment>translation pending</comment>
+    <value>아카이브</value>
   </data>
   <data name="Type_audio" xml:space="preserve">
-    <value>audio</value>
-    <comment>translation pending</comment>
+    <value>오디오</value>
   </data>
   <data name="Type_image" xml:space="preserve">
-    <value>image</value>
-    <comment>translation pending</comment>
+    <value>이미지</value>
   </data>
   <data name="Type_script" xml:space="preserve">
-    <value>script</value>
-    <comment>translation pending</comment>
+    <value>스크립트</value>
   </data>
   <data name="TextViewer" xml:space="preserve">
-    <value>Image viewer</value>
-    <comment>translation pending</comment>
+    <value>이미지 뷰어</value>
   </data>
   <data name="winDownScaleImage" xml:space="preserve">
-    <value>Scale large images to fit window</value>
-    <comment>translation pending</comment>
+    <value>큰 이미지 파일을 창 크기에 맞춤</value>
   </data>
 </root>
