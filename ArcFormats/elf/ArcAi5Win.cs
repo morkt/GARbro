@@ -2,7 +2,7 @@
 //! \date       Mon Jun 29 04:41:29 2015
 //! \brief      Ai5Win engine resource archive.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -57,17 +57,13 @@ namespace GameRes.Formats.Elf
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        public static Dictionary<string, ArcIndexScheme> KnownSchemes = new Dictionary<string, ArcIndexScheme>();
-
-        public ArcAI5Opener ()
-        {
-            Extensions = new string[] { "arc" };
-        }
+        static Ai5Scheme DefaultScheme = new Ai5Scheme { KnownSchemes = new Dictionary<string, ArcIndexScheme>() };
+        public Dictionary<string, ArcIndexScheme> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new Ai5Scheme { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((Ai5Scheme)value).KnownSchemes; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (Ai5Scheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -79,9 +75,11 @@ namespace GameRes.Formats.Elf
                 return null;
             var reader = new Ai5ArcIndexReader (file, count);
             var dir = reader.TrySchemes (KnownSchemes.Values);
-            if (dir != null)
-                return new ArcFile (file, this, dir);
-            return null;
+            if (null == dir)
+                dir = reader.TrySchemes (reader.GuessSchemes());
+            if (null == dir)
+                return null;
+            return new ArcFile (file, this, dir);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -167,5 +165,33 @@ namespace GameRes.Formats.Elf
             else
                 return null;
         }
+
+        internal IEnumerable<ArcIndexScheme> GuessSchemes ()
+        {
+            if (m_count < 2)
+                yield break;
+            foreach (int name_length in NameLengths)
+            {
+                uint data_offset = (uint)((name_length + 8) * m_count + 4);
+                byte name_key = m_file.View.ReadByte (3 + name_length);
+                uint first_size   = m_file.View.ReadUInt32 (4 + name_length);
+                uint first_offset = m_file.View.ReadUInt32 (8 + name_length);
+                uint offset_key = data_offset ^ first_offset;
+                uint second_offset = m_file.View.ReadUInt32 ((name_length+8) * 2) ^ offset_key;
+                if (second_offset < data_offset || second_offset >= m_file.MaxOffset)
+                    continue;
+                uint size_key = (second_offset - data_offset) ^ first_size;
+                if (0 == offset_key || 0 == size_key)
+                    continue;
+                yield return new ArcIndexScheme {
+                    NameLength = name_length,
+                    NameKey = name_key,
+                    SizeKey = size_key,
+                    OffsetKey = offset_key,
+                };
+            }
+        }
+
+        static readonly int[] NameLengths = { 0x14, 0x1E, 0x20, 0x100 };
     }
 }
