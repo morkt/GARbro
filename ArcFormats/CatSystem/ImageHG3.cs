@@ -70,7 +70,7 @@ namespace GameRes.Formats.CatSystem
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (HgMetaData)info;
-            if (0x20 != meta.BPP)
+            if (32 != meta.BPP && 24 != meta.BPP)
                 throw new NotSupportedException ("Not supported HG-3 color depth");
 
             using (var reg = new StreamRegion (stream.AsStream, 0x14, true))
@@ -204,15 +204,15 @@ namespace GameRes.Formats.CatSystem
                 output[x] += output[x - m_pixel_size];
             }
 
-            int line = Stride;
+            int prev = 0;
             for (uint y = 1; y < m_info.Height; y++)
             {
-                int prev = line - Stride;
+                int line = prev + Stride;
                 for (int x = 0; x < Stride; x++)
                 {
                     output[line+x] += output[prev+x];
                 }
-                line += Stride;
+                prev = line;
             }
             return output;
         }
@@ -243,10 +243,11 @@ namespace GameRes.Formats.CatSystem
                 if (null == m_image)
                 {
                     var pixels = Unpack();
+                    PixelFormat format = 24 == m_info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
                     if (Flipped)
-                        m_image = ImageData.CreateFlipped (Info, PixelFormats.Bgra32, null, pixels, Stride);
+                        m_image = ImageData.CreateFlipped (Info, format, null, pixels, Stride);
                     else
-                        m_image = ImageData.Create (Info, PixelFormats.Bgra32, null, pixels, Stride);
+                        m_image = ImageData.Create (Info, format, null, pixels, Stride);
                 }
                 return m_image;
             }
@@ -264,6 +265,8 @@ namespace GameRes.Formats.CatSystem
                 return UnpackImg0000();
             else if (Binary.AsciiEqual (img_type, "img_jpg\0"))
                 return UnpackJpeg();
+            else if (Binary.AsciiEqual (img_type, "img_wbp\0"))
+                return UnpackWebp();
             else
                 throw new NotSupportedException ("Not supported HG-3 image");
         }
@@ -325,6 +328,11 @@ namespace GameRes.Formats.CatSystem
                 }
                 return output;
             }
+        }
+
+        byte[] UnpackWebp ()
+        {
+            throw new NotImplementedException ("HG-3 WebP decoder not implemented.");
         }
     }
 }
