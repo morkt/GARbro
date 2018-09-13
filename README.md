@@ -60,8 +60,8 @@ Author
 
 Written by [morkt](https://github.com/morkt/GARbro) under [MIT License](https://github.com/morkt/GARbro/blob/master/LICENSE).
 
-Korean translation by [mireado](https://github.com/mireado)
+Korean translation by [mireado](https://github.com/mireado), [overworks](https://github.com/overworks)
 
-Simplified Chinese translation by [tenyuhuang](https://github.com/tenyuhuang), [PeratX](https://github.com/PeratX) and [taroxd](https://github.com/taroxd)
+Simplified Chinese translation by [elasticblitz](https://github.com/elasticblitz), [PeratX](https://github.com/PeratX) and [taroxd](https://github.com/taroxd)
 
 Japanese translation by [haniwa55](https://github.com/haniwa55)

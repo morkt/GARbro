@@ -29,6 +29,7 @@ using System.Windows.Media;
 using GameRes.Compression;
 
 // [030912][Wing] Minato Gensou ~Venice Fantastica~
+// [031010][Hachimitsu] Yori Shiro
 
 namespace GameRes.Formats.Wing
 {
