@@ -518,6 +518,10 @@
     <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="Succubus\ArcARC.cs" />
     <Compile Include="SuperNekoX\ArcGPC.cs" />
+    <Compile Include="Sviu\ArcPKZ.cs" />
+    <Compile Include="Sviu\AudioKOG.cs" />
+    <Compile Include="Sviu\ImageGBP.cs" />
+    <Compile Include="Sviu\ImageJBP.cs" />
     <Compile Include="SysD\ArcDPK.cs" />
     <Compile Include="SysD\AudioDWV.cs" />
     <Compile Include="SysD\ImageDBM.cs" />

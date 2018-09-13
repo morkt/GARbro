@@ -70,10 +70,6 @@
     <Compile Include="Airyu\ArcCHR.cs" />
     <Compile Include="Akatombo\ArcX.cs" />
     <Compile Include="Akatombo\ImageFB.cs" />
-    <Compile Include="Sviu\ArcPKZ.cs" />
-    <Compile Include="Sviu\AudioKOG.cs" />
-    <Compile Include="Sviu\ImageGBP.cs" />
-    <Compile Include="Sviu\ImageJBP.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
     <Compile Include="KeroQ\ImageCBM.cs" />
