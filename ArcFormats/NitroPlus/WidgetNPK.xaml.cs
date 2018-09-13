@@ -1,6 +1,6 @@
-﻿using System.Windows.Controls;
+﻿using System.Collections.Generic;
+using System.Windows.Controls;
 using System.Linq;
-using GameRes.Formats.NitroPlus;
 
 namespace GameRes.Formats.GUI
 {
@@ -9,10 +9,10 @@ namespace GameRes.Formats.GUI
     /// </summary>
     public partial class WidgetNPK : Grid
     {
-        public WidgetNPK ()
+        public WidgetNPK (IEnumerable<string> titles)
         {
             InitializeComponent();
-            Scheme.ItemsSource = NpkOpener.KnownKeys.Keys.OrderBy (x => x);
+            Scheme.ItemsSource = titles.OrderBy (x => x);
         }
     }
 }

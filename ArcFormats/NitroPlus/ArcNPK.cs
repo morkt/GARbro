@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Text;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
@@ -87,14 +88,16 @@ namespace GameRes.Formats.NitroPlus
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return true; } }
 
-        public static Dictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
+        static Npk2Scheme DefaultScheme = new Npk2Scheme { KnownKeys = new Dictionary<string, byte[]>() };
+        internal Dictionary<string, byte[]> KnownKeys { get { return DefaultScheme.KnownKeys; } }
 
         const uint DefaultSegmentSize = 0x10000;
+        static readonly Encoding DefaultEncoding = Encoding.UTF8;
 
         public override ResourceScheme Scheme
         {
-            get { return new Npk2Scheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((Npk2Scheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (Npk2Scheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -144,7 +147,7 @@ namespace GameRes.Formats.NitroPlus
                 if (0 == name_length || name_length > name_buffer.Length)
                     return null;
                 index.Read (name_buffer, 0, name_length);
-                var name = Encodings.cp932.GetString (name_buffer, 0, name_length);
+                var name = DefaultEncoding.GetString (name_buffer, 0, name_length);
                 var entry = FormatCatalog.Instance.Create<NpkEntry> (name);
                 entry.UnpackedSize = index.ReadUInt32();
                 index.Read (name_buffer, 0, 0x20); // skip
@@ -206,12 +209,12 @@ namespace GameRes.Formats.NitroPlus
 
         public override object GetAccessWidget ()
         {
-            return new GUI.WidgetNPK();
+            return new GUI.WidgetNPK (KnownKeys.Keys);
         }
 
         public override object GetCreationWidget ()
         {
-            return new GUI.WidgetNPK();
+            return new GUI.WidgetNPK (KnownKeys.Keys);
         }
 
         byte[] QueryEncryption (string arc_name)
@@ -231,8 +234,7 @@ namespace GameRes.Formats.NitroPlus
         byte[] GetKey (string title)
         {
             byte[] key;
-            if (KnownKeys.TryGetValue (title, out key))
-                return key;
+            KnownKeys.TryGetValue (title, out key);
             return key;
         }
 
@@ -243,7 +245,7 @@ namespace GameRes.Formats.NitroPlus
             if (null == npk_options.Key)
                 throw new InvalidEncryptionScheme();
 
-            var enc = Encodings.cp932.WithFatalFallback();
+            var enc = DefaultEncoding.WithFatalFallback();
             int index_length = 0;
             var dir = new List<NpkStoredEntry>();
             foreach (var entry in list)
