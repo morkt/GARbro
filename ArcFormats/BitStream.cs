@@ -117,19 +117,40 @@ namespace GameRes.Formats
 
         public int GetBits (int count)
         {
-            Debug.Assert (count <= 24, "LsbBitStream does not support sequences longer than 24 bits");
-            while (m_cached_bits < count)
+            Debug.Assert (count <= 32, "LsbBitStream does not support sequences longer than 32 bits");
+            int value;
+            if (m_cached_bits >= count)
             {
-                int b = m_input.ReadByte();
-                if (-1 == b)
-                    return -1;
-                m_bits |= b << m_cached_bits;
-                m_cached_bits += 8;
+                int mask = (1 << count) - 1;
+                value = m_bits & mask;
+                m_bits = (int)((uint)m_bits >> count);
+                m_cached_bits -= count;
             }
-            int mask = (1 << count) - 1;
-            int value = m_bits & mask;
-            m_bits = (int)((uint)m_bits >> count);
-            m_cached_bits -= count;
+            else
+            {
+                value = m_bits & ((1 << m_cached_bits) - 1);
+                count -= m_cached_bits;
+                int shift = m_cached_bits;
+                m_cached_bits = 0;
+                while (count >= 8)
+                {
+                    int b = m_input.ReadByte();
+                    if (-1 == b)
+                        return -1;
+                    value |= b << shift;
+                    shift += 8;
+                    count -= 8;
+                }
+                if (count > 0)
+                {
+                    int b = m_input.ReadByte();
+                    if (-1 == b)
+                        return -1;
+                    value |= (b & ((1 << count) - 1)) << shift;
+                    m_bits = b >> count;
+                    m_cached_bits = 8 - count;
+                }
+            }
             return value;
         }
 
