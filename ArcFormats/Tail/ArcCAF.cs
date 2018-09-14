@@ -2,7 +2,7 @@
 //! \date       2017 Nov 30
 //! \brief      Tail resource archive.
 //
-// Copyright (C) 2017 by morkt
+// Copyright (C) 2017-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -85,11 +85,13 @@ namespace GameRes.Formats.Tail
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!arc.File.View.AsciiEqual (entry.Offset, "PREN"))
+            bool is_pren = arc.File.View.AsciiEqual (entry.Offset, "PREN");
+            bool is_cfp0 = !is_pren && arc.File.View.AsciiEqual (entry.Offset, "CFP0");
+            if (!is_pren && !is_cfp0)
                 return base.OpenEntry (arc, entry);
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
             {
-                var data = UnpackPren (input);
+                var data = is_pren ? UnpackPren (input) : UnpackCfp0 (input);
                 return new BinMemoryStream (data, entry.Name);
             }
         }
@@ -121,6 +123,57 @@ namespace GameRes.Formats.Tail
                 {
                     output[dst++] = (byte)v;
                 }
+            }
+            return output;
+        }
+
+        byte[] UnpackCfp0 (IBinaryStream input)
+        {
+            input.Position = 8;
+            int unpacked_size = input.ReadInt32();
+            var output = new byte[unpacked_size];
+            int dst = 0;
+            while (dst < output.Length)
+            {
+                int cmd = input.ReadByte();
+                int count = 0;
+                switch (cmd)
+                {
+                case 0:
+                    count = input.ReadUInt8();
+                    input.Read (output, dst, count);
+                    break;
+                case 1:
+                    count = input.ReadInt32();
+                    input.Read (output, dst, count);
+                    break;
+                case 2:
+                    {
+                        count = input.ReadUInt8();
+                        byte v = input.ReadUInt8();
+                        for (int i = 0; i < count; ++i)
+                            output[dst+i] = v;
+                        break;
+                    }
+                case 3:
+                    {
+                        count = input.ReadInt32();
+                        byte v = input.ReadUInt8();
+                        for (int i = 0; i < count; ++i)
+                            output[dst+i] = v;
+                        break;
+                    }
+                case 6:
+                    int offset = input.ReadUInt16();
+                    count = input.ReadUInt16();
+                    Binary.CopyOverlapped (output, dst-offset, dst, count);
+                    break;
+
+                case 15:
+                case -1:
+                    return output;
+                }
+                dst += count;
             }
             return output;
         }
