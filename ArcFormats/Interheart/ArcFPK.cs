@@ -40,6 +40,11 @@ namespace GameRes.Formats.CandySoft
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public FpkOpener ()
+        {
+            Signatures = new uint[] { 0, 1 };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (file.MaxOffset < 0x10)
@@ -76,6 +81,7 @@ namespace GameRes.Formats.CandySoft
             uint index_size = (uint)((8 + name_size) * count);
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
+            uint data_offset = 4 + index_size;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
@@ -85,7 +91,7 @@ namespace GameRes.Formats.CandySoft
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
-                if (entry.Offset < index_size || !entry.CheckPlacement (file.MaxOffset))
+                if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
                 index_offset += 8 + name_size;
