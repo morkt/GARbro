@@ -67,7 +67,7 @@ namespace GameRes.Formats.Tail
                     string dir_name;
                     if (!dir_map.TryGetValue (dir_name_offset, out dir_name))
                     {
-                        dir_name = Binary.GetCString (names, dir_name_offset);
+                        dir_name = Binary.GetCString (names, dir_name_offset).Replace ('/', '\\');
                         dir_map[dir_name_offset] = dir_name;
                     }
                     name = Path.Combine (dir_name, name);
@@ -83,15 +83,25 @@ namespace GameRes.Formats.Tail
             return new ArcFile (file, this, dir);
         }
 
+        const uint PrenSignature = 0x4E455250; // "PREN"
+        const uint Cfp0Signature = 0x30504643; // "CFP0"
+        const uint HpSignature   = 0x00005048; // "HP"
+
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            bool is_pren = arc.File.View.AsciiEqual (entry.Offset, "PREN");
-            bool is_cfp0 = !is_pren && arc.File.View.AsciiEqual (entry.Offset, "CFP0");
-            if (!is_pren && !is_cfp0)
-                return base.OpenEntry (arc, entry);
-            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
+            var input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
+            Func<IBinaryStream, byte[]> unpacker = null;
+            switch (input.Signature)
             {
-                var data = is_pren ? UnpackPren (input) : UnpackCfp0 (input);
+            case PrenSignature: unpacker = UnpackPren; break;
+            case Cfp0Signature: unpacker = UnpackCfp0; break;
+            case HpSignature:   unpacker = UnpackHp; break;
+
+            default: return input;
+            }
+            using (input)
+            {
+                var data = unpacker (input);
                 return new BinMemoryStream (data, entry.Name);
             }
         }
@@ -174,6 +184,46 @@ namespace GameRes.Formats.Tail
                     return output;
                 }
                 dst += count;
+            }
+            return output;
+        }
+
+        byte[] UnpackHp (IBinaryStream input)
+        {
+            input.Position = 8;
+            int unpacked_size = input.ReadInt32();
+            int root_token = input.ReadInt32();
+            int node_count = input.ReadInt32();
+            int packed_count = input.ReadInt32();
+            var tree_nodes = new int[0x400];
+            node_count += root_token - 0xFF;
+            while (node_count --> 0)
+            {
+                int node = 2 * input.ReadInt32();
+                tree_nodes[node    ] = input.ReadInt32();
+                tree_nodes[node + 1] = input.ReadInt32();
+            }
+            var output = new byte[unpacked_size];
+            int dst = 0;
+            byte bits = 0;
+            byte bit_mask = 0;
+            for (int i = 0; i < packed_count; ++i)
+            {
+                int symbol = root_token;
+                do
+                {
+                    if (0 == bit_mask)
+                    {
+                        bits = input.ReadUInt8();
+                        bit_mask = 128;
+                    }
+                    int node = 2 * symbol;
+                    node += ((bits & bit_mask) != 0) ? 1 : 0;
+                    symbol = tree_nodes[node];
+                    bit_mask >>= 1;
+                }
+                while (tree_nodes[2 * symbol] != -1);
+                output[dst++] = (byte)symbol;
             }
             return output;
         }
