@@ -732,15 +732,7 @@ namespace GameRes
                 return arc_fs.Source.OpenImage (entry);
 
             var input = fs.OpenBinaryStream (entry);
-            try
-            {
-                return new ImageFormatDecoder (input);
-            }
-            catch
-            {
-                input.Dispose();
-                throw;
-            }
+            return ImageFormatDecoder.Create (input);
         }
 
         public static Stream OpenStream (string filename)
