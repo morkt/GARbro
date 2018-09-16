@@ -686,7 +686,7 @@
     <Compile Include="Qlie\ArcQLIE.cs" />
     <Compile Include="RenPy\ArcRPA.cs" />
     <Compile Include="ShiinaRio\ArcS25.cs" />
-    <Compile Include="ArcSAF.cs" />
+    <Compile Include="Rits\ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
     <Compile Include="Unity\ArcASSET.cs" />
     <Compile Include="Unity\ArcSpVM.cs" />
