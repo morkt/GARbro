@@ -93,7 +93,9 @@ namespace GameRes.Formats.Entis
             uint id = file.View.ReadUInt32 (8);
             if (0x02000400 != id)
                 return null;
-            var reader = new IndexReader (file, NoaEncoding.Get<Encoding>());
+            bool old_format = file.View.AsciiEqual (0x10, "EMSAC-Binary Archive");
+            Encoding enc = old_format ? Encodings.cp932 : NoaEncoding.Get<Encoding>();
+            var reader = new IndexReader (file, enc);
             if (!reader.ParseRoot() || 0 == reader.Dir.Count)
                 return null;
             if (reader.HasEncrypted)
