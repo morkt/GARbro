@@ -44,7 +44,8 @@ namespace GameRes.Formats.GPlay
 
         public YskOpener ()
         {
-            Signatures = new uint[] { 0x36314141, 0x39324141, 0 };
+            // "AA1640124080", "AA7790743350"
+            Signatures = new uint[] { 0x36314141, 0x39324141, 0x37374141, 0 };
         }
 
         const ulong DefaultKey = 0x1234567812345678ul;
@@ -98,6 +99,28 @@ namespace GameRes.Formats.GPlay
                     }
                     return new BinMemoryStream (data, entry.Name);
                 }
+            }
+            else if (entry.Name.HasExtension ("BMP"))
+            {
+                var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+                int bpp = data.ToUInt16 (0x1C);
+                if (4 == bpp)
+                    data[0x1C] = 8;
+                else if (16 == bpp)
+                    data[0x1C] = 24;
+                int pixels_src = 0x36;
+                int pixels_length = data.Length - pixels_src;
+                if (pixels_length > 0x493AA)
+                {
+                    using (var dec = new DesTransform (DefaultKey))
+                    {
+                        for (int src = pixels_src + 0x493AA; src + 8 <= data.Length; src += 0xA0)
+                        {
+                            dec.TransformBlock (data, src, 8, data, src);
+                        }
+                    }
+                }
+                return new BinMemoryStream (data, entry.Name);
             }
             else
             {
