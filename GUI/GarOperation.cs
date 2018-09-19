@@ -55,7 +55,7 @@ namespace GARbro.GUI
         protected Stream CreateNewFile (string filename, bool create_path = false)
         {
             if (create_path)
-                filename = GameRes.ArchiveFormat.CreatePath (filename);
+                filename = GameRes.PhysicalFileSystem.CreatePath (filename);
             FileMode open_mode = FileMode.CreateNew;
             if (m_duplicate_action.ApplyToAll &&
                 m_duplicate_action.Action == ExistingFileAction.Overwrite)

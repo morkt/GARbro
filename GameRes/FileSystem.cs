@@ -138,7 +138,7 @@ namespace GameRes
             var info = new DirectoryInfo (CurrentDirectory);
             foreach (var subdir in info.EnumerateDirectories())
             {
-                if (0 != (subdir.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
+                if (0 != (subdir.Attributes & FileAttributes.System))
                     continue;
                 yield return new SubDirEntry (subdir.FullName);
             }
@@ -158,7 +158,7 @@ namespace GameRes
             var info = new DirectoryInfo (path);
             foreach (var file in info.EnumerateFiles (pattern))
             {
-                if (0 != (file.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
+                if (0 != (file.Attributes & FileAttributes.System))
                     continue;
                 yield return EntryFromFileInfo (file);
             }
@@ -169,7 +169,7 @@ namespace GameRes
             var info = new DirectoryInfo (CurrentDirectory);
             foreach (var file in info.EnumerateFiles ("*", SearchOption.AllDirectories))
             {
-                if (0 != (file.Attributes & (FileAttributes.Hidden | FileAttributes.System)))
+                if (0 != (file.Attributes & FileAttributes.System))
                     continue;
                 yield return EntryFromFileInfo (file);
             }
@@ -201,6 +201,43 @@ namespace GameRes
         public void Dispose ()
         {
             GC.SuppressFinalize (this);
+        }
+
+        /// <summary>
+        /// Create file named <paramref name="filename"/> in current directory and open it
+        /// for writing. Overwrites existing file, if any.
+        /// </summary>
+        static public Stream CreateFile (string filename)
+        {
+            filename = CreatePath (filename);
+            return File.Create (filename);
+        }
+
+        /// <summary>
+        /// Create all directories that lead to <paramref name="filename"/>, if any.
+        /// </summary>
+        static public string CreatePath (string filename)
+        {
+            string dir = Path.GetDirectoryName (filename);
+            if (!string.IsNullOrEmpty (dir)) // check for malformed filenames
+            {
+                string root = Path.GetPathRoot (dir);
+                if (!string.IsNullOrEmpty (root))
+                {
+                    dir = dir.Substring (root.Length); // strip root
+                }
+                string cwd = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar;
+                dir = Path.GetFullPath (dir);
+                filename = Path.GetFileName (filename);
+                // check whether filename would reside within current directory
+                if (dir.StartsWith (cwd, StringComparison.OrdinalIgnoreCase))
+                {
+                    // path looks legit, create it
+                    Directory.CreateDirectory (dir);
+                    filename = Path.Combine (dir, filename);
+                }
+            }
+            return filename;
         }
     }
 
