@@ -59,7 +59,7 @@ namespace GameRes.Formats.Kogado
 
         public PakOpener ()
         {
-            Extensions = new string[] { "pak" };
+            Extensions = new string[] { "pak", "dat" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -393,5 +393,12 @@ namespace GameRes.Formats.Kogado
                 dest_size -= count;
             }
         }
+    }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "SND")]
+    [ExportMetadata("Target", "OGG")]
+    public class SndFormat : ResourceAlias
+    {
     }
 }
