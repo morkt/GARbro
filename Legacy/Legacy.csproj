@@ -70,11 +70,14 @@
     <Compile Include="Airyu\ArcCHR.cs" />
     <Compile Include="Akatombo\ArcX.cs" />
     <Compile Include="Akatombo\ImageFB.cs" />
+    <Compile Include="Ark\ImageCMP.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
     <Compile Include="KeroQ\ImageCBM.cs" />
     <Compile Include="KeroQ\ImageKGD.cs" />
     <Compile Include="KeroQ\ImageKGD1.cs" />
+    <Compile Include="Lazycrew\ArcDAT.cs" />
+    <Compile Include="Lazycrew\ImageDAT.cs" />
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
@@ -208,7 +211,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Ark\" />
     <Folder Include="Bom\" />
     <Folder Include="StudioJikkenshitsu\" />
   </ItemGroup>
