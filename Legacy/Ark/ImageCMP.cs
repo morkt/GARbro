@@ -23,6 +23,8 @@
 // IN THE SOFTWARE.
 //
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
@@ -34,8 +36,8 @@ namespace GameRes.Formats.Ark
     internal class CmpMetaData : ImageMetaData
     {
         public bool     HasAlpha;
-        public uint     AWidth;
-        public uint     AHeight;
+        public int      AWidth;
+        public int      AHeight;
         public uint[]   FreqTable;
         public int      DataOffset;
     }
@@ -54,7 +56,7 @@ namespace GameRes.Formats.Ark
             var header = file.ReadHeader (5);
             uint width  = header.ToUInt16 (0);
             uint height = header.ToUInt16 (2);
-            bool has_alpha = header[4];
+            bool has_alpha = header[4] != 0;
             int aw = 0, ah = 0;
             if (has_alpha)
             {
@@ -84,7 +86,7 @@ namespace GameRes.Formats.Ark
         {
             var reader = new CmpReader (file, (CmpMetaData)info);
             var pixels = reader.Unpack();
-            return ImageData.Create (info, reader.Format, null, pixels);
+            return ImageData.Create (info, reader.Format, null, pixels, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -97,18 +99,115 @@ namespace GameRes.Formats.Ark
     {
         IBinaryStream   m_input;
         CmpMetaData     m_info;
+        int             m_stride;
 
         public PixelFormat Format { get; private set; }
+        public int         Stride { get { return m_stride; } }
 
         public CmpReader (IBinaryStream input, CmpMetaData info)
         {
             m_input = input;
             m_info = info;
+            m_stride = (int)info.Width * 2;
+            Format = PixelFormats.Bgr555;
         }
 
-        public byte[] Unpack ()
+        public Array Unpack ()
         {
             m_input.Position = m_info.DataOffset;
+            int plane_size = (int)m_info.Width * (int)m_info.Height;
+            var planes = new byte[plane_size * 3];
+            using (var bits = new MsbBitStream (m_input.AsStream, true))
+                UnpackHuffman (bits, planes);
+
+            int rsrc = 0;
+            int gsrc = plane_size;
+            int bsrc = plane_size * 2;
+            int width = m_stride / 2;
+            var output = new ushort[width * (int)m_info.Height];
+            int dst_row = output.Length - width;
+            while (dst_row >= 0)
+            {
+                int dst = dst_row;
+                for (int x = (int)m_info.Width; x > 0; --x)
+                {
+                    int color = planes[bsrc++] << 10 | planes[gsrc++] << 5 | planes[rsrc++];
+                    output[dst++] = (ushort)color;
+                }
+                dst_row -= width;
+            }
+            return output;
+        }
+
+        void UnpackHuffman (MsbBitStream input, byte[] output)
+        {
+            var root = BuildHuffmanTree (m_info.FreqTable);
+            int dst = 0;
+            byte last_symbol = 0;
+            while (dst < output.Length)
+            {
+                var node = root;
+                while (node.Symbol > 0x1F)
+                {
+                    if (input.GetNextBit() != 0)
+                        node = node.Left;
+                    else
+                        node = node.Right;
+                }      
+                byte symbol = (byte)(last_symbol + node.Symbol);
+                if (symbol > 0x1F)
+                    symbol -= 0x20;
+                output[dst++] = symbol;
+                last_symbol = symbol;
+            }
+        }
+
+        class Node
+        {
+            public byte Symbol;
+            public uint Freq;
+            public Node Left;
+            public Node Right;
+        }
+
+        Node BuildHuffmanTree (uint[] freq_table)
+        {
+            var tree = new List<Node> (256);
+            for (byte i = 0; i < 32; ++i)
+            {
+                tree.Add (new Node { Symbol = i, Freq = freq_table[i] });
+            }
+            for (byte i = 32; i < 255; ++i)
+            {
+                tree.Add (new Node { Symbol = i });
+            }
+            while (tree.Count > 1)
+            {
+                Node[] child = { null, null };
+
+                for (int i = 0; i < 2; i++)
+                {
+                    Node last_node = null;
+                    uint min_freq = uint.MaxValue;
+                    foreach (var node in tree)
+                    {
+                        if (node.Freq <= min_freq)
+                        {
+                            min_freq = node.Freq;
+                            last_node = node;
+                        }
+                    }
+                    child[i] = last_node;
+                    tree.Remove (last_node);
+                }
+                tree.Add (new Node {
+                    Symbol = 0xFF,
+                    Freq = child[0].Freq + child[1].Freq,
+                    Left = child[0],
+                    Right = child[1]
+                });
+            }
+            return tree[0];
         }
     }
 }
