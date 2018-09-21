@@ -109,14 +109,6 @@ namespace GameRes
         /// <summary>Resource access scheme suitable for serialization.</summary>
         public virtual ResourceScheme Scheme { get; set; }
 
-        /// <summary>
-        /// Create empty Entry that corresponds to implemented resource.
-        /// </summary>
-        public EntryType Create<EntryType> () where EntryType : Entry, new()
-        {
-            return new EntryType { Type = this.Type };
-        }
-
         protected IResource ()
         {
             Extensions = new string[] { GetDefaultExtension() };

@@ -239,6 +239,13 @@ namespace GameRes
         {
             var ext = new Lazy<string> (() => Path.GetExtension (filename).TrimStart ('.').ToLowerInvariant(), false);
             var tried = Enumerable.Empty<ResourceType>();
+            IEnumerable<string> preferred = null;
+            if (VFS.IsVirtual)
+            {
+                var arc_fs = VFS.Top as ArchiveFileSystem;
+                if (arc_fs != null)
+                    preferred = arc_fs.Source.ContainedFormats;
+            }
             for (;;)
             {
                 var range = LookupSignature<ResourceType> (signature);
@@ -247,6 +254,8 @@ namespace GameRes
                 // check formats that match filename extension first
                 if (range.Skip (1).Any()) // if range.Count() > 1
                     range = range.OrderByDescending (f => f.Extensions.Any (e => e == ext.Value));
+                if (preferred != null && preferred.Any())
+                    range = range.OrderByDescending (f => preferred.Contains (f.Tag));
                 foreach (var impl in range)
                 {
                     yield return impl;
@@ -268,7 +277,7 @@ namespace GameRes
             EntryType entry = null;
             var formats = LookupFileName (filename);
             if (formats.Any())
-                entry = formats.First().Create<EntryType>();
+                entry = new EntryType { Type = formats.First().Type };
             if (null == entry)
                 entry = new EntryType();
             entry.Name = filename;

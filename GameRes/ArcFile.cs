@@ -43,6 +43,9 @@ namespace GameRes
         /// <summary>Short archive format description.</summary>
         public string Description { get { return m_interface.Description; } }
 
+        /// <summary>Tags of formats related to this archive format (could be null).</summary>
+        public IEnumerable<string> ContainedFormats { get { return m_interface.ContainedFormats; } }
+
         /// <summary>Memory-mapped view of the archive.</summary>
         public ArcView File { get { return m_arc; } }
 
