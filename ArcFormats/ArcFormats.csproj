@@ -647,7 +647,7 @@
     <Compile Include="Kaas\ArcKAAS.cs" />
     <Compile Include="Kaguya\ArcKaguya.cs" />
     <Compile Include="Selene\ArcKCAP.cs" />
-    <Compile Include="ArcKogado.cs" />
+    <Compile Include="Hypatia\ArcKogado.cs" />
     <Compile Include="Malie\ArcLIB.cs" />
     <Compile Include="Lucifen\ArcLPK.cs" />
     <Compile Include="Tactics\ArcLST.cs" />
