@@ -143,6 +143,7 @@
     <Compile Include="Cmvs\ArcCPZ1.cs" />
     <Compile Include="Cmvs\CpzHeader.cs" />
     <Compile Include="Cmvs\HuffmanDecoder.cs" />
+    <Compile Include="Crc16.cs" />
     <Compile Include="Crowd\ImageCRZ.cs" />
     <Compile Include="CsWare\ArcDAT.cs" />
     <Compile Include="CsWare\ImageB5.cs" />
@@ -176,6 +177,8 @@
     <Compile Include="HCSystem\ArcPAK.cs" />
     <Compile Include="HCSystem\ImageOPF.cs" />
     <Compile Include="HuffmanCompression.cs" />
+    <Compile Include="Hypatia\AudioADP.cs" />
+    <Compile Include="Hypatia\ImageWBM.cs" />
     <Compile Include="Ikura\ArcGAN.cs" />
     <Compile Include="Ikura\ArcTAN.cs" />
     <Compile Include="Ikura\ImageGGA.cs" />
