@@ -44,8 +44,8 @@ namespace GameRes.Formats.GPlay
 
         public YskOpener ()
         {
-            // "AA1640124080", "AA7790743350"
-            Signatures = new uint[] { 0x36314141, 0x39324141, 0x37374141, 0 };
+            // "AA1640124080", "AA7790743350", "AA1825646340"
+            Signatures = new uint[] { 0x36314141, 0x39324141, 0x37374141, 0x38314141, 0 };
         }
 
         const ulong DefaultKey = 0x1234567812345678ul;
@@ -83,7 +83,10 @@ namespace GameRes.Formats.GPlay
         {
             if (entry.Name.HasAnyOfExtensions ("TXT", "DAT"))
             {
-                var input = arc.File.CreateStream (entry.Offset, entry.Size);
+                var input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
+                int first_byte = (int)input.Signature & 0xFF;
+                if (first_byte == '#' || first_byte == '*')
+                    return input;
                 var dec = new DesTransform (DefaultKey);
                 return new InputCryptoStream (input, dec);
             }
