@@ -145,8 +145,12 @@ namespace GameRes.Formats.Lazycrew
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (entry.Type == "audio" && arc.File.View.ReadUInt32 (entry.Offset) == 0)
-                return OpenAudio (arc, entry);
+            if (entry.Type == "audio")
+            {
+                uint signature = arc.File.View.ReadUInt32 (entry.Offset);
+                if (signature == 0x10000 || signature == 0)
+                    return OpenAudio (arc, entry);
+            }
             return base.OpenEntry (arc, entry);
         }
 
