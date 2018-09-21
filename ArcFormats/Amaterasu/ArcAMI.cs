@@ -341,7 +341,7 @@ namespace GameRes.Formats.Amaterasu
     [Export(typeof(ScriptFormat))]
     public class ScrFormat : ScriptFormat
     {
-        public override string Tag { get { return "SCR"; } }
+        public override string Tag { get { return "SCR/AMI"; } }
         public override string Description { get { return Strings.arcStrings.SCRDescription; } }
         public override uint Signature { get { return 0x00524353; } }
 
