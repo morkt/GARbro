@@ -891,7 +891,7 @@ namespace GameRes.Formats.ShiinaRio
 
         void Crc16Crypt (byte[] data, int index, int length)
         {
-            var crc16 = new Kogado.Crc16();
+            var crc16 = new Crc16();
             crc16.Update (data, index, length & 0x7E | 1);
             var sum = crc16.Value ^ 0xFFFF;
             data[index + 0x104] ^= (byte)sum;
