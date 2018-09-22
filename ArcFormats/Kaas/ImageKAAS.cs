@@ -79,7 +79,7 @@ namespace GameRes.Formats.KAAS
             var file_len = stream.Length;
             uint comp_size1 = LittleEndian.ToUInt32 (header, 8);
             uint comp_size2 = LittleEndian.ToUInt32 (header, 12);
-            uint comp_size3 = LittleEndian.ToUInt16 (header, 16);
+            uint comp_size3 = (uint)(file_len - (0x12 + comp_size1 + comp_size2));
             if (comp_size1 >= file_len || comp_size2 >= file_len || comp_size3 >= file_len)
                 return null;
             return new PicMetaData
