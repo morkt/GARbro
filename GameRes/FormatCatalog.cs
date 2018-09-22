@@ -274,22 +274,20 @@ namespace GameRes
         /// characters.</exception>
         public EntryType Create<EntryType> (string filename) where EntryType : Entry, new()
         {
-            EntryType entry = null;
-            var formats = LookupFileName (filename);
-            if (formats.Any())
-                entry = new EntryType { Type = formats.First().Type };
-            if (null == entry)
-                entry = new EntryType();
-            entry.Name = filename;
-            return entry;
+            return new EntryType {
+                Name = filename,
+                Type = GetTypeFromName (filename),
+            };
         }
 
-        public string GetTypeFromName (string filename)
+        public string GetTypeFromName (string filename, IEnumerable<string> preferred_formats = null)
         {
             var formats = LookupFileName (filename);
-            if (formats.Any())
-                return formats.First().Type;
-            return "";
+            if (!formats.Any())
+                return "";
+            if (preferred_formats != null && preferred_formats.Any())
+                formats = formats.OrderByDescending (f => preferred_formats.Contains (f.Tag));
+            return formats.First().Type;
         }
 
         public void InvokeParametersRequest (object source, ParametersRequestEventArgs args)

@@ -56,18 +56,10 @@ namespace GameRes
         /// characters.</exception>
         public EntryType Create<EntryType> (string filename) where EntryType : Entry, new()
         {
-            EntryType entry = null;
-            var formats = FormatCatalog.Instance.LookupFileName (filename);
-            if (formats.Any())
-            {
-                if (ContainedFormats != null && ContainedFormats.Any())
-                    formats = formats.OrderByDescending (f => ContainedFormats.Contains (f.Tag));
-                entry = new EntryType { Type = formats.First().Type };
-            }
-            if (null == entry)
-                entry = new EntryType();
-            entry.Name = filename;
-            return entry;
+            return new EntryType {
+                Name = filename,
+                Type = FormatCatalog.Instance.GetTypeFromName (filename, ContainedFormats),
+            };
         }
 
         /// <summary>
@@ -85,7 +77,10 @@ namespace GameRes
         /// </summary>
         public virtual Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            return arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
+            if (entry.Size > 0)
+                return arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
+            else
+                return Stream.Null;
         }
 
         /// <summary>
