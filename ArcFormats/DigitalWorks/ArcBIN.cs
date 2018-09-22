@@ -72,6 +72,11 @@ namespace GameRes.Formats.DigitalWorks
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public BinOpener ()
+        {
+            ContainedFormats = new[] { "TX", "OGG", "SCR" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.Name.HasAnyOfExtensions ("bin", "pac"))
