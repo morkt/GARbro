@@ -2,7 +2,7 @@
 //! \date       Sun Sep 20 13:58:52 2015
 //! \brief      Eushully and its subsidiaries resource archives.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -41,6 +41,11 @@ namespace GameRes.Formats.Eushully
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public AlfOpener ()
+        {
+            ContainedFormats = new[] { "AGF", "WAV", "AOG/SYS3", "SCR" };
+        }
+
         static string[] IndexNames = new string[] { "sys4ini.bin", "sys3ini.bin" };
 
         public override ArcFile TryOpen (ArcView file)
@@ -67,47 +72,30 @@ namespace GameRes.Formats.Eushully
         List<Entry> ReadIndex (string ini_file, string arc_name)
         {
             if (null == LastAccessedIndex
-                || !LastAccessedIndex.Item1.Equals (ini_file, StringComparison.InvariantCultureIgnoreCase))
+                || !LastAccessedIndex.Item1.Equals (ini_file, StringComparison.OrdinalIgnoreCase))
             {
                 LastAccessedIndex = null;
                 using (var ini = VFS.OpenView (ini_file))
                 {
-                    if (!ini.View.AsciiEqual (0, "S4IC") && !ini.View.AsciiEqual (0, "S3IC"))
-                        return null;
-                    uint packed_size = ini.View.ReadUInt32 (0x134);
-                    using (var packed = ini.CreateStream (0x138, packed_size))
-                    using (var unpacked = new LzssStream (packed))
-                    using (var index = new BinaryReader (unpacked))
+                    IBinaryStream index;
+                    if (ini.View.AsciiEqual (0, "S4IC") || ini.View.AsciiEqual (0, "S3IC"))
                     {
-                        int arc_count = index.ReadInt32();
-                        var name_buf = new byte[0x100];
-                        var file_table = new Dictionary<string, List<Entry>> (arc_count, StringComparer.InvariantCultureIgnoreCase);
-                        var arc_list = new List<List<Entry>> (arc_count);
-                        for (int i = 0; i < arc_count; ++i)
-                        {
-                            index.Read (name_buf, 0, name_buf.Length);
-                            var file_list = new List<Entry>();
-                            file_table.Add (Binary.GetCString (name_buf, 0, name_buf.Length), file_list);
-                            arc_list.Add (file_list);
-                        }
-                        int file_count = index.ReadInt32();
-                        for (int i = 0; i < file_count; ++i)
-                        {
-                            index.Read (name_buf, 0, 0x40);
-                            int arc_id = index.ReadInt32();
-                            if (arc_id < 0 || arc_id >= arc_list.Count)
-                                return null;
-                            index.ReadInt32(); // file number
-                            uint offset = index.ReadUInt32();
-                            uint size = index.ReadUInt32();
-                            var name = Binary.GetCString (name_buf, 0, 0x40);
-                            if ("@" == name)
-                                continue;
-                            var entry = FormatCatalog.Instance.Create<Entry> (name);
-                            entry.Offset = offset;
-                            entry.Size = size;
-                            arc_list[arc_id].Add (entry);
-                        }
+                        uint packed_size = ini.View.ReadUInt32 (0x134);
+                        var packed = ini.CreateStream (0x138, packed_size);
+                        var unpacked = new LzssStream (packed);
+                        index = new BinaryStream (unpacked, ini_file);
+                    }
+                    else if (ini.View.AsciiEqual (0, "S3IN"))
+                    {
+                        index = ini.CreateStream (0x12C);
+                    }
+                    else
+                        return null;
+                    using (index)
+                    {
+                        var file_table = ReadSysIni (index);
+                        if (null == file_table)
+                            return null;
                         LastAccessedIndex = Tuple.Create (ini_file, file_table);
                     }
                 }
@@ -115,6 +103,42 @@ namespace GameRes.Formats.Eushully
             List<Entry> dir = null;
             LastAccessedIndex.Item2.TryGetValue (arc_name, out dir);
             return dir;
+        }
+
+        internal Dictionary<string, List<Entry>> ReadSysIni (IBinaryStream index)
+        {
+            int arc_count = index.ReadInt32();
+            if (!IsSaneCount (arc_count))
+                return null;
+            var file_table = new Dictionary<string, List<Entry>> (arc_count, StringComparer.OrdinalIgnoreCase);
+            var arc_list = new List<Entry>[arc_count];
+            for (int i = 0; i < arc_count; ++i)
+            {
+                var name = index.ReadCString (0x100);
+                var file_list = new List<Entry>();
+                file_table.Add (name, file_list);
+                arc_list[i] = file_list;
+            }
+            int file_count = index.ReadInt32();
+            if (!IsSaneCount (file_count))
+                return null;
+            for (int i = 0; i < file_count; ++i)
+            {
+                var name = index.ReadCString (0x40);
+                int arc_id = index.ReadInt32();
+                if (arc_id < 0 || arc_id >= arc_list.Length)
+                    return null;
+                index.ReadInt32(); // file number
+                uint offset = index.ReadUInt32();
+                uint size = index.ReadUInt32();
+                if ("@" == name)
+                    continue;
+                var entry = Create<Entry> (name);
+                entry.Offset = offset;
+                entry.Size = size;
+                arc_list[arc_id].Add (entry);
+            }
+            return file_table;
         }
     }
 }
