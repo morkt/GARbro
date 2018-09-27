@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -60,10 +61,10 @@ namespace GameRes.Formats.Libido
                     if (0 == name_buf[j])
                         break;
                 }
-                if (0 == j)
+                if (0 == j || -1 != Array.IndexOf<byte> (name_buf, 0xFF, 0, j))
                     return null;
                 var name = Encodings.cp932.GetString (name_buf, 0, j);
-                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                var entry = Create<PackedEntry> (name);
                 entry.UnpackedSize = file.View.ReadUInt32 (index_offset+0x14);
                 entry.Size         = file.View.ReadUInt32 (index_offset+0x18);
                 entry.Offset       = file.View.ReadUInt32 (index_offset+0x1C);
