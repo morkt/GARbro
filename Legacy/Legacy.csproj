@@ -65,11 +65,15 @@
     <Compile Include="Aaru\ArcFL4.cs" />
     <Compile Include="Aaru\ImageBM2.cs" />
     <Compile Include="Acme\ImageARD.cs" />
+    <Compile Include="Acme\ImagePMG.cs" />
     <Compile Include="Ags32i\AudioAGS.cs" />
     <Compile Include="Ags32i\ImageGSS.cs" />
     <Compile Include="Airyu\ArcCHR.cs" />
     <Compile Include="Akatombo\ArcX.cs" />
     <Compile Include="Akatombo\ImageFB.cs" />
+    <Compile Include="Aquarium\ArcAAP.cs" />
+    <Compile Include="Aquarium\ArcCPA.cs" />
+    <Compile Include="Aquarium\ImageCP2.cs" />
     <Compile Include="Ark\ImageCMP.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
@@ -121,7 +125,7 @@
     <Compile Include="Rune\ArcYK.cs" />
     <Compile Include="Sarang\ImageABC.cs" />
     <Compile Include="Sogna\ArcSGS.cs" />
-    <Compile Include="Speed\ImageDAT.cs" />
+    <None Include="Speed\ImageDAT.cs" />
     <Compile Include="Tako\ArcMPK.cs" />
     <Compile Include="Tetratech\ArcBND.cs" />
     <Compile Include="Tigerman\ArcCHR.cs" />
