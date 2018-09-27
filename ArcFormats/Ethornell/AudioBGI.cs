@@ -38,6 +38,7 @@ namespace GameRes.Formats.BGI
 
         public BgiAudio ()
         {
+            Signatures = new uint[] { 0x40, 0 };
             Extensions = new string[] { "bw", "", "_bw" };
         }
         
