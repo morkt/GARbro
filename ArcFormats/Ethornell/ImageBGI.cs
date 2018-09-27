@@ -43,7 +43,7 @@ namespace GameRes.Formats.BGI
 
         public BgiFormat ()
         {
-            Extensions = new string[] { "", "bgi", "_bg" };
+            Extensions = new string[] { "", "bgi", "_bg", "bg" };
         }
 
         public override void Write (Stream file, ImageData image)
