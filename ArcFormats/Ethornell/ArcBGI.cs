@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Utility;
 
 namespace GameRes.Formats.BGI
@@ -43,6 +44,7 @@ namespace GameRes.Formats.BGI
         public ArcOpener ()
         {
             Extensions = new string[] { "arc" };
+            ContainedFormats = new[] { "BGI", "CompressedBG", "BW", "SCR" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -61,7 +63,7 @@ namespace GameRes.Formats.BGI
             for (uint i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x10);
-                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                var entry = Create<PackedEntry> (name);
                 entry.Offset = base_offset + file.View.ReadUInt32 (index_offset+0x10);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x14);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -69,11 +71,9 @@ namespace GameRes.Formats.BGI
                 dir.Add (entry);
                 index_offset += 0x20;
             }
-            foreach (var entry in dir)
+            foreach (var entry in dir.Where (e => string.IsNullOrEmpty (e.Type)))
             {
-                if (entry.Name.HasExtension ("_bp"))
-                    entry.Type = "script";
-                else if (file.View.AsciiEqual (entry.Offset, "CompressedBG"))
+                if (file.View.AsciiEqual (entry.Offset, "CompressedBG"))
                     entry.Type = "image";
                 else if (file.View.AsciiEqual (entry.Offset+4, "bw  "))
                     entry.Type = "audio";
@@ -394,4 +394,9 @@ namespace GameRes.Formats.BGI
             return m_key;
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "_BP")]
+    [ExportMetadata("Target", "SCR")]
+    public class BpFormat : ResourceAlias { }
 }
