@@ -59,6 +59,7 @@ namespace GameRes.Formats.Rpm
     }
 
     [Export(typeof(ArchiveFormat))]
+    [ExportMetadata("Priority", -2)]
     public class ArcOpener : ArchiveFormat
     {
         public override string         Tag { get { return "ARC/RPM"; } }
@@ -94,9 +95,14 @@ namespace GameRes.Formats.Rpm
 
             var index_reader = new ArcIndexReader (file, count, is_compressed != 0);
             var scheme = index_reader.GuessScheme (8, new int[] { 0x20, 0x18 });
-            // additional filename extension check avoids dialog popup on false positives
+            // additional checks to avoid dialog popup on false positives
             if (null == scheme && KnownSchemes.Count > 0 && file.Name.HasExtension (".arc"))
+            {
+                var first_entry = file.View.ReadBytes (8, 0x20);
+                if (-1 == Array.FindIndex (first_entry, x => x != 0))
+                    return null;
                 scheme = QueryScheme();
+            }
             if (null == scheme)
                 return null;
 
