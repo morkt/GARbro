@@ -29,9 +29,7 @@ using System.IO;
 
 namespace GameRes.Formats.WestGate
 {
-#if DEBUG
     [Export(typeof(ArchiveFormat))]
-#endif
     public class UwfOpener : ArchiveFormat
     {
         public override string         Tag { get { return "UWF"; } }
@@ -39,6 +37,11 @@ namespace GameRes.Formats.WestGate
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
+
+        public UwfOpener ()
+        {
+            Extensions = new[] { "uwf", "arc" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {

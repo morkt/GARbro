@@ -28,9 +28,7 @@ using System.ComponentModel.Composition;
 
 namespace GameRes.Formats.WestGate
 {
-#if DEBUG
     [Export(typeof(ArchiveFormat))]
-#endif
     public class UsfOpener : ArchiveFormat
     {
         public override string         Tag { get { return "USF"; } }
