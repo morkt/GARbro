@@ -67,6 +67,7 @@ namespace GameRes.Formats.Valkyria
         public OdnOpener ()
         {
             Settings = new[] { AudioSampleRate };
+            Extensions = new[] { "odn", "dat" };
         }
 
         FixedSetSetting AudioSampleRate = new FixedSetSetting (Properties.Settings.Default) {
@@ -77,32 +78,17 @@ namespace GameRes.Formats.Valkyria
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.HasExtension (".odn"))
+            if (!file.Name.HasAnyOfExtensions ("odn", "dat"))
                 return null;
             var reader = new OdnIndexReader (file);
             var dir = reader.ReadIndex();
             if (null == dir)
                 return null;
-            /*
-            var sys_ini = VFS.CombinePath (VFS.GetDirectoryName (file.Name), "system.ini");
-            if (VFS.FileExists (sys_ini))
-            {
-                try
-                {
-                    using (var ini = new IniReader (sys_ini))
-                    {
-                        var scheme = ini.ReadScheme();
-                        return new OdnArchive (file, this, dir, scheme);
-                    }
-                }
-                catch { }
-            }
-            */
             return new ArcFile (file, this, dir);
         }
 
         internal static readonly Regex Image24NameRe = new Regex ("^(?:back|phii)");
-        internal static readonly Regex Image32NameRe = new Regex ("^(?:data|codn|cccc)");
+        internal static readonly Regex Image32NameRe = new Regex ("^(?:data|codn|cccc|fund)");
         internal static readonly Regex ScriptNameRe  = new Regex ("^(?:scrp|menu|sysm)");
         internal static readonly Regex AudioNameRe   = new Regex ("^hime");
 
@@ -185,6 +171,7 @@ namespace GameRes.Formats.Valkyria
             new Size (1024, 768),
             new Size (800, 600),
             new Size (640, 480),
+            new Size (400, 600),
             new Size (400, 200),
         };
 
@@ -369,6 +356,8 @@ namespace GameRes.Formats.Valkyria
                     IResource res = null;
                     if (0x5E6A6A42 == signature)
                         res = OggAudio.Instance;
+                    else if (AudioFormat.Wav.Signature == signature)
+                        res = AudioFormat.Wav;
                     else
                         res = AutoEntry.DetectFileType (signature);
                     if (res != null)
