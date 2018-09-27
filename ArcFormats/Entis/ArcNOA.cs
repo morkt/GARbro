@@ -77,8 +77,10 @@ namespace GameRes.Formats.Entis
 
         public NoaOpener ()
         {
-            Extensions = new string[] { "noa", "dat", "rsa", "arc" };
+            Extensions = new string[] { "noa", "dat", "rsa", "arc", "emc" };
+            Signatures = new uint[] { 0x69746E45, 0x54534956 };
             Settings = new[] { NoaEncoding };
+            ContainedFormats = new[] { "ERI", "EMI", "MIO", "EMS", "TXT" };
         }
 
         EncodingSetting NoaEncoding = new EncodingSetting ("NOAEncodingCP", "DefaultEncoding");
@@ -88,7 +90,7 @@ namespace GameRes.Formats.Entis
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "Entis\x1a"))
+            if (!file.View.AsciiEqual (0, "Entis\x1a") && !file.View.AsciiEqual (0, "VIST\x1a"))
                 return null;
             uint id = file.View.ReadUInt32 (8);
             if (0x02000400 != id)
@@ -603,4 +605,9 @@ namespace GameRes.Formats.Entis
             }
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "GDS")]
+    [ExportMetadata("Target", "TXT")]
+    public class GdsFormat : ResourceAlias { }
 }
