@@ -90,7 +90,7 @@ namespace GameRes.Formats.DigitalWorks
                 Offset = e.Offset,
                 Size = e.Size,
             } as Entry).ToList();
-            dir.ForEach (e => e.Type = FormatCatalog.Instance.GetTypeFromName (e.Name));
+            dir.ForEach (e => e.Type = FormatCatalog.Instance.GetTypeFromName (e.Name, ContainedFormats));
             return new ArcFile (file, this, dir);
         }
 
