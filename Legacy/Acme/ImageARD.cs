@@ -27,6 +27,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
+// [031212][Acme] Hageshiku Botebara! Senpai, Watashi no Ko, Mitomete Kudasai!!
 // [050325][Acme] Project Sex Shuudan Ninshin ~Athlete o Haramasero!~
 
 namespace GameRes.Formats.Acme
