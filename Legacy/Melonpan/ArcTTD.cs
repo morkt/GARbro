@@ -28,6 +28,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
 
+// [021220][Aias] Stitch -Kakechigaeta Button-
 // [030829][Melonpan] Himawari no Natsu ~Boku ga Eranda Ashita~
 
 namespace GameRes.Formats.Melonpan
@@ -46,20 +47,25 @@ namespace GameRes.Formats.Melonpan
             int count = file.View.ReadInt32 (4);
             if (!IsSaneCount (count))
                 return null;
-            uint index_offset = 12;
+            int index_offset = 12;
+            int first_offset = file.View.ReadInt32 (index_offset+4);
+            int name_length = (first_offset - index_offset) / count - 0xC;
+            if (name_length < 8)
+                return null;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
                 uint size   = file.View.ReadUInt32 (index_offset);
                 uint offset = file.View.ReadUInt32 (index_offset+4);
-                var name = file.View.ReadString (index_offset+0xC, 0x20);
-                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                index_offset += 0xC;
+                var name = file.View.ReadString (index_offset, (uint)name_length);
+                var entry = Create<PackedEntry> (name);
                 entry.Offset = offset;
                 entry.Size   = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
-                index_offset += 0x2C;
+                index_offset += name_length;
             }
             return new ArcFile (file, this, dir);
         }
