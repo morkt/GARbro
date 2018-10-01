@@ -127,6 +127,7 @@
     <Compile Include="Sogna\ArcSGS.cs" />
     <Compile Include="StudioJikkenshitsu\ImageDAT.cs" />
     <Compile Include="StudioJikkenshitsu\ImageGRD.cs" />
+    <Compile Include="StudioJikkenshitsu\SjTransform.cs" />
     <Compile Include="Tako\ArcMPK.cs" />
     <Compile Include="Tetratech\ArcBND.cs" />
     <Compile Include="Tigerman\ArcCHR.cs" />
