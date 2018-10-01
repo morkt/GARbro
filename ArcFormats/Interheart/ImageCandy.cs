@@ -35,31 +35,56 @@ namespace GameRes.Formats.Interheart
     internal class CandyMetaData : ImageMetaData
     {
         public int  Colors;
+        public int  HeaderSize;
+        public int  Version;
     }
 
     [Export(typeof(ImageFormat))]
     public class CandyFormat : ImageFormat
     {
-        public override string         Tag { get { return "PIC/CANDY"; } }
+        public override string         Tag { get { return "EPF"; } }
         public override string Description { get { return "Candy Soft image format"; } }
         public override uint     Signature { get { return 0; } }
 
         public CandyFormat ()
         {
-            Extensions = new string[] { "" };
+            Signatures = new uint[] { 0x0E00, 0 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = file.ReadHeader (10);
-            if (BigEndian.ToUInt16 (header, 0) != 10 || header[7] != 1)
+            var header = file.ReadHeader (14);
+            int header_size = BigEndian.ToUInt16 (header, 0);
+            CandyMetaData info;
+            if (14 == header_size)
+            {
+                info = new CandyMetaData {
+                    OffsetX = BigEndian.ToInt16 (header, 2),
+                    OffsetY = BigEndian.ToInt16 (header, 4),
+                    Width   = BigEndian.ToUInt16 (header, 6),
+                    Height  = BigEndian.ToUInt16 (header, 8),
+                    BPP     = header[0xA],
+                    Colors  = BigEndian.ToUInt16 (header, 0xC),
+                    Version = header[0xB],
+                    HeaderSize = header_size,
+                };
+            }
+            else if (10 == header_size)
+            {
+                info = new CandyMetaData {
+                    Width   = BigEndian.ToUInt16 (header, 2),
+                    Height  = BigEndian.ToUInt16 (header, 4),
+                    BPP     = header[6],
+                    Colors  = BigEndian.ToUInt16 (header, 8),
+                    Version = header[7],
+                    HeaderSize = header_size,
+                };
+            }
+            else
                 return null;
-            return new CandyMetaData {
-                Width  = BigEndian.ToUInt16 (header, 2),
-                Height = BigEndian.ToUInt16 (header, 4),
-                BPP = header[6],
-                Colors = BigEndian.ToUInt16 (header, 8),
-            };
+            if (info.Version != 1 && info.Version != 2 || info.BPP < 8 || info.BPP > 32)
+                return null;
+            return info;
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -78,11 +103,13 @@ namespace GameRes.Formats.Interheart
     internal class CandyDecoder
     {
         IBinaryStream   m_input;
+        CandyMetaData   m_info;
         byte[]          m_output;
         int             m_width;
         int             m_height;
         int             m_stride;
         int             m_colors;
+        int             m_pixel_size;
 
         public PixelFormat    Format { get; private set; }
         public BitmapPalette Palette { get; private set; }
@@ -90,17 +117,26 @@ namespace GameRes.Formats.Interheart
         public CandyDecoder (IBinaryStream input, CandyMetaData info)
         {
             m_input = input;
+            m_info = info;
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_colors = info.Colors;
-            if (32 == info.BPP)
+            if (24 == info.BPP || (32 == info.BPP && 1 == info.Version))
             {
-                m_stride = (int)m_width * 3;
+                m_pixel_size = 3;
+                m_stride = m_width * 3;
                 Format = PixelFormats.Bgr24;
+            }
+            else if (32 == info.BPP)
+            {
+                m_pixel_size = 4;
+                m_stride = m_width * 4;
+                Format = PixelFormats.Bgra32;
             }
             else
             {
-                m_stride = (int)m_width;
+                m_pixel_size = 1;
+                m_stride = m_width;
                 Format = PixelFormats.Indexed8;
             }
             m_output = new byte[m_stride * m_height];
@@ -108,31 +144,50 @@ namespace GameRes.Formats.Interheart
 
         public byte[] Unpack ()
         {
-            m_input.Position = 0xA;
+            m_input.Position = m_info.HeaderSize;
             if (m_colors > 0)
                 Palette = ReadPalette();
             LzUnpack();
-            if (m_colors > 0)
-                return m_output;
+            return RestorePixels();
+        }
+
+        byte[] RestorePixels ()
+        {
             var pixels = new byte[m_output.Length];
             int src = 0;
-            for (int block_y = 0; block_y < m_height; block_y += 80)
-            for (int block_x = 0; block_x < m_width; block_x += 80)
+            int block_size = m_info.BPP == 8 ? 144 : 80;
+            for (int block_y = 0; block_y < m_height; block_y += block_size)
+            for (int block_x = 0; block_x < m_width; block_x += block_size)
             {
-                int dst_col = block_y * m_stride + block_x * 3;
-                int block_height = Math.Min (80, m_height - block_y);
-                int block_width  = Math.Min (80, m_width - block_x);
+                int dst_col = block_y * m_stride + block_x * m_pixel_size;
+                int block_height = Math.Min (block_size, m_height - block_y);
+                int block_width  = Math.Min (block_size, m_width - block_x);
                 for (int x = 0; x < block_width; ++x)
                 {
                     int dst = dst_col;
                     for (int y = 0; y < block_height; ++y)
                     {
-                        pixels[dst+2] = m_output[src++];
-                        pixels[dst+1] = m_output[src++];
-                        pixels[dst  ] = m_output[src++];
+                        if (m_pixel_size > 3)
+                        {
+                            pixels[dst+3] = m_output[src ];
+                            pixels[dst+2] = m_output[src+1];
+                            pixels[dst+1] = m_output[src+2];
+                            pixels[dst  ] = m_output[src+3];
+                        }
+                        else if (1 == m_pixel_size)
+                        {
+                            pixels[dst] = m_output[src];
+                        }
+                        else
+                        {
+                            pixels[dst+2] = m_output[src ];
+                            pixels[dst+1] = m_output[src+1];
+                            pixels[dst  ] = m_output[src+2];
+                        }
                         dst += m_stride;
+                        src += m_pixel_size;
                     }
-                    dst_col += 3;
+                    dst_col += m_pixel_size;
                 }
             }
             return pixels;
