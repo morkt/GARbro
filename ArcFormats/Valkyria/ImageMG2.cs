@@ -118,7 +118,7 @@ namespace GameRes.Formats.Valkyria
 
             using (var input = meta.Scheme.CreateStream (file, 0x10+meta.ImageLength, meta.AlphaLength))
             {
-                var decoder = new PngBitmapDecoder (input, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                var decoder = BitmapDecoder.Create (input, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 BitmapSource alpha_frame = decoder.Frames[0];
                 if (alpha_frame.PixelWidth != frame.PixelWidth || alpha_frame.PixelHeight != frame.PixelHeight)
                     return BitmapSource.Create ((int)meta.Width, (int)meta.Height,
