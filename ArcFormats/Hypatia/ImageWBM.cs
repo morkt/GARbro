@@ -39,7 +39,7 @@ namespace GameRes.Formats.Hypatia
 
         public WbmFormat ()
         {
-            Extensions = new[] { "dat", "wbm" };
+            Extensions = new[] { "wbm"/*, "dat"*/ };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
