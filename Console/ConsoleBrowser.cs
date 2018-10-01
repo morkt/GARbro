@@ -16,7 +16,9 @@ namespace GARbro
 {
     class ConsoleBrowser
     {
-        private string m_arc_name;
+        private string      m_arc_name;
+        private ImageFormat m_image_format;
+        private bool        m_extract_all;
 
         void ListFormats ()
         {
@@ -53,6 +55,7 @@ namespace GARbro
             Console.WriteLine ("Extracting {0} ...", entry.Name);
             arc.Extract (entry);
         }
+
         void TestArc (string[] args)
         {
 /*
@@ -63,55 +66,86 @@ namespace GARbro
             }
 */
         }
+
         void Run (string[] args)
         {
             int argn = 0;
-            if (args[argn].Equals ("-l"))
+            while (argn < args.Length)
             {
-                ListFormats();
-                return;
-            }
-            if (args[argn].Equals ("-t"))
-            {
-                TestArc (args);
-                return;
-            }
-            if (args[argn].Equals ("-x"))
-            {
-                ++argn;
-                if (args.Length < 2)
+                if (args[argn].Equals ("-l"))
                 {
-                    Usage();
+                    ListFormats();
                     return;
                 }
+                else if (args[argn].Equals ("-t"))
+                {
+                    TestArc (args);
+                    return;
+                }
+                else if (args[argn].Equals ("-c"))
+                {
+                    if (argn+1 >= args.Length)
+                    {
+                        Usage();
+                        return;
+                    }
+                    var tag = args[argn+1];
+                    m_image_format = FindFormat (tag);
+                    if (null == m_image_format)
+                    {
+                        Console.Error.WriteLine ("{0}: unknown format specified", tag);
+                        return;
+                    }
+                    argn += 2;
+                }
+                else if (args[argn].Equals ("-x"))
+                {
+                    m_extract_all = true;
+                    ++argn;
+                    if (args.Length <= argn)
+                    {
+                        Usage();
+                        return;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (argn >= args.Length)
+            {
+                Usage();
+                return;
             }
             DeserializeGameData();
             foreach (var file in VFS.GetFiles (args[argn]))
             {
                 m_arc_name = file.Name;
-                var arc = ArcFile.TryOpen (file);
-                if (null == arc)
+                try
+                {
+                    VFS.ChDir (m_arc_name);
+                }
+                catch (Exception X)
                 {
                     Console.Error.WriteLine ("{0}: unknown format", m_arc_name);
                     continue;
                 }
-                using (arc)
+                var arc = (ArchiveFileSystem)VFS.Top;
+                if (args.Length > argn+1)
                 {
-                    if (args.Length > argn+1)
+                    for (int i = argn+1; i < args.Length; ++i)
+                        ExtractFile (arc, args[i]);
+                }
+                else if (m_extract_all)
+                {
+                    ExtractAll (arc);
+                }
+                else
+                {
+                    foreach (var entry in arc.Dir.OrderBy (e => e.Offset))
                     {
-                        for (int i = argn+1; i < args.Length; ++i)
-                            ExtractFile (arc, args[i]);
-                    }
-                    else if (args[0].Equals ("-x"))
-                    {
-                        ExtractAll (arc);
-                    }
-                    else
-                    {
-                        foreach (var entry in arc.Dir.OrderBy (e => e.Offset))
-                        {
-                            Console.WriteLine ("{0,9} [{2:X8}] {1}", entry.Size, entry.Name, entry.Offset);
-                        }
+                        Console.WriteLine ("{0,9} [{2:X8}] {1}", entry.Size, entry.Name, entry.Offset);
                     }
                 }
             }
