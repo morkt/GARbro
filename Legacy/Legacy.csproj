@@ -125,7 +125,8 @@
     <Compile Include="Rune\ArcYK.cs" />
     <Compile Include="Sarang\ImageABC.cs" />
     <Compile Include="Sogna\ArcSGS.cs" />
-    <None Include="Speed\ImageDAT.cs" />
+    <Compile Include="StudioJikkenshitsu\ImageDAT.cs" />
+    <Compile Include="StudioJikkenshitsu\ImageGRD.cs" />
     <Compile Include="Tako\ArcMPK.cs" />
     <Compile Include="Tetratech\ArcBND.cs" />
     <Compile Include="Tigerman\ArcCHR.cs" />
@@ -216,7 +217,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Bom\" />
-    <Folder Include="StudioJikkenshitsu\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
