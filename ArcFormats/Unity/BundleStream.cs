@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using GameRes.Compression;
+using LZMA = SevenZip.Compression.LZMA;
 
 namespace GameRes.Formats.Unity
 {
@@ -97,18 +98,43 @@ namespace GameRes.Formats.Unity
             }
         }
 
+        byte[] PrepareBuffer (uint length)
+        {
+            if (null == m_buffer || length > m_buffer.Length)
+                m_buffer = new byte[length];
+            return m_buffer;
+        }
+
         void ReadCompressedSegment (BundleSegment segment)
         {
             m_input.Position = segment.Offset;
+            int method = segment.Compression & 0x3F;
+            if (1 == method)
+            {
+                m_buffer_len = LzmaDecompressBlock (segment.PackedSize, segment.UnpackedSize);
+                return;
+            }
             if (null == m_packed || segment.PackedSize > m_packed.Length)
                 m_packed = new byte[segment.PackedSize];
             int packed_size = m_input.Read (m_packed, 0, (int)segment.PackedSize);
-            if (null == m_buffer || segment.UnpackedSize > m_buffer.Length)
-                m_buffer = new byte[segment.UnpackedSize];
-            if (3 == segment.Compression)
-                m_buffer_len = Lz4Compressor.DecompressBlock (m_packed, packed_size, m_buffer, (int)segment.UnpackedSize);
+            var output = PrepareBuffer (segment.UnpackedSize);
+            if (3 == method)
+                m_buffer_len = Lz4Compressor.DecompressBlock (m_packed, packed_size, output, (int)segment.UnpackedSize);
             else
                 throw new NotImplementedException ("Not supported Unity asset bundle compression.");
+        }
+
+        int LzmaDecompressBlock (uint packed_size, uint unpacked_size)
+        {
+            var decoder = new LZMA.Decoder();
+            var props = m_input.ReadBytes (5);
+            decoder.SetDecoderProperties (props);
+            var buffer = PrepareBuffer (unpacked_size);
+            using (var output = new MemoryStream (buffer))
+            {
+                decoder.Code (m_input, output, packed_size-5, unpacked_size, null);
+                return (int)output.Length;
+            }
         }
 
         int ReadFromSegment (BundleSegment segment, byte[] buffer, int offset, int count)
