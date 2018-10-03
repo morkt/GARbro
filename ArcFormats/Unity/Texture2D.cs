@@ -24,6 +24,7 @@
 //
 
 using System;
+using System.Collections;
 using System.IO;
 using System.Windows.Media;
 using GameRes.Formats.DirectDraw;
@@ -99,6 +100,20 @@ namespace GameRes.Formats.Unity
         public void LoadData (AssetReader reader)
         {
             m_Data = reader.ReadBytes (m_DataLength);
+        }
+
+        public void Import (IDictionary fields)
+        {
+            m_Name = fields["m_Name"] as string ?? "";
+            m_Width = (int)(fields["m_Width"] ?? 0);
+            m_Height = (int)(fields["m_Height"] ?? 0);
+            m_CompleteImageSize = (int)(fields["m_CompleteImageSize"] ?? 0);
+            m_TextureFormat = (TextureFormat)(fields["m_TextureFormat"] ?? 0);
+            m_MipCount = (int)(fields["m_MipCount"] ?? 0);
+            m_ImageCount = (int)(fields["m_ImageCount"] ?? 0);
+            m_TextureDimension = (int)(fields["m_TextureDimension"] ?? 0);
+            m_IsReadable = (bool)(fields["m_IsReadable"] ?? false);
+            m_Data = fields["image data"] as byte[] ?? Array.Empty<byte>();
         }
     }
 

@@ -99,7 +99,7 @@ namespace GameRes.Formats.Unity
             using (var input = new BinMemoryStream (index_data))
                 index.Parse (input);
             var dir = index.LoadObjects();
-            return new UnityBundle (file, this, dir, index.Segments);
+            return new UnityBundle (file, this, dir, index.Segments, index.Bundles);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -126,12 +126,37 @@ namespace GameRes.Formats.Unity
                 return base.OpenImage (arc, entry);
             var uarc = (UnityBundle)arc;
             var obj = aent.AssetObject;
-            Stream input = new BundleStream (uarc.File, uarc.Segments);
-            input = new StreamRegion (input, obj.Offset, obj.Size);
+            var bundles = new BundleStream (uarc.File, uarc.Segments);
+            var input = new StreamRegion (bundles, obj.Offset, obj.Size);
             var reader = new AssetReader (input, entry.Name);
             reader.SetupReaders (obj.Asset);
-            var tex = new Texture2D();
-            tex.Load (reader);
+            Texture2D tex = null;
+            if (obj.Asset.Tree.TypeTrees.ContainsKey (obj.TypeId))
+            {
+                var type = obj.Asset.Tree.TypeTrees[obj.TypeId];
+                if (type.Children.Any (t => t.Type == "StreamingInfo"))
+                {
+                    var fields = obj.Deserialize (reader);
+                    tex = new Texture2D();
+                    tex.Import (fields);
+                    var info = fields["m_StreamData"] as StreamingInfo;
+                    if (info != null)
+                    {
+                        var bundle = uarc.Bundles.FirstOrDefault (b => VFS.IsPathEqualsToFileName (info.Path, b.Name));
+                        if (bundle != null)
+                        {
+                            tex.m_DataLength = (int)info.Size;
+                            input = new StreamRegion (bundles, bundle.Offset+info.Offset, info.Size);
+                            reader = new AssetReader (input, entry.Name);
+                        }
+                    }
+                }
+            }
+            if (null == tex)
+            {
+                tex = new Texture2D();
+                tex.Load (reader);
+            }
             return new Texture2DDecoder (tex, reader);
         }
 
@@ -166,11 +191,13 @@ namespace GameRes.Formats.Unity
     internal class UnityBundle : ArcFile
     {
         public readonly List<BundleSegment> Segments;
+        public readonly List<BundleEntry>   Bundles;
 
-        public UnityBundle (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, List<BundleSegment> segments)
+        public UnityBundle (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, List<BundleSegment> segments, List<BundleEntry> bundles)
             : base (arc, impl, dir)
         {
             Segments = segments;
+            Bundles = bundles;
         }
     }
 
@@ -193,6 +220,7 @@ namespace GameRes.Formats.Unity
         List<BundleEntry>   m_bundles;
 
         public List<BundleSegment> Segments { get { return m_segments; } }
+        public List<BundleEntry>    Bundles { get { return m_bundles; } }
 
         public AssetDeserializer (ArcView file, long data_offset)
         {
@@ -239,8 +267,10 @@ namespace GameRes.Formats.Unity
             {
                 foreach (BundleEntry bundle in m_bundles)
                 {
-                    if (bundle.Name.EndsWith (".resource"))
+                    if (bundle.Name.HasAnyOfExtensions (".resource", ".resS"))
                         continue;
+                    var res_s_name = bundle.Name + ".resS";
+                    var res_s = m_bundles.FirstOrDefault (b => b.Name == res_s_name);
                     using (var asset_stream = new StreamRegion (stream, bundle.Offset, bundle.Size, true))
                     using (var reader = new AssetReader (asset_stream, bundle.Name))
                     {

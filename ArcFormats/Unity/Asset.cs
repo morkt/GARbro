@@ -28,9 +28,11 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using GameRes.Utility;
 
@@ -209,6 +211,71 @@ namespace GameRes.Formats.Unity
         {
             return string.Format ("<{0} {1}>", Type, ClassId);
         }
+
+        public IDictionary Deserialize (AssetReader input)
+        {
+            var type_tree = Asset.Tree.TypeTrees;
+            if (!type_tree.ContainsKey (TypeId))
+                return null;
+            var type_map = new Hashtable();
+            var type = type_tree[TypeId];
+            foreach (var node in type.Children)
+            {
+                type_map[node.Name] = DeserializeType (input, node);
+            }
+            return type_map;
+        }
+
+        object DeserializeType (AssetReader input, TypeTree node)
+        {
+            object obj = null;
+            if (node.IsArray)
+            {
+                int size = input.ReadInt32();
+                var data_field = node.Children.FirstOrDefault (n => n.Name == "data");
+                if (data_field != null)
+                {
+                    if ("TypelessData" == node.Type)
+                        obj = input.ReadBytes (size * data_field.Size);
+                    else
+                        obj = DeserializeArray (input, size, data_field);
+                }
+            }
+            else if (node.Size < 0)
+            {
+                if (node.Type == "string")
+                {
+                    obj = input.ReadString();
+                    if (node.Children[0].IsAligned)
+                        input.Align();
+                }
+                else if (node.Type == "StreamingInfo")
+                {
+                    var info = new StreamingInfo();
+                    info.Load (input);
+                    obj = info;
+                }
+                else
+                    throw new NotImplementedException ("Unknown class encountered in asset deserialzation.");
+            }
+            else if ("int" == node.Type)
+                obj = input.ReadInt32();
+            else if ("bool" == node.Type)
+                obj = input.ReadBool();
+            else
+                input.Position += node.Size;
+            if (node.IsAligned)
+                input.Align();
+            return obj;
+        }
+
+        object[] DeserializeArray (AssetReader input, int length, TypeTree elem)
+        {
+            var array = new object[length];
+            for (int i = 0; i < length; ++i)
+                array[i] = DeserializeType (input, elem);
+            return array;
+        }
     }
 
     internal class TypeTree
@@ -225,6 +292,8 @@ namespace GameRes.Formats.Unity
         public int      Flags;
 
         public IList<TypeTree> Children { get { return m_children; } }
+
+        public bool           IsAligned { get { return (Flags & 0x4000) != 0; } }
 
         static readonly string          Null = "(null)";
         static readonly Lazy<byte[]>    StringsDat = new Lazy<byte[]> (() => LoadResource ("strings.dat"));

@@ -39,6 +39,8 @@ namespace GameRes.Formats.Unity
         IBinaryStream   m_input;
         int             m_format;
 
+        const int MaxStringLength = 0x100000;
+
         public Stream Source { get { return m_input.AsStream; } }
         public int    Format { get { return m_format; } }
         public long Position {
@@ -144,6 +146,8 @@ namespace GameRes.Formats.Unity
             int length = ReadInt32();
             if (0 == length)
                 return string.Empty;
+            if (length < 0 || length > MaxStringLength)
+                throw new InvalidFormatException();
             var bytes = ReadBytes (length);
             return Encoding.UTF8.GetString (bytes);
         }
