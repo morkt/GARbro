@@ -70,8 +70,8 @@ namespace GameRes.Formats.TmrHiro
             int bottom  = header.ToUInt16 (0xE);
             var info = new GrdMetaData {
                 Format      = header.ToUInt16 (0),
-                Width       = (uint)(right-left),
-                Height      = (uint)(bottom-top),
+                Width       = (uint)System.Math.Abs (right - left),
+                Height      = (uint)System.Math.Abs (bottom - top),
                 BPP         = bpp,
                 OffsetX     = left,
                 OffsetY     = screen_height - bottom,
