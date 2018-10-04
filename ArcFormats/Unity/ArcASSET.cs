@@ -84,7 +84,7 @@ namespace GameRes.Formats.Unity
             {
                 reader.SetupReaders (obj.Asset);
                 var tex = new Texture2D();
-                tex.Load (reader);
+                tex.Load (reader, obj.Asset.Tree.Version);
                 if (0 == tex.m_DataLength)
                 {
                     reader.Dispose();
@@ -131,6 +131,7 @@ namespace GameRes.Formats.Unity
                 }
                 m_disposed = true;
             }
+            base.Dispose (disposing);
         }
         #endregion
     }

@@ -45,7 +45,7 @@ namespace GameRes.Formats.Unity
 
         public UnityFSOpener ()
         {
-            Extensions = new string[] { "", "unity3d" };
+            Extensions = new string[] { "", "unity3d", "asset" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -122,7 +122,7 @@ namespace GameRes.Formats.Unity
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var aent = entry as AssetEntry;
-            if (null == aent || aent.AssetObject.Type != "Texture2D")
+            if (null == aent || aent.AssetObject.TypeName != "Texture2D")
                 return base.OpenImage (arc, entry);
             var uarc = (UnityBundle)arc;
             var obj = aent.AssetObject;
@@ -131,24 +131,21 @@ namespace GameRes.Formats.Unity
             var reader = new AssetReader (input, entry.Name);
             reader.SetupReaders (obj.Asset);
             Texture2D tex = null;
-            if (obj.Asset.Tree.TypeTrees.ContainsKey (obj.TypeId))
+            var type = obj.Type;
+            if (type != null && type.Children.Any (t => t.Type == "StreamingInfo"))
             {
-                var type = obj.Asset.Tree.TypeTrees[obj.TypeId];
-                if (type.Children.Any (t => t.Type == "StreamingInfo"))
+                var fields = obj.Deserialize (reader);
+                tex = new Texture2D();
+                tex.Import (fields);
+                var info = fields["m_StreamData"] as StreamingInfo;
+                if (info != null)
                 {
-                    var fields = obj.Deserialize (reader);
-                    tex = new Texture2D();
-                    tex.Import (fields);
-                    var info = fields["m_StreamData"] as StreamingInfo;
-                    if (info != null)
+                    var bundle = uarc.Bundles.FirstOrDefault (b => VFS.IsPathEqualsToFileName (info.Path, b.Name));
+                    if (bundle != null)
                     {
-                        var bundle = uarc.Bundles.FirstOrDefault (b => VFS.IsPathEqualsToFileName (info.Path, b.Name));
-                        if (bundle != null)
-                        {
-                            tex.m_DataLength = (int)info.Size;
-                            input = new StreamRegion (bundles, bundle.Offset+info.Offset, info.Size);
-                            reader = new AssetReader (input, entry.Name);
-                        }
+                        tex.m_DataLength = (int)info.Size;
+                        input = new StreamRegion (bundles, bundle.Offset+info.Offset, info.Size);
+                        reader = new AssetReader (input, entry.Name);
                     }
                 }
             }
@@ -269,8 +266,6 @@ namespace GameRes.Formats.Unity
                 {
                     if (bundle.Name.HasAnyOfExtensions (".resource", ".resS"))
                         continue;
-                    var res_s_name = bundle.Name + ".resS";
-                    var res_s = m_bundles.FirstOrDefault (b => b.Name == res_s_name);
                     using (var asset_stream = new StreamRegion (stream, bundle.Offset, bundle.Size, true))
                     using (var reader = new AssetReader (asset_stream, bundle.Name))
                     {
@@ -305,6 +300,8 @@ namespace GameRes.Formats.Unity
             foreach (var obj in asset.Objects)
             {
                 var entry = ReadAsset (file, obj);
+                if (null == entry)
+                    continue;
                 if (null == entry.Bundle)
                     entry.Bundle = bundle;
                 string name;
@@ -319,7 +316,7 @@ namespace GameRes.Formats.Unity
 
         AssetEntry ReadAsset (Stream file, UnityObject obj)
         {
-            string type = obj.Type;
+            string type = obj.TypeName;
             if ("AudioClip" == type)
                 return ReadAudioClip (file, obj);
             else if ("TextAsset" == type)
@@ -366,8 +363,8 @@ namespace GameRes.Formats.Unity
 
         string GetObjectName (Stream input, UnityObject obj)
         {
-            TypeTree type;
-            if (obj.Asset.Tree.TypeTrees.TryGetValue (obj.TypeId, out type) && type.Children.Count > 0)
+            var type = obj.Type;
+            if (type != null && type.Children.Count > 0)
             {
                 var first_field = type.Children[0];
                 if ("m_Name" == first_field.Name && "string" == first_field.Type)
@@ -385,8 +382,7 @@ namespace GameRes.Formats.Unity
 
         AssetEntry ReadTextAsset (Stream input, UnityObject obj)
         {
-            var type_def = obj.Asset.Tree.TypeTrees[obj.TypeId];
-            var script = type_def.Children.FirstOrDefault (f => f.Name == "m_Script");
+            var script = obj.Type.Children.FirstOrDefault (f => f.Name == "m_Script");
             if (null == script)
                 return null;
             using (var reader = obj.Open (input))

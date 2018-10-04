@@ -198,12 +198,20 @@ namespace GameRes.Formats.Unity
                 reader.ReadByte();
         }
 
-        public string Type {
+        public string TypeName {
             get {
-                var type_tree = Asset.Tree.TypeTrees;
-                if (type_tree.ContainsKey (TypeId))
-                    return type_tree[TypeId].Type;
+                var type = this.Type;
+                if (type != null)
+                    return type.Type;
                 return string.Format ("[TypeId:{0}]", TypeId);
+            }
+        }
+
+        public TypeTree Type {
+            get {
+                TypeTree type;
+                Asset.Tree.TypeTrees.TryGetValue (TypeId, out type);
+                return type;
             }
         }
 
@@ -260,6 +268,8 @@ namespace GameRes.Formats.Unity
             }
             else if ("int" == node.Type)
                 obj = input.ReadInt32();
+            else if ("unsigned int" == node.Type)
+                obj = input.ReadUInt32();
             else if ("bool" == node.Type)
                 obj = input.ReadBool();
             else
