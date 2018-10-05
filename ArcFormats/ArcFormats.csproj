@@ -253,6 +253,7 @@
     <Compile Include="MicroVision\ImageGPC.cs" />
     <Compile Include="Morning\ArcPAK.cs" />
     <Compile Include="PackedStream.cs" />
+    <Compile Include="Palette\ArcPAK2.cs" />
     <Compile Include="PalmTree\ArcAR.cs" />
     <Compile Include="PkWare\WidgetZIP.xaml.cs">
       <DependentUpon>WidgetZIP.xaml</DependentUpon>
