@@ -2,7 +2,7 @@
 //! \date       Mon Oct 26 07:26:39 2015
 //! \brief      Multi-frame PNG archive.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -100,6 +100,7 @@ namespace GameRes.Formats.Palette
                         Name = string.Format ("{0}#blend#{1}.png", base_name, name),
                         Type = "image",
                         Source = entry,
+                        Offset = 0,
                     };
                     dir.Add (virt_entry);
                 }
@@ -108,10 +109,20 @@ namespace GameRes.Formats.Palette
             return new ArcFile (file, this, dir);
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             if (entry is VirtualCharEntry)
                 return BlendEntry (arc, entry as VirtualCharEntry);
+            var input = arc.OpenBinaryEntry (entry);
+            var info = ImageFormat.Png.ReadMetaData (input);
+            input.Position = 0;
+            return new ImageFormatDecoder (input, ImageFormat.Png, info);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (entry is VirtualCharEntry)
+                return Stream.Null;
             int extra_length = PgaFormat.PngHeader.Length + PgaFormat.PngFooter.Length;
             var png = new MemoryStream ((int)entry.Size + extra_length + 17);
             var cent = entry as CharEntry;
@@ -148,7 +159,7 @@ namespace GameRes.Formats.Palette
             return png;
         }
 
-        Stream BlendEntry (ArcFile arc, VirtualCharEntry entry)
+        IImageDecoder BlendEntry (ArcFile arc, VirtualCharEntry entry)
         {
             using (var base_png = OpenEntry (arc, arc.Dir.First()))
             using (var overlay_png = OpenEntry (arc, entry.Source))
@@ -168,15 +179,31 @@ namespace GameRes.Formats.Palette
                 var bmp = new RenderTargetBitmap (base_frame.PixelWidth, base_frame.PixelHeight,
                                                   base_frame.DpiX, base_frame.DpiY, PixelFormats.Pbgra32);
                 bmp.Render (visual);
-
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add (BitmapFrame.Create (bmp));
-
-                var mem = new MemoryStream();
-                encoder.Save (mem);
-                mem.Position = 0;
-                return mem;
+                var base_info = new ImageMetaData {
+                    Width  = (uint)bmp.PixelWidth,
+                    Height = (uint)bmp.PixelHeight,
+                    BPP    = bmp.Format.BitsPerPixel,
+                };
+                return new BitmapSourceDecoder (bmp, base_info);
             }
+        }
+    }
+
+    internal class BitmapSourceDecoder : IImageDecoder
+    {
+        public Stream            Source { get { return null; } }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get; private set; }
+        public ImageData          Image { get; private set; }
+
+        public BitmapSourceDecoder (BitmapSource bmp, ImageMetaData info)
+        {
+            Info = info;
+            Image = new ImageData (bmp, info);
+        }
+
+        public void Dispose ()
+        {
         }
     }
 }
