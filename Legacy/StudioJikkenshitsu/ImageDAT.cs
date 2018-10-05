@@ -59,7 +59,7 @@ namespace GameRes.Formats.Jikkenshitsu
 
         public SpDatFormat ()
         {
-            Extensions = new string[] { "dat" };
+            Extensions = new string[] { /* "dat" */ };
             Signatures = new uint[] { 0x010003, 0x010007, 0x01000B, 0x010046, 0 };
         }
 
