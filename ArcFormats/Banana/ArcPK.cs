@@ -67,7 +67,7 @@ namespace GameRes.Formats.Banana // namespace is arbitrary, actual format source
                 for (int j = 0; j < name_length; ++j)
                 {
                     name_buffer[j] -= key--;
-                    if (name_buffer[j] < 0x20)
+                    if (name_buffer[j] < 0x20 || name_buffer[j] >= 0xFD)
                         return null;
                 }
                 string name = Encodings.cp932.GetString (name_buffer, 0, name_length);
