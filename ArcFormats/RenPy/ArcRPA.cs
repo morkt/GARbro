@@ -100,7 +100,7 @@ namespace GameRes.Formats.RenPy
                 }
                 var entry = FormatCatalog.Instance.Create<RpaEntry> (name);
                 entry.Offset       = (long)(Convert.ToInt64 (tuple[0]) ^ key);
-                entry.UnpackedSize = (uint)(Convert.ToInt32 (tuple[1]) ^ key);
+                entry.UnpackedSize = (uint)(Convert.ToInt64 (tuple[1]) ^ key);
                 entry.Size         = entry.UnpackedSize;
                 if (tuple.Count > 2)
                 {
