@@ -75,6 +75,8 @@
     <Compile Include="Aquarium\ArcCPA.cs" />
     <Compile Include="Aquarium\ImageCP2.cs" />
     <Compile Include="Ark\ImageCMP.cs" />
+    <Compile Include="DigitalMonkey\ArcDM.cs" />
+    <Compile Include="DigitalMonkey\ImagePKT.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
     <Compile Include="KeroQ\ImageCBM.cs" />
