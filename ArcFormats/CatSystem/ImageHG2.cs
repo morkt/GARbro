@@ -48,11 +48,13 @@ namespace GameRes.Formats.CatSystem
         {
             stream.Position = 8;
             var info = new Hg2MetaData();
-            int type = stream.ReadInt32();
-            if (0x25 == type)
+            int version = stream.ReadInt32();
+            if (0x25 == version)
                 info.HeaderSize = 0x58;
-            else if (0x20 == type)
+            else if (0x20 == version)
                 info.HeaderSize = 0x50;
+            else if (0x10 == version)
+                info.HeaderSize = 0x30;
             else
                 return null;
             info.Width  = stream.ReadUInt32();
@@ -63,11 +65,14 @@ namespace GameRes.Formats.CatSystem
             info.DataUnpacked   = stream.ReadInt32();
             info.CtlPacked      = stream.ReadInt32();
             info.CtlUnpacked    = stream.ReadInt32();
-            stream.Seek (8, SeekOrigin.Current);
-            info.CanvasWidth    = stream.ReadUInt32();
-            info.CanvasHeight   = stream.ReadUInt32();
-            info.OffsetX        = stream.ReadInt32();
-            info.OffsetY        = stream.ReadInt32();
+            if (info.HeaderSize > 0x30)
+            {
+                stream.Seek (8, SeekOrigin.Current);
+                info.CanvasWidth    = stream.ReadUInt32();
+                info.CanvasHeight   = stream.ReadUInt32();
+                info.OffsetX        = stream.ReadInt32();
+                info.OffsetY        = stream.ReadInt32();
+            }
             return info;
         }
 
