@@ -45,7 +45,8 @@ namespace GameRes.Formats.AliceSoft
             long index_offset = file.MaxOffset - 0x10;
             if (index_offset <= 0)
                 return null;
-            if (0x014c4e != file.View.ReadUInt32 (index_offset)
+            uint version = file.View.ReadUInt32 (index_offset);
+            if (0x014C4E != version && 0x012020 != version
                 || 0x10 != file.View.ReadUInt32 (index_offset+4))
                 return null;
             int count = file.View.ReadUInt16 (index_offset+9);
