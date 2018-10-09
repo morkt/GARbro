@@ -179,31 +179,8 @@ namespace GameRes.Formats.Palette
                 var bmp = new RenderTargetBitmap (base_frame.PixelWidth, base_frame.PixelHeight,
                                                   base_frame.DpiX, base_frame.DpiY, PixelFormats.Pbgra32);
                 bmp.Render (visual);
-                var base_info = new ImageMetaData {
-                    Width  = (uint)bmp.PixelWidth,
-                    Height = (uint)bmp.PixelHeight,
-                    BPP    = bmp.Format.BitsPerPixel,
-                };
-                return new BitmapSourceDecoder (bmp, base_info);
+                return new BitmapSourceDecoder (bmp);
             }
-        }
-    }
-
-    internal class BitmapSourceDecoder : IImageDecoder
-    {
-        public Stream            Source { get { return null; } }
-        public ImageFormat SourceFormat { get { return null; } }
-        public ImageMetaData       Info { get; private set; }
-        public ImageData          Image { get; private set; }
-
-        public BitmapSourceDecoder (BitmapSource bmp, ImageMetaData info)
-        {
-            Info = info;
-            Image = new ImageData (bmp, info);
-        }
-
-        public void Dispose ()
-        {
         }
     }
 }

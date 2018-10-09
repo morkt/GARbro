@@ -25,6 +25,7 @@
 
 using System;
 using System.IO;
+using System.Windows.Media.Imaging;
 
 namespace GameRes
 {
@@ -164,5 +165,27 @@ namespace GameRes
             }
         }
         #endregion
+    }
+
+    public class BitmapSourceDecoder : IImageDecoder
+    {
+        public Stream            Source { get; set; }
+        public ImageFormat SourceFormat { get; set; }
+        public ImageMetaData       Info { get; private set; }
+        public ImageData          Image { get; private set; }
+
+        public BitmapSourceDecoder (BitmapSource bitmap)
+        {
+            Info = new ImageMetaData {
+                Width = (uint)bitmap.PixelWidth,
+                Height = (uint)bitmap.PixelHeight,
+                BPP = bitmap.Format.BitsPerPixel,
+            };
+            Image = new ImageData (bitmap);
+        }
+
+        public void Dispose ()
+        {
+        }
     }
 }

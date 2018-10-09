@@ -257,26 +257,4 @@ namespace GameRes.Formats.Tamamo
             return key;
         }
     }
-
-    internal class BitmapSourceDecoder : IImageDecoder
-    {
-        public Stream            Source { get { return null; } }
-        public ImageFormat SourceFormat { get { return null; } }
-        public ImageMetaData       Info { get; private set; }
-        public ImageData          Image { get; private set; }
-
-        public BitmapSourceDecoder (BitmapSource bitmap)
-        {
-            Info = new ImageMetaData {
-                Width = (uint)bitmap.PixelWidth,
-                Height = (uint)bitmap.PixelHeight,
-                BPP = bitmap.Format.BitsPerPixel,
-            };
-            Image = new ImageData (bitmap);
-        }
-
-        public void Dispose ()
-        {
-        }
-    }
 }
