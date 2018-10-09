@@ -56,6 +56,8 @@ namespace GameRes.Formats.Types
                     if (0 == name_length || name_length > 0x100)
                         return null;
                     var name = input.ReadCString (name_length);
+                    if (string.IsNullOrWhiteSpace (name))
+                        return null;
                     var entry = new Entry {
                         Name = name,
                         Offset = input.Position,
