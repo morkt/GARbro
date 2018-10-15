@@ -179,7 +179,9 @@ namespace GameRes.Formats.Qlie
         /// Internal game data used to decrypt encrypted entries.
         /// null if not used.
         /// </summary>
-        public byte[] GameKeyData;
+        internal byte[] GameKeyData;
+
+        internal bool GameKeyIsEmpty { get { return GameKeyData != null && GameKeyData.Length == 0; } }
 
         public EncryptionV3 (ArcView file, byte[] game_key)
         {
@@ -213,7 +215,7 @@ namespace GameRes.Formats.Qlie
         public override void DecryptEntry (byte[] data, int offset, int length, QlieEntry entry)
         {
             var key_file = entry.KeyFile;
-            if (null == key_file)
+            if (null == key_file || GameKeyIsEmpty)
             {
                 base.DecryptEntry (data, offset, length, entry);
                 return;
