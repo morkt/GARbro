@@ -84,6 +84,7 @@ namespace GameRes.Formats.Qlie
         public PackOpener ()
         {
             Extensions = new string [] { "pack" };
+            ContainedFormats = new[] { "ABMP/QLIE", "DPNG", "PNG", "JPEG", "OGG", "WAV" };
         }
 
         /// <summary>
@@ -147,7 +148,7 @@ namespace GameRes.Formats.Qlie
                     if (name_length != index.Read (name_buffer, 0, name_length))
                         return null;
                     var name = enc.DecryptName (name_buffer, name_length);
-                    var entry = FormatCatalog.Instance.Create<QlieEntry> (name);
+                    var entry = Create<QlieEntry> (name);
                     if (use_pack_keyfile)
                         entry.RawName = name_buffer.Take (name_length).ToArray();
 
