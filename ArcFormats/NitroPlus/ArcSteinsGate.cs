@@ -31,7 +31,7 @@ using System.ComponentModel.Composition;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
 
-namespace GameRes.Formats
+namespace GameRes.Formats.NitroPlus
 {
     public class SteinsGateOptions : ResourceOptions
     {
