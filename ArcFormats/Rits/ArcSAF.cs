@@ -57,6 +57,11 @@ namespace GameRes.Formats.Rits
         const byte DefaultKey5 = 0xDF;
         const byte DefaultKey6 = 0xEF;
 
+        public SafOpener ()
+        {
+            ContainedFormats = new[] { "HBM", "BMP", "PNG", "WAV", "OGG", "TXT" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int id = file.View.ReadInt16 (0);
@@ -71,7 +76,7 @@ namespace GameRes.Formats.Rits
                     return null;
                 if (0x501 == id)
                     DecryptIndex (index_buffer, count, DefaultKey5);
-                reader = new SafIndexReader5 (index_buffer, count);
+                reader = new SafIndexReader5 (this, index_buffer, count);
             }
             else if ((id & 0xFF00) == 0x600)
             {
@@ -86,7 +91,7 @@ namespace GameRes.Formats.Rits
                     DecryptIndexV6 (index_buffer, count, DefaultKey6);
                     DecryptNames (names_buffer, names_length);
                 }
-                reader = new SafIndexReader6 (index_buffer, names_buffer, count);
+                reader = new SafIndexReader6 (this, index_buffer, names_buffer, count);
             }
             else
                 return null;
@@ -152,6 +157,7 @@ namespace GameRes.Formats.Rits
 
     internal class SafIndexReader5 : IIndexReader
     {
+        private     ArchiveFormat   m_saf;
         protected   byte[]      m_index;
         protected   int         m_count;
         private     List<Entry> m_dir;
@@ -165,8 +171,9 @@ namespace GameRes.Formats.Rits
 
         bool m_ignore_dirs = false;
 
-        public SafIndexReader5 (byte[] index, int count)
+        public SafIndexReader5 (ArchiveFormat saf, byte[] index, int count)
         {
+            m_saf = saf;
             m_index = index;
             m_count = count;
             m_dir = new List<Entry> (count);
@@ -220,14 +227,10 @@ namespace GameRes.Formats.Rits
                 {
                     var name = ReadName (index_offset);
                     name = Path.Combine (dir_name, name);
-                    var entry = new PackedEntry
-                    {
-                        Name = name,
-                        Type = FormatCatalog.Instance.GetTypeFromName (name),
-                        Offset = (long)m_index.ToUInt32 (index_offset+OffsetPos) << 11,
-                        Size   = m_index.ToUInt32 (index_offset+SizePos),
-                        UnpackedSize = m_index.ToUInt32 (index_offset+UnpackedPos),
-                    };
+                    var entry = m_saf.Create<PackedEntry> (name);
+                    entry.Offset = (long)m_index.ToUInt32 (index_offset+OffsetPos) << 11;
+                    entry.Size   = m_index.ToUInt32 (index_offset+SizePos);
+                    entry.UnpackedSize = m_index.ToUInt32 (index_offset+UnpackedPos);
                     entry.IsPacked = entry.UnpackedSize != 0;
                     m_dir.Add (entry);
                 }
@@ -251,7 +254,7 @@ namespace GameRes.Formats.Rits
     {
         byte[]  m_names;
 
-        public SafIndexReader6 (byte[] index, byte[] names, int count) : base (index, count)
+        public SafIndexReader6 (ArchiveFormat saf, byte[] index, byte[] names, int count) : base (saf, index, count)
         {
             m_names = names;
 
@@ -274,4 +277,9 @@ namespace GameRes.Formats.Rits
             return Binary.GetCString (m_names, name_pos);
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "STR")]
+    [ExportMetadata("Target", "TXT")]
+    public class StrFormat : ResourceAlias { }
 }
