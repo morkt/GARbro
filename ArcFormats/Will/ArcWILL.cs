@@ -57,7 +57,8 @@ namespace GameRes.Formats.Will
         ArcOpener ()
         {
             Extensions = new string[] { "arc" };
-            Signatures = new uint[] { 1, 0, 5 };
+            Signatures = new uint[] { 1, 0, 5, 6 };
+            ContainedFormats = new[] { "WIP", "PNA", "OGG" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -105,7 +106,7 @@ namespace GameRes.Formats.Will
                     name = name.ToLowerInvariant();
                     if (ext.Extension.Length > 0)
                         name = Path.ChangeExtension (name, ext.Extension);
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    var entry = Create<Entry> (name);
                     entry.Size = file.View.ReadUInt32 (dir_offset+name_size);
                     entry.Offset = file.View.ReadUInt32 (dir_offset+name_size+4);
                     if (!entry.CheckPlacement (file.MaxOffset))
