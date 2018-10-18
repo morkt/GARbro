@@ -48,7 +48,7 @@ namespace GameRes.Formats.Will
 
         public WipFormat ()
         {
-            Extensions = new string[] { "wip", "msk", "mos" };
+            Extensions = new string[] { "wip", "wi0", "msk", "mos" };
         }
 
         public bool ApplyMask = false;
