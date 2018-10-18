@@ -176,6 +176,41 @@ namespace GameRes.Utility
         {
             return (int)ToUInt32 (value, index);
         }
+
+        public static void Pack (ushort value, byte[] buf, int index)
+        {
+            buf[index]   = (byte)(value >> 8);
+            buf[index+1] = (byte)(value);
+        }
+
+        public static void Pack (uint value, byte[] buf, int index)
+        {
+            buf[index]   = (byte)(value >> 24);
+            buf[index+1] = (byte)(value >> 16);
+            buf[index+2] = (byte)(value >> 8);
+            buf[index+3] = (byte)(value);
+        }
+
+        public static void Pack (ulong value, byte[] buf, int index)
+        {
+            Pack ((uint)(value >> 32), buf, index);
+            Pack ((uint)value, buf, index+4);
+        }
+
+        public static void Pack (short value, byte[] buf, int index)
+        {
+            Pack ((ushort)value, buf, index);
+        }
+
+        public static void Pack (int value, byte[] buf, int index)
+        {
+            Pack ((uint)value, buf, index);
+        }
+
+        public static void Pack (long value, byte[] buf, int index)
+        {
+            Pack ((ulong)value, buf, index);
+        }
     }
 
     public static class LittleEndian
