@@ -209,6 +209,8 @@
     <Compile Include="MangaGamer\ArcSHA.cs" />
     <Compile Include="Mnp\ArcMMA.cs" />
     <Compile Include="MultiFileArchive.cs" />
+    <Compile Include="NitroPlus\ArcLAY.cs" />
+    <Compile Include="NitroPlus\ArcMPK.cs" />
     <Compile Include="Noesis\ArcIGA.cs" />
     <Compile Include="NonColor\ArcMinato.cs" />
     <Compile Include="Misc\ArcBIN.cs" />
@@ -265,7 +267,10 @@
     <Compile Include="RealLive\ArcSEEN.cs" />
     <Compile Include="RealLive\ImageG00Jpeg.cs" />
     <Compile Include="ResourceSettings.cs" />
+    <Compile Include="Rits\ImageHBM.cs" />
     <Compile Include="RPGMaker\ArcRGSS.cs" />
+    <Compile Include="RPGMaker\AudioRPGMV.cs" />
+    <Compile Include="RPGMaker\ImageRPGMV.cs" />
     <Compile Include="RPM\ArcZENOS.cs" />
     <Compile Include="rUGP\AudioRHA.cs" />
     <Compile Include="Lilim\ArcFGA.cs" />
