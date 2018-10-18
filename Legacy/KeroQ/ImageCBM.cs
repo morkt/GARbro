@@ -80,8 +80,10 @@ namespace GameRes.Formats.KeroQ
             var base_name = Path.GetFileNameWithoutExtension (filename);
             yield return VFS.ChangeFileName (filename, base_name + ".pal");
             if (base_name.Length > 3)
+            {
                 base_name = base_name.Substring (0, 3);
-            yield return VFS.ChangeFileName (filename, base_name + ".pal");
+                yield return VFS.ChangeFileName (filename, base_name + ".pal");
+            }
             yield return VFS.ChangeFileName (filename, base_name + "_2.pal");
             yield return VFS.ChangeFileName (filename, base_name + "_1.pal");
         }
