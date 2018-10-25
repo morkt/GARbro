@@ -44,8 +44,10 @@ namespace GameRes.Formats.GPlay
 
         public YskOpener ()
         {
-            // "AA1640124080", "AA7790743350", "AA1825646340"
-            Signatures = new uint[] { 0x36314141, 0x39324141, 0x37374141, 0x38314141, 0 };
+            // "AA1640124080", "AA7790743350", "AA1825646340", "AA1316763700", "AA1945074730", "AA7235065580"
+            Signatures = new uint[] {
+                0x36314141, 0x39324141, 0x37374141, 0x38314141, 0x33314141, 0x39314141, 0x32374141, 0
+            };
         }
 
         const ulong DefaultKey = 0x1234567812345678ul;
@@ -67,7 +69,7 @@ namespace GameRes.Formats.GPlay
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x14);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 entry.Offset = data_offset;
                 entry.Size = file.View.ReadUInt32 (index_offset+0x14);
                 if (!entry.CheckPlacement (file.MaxOffset))
