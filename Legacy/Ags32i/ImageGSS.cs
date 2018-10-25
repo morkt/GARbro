@@ -32,6 +32,7 @@ using GameRes.Compression;
 using GameRes.Utility;
 
 // [041001][Innocence] China Chaime+
+// [041224][Tam's] Volga Series 1
 
 namespace GameRes.Formats.Ags32i
 {
@@ -51,7 +52,7 @@ namespace GameRes.Formats.Ags32i
 
         public GssFormat ()
         {
-            Signatures = new uint[] { 0x20575A52, 0 };
+            Signatures = new uint[] { 0x20575A52, 0x20574242, 0 };
         }
 
         //static readonly uint DefaultKey = 0x20040915;
