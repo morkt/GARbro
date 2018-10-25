@@ -88,6 +88,8 @@
     <Compile Include="Lazycrew\ImageDAT.cs" />
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
+    <Compile Include="PenguinWorks\ArcPAC.cs" />
+    <Compile Include="ProjectMyu\ImageGAM.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
     <Compile Include="Brownie\ArcNAF.cs" />
