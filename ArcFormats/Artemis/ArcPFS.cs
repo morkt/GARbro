@@ -56,19 +56,26 @@ namespace GameRes.Formats.Artemis
             switch (version)
             {
             case 6:
-            case 8:     return OpenPf (file, version);
+            case 8:
+                try
+                {
+                    return OpenPf (file, version, PfsEncoding.Get<Encoding>());
+                }
+                catch (System.ArgumentException)
+                {
+                    return OpenPf (file, version, GetAltEncoding());
+                }
             case 2:     return OpenPf2 (file);
             default:    return null;
             }
         }
 
-        ArcFile OpenPf (ArcView file, int version)
+        ArcFile OpenPf (ArcView file, int version, Encoding encoding)
         {
             uint index_size = file.View.ReadUInt32 (3);
             int count = file.View.ReadInt32 (7);
             if (!IsSaneCount (count) || 7L + index_size > file.MaxOffset)
                 return null;
-            var encoding = PfsEncoding.Get<Encoding>();
             var index = file.View.ReadBytes (7, index_size);
             int index_offset = 4;
             var dir = new List<Entry> (count);
@@ -77,7 +84,7 @@ namespace GameRes.Formats.Artemis
                 int name_length = index.ToInt32 (index_offset);
                 var name = encoding.GetString (index, index_offset+4, name_length);
                 index_offset += name_length + 8;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 entry.Offset = index.ToUInt32 (index_offset);
                 entry.Size   = index.ToUInt32 (index_offset+4);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -110,7 +117,7 @@ namespace GameRes.Formats.Artemis
                 int name_length = index.ToInt32 (index_offset);
                 var name = Encodings.cp932.GetString (index, index_offset+4, name_length);
                 index_offset += name_length + 0x10;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 entry.Offset = index.ToUInt32 (index_offset);
                 entry.Size   = index.ToUInt32 (index_offset+4);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -128,6 +135,15 @@ namespace GameRes.Formats.Artemis
             if (null == parc)
                 return input;
             return new ByteStringEncryptedStream (input, parc.Key);
+        }
+
+        Encoding GetAltEncoding ()
+        {
+            var enc = PfsEncoding.Get<Encoding>();
+            if (enc.CodePage == 932)
+                return Encoding.UTF8;
+            else
+                return Encodings.cp932;
         }
     }
 
