@@ -48,7 +48,7 @@ namespace GameRes.Formats.Abogado
 
         public KgFormat ()
         {
-            Signatures = new uint[] { 0x0202474B, 0x0102474B, 0x0100474B };
+            Signatures = new uint[] { 0x0202474B, 0x0102474B, 0x0200474B, 0x0100474B };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
