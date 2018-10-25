@@ -43,10 +43,10 @@ namespace GameRes.Formats.Softpal
 
         public VafsOpener ()
         {
-            Extensions = new string[] { "052", "055", "058" };
+            Extensions = new string[] { "052", "055", "056", "058" };
         }
 
-        static readonly Lazy<ImageFormat> s_PicFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PIC/SOFTPAL"));
+        static readonly ResourceInstance<ImageFormat> s_PicFormat = new ResourceInstance<ImageFormat> ("PIC/SOFTPAL");
 
         public override ArcFile TryOpen (ArcView file)
         {
