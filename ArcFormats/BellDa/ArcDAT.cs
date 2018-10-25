@@ -25,12 +25,13 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 using GameRes.Compression;
 
 namespace GameRes.Formats.BellDa
 {
     [Export(typeof(ArchiveFormat))]
-    public class BldOpener : ArchiveFormat
+    public sealed class BldOpener : ArchiveFormat
     {
         public override string         Tag { get { return "DAT/BLD"; } }
         public override string Description { get { return "BELL-DA resource archive"; } }
@@ -54,7 +55,7 @@ namespace GameRes.Formats.BellDa
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0xC);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<PackedEntry> (name);
                 entry.Offset = data_offset;
                 entry.Size   = file.View.ReadUInt32 (index_offset+0xC);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -66,23 +67,25 @@ namespace GameRes.Formats.BellDa
             return new ArcFile (file, this, dir);
         }
 
-        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             // XXX compression method identical to Maika.Mk2Opener
-            var id_str = arc.File.View.ReadString (entry.Offset, 2);
-            if (id_str != "B1" && id_str != "D1" && id_str != "E1")
-                return base.OpenImage (arc, entry);
-            uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+2);
-            if (packed_size != entry.Size - 10)
-                return base.OpenImage (arc, entry);
-            uint unpacked_size = arc.File.View.ReadUInt32 (entry.Offset+6);
-            using (var input = arc.File.CreateStream (entry.Offset+10, packed_size))
-            using (var lzss = new LzssReader (input, (int)packed_size, (int)unpacked_size))
+            var pent = (PackedEntry)entry;
+            if (null == pent || !pent.IsPacked)
             {
-                lzss.Unpack();
-                var bmp = new BinMemoryStream (lzss.Data, entry.Name);
-                return new ImageFormatDecoder (bmp);
+                var id_str = arc.File.View.ReadString (entry.Offset, 2);
+                if (id_str != "B1" && id_str != "C1" && id_str != "D1" && id_str != "E1")
+                    return base.OpenEntry (arc, entry);
+                uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+2);
+                if (packed_size != entry.Size - 10)
+                    return base.OpenEntry (arc, entry);
+                pent.Size = packed_size;
+                pent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset+6);
+                pent.Offset += 10;
+                pent.IsPacked = true;
             }
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new LzssStream (input);
         }
     }
 }
