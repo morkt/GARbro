@@ -1270,4 +1270,27 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, buffer, pos, count);
         }
     }
+
+    [Serializable]
+    public class FestivalCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ (entry.Hash >> 7) ^ 0xFF);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            byte key = (byte)~(entry.Hash >> 7);
+            for (int i = 0; i < count; ++i)
+            {
+                data[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            Decrypt (entry, offset, data, pos, count);
+        }
+    }
 }
