@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -63,11 +64,15 @@ namespace GameRes.Formats.DxLib
 
         public DxOpener ()
         {
-            Extensions = new string[] { "dxa", "hud", "usi", "med", "dat", "bin" };
-            Signatures = new uint[] { 0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0x5524F211, 0x69FC5FE4, 0 };
+            Extensions = new string[] { "dxa", "hud", "usi", "med", "dat", "bin", "bcx" };
+            Signatures = new uint[] {
+                0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0x5524F211, 0x69FC5FE4, 0x09E19ED9, 0
+            };
         }
 
-        public static IList<byte[]> KnownKeys = new List<byte[]>();
+        DxScheme DefaultScheme = new DxScheme { KnownKeys = new List<byte[]>() };
+
+        public IList<byte[]> KnownKeys { get { return DefaultScheme.KnownKeys; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -127,6 +132,7 @@ namespace GameRes.Formats.DxLib
                     if (null != dir)
                     {
                         KnownKeys.Insert (0, key);
+                        Trace.WriteLine (string.Format ("Restored key '{0}'", RestoreKey (key)), "[DXA]");
                         return new DxArchive (file, this, dir, key, version);
                     }
                 }
@@ -311,10 +317,28 @@ namespace GameRes.Formats.DxLib
             return key;
         }
 
+        string RestoreKey (byte[] key)
+        {
+            var bin = key.Clone() as byte[];
+            bin[0] ^= 0xFF;
+            bin[1]  = Binary.RotByteL (bin[1], 4);
+            bin[2] ^= 0x8A;
+            bin[3]  = Binary.RotByteL ((byte)~bin[3], 4);
+            bin[4] ^= 0xFF;
+            bin[5] ^= 0xAC;
+            bin[6] ^= 0xFF;
+            bin[7]  = Binary.RotByteL ((byte)~bin[7], 3);
+            bin[8]  = Binary.RotByteR (bin[8], 3);
+            bin[9] ^= 0x7F;
+            bin[10] = Binary.RotByteL ((byte)(bin[10] ^ 0xD6), 4);
+            bin[11] ^= 0xCC;
+            return Encodings.cp932.GetString (bin);
+        }
+
         public override ResourceScheme Scheme
         {
-            get { return new DxScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((DxScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (DxScheme)value; }
         }
     }
 
