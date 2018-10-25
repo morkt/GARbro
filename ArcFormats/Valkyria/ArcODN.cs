@@ -55,6 +55,11 @@ namespace GameRes.Formats.Valkyria
         }
     }
 
+    internal class OdnEntry : Entry
+    {
+        public bool IsEncrypted;
+    }
+
     [Export(typeof(ArchiveFormat))]
     sealed public class OdnOpener : ArchiveFormat
     {
@@ -67,8 +72,10 @@ namespace GameRes.Formats.Valkyria
         public OdnOpener ()
         {
             Settings = new[] { AudioSampleRate };
-            Extensions = new[] { "odn", "dat" };
+            Extensions = RequiredExtensions;
         }
+
+        static string[] RequiredExtensions = new[] { "odn", "dat", "pni" };
 
         FixedSetSetting AudioSampleRate = new FixedSetSetting (Properties.Settings.Default) {
             Name = "ODNAudioSampleRate",
@@ -78,7 +85,7 @@ namespace GameRes.Formats.Valkyria
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.Name.HasAnyOfExtensions ("odn", "dat"))
+            if (!file.Name.HasAnyOfExtensions (RequiredExtensions))
                 return null;
             var reader = new OdnIndexReader (file);
             var dir = reader.ReadIndex();
@@ -87,14 +94,15 @@ namespace GameRes.Formats.Valkyria
             return new ArcFile (file, this, dir);
         }
 
-        internal static readonly Regex Image24NameRe = new Regex ("^(?:back|phii)");
-        internal static readonly Regex Image32NameRe = new Regex ("^(?:data|codn|cccc|fund)");
+        internal static readonly Regex Image24NameRe = new Regex ("^(?:back|phii|psss)");
+        internal static readonly Regex Image32NameRe = new Regex ("^(?:data|codn|cccc|fund|puni|wind)");
         internal static readonly Regex ScriptNameRe  = new Regex ("^(?:scrp|menu|sysm)");
         internal static readonly Regex AudioNameRe   = new Regex ("^hime");
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (ScriptNameRe.IsMatch (entry.Name))
+            var oent = entry as OdnEntry;
+            if (oent != null && oent.IsEncrypted)
             {
                 byte key = (byte)~entry.Offset;
                 var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
@@ -140,6 +148,11 @@ namespace GameRes.Formats.Valkyria
                 try
                 {
                     UnpackImage (input, output, pixel_size);
+                    if (entry.Name.StartsWith ("wind") && output.Length == 1024 * 256 * pixel_size)
+                    {
+                        var info = new ImageMetaData { Width = 1024, Height = 256, BPP = pixel_size * 8 };
+                        return new OdnImageDecoder (output, info);
+                    }
                     return CreateImageDecoder (output, pixel_size);
                 }
                 catch { /* try different pixel size */ }
@@ -169,8 +182,10 @@ namespace GameRes.Formats.Valkyria
         static readonly Size[] ImageDimensions = new Size[]
         {
             new Size (1024, 768),
+            new Size (1024, 512),
             new Size (800, 600),
             new Size (640, 480),
+            new Size (512, 512),
             new Size (400, 600),
             new Size (400, 200),
         };
@@ -221,6 +236,7 @@ namespace GameRes.Formats.Valkyria
         byte[]      m_entry_buf = new byte[0x20];
         List<Entry> m_dir = new List<Entry>();
         Encoding    m_enc;
+        bool        m_scripts_encrypted = true;
 
         public OdnIndexReader (ArcView file)
         {
@@ -265,6 +281,11 @@ namespace GameRes.Formats.Valkyria
                 index_offset += 0x10;
                 if (m_entry_buf.AsciiEqual (0, "END_ffffffffffff"))
                     break;
+                else if (m_entry_buf.AsciiEqual (0, "ffffffffffffffff"))
+                {
+                    m_scripts_encrypted = false;
+                    break;
+                }
                 else if (m_entry_buf.AsciiEqual (0, "HIME_END"))
                 {
                     index_offset += 8;
@@ -272,10 +293,10 @@ namespace GameRes.Formats.Valkyria
                 }
                 var name = m_enc.GetString (m_entry_buf, 0, 8);
                 var offset = m_enc.GetString (m_entry_buf, 8, 8);
-                var entry = new Entry { Name = name, Offset = Convert.ToUInt32 (offset, 16) };
+                var entry = new OdnEntry { Name = name, Offset = Convert.ToUInt32 (offset, 16) };
                 m_dir.Add (entry);
             }
-            foreach (var entry in m_dir)
+            foreach (OdnEntry entry in m_dir)
                 entry.Offset += index_offset;
             if (m_dir.Any() && m_dir[m_dir.Count-1].Offset == m_file.MaxOffset)
                 m_dir.RemoveAt (m_dir.Count-1);
@@ -293,7 +314,7 @@ namespace GameRes.Formats.Valkyria
                 if (m_file.MaxOffset == offset)
                     break;
                 var name = m_enc.GetString (m_entry_buf, 0, 8);
-                var entry = new Entry { Name = name, Offset = offset };
+                var entry = new OdnEntry { Name = name, Offset = offset };
                 m_dir.Add (entry);
                 index_offset += record_size;
                 if (record_size != m_file.View.Read (index_offset, m_entry_buf, 0, record_size))
@@ -311,7 +332,7 @@ namespace GameRes.Formats.Valkyria
                     break;
                 var name = m_enc.GetString (m_entry_buf, 0, 8);
                 var offset = m_enc.GetString (m_entry_buf, 8, 8);
-                var entry = new Entry { Name = name, Offset = Convert.ToUInt32 (offset, 16) };
+                var entry = new OdnEntry { Name = name, Offset = Convert.ToUInt32 (offset, 16) };
                 m_dir.Add (entry);
                 if (0x10 != m_file.View.Read (index_offset, m_entry_buf, 0, 0x10))
                     throw new InvalidFormatException();
@@ -333,7 +354,7 @@ namespace GameRes.Formats.Valkyria
         {
             for (int i = 0; i < m_dir.Count; ++i)
             {
-                var entry = m_dir[i];
+                var entry = (OdnEntry)m_dir[i];
 
                 long next_offset = i+1 < m_dir.Count ? m_dir[i+1].Offset : m_file.MaxOffset;
                 entry.Size = (uint)(next_offset - entry.Offset);
@@ -345,6 +366,7 @@ namespace GameRes.Formats.Valkyria
                 else if (OdnOpener.ScriptNameRe.IsMatch (entry.Name))
                 {
                     entry.Type = "script";
+                    entry.IsEncrypted = m_scripts_encrypted;
                 }
                 else if (OdnOpener.AudioNameRe.IsMatch (entry.Name))
                 {
