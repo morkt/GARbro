@@ -30,12 +30,12 @@ using System.Windows.Media;
 using GameRes.Utility;
 
 // [001110][Lune] Wasurekaketa Kokoro no Kakera
+// [010413][Sarang] Tokyo Yuuyuu
 
 namespace GameRes.Formats.Lune
 {
-#if DEBUG
     [Export(typeof(ArchiveFormat))]
-#endif
+    [ExportMetadata("Priority", -2)]
     public class PackOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PACK/LUNE"; } }
@@ -58,9 +58,11 @@ namespace GameRes.Formats.Lune
             if (!IsSaneCount (count))
                 return null;
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
-            string type = file.Name.HasExtension (".wda") ? "audio"
+            string type = file.Name.HasAnyOfExtensions (".wda", ".bgm") ? "audio"
                         : file.Name.HasExtension (".scr") ? "script"
                         : "image";
+            if (base_name == "pack")
+                base_name = Path.GetExtension (file.Name).TrimStart ('.');
             uint index_offset = 0;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
@@ -84,16 +86,17 @@ namespace GameRes.Formats.Lune
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!arc.File.Name.HasExtension (".wda"))
+            if (!arc.File.Name.HasAnyOfExtensions (".wda", ".bgm"))
                 return base.OpenEntry (arc, entry);
+            uint sample_rate = arc.File.Name.HasExtension (".bgm") ? 44100u : 22050u;
             var format = new WaveFormat {
                 FormatTag = 1,
                 Channels = 1,
-                SamplesPerSecond = 22050,
-                AverageBytesPerSecond = 44100,
+                SamplesPerSecond = sample_rate,
                 BlockAlign = 2,
                 BitsPerSample = 16,
             };
+            format.SetBPS();
             byte[] wav_header;
             using (var output = new MemoryStream (0x2C))
             {
@@ -107,72 +110,90 @@ namespace GameRes.Formats.Lune
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (arc.File.Name.HasExtension (".msk"))
+            if (0 == input.Signature)
+                return new Pack2ImageDecoder (input);
+            else if (arc.File.Name.HasExtension (".msk"))
                 return new PackMaskDecoder (input);
             else
                 return new PackImageDecoder (input);
         }
     }
 
-    internal class PackImageDecoder : IImageDecoder
+    internal class PackImageDecoder : BinaryImageDecoder
     {
-        protected IBinaryStream   m_input;
-        protected byte[]          m_output;
-        private   ImageData       m_image;
+        protected int   m_start_pos;
+        protected int   m_stride;
+        protected int   m_first_pixel_size;
+        protected byte  m_max_pixel = 0x20;
 
-        public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
-        public ImageFormat SourceFormat { get { return null; } }
-        public PixelFormat       Format { get; private set; }
-        public ImageMetaData       Info { get; private set; }
 
-        public ImageData Image {
-            get {
-                if (null == m_image)
-                {
-                    Unpack();
-                    m_image = ImageData.Create (Info, Format, null, m_output);
-                }
-                return m_image;
-            }
-        }   
+        public PixelFormat       Format { get; protected set; }
 
-        public PackImageDecoder (IBinaryStream input) : this (input, PixelFormats.Bgr24) { }
-
-        protected PackImageDecoder (IBinaryStream input, PixelFormat format)
+        public PackImageDecoder (IBinaryStream input) : base (input)
         {
-            m_input = input;
-            uint width = input.ReadUInt16();
-            uint height = input.ReadUInt16();
-            Format = format;
-            Info = new ImageMetaData { Width = width, Height = height, BPP = format.BitsPerPixel };
-            m_output = new byte[(int)width * (int)height * Info.BPP / 8];
+            ReadHeader();
+            m_start_pos = (int)m_input.Position;
+            m_stride = (int)Info.Width * Format.BitsPerPixel / 8;
         }
 
-        protected virtual void Unpack ()
+        protected virtual void ReadHeader ()
         {
-            m_input.Position = 4;
+            Format = PixelFormats.Bgr24;
+            Info = new ImageMetaData {
+                Width = m_input.ReadUInt16(),
+                Height = m_input.ReadUInt16(),
+                BPP = 24,
+            };
+            m_first_pixel_size = 1;
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = m_start_pos;
             var data = ReadDataBytes();
             using (var bits = new MsbBitStream (m_input.AsStream, true))
             {
-                int src = 0;
-                m_output[0] = data[src++];
-                for (int dst = 1; dst < m_output.Length; ++dst)
+                var pixels = new byte[m_stride * (int)Info.Height];
+                if (24 == Info.BPP)
+                    Unpack24bpp (bits, data, pixels);
+                else
+                    Unpack8bpp (bits, data, pixels);
+                return ImageData.Create (Info, Format, null, pixels);
+            }
+        }
+
+        protected void Unpack24bpp (MsbBitStream bits, byte[] data, byte[] output)
+        {
+            int src = 0, dst = 0;
+            for (int i = 0; i < m_first_pixel_size; ++i)
+                output[dst++] = data[src++];
+            while (dst < output.Length)
+            {
+                int ctl = bits.GetBits (2);
+                byte v;
+                if (0 == ctl)
                 {
-                    int ctl = bits.GetBits (2);
-                    byte v;
-                    if (0 == ctl)
+                    v = data[src++];
+                }
+                else
+                {
+                    v = output[dst-3];
+                    if (ctl == 2)
                     {
-                        v = data[src++];
+                        if (bits.GetNextBit() != 0)
+                            v -= 1;
+                        else
+                            v += 1;
                     }
-                    else
+                    else if (ctl == 3)
                     {
-                        v = m_output[dst-3];
+                        ctl = bits.GetBits (2);
                         if (ctl == 2)
                         {
                             if (bits.GetNextBit() != 0)
-                                v -= 1;
+                                v -= 3;
                             else
-                                v += 1;
+                                v += 3;
                         }
                         else if (ctl == 3)
                         {
@@ -180,42 +201,107 @@ namespace GameRes.Formats.Lune
                             if (ctl == 2)
                             {
                                 if (bits.GetNextBit() != 0)
-                                    v -= 3;
+                                    v -= 5;
                                 else
-                                    v += 3;
+                                    v += 5;
                             }
                             else if (ctl == 3)
                             {
-                                ctl = bits.GetBits (2);
-                                if (ctl == 2)
+                                switch (bits.GetBits (2))
                                 {
-                                    if (bits.GetNextBit() != 0)
-                                        v -= 5;
-                                    else
-                                        v += 5;
+                                case 3:  v -= 7; break;
+                                case 2:  v += 7; break;
+                                case 1:  v -= 6; break;
+                                default: v += 6; break;
                                 }
-                                else if (ctl == 3)
-                                {
-                                    switch (bits.GetBits (2))
-                                    {
-                                    case 3:  v -= 7; break;
-                                    case 2:  v += 7; break;
-                                    case 1:  v -= 6; break;
-                                    default: v += 6; break;
-                                    }
-                                }
-                                else if (ctl == 1)
-                                    v -= 4;
-                                else
-                                    v += 4;
                             }
                             else if (ctl == 1)
-                                v -= 2;
+                                v -= 4;
                             else
-                                v += 2;
+                                v += 4;
+                        }
+                        else if (ctl == 1)
+                            v -= 2;
+                        else
+                            v += 2;
+                    }
+                }
+                output[dst++] = v;
+            }
+        }
+
+        protected void Unpack8bpp (MsbBitStream bits, byte[] data, byte[] output)
+        {
+            int src = 0;
+            int dst = 0;
+            byte init_value = data[src++];
+            output[dst++] = init_value;
+            int bit_count = 0;
+            int y = 0;
+            int x = 1;
+            while (dst < output.Length)
+            {
+                int ctl = bits.GetBits (2);
+                if (0 == ctl)
+                {
+                    int count;
+                    if (bit_count > 0)
+                        count = bits.GetBits (14 - bit_count);
+                    else
+                        count = bits.GetBits (6);
+                    while (count --> 0 && dst < output.Length)
+                    {
+                        if (y == 0 || x + 1 == m_stride)
+                            output[dst] = init_value;
+                        else
+                            output[dst] = output[dst - m_stride + 1];
+                        ++dst;
+                        if (++x == m_stride)
+                        {
+                            x = 0;
+                            ++y;
                         }
                     }
-                    m_output[dst] = v;
+                    bit_count = 0;
+                    continue;
+                }
+                else if (1 == ctl)
+                {
+                    bit_count += 2;
+                    if (0 == x)
+                        output[dst] = init_value;
+                    else
+                        output[dst] = output[dst - m_stride - 1];
+                }
+                else if (2 == ctl)
+                {
+                    bit_count += 2;
+                    output[dst] = data[src++];
+                }
+                else
+                {
+                    bit_count += 3;
+                    if (bits.GetNextBit() != 0)
+                        output[dst] = output[dst - m_stride];
+                    else
+                        output[dst] = output[dst-1];
+                }
+                ++dst;
+                if (++x == m_stride)
+                {
+                    x = 0;
+                    ++y;
+                }
+                if (bit_count >= 8)
+                    bit_count -= 8;
+            }
+            if (8 == Info.BPP)
+            {
+                byte max = m_max_pixel; // System.Linq.Enumerable.Max (output);
+                if (max != 0 && max != 0xFF)
+                {
+                    for (int i = 0; i < output.Length; ++i)
+                        output[i] = (byte)(output[i] * 0xFF / max);
                 }
             }
         }
@@ -231,99 +317,42 @@ namespace GameRes.Formats.Lune
             m_input.Position = ctl_pos;
             return data;
         }
-
-        bool m_disposed = false;
-        public void Dispose ()
-        {
-            if (!m_disposed)
-            {
-                m_input.Dispose();
-                m_disposed = true;
-            }
-        }
     }
 
     internal sealed class PackMaskDecoder : PackImageDecoder
     {
-        public PackMaskDecoder (IBinaryStream input) : base (input, PixelFormats.Gray8) { }
+        public PackMaskDecoder (IBinaryStream input) : base (input) { }
 
-        protected override void Unpack ()
+        protected override void ReadHeader ()
         {
-            m_input.Position = 4;
-            var data = ReadDataBytes();
-            using (var bits = new MsbBitStream (m_input.AsStream, true))
-            {
-                int stride = (int)Info.Width;
-                int src = 0;
-                int dst = 0;
-                byte init_value = data[src++];
-                m_output[dst++] = init_value;
-                int bit_count = 0;
-                int y = 0;
-                int x = 1;
-                while (dst < m_output.Length)
-                {
-                    int ctl = bits.GetBits (2);
-                    if (0 == ctl)
-                    {
-                        int count;
-                        if (bit_count > 0)
-                            count = bits.GetBits (14 - bit_count);
-                        else
-                            count = bits.GetBits (6);
-                        while (count --> 0 && dst < m_output.Length)
-                        {
-                            if (y == 0 || x + 1 == stride)
-                                m_output[dst] = init_value;
-                            else
-                                m_output[dst] = m_output[dst - stride + 1];
-                            ++dst;
-                            if (++x == stride)
-                            {
-                                x = 0;
-                                ++y;
-                            }
-                        }
-                        bit_count = 0;
-                        continue;
-                    }
-                    else if (1 == ctl)
-                    {
-                        bit_count += 2;
-                        if (0 == x)
-                            m_output[dst] = init_value;
-                        else
-                            m_output[dst] = m_output[dst - stride - 1];
-                    }
-                    else if (2 == ctl)
-                    {
-                        bit_count += 2;
-                        m_output[dst] = data[src++];
-                    }
-                    else
-                    {
-                        bit_count += 3;
-                        if (bits.GetNextBit() != 0)
-                            m_output[dst] = m_output[dst - stride];
-                        else
-                            m_output[dst] = m_output[dst-1];
-                    }
-                    ++dst;
-                    if (++x == stride)
-                    {
-                        x = 0;
-                        ++y;
-                    }
-                    if (bit_count >= 8)
-                        bit_count -= 8;
-                }
-            }
-            const byte max = 0x20; // System.Linq.Enumerable.Max (m_output);
-            if (max != 0 && max != 0xFF)
-            {
-                for (int i = 0; i < m_output.Length; ++i)
-                    m_output[i] = (byte)(m_output[i] * 0xFF / max);
-            }
+            Format = PixelFormats.Gray8;
+            Info = new ImageMetaData {
+                Width = m_input.ReadUInt16(),
+                Height = m_input.ReadUInt16(),
+                BPP = 8
+            };
+        }
+    }
+
+    internal class Pack2ImageDecoder : PackImageDecoder
+    {
+        public Pack2ImageDecoder (IBinaryStream input) : base (input) { }
+
+        protected override void ReadHeader ()
+        {
+            Info = new ImageMetaData {
+                OffsetX = m_input.ReadInt16(),
+                OffsetY = m_input.ReadInt16(),
+                Width   = m_input.ReadUInt16(),
+                Height  = m_input.ReadUInt16(),
+                BPP     = m_input.ReadUInt16(),
+            };
+            if (Info.BPP < 4 || Info.BPP > 24)
+                throw new InvalidFormatException();
+            m_first_pixel_size = 3;
+            Format = Info.BPP == 24 ? PixelFormats.Bgr24
+                   : Info.BPP == 4  ? PixelFormats.Gray4
+                                    : PixelFormats.Gray8;
         }
     }
 }
