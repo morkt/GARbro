@@ -54,6 +54,9 @@ namespace GameRes.Formats.Abogado
             { "PCM2",   "ADP" },
             { "PCM",    "ADP" },
             { "GRAPHIC", "KG" },
+            { "GRPFILE", "KG" },
+            { "EFCFILE", "ADP" },
+            { "PCMFILE", "ADP" },
             { "SCENARIO", "SCF" },
         };
 
