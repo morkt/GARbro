@@ -33,7 +33,7 @@ namespace GameRes.Formats.BaseUnit
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "IPAC"; } }
+        public override string         Tag { get { return "PAK/IPAC"; } }
         public override string Description { get { return "IPAC resource archive"; } }
         public override uint     Signature { get { return 0x43415049; } } // 'IPAC'
         public override bool  IsHierarchic { get { return false; } }
@@ -50,7 +50,7 @@ namespace GameRes.Formats.BaseUnit
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x20);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<PackedEntry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x24);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x28);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -63,8 +63,14 @@ namespace GameRes.Formats.BaseUnit
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!arc.File.View.AsciiEqual (entry.Offset, "IEL1"))
-                return base.OpenEntry (arc, entry);
+            var pent = (PackedEntry)entry;
+            if (!pent.IsPacked)
+            {
+                if (!arc.File.View.AsciiEqual (entry.Offset, "IEL1"))
+                    return base.OpenEntry (arc, entry);
+                pent.IsPacked = true;
+                pent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset+4);
+            }
             var input = arc.File.CreateStream (entry.Offset+8, entry.Size-8);
             return new LzssStream (input);
         }
