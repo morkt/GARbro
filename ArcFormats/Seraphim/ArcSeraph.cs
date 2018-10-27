@@ -166,12 +166,17 @@ namespace GameRes.Formats.Seraphim
             if (0 == entry.Size)
                 return Stream.Null;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (!(entry is PackedEntry))
+            var pent = entry as PackedEntry;
+            if (null == pent)
                 return input;
             if (0x9C78 == (input.Signature & 0xFFFF))
+            {
+                pent.IsPacked = true;
                 return new ZLibStream (input, CompressionMode.Decompress);
+            }
             if (1 == input.Signature && arc.File.View.ReadByte (entry.Offset+4) == 0x78)
             {
+                pent.IsPacked = true;
                 input.Position = 4;
                 return new ZLibStream (input, CompressionMode.Decompress);
             }
