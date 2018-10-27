@@ -614,9 +614,7 @@ namespace GameRes.Formats.ShiinaRio
         private byte[]  m_extra;
         private int     m_common_length;
 
-        static readonly byte[] EmptyArray = new byte[0]; // Array.Empty<T>() available in .Net 4.6 only
-
-        public ImageArray (byte[] common) : this (common, common.Length, EmptyArray)
+        public ImageArray (byte[] common) : this (common, common.Length, Array.Empty<byte>())
         {
         }
 
