@@ -140,6 +140,7 @@
     <Compile Include="Cadath\ImageCGF.cs" />
     <Compile Include="Carriere\ArcARC.cs" />
     <Compile Include="Carriere\ImageCGD.cs" />
+    <Compile Include="CDPA\ArcPACK.cs" />
     <Compile Include="Cmvs\ArcCPZ1.cs" />
     <Compile Include="Cmvs\CpzHeader.cs" />
     <Compile Include="Cmvs\HuffmanDecoder.cs" />
@@ -277,9 +278,11 @@
     <Compile Include="ScenePlayer\ArcPMA.cs" />
     <Compile Include="ScenePlayer\ArcPMX.cs" />
     <Compile Include="Scoop\ArcGX.cs" />
+    <Compile Include="Seraphim\ArcCP3.cs" />
     <Compile Include="Seraphim\ArcMC.cs" />
     <Compile Include="Seraphim\ArcSCN.cs" />
     <Compile Include="Seraphim\ArcVoice.cs" />
+    <Compile Include="Seraphim\ImageCP3.cs" />
     <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
     <Compile Include="ShiinaRio\ImageCHD.cs" />
     <Compile Include="Speed\ArcARC.cs" />
