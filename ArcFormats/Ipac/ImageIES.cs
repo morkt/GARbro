@@ -91,4 +91,56 @@ namespace GameRes.Formats.BaseUnit
             throw new System.NotImplementedException ("IesFormat.Write not implemented");
         }
     }
+
+    [Export(typeof(ImageFormat))]
+    public class IesRawFormat : ImageFormat
+    {
+        public override string         Tag { get { return "IES/RAW"; } }
+        public override string Description { get { return "IPAC image format"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
+        {
+            if (!file.Name.HasExtension (".ies"))
+                return null;
+            var header = file.ReadHeader (0x10);
+            if (header.ToInt32 (12) != 0)
+                return null;
+            uint width  = header.ToUInt32 (0);
+            uint height = header.ToUInt32 (4);
+            int  bpp    = header.ToInt32 (8);
+            if (width * height * (bpp / 8) != (file.Length - 0x414))
+                return null;
+            return new ImageMetaData
+            {
+                Width   = width,
+                Height  = height,
+                BPP     = bpp,
+            };
+        }
+
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
+        {
+            if (32 == info.BPP)
+            {
+                file.Position = 0x414;
+                var pixels = file.ReadBytes ((int)info.Width * (int)info.Height * 4);
+                return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
+            }
+            else if (8 == info.BPP)
+            {
+                file.Position = 0x14;
+                var palette = ReadPalette (file.AsStream, 0x100, PaletteFormat.RgbX);
+                var pixels = file.ReadBytes ((int)info.Width * (int)info.Height);
+                return ImageData.Create (info, PixelFormats.Indexed8, palette, pixels);
+            }
+            else
+                throw new InvalidFormatException ("[IES] Invalid color depth");
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("IesRawFormat.Write not implemented");
+        }
+    }
 }
