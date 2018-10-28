@@ -18,7 +18,7 @@ Improved handling of composite TLG images.
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>128</FileVersion>
+        <FileVersion>129</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.42.1920"/>
