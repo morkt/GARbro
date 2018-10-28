@@ -124,7 +124,7 @@ namespace GameRes.Formats.TmrHiro
             int record_count = arc.File.View.ReadInt32 (entry.Offset);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             int pos = 4;
-            for (int i = 0; i < record_count; ++i)
+            for (int i = 0; i < record_count && pos + 2 <= data.Length; ++i)
             {
                 int chunk_size = LittleEndian.ToUInt16 (data, pos) - 4;
                 pos += 6;
