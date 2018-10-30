@@ -143,7 +143,7 @@ namespace GameRes.Formats.ShiinaRio // 椎名里緒
                     entry.IsPacked     = entry.Size != entry.UnpackedSize;
                     entry.FileTime     = header.ReadInt64();
                     entry.Flags        = header.ReadUInt32();
-                    if (0 != name.Length && unique_names.Add (name))
+                    if (0 != name.Length && name_buf[0] < 0x80 && unique_names.Add (name))
                         dir.Add (entry);
                 }
                 if (0 == dir.Count)
