@@ -52,7 +52,7 @@ namespace GameRes.Formats.BlackRainbow
             using (var input = file.CreateStream (0, index_length))
             {
                 var reader = new IndexReader (input, file.MaxOffset);
-                if (!reader.ReadDir ("", 8, index_length))
+                if (!reader.ReadDir ("", 8, index_length) || 0 == reader.Dir.Count)
                     return null;
                 return new ArcFile (file, this, reader.Dir);
             }
