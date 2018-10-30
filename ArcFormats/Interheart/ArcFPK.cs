@@ -43,6 +43,7 @@ namespace GameRes.Formats.CandySoft
         public FpkOpener ()
         {
             Signatures = new uint[] { 0, 1 };
+            ContainedFormats = new[] { "BMP", "KG", "OGG", "SCR", "TXT" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -88,7 +89,7 @@ namespace GameRes.Formats.CandySoft
                 string name = file.View.ReadString (index_offset+8, (uint)name_size);
                 if (string.IsNullOrWhiteSpace (name))
                     return null;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+4);
                 if (entry.Offset < data_offset || !entry.CheckPlacement (file.MaxOffset))
@@ -101,7 +102,6 @@ namespace GameRes.Formats.CandySoft
 
         private List<Entry> ReadEncryptedIndex (ArcView file, int count)
         {
-            file.View.Reserve (file.MaxOffset-8, 8);
             uint index_offset = file.View.ReadUInt32 (file.MaxOffset-4);
             if (index_offset < 4 || index_offset >= file.MaxOffset-8)
                 return null;
@@ -121,7 +121,7 @@ namespace GameRes.Formats.CandySoft
                 string name = Binary.GetCString (index, index_pos+8, name_size);
                 if (string.IsNullOrWhiteSpace (name))
                     return null;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 entry.Offset = LittleEndian.ToUInt32 (index, index_pos);
                 entry.Size   = LittleEndian.ToUInt32 (index, index_pos+4);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -211,4 +211,9 @@ namespace GameRes.Formats.CandySoft
         }
         #endregion
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "SPT")]
+    [ExportMetadata("Target", "SCR")]
+    public class SptFormat : ResourceAlias { }
 }
