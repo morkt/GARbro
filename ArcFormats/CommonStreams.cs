@@ -249,6 +249,12 @@ namespace GameRes.Formats
         }
     }
 
+    public enum StreamOption
+    {
+        None,
+        Fill,
+    }
+
     /// <summary>
     /// Limits underlying stream to the first N bytes.
     /// </summary>
@@ -257,12 +263,27 @@ namespace GameRes.Formats
         bool    m_can_seek;
         long    m_position;
         long    m_last;
+        bool    m_fill;
 
         public LimitStream (Stream input, long last, bool leave_open = false) : base (input, leave_open)
         {
             m_can_seek = input.CanSeek;
             m_position = 0;
             m_last = last;
+        }
+
+        public LimitStream (Stream input, long last, StreamOption option, bool leave_open = false)
+            : this (input, last, leave_open)
+        {
+            if (StreamOption.Fill == option)
+            {
+                if (m_can_seek && input.Length < m_last)
+                {
+                    input.Position = m_position;
+                    m_can_seek = false;
+                }
+                m_fill = true;
+            }
         }
 
         public override bool CanSeek  { get { return m_can_seek; } }
@@ -276,6 +297,13 @@ namespace GameRes.Formats
                 return 0;
             count = (int)Math.Min (count, m_last - m_position);
             int read = BaseStream.Read (buffer, offset, count);
+            if (m_fill)
+            {
+                while (read < count)
+                {
+                    buffer[read++] = 0;
+                }
+            }
             m_position += read;
             return read;
         }
