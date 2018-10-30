@@ -111,6 +111,8 @@ namespace GameRes.Formats.Adobe
                     Format = PixelFormats.Bgr24;
                 else if (4 == m_info.Channels)
                     Format = PixelFormats.Bgra32;
+                else if (m_info.Channels > 4)
+                    Format = PixelFormats.Bgr32;
                 else
                     throw new NotSupportedException();
                 break;
