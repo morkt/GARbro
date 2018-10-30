@@ -41,7 +41,7 @@ namespace GameRes.Formats.Nekopunch
             if (!file.Name.HasExtension (".pbm"))
                 return null;
             var header = file.ReadHeader (8);
-            if (!header.AsciiEqual (5, "BM"))
+            if ((header[4] & 7) != 7 || !header.AsciiEqual (5, "BM"))
                 return null;
             using (var bmp = OpenBitmapStream (file, header.ToUInt32 (0)))
                 return Bmp.ReadMetaData (bmp);
@@ -57,7 +57,7 @@ namespace GameRes.Formats.Nekopunch
         {
             file.Position = 4;
             Stream input = new LzssStream (file.AsStream, LzssMode.Decompress, true);
-            input = new LimitStream (input, unpacked_size);
+            input = new LimitStream (input, unpacked_size, StreamOption.Fill);
             return new BinaryStream (input, file.Name); 
         }
 
