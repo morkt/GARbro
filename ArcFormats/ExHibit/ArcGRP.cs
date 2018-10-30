@@ -109,17 +109,15 @@ namespace GameRes.Formats.ExHibit
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
                 {
-                    uint offset = toc_file.View.ReadUInt32 (index_offset);
                     uint size   = toc_file.View.ReadUInt32 (index_offset+4);
                     if (size != 0)
                     {
                         var entry = new Entry {
                             Name = string.Format ("{0:D5}.ogg", start_index+i),
                             Type = "audio",
-                            Offset = offset,
+                            Offset = toc_file.View.ReadUInt32 (index_offset),
                             Size = size,
                         };
-                        entry.Offset = toc_file.View.ReadUInt32 (index_offset);
                         if (!entry.CheckPlacement (file.MaxOffset))
                             return null;
                         dir.Add (entry);
