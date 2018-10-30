@@ -79,6 +79,7 @@
     <Compile Include="Brownie\ImageNGW.cs" />
     <Compile Include="DigitalMonkey\ArcDM.cs" />
     <Compile Include="DigitalMonkey\ImagePKT.cs" />
+    <Compile Include="Electriciteit\ArcPKK.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
     <Compile Include="KeroQ\ImageCBM.cs" />
