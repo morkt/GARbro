@@ -252,6 +252,19 @@ namespace GameRes.Formats.Fs
             return new ArcFile (file, this, dir);
         }
 
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            if (!entry.Name.HasAnyOfExtensions (".def", ".dsf") || entry.Size < 2)
+                return base.OpenEntry (arc, entry);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            byte key = (byte)(data[data.Length-1] ^ 0xA);
+            if (0xD == (data[data.Length-2] ^ key))
+            {
+                DecodeEntry (data, key);
+            }
+            return new BinMemoryStream (data);
+        }
+
         void DecodeEntry (byte[] buf, byte key)
         {
             for (int i = 0; i < buf.Length; ++i)
