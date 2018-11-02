@@ -51,7 +51,7 @@ namespace GameRes.Formats.CatSystem
                 if (0 == section_size)
                     section_size = (uint)(file.MaxOffset - offset);
                 uint stdinfo_size = file.View.ReadUInt32 (offset+0x10);
-                if (file.View.AsciiEqual (offset+8+stdinfo_size, "img0000"))
+                if (file.View.AsciiEqual (offset+8+stdinfo_size, "img"))
                 {
                     var entry = new Entry
                     {
