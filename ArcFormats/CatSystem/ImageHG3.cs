@@ -288,9 +288,12 @@ namespace GameRes.Formats.CatSystem
             m_input.ReadInt32();
             var jpeg_size = m_input.ReadInt32();
             long next_section = Source.Position + jpeg_size;
-            var decoder = new JpegBitmapDecoder (Source,
-                BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-            var frame = decoder.Frames[0];
+            BitmapSource frame;
+            using (var jpeg = new StreamRegion (Source, Source.Position, jpeg_size, true))
+            {
+                var decoder = new JpegBitmapDecoder (jpeg, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                frame = decoder.Frames[0];
+            }
             if (frame.Format.BitsPerPixel < 24)
                 throw new NotSupportedException ("Not supported HG-3 JPEG color depth");
             int src_pixel_size = frame.Format.BitsPerPixel/8;
@@ -303,9 +306,9 @@ namespace GameRes.Formats.CatSystem
             int dst = 0;
             for (uint i = 0; i < total; ++i)
             {
-                output[dst++] = pixels[src];
-                output[dst++] = pixels[src+1];
                 output[dst++] = pixels[src+2];
+                output[dst++] = pixels[src+1];
+                output[dst++] = pixels[src];
                 output[dst++] = 0xFF;
                 src += src_pixel_size;
             }
