@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using GameRes.Compression;
 using GameRes.Utility;
@@ -1291,6 +1292,46 @@ namespace GameRes.Formats.KiriKiri
         public override void Encrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
         {
             Decrypt (entry, offset, data, pos, count);
+        }
+    }
+
+    [Serializable]
+    public class PinPointCrypt : ICrypt
+    {
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                byte val = data[pos+i];
+                int bit_count = CountSetBits (val);
+                if (bit_count > 0)
+                {
+                    val = Binary.RotByteL (val, bit_count);
+                    data[pos+i] = val;
+                }
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] data, int pos, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                byte val = data[pos+i];
+                int bit_count = CountSetBits (val);
+                if (bit_count > 0)
+                {
+                    val = Binary.RotByteR (val, bit_count);
+                    data[pos+i] = val;
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountSetBits (byte x)
+        {
+            int bit_count = (x & 0x55) + ((x >> 1) & 0x55);
+            bit_count = (bit_count & 0x33) + ((bit_count >> 2) & 0x33);
+            return ((bit_count & 0xF) + ((bit_count >> 4) & 0xF)) & 0xF;
         }
     }
 }
