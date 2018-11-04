@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -87,7 +88,10 @@ namespace GameRes.Formats.FC01
             {
                 var scheme = QueryScheme (file);
                 if (null == scheme)
+                {
+                    Trace.WriteLine ("Unknown AGSI encryption scheme", "[PAK/AGSI]");
                     return null;
+                }
                 var arc_name = Path.GetFileName (file.Name).ToLowerInvariant();
                 byte[] key;
                 if (scheme.TryGetValue (arc_name, out key) && key != null)
@@ -114,6 +118,7 @@ namespace GameRes.Formats.FC01
                 break;
             case 1: // RLE compression
             case 4:
+                input = new PackedStream<RleDecompressor> (input, new RleDecompressor ((int)aent.UnpackedSize));
                 break;
             case 2: // LZSS bit stream
             case 5:
@@ -380,6 +385,29 @@ namespace GameRes.Formats.FC01
                 }
                 base.Dispose (disposing);
             }
+        }
+    }
+
+    internal sealed class RleDecompressor : Decompressor
+    {
+        int             m_unpacked_size;
+
+        public RleDecompressor ()
+        {
+        }
+
+        public RleDecompressor (int unpacked_size)
+        {
+            m_unpacked_size = unpacked_size;
+        }
+
+        public override void Initialize (Stream input)
+        {
+        }
+
+        protected override IEnumerator<int> Unpack ()
+        {
+            throw new NotImplementedException();
         }
     }
 }
