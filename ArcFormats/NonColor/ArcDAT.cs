@@ -147,7 +147,9 @@ namespace GameRes.Formats.NonColor
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             if (dent.IsPacked)
             {
-                if (darc.MasterKey != 0)
+                if (6 == dent.Flags)
+                    DecryptData (data, (uint)dent.Hash);
+                else if (darc.MasterKey != 0)
                     DecryptData (data, (uint)(dent.Hash ^ darc.MasterKey));
                 return new ZLibStream (new MemoryStream (data), CompressionMode.Decompress);
             }
@@ -311,26 +313,29 @@ namespace GameRes.Formats.NonColor
                     entry.Name = known_rec.Name;
                     entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
                     entry.RawName = known_rec.NameBytes;
+                    if (null == last_name && i > 0)
+                    {
+                        Trace.WriteLine (string.Format ("[{0}] {1}", i, known_rec.Name), "[noncolor]");
+                        last_reported = i;
+                    }
+                }
+                else
+                {
+                    if (last_name != null && last_reported != i-1)
+                        Trace.WriteLine (string.Format ("[{0}] {1}", i-1, last_name), "[noncolor]");
+                    Trace.WriteLine (string.Format ("[{0}] Unknown hash {1:X08}", i, entry.Hash), "[noncolor]");
+                    last_name = null;
                 }
                 if (0 == (entry.Flags & 2))
                 {
                     if (null == known_rec.Name)
                     {
-                        if (last_name != null && last_reported != i-1)
-                            Trace.WriteLine (string.Format ("[{0}] {1}", i-1, last_name), "[noncolor]");
-                        Trace.WriteLine (string.Format ("[{0}] Unknown hash {1:X8}", i, entry.Hash), "[noncolor]");
-                        last_name = null;
                         ++skipped;
                         continue;
                     }
                     else
                     {
                         var raw_name = known_rec.NameBytes;
-                        if (null == last_name && i > 0)
-                        {
-                            Trace.WriteLine (string.Format ("[{0}] {1}", i, known_rec.Name), "[noncolor]");
-                            last_reported = i;
-                        }
                         entry.Offset        ^= Extend8Bit (raw_name[raw_name.Length >> 1]);
                         entry.Size          ^= Extend8Bit (raw_name[raw_name.Length >> 2]);
                         entry.UnpackedSize  ^= Extend8Bit (raw_name[raw_name.Length >> 3]);
