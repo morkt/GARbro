@@ -23,9 +23,12 @@
 // IN THE SOFTWARE.
 //
 
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Windows.Media;
+using System.Text;
+using System.Web.Script.Serialization;
 
 namespace GameRes.Formats.RPGMaker
 {
@@ -41,20 +44,22 @@ namespace GameRes.Formats.RPGMaker
         public override string Description { get { return "RPG Maker engine image format"; } }
         public override uint     Signature { get { return 0x4D475052; } } // 'RPGMV'
 
-        internal static readonly byte[] DefaultKey = {
-            0x77, 0x4E, 0x46, 0x45, 0xFC, 0x43, 0x2F, 0x71, 0x47, 0x95, 0xA2, 0x43, 0xE5, 0x10, 0x13, 0xD8
-        };
-
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x14);
             if (header[4] != 'V')
                 return null;
-            var key = DefaultKey;
+            var key = RpgmvDecryptor.LastKey ?? RpgmvDecryptor.FindKeyFor (file.Name);
+            if (null == key)
+                return null;
             for (int i = 0; i < 4; ++i)
                 header[0x10+i] ^= key[i];
             if (!header.AsciiEqual (0x10, "\x89PNG"))
+            {
+                RpgmvDecryptor.LastKey = null;
                 return null;
+            }
+            RpgmvDecryptor.LastKey = key;
             using (var png = RpgmvDecryptor.DecryptStream (file, key, true))
             {
                 var info = Png.ReadMetaData (png);
@@ -92,8 +97,66 @@ namespace GameRes.Formats.RPGMaker
             var header = input.ReadBytes (key.Length);
             for (int i = 0; i < key.Length; ++i)
                 header[i] ^= key[i];
-            var result = new PrefixStream (header, new StreamRegion (input.AsStream, 0x20, leave_open));
+            var result = new PrefixStream (header, new StreamRegion (input.AsStream, input.Position, leave_open));
             return new BinaryStream (result, input.Name);
         }
+
+        static byte[] GetKeyFromString (string hex)
+        {
+            if ((hex.Length & 1) != 0)
+                throw new System.ArgumentException ("invalid key string");
+            var key = new byte[hex.Length/2];
+            for (int i = 0; i < key.Length; ++i)
+            {
+                key[i] = (byte)(HexToInt (hex[i * 2]) << 4 | HexToInt (hex[i * 2 + 1]));
+            }
+            return key;
+        }
+
+        static int HexToInt (char x)
+        {
+            if (char.IsDigit (x))
+                return x - '0';
+            else
+                return char.ToUpper (x) - 'A' + 10;
+        }
+
+        static byte[] ParseSystemJson (string filename)
+        {
+            var json = File.ReadAllText (filename, Encoding.UTF8);
+            var serializer = new JavaScriptSerializer();
+            var sys = serializer.DeserializeObject (json) as IDictionary;
+            if (null == sys)
+                return null;
+            var key = sys["encryptionKey"] as string;
+            if (null == key)
+                return null;
+            return GetKeyFromString (key);
+        }
+
+        public static byte[] FindKeyFor (string filename)
+        {
+            foreach (var system_filename in FindSystemJson (filename))
+            {
+                if (File.Exists (system_filename))
+                    return ParseSystemJson (system_filename);
+            }
+            return null;
+        }
+
+        static IEnumerable<string> FindSystemJson (string filename)
+        {
+            var dir_name = Path.GetDirectoryName (filename);
+            yield return Path.Combine (dir_name, @"..\..\data\System.json");
+            yield return Path.Combine (dir_name, @"..\..\..\www\data\System.json");
+            yield return Path.Combine (dir_name, @"..\data\System.json");
+            yield return Path.Combine (dir_name, @"data\System.json");
+        }
+
+        internal static readonly byte[] DefaultKey = {
+            0x77, 0x4E, 0x46, 0x45, 0xFC, 0x43, 0x2F, 0x71, 0x47, 0x95, 0xA2, 0x43, 0xE5, 0x10, 0x13, 0xD8
+        };
+
+        internal static byte[] LastKey = null;
     }
 }

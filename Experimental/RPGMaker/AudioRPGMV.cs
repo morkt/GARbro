@@ -23,12 +23,7 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.ComponentModel.Composition;
-using System.IO;
-using System.Linq;
-using GameRes.Utility;
-using NVorbis;
 
 namespace GameRes.Formats.RPGMaker
 {
@@ -45,11 +40,17 @@ namespace GameRes.Formats.RPGMaker
             var header = file.ReadHeader (0x14);
             if (header[4] != 'V')
                 return null;
-            var key = RpgmvpFormat.DefaultKey;
+            var key = RpgmvDecryptor.LastKey ?? RpgmvDecryptor.FindKeyFor (file.Name);
+            if (null == key)
+                return null;
             for (int i = 0; i < 4; ++i)
                 header[0x10+i] ^= key[i];
             if (!header.AsciiEqual (0x10, "OggS"))
+            {
+                RpgmvDecryptor.LastKey = null;
                 return null;
+            }
+            RpgmvDecryptor.LastKey = key;
             var ogg = RpgmvDecryptor.DecryptStream (file, key);
             return OggAudio.Instance.TryOpen (ogg);
         }
