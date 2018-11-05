@@ -194,6 +194,7 @@
     <Compile Include="KiriKiri\YuzCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Lambda\ImageCLS.cs" />
+    <Compile Include="Leaf\ArcPAK.cs" />
     <Compile Include="Lilim\ImageIMG.cs" />
     <Compile Include="LiveMaker\ArcGALX.cs" />
     <Compile Include="Aims\ArcPACK.cs" />
