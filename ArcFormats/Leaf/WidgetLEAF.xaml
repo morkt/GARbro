@@ -1,0 +1,10 @@
+﻿<StackPanel x:Class="GameRes.Formats.GUI.WidgetLEAF"
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:fmt="clr-namespace:GameRes.Formats.KiriKiri"
+            xmlns:p="clr-namespace:GameRes.Formats.Properties"
+            xmlns:local="clr-namespace:GameRes.Formats.GUI"
+            MaxWidth="250" Orientation="Vertical" HorizontalAlignment="Left">
+    <ComboBox Name="Scheme" Width="180" ItemsSource="{Binding}" HorizontalAlignment="Left"
+              SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=LEAFTitle, Mode=TwoWay}"/>
+</StackPanel>

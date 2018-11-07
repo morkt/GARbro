@@ -191,5 +191,8 @@
     <Setting Name="NOAEncodingCP" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">932</Value>
     </Setting>
+    <Setting Name="LEAFTitle" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -171,7 +171,10 @@
     <Compile Include="FC01\ImageTIL.cs" />
     <Compile Include="FC01\ImageWM2.cs" />
     <Compile Include="FC01\ImageWMK.cs" />
+    <Compile Include="FrontWing\ArcFG.cs" />
+    <Compile Include="FrontWing\ArcFLT.cs" />
     <Compile Include="FrontWing\ArcVAV.cs" />
+    <Compile Include="FrontWing\ImageFG.cs" />
     <Compile Include="GLib\ArcG.cs" />
     <Compile Include="Groover\ArcPCG.cs" />
     <Compile Include="Gss\ArcARC.cs" />
@@ -194,7 +197,14 @@
     <Compile Include="KiriKiri\YuzCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
     <Compile Include="Lambda\ImageCLS.cs" />
+    <Compile Include="Leaf\ArcLEAF.cs" />
     <Compile Include="Leaf\ArcPAK.cs" />
+    <Compile Include="Leaf\AudioP16.cs" />
+    <Compile Include="Leaf\ImageBJR.cs" />
+    <Compile Include="Leaf\ImageLFG.cs" />
+    <Compile Include="Leaf\WidgetLEAF.xaml.cs">
+      <DependentUpon>WidgetLEAF.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Lilim\ImageIMG.cs" />
     <Compile Include="LiveMaker\ArcGALX.cs" />
     <Compile Include="Aims\ArcPACK.cs" />
@@ -1004,6 +1014,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FC01\WidgetMCG.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Leaf\WidgetLEAF.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

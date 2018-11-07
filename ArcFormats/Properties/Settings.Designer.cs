@@ -777,5 +777,17 @@ namespace GameRes.Formats.Properties {
                 this["NOAEncodingCP"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LEAFTitle {
+            get {
+                return ((string)(this["LEAFTitle"]));
+            }
+            set {
+                this["LEAFTitle"] = value;
+            }
+        }
     }
 }
