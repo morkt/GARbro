@@ -27,6 +27,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
+// [000310][Mermaid] Into Your World
+
 namespace GameRes.Formats.Mermaid
 {
     internal class MgMetaData : ImageMetaData
@@ -35,9 +37,7 @@ namespace GameRes.Formats.Mermaid
         public int  TileCount;
     }
 
-#if DEBUG
     [Export(typeof(ImageFormat))]
-#endif
     public class MgFormat : ImageFormat
     {
         public override string         Tag { get { return "MG1"; } }
@@ -93,7 +93,7 @@ namespace GameRes.Formats.Mermaid
                 for (int y = tile_count-1; y >= 0; --y)
                 {
                     int tile_dst = dst + y * tile_width;
-                    for (int x = 0; x < tile_count; ++x)
+                    for (int x = 0; x < stride; x += tile_width)
                     {
                         if (tile_dst + tile_width > pixels.Length)
                             file.Seek (tile_width, SeekOrigin.Current);

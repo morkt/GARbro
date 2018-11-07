@@ -1,27 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.5.39</Version>
+        <Version>1.5.40</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
         <Notes>New formats:
-- MIF archives, BCF and NG3 images
-- 'mrg0' archives
-- 'SHA_' archives
-- 'GML_ARC' archives
-- TIL images
-- RAD archives and RSG images
-- PAQ archives DZP images
-- PKZ archives, JBP images and KOG audio
+- PPAC archives, TIM2 and TX images
+- GPK archives
+- CMP images
+- WBM bitmaps and ADP1 audio
+- CPA and AAP archives, CP2 images
+- DM archives and PKT images
+- MPK archives and LAY images
+- HBM images
+- CDPA 'PACK' archives
+- PKK archives
+- Leaf 'KCAP' and 'LEAFPACK' archives
+- FLT archives and FG images
 - updated KiriKiri and ShiinaRio encryption schemes
-
-Improved handling of composite TLG images.
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>130</FileVersion>
+        <FileVersion>131</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.42.1920"/>
+            <Assembly Name="ArcFormats" Version="1.2.43.2015"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>

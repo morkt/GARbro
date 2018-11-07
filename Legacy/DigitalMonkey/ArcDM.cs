@@ -28,6 +28,9 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
 
+// [030725][Digital Monkey] Kono Sora ga Tsuieru Toki ni
+// [041112][Yumesta] Seikon ~Kiba to Nie to Kyouki no Yakata~
+
 namespace GameRes.Formats.DigitalMonkey
 {
     [Export(typeof(ArchiveFormat))]

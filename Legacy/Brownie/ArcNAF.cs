@@ -27,6 +27,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [980529][Brownie] Dawn Slave
+
 namespace GameRes.Formats.Brownie
 {
     [Export(typeof(ArchiveFormat))]
