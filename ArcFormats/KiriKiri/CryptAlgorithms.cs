@@ -1247,20 +1247,30 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class SmxCrypt : ICrypt
     {
+        byte[]  KeySeq;
+
+        public SmxCrypt (params byte[] key_seq)
+        {
+            if (key_seq.Length < 7)
+                throw new ArgumentException ("Not enough arguments for SmxCrypt.");
+            KeySeq = key_seq;
+        }
+
         public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
         {
-            var key = new byte[6] {
-                (byte)(entry.Hash >> 5),
-                (byte)(entry.Hash >> 4),
-                (byte)(entry.Hash >> 3),
-                (byte)(entry.Hash >> 2),
-                (byte)(entry.Hash >> 2),
-                (byte)(entry.Hash >> 3),
+            byte start_key = (byte)(entry.Hash >> KeySeq[0]);
+            var key = new byte[] {
+                (byte)(entry.Hash >> KeySeq[1]),
+                (byte)(entry.Hash >> KeySeq[2]),
+                (byte)(entry.Hash >> KeySeq[3]),
+                (byte)(entry.Hash >> KeySeq[4]),
+                (byte)(entry.Hash >> KeySeq[5]),
+                (byte)(entry.Hash >> KeySeq[6]),
             };
             for (int i = 0; i < count; ++i)
             {
                 if ((offset + i) <= 100)
-                    buffer[pos+i] ^= key[3];
+                    buffer[pos+i] ^= start_key;
                 else
                     buffer[pos+i] ^= key[(int)(offset + i) & 5];
             }
@@ -1269,6 +1279,12 @@ namespace GameRes.Formats.KiriKiri
         public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
         {
             Decrypt (entry, offset, buffer, pos, count);
+        }
+
+        public override string ToString ()
+        {
+            var key_seq = KeySeq != null ? string.Join (",", KeySeq.Select (x => x.ToString ("D"))) : "null";
+            return string.Format ("{0}({1})", base.ToString(), key_seq);
         }
     }
 
