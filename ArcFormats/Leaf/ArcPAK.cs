@@ -39,13 +39,68 @@ namespace GameRes.Formats.Leaf
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public KcapOpener ()
+        {
+            ContainedFormats = new[] { "TGA", "BJR", "BMP", "OGG", "WAV", "AMP/LEAF" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
-            int count = file.View.ReadInt32 (12);
-            if (!IsSaneCount (count))
+            int version = 1;
+            int count = file.View.ReadInt32 (8);
+            uint first_offset = file.View.ReadUInt32 (0x28);
+            if (!IsSaneCount (count) || count * 0x24 + 0xC != first_offset)
+            {
+                count = file.View.ReadInt32 (12);
+                if (!IsSaneCount (count))
+                    return null;
+                first_offset = file.View.ReadUInt32 (0x34);
+                if (count * 0x2C + 0x10 != first_offset)
+                    return null;
+                version = 2;
+            }
+            List<Entry> dir;
+            if (1 == version)
+                dir = ReadIndexV1 (file, count);
+            else
+                dir = ReadIndexV2 (file, count);
+            if (null == dir)
                 return null;
+            return new ArcFile (file, this, dir);
+        }
+
+        List<Entry> ReadIndexV1 (ArcView file, int count)
+        {
+            const uint index_entry_size = 0x24;
+            uint index_offset = 0xC;
+            uint index_size = (uint)count * index_entry_size;
+            if (file.View.Reserve (index_offset, index_size) < index_size)
+                return null;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                uint size = file.View.ReadUInt32 (index_offset+0x20);
+                if (size != 0)
+                {
+                    var name = file.View.ReadString (index_offset+4, 0x18);
+                    var entry = Create<PackedEntry> (name);
+                    entry.Offset = file.View.ReadUInt32 (index_offset+0x1C);
+                    entry.Size   = size;
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                    entry.IsPacked = file.View.ReadInt32 (index_offset) != 0;
+                    dir.Add (entry);
+                }
+                index_offset += index_entry_size;
+            }
+            return dir;
+        }
+
+        List<Entry> ReadIndexV2 (ArcView file, int count)
+        {
+            const uint index_entry_size = 0x2C;
             uint index_offset = 0x10;
-            uint index_size = (uint)count * 0x2C;
+            uint index_size = (uint)count * index_entry_size;
             if (file.View.Reserve (index_offset, index_size) < index_size)
                 return null;
             var dir = new List<Entry> (count);
@@ -63,9 +118,9 @@ namespace GameRes.Formats.Leaf
                     entry.IsPacked = file.View.ReadInt32 (index_offset) != 0;
                     dir.Add (entry);
                 }
-                index_offset += 0x2C;
+                index_offset += index_entry_size;
             }
-            return new ArcFile (file, this, dir);
+            return dir;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -105,5 +160,14 @@ namespace GameRes.Formats.Leaf
             input.Position = 0;
             return ImageFormatDecoder.Create (input);
         }
+    }
+
+    [Export(typeof(ScriptFormat))]
+    public class AmpFormat : GenericScriptFormat
+    {
+        public override string        Type { get { return ""; } }
+        public override string         Tag { get { return "AMP/LEAF"; } }
+        public override string Description { get { return "Leaf engine internal file"; } }
+        public override uint     Signature { get { return 0; } }
     }
 }
