@@ -193,7 +193,10 @@ namespace GameRes.Formats.Entis
                             xml.Load (input);
                             var password = XmlFindArchiveKey (xml, noa_name);
                             if (password != null)
+                            {
+                                Trace.WriteLine (string.Format ("{0}: found password \"{1}\"", noa_name, password), "[NOA]");
                                 return password;
+                            }
                         }
                     }
                 }
