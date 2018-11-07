@@ -27,6 +27,7 @@ using GameRes.Utility;
 using System;
 using System.IO;
 using System.Linq;
+using System.ComponentModel.Composition;
 
 namespace GameRes.Formats
 {
@@ -339,5 +340,14 @@ namespace GameRes.Formats
             using (var dump = File.Create (Path.Combine (DirectoryName, filename)))
                 dump.Write (mem, 0, mem.Length);
         }
+    }
+
+    [Export(typeof(ScriptFormat))]
+    public class DataFileFormat : GenericScriptFormat
+    {
+        public override string        Type { get { return ""; } }
+        public override string         Tag { get { return "DAT/GENERIC"; } }
+        public override string Description { get { return "Unidentified data file"; } }
+        public override uint     Signature { get { return 0; } }
     }
 }
