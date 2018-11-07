@@ -56,6 +56,7 @@ namespace GameRes.Formats.Entis
 
     public enum CvType
     {
+        Lossless_EMI =  0x03010000,
         Lossless_ERI =  0x03020000,
         DCT_ERI      =  0x00000001,
         LOT_ERI      =  0x00000005,
@@ -149,13 +150,21 @@ namespace GameRes.Formats.Entis
         public override string Description { get { return "Entis rasterized image format"; } }
         public override uint     Signature { get { return 0x69746e45u; } } // 'Enti'
 
+        public EriFormat ()
+        {
+            Extensions = new [] { "eri", "emi" };
+            Signatures = new uint[] { 0x69746E45, 0x54534956 };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x40);
-            if (0x03000100 != header.ToUInt32 (8))
+            uint id = header.ToUInt32 (8);
+            if (0x03000100 != id && 0x02000100 != id)
                 return null;
-            if (!header.AsciiEqual (0x10, "Entis Rasterized Image")
-                && !header.AsciiEqual (0x10, "Moving Entis Image"))
+            if (!header.AsciiEqual (0x10, "Entis Rasterized Image") &&
+                !header.AsciiEqual (0x10, "Moving Entis Image") &&
+                !header.AsciiEqual (0x10, "EMSAC-Image"))
                 return null;
             using (var reader = new EriFile (stream.AsStream))
             {
