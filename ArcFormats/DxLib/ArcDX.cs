@@ -2,7 +2,7 @@
 //! \date       Thu Oct 08 00:18:56 2015
 //! \brief      DxLib engine archives with 'DX' signature.
 //
-// Copyright (C) 2015-2017 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -64,9 +64,10 @@ namespace GameRes.Formats.DxLib
 
         public DxOpener ()
         {
-            Extensions = new string[] { "dxa", "hud", "usi", "med", "dat", "bin", "bcx" };
+            Extensions = new string[] { "dxa", "hud", "usi", "med", "dat", "bin", "bcx", "wolf" };
             Signatures = new uint[] {
-                0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0x5524F211, 0x69FC5FE4, 0x09E19ED9, 0
+                0x19EF8ED4, 0xA9FCCEDD, 0x0AEE0FD3, 0x5523F211, 0x5524F211, 0x69FC5FE4, 0x09E19ED9, 0x7DCC5D83,
+                0
             };
         }
 
@@ -100,14 +101,27 @@ namespace GameRes.Formats.DxLib
                     return null;
                 }
             }
-            return GuessKey (file);
+            var arc = GuessKey (file);
+            if (arc != null)
+            {
+                KnownKeys.Insert (0, arc.Key);
+                Trace.WriteLine (string.Format ("Restored key '{0}'", RestoreKey (arc.Key)), "[DXA]");
+            }
+            return arc;
         }
 
-        ArcFile GuessKey (ArcView file)
+        DxArchive GuessKey (ArcView file)
         {
             if (file.MaxOffset > uint.MaxValue)
                 return null;
-            var key = new byte[12];
+            var key = GuessKeyV6 (file);
+            if (key != null)
+            {
+                var dir = ReadIndex (file, 6, key);
+                if (dir != null)
+                    return new DxArchive (file, this, dir, key, 6);
+            }
+            key = new byte[12];
             for (short version = 4; version >= 1; --version)
             {
                 file.View.Read (0, key, 0, 12);
@@ -130,15 +144,34 @@ namespace GameRes.Formats.DxLib
                 {
                     var dir = ReadIndex (file, version, key);
                     if (null != dir)
-                    {
-                        KnownKeys.Insert (0, key);
-                        Trace.WriteLine (string.Format ("Restored key '{0}'", RestoreKey (key)), "[DXA]");
                         return new DxArchive (file, this, dir, key, version);
-                    }
                 }
                 catch { /* ignore parse errors */ }
             }
             return null;
+        }
+
+        byte[] GuessKeyV6 (ArcView file)
+        {
+            var header = file.View.ReadBytes (0, 0x30);
+            header[0] ^= (byte)'D'; 
+            header[1] ^= (byte)'X';
+            header[2] ^= 6;
+            uint key0 = header.ToUInt32 (0);
+            header[8] ^= (byte)0x30;
+            uint data_offset_hi = header.ToUInt32 (12) ^ key0;
+            if (data_offset_hi != 0)
+                return null;
+            uint key2 = header.ToUInt32 (8);
+            uint key1 = header.ToUInt32 (0x1C);
+            long index_offset = header.ToInt64 (0x10) ^ key1 ^ ((long)key2 << 32);
+            if (index_offset <= 0x30 || index_offset >= file.MaxOffset)
+                return null;
+            var key = new byte[12];
+            LittleEndian.Pack (key0, key, 0);
+            LittleEndian.Pack (key1, key, 4);
+            LittleEndian.Pack (key2, key, 8);
+            return key;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
