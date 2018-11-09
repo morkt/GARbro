@@ -41,27 +41,33 @@ namespace GameRes.Formats.Leaf
 
         public KcapOpener ()
         {
-            ContainedFormats = new[] { "TGA", "BJR", "BMP", "OGG", "WAV", "AMP/LEAF" };
+            ContainedFormats = new[] { "TGA", "BJR", "BMP", "OGG", "WAV", "AMP/LEAF", "SCR" };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int version = 1;
-            int count = file.View.ReadInt32 (8);
-            uint first_offset = file.View.ReadUInt32 (0x28);
-            if (!IsSaneCount (count) || count * 0x24 + 0xC != first_offset)
+            int version = 0;
+            int count = file.View.ReadInt32 (4);
+            uint first_offset = file.View.ReadUInt32 (0x24);
+            if (!IsSaneCount (count) || count * 0x24 + 8 != first_offset)
             {
-                count = file.View.ReadInt32 (12);
-                if (!IsSaneCount (count))
-                    return null;
-                first_offset = file.View.ReadUInt32 (0x34);
-                if (count * 0x2C + 0x10 != first_offset)
-                    return null;
-                version = 2;
+                version = 1;
+                count = file.View.ReadInt32 (8);
+                first_offset = file.View.ReadUInt32 (0x28);
+                if (!IsSaneCount (count) || count * 0x24 + 0xC != first_offset)
+                {
+                    count = file.View.ReadInt32 (12);
+                    first_offset = file.View.ReadUInt32 (0x34);
+                    if (!IsSaneCount (count) || count * 0x2C + 0x10 != first_offset)
+                        return null;
+                    version = 2;
+                }
             }
             List<Entry> dir;
-            if (1 == version)
-                dir = ReadIndexV1 (file, count);
+            if (0 == version)
+                dir = ReadIndexV1 (file, count, 8);
+            else if (1 == version)
+                dir = ReadIndexV1 (file, count, 0xC);
             else
                 dir = ReadIndexV2 (file, count);
             if (null == dir)
@@ -69,10 +75,9 @@ namespace GameRes.Formats.Leaf
             return new ArcFile (file, this, dir);
         }
 
-        List<Entry> ReadIndexV1 (ArcView file, int count)
+        List<Entry> ReadIndexV1 (ArcView file, int count, uint index_offset)
         {
             const uint index_entry_size = 0x24;
-            uint index_offset = 0xC;
             uint index_size = (uint)count * index_entry_size;
             if (file.View.Reserve (index_offset, index_size) < index_size)
                 return null;
@@ -170,4 +175,9 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf engine internal file"; } }
         public override uint     Signature { get { return 0; } }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "SDT")]
+    [ExportMetadata("Target", "SCR")]
+    public class SdtFormat : ResourceAlias { }
 }
