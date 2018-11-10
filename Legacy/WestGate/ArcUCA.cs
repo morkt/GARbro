@@ -2,7 +2,7 @@
 //! \date       2017 Dec 15
 //! \brief      West Gate resource archive.
 //
-// Copyright (C) 2017 by morkt
+// Copyright (C) 2017-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -26,6 +26,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
 
 namespace GameRes.Formats.WestGate
 {
@@ -48,12 +49,20 @@ namespace GameRes.Formats.WestGate
             if (file.View.ReadUInt32 (0) != 0)
                 return null;
             int count = file.View.ReadInt32 (4);
-            if (!IsSaneCount (count) || count != file.View.ReadInt32 (8))
+            if (!IsSaneCount (count))
                 return null;
             var dir = UcaTool.ReadIndex (file, 0x10, count, "image");
             if (null == dir)
                 return null;
             return new ArcFile (file, this, dir);
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var input = arc.OpenBinaryEntry (entry);
+            if (0x28 == input.Signature)
+                return new UcaBitmapDecoder (input);
+            return ImageFormatDecoder.Create (input);
         }
     }
 
@@ -85,6 +94,76 @@ namespace GameRes.Formats.WestGate
                 dir.Add (entry);
             }
             return dir;
+        }
+    }
+
+    internal sealed class UcaBitmapDecoder : BinaryImageDecoder
+    {
+        public UcaBitmapDecoder (IBinaryStream input) : base (input)
+        {
+            var header = m_input.ReadHeader (0x28);
+            Info = new ImageMetaData {
+                Width  = header.ToUInt32 (4),
+                Height = header.ToUInt32 (8),
+                BPP    = header.ToUInt16 (0xE),
+            };
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = 0x28;
+            int palette_size = m_input.ReadInt32();
+            if (24 == Info.BPP)
+            {
+                var palette = m_input.ReadBytes (palette_size * 3);
+                int stride = 3 * (int)Info.Width;
+                var pixels = new byte[stride * (int)Info.Height];
+                int dst = 0;
+                while (dst < pixels.Length)
+                {
+                    int src = m_input.ReadUInt16();
+                    if (src >= palette_size)
+                        throw new InvalidFormatException();
+                    int color = src * 3;
+                    pixels[dst++] = palette[color+2];
+                    pixels[dst++] = palette[color+1];
+                    pixels[dst++] = palette[color];
+                }
+                return ImageData.CreateFlipped (Info, PixelFormats.Bgr24, null, pixels, stride);
+            }
+            else
+            {
+                int bits_length = m_input.ReadInt32();
+                var palette = m_input.ReadBytes (palette_size * 2);
+                int color_bits = GetColorBits (palette_size);
+                int stride = 2 * (int)Info.Width;
+                var pixels = new byte[stride * (int)Info.Height];
+                int dst = 0;
+                using (var bits = new MsbBitStream (m_input.AsStream, true))
+                {
+                    while (dst < pixels.Length)
+                    {
+                        int src = bits.GetBits (color_bits);
+                        if (src >= palette_size)
+                            throw new InvalidFormatException();
+                        int color = src * 2;
+                        pixels[dst++] = palette[color];
+                        pixels[dst++] = palette[color+1];
+                    }
+                    return ImageData.CreateFlipped (Info, PixelFormats.Bgr555, null, pixels, stride);
+                }
+            }
+        }
+
+        static int GetColorBits (int n)
+        {
+            --n;
+            n |= n >> 1;
+            n |= n >> 2;
+            n |= n >> 4;
+            n |= n >> 8;
+            n |= n >> 16;
+            return n + 1;
         }
     }
 }
