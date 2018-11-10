@@ -30,6 +30,11 @@ using GameRes.Compression;
 
 namespace GameRes.Formats.Ankh
 {
+    internal class GpdMetaData : ImageMetaData
+    {
+        public int  HeaderSize;
+    }
+
     [Export(typeof(ImageFormat))]
     public class GpdFormat : ImageFormat
     {
@@ -40,19 +45,19 @@ namespace GameRes.Formats.Ankh
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x10);
-            if (header.ToInt32 (12) != 0)
-                return null;
-            return new ImageMetaData {
+            return new GpdMetaData {
                 Width  = header.ToUInt32 (4),
                 Height = header.ToUInt32 (8),
                 BPP    = 24,
+                HeaderSize = header.ToInt32 (12) != 0 ? 12 : 16,
             };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
+            var meta = (GpdMetaData)info;
             int stride = (int)info.Width * 3;
-            file.Position = 0x10;
+            file.Position = meta.HeaderSize;
             using (var lzss = new LzssStream (file.AsStream, LzssMode.Decompress, true))
             {
                 var pixels = new byte[stride * (int)info.Height];
