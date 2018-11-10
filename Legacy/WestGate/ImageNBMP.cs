@@ -26,6 +26,7 @@
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace GameRes.Formats.WestGate
 {
@@ -42,7 +43,7 @@ namespace GameRes.Formats.WestGate
             if (header.ToInt32 (4) != 0x28)
                 return null;
             int bpp = header.ToInt16 (0x12);
-            if (bpp != 24 && bpp != 32)
+            if (bpp != 24 && bpp != 32 && bpp != 8)
                 return null;
             return new ImageMetaData {
                 Width = header.ToUInt32 (8),
@@ -55,9 +56,13 @@ namespace GameRes.Formats.WestGate
         {
             int stride = ((int)info.Width * info.BPP / 8 + 3) & ~3;
             file.Position = 0x2C;
+            BitmapPalette palette = null;
+            if (8 == info.BPP)
+                palette = ReadPalette (file.AsStream);
             var pixels = file.ReadBytes (stride * (int)info.Height);
-            PixelFormat format = 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgr32;
-            return ImageData.CreateFlipped (info, format, null, pixels, stride);
+            PixelFormat format = 8 == info.BPP ? PixelFormats.Indexed8
+                              : 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgr32;
+            return ImageData.CreateFlipped (info, format, palette, pixels, stride);
         }
 
         public override void Write (Stream file, ImageData image)
