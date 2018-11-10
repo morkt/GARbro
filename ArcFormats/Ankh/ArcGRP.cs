@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Ankh
@@ -123,7 +124,9 @@ namespace GameRes.Formats.Ankh
                     entry.Offset += 4;
                     entry.Size   -= 4;
                 }
-                else if (entry.Size > 12 && header.AsciiEqual (8, "RIFF"))
+                else if (entry.Size > 12 &&
+                         (header.AsciiEqual (8, "RIFF") ||
+                          ((header[4] & 0xF) == 0xF && header.AsciiEqual (5, "RIFF"))))
                 {
                     entry.ChangeType (AudioFormat.Wav);
                     entry.UnpackedSize = header.ToUInt32 (0);
@@ -174,9 +177,19 @@ namespace GameRes.Formats.Ankh
                         return OpenTpw (arc, pent);
                     if (arc.File.View.AsciiEqual (entry.Offset+4, "HDJ\0"))
                         return OpenImage (arc, pent);
-                    if (entry.Size > 12 && 'W' == arc.File.View.ReadByte (entry.Offset+4)
-                        && arc.File.View.AsciiEqual (entry.Offset+8, "RIFF"))
-                        return OpenAudio (arc, entry);
+                    if (entry.Size > 12)
+                    {
+                        byte type = arc.File.View.ReadByte (entry.Offset+4);
+                        if ('W' == type
+                            && arc.File.View.AsciiEqual (entry.Offset+8, "RIFF"))
+                            return OpenAudio (arc, entry);
+                        if ((type & 0xF) == 0xF
+                            && arc.File.View.AsciiEqual (entry.Offset+5, "RIFF"))
+                        {
+                            var input = arc.File.CreateStream (entry.Offset+4, entry.Size-4);
+                            return new LzssStream (input);
+                        }
+                    }
                 }
                 catch (Exception X)
                 {
