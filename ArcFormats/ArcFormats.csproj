@@ -163,6 +163,7 @@
     <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="EmbeddedResource.cs" />
     <Compile Include="Emote\ImageDREF.cs" />
+    <Compile Include="Eternity\ArcGLNK.cs" />
     <Compile Include="Eternity\ImageSGF.cs" />
     <Compile Include="Ethornell\ImageCBG.cs" />
     <Compile Include="Eushully\AudioAOG.cs" />
