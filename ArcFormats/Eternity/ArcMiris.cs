@@ -97,7 +97,7 @@ namespace GameRes.Formats.Miris
 
         public GlnkOpener ()
         {
-            Extensions = new string[] { "dat", "glk", "mlk", "slk", "gl", "ml", "sl" };
+            Extensions = new string[] { "dat", "glk", "mlk", "slk", "gl", "ml", "sl", "ets", "etg", "etm" };
         }
 
         public override ArcFile TryOpen (ArcView file)
