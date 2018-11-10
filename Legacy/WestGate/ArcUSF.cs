@@ -39,7 +39,7 @@ namespace GameRes.Formats.WestGate
 
         public UsfOpener ()
         {
-            Extensions = new string[] { "alh", "usf", "udc", "uwb" };
+            Extensions = new string[] { "alh", "usf", "udc", "uwb", "arc" };
         }
 
         public override ArcFile TryOpen (ArcView file)
