@@ -60,6 +60,8 @@ namespace GameRes.Formats.Unison
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x14).TrimEnd();
+                if (string.IsNullOrWhiteSpace (name))
+                    return null;
                 string ext  = file.View.ReadString (index_offset+0x14, 3);
                 if (!string.IsNullOrWhiteSpace (ext))
                     name += '.' + ext;
