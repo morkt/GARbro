@@ -84,9 +84,8 @@ namespace GameRes.Formats.Nekopunch
     /// <summary>
     /// Link DOW extension to WaveAudio format.
     /// </summary>
-    [Export(typeof(AudioFormat))]
-    public class DowAudio : WaveAudio
-    {
-        public override string         Tag { get { return "DOW"; } }
-    }
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "DOW")]
+    [ExportMetadata("Target", "WAV")]
+    public class DowAudio : ResourceAlias { }
 }
