@@ -75,6 +75,8 @@
     <Compile Include="Aquarium\ArcCPA.cs" />
     <Compile Include="Aquarium\ImageCP2.cs" />
     <Compile Include="Ark\ImageCMP.cs" />
+    <Compile Include="Asura\ArcPAK.cs" />
+    <Compile Include="Asura\ImageMTG.cs" />
     <Compile Include="Brownie\ImageNGC.cs" />
     <Compile Include="Brownie\ImageNGW.cs" />
     <Compile Include="DigitalMonkey\ArcDM.cs" />
@@ -90,6 +92,7 @@
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
+    <Compile Include="Powerd\ImageNCL.cs" />
     <Compile Include="ProjectMyu\ImageGAM.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
