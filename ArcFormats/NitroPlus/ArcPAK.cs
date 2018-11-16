@@ -2,7 +2,7 @@
 //! \date       Sat May 21 00:12:14 2016
 //! \brief      MAGI resource archive.
 //
-// Copyright (C) 2016 by morkt
+// Copyright (C) 2016-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -42,8 +42,14 @@ namespace GameRes.Formats.Magi
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
+        public PakOpener ()
+        {
+            Signatures = new uint[] { 3, 4 };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
+            int version = file.View.ReadInt32 (0);
             int count = file.View.ReadInt32 (4);
             if (!IsSaneCount (count))
                 return null;
@@ -55,20 +61,31 @@ namespace GameRes.Formats.Magi
 
             using (var mem = file.CreateStream (0x118, index_size))
             using (var z = new ZLibStream (mem, CompressionMode.Decompress))
-            using (var index = new BinaryReader (z))
+            using (var index = new BinaryStream (z, file.Name))
             {
-                var name_buffer = new byte[0x100];
                 var dir = new List<Entry> (count);
+                string cur_dir = "";
                 for (int i = 0; i < count; ++i)
                 {
                     int name_length = index.ReadInt32();
-                    if (name_length <= 0 || name_length > name_buffer.Length)
+                    if (name_length <= 0)
                         return null;
-                    if (name_length != index.Read (name_buffer, 0, name_length))
-                        return null;
-                    var name = Encodings.cp932.GetString (name_buffer, 0, name_length);
-                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-
+                    var name = index.ReadCString (name_length);
+                    if (version > 3)
+                    {
+                        bool is_dir = index.ReadInt32() != 0;
+                        if (is_dir)
+                        {
+                            cur_dir = name;
+                            index.ReadInt64();
+                            index.ReadInt32();
+                            index.ReadInt64();
+                            continue;
+                        }
+                        if (cur_dir.Length > 0)
+                            name = Path.Combine (cur_dir, name);
+                    }
+                    var entry = Create<PackedEntry> (name);
                     entry.Offset        = index.ReadUInt32() + base_offset;
                     entry.UnpackedSize  = index.ReadUInt32();
                     index.ReadUInt32();
@@ -90,9 +107,9 @@ namespace GameRes.Formats.Magi
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
+            Stream input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
             var pentry = entry as PackedEntry;
-            if (null != pentry || pentry.IsPacked)
+            if (null != pentry && pentry.IsPacked)
                 input = new ZLibStream (input, CompressionMode.Decompress);
             return input;
         }
