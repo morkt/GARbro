@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.Security.Cryptography;
 using System.IO;
 using GameRes.Formats.Strings;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Selene
 {
@@ -70,23 +71,25 @@ namespace GameRes.Formats.Selene
 
         static private string DefaultPassPhrase = "Selene.Default.Password";
 
-        public static Dictionary<string,string> KnownSchemes = new Dictionary<string,string>();
-
         public PackOpener ()
         {
             Extensions = new string[] { "pack" };
         }
 
+        static KcapScheme DefaultScheme = new KcapScheme { KnownSchemes = new Dictionary<string,string>() };
+
+        public static Dictionary<string,string> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
+
         public override ResourceScheme Scheme
         {
-            get { return new KcapScheme { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((KcapScheme)value).KnownSchemes; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (KcapScheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
-            if (count <= 0 || count > 0xfffff)
+            if (!IsSaneCount (count))
                 return null;
             uint index_size = (uint)count * 0x54u;
             if (index_size > file.View.Reserve (8, index_size))
@@ -97,14 +100,10 @@ namespace GameRes.Formats.Selene
             for (int i = 0; i < count; ++i)
             {
                 string name = file.View.ReadString (index_offset, 0x40);
-                var entry = new KcapEntry
-                {
-                    Name = name,
-                    Type = FormatCatalog.Instance.GetTypeFromName (name),
-                    Offset = file.View.ReadUInt32 (index_offset+0x48),
-                    Size   = file.View.ReadUInt32 (index_offset+0x4c),
-                    Encrypted = 0 != file.View.ReadUInt32 (index_offset+0x50),
-                };
+                var entry = Create<KcapEntry> (name);
+                entry.Offset = file.View.ReadUInt32 (index_offset+0x48);
+                entry.Size   = file.View.ReadUInt32 (index_offset+0x4C);
+                entry.Encrypted = 0 != file.View.ReadUInt32 (index_offset+0x50);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 encrypted = encrypted || entry.Encrypted;
@@ -148,77 +147,84 @@ namespace GameRes.Formats.Selene
             };
         }
 
-        static private byte[] CreateKeyTable (string pass) // (void *this, byte *a2)
+        static private byte[] CreateKeyTable (string pass)
         {
             if (pass.Length < 8)
                 pass = DefaultPassPhrase;
             int pass_len = pass.Length;
-            int hash = PasskeyHash (pass); // sub_100E0390
-            var hash_table = new KeyTableGenerator (hash);
+            uint seed = PasskeyHash (pass);
+            var rng = new KeyTableGenerator ((int)seed);
             byte[] table = new byte[0x10000];
             for (int i = 0; i < table.Length; ++i)
             {
-                int key = hash_table.Permutate(); // sub_100E06D0
-                table[i] = (byte)((byte)pass[i % pass_len] ^ (key >> 16));
+                int key = rng.Rand();
+                table[i] = (byte)(pass[i % pass_len] ^ (key >> 16));
             }
             return table;
         }
 
-        static int PasskeyHash (string pass) // sub_100E0390(int a1, unsigned int a2)
+        static uint PasskeyHash (string pass)
         {
-            int hash = -1; // eax@1
-            for (int i = 0; i < pass.Length; ++i) // ecx@1
-            {
-                hash = (byte)pass[i] ^ hash; // eax@2
-                for (int j = 0; j < 8; ++j)
-                    hash = (int)(((uint)hash >> 1) ^ (0 != (hash & 1) ? 0xEDB88320u : 0u));
-            }
-            return ~hash;
+            var bytes = Encodings.cp932.GetBytes (pass);
+            return Crc32.Compute (bytes, 0, bytes.Length);
         }
 
+        /// <summary>
+        /// Mersenne Twister with signed integer arithmetics, resulting in a different sequence.
+        /// </summary>
         internal class KeyTableGenerator
         {
-            private int[]   m_table = new int[0x270];
+            const int   StateLength     = 624;
+            const int   StateM          = 397;
+            const int   MatrixA         = -1727483681;
+            const int   TemperingMaskB  = -1658038656;
+            const int   TemperingMaskC  = -272236544;
+
+            private int[]   m_table = new int[StateLength];
             private int     m_pos;
 
-            public KeyTableGenerator (int first = 0)
+            public KeyTableGenerator (int seed = 0)
             {
-                Init (first);
+                SRand (seed);
             }
 
-            public void Init (int first)
+            public void SRand (int seed)
             {
-                m_table[0] = first;
-                for (int i = 1; i < 0x270; ++i)
+                m_table[0] = seed;
+                for (int i = 1; i < StateLength; ++i)
                     m_table[i] = i + 0x6C078965 * (m_table[i-1] ^ (m_table[i-1] >> 30));
-                m_pos = 0x270;
+                m_pos = StateLength;
             }
 
-            private static int[] v14 = new int[2] { 0, -1727483681 }; // [sp+4h] [bp-4h]@1
+            private static int[] mag01 = new int[2] { 0, MatrixA };
 
-            public int Permutate () // sub_100E06D0
+            public int Rand ()
             {
-                if (m_pos >= 0x270)
+                if (m_pos >= StateLength)
                 {
-                    for (int i = 0; i < 0xe3; ++i)
+                    int i;
+                    for (i = 0; i < StateLength - StateM; ++i)
                     {
-                        int v5 = m_table[i] ^ m_table[i+1];
-                        m_table[i] = m_table[i+0x18d] ^ v14[(m_table[i] ^ (byte)v5) & 1] ^ ((m_table[i] ^ v5 & 0x7FFFFFFF) >> 1);
+                        int x = m_table[i] ^ m_table[i+1];
+                        m_table[i] = m_table[i + StateM] ^ mag01[(m_table[i] ^ x) & 1]
+                                   ^ ((m_table[i] ^ x & 0x7FFFFFFF) >> 1);
                     }
-                    for (int i = 0; i < 0x18c; ++i)
+                    for (; i < StateLength - 1; ++i)
                     {
-                        int v6 = i + 0xe3;
-                        int v8 = m_table[v6] ^ m_table[v6+1];
-                        m_table[v6] = m_table[i] ^ v14[(m_table[v6] ^ (byte)v8) & 1] ^ ((m_table[v6] ^ v8 & 0x7FFFFFFF) >> 1);
+                        int x = m_table[i] ^ m_table[i + 1];
+                        m_table[i] = m_table[i + StateM - StateLength] ^ mag01[(m_table[i] ^ x) & 1]
+                                   ^ ((m_table[i] ^ x & 0x7FFFFFFF) >> 1);
                     }
-                    int v9 = m_table[0x26f] ^ (m_table[0] ^ m_table[0x26f]) & 0x7FFFFFFF;
-                    m_table[0x26f] = (v9 >> 1) ^ m_table[0x18c] ^ v14[v9 & 1];
+                    int z = m_table[StateLength - 1] ^ (m_table[0] ^ m_table[StateLength-1]) & 0x7FFFFFFF;
+                    m_table[StateLength - 1] = m_table[StateM-1] ^ (z >> 1) ^ mag01[z & 1];
                     m_pos = 0;
                 }
-                int v11 = m_table[m_pos++]; // edx@7
-                int v12 = (int)((((((((v11 >> 11) ^ v11) & 0xFF3A58AD) << 7) ^ (v11 >> 11) ^ v11) & 0xFFFFDF8C) << 15) ^ ((((v11 >> 11) ^ v11) & 0xFF3A58AD) << 7) ^ (v11 >> 11) ^ v11); // edx@7
-
-                return v12 ^ (v12 >> 18);
+                int y = m_table[m_pos++];
+                y ^= y >> 11;
+                y ^= (y << 7)  & TemperingMaskB;
+                y ^= (y << 15) & TemperingMaskC;
+                y ^= y >> 18;
+                return y;
             }
         }
 
