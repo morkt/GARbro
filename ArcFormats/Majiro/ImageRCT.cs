@@ -87,24 +87,22 @@ namespace GameRes.Formats.Majiro
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            stream.Position = 4;
-            int id = stream.ReadByte();
-            if (0x54 != id)
+            var header = stream.ReadHeader (0x14);
+            if (header[4] != 'T')
                 return null;
-            int encryption = stream.ReadByte();
-            if (encryption != 0x43 && encryption != 0x53)
+            int encryption = header[5];
+            if (encryption != 'C' && encryption != 'S')
                 return null;
-            bool is_encrypted = 0x53 == encryption;
-            int version = stream.ReadByte();
-            if (0x30 != version)
+            bool is_encrypted = 'S' == encryption;
+            if (header[6] != '0')
                 return null;
-            version = stream.ReadByte() - 0x30;
+            int version = header[7] - '0';
             if (version != 0 && version != 1)
                 return null;
 
-            uint width = stream.ReadUInt32();
-            uint height = stream.ReadUInt32();
-            int data_size = stream.ReadInt32();
+            uint width = header.ToUInt32 (8);
+            uint height = header.ToUInt32 (12);
+            int data_size = header.ToInt32 (16);
             int additional_size = 0;
             if (1 == version)
             {
