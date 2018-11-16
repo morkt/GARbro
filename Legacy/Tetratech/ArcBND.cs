@@ -28,6 +28,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 
 // [010309][Tetratech] Kyouiku Jisshuu 2 ~Joshikousei Maniacs~
+// [031128][Kogado Studio] 指極星
 
 namespace GameRes.Formats.Tetratech
 {
@@ -39,6 +40,11 @@ namespace GameRes.Formats.Tetratech
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
+
+        public BndOpener ()
+        {
+            ContainedFormats = new[] { "BMP", "WAV", "SCR" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -56,7 +62,7 @@ namespace GameRes.Formats.Tetratech
                 for (int i = 0; i < count; ++i)
                 {
                     var name = idx.ReadCString (0x10);
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    var entry = Create<Entry> (name);
                     entry.Size   = idx.ReadUInt32();
                     entry.Offset = idx.ReadUInt32();
                     if (!entry.CheckPlacement (file.MaxOffset))
@@ -67,4 +73,9 @@ namespace GameRes.Formats.Tetratech
             }
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "SCB")]
+    [ExportMetadata("Target", "SCR")]
+    public class ScbFormat : ResourceAlias { }
 }
