@@ -102,18 +102,34 @@ namespace GameRes.Formats.KiriKiri
 
             var header = new byte[5];
             input.Read (header, 0, 5);
-            if (0x184D2204 == header.ToInt32 (0)) // LZ4 magic
+            uint signature = header.ToUInt32 (0);
+            if (0x184D2204 == signature) // LZ4 magic
             {
                 // assume no scripts are compressed using LZ4, return decompressed stream right away
                 return DecompressLz4 (entry, header, input);
             }
-            if (0xFE == header[0] && 0xFE == header[1] && header[2] < 3 && 0xFF == header[3] && 0xFE == header[4])
+            if (0x66646D == signature) // 'mdf'
+            {
+                return DecompressMdf (entry, header, input);
+            }
+            if ((signature & 0xFF00FFFFu) == 0xFF00FEFEu && header[2] < 3 && 0xFE == header[4])
                 return DecryptScript (header[2], input, entry.UnpackedSize);
 
             if (!input.CanSeek)
                 return new PrefixStream (header, input);
             input.Position = 0;
             return input;
+        }
+
+        internal Stream DecompressMdf (Xp3Entry entry, byte[] header, Stream input)
+        {
+            if (header.Length != 5)
+                throw new ArgumentException ("Invalid header length for DecompressMdf", "header");
+            var mdf_header = new byte[4] { header[4], 0, 0, 0 };
+            input.Read (mdf_header, 1, 3);
+            entry.UnpackedSize = mdf_header.ToUInt32 (0);
+            entry.IsPacked = true;
+            return new ZLibStream (input, CompressionMode.Decompress);
         }
 
         internal Stream DecompressLz4 (Xp3Entry entry, byte[] header, Stream input)
@@ -608,34 +624,6 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class GakuenButouCrypt : ICrypt
-    {
-        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
-        {
-            if (0 != (offset & 1))
-                return (byte)(value ^ offset);
-            else
-                return (byte)(value ^ entry.Hash);
-        }
-
-        public override void Decrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
-        {
-            for (int i = 0; i < count; ++i, ++offset)
-            {
-                if (0 != (offset & 1))
-                    values[pos+i] ^= (byte)offset;
-                else
-                    values[pos+i] ^= (byte)entry.Hash;
-            }
-        }
-
-        public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
-        {
-            Decrypt (entry, offset, values, pos, count);
-        }
-    }
-
-    [Serializable]
     public class AlteredPinkCrypt : ICrypt
     {
         static readonly byte[] KeyTable = {
@@ -781,12 +769,12 @@ namespace GameRes.Formats.KiriKiri
                 var ext_bin = new byte[16];
                 Encodings.cp932.GetBytes (ext, 0, Math.Min (4, ext.Length), ext_bin, 0);
                 key = ~LittleEndian.ToUInt32 (ext_bin, 0);
-                if (".asd\0.ks\0.tjs\0".Contains (ext+'\0'))
-                    return entry.Size;
+                if (".asd.tjs.ks".Contains (ext))
+                    return entry.UnpackedSize;
             }
             else
                 key = uint.MaxValue;
-            return Math.Min (entry.Size, 0x100u);
+            return Math.Min (entry.UnpackedSize, 0x100u);
         }
     }
 
