@@ -223,6 +223,8 @@
     <Compile Include="Maika\ArcMIK01.cs" />
     <Compile Include="Maika\AudioWV5.cs" />
     <Compile Include="MangaGamer\ArcSHA.cs" />
+    <Compile Include="Mebius\AudioKOE.cs" />
+    <Compile Include="Mebius\ImageMCG.cs" />
     <Compile Include="Mnp\ArcMMA.cs" />
     <Compile Include="MultiFileArchive.cs" />
     <Compile Include="NitroPlus\ArcLAY.cs" />
