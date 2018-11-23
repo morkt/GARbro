@@ -81,11 +81,11 @@ namespace GameRes.Formats.KiriKiri
 
         static int CzDecryptInt (byte[] data, int offset, byte key)
         {
-            for (int i = 0; i < 4; ++i)
-            {
-                data[offset+i] ^= (byte)(key ^ CzHeaderKey[i]);
-            }
-            return data.ToInt32 (offset);
+            int v = data[offset] ^ key ^ CzHeaderKey[0];
+            v |= (data[offset+1] ^ key ^ CzHeaderKey[1]) << 8;
+            v |= (data[offset+2] ^ key ^ CzHeaderKey[2]) << 16;
+            v |= (data[offset+3] ^ key ^ CzHeaderKey[3]) << 24;
+            return v;
         }
 
         static byte[] CzDecryptData (byte[] data)
