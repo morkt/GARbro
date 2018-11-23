@@ -81,19 +81,21 @@ namespace GameRes.Formats.MoonhirGames
                 return null;
             uint index_offset = file.View.ReadUInt32 (8);
 
+            var arc_name = Path.GetFileName (file.Name);
+            var fbx_type = arc_name.StartsWith ("scr", StringComparison.OrdinalIgnoreCase) ? "" : "image";
             var dir = new List<Entry> (count);
             bool has_encrypted = false;
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset+12, 12);
-                var entry = FormatCatalog.Instance.Create<FpkEntry> (name);
+                var entry = Create<FpkEntry> (name);
                 entry.IsEncrypted = 0 != file.View.ReadUInt32 (index_offset);
                 entry.Offset = file.View.ReadUInt32 (index_offset+4);
                 entry.Size   = file.View.ReadUInt32 (index_offset+8);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 if (name.HasExtension (".fbx"))
-                    entry.Type = "image";
+                    entry.Type = fbx_type;
                 has_encrypted = has_encrypted || entry.IsEncrypted;
                 dir.Add (entry);
                 index_offset += 0x18;
