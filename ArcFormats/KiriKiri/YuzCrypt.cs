@@ -73,23 +73,33 @@ namespace GameRes.Formats.KiriKiri
     }
 
     [Serializable]
-    public class NanaCxCrypt : SenrenCxCrypt
+    public class CabbageCxCrypt : SenrenCxCrypt
     {
         uint m_random_seed;
 
-        public uint[] YuzKey;
-
-        public NanaCxCrypt (CxScheme scheme, uint seed) : base (scheme)
+        public CabbageCxCrypt (CxScheme scheme, uint seed) : base (scheme)
         {
             m_random_seed = seed;
         }
 
-        public override string NamesSectionId { get { return "dls:"; } }
+        public override string NamesSectionId { get { return "cbg:"; } }
 
         internal override CxProgram NewProgram (uint seed)
         {
             return new CxProgramNana (seed, m_random_seed, ControlBlock);
         }
+    }
+
+    [Serializable]
+    public class NanaCxCrypt : CabbageCxCrypt
+    {
+        public uint[] YuzKey;
+
+        public NanaCxCrypt (CxScheme scheme, uint seed) : base (scheme, seed)
+        {
+        }
+
+        public override string NamesSectionId { get { return "dls:"; } }
 
         internal override void ReadYuzNames (byte[] yuz, FilenameMap filename_map)
         {
