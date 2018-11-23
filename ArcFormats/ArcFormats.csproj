@@ -194,6 +194,9 @@
     <Compile Include="Interheart\ArcFPK2.cs" />
     <Compile Include="Interheart\ImageCandy.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
+    <Compile Include="Kid\ArcDAT.cs" />
+    <Compile Include="Kid\AudioWAF.cs" />
+    <Compile Include="Kid\ImagePRT.cs" />
     <Compile Include="KiriKiri\MoreCrypt.cs" />
     <Compile Include="KiriKiri\YuzCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
@@ -551,6 +554,7 @@
     <Compile Include="StudioEgo\ArcPAK0.cs" />
     <Compile Include="StudioEgo\ImageANT.cs" />
     <Compile Include="Succubus\ArcARC.cs" />
+    <Compile Include="Succubus\ImageGH.cs" />
     <Compile Include="SuperNekoX\ArcGPC.cs" />
     <Compile Include="Sviu\ArcPKZ.cs" />
     <Compile Include="Sviu\AudioKOG.cs" />
