@@ -124,15 +124,7 @@ namespace GameRes
         public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
         public ImageFormat SourceFormat { get { return null; } }
         public ImageMetaData       Info { get; protected set; }
-        public ImageData Image
-        {
-            get
-            {
-                if (null == m_image)
-                    m_image = GetImageData();
-                return m_image;
-            }
-        }
+        public ImageData          Image { get { return m_image ?? (m_image = GetImageData()); } }
 
         protected BinaryImageDecoder (IBinaryStream input)
         {
