@@ -38,10 +38,16 @@ namespace GameRes.Formats.Aoi
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
-            var header = file.ReadHeader (0x30);
-            if (!header.AsciiEqual (0, "AoiOgg") || !header.AsciiEqual (0x2C, "OggS"))
+            var header = file.ReadHeader (0x3C);
+            if (!header.AsciiEqual (0, "AoiOgg"))
                 return null;
-            var ogg = new StreamRegion (file.AsStream, 0x2C);
+            Stream ogg;
+            if (header.AsciiEqual (0x2C, "OggS"))
+                ogg = new StreamRegion (file.AsStream, 0x2C);
+            else if (header.AsciiEqual (0xC, "Decode") && header.AsciiEqual (0x38, "OggS"))
+                ogg = new StreamRegion (file.AsStream, 0x38);
+            else
+                return null;
             return new OggInput (ogg);
         }
     }
