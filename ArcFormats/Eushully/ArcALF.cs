@@ -46,13 +46,11 @@ namespace GameRes.Formats.Eushully
             ContainedFormats = new[] { "AGF", "WAV", "AOG/SYS3", "SCR" };
         }
 
-        static string[] IndexNames = new string[] { "sys4ini.bin", "sys3ini.bin" };
-
         public override ArcFile TryOpen (ArcView file)
         {
             string dir_name = Path.GetDirectoryName (file.Name);
             string file_name = Path.GetFileName (file.Name);
-            foreach (var ini_name in IndexNames)
+            foreach (var ini_name in GetIndexNames (file_name))
             {
                 string ini_path = VFS.CombinePath (dir_name, ini_name);
                 if (VFS.FileExists (ini_path))
@@ -60,11 +58,16 @@ namespace GameRes.Formats.Eushully
                     var dir = ReadIndex (ini_path, file_name);
                     if (null != dir)
                         return new ArcFile (file, this, dir);
-                    if (LastAccessedIndex != null)
-                        break;
                 }
             }
             return null;
+        }
+
+        internal IEnumerable<string> GetIndexNames (string alf_name)
+        {
+            yield return "sys4ini.bin";
+            yield return "sys3ini.bin";
+            yield return Path.ChangeExtension (alf_name, "AAI");
         }
 
         Tuple<string, Dictionary<string, List<Entry>>> LastAccessedIndex;
@@ -78,10 +81,12 @@ namespace GameRes.Formats.Eushully
                 using (var ini = VFS.OpenView (ini_file))
                 {
                     IBinaryStream index;
-                    if (ini.View.AsciiEqual (0, "S4IC") || ini.View.AsciiEqual (0, "S3IC"))
+                    bool is_append = ini.View.AsciiEqual (0, "S4AC");
+                    if (is_append || ini.View.AsciiEqual (0, "S4IC") || ini.View.AsciiEqual (0, "S3IC"))
                     {
-                        uint packed_size = ini.View.ReadUInt32 (0x134);
-                        var packed = ini.CreateStream (0x138, packed_size);
+                        uint offset = is_append ? 0x114u : 0x134u;
+                        uint packed_size = ini.View.ReadUInt32 (offset);
+                        var packed = ini.CreateStream (offset+4, packed_size);
                         var unpacked = new LzssStream (packed);
                         index = new BinaryStream (unpacked, ini_file);
                     }
