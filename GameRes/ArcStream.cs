@@ -43,6 +43,7 @@ namespace GameRes
         private int                     m_buffer_len;   // length of bytes read in buffer
 
         private const int DefaultBufferSize = 0x1000;
+        private const uint MaxFrameSize = 0x1000000; // 16MB
 
         public string     Name { get; set; }
         public uint  Signature { get { return ReadSignature(); } }
@@ -90,8 +91,12 @@ namespace GameRes
         }
 
         public ArcViewStream (ArcView file, long offset, uint size, string name = null)
-            : this (new ArcView.Frame (file, offset, size), name)
         {
+            m_view = new ArcView.Frame (file, offset, Math.Min (size, MaxFrameSize));
+            m_start = offset;
+            m_size = size;
+            m_position = 0;
+            Name = name;
         }
 
         public ArcViewStream (ArcView.Frame view, long offset, uint size, string name = null)
