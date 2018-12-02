@@ -110,68 +110,38 @@ namespace GameRes.Formats.Qlie
             if (!file.View.AsciiEqual (index_offset, "FilePackVer")
                 || '.' != file.View.ReadByte (index_offset+0xC))
                 return null;
-            var pack_version = new Version (file.View.ReadByte (index_offset+0xB) - '0',
-                                            file.View.ReadByte (index_offset+0xD) - '0');
-            int count = file.View.ReadInt32 (index_offset+0x10);
-            if (!IsSaneCount (count))
-                return null;
-            index_offset = file.View.ReadInt64 (index_offset+0x14);
-            if (index_offset < 0 || index_offset >= file.MaxOffset)
-                return null;
-
-            byte[] arc_key = null;
-            byte[] key_file = null;
-            bool use_pack_keyfile = false;
-            if (pack_version.Major >= 3)
+            using (var index = new PackIndexReader (this, file, index_offset))
             {
-                key_file = FindKeyFile (file);
-                use_pack_keyfile = key_file != null;
-                // currently, user is prompted to choose encryption scheme only if there's 'key.fkey' file found.
-                if (use_pack_keyfile && pack_version.Minor == 0)
-                    arc_key = QueryEncryption (file);
-//                use_pack_keyfile = null != arc_key;
-            }
-            var enc = QlieEncryption.Create (file, pack_version, arc_key);
-
-            bool read_pack_keyfile = 3 == pack_version.Major && use_pack_keyfile;
-            var name_buffer = new byte[0x100];
-            var dir = new List<Entry> (count);
-            using (var index = file.CreateStream (index_offset))
-            {
-                for (int i = 0; i < count; ++i)
+                byte[] arc_key = null;
+                byte[] key_file = null;
+                bool use_pack_keyfile = false;
+                if (index.PackVersion.Major >= 3)
                 {
-                    int name_length = index.ReadUInt16();
-                    if (enc.IsUnicode)
-                        name_length *= 2;
-                    if (name_length > name_buffer.Length)
-                        name_buffer = new byte[name_length];
-                    if (name_length != index.Read (name_buffer, 0, name_length))
-                        return null;
-                    var name = enc.DecryptName (name_buffer, name_length);
-                    var entry = Create<QlieEntry> (name);
-                    if (use_pack_keyfile)
-                        entry.RawName = name_buffer.Take (name_length).ToArray();
-
-                    entry.Offset = index.ReadInt64();           // [+00]
-                    entry.Size   = index.ReadUInt32();          // [+08]
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    entry.UnpackedSize = index.ReadUInt32();    // [+0C]
-                    entry.IsPacked    = 0 != index.ReadInt32(); // [+10]
-                    entry.EncryptionMethod = index.ReadInt32(); // [+14]
-                    if (pack_version.Major > 1)
-                        entry.Hash = index.ReadUInt32();            // [+18]
-                    entry.KeyFile = key_file;
-                    if (read_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
-                    {
-                        // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
-                        key_file = ReadEntryBytes (file, entry, enc);
-                        read_pack_keyfile = false;
-                    }
-                    dir.Add (entry);
+                    key_file = FindKeyFile (file);
+                    use_pack_keyfile = key_file != null;
+                    // currently, user is prompted to choose encryption scheme only if there's 'key.fkey' file found.
+                    if (use_pack_keyfile && index.PackVersion.Minor == 0)
+                        arc_key = QueryEncryption (file);
+//                    use_pack_keyfile = null != arc_key;
                 }
+                var enc = QlieEncryption.Create (file, index.PackVersion, arc_key);
+                List<Entry> dir = null;
+                try
+                {
+                    dir = index.Read (enc, key_file, use_pack_keyfile);
+                }
+                catch
+                {
+                    if (index.PackVersion.Major == 1)
+                    {
+                        enc = new EncryptionV2();
+                        dir = index.Read (enc, key_file, use_pack_keyfile);
+                    }
+                }
+                if (null == dir)
+                    return null;
+                return new QlieArchive (file, this, dir, enc);
             }
-            return new QlieArchive (file, this, dir, enc);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -184,7 +154,7 @@ namespace GameRes.Formats.Qlie
             return new BinMemoryStream (data, entry.Name);
         }
 
-        private byte[] ReadEntryBytes (ArcView file, QlieEntry entry, IEncryption enc)
+        internal byte[] ReadEntryBytes (ArcView file, QlieEntry entry, IEncryption enc)
         {
             var data = file.View.ReadBytes (entry.Offset, entry.Size);
             if (entry.IsEncrypted)
@@ -388,6 +358,87 @@ namespace GameRes.Formats.Qlie
                         return null;
                     return new CowArray<byte> (icon, 6, 0x100).ToArray();
                 }
+            }
+        }
+    }
+
+    internal sealed class PackIndexReader : IDisposable
+    {
+        PackOpener  m_fmt;
+        ArcView     m_file;
+        Version     m_pack_version;
+        int         m_count;
+        long        m_index_offset;
+        IBinaryStream   m_index;
+        List<Entry> m_dir;
+
+        public Version PackVersion { get { return m_pack_version; } }
+
+        public PackIndexReader (PackOpener fmt, ArcView file, long index_offset)
+        {
+            m_fmt = fmt;
+            m_file = file;
+            m_pack_version = new Version (m_file.View.ReadByte (index_offset+0xB) - '0',
+                                          m_file.View.ReadByte (index_offset+0xD) - '0');
+            m_count = m_file.View.ReadInt32 (index_offset+0x10);
+            if (!ArchiveFormat.IsSaneCount (m_count))
+                throw new InvalidFormatException();
+            m_index_offset = m_file.View.ReadInt64 (index_offset+0x14);
+            if (index_offset < 0 || index_offset >= m_file.MaxOffset)
+                throw new InvalidFormatException();
+            m_index = m_file.CreateStream (m_index_offset);
+            m_dir = new List<Entry> (m_count);
+        }
+            
+        byte[]  m_name_buffer = new byte[0x100];
+
+        public List<Entry> Read (IEncryption enc, byte[] key_file, bool use_pack_keyfile)
+        {
+            m_dir.Clear();
+            m_index.Position = 0;
+            bool read_pack_keyfile = 3 == m_pack_version.Major && use_pack_keyfile;
+            for (int i = 0; i < m_count; ++i)
+            {
+                int name_length = m_index.ReadUInt16();
+                if (enc.IsUnicode)
+                    name_length *= 2;
+                if (name_length > m_name_buffer.Length)
+                    m_name_buffer = new byte[name_length];
+                if (name_length != m_index.Read (m_name_buffer, 0, name_length))
+                    return null;
+                var name = enc.DecryptName (m_name_buffer, name_length);
+                var entry = m_fmt.Create<QlieEntry> (name);
+                if (use_pack_keyfile)
+                    entry.RawName = m_name_buffer.Take (name_length).ToArray();
+
+                entry.Offset = m_index.ReadInt64();           // [+00]
+                entry.Size   = m_index.ReadUInt32();          // [+08]
+                if (!entry.CheckPlacement (m_file.MaxOffset))
+                    return null;
+                entry.UnpackedSize = m_index.ReadUInt32();    // [+0C]
+                entry.IsPacked    = 0 != m_index.ReadInt32(); // [+10]
+                entry.EncryptionMethod = m_index.ReadInt32(); // [+14]
+                if (m_pack_version.Major > 1)
+                    entry.Hash = m_index.ReadUInt32();            // [+18]
+                entry.KeyFile = key_file;
+                if (read_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
+                {
+                    // note that 'pack_keyfile' itself is encrypted using 'key.fkey' file contents.
+                    key_file = m_fmt.ReadEntryBytes (m_file, entry, enc);
+                    read_pack_keyfile = false;
+                }
+                m_dir.Add (entry);
+            }
+            return m_dir;
+        }
+
+        bool m_disposed = false;
+        public void Dispose ()
+        {
+            if (!m_disposed)
+            {
+                m_index.Dispose();
+                m_disposed = true;
             }
         }
     }
