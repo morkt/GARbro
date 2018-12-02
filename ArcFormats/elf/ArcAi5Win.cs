@@ -49,6 +49,7 @@ namespace GameRes.Formats.Elf
     }
 
     [Export(typeof(ArchiveFormat))]
+    [ExportMetadata("Priority", -1)]
     public class ArcAI5Opener : ArchiveFormat
     {
         public override string         Tag { get { return "ARC/AI5WIN"; } }
@@ -133,7 +134,7 @@ namespace GameRes.Formats.Elf
             {
                 m_file.View.Read (index_offset, m_name_buf, 0, (uint)scheme.NameLength);
                 string name = DecryptName (scheme);
-                if (null == name)
+                if (string.IsNullOrWhiteSpace (name))
                     return null;
                 index_offset += scheme.NameLength;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
