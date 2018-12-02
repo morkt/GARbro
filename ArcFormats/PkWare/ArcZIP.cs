@@ -126,7 +126,7 @@ namespace GameRes.Formats.PkWare
 
         internal ArcFile OpenZipArchive (ArcView file, Stream input)
         {
-            SharpZip.ZipConstants.DefaultCodePage = Properties.Settings.Default.ZIPEncodingCP;
+            SharpZip.ZipStrings.CodePage = Properties.Settings.Default.ZIPEncodingCP;
             var zip = new SharpZip.ZipFile (input);
             try
             {
