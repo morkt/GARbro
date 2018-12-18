@@ -33,12 +33,26 @@ namespace GameRes
 {
     public class ImageMetaData
     {
+        /// <summary>Image width in pixels.</summary>
         public uint Width { get; set; }
+
+        /// <summary>Image height in pixels.</summary>
         public uint Height { get; set; }
+
+        /// <summary>Horizontal coordinate of the image top left corner.</summary>
         public int OffsetX { get; set; }
+
+        /// <summary>Vertical coordinate of the image top left corner.</summary>
         public int OffsetY { get; set; }
+
+        /// <summary>Image bitdepth.</summary>
         public int BPP { get; set; }
+
+        /// <summary>Image source file name, if any.</summary>
         public string FileName { get; set; }
+
+        public int iWidth  { get { return (int)Width; } }
+        public int iHeight { get { return (int)Height; } }
     }
 
     public class ImageEntry : Entry
