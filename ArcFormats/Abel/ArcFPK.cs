@@ -39,6 +39,11 @@ namespace GameRes.Formats.Abel
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public FpkOpener ()
+        {
+            ContainedFormats = new[] { "CBF", "WAV", "DAT/GENERIC" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (4);
@@ -56,7 +61,7 @@ namespace GameRes.Formats.Abel
                     var name = names.ReadCString();
                     if (string.IsNullOrEmpty (name))
                         return null;
-                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    var entry = Create<Entry> (name);
                     entry.Offset = file.View.ReadUInt32 (index_offset);
                     entry.Size   = file.View.ReadUInt32 (index_offset+4);
                     if (!entry.CheckPlacement (file.MaxOffset))
@@ -68,4 +73,9 @@ namespace GameRes.Formats.Abel
             }
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "ALP")]
+    [ExportMetadata("Target", "DAT/GENERIC")]
+    public class AlpFormat : ResourceAlias { }
 }
