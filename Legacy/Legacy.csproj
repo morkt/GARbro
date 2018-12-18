@@ -62,8 +62,10 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Aaru\ArcFL2.cs" />
     <Compile Include="Aaru\ArcFL3.cs" />
     <Compile Include="Aaru\ArcFL4.cs" />
+    <Compile Include="Aaru\AudioWV1.cs" />
     <Compile Include="Aaru\ImageBM2.cs" />
     <Compile Include="Acme\ImageARD.cs" />
     <Compile Include="Acme\ImagePMG.cs" />
