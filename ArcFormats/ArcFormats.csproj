@@ -221,6 +221,7 @@
     <Compile Include="Lzma\RangeCoder.cs" />
     <Compile Include="Lzma\RangeCoderBit.cs" />
     <Compile Include="Lzma\RangeCoderBitTree.cs" />
+    <Compile Include="Macromedia\ArcSWF.cs" />
     <Compile Include="Maika\ArcBK.cs" />
     <Compile Include="Maika\ArcMIK01.cs" />
     <Compile Include="Maika\AudioWV5.cs" />
