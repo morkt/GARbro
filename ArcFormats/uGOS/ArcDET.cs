@@ -2,7 +2,7 @@
 //! \date       Mon Nov 09 00:16:53 2015
 //! \brief      μ-GameOperationSystem resource archive.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2018 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,12 +27,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.uGOS
 {
     [Export(typeof(ArchiveFormat))]
-    public class PakOpener : ArchiveFormat
+    public class DetOpener : ArchiveFormat
     {
         public override string         Tag { get { return "DET"; } }
         public override string Description { get { return "μ-GameOperationSystem resource archive"; } }
@@ -51,28 +52,12 @@ namespace GameRes.Formats.uGOS
             using (var nme = VFS.OpenView (name_file))
             using (var idx = VFS.OpenView (index_file))
             {
-                int count = (int)(idx.MaxOffset / 0x14);
-                if (!IsSaneCount (count))
+                var reader = new DetIndexReader (file, name_file: nme, index_file: idx);
+                var dir = reader.ReadIndex (0x10);
+                if (null == dir)
+                    dir = reader.ReadIndex (0x14);
+                if (null == dir)
                     return null;
-                uint idx_offset = 0;
-                var name_table = nme.View.ReadBytes (0, (uint)nme.MaxOffset);
-                var dir = new List<Entry> (count);
-                for (int i = 0; i < count; ++i)
-                {
-                    int name_offset = idx.View.ReadInt32 (idx_offset);
-                    if (name_offset < 0 || name_offset >= name_table.Length)
-                        return null;
-                    var name = Binary.GetCString (name_table, name_offset, name_table.Length - name_offset);
-                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
-                    entry.Offset = idx.View.ReadUInt32 (idx_offset + 4);
-                    entry.Size = idx.View.ReadUInt32 (idx_offset + 8);
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    entry.UnpackedSize = idx.View.ReadUInt32 (idx_offset + 0x10);
-                    entry.IsPacked = true;
-                    dir.Add (entry);
-                    idx_offset += 0x14;
-                }
                 return new ArcFile (file, this, dir);
             }
         }
@@ -82,15 +67,8 @@ namespace GameRes.Formats.uGOS
             var pent = entry as PackedEntry;
             if (null == pent || !pent.IsPacked)
                 return base.OpenEntry (arc, entry);
-
-            var output = new byte[pent.UnpackedSize];
-            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
-            {
-                if (Unpack (input, output))
-                    return new BinMemoryStream (output, entry.Name);
-                else
-                    return base.OpenEntry (arc, entry);
-            }
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new PackedStream<RleDecompressor> (input);
         }
 
         bool Unpack (Stream input, byte[] output)
@@ -124,6 +102,108 @@ namespace GameRes.Formats.uGOS
                 }
             }
             return true;
+        }
+    }
+
+    internal sealed class DetIndexReader
+    {
+        ArcView     m_arc;
+        ArcView     m_index;
+        byte[]      m_names;
+        List<Entry> m_dir;
+
+        public DetIndexReader (ArcView arc_file, ArcView name_file, ArcView index_file)
+        {
+            m_arc = arc_file;
+            m_names = name_file.View.ReadBytes (0, (uint)name_file.MaxOffset);
+            m_index = index_file;
+        }
+
+        public List<Entry> ReadIndex (uint entry_size)
+        {
+            int count = (int)(m_index.MaxOffset / entry_size);
+            if (!ArchiveFormat.IsSaneCount (count))
+                return null;
+            if (null == m_dir)
+                m_dir = new List<Entry> (count);
+            else
+                m_dir.Clear();
+            uint idx_offset = 0;
+            for (int i = 0; i < count; ++i)
+            {
+                if (idx_offset + entry_size > m_index.MaxOffset)
+                    return null;
+                int name_offset = m_index.View.ReadInt32 (idx_offset);
+                if (name_offset < 0 || name_offset >= m_names.Length)
+                    return null;
+                var name = Binary.GetCString (m_names, name_offset, m_names.Length - name_offset);
+                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                entry.Offset = m_index.View.ReadUInt32 (idx_offset + 4);
+                entry.Size = m_index.View.ReadUInt32 (idx_offset + 8);
+                if (!entry.CheckPlacement (m_arc.MaxOffset))
+                    return null;
+                entry.IsPacked = true;
+                if (entry_size >= 0x14)
+                    entry.UnpackedSize = m_index.View.ReadUInt32 (idx_offset + 0x10);
+                if (name.EndsWith (".bmp.txt", StringComparison.OrdinalIgnoreCase))
+                    entry.Type = "image";
+                m_dir.Add (entry);
+                idx_offset += entry_size;
+            }
+            return m_dir;
+        }
+    }
+
+    internal sealed class RleDecompressor : Decompressor
+    {
+        Stream          m_input;
+
+        public override void Initialize (Stream input)
+        {
+            m_input = input;
+        }
+
+        protected override IEnumerator<int> Unpack ()
+        {
+            var frame = new byte[0x100];
+            int frame_pos = 0;
+            const int frame_mask = 0xFF;
+            for (;;)
+            {
+                int ctl = m_input.ReadByte();
+                if (-1 == ctl)
+                    yield break;
+                if (0xFF != ctl)
+                {
+                    m_buffer[m_pos++] = frame[frame_pos++ & frame_mask] = (byte)ctl;
+                    if (0 == --m_length)
+                        yield return m_pos;
+                }
+                else
+                {
+                    ctl = m_input.ReadByte();
+                    if (-1 == ctl)
+                        yield break;
+                    if (0xFF == ctl)
+                    {
+                        m_buffer[m_pos++] = frame[frame_pos++ & frame_mask] = 0xFF;
+                        if (0 == --m_length)
+                            yield return m_pos;
+                    }
+                    else
+                    {
+                        int offset = frame_pos - ((ctl >> 2) + 1);
+                        int count = (ctl & 3) + 3;
+                        while (count --> 0)
+                        {
+                            byte v = frame[offset++ & frame_mask];
+                            m_buffer[m_pos++] = frame[frame_pos++ & frame_mask] = v;
+                            if (0 == --m_length)
+                                yield return m_pos;
+                        }
+                    }
+                }
+            }
         }
     }
 }
