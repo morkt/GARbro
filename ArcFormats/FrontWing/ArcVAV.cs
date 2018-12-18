@@ -35,6 +35,17 @@ namespace GameRes.Formats.FrontWing
         public int  Compression;
     }
 
+    internal class VavArchive : ArcFile
+    {
+        public int  Version;
+
+        public VavArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, int version)
+            : base (arc, impl, dir)
+        {
+            Version = version;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
@@ -47,28 +58,33 @@ namespace GameRes.Formats.FrontWing
         public override ArcFile TryOpen (ArcView file)
         {
             int version = file.View.ReadInt32 (4);
-            if (version != 200 && version != 201)
+            if (version != 100 && version != 200 && version != 201)
                 return null;
             int count = file.View.ReadInt32 (8);
             if (!IsSaneCount (count))
                 return null;
+            bool is_voice = Path.GetFileNameWithoutExtension (file.Name).Equals ("voice", StringComparison.OrdinalIgnoreCase);
             uint index_offset = file.View.ReadUInt32 (0xC);
+            uint name_size = version < 200 ? 0x10u : 0x20u;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                var name = file.View.ReadString (index_offset, 0x20);
-                var entry = FormatCatalog.Instance.Create<VavEntry> (name);
-                entry.Size         = file.View.ReadUInt32 (index_offset+0x20);
-                entry.UnpackedSize = file.View.ReadUInt32 (index_offset+0x24);
-                entry.Offset       = file.View.ReadUInt32 (index_offset+0x28);
+                var name = file.View.ReadString (index_offset, name_size);
+                var entry = Create<VavEntry> (name);
+                index_offset += name_size;
+                entry.Size         = file.View.ReadUInt32 (index_offset);
+                entry.UnpackedSize = file.View.ReadUInt32 (index_offset+4);
+                entry.Offset       = file.View.ReadUInt32 (index_offset+8);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
-                entry.Compression  = file.View.ReadInt32 (index_offset+0x2C);
+                entry.Compression  = file.View.ReadInt32 (index_offset+0xC);
                 entry.IsPacked     = (entry.Compression & 0x90) != 0;
+                if (is_voice)
+                    entry.Type = "audio";
                 dir.Add (entry);
-                index_offset += 0x38;
+                index_offset += 0x18;
             }
-            return new ArcFile (file, this, dir);
+            return new VavArchive (file, this, dir, version);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -76,6 +92,8 @@ namespace GameRes.Formats.FrontWing
             var vent = entry as VavEntry;
             if (null == vent)
                 return base.OpenEntry (arc, entry);
+            var varc = arc as VavArchive;
+            bool old_version = varc != null && varc.Version < 200;
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             int data_length = data.Length;
             if ((vent.Compression & 0x80) != 0)
@@ -90,21 +108,22 @@ namespace GameRes.Formats.FrontWing
                 UnpackRle (data, data_length, output);
                 data = output;
             }
-            DecryptEntry (data, vent.Compression & 0xF);
+            DecryptEntry (data, vent.Compression & 0xF, old_version);
             return new BinMemoryStream (data);
         }
 
-        void DecryptEntry (byte[] data, int start)
+        void DecryptEntry (byte[] data, int start, bool old_version = false)
         {
-            if (0 == start)
-            {
-                for (int i = 0; i < data.Length; ++i)
-                    data[i] ^= 0x55;
-            }
-            else
+            if (start > 0)
             {
                 for (int i = start; i < data.Length; ++i)
                     data[i] ^= data[i-start];
+            }
+            else
+            {
+                int data_length = old_version ? 1 : data.Length;
+                for (int i = 0; i < data_length; ++i)
+                    data[i] ^= 0x55;
             }
         }
 
