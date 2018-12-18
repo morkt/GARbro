@@ -20,10 +20,10 @@
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>135</FileVersion>
+        <FileVersion>136</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.44.2030"/>
+            <Assembly Name="ArcFormats" Version="1.2.44.2046"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>
