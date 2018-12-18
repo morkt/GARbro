@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abel\ArcARC.cs" />
+    <Compile Include="Abel\ArcBIN.cs" />
     <Compile Include="Abel\ArcFPK.cs" />
     <Compile Include="Abel\ImageCBF.cs" />
     <Compile Include="Abel\ImageGPS.cs" />
@@ -122,6 +123,7 @@
     <Compile Include="Artemis\ArcMJA.cs" />
     <None Include="AudioAIFF.cs" />
     <Compile Include="Basil\ArcMIF.cs" />
+    <Compile Include="Basil\AudioWHC.cs" />
     <Compile Include="Basil\ImageBCF.cs" />
     <Compile Include="Basil\ImageNG3.cs" />
     <Compile Include="BeF\AudioVZY.cs" />
@@ -300,6 +302,7 @@
     <Compile Include="Seraphim\ImageCP3.cs" />
     <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
     <Compile Include="ShiinaRio\ImageCHD.cs" />
+    <Compile Include="Slg\ImageTIM.cs" />
     <Compile Include="Speed\ArcARC.cs" />
     <Compile Include="Stack\ArcGPK.cs" />
     <Compile Include="StudioSakura\ArcDAT.cs" />
@@ -722,6 +725,7 @@
     <Compile Include="uGOS\ArcDET.cs" />
     <Compile Include="uGOS\ImageBMP.cs" />
     <Compile Include="AdvSys\ArcGR2.cs" />
+    <Compile Include="uGOS\ImageTXT.cs" />
     <Compile Include="UMeSoft\ArcMGX.cs" />
     <Compile Include="UMeSoft\ArcPK.cs" />
     <Compile Include="Qlie\ArcQLIE.cs" />
