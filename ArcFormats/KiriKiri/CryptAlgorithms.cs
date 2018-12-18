@@ -1235,32 +1235,31 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class SmxCrypt : ICrypt
     {
-        byte[]  KeySeq;
+        readonly int    Mask;
+        readonly byte[] KeySeq;
 
-        public SmxCrypt (params byte[] key_seq)
+        public SmxCrypt (int mask, byte[] key_seq)
         {
-            if (key_seq.Length < 7)
+            if (key_seq.Length <= mask+1)
                 throw new ArgumentException ("Not enough arguments for SmxCrypt.");
             KeySeq = key_seq;
+            Mask = mask;
+        }
+
+        public SmxCrypt (params byte[] key_seq) : this (5, key_seq)
+        {
         }
 
         public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
         {
             byte start_key = (byte)(entry.Hash >> KeySeq[0]);
-            var key = new byte[] {
-                (byte)(entry.Hash >> KeySeq[1]),
-                (byte)(entry.Hash >> KeySeq[2]),
-                (byte)(entry.Hash >> KeySeq[3]),
-                (byte)(entry.Hash >> KeySeq[4]),
-                (byte)(entry.Hash >> KeySeq[5]),
-                (byte)(entry.Hash >> KeySeq[6]),
-            };
+            var key = GenerateKey (entry.Hash);
             for (int i = 0; i < count; ++i)
             {
                 if ((offset + i) <= 100)
                     buffer[pos+i] ^= start_key;
                 else
-                    buffer[pos+i] ^= key[(int)(offset + i) & 5];
+                    buffer[pos+i] ^= key[(int)(offset + i) & Mask];
             }
         }
 
@@ -1273,6 +1272,14 @@ namespace GameRes.Formats.KiriKiri
         {
             var key_seq = KeySeq != null ? string.Join (",", KeySeq.Select (x => x.ToString ("D"))) : "null";
             return string.Format ("{0}({1})", base.ToString(), key_seq);
+        }
+
+        protected byte[] GenerateKey (uint hash)
+        {
+            var key = new byte[KeySeq.Length - 1];
+            for (int i = 1; i < KeySeq.Length; ++i)
+                key[i - 1] = (byte)(hash >> KeySeq[i]);
+            return key;
         }
     }
 
