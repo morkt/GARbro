@@ -46,7 +46,7 @@ namespace GameRes.Formats.Akatombo
             return new ImageMetaData {
                 Width  = header.ToUInt16 (4),
                 Height = header.ToUInt16 (6),
-                BPP = header.ToUInt16 (2),
+                BPP = header[2],
             };
         }
 
@@ -54,7 +54,7 @@ namespace GameRes.Formats.Akatombo
         {
             var reader = new FbReader (file, info);
             var pixels = reader.Unpack();
-            return ImageData.Create (info, reader.Format, null, pixels);
+            return ImageData.CreateFlipped (info, reader.Format, null, pixels, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -67,17 +67,17 @@ namespace GameRes.Formats.Akatombo
     {
         IBinaryStream   m_input;
         int             m_width;
-        int             m_pixel_count;
         byte[]          m_output;
 
         public PixelFormat Format { get; private set; }
+        public int         Stride { get; private set; }
 
         public FbReader (IBinaryStream input, ImageMetaData info)
         {
             m_input = input;
-            m_width = (int)info.Width;
-            m_pixel_count = m_width * (int)info.Height;
-            m_output = new byte[m_pixel_count * 4];
+            m_width = info.iWidth;
+            Stride = 4 * m_width;
+            m_output = new byte[Stride * info.iHeight];
             Format = PixelFormats.Bgr32;
         }
 
@@ -87,8 +87,7 @@ namespace GameRes.Formats.Akatombo
         {
             m_input.Position = 8;
             m_bits = 0x80000000;
-            int dst = 0;
-            for (int i = 0; i < m_pixel_count; ++i)
+            for (int dst = 0; dst < m_output.Length; dst += 4)
             {
                 int bit = GetNextBit();
                 if (0 == bit)
@@ -105,29 +104,26 @@ namespace GameRes.Formats.Akatombo
                 m_output[dst  ] += ReadDiff();
                 m_output[dst+1] += ReadDiff();
                 m_output[dst+2] += ReadDiff();
-                dst += 4;
             }
             return m_output;
         }
 
         byte ReadDiff ()
         {
-            uint n = 1;
-            do
+            int count = 1;
+            while (GetNextBit() != 0)
             {
-                n = Binary.RotR (n, 1);
+                ++count;
             }
-            while (GetNextBit() != 0);
-            ++n;
-            byte bit;
-            do
+            int n = 1;
+            while (count --> 0)
             {
-                bit = (byte)GetNextBit();
-                n = (n << 1) | bit;
+                n = (n << 1) | GetNextBit();
             }
-            while (0 == bit);
             return (byte)(-(n & 1) ^ ((n >> 1) - 1));
         }
+
+        byte[] m_bits_buffer = new byte[4];
 
         int GetNextBit ()
         {
@@ -135,7 +131,9 @@ namespace GameRes.Formats.Akatombo
             m_bits <<= 1;
             if (0 == m_bits)
             {
-                m_bits = Binary.BigEndian (m_input.ReadUInt32());
+                if (0 == m_input.Read (m_bits_buffer, 0, 4))
+                    throw new EndOfStreamException();
+                m_bits = BigEndian.ToUInt32 (m_bits_buffer, 0);
                 bit = m_bits >> 31;
                 m_bits = (m_bits << 1) | 1;
             }
