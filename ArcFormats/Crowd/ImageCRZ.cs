@@ -30,6 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using GameRes.Compression;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Crowd
 {
@@ -54,31 +55,26 @@ namespace GameRes.Formats.Crowd
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             file.Position = 0xE;
-            using (var lz = new LzssStream (file.AsStream, LzssMode.Decompress, true))
+            using (var lz = OpenCrzStream (file))
             {
-                lz.Config.FrameSize = 0x1000;
-                lz.Config.FrameFill = 0x20;
-                lz.Config.FrameInitPos = 0x1000 - 0x10;
-                var header = new byte[0x24];
-                if (0x11 != lz.Read (header, 0, 0x11))
+                int max_header_length = KnownKeys.Keys.Max (x => x.Length);
+                var header = new byte[max_header_length + 0x35];
+                lz.Read (header, 0, header.Length);
+                var id = Binary.GetCString (header, 0, max_header_length);
+                byte[] key;
+                if (!KnownKeys.TryGetValue (id, out key))
                     return null;
-                var key = KnownKeys.Where (x => header.AsciiEqual (x.Key)).Select (x => x.Value).FirstOrDefault();
-                if (null == key)
-                    return null;
-                var seed = new byte[0x10];
-                lz.Read (seed, 0, 0x10);
-                lz.Read (header, 0, 0x24);
+                int seed_pos = id.Length + 1;
+                int header_pos = seed_pos + 0x10;
 
                 for (int i = 0; i < 0x24; ++i)
-                    header[i] ^= key[i];
-                for (int i = 0; i < 0x24; ++i)
-                    header[i] ^= seed[i & 0xF];
+                    header[header_pos+i] ^= (byte)(key[i] ^ header[seed_pos + (i & 0xF)]);
 
                 return new CrzMetaData {
-                    Width = header.ToUInt32 (4),
-                    Height = header.ToUInt32 (0x10),
+                    Width = header.ToUInt32 (header_pos+4),
+                    Height = header.ToUInt32 (header_pos+0x10),
                     BPP = 16,
-                    HeaderSize = header.ToInt32 (0x18) + 0x45
+                    HeaderSize = header.ToInt32 (header_pos+0x18) + 0x34 + seed_pos
                 };
             }
         }
@@ -86,20 +82,26 @@ namespace GameRes.Formats.Crowd
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             file.Position = 0xE;
-            using (var lz = new LzssStream (file.AsStream, LzssMode.Decompress, true))
+            using (var lz = OpenCrzStream (file))
             {
-                lz.Config.FrameSize = 0x1000;
-                lz.Config.FrameFill = 0x20;
-                lz.Config.FrameInitPos = 0x1000 - 0x10;
                 var meta = (CrzMetaData)info;
                 var header = new byte[meta.HeaderSize];
                 lz.Read (header, 0, header.Length);
-                int stride = (int)info.Width * 2;
-                var pixels = new byte[stride * (int)info.Height];
+                int stride = info.iWidth * 2;
+                var pixels = new byte[stride * info.iHeight];
                 if (pixels.Length != lz.Read (pixels, 0, pixels.Length))
                     throw new InvalidFormatException();
                 return ImageData.Create (info, PixelFormats.Bgr555, null, pixels, stride);
             }
+        }
+
+        internal Stream OpenCrzStream (IBinaryStream file)
+        {
+            var lz = new LzssStream (file.AsStream, LzssMode.Decompress, true);
+            lz.Config.FrameSize = 0x1000;
+            lz.Config.FrameFill = 0x20;
+            lz.Config.FrameInitPos = 0x1000 - 0x10;
+            return lz;
         }
 
         public override void Write (Stream file, ImageData image)
@@ -159,12 +161,14 @@ namespace GameRes.Formats.Crowd
             return key;
         }
 
-        IDictionary<string, byte[]> KnownKeys = new Dictionary<string, byte[]>();
+        CrzScheme DefaultScheme = new CrzScheme { KnownKeys = new Dictionary<string, byte[]>() };
 
         public override ResourceScheme Scheme
         {
-            get { return new CrzScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((CrzScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (CrzScheme)value; }
         }
+
+        IDictionary<string, byte[]> KnownKeys { get { return DefaultScheme.KnownKeys; } }
     }
 }
