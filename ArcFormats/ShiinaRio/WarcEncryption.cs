@@ -1054,7 +1054,20 @@ namespace GameRes.Formats.ShiinaRio
     }
 
     [Serializable]
-    public class AdlerCrypt : IDecryptExtra
+    public class AdlerCrypt
+    {
+        internal void Transform (byte[] data, int index, int length)
+        {
+            uint key = Adler32.Compute (data, index, length);
+            data[index + 0x200] ^= (byte)key;
+            data[index + 0x201] ^= (byte)(key >> 8);
+            data[index + 0x202] ^= (byte)(key >> 16);
+            data[index + 0x203] ^= (byte)(key >> 24);
+        }
+    }
+
+    [Serializable]
+    public class PostAdlerCrypt : AdlerCrypt, IDecryptExtra
     {
         public void Decrypt (byte[] data, int index, uint length, uint flags)
         {
@@ -1067,14 +1080,21 @@ namespace GameRes.Formats.ShiinaRio
             if (length >= 0x400 && (flags & 0x104) == 0x104)
                 Transform (data, index, 0xFF);
         }
+    }
 
-        void Transform (byte[] data, int index, int length)
+    [Serializable]
+    public class PreAdlerCrypt : AdlerCrypt IDecryptExtra
+    {
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
         {
-            uint key = Adler32.Compute (data, index, length);
-            data[index + 0x200] ^= (byte)key;
-            data[index + 0x201] ^= (byte)(key >> 8);
-            data[index + 0x202] ^= (byte)(key >> 16);
-            data[index + 0x203] ^= (byte)(key >> 24);
+            if (length >= 0x400 && (flags & 0x202) == 0x202)
+                Transform (data, index, 0xFF);
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x400 && (flags & 0x102) == 0x102)
+                Transform (data, index, 0xFF);
         }
     }
 
