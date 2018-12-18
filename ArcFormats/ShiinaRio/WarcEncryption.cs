@@ -1083,7 +1083,7 @@ namespace GameRes.Formats.ShiinaRio
     }
 
     [Serializable]
-    public class PreAdlerCrypt : AdlerCrypt IDecryptExtra
+    public class PreAdlerCrypt : AdlerCrypt, IDecryptExtra
     {
         public void Decrypt (byte[] data, int index, uint length, uint flags)
         {
