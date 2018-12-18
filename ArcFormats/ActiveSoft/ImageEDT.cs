@@ -294,8 +294,7 @@ namespace GameRes.Formats.AdPack
 
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
-            var meta = (Ed8MetaData)info;
-            var reader = new Reader (stream.AsStream, meta);
+            var reader = new Reader (stream.AsStream, (Ed8MetaData)info);
             reader.Unpack();
             var palette = new BitmapPalette (reader.Palette);
             return ImageData.Create (info, PixelFormats.Indexed8, palette, reader.Data, (int)info.Width);
@@ -307,6 +306,7 @@ namespace GameRes.Formats.AdPack
             byte[]          m_data;
             Color[]         m_palette;
             int             m_width;
+            int             m_colors;
 
             public Color[] Palette { get { return m_palette; } }
             public byte[]     Data { get { return m_data; } }
@@ -323,12 +323,13 @@ namespace GameRes.Formats.AdPack
                 m_width = (int)info.Width;
                 m_input = file;
                 m_data = new byte[info.Width * info.Height];
+                m_colors = info.PaletteSize;
             }
 
             public void Unpack ()
             {
                 m_input.Position = 0x1A;
-                m_palette = ReadColorMap (m_input, 0x100, PaletteFormat.Bgr);
+                m_palette = ReadColorMap (m_input, m_colors, PaletteFormat.Bgr);
                 int data_pos = 0;
                 while (data_pos < m_data.Length)
                 {
