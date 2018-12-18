@@ -58,7 +58,7 @@ namespace GameRes.Formats.Will
         {
             Extensions = new string[] { "arc" };
             Signatures = new uint[] { 1, 0, 5, 6 };
-            ContainedFormats = new[] { "WIP", "PNA", "OGG" };
+            ContainedFormats = new[] { "WIP", "PNA", "OGG", "SCR" };
         }
 
         public override ArcFile TryOpen (ArcView file)
