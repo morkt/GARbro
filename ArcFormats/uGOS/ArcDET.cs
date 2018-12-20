@@ -46,15 +46,23 @@ namespace GameRes.Formats.uGOS
             if (!file.Name.HasExtension (".det"))
                 return null;
             var name_file = Path.ChangeExtension (file.Name, "nme");
-            var index_file = Path.ChangeExtension (file.Name, "atm");
-            if (!VFS.FileExists (name_file) || !VFS.FileExists (index_file))
+            if (!VFS.FileExists (name_file))
                 return null;
+            uint entry_size = 0x10;
+            var index_file = Path.ChangeExtension (file.Name, "atm");
+            if (!VFS.FileExists (index_file))
+            {
+                index_file = Path.ChangeExtension (index_file, "at2");
+                if (!VFS.FileExists (index_file))
+                    return null;
+                entry_size = 0x14;
+            }
             using (var nme = VFS.OpenView (name_file))
             using (var idx = VFS.OpenView (index_file))
             {
                 var reader = new DetIndexReader (file, name_file: nme, index_file: idx);
-                var dir = reader.ReadIndex (0x10);
-                if (null == dir)
+                var dir = reader.ReadIndex (entry_size);
+                if (null == dir && entry_size != 0x14)
                     dir = reader.ReadIndex (0x14);
                 if (null == dir)
                     return null;
@@ -69,39 +77,6 @@ namespace GameRes.Formats.uGOS
                 return base.OpenEntry (arc, entry);
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             return new PackedStream<RleDecompressor> (input);
-        }
-
-        bool Unpack (Stream input, byte[] output)
-        {
-            int dst = 0;
-            while (dst < output.Length)
-            {
-                int ctl = input.ReadByte();
-                if (-1 == ctl)
-                    return false;
-                if (0xFF != ctl)
-                {
-                    output[dst++] = (byte)ctl;
-                }
-                else
-                {
-                    ctl = input.ReadByte();
-                    if (-1 == ctl)
-                        return false;
-                    if (0xFF == ctl)
-                    {
-                        output[dst++] = 0xFF;
-                    }
-                    else
-                    {
-                        int offset = (ctl >> 2) + 1;
-                        int count = (ctl & 3) + 3;
-                        Binary.CopyOverlapped (output, dst-offset, dst, count);
-                        dst += count;
-                    }
-                }
-            }
-            return true;
         }
     }
 
