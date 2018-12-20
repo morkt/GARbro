@@ -216,6 +216,7 @@
     <Compile Include="WestGate\ImageNBMP.cs" />
     <Compile Include="Witch\ArcARC.cs" />
     <Compile Include="Yaneurao\ArcSDA.cs" />
+    <Compile Include="Yaneurao\ImageGTO.cs" />
     <Compile Include="Yaneurao\ImageYGA.cs" />
     <Compile Include="YellowCap\ImageGEF.cs" />
     <Compile Include="YellowCap\ImageGGF.cs" />
