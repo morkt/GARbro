@@ -60,12 +60,14 @@ namespace GameRes.Formats.FC01
         public override string Description { get { return "F&C Co. image format"; } }
         public override uint     Signature { get { return 0x2047434D; } } // 'MCG'
 
-        public static Dictionary<string, byte> KnownKeys = new Dictionary<string, byte>();
+        internal static Dictionary<string, byte> KnownKeys { get { return DefaultScheme.KnownKeys; } }
+
+        static McgScheme DefaultScheme = new McgScheme { KnownKeys = new Dictionary<string, byte>() };
 
         public override ResourceScheme Scheme
         {
-            get { return new McgScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((McgScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (McgScheme)value; }
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -74,7 +76,7 @@ namespace GameRes.Formats.FC01
             if (header[5] != '.')
                 return null;
             int version = header[4] * 100 + header[6] * 10 + header[7] - 0x14D0;
-            if (version != 200 && version != 101)
+            if (version != 200 && version != 101 && version != 100)
                 throw new NotSupportedException ("Not supported MCG format version");
             int header_size = header.ToInt32 (0x10);
             if (header_size < 0x40)
@@ -173,7 +175,7 @@ namespace GameRes.Formats.FC01
             m_pixels = m_width*m_height;
             m_key = key;
             Stride = m_width * m_info.BPP / 8;
-            if (101 == m_info.Version)
+            if (m_info.Version <= 101)
                 Stride = (Stride + 3) & -4;
             if (24 == m_info.BPP)
                 Format = PixelFormats.Bgr24;
@@ -227,7 +229,7 @@ namespace GameRes.Formats.FC01
                 MrgOpener.Decrypt (m_input, 0, m_input.Length-1, m_key);
             }
 #if DEBUG
-            else // bruteforce key *in debug build only*
+            else if (101 == m_info.Version) // bruteforce key *in debug build only*
             {
                 var copy = new byte[m_input.Length];
                 for (int key = 1; key < 256; ++key)
