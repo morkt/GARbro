@@ -70,13 +70,7 @@ namespace GameRes.Formats.Minato
                 return null;
 
             using (var index = new MinatoIndexReader (file, count))
-            {
-                var file_map = ReadFilenameMap (scheme);
-                var dir = index.Read (file_map);
-                if (null == dir)
-                    return null;
-                return new ArcDatArchive (file, this, dir, scheme.Hash);
-            }
+                return index.Read (this, scheme);
         }
     }
 

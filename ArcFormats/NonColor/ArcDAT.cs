@@ -59,6 +59,7 @@ namespace GameRes.Formats.NonColor
         public ulong    Hash;
         public string   FileListName;
         public bool     LowCaseNames;
+        public bool     IgnoreScriptKey;
 
         public Scheme(string title)
         {
@@ -129,13 +130,7 @@ namespace GameRes.Formats.NonColor
                 return null;
 
             using (var index = new NcIndexReader (file, count))
-            {
-                var file_map = ReadFilenameMap (scheme);
-                var dir = index.Read (file_map);
-                if (null == dir)
-                    return null;
-                return new ArcDatArchive (file, this, dir, scheme.Hash);
-            }
+                return index.Read (this, scheme);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -147,10 +142,10 @@ namespace GameRes.Formats.NonColor
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             if (dent.IsPacked)
             {
-                if (6 == dent.Flags)
-                    DecryptData (data, (uint)dent.Hash);
-                else if (darc.MasterKey != 0)
+                if (darc.MasterKey != 0)
                     DecryptData (data, (uint)(dent.Hash ^ darc.MasterKey));
+                else if (6 == dent.Flags)
+                    DecryptData (data, (uint)dent.Hash);
                 return new ZLibStream (new MemoryStream (data), CompressionMode.Decompress);
             }
             // 1 == dent.Flags
@@ -284,10 +279,10 @@ namespace GameRes.Formats.NonColor
         protected IBinaryStream m_input;
         private   List<Entry>   m_dir;
         private   int           m_count;
-        private   long          m_max_offset;
+        private   ArcView       m_file;
 
         public long IndexPosition { get; set; }
-        public long     MaxOffset { get { return m_max_offset; } }
+        public long     MaxOffset { get { return m_file.MaxOffset; } }
         public bool ExtendByteSign { get; protected set; }
 
         protected NcIndexReaderBase (ArcView file, int count)
@@ -295,8 +290,18 @@ namespace GameRes.Formats.NonColor
             m_input = file.CreateStream();
             m_dir = new List<Entry> (count);
             m_count = count;
-            m_max_offset = file.MaxOffset;
+            m_file = file;
             IndexPosition = 4;
+        }
+
+        public ArcFile Read (DatOpener format, Scheme scheme)
+        {
+            var file_map = format.ReadFilenameMap (scheme);
+            var dir = Read (file_map);
+            if (null == dir)
+                return null;
+            var master_key = scheme.IgnoreScriptKey ? 0ul : scheme.Hash;
+            return new ArcDatArchive (m_file, format, dir, master_key);
         }
 
         public List<Entry> Read (IDictionary<ulong, NameRecord> file_map)
