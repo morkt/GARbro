@@ -36,6 +36,11 @@ namespace GameRes.Formats.Tail
         public override string Description { get { return "Tail image format"; } }
         public override uint     Signature { get { return 0x20424552; } } // 'REB '
 
+        public CfpFormat ()
+        {
+            Signatures = new uint[] { 0x20424552, 0x5242 }; // 'REB ', 'BR'
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x1C);
