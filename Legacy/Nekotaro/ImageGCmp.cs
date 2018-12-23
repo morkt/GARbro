@@ -32,6 +32,11 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Nekotaro
 {
+    internal class GCmpMetaData : ImageMetaData
+    {
+        public bool IsCompressed;
+    }
+
     [Export(typeof(ImageFormat))]
     public class GCmpFormat : ImageFormat
     {
@@ -42,19 +47,21 @@ namespace GameRes.Formats.Nekotaro
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x10);
-            int bpp = header[12];
+            int format = (sbyte)header[12];
+            int bpp = Math.Abs (format);
             if (bpp != 24 && bpp != 8 && bpp != 1)
                 return null;
-            return new ImageMetaData {
+            return new GCmpMetaData {
                 Width = header.ToUInt16 (8),
                 Height = header.ToUInt16 (10),
                 BPP = bpp,
+                IsCompressed = format > 0,
             };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            using (var reader = new GCmpDecoder (file, info, this, true))
+            using (var reader = new GCmpDecoder (file, (GCmpMetaData)info, this, true))
                 return reader.Image;
         }
 
@@ -68,63 +75,57 @@ namespace GameRes.Formats.Nekotaro
     {
         IBinaryStream   m_input;
         ImageData       m_image;
+        GCmpMetaData    m_info;
         bool            m_should_dispose;
 
         public Stream            Source { get { return m_input.AsStream; } }
         public ImageFormat SourceFormat { get; private set; }
-        public ImageMetaData       Info { get; private set; }
+        public ImageMetaData       Info { get { return m_info; } }
         public PixelFormat       Format { get; private set; }
         public BitmapPalette    Palette { get; private set; }
         public int               Stride { get; private set; }
-        public ImageData          Image {
-            get {
-                if (null == m_image)
-                {
-                    var pixels = Unpack();
-                    m_image = ImageData.CreateFlipped (Info, Format, Palette, pixels, Stride);
-                }
-                return m_image;
-            }
-        }
+        public ImageData          Image { get { return m_image ?? (m_image = Unpack()); } }
 
-        public GCmpDecoder (IBinaryStream input, ImageMetaData info, ImageFormat source, bool leave_open = false)
+        public GCmpDecoder (IBinaryStream input, GCmpMetaData info, ImageFormat source, bool leave_open = false)
         {
             m_input = input;
-            Info = info;
+            m_info = info;
             SourceFormat = source;
             m_should_dispose = !leave_open;
             if (info.BPP > 1)
-                Stride = (int)info.Width * info.BPP / 8;
+                Stride = info.iWidth * info.BPP / 8;
             else
-                Stride = ((int)info.Width + 7) / 8;
+                Stride = (info.iWidth + 7) / 8;
         }
 
-        public byte[] Unpack ()
+        public ImageData Unpack ()
         {
             m_input.Position = 0x10;
+            byte[] pixels;
             if (24 == Info.BPP)
-                return Unpack24bpp();
+                pixels = Unpack24bpp();
             else
-                return Unpack8bpp();
+                pixels = Unpack8bpp();
+            return ImageData.CreateFlipped (Info, Format, Palette, pixels, Stride);
         }
 
         byte[] Unpack24bpp ()
         {
             Format = PixelFormats.Bgr24;
-            int pixel_count = (int)(Info.Width * Info.Height);
+            int pixel_count = Info.iWidth * Info.iHeight;
             var output = new byte[pixel_count * Info.BPP / 8 + 1];
             var frame = new byte[384];
             int dst = 0;
-            int v19 = 0;
+            int chunk_length = 0;
             while (pixel_count > 0)
             {
                 int count, frame_pos, pixel;
-                if (v19 != 0)
+                if (chunk_length != 0)
                 {
                     pixel = m_input.ReadInt24();
                     count = 1;
                     frame_pos = 127;
-                    --v19;
+                    --chunk_length;
                 }
                 else
                 {
@@ -156,7 +157,7 @@ namespace GameRes.Formats.Nekotaro
                     {
                         if (1 == count)
                         {
-                            v19 = m_input.ReadUInt8() - 1;
+                            chunk_length = m_input.ReadUInt8() - 1;
                         }
                         else if (0 == count)
                         {
@@ -195,7 +196,10 @@ namespace GameRes.Formats.Nekotaro
             }
             else
                 Format = PixelFormats.BlackWhite;
-            int pixel_count = (int)Info.Height * Stride;
+            int pixel_count = Info.iHeight * Stride;
+            if (m_info.IsCompressed)
+                return m_input.ReadBytes (pixel_count);
+
             var output = new byte[pixel_count];
             int dst = 0;
             byte[] frame = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0xFF };
@@ -269,6 +273,7 @@ namespace GameRes.Formats.Nekotaro
         }
 
         static readonly BitmapPalette DefaultPalette = new BitmapPalette (
+            /*
             new Color[] {
                 Color.FromRgb (0x00, 0x00, 0x00),
                 Color.FromRgb (0xFF, 0xFF, 0xFF),
@@ -526,6 +531,266 @@ namespace GameRes.Formats.Nekotaro
                 Color.FromRgb (0xFF, 0xFF, 0xFF),
                 Color.FromRgb (0xFF, 0xFF, 0xFF),
                 Color.FromRgb (0xFF, 0xFF, 0xFF),
+            }
+            */
+            // [000317][PIL] Seek -remasters-
+            new Color[] {
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0xFF, 0xFF, 0xFF),
+                Color.FromRgb (0x22, 0x22, 0x22),
+                Color.FromRgb (0x44, 0x44, 0x44),
+                Color.FromRgb (0x55, 0x55, 0x55),
+                Color.FromRgb (0x66, 0x66, 0x66),
+                Color.FromRgb (0x77, 0x77, 0x77),
+                Color.FromRgb (0x88, 0x88, 0x88),
+                Color.FromRgb (0x99, 0x99, 0x99),
+                Color.FromRgb (0xAA, 0xAA, 0xAA),
+                Color.FromRgb (0xBB, 0xBB, 0xBB),
+                Color.FromRgb (0xCC, 0xCC, 0xCC),
+                Color.FromRgb (0xDD, 0xDD, 0xDD),
+                Color.FromRgb (0xEE, 0xEE, 0xEE),
+                Color.FromRgb (0x00, 0xFF, 0x00),
+                Color.FromRgb (0xFF, 0x00, 0x00),
+                Color.FromRgb (0xFF, 0xFF, 0x00),
+                Color.FromRgb (0x00, 0x00, 0xFF),
+                Color.FromRgb (0x01, 0x01, 0x01),
+                Color.FromRgb (0x04, 0x07, 0x17),
+                Color.FromRgb (0x0D, 0x07, 0x05),
+                Color.FromRgb (0x18, 0x03, 0x01),
+                Color.FromRgb (0x1A, 0x0D, 0x09),
+                Color.FromRgb (0x0F, 0x11, 0x15),
+                Color.FromRgb (0x07, 0x14, 0x25),
+                Color.FromRgb (0x2A, 0x09, 0x04),
+                Color.FromRgb (0x37, 0x03, 0x02),
+                Color.FromRgb (0x23, 0x14, 0x0D),
+                Color.FromRgb (0x4C, 0x03, 0x01),
+                Color.FromRgb (0x18, 0x19, 0x20),
+                Color.FromRgb (0x3F, 0x0C, 0x07),
+                Color.FromRgb (0x06, 0x13, 0x67),
+                Color.FromRgb (0x0B, 0x20, 0x2E),
+                Color.FromRgb (0x2E, 0x19, 0x0F),
+                Color.FromRgb (0x5E, 0x03, 0x02),
+                Color.FromRgb (0x02, 0x2D, 0x2D),
+                Color.FromRgb (0x22, 0x21, 0x2C),
+                Color.FromRgb (0x4E, 0x12, 0x08),
+                Color.FromRgb (0x40, 0x0E, 0x4D),
+                Color.FromRgb (0x3A, 0x1E, 0x10),
+                Color.FromRgb (0x71, 0x04, 0x02),
+                Color.FromRgb (0x16, 0x32, 0x1C),
+                Color.FromRgb (0x11, 0x2B, 0x4F),
+                Color.FromRgb (0x28, 0x29, 0x38),
+                Color.FromRgb (0x86, 0x03, 0x03),
+                Color.FromRgb (0x64, 0x15, 0x0B),
+                Color.FromRgb (0x41, 0x26, 0x17),
+                Color.FromRgb (0x50, 0x20, 0x0E),
+                Color.FromRgb (0x03, 0x40, 0x44),
+                Color.FromRgb (0x9C, 0x02, 0x00),
+                Color.FromRgb (0x04, 0x34, 0x80),
+                Color.FromRgb (0x2C, 0x30, 0x43),
+                Color.FromRgb (0x00, 0x00, 0xFB),
+                Color.FromRgb (0x56, 0x1C, 0x43),
+                Color.FromRgb (0x7E, 0x13, 0x0B),
+                Color.FromRgb (0x3A, 0x30, 0x2F),
+                Color.FromRgb (0x70, 0x1E, 0x02),
+                Color.FromRgb (0x5B, 0x27, 0x10),
+                Color.FromRgb (0x4F, 0x2E, 0x1C),
+                Color.FromRgb (0x1C, 0x48, 0x1D),
+                Color.FromRgb (0x31, 0x35, 0x53),
+                Color.FromRgb (0x24, 0x24, 0x9E),
+                Color.FromRgb (0xB7, 0x02, 0x01),
+                Color.FromRgb (0x78, 0x22, 0x05),
+                Color.FromRgb (0x3A, 0x37, 0x3D),
+                Color.FromRgb (0x0A, 0x4B, 0x68),
+                Color.FromRgb (0x9A, 0x0E, 0x34),
+                Color.FromRgb (0x92, 0x1A, 0x0B),
+                Color.FromRgb (0x5A, 0x33, 0x25),
+                Color.FromRgb (0x81, 0x04, 0xBA),
+                Color.FromRgb (0x7B, 0x28, 0x18),
+                Color.FromRgb (0x68, 0x33, 0x18),
+                Color.FromRgb (0x3B, 0x3E, 0x58),
+                Color.FromRgb (0x45, 0x3F, 0x42),
+                Color.FromRgb (0xD0, 0x04, 0x04),
+                Color.FromRgb (0x67, 0x27, 0x77),
+                Color.FromRgb (0x8C, 0x2B, 0x12),
+                Color.FromRgb (0x2E, 0x5D, 0x11),
+                Color.FromRgb (0x66, 0x3D, 0x29),
+                Color.FromRgb (0x2F, 0x53, 0x49),
+                Color.FromRgb (0xED, 0x01, 0x01),
+                Color.FromRgb (0x75, 0x39, 0x1C),
+                Color.FromRgb (0x45, 0x45, 0x61),
+                Color.FromRgb (0x29, 0x43, 0xA2),
+                Color.FromRgb (0xA3, 0x27, 0x1A),
+                Color.FromRgb (0x5D, 0x46, 0x42),
+                Color.FromRgb (0x15, 0x64, 0x6A),
+                Color.FromRgb (0x78, 0x35, 0x62),
+                Color.FromRgb (0x76, 0x44, 0x1C),
+                Color.FromRgb (0x92, 0x37, 0x20),
+                Color.FromRgb (0xB0, 0x0C, 0xB3),
+                Color.FromRgb (0x51, 0x50, 0x5B),
+                Color.FromRgb (0x79, 0x47, 0x33),
+                Color.FromRgb (0xE6, 0x11, 0x29),
+                Color.FromRgb (0x0F, 0x62, 0xB7),
+                Color.FromRgb (0x4F, 0x51, 0x79),
+                Color.FromRgb (0xA6, 0x37, 0x25),
+                Color.FromRgb (0x86, 0x49, 0x21),
+                Color.FromRgb (0x44, 0x6C, 0x20),
+                Color.FromRgb (0x3C, 0x56, 0xA5),
+                Color.FromRgb (0x20, 0x72, 0x7B),
+                Color.FromRgb (0x71, 0x53, 0x49),
+                Color.FromRgb (0xA1, 0x3F, 0x3A),
+                Color.FromRgb (0x7F, 0x44, 0x7D),
+                Color.FromRgb (0x5C, 0x5C, 0x61),
+                Color.FromRgb (0xDC, 0x02, 0xE7),
+                Color.FromRgb (0x59, 0x57, 0x82),
+                Color.FromRgb (0xB7, 0x3B, 0x27),
+                Color.FromRgb (0x91, 0x51, 0x26),
+                Color.FromRgb (0xED, 0x24, 0x44),
+                Color.FromRgb (0x69, 0x61, 0x67),
+                Color.FromRgb (0xB9, 0x44, 0x31),
+                Color.FromRgb (0x5F, 0x61, 0x88),
+                Color.FromRgb (0x92, 0x53, 0x58),
+                Color.FromRgb (0xA3, 0x53, 0x3B),
+                Color.FromRgb (0x56, 0x7D, 0x2B),
+                Color.FromRgb (0x45, 0x74, 0x89),
+                Color.FromRgb (0x8F, 0x66, 0x13),
+                Color.FromRgb (0x25, 0x87, 0x84),
+                Color.FromRgb (0x69, 0x68, 0x70),
+                Color.FromRgb (0xBA, 0x4F, 0x3A),
+                Color.FromRgb (0x69, 0x69, 0x94),
+                Color.FromRgb (0xE9, 0x3B, 0x35),
+                Color.FromRgb (0x90, 0x53, 0xA6),
+                Color.FromRgb (0x9E, 0x60, 0x43),
+                Color.FromRgb (0xC1, 0x3A, 0xAD),
+                Color.FromRgb (0x5B, 0x67, 0xBA),
+                Color.FromRgb (0x06, 0x95, 0xC7),
+                Color.FromRgb (0x6D, 0x71, 0x7E),
+                Color.FromRgb (0xC8, 0x51, 0x46),
+                Color.FromRgb (0x84, 0x6E, 0x6C),
+                Color.FromRgb (0x29, 0xAA, 0x28),
+                Color.FromRgb (0xA2, 0x6D, 0x2F),
+                Color.FromRgb (0x74, 0x74, 0x96),
+                Color.FromRgb (0xC1, 0x5E, 0x44),
+                Color.FromRgb (0x43, 0x92, 0x8B),
+                Color.FromRgb (0xA8, 0x6D, 0x57),
+                Color.FromRgb (0xF3, 0x45, 0x60),
+                Color.FromRgb (0xE8, 0x5A, 0x28),
+                Color.FromRgb (0x71, 0x94, 0x34),
+                Color.FromRgb (0x7D, 0x7E, 0x8E),
+                Color.FromRgb (0xD1, 0x61, 0x51),
+                Color.FromRgb (0x75, 0x7E, 0xBC),
+                Color.FromRgb (0xA9, 0x74, 0x72),
+                Color.FromRgb (0xC5, 0x6C, 0x51),
+                Color.FromRgb (0xA1, 0x87, 0x38),
+                Color.FromRgb (0x9E, 0x70, 0xB7),
+                Color.FromRgb (0x84, 0x85, 0x96),
+                Color.FromRgb (0xEC, 0x5C, 0x5D),
+                Color.FromRgb (0xD1, 0x70, 0x5E),
+                Color.FromRgb (0x40, 0xAD, 0xAC),
+                Color.FromRgb (0x8A, 0x8B, 0x99),
+                Color.FromRgb (0xB0, 0x83, 0x69),
+                Color.FromRgb (0xE5, 0x54, 0xD2),
+                Color.FromRgb (0x7D, 0xA3, 0x51),
+                Color.FromRgb (0xA3, 0x7E, 0xB2),
+                Color.FromRgb (0xF3, 0x6A, 0x5D),
+                Color.FromRgb (0x86, 0x8B, 0xC9),
+                Color.FromRgb (0x91, 0x92, 0x9D),
+                Color.FromRgb (0xD7, 0x7A, 0x67),
+                Color.FromRgb (0x00, 0xFD, 0x01),
+                Color.FromRgb (0xC9, 0x85, 0x73),
+                Color.FromRgb (0xAD, 0x93, 0x80),
+                Color.FromRgb (0xB9, 0x96, 0x58),
+                Color.FromRgb (0x98, 0x99, 0xA1),
+                Color.FromRgb (0xF5, 0x74, 0x69),
+                Color.FromRgb (0xA2, 0xB1, 0x1B),
+                Color.FromRgb (0xE4, 0x82, 0x6B),
+                Color.FromRgb (0x90, 0x98, 0xCD),
+                Color.FromRgb (0xB7, 0x8A, 0xBE),
+                Color.FromRgb (0xE1, 0x89, 0x76),
+                Color.FromRgb (0xA0, 0xA2, 0xAD),
+                Color.FromRgb (0xD3, 0x92, 0x85),
+                Color.FromRgb (0x7C, 0xA5, 0xF5),
+                Color.FromRgb (0xF9, 0x84, 0x77),
+                Color.FromRgb (0xC0, 0xA2, 0x77),
+                Color.FromRgb (0xF8, 0x99, 0x1F),
+                Color.FromRgb (0xE9, 0x8F, 0x84),
+                Color.FromRgb (0x9D, 0xA3, 0xDC),
+                Color.FromRgb (0xAB, 0xAB, 0xAA),
+                Color.FromRgb (0xF9, 0x90, 0x7D),
+                Color.FromRgb (0xB0, 0xC6, 0x24),
+                Color.FromRgb (0xCD, 0xA1, 0xB0),
+                Color.FromRgb (0xDE, 0x9E, 0x90),
+                Color.FromRgb (0xAE, 0xAF, 0xB9),
+                Color.FromRgb (0xEE, 0x99, 0x86),
+                Color.FromRgb (0xA9, 0xAB, 0xE4),
+                Color.FromRgb (0xF8, 0x9B, 0x89),
+                Color.FromRgb (0xB4, 0xB6, 0xB9),
+                Color.FromRgb (0xAD, 0xB5, 0xE3),
+                Color.FromRgb (0xF9, 0xA3, 0x88),
+                Color.FromRgb (0xE4, 0xAA, 0x9F),
+                Color.FromRgb (0xF9, 0xA6, 0x95),
+                Color.FromRgb (0xD5, 0xCE, 0x29),
+                Color.FromRgb (0xD3, 0xB5, 0xBC),
+                Color.FromRgb (0xBC, 0xBF, 0xC4),
+                Color.FromRgb (0xBA, 0xB9, 0xE9),
+                Color.FromRgb (0xFB, 0xAC, 0x9A),
+                Color.FromRgb (0xEB, 0xB4, 0xA9),
+                Color.FromRgb (0xFC, 0xB0, 0xA0),
+                Color.FromRgb (0xBD, 0xC3, 0xEA),
+                Color.FromRgb (0xFB, 0xBB, 0x74),
+                Color.FromRgb (0xC6, 0xC6, 0xCA),
+                Color.FromRgb (0xEE, 0xBA, 0xAF),
+                Color.FromRgb (0xFD, 0xB5, 0xA4),
+                Color.FromRgb (0xFC, 0xB8, 0xA9),
+                Color.FromRgb (0xFC, 0xBC, 0xAC),
+                Color.FromRgb (0xC7, 0xCA, 0xEF),
+                Color.FromRgb (0xCE, 0xCD, 0xD2),
+                Color.FromRgb (0xEF, 0xC3, 0xC0),
+                Color.FromRgb (0xFC, 0xC0, 0xB3),
+                Color.FromRgb (0xD4, 0xED, 0x38),
+                Color.FromRgb (0xFC, 0xC5, 0xB9),
+                Color.FromRgb (0xD0, 0xD3, 0xE8),
+                Color.FromRgb (0xFC, 0xD5, 0x78),
+                Color.FromRgb (0xFC, 0xC9, 0xBF),
+                Color.FromRgb (0xD8, 0xD9, 0xE2),
+                Color.FromRgb (0xFC, 0xCD, 0xC4),
+                Color.FromRgb (0xFC, 0xD1, 0xC9),
+                Color.FromRgb (0xDB, 0xDE, 0xE9),
+                Color.FromRgb (0xFD, 0xD5, 0xD0),
+                Color.FromRgb (0xFE, 0xFD, 0x04),
+                Color.FromRgb (0xFD, 0xD8, 0xD4),
+                Color.FromRgb (0xFB, 0xE0, 0xB9),
+                Color.FromRgb (0xE2, 0xE5, 0xEE),
+                Color.FromRgb (0xFD, 0xDD, 0xD9),
+                Color.FromRgb (0xFD, 0xE3, 0xE0),
+                Color.FromRgb (0xFC, 0xF4, 0x91),
+                Color.FromRgb (0xEB, 0xED, 0xF1),
+                Color.FromRgb (0xFD, 0xE8, 0xE4),
+                Color.FromRgb (0xFD, 0xEC, 0xE8),
+                Color.FromRgb (0xF1, 0xF3, 0xF6),
+                Color.FromRgb (0xFD, 0xF0, 0xED),
+                Color.FromRgb (0xFD, 0xF6, 0xF4),
+                Color.FromRgb (0xFD, 0xFB, 0xF9),
+                Color.FromRgb (0xFF, 0xFF, 0xFF),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
+                Color.FromRgb (0x00, 0x00, 0x00),
             }
         );
 
