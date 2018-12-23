@@ -86,23 +86,27 @@ namespace GameRes.Formats.Tail
         const uint PrenSignature = 0x4E455250; // "PREN"
         const uint Cfp0Signature = 0x30504643; // "CFP0"
         const uint HpSignature   = 0x00005048; // "HP"
+        const uint RpSignature   = 0x00005052; // "RP"
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
+            IBinaryStream input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
             Func<IBinaryStream, byte[]> unpacker = null;
-            switch (input.Signature)
+            for (;;)
             {
-            case PrenSignature: unpacker = UnpackPren; break;
-            case Cfp0Signature: unpacker = UnpackCfp0; break;
-            case HpSignature:   unpacker = UnpackHp; break;
+                switch (input.Signature)
+                {
+                case RpSignature:
+                case PrenSignature: unpacker = UnpackPren; break;
+                case Cfp0Signature: unpacker = UnpackCfp0; break;
+                case HpSignature:   unpacker = UnpackHp; break;
 
-            default: return input;
-            }
-            using (input)
-            {
-                var data = unpacker (input);
-                return new BinMemoryStream (data, entry.Name);
+                default: return input.AsStream;
+                }
+                byte[] data;
+                using (input)
+                    data = unpacker (input);
+                input = new BinMemoryStream (data, entry.Name);
             }
         }
 
