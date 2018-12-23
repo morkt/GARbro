@@ -29,8 +29,10 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using GameRes.Formats.Strings;
 
 // [010719][Studio Jikkenshitsu] Shin Gekka Bijin ~Hitori Shizuka
+// [030606][Studio Jikkenshitsu] Bias {biAs+}
 // [031212][Studio Jikkenshitsu] Jam n' Limit
 
 namespace GameRes.Formats.Jikkenshitsu
@@ -50,6 +52,11 @@ namespace GameRes.Formats.Jikkenshitsu
         public IDictionary<string, byte[]>  KnownSchemes;
     }
 
+    internal class SjOptions : ResourceOptions
+    {
+        public byte[]   Key;
+    }
+
     [Export(typeof(ImageFormat))]
     public class SpDatFormat : ImageFormat
     {
@@ -63,11 +70,7 @@ namespace GameRes.Formats.Jikkenshitsu
             Signatures = new uint[] { 0x010003, 0x010007, 0x01000B, 0x010046, 0 };
         }
 
-        // Futanari Clinic Karte #1
-//        static readonly byte[] DefaultKey = { 10, 0, 5, 10, 11, 0, 9, 0, 1, 13, 5, 2, 3, 5, 6, 4 };
-
-        // Jam n' Limit
-        static readonly byte[] DefaultKey = { 12, 5, 0, 8, 5, 1, 2, 10, 4, 8, 2, 3, 9, 6, 0, 1 };
+        byte[] DefaultKey = null;
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
@@ -77,14 +80,24 @@ namespace GameRes.Formats.Jikkenshitsu
             int flags = header.ToUInt16 (0);
             if ((flags & ~0xFF) != 0)
                 return null;
-            return new SpMetaData {
+            var info = new SpMetaData {
                 Width = header.ToUInt16 (0x16),
                 Height = header.ToUInt16 (0x18),
                 BPP = 8,
                 Flags = flags,
                 Colors = header.ToUInt16 (0x1E),
-                Key = DefaultKey,
             };
+            if (info.IsEncrypted)
+            {
+                if (null == DefaultKey)
+                {
+                    DefaultKey = QueryKey (file.Name);
+                    if (null == DefaultKey)
+                        return null;
+                }
+                info.Key = DefaultKey;
+            }
+            return info;
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -106,6 +119,30 @@ namespace GameRes.Formats.Jikkenshitsu
             get { return DefaultScheme; }
             set { DefaultScheme = (SjSchemeMap)value; }
         }
+
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new SjOptions { Key = GetKey (Properties.Settings.Default.SJDatTitle) };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetSJDAT (DefaultScheme.KnownSchemes.Keys);
+        }
+
+        byte[] QueryKey (string filename)
+        {
+            var options = Query<SjOptions> (arcStrings.ArcImageEncrypted);
+            return options.Key;
+        }
+
+        byte[] GetKey (string title)
+        {
+            byte[] key = null;
+            if (!string.IsNullOrEmpty (title))
+                DefaultScheme.KnownSchemes.TryGetValue (title, out key);
+            return key;
+        }
     }
 
     internal class SpReader
@@ -124,7 +161,7 @@ namespace GameRes.Formats.Jikkenshitsu
             m_input = input;
             m_info = info;
             m_output = new byte[info.Width * info.Height];
-            m_stride = (int)info.Width;
+            m_stride = info.iWidth;
         }
 
         public byte[] Unpack ()
@@ -210,8 +247,8 @@ namespace GameRes.Formats.Jikkenshitsu
 
         byte[] ConvertToRgbA (byte[] alpha)
         {
-            m_stride = (int)m_info.Width * 4;
-            var pixels = new byte[m_stride * (int)m_info.Height];
+            m_stride = m_info.iWidth * 4;
+            var pixels = new byte[m_stride * m_info.iHeight];
             var colors = Palette.Colors;
             int dst = 0;
             for (int src = 0; src < m_output.Length; ++src)

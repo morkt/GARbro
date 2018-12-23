@@ -51,7 +51,7 @@ namespace GameRes.Formats.Jikkenshitsu
         public override uint     Signature { get { return 0x20445247; } } // 'GRD '
 
         // Giin Oyako
-        static readonly byte[] DefaultKey = { 0xF, 0, 1, 2, 8, 5, 0xA, 0xB, 5, 9, 0xE, 0xD, 1, 8, 0, 6 };
+        static readonly byte[] DefaultKey = { 15, 0, 1, 2, 8, 5, 10, 11, 5, 9, 14, 13, 1, 8, 0, 6 };
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {

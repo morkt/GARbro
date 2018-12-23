@@ -306,6 +306,12 @@
     <Compile Include="Slg\ImageTIM.cs" />
     <Compile Include="Speed\ArcARC.cs" />
     <Compile Include="Stack\ArcGPK.cs" />
+    <Compile Include="StudioJikkenshitsu\ImageDAT.cs" />
+    <Compile Include="StudioJikkenshitsu\ImageGRD.cs" />
+    <Compile Include="StudioJikkenshitsu\SjTransform.cs" />
+    <Compile Include="StudioJikkenshitsu\WidgetSJDAT.xaml.cs">
+      <DependentUpon>WidgetSJDAT.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StudioSakura\ArcDAT.cs" />
     <Compile Include="Silky\ImageGRD.cs" />
     <Compile Include="Slg\ArcSPD.cs" />
@@ -575,6 +581,7 @@
       <DependentUpon>WidgetTactics.xaml</DependentUpon>
     </Compile>
     <Compile Include="Tail\ArcCAF.cs" />
+    <Compile Include="Tail\ArcPKG.cs" />
     <Compile Include="Tail\ImageCFP.cs" />
     <Compile Include="Tamamo\ArcPCK.cs" />
     <Compile Include="Tamamo\WidgetPCK.xaml.cs">
@@ -1093,6 +1100,10 @@
     <Page Include="RPM\WidgetARC.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="StudioJikkenshitsu\WidgetSJDAT.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Tactics\WidgetTactics.xaml">
       <SubType>Designer</SubType>

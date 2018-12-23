@@ -789,5 +789,17 @@ namespace GameRes.Formats.Properties {
                 this["LEAFTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SJDatTitle {
+            get {
+                return ((string)(this["SJDatTitle"]));
+            }
+            set {
+                this["SJDatTitle"] = value;
+            }
+        }
     }
 }
