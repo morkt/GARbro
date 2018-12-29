@@ -323,6 +323,8 @@ namespace GameRes.Formats.Unity
                 return ReadTextAsset (file, obj);
             else if ("Texture2D" == type)
                 type = "image";
+            else if ("AssetBundle" == type)
+                return null;
 
             return new AssetEntry {
                 Type = type,

@@ -214,7 +214,8 @@ namespace GameRes.Formats.Unity
 
         ImageData Unpack ()
         {
-            m_texture.LoadData (m_reader);
+            if (null == m_texture.m_Data || 0 == m_texture.m_Data.Length)
+                m_texture.LoadData (m_reader);
             byte[] pixels;
             switch (m_texture.m_TextureFormat)
             {
