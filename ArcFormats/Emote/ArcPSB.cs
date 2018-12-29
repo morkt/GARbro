@@ -343,6 +343,9 @@ namespace GameRes.Formats.Emote
         int m_chunk_offsets;
         int m_chunk_lengths;
         int m_chunk_data;
+        int m_extra_offsets;
+        int m_extra_lengths;
+        int m_extra_data;
         int m_root;
         byte[] m_data;
 
@@ -355,17 +358,29 @@ namespace GameRes.Formats.Emote
             if (encrypted && m_version < 3)
                 m_flags = 2;
 
-            var header = m_input.ReadBytes (0x20);
+            int header_size = m_version > 3 ? 0x30 : 0x24;
+            var header = m_input.ReadBytes (header_size);
             if (encrypted && 0 != (m_flags & 1))
-                Decrypt (header, 0, 0x20);
+            {
+                Decrypt (header, 0, 0x24);
+                if (m_version > 3)
+                    Decrypt (header, 0x24, 0xC);
+            }
 
-            m_names         = LittleEndian.ToInt32 (header, 0x04);
-            m_strings       = LittleEndian.ToInt32 (header, 0x08);
-            m_strings_data  = LittleEndian.ToInt32 (header, 0x0C);
-            m_chunk_offsets = LittleEndian.ToInt32 (header, 0x10);
-            m_chunk_lengths = LittleEndian.ToInt32 (header, 0x14);
-            m_chunk_data    = LittleEndian.ToInt32 (header, 0x18);
-            m_root          = LittleEndian.ToInt32 (header, 0x1C);
+            m_names         = LittleEndian.ToInt32 (header, 0x04); // 0x08
+            m_strings       = LittleEndian.ToInt32 (header, 0x08); // 0x0C
+            m_strings_data  = LittleEndian.ToInt32 (header, 0x0C); // 0x10
+            m_chunk_offsets = LittleEndian.ToInt32 (header, 0x10); // 0x14
+            m_chunk_lengths = LittleEndian.ToInt32 (header, 0x14); // 0x18
+            m_chunk_data    = LittleEndian.ToInt32 (header, 0x18); // 0x1C
+            m_root          = LittleEndian.ToInt32 (header, 0x1C); // 0x20
+
+            if (m_version > 3)
+            {
+                m_extra_offsets = LittleEndian.ToInt32 (header, 0x24);
+                m_extra_lengths = LittleEndian.ToInt32 (header, 0x28);
+                m_extra_data    = LittleEndian.ToInt32 (header, 0x2C);
+            }
 
             int buffer_length = (int)m_input.Length;
             if (!(m_names           >= 0x28 && m_names < m_chunk_data
@@ -549,6 +564,11 @@ namespace GameRes.Formats.Emote
             case 0x1F: return GetDouble (offset);
             case 0x20: return GetList (offset);
             case 0x21: return GetDict (offset);
+
+            case 0x22:
+            case 0x23:
+            case 0x24:
+            case 0x25: return GetExtraChunk (offset);
             default:
                 throw new InvalidFormatException (string.Format ("Unknown serialized object type 0x{0:X2}", m_data[offset]));
             }
@@ -642,6 +662,19 @@ namespace GameRes.Formats.Emote
             if (chunk_index >= chunks.Count)
                 throw new InvalidFormatException ("Invalid chunk index");
             var lengths = GetArray (m_chunk_lengths);
+            return new EmChunk {
+                Offset = GetArrayElem (chunks, chunk_index),
+                Length = GetArrayElem (lengths, chunk_index),
+            };
+        }
+
+        EmChunk GetExtraChunk (int offset)
+        {
+            var chunk_index = GetInteger (offset, 0x21);
+            var chunks = GetArray (m_extra_offsets);
+            if (chunk_index >= chunks.Count)
+                throw new InvalidFormatException ("Invalid chunk index");
+            var lengths = GetArray (m_extra_lengths);
             return new EmChunk {
                 Offset = GetArrayElem (chunks, chunk_index),
                 Length = GetArrayElem (lengths, chunk_index),
