@@ -202,7 +202,7 @@ namespace GameRes.Formats.YuRis
                 scheme = new YpfScheme {
                     SwapTable   = GuessSwapTable (version),
                     GuessKey    = true,
-                    ExtraHeaderSize = version >= 0x1D9 ? 4u : 0u,
+                    ExtraHeaderSize = version >= 0x1D9 ? 4u : version == 0xDE ? 8u : 0u,
                 };
             return scheme;
         }
