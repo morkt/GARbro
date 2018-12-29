@@ -95,7 +95,7 @@ namespace GameRes.Formats.Marble
                 return null;
             try
             {
-                bool contains_scripts = Path.GetFileNameWithoutExtension (file.Name).EndsWith ("_data");
+                bool contains_scripts = Path.GetFileNameWithoutExtension (file.Name).EndsWith ("_data", StringComparison.OrdinalIgnoreCase);
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
                 {
