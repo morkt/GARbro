@@ -253,15 +253,16 @@ namespace GameRes.Formats.Ankh
                     int count;
                     if (ctl < 0x40)
                     {
-                        input.Read (output, dst, ctl);
-                        dst += ctl;
+                        count = Math.Min (ctl, output.Length - dst);
+                        input.Read (output, dst, count);
+                        dst += count;
                     }
                     else if (ctl <= 0x6F)
                     {
                         if (0x6F == ctl)
                             count = input.ReadUInt16();
                         else
-                            count = (ctl + 0xC3) & 0xFF;
+                            count = ctl - 0x3D;
                         byte v = input.ReadUInt8();
                         while (count --> 0)
                             output[dst++] = v;
@@ -271,7 +272,7 @@ namespace GameRes.Formats.Ankh
                         if (ctl == 0x9F)
                             count = input.ReadUInt16();
                         else 
-                            count = (ctl + 0x92) & 0xFF;
+                            count = ctl - 0x6E;
                         byte v1 = input.ReadUInt8();
                         byte v2 = input.ReadUInt8();
                         while (count --> 0)
@@ -285,7 +286,7 @@ namespace GameRes.Formats.Ankh
                         if (ctl == 0xBF)
                             count = input.ReadUInt16();
                         else
-                            count = ((ctl + 0x62) & 0xFF);
+                            count = ctl - 0x9E;
                         input.Read (output, dst, 3);
                         if (count > 0)
                         {
