@@ -78,7 +78,7 @@ namespace GameRes.Formats.Jikkenshitsu
             if (header.ToInt32 (4) != 0)
                 return null;
             int flags = header.ToUInt16 (0);
-            if ((flags & ~0xFF) != 0)
+            if ((flags & ~0xFF) != 0 || header[2] != 1)
                 return null;
             var info = new SpMetaData {
                 Width = header.ToUInt16 (0x16),
@@ -87,6 +87,9 @@ namespace GameRes.Formats.Jikkenshitsu
                 Flags = flags,
                 Colors = header.ToUInt16 (0x1E),
             };
+            if (info.Width == 0 || info.Width > 0x2000 || info.Height == 0 || info.Height > 0x2000 ||
+                info.Colors > 0x100)
+                return null;
             if (info.IsEncrypted)
             {
                 if (null == DefaultKey)
