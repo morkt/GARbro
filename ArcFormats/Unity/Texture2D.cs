@@ -160,15 +160,7 @@ namespace GameRes.Formats.Unity
         public ImageFormat SourceFormat { get { return null; } }
         public PixelFormat       Format { get; private set; }
         public ImageMetaData       Info { get; private set; }
-        public ImageData Image {
-            get {
-                if (null == m_image)
-                {
-                    m_image = Unpack();
-                }
-                return m_image;
-            }
-        }
+        public ImageData          Image { get { return m_image ?? (m_image = Unpack()); } }
 
         public Texture2DDecoder (Texture2D texture, AssetReader input)
         {
