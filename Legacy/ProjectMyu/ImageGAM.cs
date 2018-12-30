@@ -28,6 +28,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
 
+// [040528][Lakshmi] Mabuta Tojireba Soko ni...
+
 namespace GameRes.Formats.ProjectMu
 {
     [Export(typeof(ImageFormat))]

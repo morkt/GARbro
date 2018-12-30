@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 
 // [030525][Virgin Cream] Yamai Tsuki ~Ryouki Kansen Virus~
+// [030530][Mithra] Clione no Kimochi ~Oshiete, Sensei Osanazuma~
 
 namespace GameRes.Formats.Kasane
 {

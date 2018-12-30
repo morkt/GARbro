@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 
 // [000114][Excellents] Thanksgiving Special
+// [000615][Beenyan] Oyako Donburi
 
 namespace GameRes.Formats.System21
 {
