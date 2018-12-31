@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.5.41</Version>
+        <Version>1.5.42</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
         <Notes>New formats:
 - LNK archives, PRT images and WAF audio
