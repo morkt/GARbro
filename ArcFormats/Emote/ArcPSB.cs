@@ -358,13 +358,17 @@ namespace GameRes.Formats.Emote
             if (encrypted && m_version < 3)
                 m_flags = 2;
 
-            int header_size = m_version > 3 ? 0x30 : 0x24;
+            int header_size = m_version > 3 ? 0x30 : 0x20;
             var header = m_input.ReadBytes (header_size);
             if (encrypted && 0 != (m_flags & 1))
             {
-                Decrypt (header, 0, 0x24);
                 if (m_version > 3)
+                {
+                    Decrypt (header, 0, 0x24);
                     Decrypt (header, 0x24, 0xC);
+                }
+                else
+                    Decrypt (header, 0, 0x20);
             }
 
             m_names         = LittleEndian.ToInt32 (header, 0x04); // 0x08
