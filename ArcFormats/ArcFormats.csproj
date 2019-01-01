@@ -169,6 +169,7 @@
     <Compile Include="Eternity\ImageSGF.cs" />
     <Compile Include="Ethornell\ImageCBG.cs" />
     <Compile Include="Eushully\AudioAOG.cs" />
+    <Compile Include="FamilyAdvSystem\ArcCSAF.cs" />
     <Compile Include="FC01\ArcMRG0.cs" />
     <Compile Include="FC01\ArcPAK.cs" />
     <Compile Include="FC01\ImageTIL.cs" />
