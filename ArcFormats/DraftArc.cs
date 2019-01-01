@@ -1,4 +1,4 @@
-// Copyright (C) 2018 by morkt
+// Copyright (C) 2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -44,7 +44,7 @@ namespace GameRes.Formats.??????
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
