@@ -30,6 +30,7 @@ using System.IO;
 
 // [000114][Excellents] Thanksgiving Special
 // [000615][Beenyan] Oyako Donburi
+// [010511][Haoh] May Club DX
 
 namespace GameRes.Formats.System21
 {
@@ -47,30 +48,49 @@ namespace GameRes.Formats.System21
             Signatures = new uint[] { 0x978FAD8F, 0x798AF589 }; // '快楽'
         }
 
+        static readonly byte[] NameSizes = { 0x14, 0x34, 0x64 };
+
         public override ArcFile TryOpen (ArcView file)
         {
             bool new_version = file.View.ReadUInt32 (0) == 0x798AF589u;
-            uint name_size = new_version ? 0x34u : 0x64u;
             uint data_offset = file.View.ReadUInt32 (4);
-            int count = (int)((data_offset - 12) / (name_size + 4));
-            if (!IsSaneCount (count))
-                return null;
+            int n = new_version ? 0 : 2;
+            uint index_size = data_offset - 12;
+            var dir = new List<Entry>();
+            for (; n < NameSizes.Length; ++n)
+            {
+                uint name_size = NameSizes[n];
+                if (index_size % (name_size + 4) != 0)
+                    continue;
+                int count = (int)(index_size / (name_size + 4));
+                if (!IsSaneCount (count))
+                    continue;
 
+                dir.Clear();
+                if (ReadIndex (file, count, data_offset, dir, name_size))
+                    return new ArcFile (file, this, dir);
+            }
+            return null;
+        }
+
+        bool ReadIndex (ArcView file, int count, uint data_offset, List<Entry> dir, uint name_size)
+        {
             uint index_offset = 12;
-            var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, name_size);
+                if (string.IsNullOrEmpty (name))
+                    return false;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = data_offset;
                 entry.Size = file.View.ReadUInt32 (index_offset + name_size);
                 if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
+                    return false;
                 dir.Add (entry);
                 index_offset += name_size + 4;
                 data_offset += entry.Size;
             }
-            return new ArcFile (file, this, dir);
+            return true;
         }
     }
 }
