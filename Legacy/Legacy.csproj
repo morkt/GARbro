@@ -94,9 +94,11 @@
     <Compile Include="Lazycrew\ImageDAT.cs" />
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
+    <Compile Include="Nyoken\ArcZLK.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
     <Compile Include="Powerd\ImageNCL.cs" />
     <Compile Include="ProjectMyu\ImageGAM.cs" />
+    <Compile Include="Rina\ImageRAD.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
     <Compile Include="Brownie\ArcNAF.cs" />
@@ -231,6 +233,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Bom\" />
+    <Folder Include="BRoom\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
