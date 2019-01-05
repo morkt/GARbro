@@ -80,6 +80,10 @@
     <Compile Include="Ark\ImageCMP.cs" />
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
+    <Compile Include="BRoom\ArcCPC.cs" />
+    <Compile Include="BRoom\ArcPK.cs" />
+    <Compile Include="BRoom\AudioEZS.cs" />
+    <Compile Include="BRoom\ImageERP.cs" />
     <Compile Include="Brownie\ImageNGC.cs" />
     <Compile Include="Brownie\ImageNGW.cs" />
     <Compile Include="DigitalMonkey\ArcDM.cs" />
@@ -233,7 +237,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Bom\" />
-    <Folder Include="BRoom\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
