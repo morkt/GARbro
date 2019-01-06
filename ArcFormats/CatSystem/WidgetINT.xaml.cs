@@ -22,14 +22,18 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows;
+using Microsoft.Win32;
 using GameRes.Formats.CatSystem;
 using GameRes.Formats.Strings;
-using Microsoft.Win32;
-using System.Windows;
-using System.IO;
 
 namespace GameRes.Formats.GUI
 {
@@ -41,43 +45,13 @@ namespace GameRes.Formats.GUI
         public WidgetINT ()
         {
             InitializeComponent();
-            this.DataContext = GameRes.Formats.Properties.Settings.Default.INTEncryption ?? new IntEncryptionInfo();
-
-            Passphrase.TextChanged += OnPassphraseChanged;
-            EncScheme.SelectionChanged += OnSchemeChanged;
+            ViewModel = new IntEncryptionViewModel (GameRes.Formats.Properties.Settings.Default.INTEncryption);
+            this.DataContext = ViewModel;
         }
 
-        public IntEncryptionInfo Info { get { return this.DataContext as IntEncryptionInfo; } }
+        IntEncryptionViewModel ViewModel { get; set; }
 
-        void OnPasskeyChanged (object sender, TextChangedEventArgs e)
-        {
-        }
-
-        void OnPassphraseChanged (object sender, TextChangedEventArgs e)
-        {
-            var widget = sender as TextBox;
-            uint key = KeyData.EncodePassPhrase (widget.Text);
-            Passkey.Text = key.ToString ("X8");
-        }
-
-        void OnSchemeChanged (object sender, SelectionChangedEventArgs e)
-        {
-            var widget = sender as ComboBox;
-            KeyData keydata;
-            if (IntOpener.KnownSchemes.TryGetValue (widget.SelectedItem as string, out keydata))
-            {
-                Passphrase.TextChanged -= OnPassphraseChanged;
-                try
-                {
-                    Passphrase.Text = keydata.Passphrase;
-                    Passkey.Text = keydata.Key.ToString ("X8");
-                }
-                finally
-                {
-                    Passphrase.TextChanged += OnPassphraseChanged;
-                }
-            }
-        }
+        public IntEncryptionInfo Info { get { return ViewModel.Source; } }
 
         private void Check_Click (object sender, System.Windows.RoutedEventArgs e)
         {
@@ -97,15 +71,15 @@ namespace GameRes.Formats.GUI
                 var pass = IntOpener.GetPassFromExe (dlg.FileName);
                 if (null != pass)
                 {
-                    this.ExeMessage.Text = arcStrings.INTMessage1;
-                    Passphrase.Text = pass;
+                    ViewModel.ExeMessage = arcStrings.INTMessage1;
+                    ViewModel.Password = pass;
                 }
                 else
-                    this.ExeMessage.Text = string.Format (arcStrings.INTKeyNotFound, Path.GetFileName (dlg.FileName));
+                    ViewModel.ExeMessage = string.Format (arcStrings.INTKeyNotFound, Path.GetFileName (dlg.FileName));
             }
             catch (Exception X)
             {
-                this.ExeMessage.Text = X.Message;
+                ViewModel.ExeMessage = X.Message;
             }
         }
     }
@@ -116,7 +90,7 @@ namespace GameRes.Formats.GUI
         public object Convert (object value, Type targetType, object parameter, CultureInfo culture)
         {
             uint? key = (uint?)value;
-            return null != key ? key.Value.ToString ("X") : "";
+            return null != key ? key.Value.ToString ("X8") : "";
         }
 
         public object ConvertBack (object value, Type targetType, object parameter, CultureInfo culture)
@@ -149,6 +123,80 @@ namespace GameRes.Formats.GUI
                 return new ValidationResult (false, Strings.arcStrings.INTKeyRequirement);
             }
             return new ValidationResult (true, null);
+        }
+    }
+
+    internal class IntEncryptionViewModel : INotifyPropertyChanged
+    {
+        public IntEncryptionViewModel (IntEncryptionInfo src)
+        {
+            Source = src ?? new IntEncryptionInfo();
+            KnownKeys = IntOpener.KnownSchemes;
+            m_message = Strings.arcStrings.INTMessage1;
+        }
+
+        public IntEncryptionInfo Source { get; set; }
+        public Dictionary<string, KeyData> KnownKeys { get; private set; }
+
+        public string Scheme {
+            get { return Source.Scheme; }
+            set {
+                if (Source.Scheme != value)
+                {
+                    Source.Scheme = value;
+                    NotifyPropertyChanged();
+                    KeyData keydata;
+                    if (!string.IsNullOrEmpty (value)
+                        && KnownKeys.TryGetValue (value, out keydata))
+                    {
+                        Source.Password = keydata.Passphrase;
+                        NotifyPropertyChanged ("Password");
+                        Key = keydata.Key;
+                    }
+                }
+            }
+        }
+        public string Password {
+            get { return Source.Password; }
+            set {
+                if (Source.Password != value)
+                {
+                    Source.Password = value;
+                    NotifyPropertyChanged();
+                    var scheme = KnownKeys.FirstOrDefault (s => s.Value.Passphrase == value);
+                    Scheme = scheme.Key;
+                    Key = KeyData.EncodePassPhrase (value);
+                }
+            }
+        }
+        public uint? Key {
+            get { return Source.Key; }
+            set {
+                if (Source.Key != value)
+                {
+                    Source.Key = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+        string  m_message;
+        public string ExeMessage {
+            get { return m_message; }
+            set {
+                if (m_message != value)
+                {
+                    m_message = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void NotifyPropertyChanged ([CallerMemberName] string propertyName = "")
+        {
+            if (PropertyChanged != null)
+                PropertyChanged (this, new PropertyChangedEventArgs (propertyName));
         }
     }
 }

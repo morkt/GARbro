@@ -10,7 +10,7 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock Name="ExeMessage" Grid.Column="0" Text="{x:Static s:arcStrings.INTMessage1}" TextWrapping="Wrap" Margin="0,0,10,10"/>
+        <TextBlock Name="ExeMessage" Grid.Column="0" Text="{Binding ExeMessage}" TextWrapping="Wrap" Margin="0,0,10,10"/>
         <Button Content="{x:Static s:arcStrings.INTExeButton}" Grid.Column="1" Grid.Row="0" Width="75" Height="25"
                 HorizontalAlignment="Left" Margin="0,0,0,10" Click="Check_Click"/>
     </Grid>
@@ -40,7 +40,7 @@
            Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right"/>
     <TextBox Name="Passkey" Grid.Column="1" Grid.Row="2" Margin="0,3,0,3">
         <TextBox.Text>
-            <Binding Path="Key" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged">
+            <Binding Path="Key" Mode="TwoWay" Converter="{StaticResource keyConverter}" UpdateSourceTrigger="PropertyChanged">
                 <Binding.ValidationRules>
                     <local:PasskeyRule/>
                 </Binding.ValidationRules>                            
@@ -60,12 +60,12 @@
     <Label Content="{x:Static s:arcStrings.LabelPassphrase}" Target="{Binding ElementName=Passphrase}"
            Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right"/>
     <TextBox Name="Passphrase" Grid.Column="1" Grid.Row="1" Margin="0,3,0,3"
-             Text="{Binding Path=Password}"/>
+             Text="{Binding Path=Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
     <Label Content="{x:Static s:arcStrings.LabelScheme}" Target="{Binding ElementName=EncScheme}"
            Grid.Column="0" Grid.Row="0" HorizontalAlignment="Right"/>
     <ComboBox Name="EncScheme" Grid.Column="1" Grid.Row="0" Margin="0,3,0,0"
-              ItemsSource="{Binding Source={x:Static fmt:IntOpener.KnownSchemes}, Path=Keys, Mode=OneWay}"
+              ItemsSource="{Binding Path=KnownKeys.Keys}"
               Width="{Binding ElementName=Passkey, Path=ActualWidth}"
-              SelectedValue="{Binding Path=Scheme}"/>
+              SelectedValue="{Binding Path=Scheme, Mode=TwoWay}"/>
 </Grid>
 </StackPanel>

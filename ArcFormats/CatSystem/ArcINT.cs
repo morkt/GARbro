@@ -237,12 +237,14 @@ namespace GameRes.Formats.CatSystem
             return Encodings.cp932.GetString (name, 0, i);
         }
 
-        public static Dictionary<string, KeyData> KnownSchemes = new Dictionary<string, KeyData>();
+        public static Dictionary<string, KeyData> KnownSchemes { get { return DefaultScheme.KnownKeys; } }
+
+        static IntScheme DefaultScheme = new IntScheme { KnownKeys = new Dictionary<string, KeyData>() };
 
         public override ResourceScheme Scheme
         {
-            get { return new IntScheme { KnownKeys = KnownSchemes }; }
-            set { KnownSchemes = ((IntScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (IntScheme)value; }
         }
 
         public override ResourceOptions GetDefaultOptions ()
