@@ -344,7 +344,7 @@ namespace GameRes.Formats.Seraphim
                     int offset = m_input.ReadByte() + ((ctl & 0xF) << 8) + 1;
                     count = m_input.ReadByte() + 1;
                     int src = dst - m_pixel_size * offset;
-                    count *= m_pixel_size;
+                    count = Math.Min (count * m_pixel_size, m_output.Length - dst);
                     Binary.CopyOverlapped (m_output, src, dst, count);
                 }
                 else
