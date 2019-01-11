@@ -44,9 +44,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+    <Reference Include="ICSharpCode.SharpZipLib, Version=1.0.0.999, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\SharpZipLib.1.0.0\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
+      <HintPath>..\packages\SharpZipLib.1.1.0\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
@@ -89,6 +89,8 @@
     <Compile Include="DigitalMonkey\ArcDM.cs" />
     <Compile Include="DigitalMonkey\ImagePKT.cs" />
     <Compile Include="Electriciteit\ArcPKK.cs" />
+    <Compile Include="KApp\ArcASD.cs" />
+    <Compile Include="KApp\ImageCGD.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
     <Compile Include="KeroQ\ImageCBM.cs" />
@@ -97,6 +99,8 @@
     <Compile Include="Lazycrew\ArcDAT.cs" />
     <Compile Include="Lazycrew\ImageDAT.cs" />
     <Compile Include="Melonpan\ArcTTD.cs" />
+    <Compile Include="Mermaid\AudioPWV.cs" />
+    <Compile Include="Mermaid\ImageGP1.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
     <Compile Include="Nyoken\ArcZLK.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
