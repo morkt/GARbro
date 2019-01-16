@@ -677,12 +677,12 @@ namespace GameRes.Formats.Cyberworks
                     ext = new string (m_type);
                 else
                     ext = new string (m_type[0], 1);
-                if ("b0" == ext || "n0" == ext || "o0" == ext || "0b" == ext)
+                if ("b0" == ext || "n0" == ext || "o0" == ext || "0b" == ext || "b" == ext)
                 {
                     entry.Type = "image";
                     HasImages = true;
                 }
-                else if ("j0" == ext || "k0" == ext || "u0" == ext)
+                else if ("j0" == ext || "k0" == ext || "u0" == ext || "j" == ext || "k" == ext)
                     entry.Type = "audio";
                 entry.Name = Path.ChangeExtension (entry.Name, ext);
             }
