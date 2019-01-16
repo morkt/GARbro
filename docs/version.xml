@@ -17,7 +17,7 @@
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>139</FileVersion>
+        <FileVersion>140</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.44.2064"/>
