@@ -68,6 +68,11 @@ namespace GameRes.Formats.Tamamo
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public PckOpener ()
+        {
+            ContainedFormats = new[] { "PNG", "DDS", "OGG", "WAV", "TXT", "DAT/GENERIC" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "_FILE001"))
@@ -99,7 +104,7 @@ namespace GameRes.Formats.Tamamo
                 pos = name_end+1;
                 uint enc_size = index.ToUInt32 (pos);
                 pos += 4;
-                var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                var entry = Create<PackedEntry> (name);
                 entry.Offset = data_offset;
                 entry.Size = enc_size;
                 entry.UnpackedSize = size;
@@ -257,4 +262,9 @@ namespace GameRes.Formats.Tamamo
             return key;
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "TMX")]
+    [ExportMetadata("Target", "DAT/GENERIC")]
+    public class TmxFormat : ResourceAlias { }
 }
