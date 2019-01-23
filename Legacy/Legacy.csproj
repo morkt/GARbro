@@ -62,6 +62,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Aaru\ArcDL1.cs" />
     <Compile Include="Aaru\ArcFL2.cs" />
     <Compile Include="Aaru\ArcFL3.cs" />
     <Compile Include="Aaru\ArcFL4.cs" />
