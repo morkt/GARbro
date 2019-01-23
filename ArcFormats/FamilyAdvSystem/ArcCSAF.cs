@@ -41,7 +41,7 @@ namespace GameRes.Formats.FamilyAdvSystem
         public override string         Tag { get { return "CSAF"; } }
         public override string Description { get { return "Family Adv System resource archive"; } }
         public override uint     Signature { get { return 0x46415343; } } // 'CSAF'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public CsafOpener ()
