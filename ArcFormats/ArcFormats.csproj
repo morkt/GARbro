@@ -186,6 +186,7 @@
     <Compile Include="HCSystem\ImageOPF.cs" />
     <Compile Include="HuffmanCompression.cs" />
     <Compile Include="Hypatia\AudioADP.cs" />
+    <Compile Include="Hypatia\ImageLPG.cs" />
     <Compile Include="Hypatia\ImageWBM.cs" />
     <Compile Include="Ikura\ArcGAN.cs" />
     <Compile Include="Ikura\ArcTAN.cs" />
