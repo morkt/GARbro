@@ -240,7 +240,7 @@ namespace GameRes.Formats.Fs
                 if (len <= 0 || len >= 0x24)
                     return null;
                 string name = enc.GetString (buf, 0, len);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 uint shift  = LittleEndian.ToUInt32 (buf, 0x24);
                 entry.Offset = LittleEndian.ToUInt32 (buf, 0x28) - shift;
                 entry.Size   = LittleEndian.ToUInt32 (buf, 0x2c) - shift;
@@ -254,6 +254,8 @@ namespace GameRes.Formats.Fs
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
+            if (entry.Name.HasExtension (".ogg") && entry.Size > 0x22)
+                return OpenOgg (arc, entry);
             if (!entry.Name.HasAnyOfExtensions (".def", ".dsf") || entry.Size < 2)
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
@@ -263,6 +265,19 @@ namespace GameRes.Formats.Fs
                 DecodeEntry (data, key);
             }
             return new BinMemoryStream (data);
+        }
+
+        Stream OpenOgg (ArcFile arc, Entry entry)
+        {
+            const uint header_length = 0x23;
+            var header = arc.File.View.ReadBytes (entry.Offset, header_length);
+            if (!(header.AsciiEqual (0, "OggS") &&
+                  header[0x1A] != 1 && header[0x1B] == 0x1E && header[0x1C] == 1 &&
+                  header.AsciiEqual (0x1D, "vorbis")))
+                return base.OpenEntry (arc, entry);
+            header[0x1A] = 1;
+            var rest = arc.File.CreateStream (entry.Offset+header_length, entry.Size-header_length);
+            return new PrefixStream (header, rest);
         }
 
         void DecodeEntry (byte[] buf, byte key)
