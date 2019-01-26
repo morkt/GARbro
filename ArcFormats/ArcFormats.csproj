@@ -148,6 +148,7 @@
     <Compile Include="Cmvs\HuffmanDecoder.cs" />
     <Compile Include="Crc16.cs" />
     <Compile Include="Crowd\ImageCRZ.cs" />
+    <Compile Include="CsWare\ArcARC2.cs" />
     <Compile Include="CsWare\ArcDAT.cs" />
     <Compile Include="CsWare\ImageB5.cs" />
     <Compile Include="CsWare\ImageBPC.cs" />
