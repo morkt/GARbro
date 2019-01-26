@@ -83,7 +83,7 @@ namespace GameRes.Formats.Triangle
             throw new System.NotImplementedException ("TriFormat.Write not implemented");
         }
 
-        void Unpack (IBinaryStream input, byte[] output)
+        internal static void Unpack (IBinaryStream input, byte[] output)
         {
             int dst = 0;
             byte key = 0x7F;
