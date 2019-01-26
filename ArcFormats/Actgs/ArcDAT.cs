@@ -2,7 +2,7 @@
 //! \date       Tue Nov 03 07:05:36 2015
 //! \brief      ACTGS engine resource archive.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -64,7 +64,9 @@ namespace GameRes.Formats.Actgs
             Extensions = new string[] { "dat" };
         }
 
-        internal static byte[][] KnownKeys = { };
+        internal static byte[][] KnownKeys { get { return DefaultScheme.KnownKeys; } }
+
+        static ActressScheme DefaultScheme = new ActressScheme { KnownKeys = Array.Empty<byte[]>() };
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -125,6 +127,10 @@ namespace GameRes.Formats.Actgs
                 var input = arc.File.CreateStream (entry.Offset+12, packed_size);
                 return new LzssStream (input);
             }
+            if (entry.Name.HasExtension (".wav") && arc.File.View.AsciiEqual (entry.Offset, "RIFF"))
+            {
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            }
             var header = ReadEntryHeader (actarc, entry);
             if (entry.Size <= 0x20)
                 return new BinMemoryStream (header, entry.Name);
@@ -157,8 +163,8 @@ namespace GameRes.Formats.Actgs
 
         public override ResourceScheme Scheme
         {
-            get { return new ActressScheme { KnownKeys = KnownKeys }; }
-            set { KnownKeys = ((ActressScheme)value).KnownKeys; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (ActressScheme)value; }
         }
     }
 
