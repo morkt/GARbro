@@ -43,7 +43,7 @@ namespace GameRes.Formats.Softpal
 
         public VafsOpener ()
         {
-            Extensions = new string[] { "052", "055", "056", "058" };
+            Extensions = new string[] { "052", "054", "055", "056", "058" };
         }
 
         static readonly ResourceInstance<ImageFormat> s_PicFormat = new ResourceInstance<ImageFormat> ("PIC/SOFTPAL");
@@ -59,7 +59,7 @@ namespace GameRes.Formats.Softpal
             {
                 var ext = Path.GetExtension (file.Name).TrimStart ('.');
                 int version;
-                if (int.TryParse (ext, out version) && version >= 55)
+                if (int.TryParse (ext, out version) && version >= 54)
                     return OpenTp055Arc (file);
                 else
                     return OpenTpArc (file);
