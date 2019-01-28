@@ -32,6 +32,24 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Maika
 {
+    [Serializable]
+    internal class ScrambleScheme
+    {
+        public uint                 ScrambledSize;
+        public Tuple<byte, byte>[]  ScrambleMap;
+    }
+
+    internal class MkArchive : ArcFile
+    {
+        public readonly ScrambleScheme  Scheme;
+
+        public MkArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, ScrambleScheme scheme)
+            : base (arc, impl, dir)
+        {
+            Scheme = scheme;
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class Mk2Opener : ArchiveFormat
     {
@@ -43,8 +61,10 @@ namespace GameRes.Formats.Maika
 
         public Mk2Opener ()
         {
-            // 'MK2.0' 'BL2.0'. 'SL1.0', 'LS2.0'
-            Signatures = new uint[] { 0x2E324B4D, 0x2E324C42, 0x2E314C53, 0x2E32534C };
+            // 'MK2.0' 'BL2.0'. 'SL1.0', 'LS2.0', 'AR2.0'
+            Signatures = new uint[] {
+                0x2E324B4D, 0x2E324C42, 0x2E314C53, 0x2E32534C, 0x2E325241
+            };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -54,6 +74,8 @@ namespace GameRes.Formats.Maika
             int count = file.View.ReadInt32 (0x12);
             if (!IsSaneCount (count))
                 return null;
+
+            string arc_id = file.View.ReadString (0, 5);
             uint base_offset  = file.View.ReadUInt16 (8);
             uint index_offset = file.View.ReadUInt32 (0xE);
             if (index_offset >= file.MaxOffset)
@@ -94,7 +116,10 @@ namespace GameRes.Formats.Maika
             }
             if (0 == dir.Count)
                 return null;
-            return new ArcFile (file, this, dir);
+            ScrambleScheme scheme;
+            if (!KnownSchemes.TryGetValue (arc_id, out scheme))
+                scheme = DefaultScheme;
+            return new MkArchive (file, this, dir, scheme);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -103,21 +128,31 @@ namespace GameRes.Formats.Maika
             // C1/D1/E1/F1
             if (0x3146 != signature && 0x3143 != signature && 0x3144 != signature && 0x3145 != signature)
                 return base.OpenEntry (arc, entry);
+            var mkarc = arc as MkArchive;
+            ScrambleScheme scheme = mkarc != null ? mkarc.Scheme : DefaultScheme;
+
             uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+2);
-            if (packed_size < 14 || packed_size > entry.Size-10)
+            if (packed_size < scheme.ScrambledSize || packed_size > entry.Size-10)
                 return base.OpenEntry (arc, entry);
 
+            Stream input;
             // XXX scrambling might be applicable for 'E1' signatures only
-            var prefix = arc.File.View.ReadBytes (entry.Offset+10, 14);
-            byte t = prefix[7];
-            prefix[7] = prefix[11];
-            prefix[11] = t;
-            t = prefix[9];
-            prefix[9] = prefix[12];
-            prefix[12] = t;
-
-            Stream input = arc.File.CreateStream (entry.Offset+24, packed_size-14);
-            input = new PrefixStream (prefix, input);
+            if (scheme.ScrambledSize > 0)
+            {
+                var prefix = arc.File.View.ReadBytes (entry.Offset+10, scheme.ScrambledSize);
+                foreach (var pair in scheme.ScrambleMap)
+                {
+                    byte t = prefix[pair.Item1];
+                    prefix[pair.Item1] = prefix[pair.Item2];
+                    prefix[pair.Item2] = t;
+                }
+                input = arc.File.CreateStream (entry.Offset+10+scheme.ScrambledSize, packed_size-scheme.ScrambledSize);
+                input = new PrefixStream (prefix, input);
+            }
+            else
+            {
+                input = arc.File.CreateStream (entry.Offset+10, packed_size);
+            }
             input = new LzssStream (input);
 
             var header = new byte[5];
@@ -128,6 +163,24 @@ namespace GameRes.Formats.Maika
                 return new PackedStream<Bpr01Decompressor> (input);
             return new PrefixStream (header, input);
         }
+
+        static readonly ScrambleScheme DefaultScheme = new ScrambleScheme {
+            ScrambledSize = 14,
+            ScrambleMap = new Tuple<byte,byte>[] {
+                new Tuple<byte, byte> (7, 11),
+                new Tuple<byte, byte> (9, 12)
+            }
+        };
+
+        Dictionary<string, ScrambleScheme> KnownSchemes = new Dictionary<string, ScrambleScheme> {
+            { "AR2.0", new ScrambleScheme {
+                ScrambledSize = 15,
+                ScrambleMap = new Tuple<byte,byte>[] {
+                    new Tuple<byte, byte> (7, 13),
+                    new Tuple<byte, byte> (9, 14)
+                }
+            } }
+        };
     }
 
     internal abstract class BprDecompressor : Decompressor
