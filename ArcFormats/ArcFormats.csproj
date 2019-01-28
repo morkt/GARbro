@@ -233,6 +233,7 @@
     <Compile Include="Mebius\ImageMCG.cs" />
     <Compile Include="Mnp\ArcMMA.cs" />
     <Compile Include="MultiFileArchive.cs" />
+    <Compile Include="Musica\ArcANI.cs" />
     <Compile Include="NitroPlus\ArcLAY.cs" />
     <Compile Include="NitroPlus\ArcMPK.cs" />
     <Compile Include="NitroPlus\ArcNPP.cs" />
