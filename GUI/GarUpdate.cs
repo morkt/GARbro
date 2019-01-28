@@ -44,6 +44,7 @@ namespace GARbro.GUI
 
         private void InitUpdatesChecker ()
         {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
             var update_url = App.Resources["UpdateUrl"] as Uri;
             m_updater = new GarUpdate (this, update_url);
             m_updater.CanExecuteChanged += (s, e) => CommandManager.InvalidateRequerySuggested();
