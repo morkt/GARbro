@@ -138,7 +138,10 @@ namespace GameRes.Formats.Musica
         public PazOpener ()
         {
             Extensions = new string[] { "paz", "dat" };
-            Signatures = new uint[] { 0x858F8493, 0x8F889395, 0x6E656465, 0x848F8486, 0x61657453, 0 };
+            Signatures = new uint[] {
+                0x858F8493, 0x8F889395, 0x6E656465, 0x848F8486, 0x61657453, 0x6873616D, 0x92808483, 0
+            };
+            ContainedFormats = new string[] { "PNG", "ANI/PAZ", "SQZ", "OGG", "WAV", "TXT" };
         }
 
         static readonly ISet<string> AudioPazNames = new HashSet<string> {
