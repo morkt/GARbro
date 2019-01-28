@@ -894,4 +894,9 @@ NextEntry:
     [ExportMetadata("Extension", "ANM")]
     [ExportMetadata("Target", "TXT")]
     public class AnmFormat : ResourceAlias { }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "ASD")]
+    [ExportMetadata("Target", "TXT")]
+    public class AsdFormat : ResourceAlias { }
 }
