@@ -162,6 +162,7 @@
     <Compile Include="DigitalWorks\ImageTX.cs" />
     <Compile Include="DirectDraw\DxtDecoder.cs" />
     <Compile Include="DjSystem\ArcDAT.cs" />
+    <Compile Include="DxLib\DxKey.cs" />
     <Compile Include="elf\ArcAi5DAT.cs" />
     <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="EmbeddedResource.cs" />
