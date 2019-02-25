@@ -166,12 +166,12 @@ namespace GameRes.Formats.Cyberworks
 
     internal class InKyouParser : ArchiveNameParser
     {
-        public InKyouParser () : base (@"^inyoukyou_kuon\.app$") { }
+        public InKyouParser () : base (@"^(inyoukyou_kuon|mugen.*)\.app$") { }
 
         protected override string ParseMatch (Match match, out int arc_idx)
         {
             arc_idx = 0;
-            return "inyoukyou_kuon.dat";
+            return match.Groups[1].Value + ".dat";
         }
     }
 
