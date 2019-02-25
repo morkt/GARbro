@@ -41,7 +41,7 @@ namespace GameRes.Formats.Seraphim
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (file.View.ReadInt32 (0) != 0 || !file.View.AsciiEqual (4, "MCs"))
+            if (file.View.ReadInt32 (0) != 0 || !file.View.AsciiEqual (4, "MC"))
                 return null;
             int count = file.View.ReadInt32 (8);
             if (!IsSaneCount (count))
