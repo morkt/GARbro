@@ -31,6 +31,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using GameRes.Formats.Strings;
+using GameRes.Compression;
 
 namespace GameRes.Formats.Will
 {
@@ -46,6 +47,7 @@ namespace GameRes.Formats.Will
         public Arc2Opener ()
         {
             Extensions = new string[] { "arc", "ar2" };
+            ContainedFormats = new[] { "PNG", "PNA", "PSB", "OGG", "SCR" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -83,7 +85,7 @@ namespace GameRes.Formats.Will
                 if (0 == name_buffer.Length)
                     return null;
                 var name = name_buffer.ToString();
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 entry.Offset = offset;
                 entry.Size = size;
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -97,14 +99,54 @@ namespace GameRes.Formats.Will
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!IsScriptFile (entry.Name))
+            if (!IsScriptFile (entry.Name) || Path.GetFileName (arc.File.Name).Contains ("Model"))
+            {
+                if (entry.Name.HasExtension (".PSP"))
+                    return OpenPsp (arc, entry);
                 return base.OpenEntry (arc, entry);
+            }
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             for (int i = 0; i < data.Length; ++i)
             {
                 data[i] = Binary.RotByteR (data[i], 2);
             }
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        Stream OpenPsp (ArcFile arc, Entry entry)
+        {
+            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
+            {
+                int unpacked_size = input.ReadInt32();
+                var output = new byte[unpacked_size];
+                int dst = 0;
+                var frame = new byte[0x1000];
+                int frame_pos = 1;
+                while (dst < unpacked_size)
+                {
+                    int ctl = input.ReadByte();
+                    for (int bit = 1; dst < unpacked_size && bit != 0x100; bit <<= 1)
+                    {
+                        if (0 != (ctl & bit))
+                        {
+                            byte b = input.ReadUInt8();
+                            output[dst++] = frame[frame_pos++ & 0xFFF] = b;
+                        }
+                        else
+                        {
+                            int hi = input.ReadByte();
+                            int lo = input.ReadByte();
+                            int offset = hi << 4 | lo >> 4;
+                            for (int count = 2 + (lo & 0xF); count != 0; --count)
+                            {
+                                byte v = frame[offset++ & 0xFFF];
+                                output[dst++] = frame[frame_pos++ & 0xFFF] = v;
+                            }
+                        }
+                    }
+                }
+                return new BinMemoryStream (output, entry.Name);
+            }
         }
 
         static bool IsScriptFile (string name)
@@ -179,4 +221,9 @@ namespace GameRes.Formats.Will
             }
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "PSP")]
+    [ExportMetadata("Target", "PSB")]
+    public class PspFormat : ResourceAlias { }
 }
