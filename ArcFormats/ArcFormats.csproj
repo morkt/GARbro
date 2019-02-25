@@ -244,6 +244,7 @@
     <Compile Include="Nekopunch\ImagePBM.cs" />
     <Compile Include="Nexas\ArcTPF.cs" />
     <Compile Include="LiveMaker\ImageGALX.cs" />
+    <Compile Include="Nonono\ArcNPF.cs" />
     <Compile Include="Origin\ArcDAT.cs" />
     <Compile Include="Otemoto\ArcTLZ.cs" />
     <Compile Include="Otemoto\ImageMAG.cs" />
@@ -748,6 +749,7 @@
     <Compile Include="Rits\ArcSAF.cs" />
     <Compile Include="BlackCyc\ArcVPK.cs" />
     <Compile Include="Unity\ArcASSET.cs" />
+    <Compile Include="Unity\ArcBIN.cs" />
     <Compile Include="Unity\ArcSpVM.cs" />
     <Compile Include="Unity\ArcUnityFS.cs" />
     <Compile Include="Unity\Asset.cs" />
