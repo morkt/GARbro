@@ -58,20 +58,22 @@ namespace GameRes.Formats.Pajamas
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var info = new EpaMetaData();
-            info.Mode = file.ReadInt32() >> 24;
-            info.ColorType = file.ReadInt32() & 0xff;
+            var header = file.ReadHeader (16);
+            var info = new EpaMetaData {
+                Width  = header.ToUInt32 (8),
+                Height = header.ToUInt32 (12),
+                Mode   = header[3],
+                ColorType = header[4],
+            };
             switch (info.ColorType)
             {
             case 0: info.BPP = 8; break;
             case 1: info.BPP = 24; break;
             case 2: info.BPP = 32; break;
-            case 3: info.BPP = 15; break;
+            case 3: info.BPP = 16; break;
             case 4: info.BPP = 8; break;
             default: return null;
             }
-            info.Width = file.ReadUInt32();
-            info.Height = file.ReadUInt32();
             if (2 == info.Mode)
             {
                 info.OffsetX = file.ReadInt32();
@@ -109,7 +111,7 @@ namespace GameRes.Formats.Pajamas
                 case 0: m_pixel_size = 1; Format = PixelFormats.Indexed8; break;
                 case 1: m_pixel_size = 3; Format = PixelFormats.Bgr24; break;
                 case 2: m_pixel_size = 4; Format = PixelFormats.Bgra32; break;
-                case 3: m_pixel_size = 2; Format = PixelFormats.Bgr555; break;
+                case 3: m_pixel_size = 2; Format = PixelFormats.Bgr565; break;
                 case 4: m_pixel_size = 1; Format = PixelFormats.Bgra32; m_has_alpha = true; break;
                 default: throw new NotSupportedException ("Not supported EPA color depth");
                 }
@@ -163,18 +165,37 @@ namespace GameRes.Formats.Pajamas
                 if (m_pixel_size > 1)
                 {
                     var bitmap = new byte[m_output.Length];
-                    int stride = m_width * m_pixel_size;
-                    int i = 0;
-                    for (int p = 0; p < m_pixel_size; ++p)
+                    int src = 0;
+                    if (m_pixel_size > 2)
                     {
+                        int stride = m_width * m_pixel_size;
+                        for (int p = 0; p < m_pixel_size; ++p)
+                        {
+                            for (int y = 0; y < m_height; ++y)
+                            {
+                                int dst = y * stride + p;
+                                for (int x = 0; x < m_width; ++x)
+                                {
+                                    bitmap[dst] = m_output[src++];
+                                    dst += m_pixel_size;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int dst = 0;
+                        int channel_size = m_width * m_height;
                         for (int y = 0; y < m_height; ++y)
                         {
-                            int pixel = y * stride + p;
                             for (int x = 0; x < m_width; ++x)
                             {
-                                bitmap[pixel] = m_output[i++];
-                                pixel += m_pixel_size;
+                                byte c1 = m_output[src + x];
+                                byte c2 = m_output[src + x + channel_size];
+                                bitmap[dst++] = (byte)(c2 & 3 | (c1 & 7 | (c2 & 0xFC) << 1) << 2);
+                                bitmap[dst++] = (byte)(c1 & 0xC0 | (c2 & 0xE3 | (c1 >> 1) & 0x1C) >> 2);
                             }
+                            src += m_width;
                         }
                     }
                     m_output = bitmap;
