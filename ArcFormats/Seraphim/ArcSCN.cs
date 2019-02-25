@@ -80,25 +80,35 @@ namespace GameRes.Formats.Seraphim
             if (0 == entry.Size)
                 return Stream.Null;
             uint signature = arc.File.View.ReadUInt32 (entry.Offset);
-            ArcViewStream input;
+            IBinaryStream input;
             if (1 == signature && 0x78 == arc.File.View.ReadByte (entry.Offset+4))
             {
                 input = arc.File.CreateStream (entry.Offset+4, entry.Size-4);
-                return new ZLibStream (input, CompressionMode.Decompress);
+                return new ZLibStream (input.AsStream, CompressionMode.Decompress);
             }
             input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (signature < 4 || 0 != (signature & 0xFF000000))
-                return input;
+            {
+                if (0x78 == (signature & 0xFF))
+                {
+                    var compr = new ZLibStream (input.AsStream, CompressionMode.Decompress);
+                    input = new BinaryStream (compr, entry.Name);
+                }
+                else
+                    return input.AsStream;
+            }
             try
             {
                 var data = LzDecompress (input);
-                input.Dispose();
                 return new BinMemoryStream (data, entry.Name);
             }
             catch
             {
-                input.Position = 0;
-                return input;
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            }
+            finally
+            {
+                input.Dispose();
             }
         }
 
