@@ -52,6 +52,8 @@ namespace GameRes.Formats.StudioSakura
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x100);
+                if (string.IsNullOrWhiteSpace (name))
+                    return null;
                 var entry = new PackedEntry();
                 entry.IsPacked = name.HasExtension (".pr3");
                 if (entry.IsPacked)
