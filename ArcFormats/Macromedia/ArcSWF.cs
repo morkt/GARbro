@@ -49,14 +49,14 @@ namespace GameRes.Formats.Macromedia
     public class SwfOpener : ArchiveFormat
     {
         public override string         Tag { get { return "SWF"; } }
-        public override string Description { get { return "Shockeave Flash presentation"; } }
+        public override string Description { get { return "Shockwave Flash presentation"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
         public SwfOpener ()
         {
-            Signatures = new uint[] { 0x08535743, 0 };
+            Signatures = new uint[] { 0x08535743, 0x08535746, 0 };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -173,12 +173,33 @@ namespace GameRes.Formats.Macromedia
             case Types.DefineBitsLossless2:
                 return new LosslessImageDecoder (swent.Chunk);
 
+            case Types.DefineBitsJpeg2:
+                return new SwfJpeg2Decoder (swent.Chunk);
+
             case Types.DefineBitsJpeg3:
                 return new SwfJpeg3Decoder (swent.Chunk);
+
+            case Types.DefineBitsJpeg:
+                return OpenBitsJpeg (swent.Chunk);
 
             default:
                 return base.OpenImage (arc, entry);
             }
+        }
+
+        IImageDecoder OpenBitsJpeg (SwfChunk chunk)
+        {
+            int jpeg_pos = 0;
+            for (int i = 0; i < chunk.Data.Length - 2; ++i)
+            {
+                if (chunk.Data[i] == 0xFF && chunk.Data[i+1] == 0xD8)
+                {
+                    jpeg_pos = i;
+                    break;
+                }
+            }
+            var input = new BinMemoryStream (chunk.Data, jpeg_pos, chunk.Data.Length - jpeg_pos);
+            return ImageFormatDecoder.Create (input);
         }
 
         delegate Stream Extractor (SwfEntry entry);
@@ -195,12 +216,20 @@ namespace GameRes.Formats.Macromedia
 
         static Dictionary<Types, string> TypeMap = new Dictionary<Types, string> {
             { Types.DefineBitsJpeg,         "image" },
-            { Types.DefineBitsJpeg2,        "DefineBitsJpeg2" },
+            { Types.DefineBitsJpeg2,        "image" },
             { Types.DefineBitsJpeg3,        "image" },
             { Types.DefineBitsLossless,     "image" },
             { Types.DefineBitsLossless2,    "image" },
             { Types.DefineSound,            "audio" },
             { Types.DoAction,               "" },
+
+            { Types.JpegTables,             "JpegTables" },
+            /*
+            { Types.DefineText,             "Text" },
+            { Types.DefineText2,            "Text2" },
+            { Types.DefineVideoStream,      "VideoStream" },
+            { Types.VideoFrame,             "VideoFrame" },
+            */
         };
 
         internal static bool IsSoundStream (SwfChunk chunk)
@@ -217,17 +246,23 @@ namespace GameRes.Formats.Macromedia
         ShowFrame           = 1,
         DefineShape         = 2,
         DefineBitsJpeg      = 6,
+        JpegTables          = 8,
+        DefineText          = 11,
         DoAction            = 12,
         DefineSound         = 14,
         SoundStreamHead     = 18,
         SoundStreamBlock    = 19,
         DefineBitsLossless  = 20,
         DefineBitsJpeg2     = 21,
+        DefineShape2        = 22,
+        DefineShape3        = 32,
+        DefineText2         = 33,
         DefineBitsJpeg3     = 35,
         DefineBitsLossless2 = 36,
         DefineSprite        = 39,
         SoundStreamHead2    = 45,
         ExportAssets        = 56,
+        DefineVideoStream   = 60,
         VideoFrame          = 61,
         FileAttributes      = 69,
         Font3               = 75,
@@ -401,14 +436,76 @@ namespace GameRes.Formats.Macromedia
                     for (int i = 0; i < pixels.Length; i += 4)
                     {
                         byte a = pixels[i];
-                        pixels[i]   = pixels[i+1];
-                        pixels[i+1] = pixels[i+2];
-                        pixels[i+2] = pixels[i+3];
+                        byte r = pixels[i+1];
+                        byte g = pixels[i+2];
+                        byte b = pixels[i+3];
+                        pixels[i]   = b;
+                        pixels[i+1] = g;
+                        pixels[i+2] = r;
                         pixels[i+3] = a;
                     }
                 }
                 return ImageData.Create (Info, Format, palette, pixels);
             }
+        }
+    }
+
+    internal sealed class SwfJpeg2Decoder : IImageDecoder
+    {
+        byte[]          m_input;
+        ImageData       m_image;
+
+        public Stream            Source { get { return Stream.Null; } }
+        public ImageFormat SourceFormat { get { return null; } }
+        public ImageMetaData       Info { get; private set; }
+        public ImageData          Image { get { return m_image ?? (m_image = Unpack()); } }
+
+        public SwfJpeg2Decoder (SwfChunk chunk)
+        {
+            m_input = chunk.Data;
+        }
+
+        ImageData Unpack ()
+        {
+            int jpeg_pos = FindJpegSignature();
+            if (jpeg_pos < 0)
+                throw new InvalidFormatException();
+            using (var jpeg = new BinMemoryStream (m_input, jpeg_pos, m_input.Length-jpeg_pos))
+            {
+                var decoder = new JpegBitmapDecoder (jpeg, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                var frame = decoder.Frames[0];
+                Info = new ImageMetaData {
+                    Width = (uint)frame.PixelWidth,
+                    Height = (uint)frame.PixelHeight,
+                    BPP = frame.Format.BitsPerPixel,
+                };
+                return new ImageData (frame, Info);
+            }
+        }
+
+        int FindJpegSignature ()
+        {
+            int jpeg_pos = 2;
+            while (jpeg_pos < m_input.Length-4)
+            {
+                if (m_input[jpeg_pos] != 0xFF)
+                    jpeg_pos++;
+                else if (m_input[jpeg_pos+1] == 0xD8)
+                    return jpeg_pos;
+                else if (m_input[jpeg_pos+1] != 0xD9)
+                    jpeg_pos++;
+                else if (m_input[jpeg_pos+2] != 0xFF)
+                    jpeg_pos += 3;
+                else if (m_input[jpeg_pos+3] != 0xD8)
+                    jpeg_pos += 2;
+                else
+                    return jpeg_pos+4;
+            }
+            return -1;
+        }
+
+        public void Dispose ()
+        {
         }
     }
 
