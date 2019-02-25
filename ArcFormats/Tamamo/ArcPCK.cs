@@ -165,8 +165,9 @@ namespace GameRes.Formats.Tamamo
                     return decoder;
                 using (decoder)
                 {
-                    var ev_bitmap = CreateCanvas (1280, 720, source, new Int32Rect (0, 0, 1024, 720));
-                    CopyRegion (source, new Int32Rect (0, 720, 720, 256), ev_bitmap, 1024, 0);
+                    var ev_bitmap = CreateCanvas (1280, 720, source, new Int32Rect (0, 0, 1024, 719));
+                    // XXX Senkou no Kishi texture
+                    CopyRegion (source, new Int32Rect (0, 719, 720, 256), ev_bitmap, 1024, 0);
                     return new BitmapSourceDecoder (ev_bitmap);
                 }
             }
