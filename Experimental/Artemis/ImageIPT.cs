@@ -93,10 +93,15 @@ namespace GameRes.Formats.Artemis
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var meta = (IptMetaData)info;
-            if (meta.Mode != "diff" && meta.Mode != "cut")
+            PixelFormat format;
+            if ("cut" == meta.Mode)
+                format = PixelFormats.Bgra32;
+            else if ("diff" == meta.Mode)
+                format = PixelFormats.Bgr32;
+            else
                 throw new InvalidFormatException (string.Format ("Not supported IPT tile mode '{0}'.", meta.Mode));
             var canvas = new WriteableBitmap (meta.iWidth, meta.iHeight, ImageData.DefaultDpiX,
-                                              ImageData.DefaultDpiY, PixelFormats.Bgr32, null);
+                                              ImageData.DefaultDpiY, format, null);
             var base_dir = VFS.GetDirectoryName (file.Name);
             try
             {
@@ -167,7 +172,7 @@ namespace GameRes.Formats.Artemis
                         byte src_alpha = pixels[src+3];
                         if (src_alpha > 0)
                         {
-                            if (0xFF == src_alpha)
+                            if (0xFF == src_alpha || 0 == buffer[dst+3])
                             {
                                 buffer[dst  ] = pixels[src];
                                 buffer[dst+1] = pixels[src+1];
@@ -179,6 +184,7 @@ namespace GameRes.Formats.Artemis
                                 buffer[dst+1] = (byte)((pixels[src+1] * src_alpha + buffer[dst+1] * (0xFF - src_alpha)) / 0xFF);
                                 buffer[dst+2] = (byte)((pixels[src+2] * src_alpha + buffer[dst+2] * (0xFF - src_alpha)) / 0xFF);
                             }
+                            buffer[dst+3] = src_alpha;
                         }
                         dst += 4;
                         src += 4;
