@@ -31,6 +31,7 @@ using System.Text.RegularExpressions;
 using GameRes.Utility;
 
 // [031024][Lazycrew] Sister Mermaid
+// [020927][Ga-Bang] Sorairo Memories
 
 namespace GameRes.Formats.Lazycrew
 {
@@ -52,10 +53,11 @@ namespace GameRes.Formats.Lazycrew
 
         public DatOpener ()
         {
+            Extensions = new string[] { "dat", "" };
             Signatures = new uint[] { 2, 0 };
         }
 
-        static readonly Regex NamePattern = new Regex (@"^(0\d\d\d)\.dat$", RegexOptions.IgnoreCase);
+        static readonly Regex NamePattern = new Regex (@"^(?:(?<num>0\d\d\d)\.dat|data(?<num>\d+)?)$", RegexOptions.IgnoreCase);
 
         const uint DefaultPcmKey = 0x4B5AB4A5;
 
@@ -65,7 +67,10 @@ namespace GameRes.Formats.Lazycrew
             if (!NamePattern.IsMatch (name))
                 return null;
             var match = NamePattern.Match (name);
-            int name_id = Int32.Parse (match.Groups[1].Value);
+            int name_id = 1;
+            var num_str = match.Groups["num"].Value;
+            if (!string.IsNullOrEmpty (num_str))
+                name_id = Int32.Parse (num_str);
             if (name_id < 1)
                 return null;
             ArcView index = file;
@@ -73,7 +78,11 @@ namespace GameRes.Formats.Lazycrew
             {
                 if (name_id != 1)
                 {
-                    var index_name = VFS.ChangeFileName (file.Name, "0001.dat");
+                    string index_name;
+                    if (file.Name.HasExtension (".dat"))
+                        index_name = VFS.ChangeFileName (file.Name, "0001.dat");
+                    else
+                        index_name = VFS.ChangeFileName (file.Name, "data");
                     if (!VFS.FileExists (index_name))
                         return null;
                     index = VFS.OpenView (index_name);
@@ -98,7 +107,6 @@ namespace GameRes.Formats.Lazycrew
             var dir_list = new List<DirEntry> (dir_count);
             int dir_offset = 4;
             int first_offset = dir_count * 0x10 + 4;
-            int file_count = 0;
             for (int i = 0; i < dir_count; ++i)
             {
                 var dir_entry = new DirEntry {
@@ -109,11 +117,10 @@ namespace GameRes.Formats.Lazycrew
                 if (dir_entry.Offset < first_offset || dir_entry.Offset >= index.MaxOffset
                     || !IsSaneCount (dir_entry.Count))
                     return null;
-                file_count += dir_entry.Count;
                 dir_list.Add (dir_entry);
                 dir_offset += 16;
             }
-            var file_list = new List<Entry> (file_count);
+            var file_list = new List<Entry>();
             foreach (var dir in dir_list)
             {
                 dir_offset = dir.Offset;
@@ -150,6 +157,8 @@ namespace GameRes.Formats.Lazycrew
                 uint signature = arc.File.View.ReadUInt32 (entry.Offset);
                 if (signature == 0x10000 || signature == 0)
                     return OpenAudio (arc, entry);
+                else if (signature == 1 || signature == 0x10001)
+                    return arc.File.CreateStream (entry.Offset+4, entry.Size-4);
             }
             return base.OpenEntry (arc, entry);
         }
