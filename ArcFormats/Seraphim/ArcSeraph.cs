@@ -89,7 +89,7 @@ namespace GameRes.Formats.Seraphim
             if (file.MaxOffset > uint.MaxValue
                 || !VFS.IsPathEqualsToFileName (file.Name, "ArchPac.dat"))
                 return null;
-            foreach (var scheme in KnownSchemes.Values.Where (s => s.IndexOffset < file.MaxOffset))
+            foreach (var scheme in KnownSchemes.Values.Where (s => s.IndexOffset < file.MaxOffset).OrderBy (s => s.IndexOffset))
             {
                 var dir = ReadIndex (file, scheme.IndexOffset, file.MaxOffset);
                 if (dir != null)
