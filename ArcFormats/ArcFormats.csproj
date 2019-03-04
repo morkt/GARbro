@@ -311,6 +311,7 @@
     <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
     <Compile Include="ShiinaRio\ImageCHD.cs" />
     <Compile Include="Slg\ImageTIM.cs" />
+    <Compile Include="Software House Parsley\ArcUCG.cs" />
     <Compile Include="Speed\ArcARC.cs" />
     <Compile Include="Stack\ArcGPK.cs" />
     <Compile Include="StudioJikkenshitsu\ImageDAT.cs" />
@@ -759,6 +760,7 @@
     <Compile Include="Unity\BundleStream.cs" />
     <Compile Include="Unity\Gx4Lib\ArcDAT.cs" />
     <Compile Include="Unity\OggStream.cs" />
+    <Compile Include="Unity\PMaster\ArcDAT.cs" />
     <Compile Include="Unity\ResourcesAssets.cs" />
     <Compile Include="Unity\Texture2D.cs" />
     <Compile Include="Unity\Utage\ImageUTAGE.cs" />
