@@ -35,7 +35,7 @@ namespace GameRes.Formats.KiriKiri
         public TlgFormat ()
         {
             Extensions = new string[] { "tlg", "tlg5", "tlg6" };
-            Signatures = new uint[] { 0x30474c54, 0x35474c54, 0x36474c54, 0x35474cAB };
+            Signatures = new uint[] { 0x30474C54, 0x35474C54, 0x36474C54, 0x35474CAB, 0x584D4B4A };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -64,6 +64,12 @@ namespace GameRes.Formats.KiriKiri
                 version = 6;
                 header[offset+0x0F] ^= 0xAB;
                 header[offset+0x13] ^= 0xAC;
+            }
+            else if (header.AsciiEqual (offset, "JKMXE8"))
+            {
+                version = 5;
+                header[offset+0x0C] ^= 0x1A;
+                header[offset+0x10] ^= 0x1C;
             }
             else
                 return null;
