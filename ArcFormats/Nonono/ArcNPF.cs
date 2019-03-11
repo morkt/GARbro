@@ -23,7 +23,6 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -97,6 +96,14 @@ namespace GameRes.Formats.Nonono
             var rnd = new RandomGenerator (nent.Seed);
             Decrypt (data, 0, data.Length, rnd);
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var input = arc.OpenBinaryEntry (entry);
+            if (input.Length <= 8 || input.Signature != 0x58474D49) // 'IMGX'
+                return ImageFormatDecoder.Create (input);
+            return new ImgXDecoder (input);
         }
 
         internal void Decrypt (byte[] data, int pos, int count, RandomGenerator rnd)

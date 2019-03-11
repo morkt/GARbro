@@ -246,6 +246,7 @@
     <Compile Include="Nexas\ArcTPF.cs" />
     <Compile Include="LiveMaker\ImageGALX.cs" />
     <Compile Include="Nonono\ArcNPF.cs" />
+    <Compile Include="Nonono\ImageIMGX.cs" />
     <Compile Include="Origin\ArcDAT.cs" />
     <Compile Include="Otemoto\ArcTLZ.cs" />
     <Compile Include="Otemoto\ImageMAG.cs" />
