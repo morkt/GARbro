@@ -142,6 +142,7 @@
     <Compile Include="Cadath\ImageCGF.cs" />
     <Compile Include="Carriere\ArcARC.cs" />
     <Compile Include="Carriere\ImageCGD.cs" />
+    <Compile Include="CatSystem\ArcDAT.cs" />
     <Compile Include="CDPA\ArcPACK.cs" />
     <Compile Include="Cmvs\ArcCPZ1.cs" />
     <Compile Include="Cmvs\CpzHeader.cs" />
@@ -314,7 +315,9 @@
     <Compile Include="Software House Parsley\ArcUCG.cs" />
     <Compile Include="Speed\ArcARC.cs" />
     <Compile Include="Stack\ArcGPK.cs" />
+    <Compile Include="StudioJikkenshitsu\ArcUMPK.cs" />
     <Compile Include="StudioJikkenshitsu\ImageDAT.cs" />
+    <Compile Include="StudioJikkenshitsu\ImageGRC.cs" />
     <Compile Include="StudioJikkenshitsu\ImageGRD.cs" />
     <Compile Include="StudioJikkenshitsu\SjTransform.cs" />
     <Compile Include="StudioJikkenshitsu\WidgetSJDAT.xaml.cs">
