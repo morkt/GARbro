@@ -31,10 +31,12 @@ namespace GameRes.Formats.CatSystem
 {
     internal class Hg2MetaData : HgMetaData
     {
+        public int  Version;
         public int  DataPacked;
         public int  DataUnpacked;
         public int  CtlPacked;
         public int  CtlUnpacked;
+        public int  Depth;
     }
 
     [Export(typeof(ImageFormat))]
@@ -57,9 +59,11 @@ namespace GameRes.Formats.CatSystem
                 info.HeaderSize = 0x30;
             else
                 return null;
+            info.Version = version;
             info.Width  = stream.ReadUInt32();
             info.Height = stream.ReadUInt32();
-            info.BPP    = stream.ReadInt32();
+            info.BPP    = stream.ReadInt16();
+            info.Depth  = stream.ReadInt16();
             stream.Seek (8, SeekOrigin.Current);
             info.DataPacked     = stream.ReadInt32();
             info.DataUnpacked   = stream.ReadInt32();
@@ -94,16 +98,7 @@ namespace GameRes.Formats.CatSystem
 
         public override ImageData Image
         {
-            get
-            {
-                if (null == m_image)
-                {
-                    var pixels = Unpack();
-                    var format = 24 == m_hg2.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
-                    m_image = ImageData.CreateFlipped (m_hg2, format, null, pixels, Stride);
-                }
-                return m_image;
-            }
+            get { return m_image ?? (m_image = CreateImage()); }
         }
 
         public Hg2Reader (IBinaryStream input, Hg2MetaData info) : base (input, info)
@@ -111,10 +106,30 @@ namespace GameRes.Formats.CatSystem
             m_hg2 = info;
         }
 
-        public byte[] Unpack ()
+        ImageData CreateImage ()
         {
-            return UnpackStream (m_hg2.HeaderSize, m_hg2.DataPacked, m_hg2.DataUnpacked,
-                                 m_hg2.CtlPacked, m_hg2.CtlUnpacked);
+            var pixels = UnpackStream (m_hg2.HeaderSize, m_hg2.DataPacked, m_hg2.DataUnpacked,
+                                       m_hg2.CtlPacked, m_hg2.CtlUnpacked);
+            var format = 24 == m_hg2.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+            if (m_hg2.Version > 0x10)
+                return ImageData.CreateFlipped (m_hg2, format, null, pixels, Stride);
+
+            if (m_hg2.Depth > 0 && m_hg2.Depth < 8)
+            {
+                byte max = (byte)((1 << m_hg2.Depth) - 1);
+                for (int i = 0; i < pixels.Length; i += m_pixel_size)
+                {
+                    pixels[i  ] = (byte)(pixels[i  ] * 0xFF / max);
+                    pixels[i+1] = (byte)(pixels[i+1] * 0xFF / max);
+                    pixels[i+2] = (byte)(pixels[i+2] * 0xFF / max);
+                }
+            }
+            if (32 == m_hg2.BPP)
+            {
+                for (int i = 3; i < pixels.Length; i += 4)
+                    pixels[i] ^= 0xFF;
+            }
+            return ImageData.Create (m_hg2, format, null, pixels, Stride);
         }
     }
 }
