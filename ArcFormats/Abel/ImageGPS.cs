@@ -35,6 +35,7 @@ namespace GameRes.Formats.Abel
     internal class GpsMetaData : ImageMetaData
     {
         public byte Compression;
+        public  int HeaderSize;
         public  int PackedSize;
         public  int UnpackedSize;
     }
@@ -55,16 +56,24 @@ namespace GameRes.Formats.Abel
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x29);
-            if (header.Length != 0x29)
-                return null;
-            var gps = new GpsMetaData
+            var gps = new GpsMetaData();
+            if (header.ToUInt32 (4) == 0xCCCCCCCC)
             {
-                Width       = header.ToUInt32 (0x19),
-                Height      = header.ToUInt32 (0x1D),
-                Compression = header[0x10],
-                UnpackedSize = header.ToInt32 (0x11),
-                PackedSize  = header.ToInt32 (0x15),
-            };
+                gps.HeaderSize  = 0x19;
+                gps.Compression = 2;
+                gps.UnpackedSize = header.ToInt32 (0x9);
+                gps.PackedSize  = header.ToInt32 (0xD);
+            }
+            else
+            {
+                gps.HeaderSize  = 0x29;
+                gps.Compression = header[0x10];
+                gps.UnpackedSize = header.ToInt32 (0x11);
+                gps.PackedSize  = header.ToInt32 (0x15);
+                gps.Width       = header.ToUInt32 (0x19);
+                gps.Height      = header.ToUInt32 (0x1D);
+            }
+            file.Position = gps.HeaderSize;
             // read BMP header
             using (var stream = OpenGpsStream (file, gps.Compression, 0x54))
             using (var input = BinaryStream.FromStream (stream, file.Name))
@@ -73,6 +82,8 @@ namespace GameRes.Formats.Abel
                 if (null == bmp_info)
                     return null;
                 gps.BPP = bmp_info.BPP;
+                gps.Width = bmp_info.Width;
+                gps.Height = bmp_info.Height;
                 return gps;
             }
         }
@@ -80,7 +91,7 @@ namespace GameRes.Formats.Abel
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
             var gps = (GpsMetaData)info;
-            file.Position = 0x29;
+            file.Position = gps.HeaderSize;
             using (var stream = OpenGpsStream (file, gps.Compression, gps.UnpackedSize))
             using (var input = BinaryStream.FromStream (stream, file.Name))
                 return Bmp.Read (input, info);
