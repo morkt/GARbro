@@ -110,6 +110,16 @@ namespace GameRes.Formats.Abel
             uint offset = arc.File.View.ReadUInt32 (entry.Offset+8);
             if (offset >= entry.Size)
                 return base.OpenEntry (arc, entry);
+            long cmp_offset = entry.Offset + offset;
+            if (arc.File.View.ReadByte (cmp_offset) == 0)
+            {
+                uint packed_size = arc.File.View.ReadUInt32 (cmp_offset+5);
+                if (packed_size == entry.Size - (offset+0x11))
+                {
+                    var input = arc.File.CreateStream (cmp_offset+0x11, packed_size);
+                    return new LzssStream (input);
+                }
+            }
             return arc.File.CreateStream (entry.Offset+offset, entry.Size-offset);
         }
     }
