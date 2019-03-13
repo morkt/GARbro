@@ -90,6 +90,9 @@
     <Compile Include="DigitalMonkey\ArcDM.cs" />
     <Compile Include="DigitalMonkey\ImagePKT.cs" />
     <Compile Include="Electriciteit\ArcPKK.cs" />
+    <Compile Include="FazeX\ImageFGP.cs" />
+    <Compile Include="HillField\ImageIMA.cs" />
+    <Compile Include="HillField\ImageIMG.cs" />
     <Compile Include="KApp\ArcASD.cs" />
     <Compile Include="KApp\ImageCGD.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
@@ -97,8 +100,11 @@
     <Compile Include="KeroQ\ImageCBM.cs" />
     <Compile Include="KeroQ\ImageKGD.cs" />
     <Compile Include="KeroQ\ImageKGD1.cs" />
+    <Compile Include="Kurumi\ImageGRA.cs" />
     <Compile Include="Lazycrew\ArcDAT.cs" />
     <Compile Include="Lazycrew\ImageDAT.cs" />
+    <Compile Include="Liddell\ArcFLK.cs" />
+    <Compile Include="Liddell\ImageBPA.cs" />
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="Mermaid\AudioPWV.cs" />
     <Compile Include="Mermaid\ImageGP1.cs" />
@@ -106,6 +112,7 @@
     <Compile Include="Nyoken\ArcZLK.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
     <Compile Include="Powerd\ImageNCL.cs" />
+    <Compile Include="PrimeSoft\ImageTHP.cs" />
     <Compile Include="ProjectMyu\ImageGAM.cs" />
     <Compile Include="Rina\ImageRAD.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
