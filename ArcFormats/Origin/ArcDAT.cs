@@ -221,13 +221,20 @@ namespace GameRes.Formats.Origin
                 int w = m_input.ReadInt32();
                 int h = m_input.ReadInt32();
                 int method = m_input.ReadByte();
-                if (w == m_width && h == m_height && (1 == method || 2 == method))
+                if (w == m_width && h == m_height)
                 {
                     alpha = new byte[plane_length];
                     if (1 == method)
                         UnpackRle (alpha);
-                    else
+                    else if (2 == method)
                         UnpackAlphaV2 (alpha);
+                    else
+                    {
+                        m_input.Seek (-1, SeekOrigin.Current);
+                        UnpackRle (alpha);
+                        for (int i = 0; i < alpha.Length; ++i)
+                            alpha[i] = (byte)(alpha[i] * 0xFF / 0x64);
+                    }
                     pixel_size = 4;
                 }
             }
