@@ -118,7 +118,7 @@ namespace GameRes.Formats.Qlie
                         string name = null;
                         if ("abimgdat15" == tag)
                         {
-                            Skip (4);
+                            int version = m_input.ReadInt32();
                             int name_length = m_input.ReadUInt16();
                             if (name_length > 0)
                             {
@@ -145,7 +145,23 @@ namespace GameRes.Formats.Qlie
                             case 7:   ".ogv"
                             case 8:   ".mdl"
                             */
-                            Skip (0x11);
+                            if (2 == version)
+                                Skip (0x1D);
+                            else
+                                Skip (0x11);
+                        }
+                        else if ("absnddat12" == tag)
+                        {
+                            int version = m_input.ReadInt32();
+                            int name_length = m_input.ReadUInt16();
+                            if (name_length > 0)
+                            {
+                                var name_bytes = m_input.ReadBytes (name_length*2);
+                                name = Encoding.Unicode.GetString (name_bytes);
+                            }
+                            if (m_input.Length - m_input.Position <= 7)
+                                break;
+                            Skip (7);
                         }
                         else
                         {
