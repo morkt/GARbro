@@ -61,8 +61,7 @@ namespace GameRes.Formats.WestVision
             int pixel_count = (int)meta.Width * (int)meta.Height;
             var pixels = new byte[pixel_count * 3];
             stream.Position = 0x20;
-            if (pixels.Length != stream.Read (pixels, 0, pixels.Length))
-                throw new EndOfStreamException ("Unexpected end of file");
+            stream.Read (pixels, 0, pixels.Length);
             var format = PixelFormats.Bgr24;
             if (meta.AlphaOffset != 0)
             {
