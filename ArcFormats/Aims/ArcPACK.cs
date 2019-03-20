@@ -53,7 +53,7 @@ namespace GameRes.Formats.Aims
 
         public PackOpener ()
         {
-            Extensions = new string[] { "p", "mus" };
+            Extensions = new string[] { "p", "mus", "pac" };
         }
 
         // entry record
