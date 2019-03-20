@@ -2,7 +2,7 @@
 //! \date       Wed Jun 08 00:27:36 2016
 //! \brief      LiveMaker resource archive.
 //
-// Copyright (C) 2016-2018 by morkt
+// Copyright (C) 2016-2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using GameRes.Compression;
 
 namespace GameRes.Formats.LiveMaker
@@ -129,11 +130,23 @@ namespace GameRes.Formats.LiveMaker
             else
                 input = arc.File.CreateStream (entry.Offset, entry.Size);
 
-            var pent = entry as PackedEntry;
-            if (pent != null && pent.IsPacked)
-                return new ZLibStream (input, CompressionMode.Decompress);
-            else
+            var pent = entry as VfEntry;
+            if (null == pent)
                 return input;
+            if (pent.IsScrambled)
+            {
+                byte[] data;
+                using (input)
+                {
+                    if (entry.Size <= 8)
+                        return Stream.Null;
+                    data = ReshuffleStream (input);
+                }
+                input = new BinMemoryStream (data, entry.Name);
+            }
+            if (pent.IsPacked)
+                input = new ZLibStream (input, CompressionMode.Decompress);
+            return input;
         }
 
         List<Entry> ReadIndex (ArcView file, uint base_offset, int count)
@@ -153,7 +166,7 @@ namespace GameRes.Formats.LiveMaker
                 index_offset += name_length;
 
                 var name = DecryptName (name_buffer, (int)name_length, rnd);
-                dir.Add (FormatCatalog.Instance.Create<PackedEntry> (name));
+                dir.Add (Create<VfEntry> (name));
             }
             rnd.Reset();
             long offset = base_offset + (file.View.ReadInt64 (index_offset) ^ (int)rnd.GetRand32());
@@ -166,9 +179,11 @@ namespace GameRes.Formats.LiveMaker
                 offset = next_offset;
             }
             index_offset += 8;
-            foreach (PackedEntry entry in dir)
+            foreach (VfEntry entry in dir)
             {
-                entry.IsPacked = 0 == file.View.ReadByte (index_offset++);
+                byte flags = file.View.ReadByte (index_offset++);
+                entry.IsPacked = 0 == flags || 3 == flags;
+                entry.IsScrambled = 2 == flags || 3 == flags;
             }
             return dir;
         }
@@ -187,6 +202,47 @@ namespace GameRes.Formats.LiveMaker
             var exe = new ExeFile (file);
             return (uint)exe.Overlay.Offset;
         }
+
+        byte[] ReshuffleStream (Stream input)
+        {
+            var header = new byte[8];
+            input.Read (header, 0, 8);
+            int chunk_size = header.ToInt32 (0);
+            uint seed = header.ToUInt32 (4) ^ 0xF8EAu;
+            int input_length = (int)input.Length - 8;
+            var output = new byte[input_length];
+            int count = (input_length - 1) / chunk_size + 1;
+            int dst = 0;
+            foreach (int i in RandomSequence (count, seed))
+            {
+                int position = i * chunk_size;
+                input.Position = 8 + position;
+                int length = Math.Min (chunk_size, input_length - position);
+                input.Read (output, dst, length);
+                dst += length;
+            }
+            return output;
+        }
+
+        static IEnumerable<int> RandomSequence (int count, uint seed)
+        {
+            var tp = new TpScramble (seed);
+            var order = Enumerable.Range (0, count).ToList<int>();
+            var seq = new int[order.Count];
+            for (int i = 0; order.Count > 1; ++i)
+            {
+                int n = tp.GetInt32 (0, order.Count - 2);
+                seq[order[n]] = i;
+                order.RemoveAt (n);
+            }
+            seq[order[0]] = count - 1;
+            return seq;
+        }
+    }
+
+    internal class VfEntry : PackedEntry
+    {
+        public bool IsScrambled;
     }
 
     internal class TpRandom
@@ -210,6 +266,61 @@ namespace GameRes.Formats.LiveMaker
         public void Reset ()
         {
             m_current = 0;
+        }
+    }
+
+    internal class TpScramble
+    {
+        uint[]  m_state = new uint[5];
+
+        const uint FactorA = 2111111111;
+        const uint FactorB = 1492;
+        const uint FactorC = 1776;
+        const uint FactorD = 5115;
+
+        public TpScramble (uint seed)
+        {
+            Init (seed);
+        }
+
+        public void Init (uint seed)
+        {
+            uint hash = seed != 0 ? seed : 0xFFFFFFFFu;
+            for (int i = 0; i < 5; ++i)
+            {
+                hash ^= hash << 13;
+                hash ^= hash >> 17;
+                hash ^= hash << 5;
+                m_state[i] = hash;
+            }
+            for (int i = 0; i < 19; ++i)
+            {
+                GetUInt32();
+            }
+        }
+
+        public int GetInt32 (int first, int last)
+        {
+            var num = GetDouble();
+            return (int)(first + (long)(num * (last - first + 1)));
+        }
+
+        double GetDouble ()
+        {
+            return (double)GetUInt32() / 0x100000000L;
+        }
+
+        uint GetUInt32 ()
+        {
+            ulong v = FactorA * (ulong)m_state[3]
+                    + FactorB * (ulong)m_state[2]
+                    + FactorC * (ulong)m_state[1]
+                    + FactorD * (ulong)m_state[0] + m_state[4];
+            m_state[3] = m_state[2];
+            m_state[2] = m_state[1];
+            m_state[1] = m_state[0];
+            m_state[4] = (uint)(v >> 32);
+            return m_state[0] = (uint)v;
         }
     }
 }
