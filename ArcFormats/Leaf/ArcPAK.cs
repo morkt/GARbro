@@ -2,7 +2,7 @@
 //! \date       2018 Nov 04
 //! \brief      Leaf resource archive.
 //
-// Copyright (C) 2018 by morkt
+// Copyright (C) 2018-2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
+using GameRes.Utility.Serialization;
 
 namespace GameRes.Formats.Leaf
 {
@@ -46,86 +47,80 @@ namespace GameRes.Formats.Leaf
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int version = 0;
+            int version = -1;
             int count = file.View.ReadInt32 (4);
-            uint first_offset = file.View.ReadUInt32 (0x24);
-            if (!IsSaneCount (count) || count * 0x24 + 8 != first_offset)
+            uint index_offset = 8;
+            uint first_offset = file.View.ReadUInt32 (0x20);
+            if (IsSaneCount (count))
             {
-                version = 1;
+                if (count * 0x20 + 8 == first_offset)
+                {
+                    version = 0;
+                }
+                else
+                {
+                    first_offset = file.View.ReadUInt32 (0x24);
+                    if (count * 0x24 + 8 == first_offset)
+                        version = 1;
+                }
+            }
+            if (version < 0)
+            {
                 count = file.View.ReadInt32 (8);
                 first_offset = file.View.ReadUInt32 (0x28);
-                if (!IsSaneCount (count) || count * 0x24 + 0xC != first_offset)
+                if (IsSaneCount (count) && count * 0x24 + 0xC == first_offset)
+                {
+                    version = 1;
+                    index_offset = 0xC;
+                }
+                else
                 {
                     count = file.View.ReadInt32 (12);
                     first_offset = file.View.ReadUInt32 (0x34);
-                    if (!IsSaneCount (count) || count * 0x2C + 0x10 != first_offset)
-                        return null;
-                    version = 2;
+                    if (IsSaneCount (count) && count * 0x2C + 0x10 == first_offset)
+                    {
+                        version = 2;
+                        index_offset = 0x10;
+                    }
                 }
             }
-            List<Entry> dir;
-            if (0 == version)
-                dir = ReadIndexV1 (file, count, 8);
-            else if (1 == version)
-                dir = ReadIndexV1 (file, count, 0xC);
-            else
-                dir = ReadIndexV2 (file, count);
+            List<Entry> dir = null;
+            switch (version)
+            {
+            case 0: dir = ReadIndex<EntryDefV0> (file, count, index_offset); break;
+            case 1: dir = ReadIndex<EntryDefV1> (file, count, index_offset); break;
+            case 2: dir = ReadIndex<EntryDefV2> (file, count, index_offset); break;
+            default: return null;
+            }
             if (null == dir)
                 return null;
             return new ArcFile (file, this, dir);
         }
 
-        List<Entry> ReadIndexV1 (ArcView file, int count, uint index_offset)
+        List<Entry> ReadIndex<EntryDef> (ArcView file, int count, uint index_offset)
+            where EntryDef : IEntryDefinition, new()
         {
-            const uint index_entry_size = 0x24;
-            uint index_size = (uint)count * index_entry_size;
-            if (file.View.Reserve (index_offset, index_size) < index_size)
-                return null;
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
+            using (var input = file.CreateStream())
             {
-                uint size = file.View.ReadUInt32 (index_offset+0x20);
-                if (size != 0)
+                input.Position = index_offset;
+                var dir = new List<Entry> (count);
+                var def = new EntryDef();
+                for (int i = 0; i < count; ++i)
                 {
-                    var name = file.View.ReadString (index_offset+4, 0x18);
-                    var entry = Create<PackedEntry> (name);
-                    entry.Offset = file.View.ReadUInt32 (index_offset+0x1C);
-                    entry.Size   = size;
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    entry.IsPacked = file.View.ReadInt32 (index_offset) != 0;
-                    dir.Add (entry);
+                    input.ReadStruct (out def);
+                    if (def.Size != 0)
+                    {
+                        var entry = Create<PackedEntry> (def.Name);
+                        entry.Offset = def.Offset;
+                        entry.Size   = def.Size;
+                        if (!entry.CheckPlacement (file.MaxOffset))
+                            return null;
+                        entry.IsPacked = def.IsPacked;
+                        dir.Add (entry);
+                    }
                 }
-                index_offset += index_entry_size;
+                return dir;
             }
-            return dir;
-        }
-
-        List<Entry> ReadIndexV2 (ArcView file, int count)
-        {
-            const uint index_entry_size = 0x2C;
-            uint index_offset = 0x10;
-            uint index_size = (uint)count * index_entry_size;
-            if (file.View.Reserve (index_offset, index_size) < index_size)
-                return null;
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
-            {
-                uint size = file.View.ReadUInt32 (index_offset+0x28);
-                if (size != 0)
-                {
-                    var name = file.View.ReadString (index_offset+4, 0x18);
-                    var entry = Create<PackedEntry> (name);
-                    entry.Offset = file.View.ReadUInt32 (index_offset+0x24);
-                    entry.Size   = size;
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    entry.IsPacked = file.View.ReadInt32 (index_offset) != 0;
-                    dir.Add (entry);
-                }
-                index_offset += index_entry_size;
-            }
-            return dir;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -180,4 +175,57 @@ namespace GameRes.Formats.Leaf
     [ExportMetadata("Extension", "SDT")]
     [ExportMetadata("Target", "SCR")]
     public class SdtFormat : ResourceAlias { }
+
+    internal interface IEntryDefinition
+    {
+        string   Name { get; }
+        long   Offset { get; }
+        uint     Size { get; }
+        bool IsPacked { get; }
+    }
+
+    #pragma warning disable 649,169
+    internal struct EntryDefV0 : IEntryDefinition
+    {
+        [CString(Length = 0x18)]
+        string  _name;
+        uint    _offset;
+        uint    _size;
+
+        public string   Name { get { return _name; } }
+        public long   Offset { get { return _offset; } }
+        public uint     Size { get { return _size; } }
+        public bool IsPacked { get { return true; } }
+    }
+
+    internal struct EntryDefV1 : IEntryDefinition
+    {
+        int     _is_packed;
+        [CString(Length = 0x18)]
+        string  _name;
+        uint    _offset;
+        uint    _size;
+
+        public string   Name { get { return _name; } }
+        public long   Offset { get { return _offset; } }
+        public uint     Size { get { return _size; } }
+        public bool IsPacked { get { return _is_packed != 0; } }
+    }
+
+    internal struct EntryDefV2 : IEntryDefinition
+    {
+        int     _is_packed;
+        [CString(Length = 0x18)]
+        string  _name;
+        uint    _crc;
+        uint    _unpacked_size;
+        uint    _offset;
+        uint    _size;
+
+        public string   Name { get { return _name; } }
+        public long   Offset { get { return _offset; } }
+        public uint     Size { get { return _size; } }
+        public bool IsPacked { get { return _is_packed != 0; } }
+    }
+    #pragma warning restore 649,169
 }
