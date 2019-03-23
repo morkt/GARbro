@@ -98,6 +98,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>garStrings.resx</DependentUpon>
     </Compile>
+    <Compile Include="StructSerialization.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="ZLibStream.cs" />
   </ItemGroup>
