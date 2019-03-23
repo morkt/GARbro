@@ -177,6 +177,10 @@ namespace GameRes
                             return ReadBitmapWithAlpha (file, info);
                     }
                 }
+                else if (0x20 == info.BPP && (info.ImageLength - (width_x_height * 3 + info.ImageOffset)) <= 2)
+                {
+                    return ReadBitmapBGRA (file, info);
+                }
             }
             return null;
         }
