@@ -20,18 +20,10 @@ Updated KiriKiri and ShiinaRio encryption schemes.
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>144</FileVersion>
+        <FileVersion>145</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.46.2120"/>
-            <Assembly Name="GameRes" Version="1.4.26.238"/>
-        </Requires>
-    </FormatsData>
-    <FormatsData>
-        <FileVersion>141</FileVersion>
-        <Url>https://github.com/morkt/GARbro/raw/bc315942658151c3c8d28d7976734422f87631da/ArcFormats/Resources/Formats.dat</Url>
-        <Requires>
-            <Assembly Name="ArcFormats" Version="1.2.44.2064"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>
         </Requires>
     </FormatsData>
