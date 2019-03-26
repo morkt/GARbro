@@ -1345,4 +1345,27 @@ namespace GameRes.Formats.KiriKiri
             return ((bit_count & 0xF) + ((bit_count >> 4) & 0xF)) & 0xF;
         }
     }
+
+    [Serializable]
+    public class HybridCrypt : ICrypt
+    {
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            return (byte)(value ^ (entry.Hash >> 5));
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            byte key = (byte)(entry.Hash >> 5);
+            for (int i = 0; i < count; ++i, ++offset)
+            {
+                buffer[pos+i] ^= key;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+    }
 }
