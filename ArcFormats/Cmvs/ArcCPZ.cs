@@ -2,7 +2,7 @@
 //! \date       Tue Nov 24 11:27:23 2015
 //! \brief      Purple Software resource archive.
 //
-// Copyright (C) 2015-2017 by morkt
+// Copyright (C) 2015-2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -61,12 +61,14 @@ namespace GameRes.Formats.Purple
     {
         public CpzHeader    Header;
         public Cpz5Decoder  Decoder;
+        public ArchiveKey   Key;
 
-        public CpzArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, CpzHeader header, Cpz5Decoder decoder)
+        public CpzArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, CpzHeader header, Cpz5Decoder decoder, ArchiveKey key)
             : base (arc, impl, dir)
         {
             Header = header;
             Decoder = decoder;
+            Key = key;
         }
     }
 
@@ -90,12 +92,14 @@ namespace GameRes.Formats.Purple
             Signatures = new uint[] { 0x355A5043, 0x365A5043, 0x375A5043 };
         }
 
-        public static Dictionary<string, CmvsScheme> KnownSchemes = new Dictionary<string, CmvsScheme>();
+        static CpzScheme DefaultScheme = new CpzScheme();
+
+        internal Dictionary<string, CmvsScheme> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
 
         public override ResourceScheme Scheme
         {
-            get { return new CpzScheme { KnownSchemes = KnownSchemes }; }
-            set { KnownSchemes = ((CpzScheme)value).KnownSchemes; }
+            get { return DefaultScheme; }
+            set { DefaultScheme = (CpzScheme)value; }
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -121,11 +125,17 @@ namespace GameRes.Formats.Purple
                 }
             }
 
+            ArchiveKey arc_key = null;
+            if (cpz.Version > 6)
+                arc_key = FindArchiveKey (file.Name);
+            if (null == arc_key)
+                arc_key = new ArchiveKey();
+
             var index_copy = new CowArray<byte> (index, 0, file_table_size).ToArray();
             var cmvs_md5 = cpz.CmvsMd5.Clone() as uint[];
             foreach (var scheme in KnownSchemes.Values.Where (s => s.Version == cpz.Version))
             {
-                var arc = ReadIndex (file, scheme, cpz, index);
+                var arc = ReadIndex (file, scheme, cpz, index, arc_key);
                 if (null != arc)
                     return arc;
                 // both CmvsMd5 and index was altered by ReadIndex in decryption attempt
@@ -135,7 +145,7 @@ namespace GameRes.Formats.Purple
             throw new UnknownEncryptionScheme();
         }
 
-        internal ArcFile ReadIndex (ArcView file, CmvsScheme scheme, CpzHeader cpz, byte[] index)
+        internal ArcFile ReadIndex (ArcView file, CmvsScheme scheme, CpzHeader cpz, byte[] index, ArchiveKey arc_key)
         {
             var cmvs_md5 = Cmvs.MD5.Create (scheme.Md5Variant);
             cmvs_md5.Compute (cpz.CmvsMd5);
@@ -151,7 +161,7 @@ namespace GameRes.Formats.Purple
             key[2] = cpz.CmvsMd5[2] ^ (cpz.MasterKey + 0x10000000);
             key[3] = cpz.CmvsMd5[3] ^  cpz.MasterKey;
 
-            DecryptIndexDirectory (index, cpz.DirEntriesSize, key);
+            DecryptIndexDirectory (index, cpz.DirEntriesSize, key, arc_key.IndexDirKey);
 
             decoder.Init (cpz.MasterKey, cpz.CmvsMd5[2]);
             uint base_offset = cpz.IndexOffset + cpz.IndexSize;
@@ -186,7 +196,7 @@ namespace GameRes.Formats.Purple
                 for (int j = 0; j < 4; ++j)
                     key[j] = cpz.CmvsMd5[j] ^ (dir_key + scheme.DirKeyAddend[j]);
 
-                DecryptIndexEntry (index, cur_offset, cur_entries_size, key, scheme.IndexSeed);
+                DecryptIndexEntry (index, cur_offset, cur_entries_size, key, scheme.IndexSeed, arc_key.IndexEntryKey);
                 bool is_root_dir = dir_name == "root";
 
                 dir.Capacity = dir.Count + file_count;
@@ -216,7 +226,7 @@ namespace GameRes.Formats.Purple
             }
             if (cpz.IsEncrypted)
                 decoder.Init (cpz.CmvsMd5[3], cpz.MasterKey);
-            return new CpzArchive (file, this, dir, cpz, decoder);
+            return new CpzArchive (file, this, dir, cpz, decoder, arc_key);
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
@@ -230,8 +240,9 @@ namespace GameRes.Formats.Purple
             if (carc.Header.IsEncrypted)
             {
                 uint key = (carc.Header.MasterKey ^ cent.Key) + (uint)carc.Header.DirCount;
+                key ^= carc.Key.EntryDataKey2;
                 key -= carc.Decoder.Scheme.EntrySubKey;
-                key ^= carc.Header.EntryKey;
+                key ^= carc.Header.EntryKey + carc.Key.EntryDataKey1;
                 carc.Decoder.DecryptEntry (data, carc.Header.CmvsMd5, key);
             }
             if (data.Length > 0x30 && Binary.AsciiEqual (data, 0, "PS2A"))
@@ -320,7 +331,7 @@ namespace GameRes.Formats.Purple
             }
         }
 
-        void DecryptIndexDirectory (byte[] data, int length, uint[] key)
+        void DecryptIndexDirectory (byte[] data, int length, uint[] key, uint arc_key)
         {
             uint seed = 0x76548AEF;
             unsafe
@@ -333,7 +344,7 @@ namespace GameRes.Formats.Purple
                     {
                         *data32 = Binary.RotL ((*data32 ^ key[i & 3]) - 0x4A91C262, 3) - seed;
                         ++data32;
-                        seed += 0x10FB562A;
+                        seed += 0x10FB562Au ^ arc_key;
                     }
                     byte* data8 = (byte*)data32;
                     for (int j = length & 3; j > 0; --j)
@@ -370,7 +381,7 @@ namespace GameRes.Formats.Purple
             }
         }
 
-        void DecryptIndexEntry (byte[] data, int offset, int length, uint[] key, uint seed)
+        void DecryptIndexEntry (byte[] data, int offset, int length, uint[] key, uint seed, uint arc_key)
         {
             if (offset < 0 || offset > data.Length)
                 throw new ArgumentOutOfRangeException ("offset");
@@ -386,7 +397,7 @@ namespace GameRes.Formats.Purple
                     {
                         *data32 = Binary.RotL ((*data32 ^ key[i & 3]) - seed, 2) + 0x37A19E8B;
                         ++data32;
-                        seed -= 0x139FA9B;
+                        seed -= 0x139FA9B ^ arc_key;
                     }
                     byte* data8 = (byte*)data32;
                     for (int j = length & 3; j > 0; --j)
@@ -509,6 +520,74 @@ namespace GameRes.Formats.Purple
                 data[i + 1] += data[src++];
                 data[i + 1] ^= key2;
             }
+        }
+
+        ArchiveKey FindArchiveKey (string arc_name)
+        {
+            // look for "start.ps3" in the same directory as an archive
+            var start_name = VFS.ChangeFileName (arc_name, "start.ps3");
+            if (!VFS.FileExists (start_name))
+                return null;
+            byte[] start_data;
+            using (var start = VFS.OpenView (start_name))
+            {
+                if (!start.View.AsciiEqual (0, "PS2A"))
+                    return null;
+                start_data = start.View.ReadBytes (0, (uint)start.MaxOffset);
+            }
+            arc_name = Path.GetFileName (arc_name);
+            start_data = UnpackPs2 (start_data);
+
+            int table_count = start_data.ToInt32 (0x10);
+            int strings_offset = 0x30 + table_count * 4 + start_data.ToInt32 (0x14);
+            int strings_size = start_data.ToInt32 (0x1C);
+            if (strings_offset < 0x30 || strings_offset + strings_size > start_data.Length)
+                return null;
+
+            // search strings table for archive name
+            int string_pos = strings_offset;
+            int strings_end = strings_offset + strings_size;
+            int arc_id = -1;
+            while (string_pos < strings_end)
+            {
+                int end_pos = Array.IndexOf<byte> (start_data, 0, string_pos);
+                if (-1 == end_pos)
+                    end_pos = strings_offset + strings_size;
+                if (end_pos != string_pos)
+                {
+                    var text = Encodings.cp932.GetString (start_data, string_pos, end_pos - string_pos);
+                    if (VFS.IsPathEqualsToFileName (text, arc_name))
+                    {
+                        arc_id = string_pos - strings_offset;
+                        break;
+                    }
+                }
+                string_pos = end_pos + 1;
+            }
+            if (-1 == arc_id)
+                return null;
+
+            // search bytecode for a reference to archive name found above
+            var id_bytes = new byte[4];
+            LittleEndian.Pack (arc_id, id_bytes, 0);
+            for (int data_pos = 0x30 + table_count * 4; data_pos + 4 <= strings_offset; ++data_pos)
+            {
+                if (start_data[data_pos+0] == id_bytes[0] && start_data[data_pos+1] == id_bytes[1] &&
+                    start_data[data_pos+2] == id_bytes[2] && start_data[data_pos+3] == id_bytes[3])
+                {
+                    if (start_data[data_pos-0x33] == 2 && start_data[data_pos-0x32] == 0 &&
+                        start_data[data_pos-0x31] == 1)
+                    {
+                        return new ArchiveKey {
+                            IndexDirKey   = start_data.ToUInt32 (data_pos-0x0C),
+                            IndexEntryKey = start_data.ToUInt32 (data_pos-0x18),
+                            EntryDataKey1 = start_data.ToUInt32 (data_pos-0x24),
+                            EntryDataKey2 = start_data.ToUInt32 (data_pos-0x30),
+                        };
+                    }
+                }
+            }
+            return null;
         }
     }
 
@@ -663,5 +742,14 @@ namespace GameRes.Formats.Purple
                 }
             }
         }
+    }
+
+    [Serializable]
+    public class ArchiveKey
+    {
+        public uint IndexDirKey;
+        public uint IndexEntryKey;
+        public uint EntryDataKey1;
+        public uint EntryDataKey2;
     }
 }
