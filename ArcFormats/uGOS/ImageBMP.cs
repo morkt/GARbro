@@ -46,7 +46,7 @@ namespace GameRes.Formats.uGOS
         public DetBmpFormat ()
         {
             Extensions = new string[] { "bmp" };
-            Signatures = new uint[] { 0x206546, 0x186546, 0x086546, 0x01186446, 0x186446, 0 };
+            Signatures = new uint[] { 0x206546, 0x186546, 0x086546, 0 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -55,7 +55,7 @@ namespace GameRes.Formats.uGOS
             if (header[0] != 'F')
                 return null;
             var type = header[1] & 0x5F;
-            if (type != 'D' && type != 'E')
+            if (type != 'E')
                 return null;
             int bpp = header[2];
             if (bpp != 8 && bpp != 0x18 && bpp != 0x20)
