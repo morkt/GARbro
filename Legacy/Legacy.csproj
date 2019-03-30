@@ -75,6 +75,9 @@
     <Compile Include="Airyu\ArcCHR.cs" />
     <Compile Include="Akatombo\ArcX.cs" />
     <Compile Include="Akatombo\ImageFB.cs" />
+    <Compile Include="AlphaSystem\ArcPAK.cs" />
+    <Compile Include="AlphaSystem\ImageSFG.cs" />
+    <Compile Include="Alterna\ArcBIN.cs" />
     <Compile Include="Aquarium\ArcAAP.cs" />
     <Compile Include="Aquarium\ArcCPA.cs" />
     <Compile Include="Aquarium\ImageCP2.cs" />
@@ -108,9 +111,16 @@
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="Mermaid\AudioPWV.cs" />
     <Compile Include="Mermaid\ImageGP1.cs" />
+    <Compile Include="Mink\ImageFC.cs" />
+    <Compile Include="Mink\ImageFD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
     <Compile Include="Nyoken\ArcZLK.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
+    <Compile Include="PineSoft\ArcCMB.cs" />
+    <Compile Include="PineSoft\ArcVoice.cs" />
+    <Compile Include="PineSoft\AudioCMB.cs" />
+    <Compile Include="PineSoft\ImageBPD.cs" />
+    <Compile Include="Pochette\ArcPAC.cs" />
     <Compile Include="Powerd\ImageNCL.cs" />
     <Compile Include="PrimeSoft\ImageTHP.cs" />
     <Compile Include="ProjectMyu\ImageGAM.cs" />
