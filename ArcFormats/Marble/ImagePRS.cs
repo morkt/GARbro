@@ -189,6 +189,7 @@ namespace GameRes.Formats.Marble
                     ++shift;
                     if (dst < shift)
                         throw new InvalidFormatException ("Invalid offset value");
+                    length = Math.Min (length, m_output.Length - dst);
                     Binary.CopyOverlapped (m_output, dst-shift, dst, length);
                     dst += length;
                 }
