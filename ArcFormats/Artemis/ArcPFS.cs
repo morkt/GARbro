@@ -42,7 +42,7 @@ namespace GameRes.Formats.Artemis
 
         public PfsOpener ()
         {
-            Extensions = new string[] { "pfs", "000", "001", "002", "003", "004", "005" };
+            Extensions = new string[] { "pfs", "000", "001", "002", "003", "004", "005", "010" };
             ContainedFormats = new string[] { "PNG", "JPEG", "IPT", "OGG", "TXT", "SCR" };
             Settings = new[] { PfsEncoding };
         }
