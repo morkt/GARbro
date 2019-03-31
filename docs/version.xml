@@ -1,27 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GARbro>
     <Release>
-        <Version>1.5.43</Version>
+        <Version>1.5.44</Version>
         <Url>https://github.com/morkt/GARbro/releases/latest</Url>
         <Notes>New formats:
-- CSAF archives
-- CPC archives, ERP images and EZS audio
-- GP1 images and PWV audio
-- CGD images and ASD archives
-- ANI animation frames
-- IPT composite images
-- ZLK archives
-- LPG images
-- RAD images
-- NPF archives
-- BIN+IDX archives
+- UMPK archives and GRC images
+- 'CsPack2' archives
+- UCG archives
+- IMGX images
+- FLK archives and BPA images
+- Jam Creation archives and DPO images
+- PAC0 archives and PCG0 images
+- CMB archives
+- PAK archives and SFG images
+- uGOS 'FC' and 'FD' images
 
-Updated KiriKiri and ShiinaRio encryption schemes.
+Updated KiriKiri encryption schemes.
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>145</FileVersion>
+        <FileVersion>146</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
+        <Requires>
+            <Assembly Name="ArcFormats" Version="1.2.47.2146"/>
+            <Assembly Name="GameRes" Version="1.4.26.238"/>
+        </Requires>
+    </FormatsData>
+    <FormatsData>
+        <FileVersion>145</FileVersion>
+        <Url>https://github.com/morkt/GARbro/raw/c35ca8ec1f15edb9a32823014a3d532d9b4f5941/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.46.2120"/>
             <Assembly Name="GameRes" Version="1.4.26.238"/>

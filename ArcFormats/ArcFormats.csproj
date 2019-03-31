@@ -100,6 +100,9 @@
     <Compile Include="AdvSys\ArcAdvSys3.cs" />
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
+    <Compile Include="BlueGale\ImageBBM.cs" />
+    <Compile Include="JamCreation\ArcDAT.cs" />
+    <Compile Include="JamCreation\ImageDPO.cs" />
     <Compile Include="AliceSoft\ArcAAR.cs" />
     <Compile Include="AliceSoft\ArcAFA.cs" />
     <Compile Include="AliceSoft\ArcALK.cs" />
@@ -148,6 +151,7 @@
     <Compile Include="Cmvs\CpzHeader.cs" />
     <Compile Include="Cmvs\HuffmanDecoder.cs" />
     <Compile Include="Crc16.cs" />
+    <Compile Include="Cri\ImageGXT.cs" />
     <Compile Include="Crowd\ImageCRZ.cs" />
     <Compile Include="CsWare\ArcARC2.cs" />
     <Compile Include="CsWare\ArcDAT.cs" />
@@ -201,6 +205,9 @@
     <Compile Include="Interheart\ArcFPK2.cs" />
     <Compile Include="Interheart\ImageCandy.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
+    <Compile Include="Key\ArcPAK.cs" />
+    <Compile Include="Key\AudioOGGPAK.cs" />
+    <Compile Include="Key\ImageCZ.cs" />
     <Compile Include="Kid\ArcDAT.cs" />
     <Compile Include="Kid\AudioWAF.cs" />
     <Compile Include="Kid\ImagePRT.cs" />
@@ -248,6 +255,7 @@
     <Compile Include="Nonono\ArcNPF.cs" />
     <Compile Include="Nonono\ImageIMGX.cs" />
     <Compile Include="Origin\ArcDAT.cs" />
+    <Compile Include="Origin\ArcGAF.cs" />
     <Compile Include="Otemoto\ArcTLZ.cs" />
     <Compile Include="Otemoto\ImageMAG.cs" />
     <Compile Include="ExHibit\ArcGRP.cs" />
@@ -313,7 +321,10 @@
     <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
     <Compile Include="ShiinaRio\ImageCHD.cs" />
     <Compile Include="Slg\ImageTIM.cs" />
+    <Compile Include="Software House Parsley\ArcCG2.cs" />
+    <Compile Include="Software House Parsley\ArcPAC.cs" />
     <Compile Include="Software House Parsley\ArcUCG.cs" />
+    <Compile Include="Software House Parsley\ImagePCG.cs" />
     <Compile Include="Speed\ArcARC.cs" />
     <Compile Include="Stack\ArcGPK.cs" />
     <Compile Include="StudioJikkenshitsu\ArcUMPK.cs" />

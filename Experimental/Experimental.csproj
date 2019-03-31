@@ -109,9 +109,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Key\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup Label="IPTFiles">
     <Compile Include="Artemis\IPT.Parser.cs">
       <DependentUpon>IPT.parser</DependentUpon>

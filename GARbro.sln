@@ -24,9 +24,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image.Convert", "Image.Conv
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemeBuilder", "SchemeBuilder\SchemeBuilder.csproj", "{B7E7EBFB-C06E-4FC8-9AF2-7CD132AB15FD}"
-	ProjectSection(ProjectDependencies) = postProject
-		{60054FD9-4472-4BB4-9E3D-2F80D3D22468} = {60054FD9-4472-4BB4-9E3D-2F80D3D22468}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Experimental", "Experimental\Experimental.csproj", "{60054FD9-4472-4BB4-9E3D-2F80D3D22468}"
 EndProject
