@@ -35,6 +35,8 @@ namespace GameRes.Formats.DirectDraw
         int         m_height;
         int         m_output_stride;
 
+        public byte[] Output { get { return m_output; } }
+
         public DxtDecoder (byte[] input, ImageMetaData info)
         {
             m_input = input;
@@ -160,7 +162,7 @@ namespace GameRes.Formats.DirectDraw
             }
         }
 
-        void DecompressDXT5Block (byte[] input, int src, int block_y, int block_x)
+        public void DecompressDXT5Block (byte[] input, int src, int block_y, int block_x)
         {
             byte alpha0 = input[src];
             byte alpha1 = input[src+1];
