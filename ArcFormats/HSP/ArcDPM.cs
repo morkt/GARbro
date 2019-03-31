@@ -46,7 +46,7 @@ namespace GameRes.Formats.HSP
             Signatures = new uint[] { 0x584D5044, 0 };
         }
 
-        static readonly uint DefaultKey = 0xAC52AE58;
+        static readonly uint DefaultKey = 0xAC52AE58; // 0x24B70413
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -76,7 +76,7 @@ namespace GameRes.Formats.HSP
             {
                 var name = file.View.ReadString (index_offset, 0x10);
                 index_offset += 0x14;
-                var entry = FormatCatalog.Instance.Create<DpmEntry> (name);
+                var entry = Create<DpmEntry> (name);
                 entry.Key = file.View.ReadUInt32 (index_offset);
                 entry.Offset = file.View.ReadUInt32 (index_offset+4) + base_offset;
                 entry.Size   = file.View.ReadUInt32 (index_offset+8);
@@ -98,21 +98,33 @@ namespace GameRes.Formats.HSP
             if (null == dent || null == darc || 0 == dent.Key)
                 return base.OpenEntry (arc, entry);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            darc.DecryptEntry (data, dent.Key);
+            darc.DecryptEntry2 (data, dent.Key);
             return new BinMemoryStream (data, entry.Name);
         }
 
         static uint FindExeKey (ExeFile exe, long dpm_offset)
         {
-            if (!exe.ContainsSection (".rdata"))
-                return DefaultKey;
             uint base_offset = (uint)(dpm_offset - 0x10000);
             var offset_str = base_offset.ToString() + '\0';
             var offset_bytes = Encoding.ASCII.GetBytes (offset_str);
-            var key_pos = exe.FindString (exe.Sections[".rdata"], offset_bytes);
+            long key_pos = -1;
+            if (exe.ContainsSection (".rdata"))
+                key_pos = exe.FindString (exe.Sections[".rdata"], offset_bytes);
+            if (-1 == key_pos && exe.ContainsSection (".data"))
+                key_pos = exe.FindString (exe.Sections[".data"], offset_bytes);
             if (-1 == key_pos)
                 return DefaultKey;
             return exe.View.ReadUInt32 (key_pos+0x17);
+        }
+
+        DpmxScheme DefaultScheme = new DpmxScheme { KnownKeys = new Dictionary<string, uint>() };
+
+        public IDictionary<string, uint> KnownKeys { get { return DefaultScheme.KnownKeys; } }
+
+        public override ResourceScheme Scheme
+        {
+            get { return DefaultScheme; }
+            set { DefaultScheme = (DpmxScheme)value; }
         }
     }
 
@@ -153,5 +165,25 @@ namespace GameRes.Formats.HSP
                 data[i] = val;
             }
         }
+
+        internal void DecryptEntry2 (byte[] data, uint entry_key)
+        {
+            byte s1 = 0x5A;
+            byte s2 = 0xA5;
+            s1 = (byte)(Seed1 + ((entry_key >> 16) ^  (entry_key       + s1)));
+            s2 = (byte)(Seed2 + ((entry_key >> 24) ^ ((entry_key >> 8) + s2)));
+            byte val = 0;
+            for (int i = 0; i < data.Length; ++i)
+            {
+                val += (byte)((s1 ^ data[i]) - s2);
+                data[i] = val;
+            }
+        }
+    }
+
+    [Serializable]
+    public class DpmxScheme : ResourceScheme
+    {
+        public IDictionary<string, uint>    KnownKeys;
     }
 }
