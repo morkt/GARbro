@@ -122,6 +122,7 @@ namespace GameRes.Formats.Neko
 
         static string[] s_known_dir_names = {
             "image/actor", "image/back", "image/mask", "image/visual", "image/actor/big",
+            "image/face", "image/actor/b", "image/actor/bb", "image/actor/s", "image/actor/ss",
             "sound/bgm", "sound/env", "sound/se", "voice", "script", "system", "count",
         };
 
