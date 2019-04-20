@@ -175,7 +175,7 @@ namespace GameRes.Formats.Cherry
                 return new ArcFile (file, this, dir);
         }
 
-        void Decrypt (byte[] data, int index, int length) // Exile ~Blood Royal 2~
+        internal static void Decrypt (byte[] data, int index, int length) // Exile ~Blood Royal 2~
         {
             for (int i = 0; i+1 < length; i += 2)
             {
