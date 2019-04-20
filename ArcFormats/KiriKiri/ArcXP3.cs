@@ -161,7 +161,12 @@ namespace GameRes.Formats.KiriKiri
                             long section_size = header.ReadInt64();
                             entry_size -= 12;
                             if (section_size > entry_size)
-                                break;
+                            {
+                                // allow "info" sections with wrong size
+                                if (section != 0x6f666e69)
+                                    break;
+                                section_size = entry_size;
+                            }
                             entry_size -= section_size;
                             long next_section_pos = header.BaseStream.Position + section_size;
                             switch (section)
