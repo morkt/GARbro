@@ -2,7 +2,7 @@
 //! \date       Wed Jun 24 22:14:41 2015
 //! \brief      Cherry Soft compressed image format.
 //
-// Copyright (C) 2015 by morkt
+// Copyright (C) 2015-2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -29,7 +29,6 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GameRes.Compression;
-using GameRes.Utility;
 
 namespace GameRes.Formats.Cherry
 {
@@ -40,6 +39,7 @@ namespace GameRes.Formats.Cherry
         public int  Offset;
         public int  HeaderSize;
         public bool AlphaChannel;
+        public bool IsEncrypted;
     }
 
     [Export(typeof(ImageFormat))]
@@ -57,6 +57,11 @@ namespace GameRes.Formats.Cherry
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x18);
+            return UnpackHeader (header);
+        }
+
+        internal GrpMetaData UnpackHeader (CowArray<byte> header)
+        {
             uint width  = header.ToUInt32 (0);
             uint height = header.ToUInt32 (4);
             int bpp = header.ToInt32 (8);
@@ -81,8 +86,7 @@ namespace GameRes.Formats.Cherry
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = (GrpMetaData)info;
-            var reader = new GrpReader (file.AsStream, meta);
+            var reader = new GrpReader (file.AsStream, (GrpMetaData)info);
             return reader.CreateImage();
         }
 
@@ -127,6 +131,37 @@ namespace GameRes.Formats.Cherry
         }
     }
 
+    [Export(typeof(ImageFormat))]
+    public class GrpEncFormat : GrpFormat
+    {
+        public override string         Tag { get { return "GRP/ENC"; } }
+        public override string Description { get { return "Cherry Soft encrypted image format"; } }
+        public override uint     Signature { get { return 0; } }
+
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
+        {
+            var header = file.ReadHeader (0x18);
+            if (header[3] != 0xA5 || header[7] != 0x35)
+                return null;
+            header[0] ^= 0x5A; // 0xA53CC35A
+            header[1] ^= 0xC3;
+            header[2] ^= 0x3C;
+            header[3] ^= 0xA5;
+            header[4] ^= 0x05; // 0x35421005
+            header[5] ^= 0x10;
+            header[6] ^= 0x42;
+            header[7] ^= 0x35;
+            header[0x10] ^= 0x5D; // 0xCF42355D
+            header[0x11] ^= 0x35;
+            header[0x12] ^= 0x42;
+            header[0x13] ^= 0xCF;
+            var info = UnpackHeader (header);
+            if (info != null)
+                info.IsEncrypted = true;
+            return info;
+        }
+    }
+
     internal class GrpReader
     {
         GrpMetaData     m_info;
@@ -150,7 +185,7 @@ namespace GameRes.Formats.Cherry
                 Format = m_info.AlphaChannel ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             else
                 throw new NotSupportedException ("Not supported GRP image depth");
-            m_stride = (int)m_info.Width*((Format.BitsPerPixel+7)/8);
+            m_stride = m_info.iWidth * ((Format.BitsPerPixel + 7) / 8);
         }
 
         public ImageData CreateImage ()
@@ -165,8 +200,10 @@ namespace GameRes.Formats.Cherry
             else if (8  == m_info.BPP && 0x418 == m_info.Offset ||
                      24 == m_info.BPP && 0x018 == m_info.Offset)
                 return ReadV1();
+            else if (m_info.IsEncrypted)
+                return ReadEncrypted();
             else if (true) // FIXME
-                return ReadV3 (0xFFFF != m_info.Offset);
+                return ReadV3 (m_input, 0xFFFF != m_info.Offset);
             else
                 throw new InvalidFormatException();
         }
@@ -174,12 +211,8 @@ namespace GameRes.Formats.Cherry
         private ImageData ReadV1 ()
         {
             if (8 == m_info.BPP)
-            {
-                var palette_data = new byte[0x400];
-                if (palette_data.Length != m_input.Read (palette_data, 0, palette_data.Length))
-                    throw new InvalidFormatException ("Unexpected end of file");
-                SetPalette (palette_data);
-            }
+                Palette = ImageFormat.ReadPalette (m_input);
+
             var packed = new byte[m_info.PackedSize];
             if (packed.Length != m_input.Read (packed, 0, packed.Length))
                 throw new InvalidFormatException ("Unexpected end of file");
@@ -187,99 +220,56 @@ namespace GameRes.Formats.Cherry
                 packed[i] ^= (byte)i;
 
             using (var input = new MemoryStream (packed))
-            using (var reader = new LzssReader (input, packed.Length, m_info.UnpackedSize))
+            using (var lzs = new LzssStream (input))
             {
-                reader.Unpack();
                 m_image_data = new byte[m_info.UnpackedSize];
                 // flip pixels vertically
-                int dst = 0;
-                for (int src = m_stride * ((int)m_info.Height-1); src >= 0; src -= m_stride)
+                for (int dst = m_stride * (m_info.iHeight-1); dst >= 0; dst -= m_stride)
                 {
-                    Buffer.BlockCopy (reader.Data, src, m_image_data, dst, m_stride);
-                    dst += m_stride;
+                    lzs.Read (m_image_data, dst, m_stride);
                 }
             }
-            return ImageData.Create (m_info, Format, Palette, m_image_data);
+            return ImageData.Create (m_info, Format, Palette, m_image_data, m_stride);
         }
 
         // DOUBLE
         private ImageData ReadV2 ()
         {
             if (0 != m_info.PackedSize)
-            {
-                using (var reader = new LzssReader (m_input, m_info.PackedSize, m_info.UnpackedSize))
-                {
-                    reader.Unpack();
-                    m_image_data = reader.Data;
-                }
-            }
-            else
-            {
-                m_image_data = new byte[m_info.UnpackedSize];
-                if (m_image_data.Length != m_input.Read (m_image_data, 0, m_image_data.Length))
-                    throw new InvalidFormatException ("Unexpected end of file");
-            }
-            int pixels_offset = 0;
-            if (8 == m_info.BPP)
-            {
-                SetPalette (m_image_data);
-                pixels_offset += 0x400;
-            }
-
-            if (0 == pixels_offset)
-                return ImageData.Create (m_info, Format, Palette, m_image_data);
-
-            if (pixels_offset + m_stride*(int)m_info.Height > m_image_data.Length)
-                throw new InvalidFormatException();
-            unsafe
-            {
-                fixed (byte* pixels = &m_image_data[pixels_offset])
-                {
-                    var bitmap = BitmapSource.Create ((int)m_info.Width, (int)m_info.Height,
-                        ImageData.DefaultDpiX, ImageData.DefaultDpiY, Format, Palette,
-                        (IntPtr)pixels, m_image_data.Length-pixels_offset, m_stride);
-                    bitmap.Freeze();
-                    return new ImageData (bitmap, m_info);
-                }
-            }
+                return ReadV3 (m_input, true);
+            return ImageFromStream (m_input, true);
         }
 
         // Exile ~Blood Royal 2~      : flipped == true
         // Gakuen ~Nerawareta Chitai~ : flipped == false
-        private ImageData ReadV3 (bool flipped)
+        private ImageData ReadV3 (Stream input, bool flipped)
         {
-            using (var lzs = new LzssStream (m_input, LzssMode.Decompress, true))
-            {
-                if (8 == m_info.BPP)
-                {
-                    var palette_data = new byte[0x400];
-                    if (palette_data.Length != lzs.Read (palette_data, 0, palette_data.Length))
-                        throw new InvalidFormatException ("Unexpected end of file");
-                    SetPalette (palette_data);
-                }
-                m_image_data = new byte[m_stride * (int)m_info.Height];
-                if (m_image_data.Length != lzs.Read (m_image_data, 0, m_image_data.Length))
-                    throw new InvalidFormatException();
-
-                if (flipped)
-                    return ImageData.CreateFlipped (m_info, Format, Palette, m_image_data, m_stride);
-                else
-                    return ImageData.Create (m_info, Format, Palette, m_image_data, m_stride);
-            }
+            using (var lzs = new LzssStream (input, LzssMode.Decompress, true))
+                return ImageFromStream (lzs, flipped);
         }
 
-        private void SetPalette (byte[] palette_data)
+        private ImageData ImageFromStream (Stream input, bool flipped)
         {
-            if (palette_data.Length < 0x400)
+            if (8 == m_info.BPP)
+                Palette = ImageFormat.ReadPalette (input);
+
+            m_image_data = new byte[m_stride * m_info.iHeight];
+            if (m_image_data.Length != input.Read (m_image_data, 0, m_image_data.Length))
                 throw new InvalidFormatException();
 
-            var palette = new Color[0x100];
-            for (int i = 0; i < palette.Length; ++i)
-            {
-                int c = i * 4;
-                palette[i] = Color.FromRgb (palette_data[c+2], palette_data[c+1], palette_data[c]);
-            }
-            Palette = new BitmapPalette (palette);
+            if (flipped)
+                return ImageData.CreateFlipped (m_info, Format, Palette, m_image_data, m_stride);
+            else
+                return ImageData.Create (m_info, Format, Palette, m_image_data, m_stride);
+        }
+
+        private ImageData ReadEncrypted ()
+        {
+            var data = new byte[m_input.Length - m_info.HeaderSize];
+            m_input.Read (data, 0, data.Length);
+            Pak2Opener.Decrypt (data, 0, data.Length);
+            using (var input = new MemoryStream (data))
+                return ReadV3 (input, true);
         }
     }
 }
