@@ -19,7 +19,7 @@ Updated KiriKiri encryption schemes.
 </Notes>
     </Release>
     <FormatsData>
-        <FileVersion>147</FileVersion>
+        <FileVersion>148</FileVersion>
         <Url>https://github.com/morkt/GARbro/raw/master/ArcFormats/Resources/Formats.dat</Url>
         <Requires>
             <Assembly Name="ArcFormats" Version="1.2.47.2146"/>
