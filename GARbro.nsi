@@ -94,8 +94,6 @@ Section "install"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Supported formats.lnk" "$INSTDIR\supported.html"
 	CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Uninstall $(^Name).lnk" "$INSTDIR\uninstall.exe"
     !insertmacro MUI_STARTMENU_WRITE_END
-
-    CreateShortCut "$DESKTOP\$(^Name).lnk" "$INSTDIR\GARbro.GUI.exe"
 SectionEnd
 
 Section "uninstall"
