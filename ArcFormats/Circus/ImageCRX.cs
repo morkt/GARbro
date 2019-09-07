@@ -443,7 +443,7 @@ namespace GameRes.Formats.Circus
 
             private void ReadPalette(int colors)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("CrxFormat.Write 8bit bpp not implemented");
             }
 
 
