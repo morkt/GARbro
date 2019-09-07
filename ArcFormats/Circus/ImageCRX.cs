@@ -47,6 +47,7 @@ namespace GameRes.Formats.Circus
         public override string         Tag { get { return "CRX"; } }
         public override string Description { get { return "Circus image format"; } }
         public override uint     Signature { get { return 0x47585243; } } // 'CRXG'
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
@@ -81,7 +82,77 @@ namespace GameRes.Formats.Circus
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new NotImplementedException ("CrxFormat.Write not implemented");
+            var header = new byte[0x14];
+
+            var depth = (short)(24 == image.BPP ? 0 : 32 == image.BPP ? 1 : 2);
+            var compression = (ushort)3;
+            var flags = (ushort)17;
+            var mode = (ushort)0;
+
+            using (var memeStream = new MemoryStream(header))
+            {
+                using (var binaryWriter = new BinaryWriter(memeStream))
+                {
+                    binaryWriter.Write(Signature);
+                    binaryWriter.Write((ushort)image.OffsetX);
+                    binaryWriter.Write((ushort)image.OffsetY);
+                    binaryWriter.Write((ushort)image.Width);
+                    binaryWriter.Write((ushort)image.Height);
+                    binaryWriter.Write(compression);
+                    binaryWriter.Write(flags);
+                    binaryWriter.Write(depth);
+                    binaryWriter.Write(mode);
+                }
+            }
+
+            var metaData = ReadMetaData(BinaryStream.FromArray(header,""));
+
+            var bitmap = image.Bitmap;
+            var pixelFormat = CheckFormat(image.BPP);
+
+            int stride = (int)(image.Width * pixelFormat.BitsPerPixel / 8 + 3) & ~3;
+
+            if (pixelFormat != bitmap.Format )
+            {
+                var converted_bitmap = new FormatConvertedBitmap();
+                converted_bitmap.BeginInit();
+                converted_bitmap.Source = image.Bitmap;
+                converted_bitmap.DestinationFormat = pixelFormat;
+                converted_bitmap.EndInit();
+                bitmap = converted_bitmap;
+            }
+
+            var data = new byte[image.Height * stride];
+            var row_data = new byte[stride];
+            var rect = new Int32Rect(0, 0, (int)image.Width, 1);
+
+            for (uint row = 0; row < image.Height; ++row)
+            {
+                bitmap.CopyPixels(rect, row_data, stride, 0);
+                rect.Y++;
+                row_data.CopyTo(data, row * stride);
+            }
+
+            using (var binaryWriter = new BinaryWriter(file))
+            {
+                binaryWriter.Write(header);
+                using (var writer = new Writer(data, 
+                    binaryWriter,(CrxMetaData)metaData ))
+                {
+                    writer.Write();
+                }
+            }
+        }
+
+        private static PixelFormat CheckFormat(int bpp)
+        {
+            switch (bpp)
+            {
+                case 24: return PixelFormats.Bgr24;
+                case 32: return PixelFormats.Bgra32;
+                case 8: return PixelFormats.Indexed8;
+                default: throw new InvalidFormatException();
+            }
         }
 
         internal sealed class Reader : IDisposable
@@ -109,13 +180,7 @@ namespace GameRes.Formats.Circus
                 m_compression = info.Compression;
                 m_flags = info.CompressionFlags;
                 m_mode = info.Mode;
-                switch (m_bpp)
-                {
-                case 24: Format = PixelFormats.Bgr24; break;
-                case 32: Format = PixelFormats.Bgra32; break;
-                case 8:  Format = PixelFormats.Indexed8; break;
-                default: throw new InvalidFormatException();
-                }
+                Format = CheckFormat(m_bpp);
                 m_stride = (m_width * m_bpp / 8 + 3) & ~3;
                 m_output = new byte[m_height*m_stride];
                 m_input = input;
@@ -332,6 +397,223 @@ namespace GameRes.Formats.Circus
 
             #region IDisposable Members
             public void Dispose ()
+            {
+            }
+            #endregion
+        }
+
+        internal sealed class Writer : IDisposable
+        {
+            BinaryWriter m_output;
+            byte[] m_input;
+            int m_width;
+            int m_height;
+            int m_stride;
+            int m_bpp;
+            int m_compression;
+            int m_flags;
+            int m_mode;
+
+            public byte[] Data { get { return m_input; } }
+            public PixelFormat Format { get; private set; }
+            public BitmapPalette Palette { get; private set; }
+            public int Stride { get { return m_stride; } }
+
+            public Writer(byte[] input,
+                BinaryWriter output,
+                CrxMetaData info)
+            {
+                m_width = (int)info.Width;
+                m_height = (int)info.Height;
+                m_bpp = info.BPP;
+                m_compression = info.Compression;
+                m_flags = info.CompressionFlags;
+                m_mode = info.Mode;
+                Format = CheckFormat(m_bpp);
+                m_stride = (m_width * m_bpp / 8 + 3) & ~3;
+
+                m_input = input;
+                m_output = output;
+
+                m_output.Seek(0x14, SeekOrigin.Begin);
+
+                if (8 == m_bpp)
+                    ReadPalette(info.Colors);
+            }
+
+            private void ReadPalette(int colors)
+            {
+                throw new NotImplementedException();
+            }
+
+
+            public void Write(bool isDiff = false)
+            {
+                int compressed_size_position = 40;
+
+                if (m_compression >= 3)
+                {
+                    var count = 1;
+                    m_output.Write(count);
+                    m_output.Seek(count * 0x10, SeekOrigin.Current);
+
+                }
+                if (0 != (m_flags & 0x10))
+                {
+                    compressed_size_position = (int) m_output.BaseStream.Position + 4;
+                    m_output.Seek(compressed_size_position, SeekOrigin.Begin);
+                }
+
+                if (32 == m_bpp && m_mode != 1)
+                {
+                    int alpha_flip = 2 == m_mode ? 0 : 0xFF;
+                    int line = 0;
+                    for (int h = 0; h < m_height; h++)
+                    {
+                        for (int w = 0; w < m_width; w++)
+                        {
+                            int pixel = line + w * 4;
+
+                            var b = m_input[pixel];
+                            var g = m_input[pixel + 1];
+                            var r = m_input[pixel + 2];
+                            var alpha = m_input[pixel + 3];
+
+                            m_input[pixel] = (byte)(alpha ^ alpha_flip);
+                            m_input[pixel + 1] = b;
+                            m_input[pixel + 2] = g;
+                            m_input[pixel + 3] = r;
+
+                        }
+                        line += m_stride;
+                    }
+                }
+
+                if (1 == m_compression)
+                    WriteV1();
+                else
+                    WriteV2();
+
+                m_output.Seek(compressed_size_position - 4, SeekOrigin.Begin);
+                var compressed_size = (int)m_output.BaseStream.Length; // compressed_size
+                m_output.Write(compressed_size);
+            }
+
+            private void WriteV2()
+            {
+                int pixel_size = m_bpp / 8;
+                int src_stride = m_width * pixel_size;
+                m_output.Flush();
+
+                using (var zlib = new ZLibStream(m_output.BaseStream, CompressionMode.Compress, true))
+                using (var output = new BinaryWriter(zlib))
+                {
+
+                    if (m_bpp >= 24)
+                    {
+                        for (int y = 0; y < m_height; ++y)
+                        {
+
+                            byte ctl = 0;
+                            output.Write(ctl);
+
+                            int dst = y * m_stride;
+                            int prev_row = dst - m_stride;
+                            switch (ctl)
+                            {
+                                case 0:
+                                    output.Write(m_input, dst, pixel_size);
+                                    for (int x = pixel_size; x < src_stride; ++x)
+                                    {
+                                        output.Write((byte)(m_input[dst + x] - m_input[dst + x - pixel_size]));
+                                    }
+                                    break;
+                                case 1:
+                                    for (int x = 0; x < src_stride; ++x)
+                                    {
+                                        output.Write((byte)(m_input[dst + x] - m_input[prev_row + x]));
+                                    }
+                                    break;
+                                case 2:
+                                    output.Write(m_input, dst, pixel_size);
+
+                                    for (int x = pixel_size; x < src_stride; ++x)
+                                    {
+                                        output.Write((byte)(m_input[dst + x] - m_input[prev_row + x - pixel_size]));
+                                    }
+                                    break;
+                                case 3:
+                                    for (int x = src_stride - pixel_size; x > 0; --x)
+                                    {
+                                        output.Write((byte)(m_input[dst++] - m_input[prev_row++ + pixel_size]));
+                                    }
+                                    output.Write(m_input, dst, pixel_size);
+                                    break;
+                                case 4:
+                                    for (int i = 0; i < pixel_size; ++i)
+                                    {
+                                        int w = m_width;
+                                        byte val = m_input[dst];
+                                        output.Write(val);
+                                        while (w > 0)
+                                        {
+                                            dst += pixel_size;
+                                            if (0 == --w)
+                                                break;
+
+                                            byte next = m_input[dst];
+                                            output.Write(next);
+
+                                            if (val == next)
+                                            {
+                                                var count = 255;
+
+                                                output.Write(count);
+
+                                                dst += pixel_size * count;
+                                                w -= count;
+
+                                                if (w > 0)
+                                                {
+                                                    val = m_input[dst];
+                                                    output.Write(val);
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                val = next;
+                                            }
+
+                                        }
+                                        dst -= src_stride - 1;
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int dst = 0;
+                        for (int y = 0; y < m_height; ++y)
+                        {
+                            m_output.Write(m_input, dst, src_stride);
+                            dst += m_stride;
+                        }
+                    }
+                }
+
+            }
+
+            private void WriteV1()
+            {
+                throw new NotImplementedException ("CrxFormat.Write version 1 not implemented");
+            }
+
+            #region IDisposable Members
+            public void Dispose()
             {
             }
             #endregion
