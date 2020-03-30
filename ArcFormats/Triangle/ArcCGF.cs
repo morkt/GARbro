@@ -72,6 +72,11 @@ namespace GameRes.Formats.Triangle
                 return null;
 
             uint index_offset = 4;
+            uint size = file.View.ReadUInt32 (index_offset + entry_size - 8);
+            offset2 = file.View.ReadUInt32 (index_offset + (entry_size * 2) - 4);
+            if (size == (offset2 - next_offset)) // route2 archives shouldn't have entry size
+                return null;
+
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
