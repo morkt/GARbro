@@ -92,10 +92,13 @@ namespace GameRes.Formats.Ikura
         public readonly ImageMetaData   Info;
         byte[][]    Frames;
 
+        const uint DefaultWidth  = 800;
+        const uint DefaultHeight = 600;
+
         public GanFrameArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir)
             : base (arc, impl, dir)
         {
-            Info = new ImageMetaData { Width = 640, Height = 480, BPP = 24 };
+            Info = new ImageMetaData { Width = DefaultWidth, Height = DefaultHeight, BPP = 24 };
             Frames = new byte[dir.Count][];
         }
 
