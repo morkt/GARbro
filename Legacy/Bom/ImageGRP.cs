@@ -160,7 +160,7 @@ namespace GameRes.Formats.Bom
             for (int i = 0; i <= 316; ++i)
             {
                 v4 = dword_6FF464[v1] + dword_6FF468[v1];
-                dword_709870[v1] = v2;
+                dword_70986C[v1 + 1] = v2;
                 dword_6FF95C[i] = v4;
                 dword_704360[i] = v1;
                 dword_70986C[v1] = v2;
@@ -175,9 +175,13 @@ namespace GameRes.Formats.Bom
             dword_6FFE50 = 0xFFFF;
         }
 
+        int[] dword_704360 = new int[317];
+        int[] dword_6FF95C = new int[317];
+        int[] dword_70986C = new int[634];
+
         int sub_408BE0 ()
         {
-            for (int i = dword_704850; i < 635; i = dword_703E68[GetNextBit() + i])
+            for (int i = dword_704360[316]; i < 635; i = dword_703E68[GetNextBit() + i])
                 ;
             int ctl = i - 635;
             sub_408C80 (ctl);
@@ -210,7 +214,7 @@ namespace GameRes.Formats.Bom
             int v8; // eax@7
             int v9; // esi@9
 
-            if (dword_6FFE4C == 0x8000)
+            if (dword_6FF95C[316] == 0x8000)
                 sub_408D50();
             int v1 = dword_70A258[a1];
             do
@@ -249,6 +253,98 @@ namespace GameRes.Formats.Bom
                 v1 = dword_70986C[v1];
             }
             while (v1 != 0);
+        }
+
+        void sub_408D50 ()
+        {
+            int v3; // ecx@2
+            int v4; // edi@3
+            int v5; // ecx@5
+            int *v6; // ebx@5
+            unsigned int v7; // eax@6
+            int *v8; // edx@6
+            int v9; // ecx@6
+            int *v10; // edi@6
+            unsigned int v11; // ebp@7
+            int v12; // ecx@8
+            int *i; // edi@8
+            int *v14; // eax@10
+            int *v15; // ecx@10
+            int v16; // edx@13
+            int *v17; // ecx@13
+            int v18; // eax@14
+            int v19; // [sp+10h] [bp-8h]@5
+            signed int v20; // [sp+14h] [bp-4h]@5
+
+            int v1 = 0;
+            int v2 = 0;
+            for (int i = 0; i < 635; ++i)
+            {
+                int v3 = dword_703E68[i];
+                if (v3 >= 635)
+                {
+                    v4 = dword_6FF464[i];
+                    dword_703E68[v2] = v3;
+                    dword_6FF464[v2] = (int)((uint)(v4 + 1) >> 1);
+                    ++v2;
+                }
+            }
+            int v5 = 318;
+            v19 = 0;
+            v20 = 318;
+            v6 = dword_6FF464;
+            do
+            {
+                v7 = *v6 + v6[1];
+                v8 = &dword_6FF95C[v1];
+                v9 = v5 - 1;
+                v10 = &dword_6FF95C[v1 - 1];
+                dword_6FF95C[v1] = v7;
+                if ( v7 < *v10 )
+                {
+                    do
+                    {
+                        v11 = *(v10 - 1);
+                        --v10;
+                        --v9;
+                    }
+                    while ( v7 < v11 );
+                }
+                v12 = v9 + 1;
+                for ( i = &dword_6FF464[v12]; v8 > i; --v8 )
+                    *v8 = *(v8 - 1);
+                *i = v7;
+                v14 = &dword_704360[v1];
+                v15 = &dword_703E68[v12];
+                if ( &dword_704360[v1] > v15 )
+                {
+                    do
+                    {
+                        *v14 = *(v14 - 1);
+                        --v14;
+                    }
+                    while ( v14 > v15 );
+                }
+                v6 += 2;
+                *v15 = v19;
+                ++v1;
+                v5 = v20 + 1;
+                v19 += 2;
+                ++v20;
+            }
+            while ( v1 < 317 );
+            v16 = 0;
+            v17 = dword_703E68;
+            do
+            {
+                v18 = *v17;
+                if ( *v17 < 635 )
+                    dword_70986C[v18 + 1] = v16;
+                dword_70986C[v18] = v16;
+                ++v17;
+                ++v16;
+            }
+            while ( (signed int)v17 < (signed int)&unk_704854 );
         }
 
         void PutByte (int a1)

@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
 
+// [991203][Libido] Ren'Ai Kumikyoku
 // [030228][Libido] Libido 7 DVD
 
 namespace GameRes.Formats.Libido
@@ -48,27 +49,34 @@ namespace GameRes.Formats.Libido
             if (!IsSaneCount (count))
                 return null;
 
+            const int name_buf_size = 0x14;
+            var name_buf = new byte[name_buf_size];
+            var is_name_encrypted = new Lazy<bool> (() => -1 != Array.IndexOf<byte> (name_buf, 0xFF, 0, name_buf_size));
             uint index_offset = 4;
-            var name_buf = new byte[0x14];
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                file.View.Read (index_offset, name_buf, 0, 0x14);
+                file.View.Read (index_offset, name_buf, 0, name_buf_size);
                 int j;
-                for (j = 0; j < 0x14; ++j)
+                if (is_name_encrypted.Value)
                 {
-                    name_buf[j] ^= 0xFF;
-                    if (0 == name_buf[j])
-                        break;
+                    for (j = 0; j < name_buf_size; ++j)
+                    {
+                        name_buf[j] ^= 0xFF;
+                        if (0 == name_buf[j])
+                            break;
+                    }
                 }
-                if (0 == j || -1 != Array.IndexOf<byte> (name_buf, 0xFF, 0, j))
+                else
+                    j = Array.IndexOf<byte> (name_buf, 0, 0, name_buf_size);
+                if (j <= 0 || -1 != Array.IndexOf<byte> (name_buf, 0xFF, 0, j))
                     return null;
                 var name = Encodings.cp932.GetString (name_buf, 0, j);
                 var entry = Create<PackedEntry> (name);
                 entry.UnpackedSize = file.View.ReadUInt32 (index_offset+0x14);
                 entry.Size         = file.View.ReadUInt32 (index_offset+0x18);
                 entry.Offset       = file.View.ReadUInt32 (index_offset+0x1C);
-                if (!entry.CheckPlacement (file.MaxOffset))
+                if (entry.Offset <= index_offset || !entry.CheckPlacement (file.MaxOffset))
                     return null;
                 entry.IsPacked = entry.Size != entry.UnpackedSize;
                 dir.Add (entry);

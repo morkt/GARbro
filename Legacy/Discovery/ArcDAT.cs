@@ -32,6 +32,7 @@ using System.Windows.Media.Imaging;
 using GameRes.Compression;
 
 // [000225][Discovery] Tsukiyo no Hitomi wa Kurenai ni
+// [001102][Discovery] Twins Rhapsody
 
 namespace GameRes.Formats.Discovery
 {
@@ -135,8 +136,8 @@ namespace GameRes.Formats.Discovery
                 entry.BodySize       = index.ToUInt32 (index_offset+4);
                 entry.BodyUnpacked   = index.ToUInt32 (index_offset+8);
                 entry.BodyOffset     = index.ToUInt32 (index_offset+0xC);
-                entry.HeaderUnpacked = index.ToUInt32 (index_offset+0x10);
-                entry.HeaderSize     = index.ToUInt32 (index_offset+0x14);
+                entry.HeaderSize     = index.ToUInt32 (index_offset+0x10);
+                entry.HeaderUnpacked = index.ToUInt32 (index_offset+0x14);
                 entry.Offset         = index.ToUInt32 (index_offset+0x18);
                 entry.Size = entry.HeaderSize + entry.BodySize;
                 entry.UnpackedSize = entry.HeaderUnpacked + entry.BodyUnpacked;
@@ -270,16 +271,7 @@ namespace GameRes.Formats.Discovery
         public int               Stride { get; private set; }
         public BitmapPalette    Palette { get; private set; }
 
-        public ImageData Image {
-            get {
-                if (null == m_image)
-                {
-                    Unpack();
-                    m_image = ImageData.CreateFlipped (Info, Format, Palette, m_output, Stride);
-                }
-                return m_image;
-            }
-        }
+        public ImageData          Image { get { return m_image ?? (m_image = Unpack()); } }
 
         public BDataDecoder (ArcFile arc, BDataEntry entry)
         {
@@ -289,14 +281,17 @@ namespace GameRes.Formats.Discovery
             if (entry.Extra > 0)
                 total_size += 10 * (uint)entry.Extra + 2;
             Stride = ((int)entry.Width * entry.BPP / 8 + 3) & ~3;
-            Format = PixelFormats.Bgr24;
+            if (8 == entry.BPP)
+                Format = PixelFormats.Indexed8;
+            else
+                Format = PixelFormats.Bgr24;
             m_output = new byte[Stride * (int)entry.Height];
             m_colors = entry.Colors;
             m_extra = entry.Extra;
             m_input = arc.File.CreateStream (entry.Offset, total_size);
         }
 
-        private void Unpack ()
+        private ImageData Unpack ()
         {
             m_input.Position = 0;
             if (m_colors > 0)
@@ -305,6 +300,7 @@ namespace GameRes.Formats.Discovery
                 m_input.Seek (10 * m_extra + 2, SeekOrigin.Current);
             using (var lzss = new LzssStream (m_input.AsStream, LzssMode.Decompress, true))
                 lzss.Read (m_output, 0, m_output.Length);
+            return ImageData.CreateFlipped (Info, Format, Palette, m_output, Stride);
         }
 
         bool m_disposed = false;

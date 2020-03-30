@@ -70,6 +70,7 @@
     <Compile Include="Aaru\ImageBM2.cs" />
     <Compile Include="Acme\ImageARD.cs" />
     <Compile Include="Acme\ImagePMG.cs" />
+    <Compile Include="ADVGSys\ImageBMP.cs" />
     <Compile Include="Ags32i\AudioAGS.cs" />
     <Compile Include="Ags32i\ImageGSS.cs" />
     <Compile Include="Airyu\ArcCHR.cs" />
@@ -78,10 +79,14 @@
     <Compile Include="AlphaSystem\ArcPAK.cs" />
     <Compile Include="AlphaSystem\ImageSFG.cs" />
     <Compile Include="Alterna\ArcBIN.cs" />
+    <Compile Include="Aos\ArcDAT.cs" />
     <Compile Include="Aquarium\ArcAAP.cs" />
     <Compile Include="Aquarium\ArcCPA.cs" />
     <Compile Include="Aquarium\ImageCP2.cs" />
     <Compile Include="Ark\ImageCMP.cs" />
+    <Compile Include="Artel\ArcPFD.cs" />
+    <Compile Include="Artel\AudioMUW.cs" />
+    <Compile Include="Artel\ImageMRL.cs" />
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
     <Compile Include="BRoom\ArcCPC.cs" />
@@ -90,9 +95,11 @@
     <Compile Include="BRoom\ImageERP.cs" />
     <Compile Include="Brownie\ImageNGC.cs" />
     <Compile Include="Brownie\ImageNGW.cs" />
+    <Compile Include="Dall\ArcPEL.cs" />
     <Compile Include="DigitalMonkey\ArcDM.cs" />
     <Compile Include="DigitalMonkey\ImagePKT.cs" />
     <Compile Include="Electriciteit\ArcPKK.cs" />
+    <Compile Include="Eye\ImageCSF.cs" />
     <Compile Include="FazeX\ImageFGP.cs" />
     <Compile Include="HillField\ImageIMA.cs" />
     <Compile Include="HillField\ImageIMG.cs" />
@@ -124,6 +131,9 @@
     <Compile Include="Powerd\ImageNCL.cs" />
     <Compile Include="PrimeSoft\ImageTHP.cs" />
     <Compile Include="ProjectMyu\ImageGAM.cs" />
+    <Compile Include="Ransel\ArcBCD.cs" />
+    <Compile Include="Regrips\AudioWRG.cs" />
+    <Compile Include="Regrips\ImagePRG.cs" />
     <Compile Include="Rina\ImageRAD.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
@@ -217,6 +227,8 @@
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
     <Compile Include="PlanTech\ArcPAC.cs" />
+    <Compile Include="Zone\ArcPKD.cs" />
+    <Compile Include="Zone\ImageBM_.cs" />
     <None Include="PlanTech\ImagePAC.cs" />
     <Compile Include="Pochette\ImageGDT.cs" />
     <Compile Include="ProjectMyu\ImageKGR.cs" />
@@ -260,6 +272,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Bom\" />
+    <Folder Include="HyperWorks\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
