@@ -36,8 +36,8 @@ namespace GameRes.Formats.Parsley
     [Export(typeof(ArchiveFormat))]
     public class CgOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "CG/PARSLEY/2"; } }
-        public override string Description { get { return "Software House Parsley CG archive"; } }
+        public override string         Tag { get { return "DAT/yanepack"; } }
+        public override string Description { get { return "YaneSDK resouce archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
@@ -50,6 +50,11 @@ namespace GameRes.Formats.Parsley
 
         public override ArcFile TryOpen (ArcView file)
         {
+            if (file.View.AsciiEqual (0, "yane"))
+            {
+                if (!file.View.AsciiEqual (4, "pack"))
+                    return null;
+            }
             int count = file.View.ReadInt32 (8);
             if (!IsSaneCount (count))
                 return null;
@@ -64,7 +69,7 @@ namespace GameRes.Formats.Parsley
                 var name = file.View.ReadString (index_offset, 0x20);
                 if (string.IsNullOrWhiteSpace (name))
                     return null;
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
+                var entry = Create<Entry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+0x20);
                 entry.Size   = file.View.ReadUInt32 (index_offset+0x24);
                 if (!entry.CheckPlacement (file.MaxOffset))
@@ -108,7 +113,7 @@ namespace GameRes.Formats.Parsley
                     var name = index.ReadCString();
                     if (string.IsNullOrWhiteSpace (name) || name.Length > 0x100)
                         return null;
-                    var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
+                    var entry = Create<PackedEntry> (name);
                     entry.Offset = index.ReadUInt32();
                     if (entry.Offset >= file.MaxOffset)
                         return null;
@@ -221,10 +226,19 @@ namespace GameRes.Formats.Parsley
             m_input.Position = 0x10;
             using (var lz = new LzssStream (m_input.AsStream, LzssMode.Decompress, true))
             {
+                /*
                 int stride = (int)Info.Width * 2;
                 var pixels = new byte[stride * (int)Info.Height];
                 if (pixels.Length != lz.Read (pixels, 0, pixels.Length))
                     throw new InvalidFormatException();
+                */
+                int w2x = (int)Info.Width * 2;
+                int stride = (w2x + 3) & ~3;
+                var pixels = new byte[stride * (int)Info.Height];
+                for (int dst = 0; dst < pixels.Length; dst += stride)
+                {
+                    lz.Read (pixels, dst, w2x);
+                }
                 return ImageData.Create (Info, PixelFormats.Bgr565, null, pixels, stride);
             }
         }
