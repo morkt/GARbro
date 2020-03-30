@@ -36,7 +36,7 @@ namespace GameRes.Formats.Slg
         public override string         Tag { get { return "SZS"; } }
         public override string Description { get { return "SLG system resource archive"; } }
         public override uint     Signature { get { return 0x31535A53; } } // 'SZS1'
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
@@ -56,6 +56,7 @@ namespace GameRes.Formats.Slg
                 if (string.IsNullOrWhiteSpace (name))
                     return null;
                 index_offset += 0x100;
+                name = name.Replace (';', '/');
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
                 entry.Offset = file.View.ReadInt64 (index_offset);
                 entry.Size   = file.View.ReadUInt32 (index_offset+8);
