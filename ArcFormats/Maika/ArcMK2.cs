@@ -33,7 +33,7 @@ using GameRes.Utility;
 namespace GameRes.Formats.Maika
 {
     [Serializable]
-    internal class ScrambleScheme
+    public class ScrambleScheme
     {
         public uint                 ScrambledSize;
         public Tuple<byte, byte>[]  ScrambleMap;
@@ -75,7 +75,6 @@ namespace GameRes.Formats.Maika
             if (!IsSaneCount (count))
                 return null;
 
-            string arc_id = file.View.ReadString (0, 5);
             uint base_offset  = file.View.ReadUInt16 (8);
             uint index_offset = file.View.ReadUInt32 (0xE);
             if (index_offset >= file.MaxOffset)
@@ -114,8 +113,14 @@ namespace GameRes.Formats.Maika
                     break;
                 current_offset += 6;
             }
+            return GetArchive (file, dir);
+        }
+
+        internal ArcFile GetArchive (ArcView file, List<Entry> dir)
+        {
             if (0 == dir.Count)
                 return null;
+            string arc_id = file.View.ReadString (0, 5);
             ScrambleScheme scheme;
             if (!KnownSchemes.TryGetValue (arc_id, out scheme))
                 scheme = DefaultScheme;
@@ -172,14 +177,17 @@ namespace GameRes.Formats.Maika
             }
         };
 
+        static readonly ScrambleScheme ArScheme = new ScrambleScheme {
+            ScrambledSize = 15,
+            ScrambleMap = new Tuple<byte,byte>[] {
+                new Tuple<byte, byte> (7, 13),
+                new Tuple<byte, byte> (9, 14)
+            }
+        };
+
         Dictionary<string, ScrambleScheme> KnownSchemes = new Dictionary<string, ScrambleScheme> {
-            { "AR2.0", new ScrambleScheme {
-                ScrambledSize = 15,
-                ScrambleMap = new Tuple<byte,byte>[] {
-                    new Tuple<byte, byte> (7, 13),
-                    new Tuple<byte, byte> (9, 14)
-                }
-            } }
+            { "AR2.0", ArScheme },
+            { "USG01", ArScheme },
         };
     }
 

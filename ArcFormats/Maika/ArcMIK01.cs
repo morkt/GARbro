@@ -39,6 +39,11 @@ namespace GameRes.Formats.Maika
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public MikOpener ()
+        {
+            Signatures = new uint[] { 0x304B494D, 0x30475355 }; // 'MIK01', 'USG01'
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "1\x1A\0"))
@@ -61,7 +66,7 @@ namespace GameRes.Formats.Maika
                 offset += entry.Size;
                 index_offset += 0x10;
             }
-            return new ArcFile (file, this, dir);
+            return GetArchive (file, dir);
         }
     }
 }
