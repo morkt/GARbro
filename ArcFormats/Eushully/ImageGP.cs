@@ -62,7 +62,7 @@ namespace GameRes.Formats.Eushully
             int bpp = stream.ReadByte();
             if (alpha_channel < 0 || alpha_channel > 1 || method < 0 || method > 2
                 || align1 < 0 || align1 > 4 || align2 < 0 || align2 > 4
-                || bpp <= 0 || !(bpp <= 16 || 24 == bpp || 32 == bpp))
+                || bpp < 0 || !(bpp <= 16 || 24 == bpp || 32 == bpp))
                 return null;
 
             int palette_size = stream.ReadInt32();
@@ -70,13 +70,13 @@ namespace GameRes.Formats.Eushully
             uint height = stream.ReadUInt16();
             if (palette_size <= 0 || 0 == width || 0 == height || palette_size >= stream.Length)
                 return null;
-            if (bpp <= 8 && palette_size > 0x100)
+            if (bpp > 0 && bpp <= 8 && palette_size > 0x100)
                 return null;
             return new GpMetaData
             {
                 Width   = width,
                 Height  = height,
-                BPP     = bpp,
+                BPP     = bpp == 0 ? 24 : bpp,
                 HasAlpha = alpha_channel != 0,
                 Method  = method,
                 ElementSize = align1,
