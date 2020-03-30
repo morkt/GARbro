@@ -107,7 +107,8 @@ namespace GameRes.Formats.Eagls
             if (dir[0].Name.HasExtension ("gr")) // CG archive
             {
                 var rng = DetectEncryptionScheme (file, dir[0]);
-                return new EaglsArchive (file, this, dir, new CgEncryption (rng));
+                if (rng != null)
+                    return new EaglsArchive (file, this, dir, new CgEncryption (rng));
             }
             else if (has_scripts)
             {
@@ -155,6 +156,8 @@ namespace GameRes.Formats.Eagls
         IRandomGenerator DetectEncryptionScheme (ArcView file, Entry first_entry)
         {
             int signature = (file.View.ReadInt32 (first_entry.Offset) >> 8) & 0xFFFF;
+            if (0x4D42 == signature) // 'BM'
+                return null;
             byte seed = file.View.ReadByte (first_entry.Offset+first_entry.Size-1);
             IRandomGenerator[] rng_list = {
                 new LehmerRandomGenerator(),
