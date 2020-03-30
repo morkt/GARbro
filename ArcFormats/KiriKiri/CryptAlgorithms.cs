@@ -1368,4 +1368,42 @@ namespace GameRes.Formats.KiriKiri
             Decrypt (entry, offset, buffer, pos, count);
         }
     }
+
+    [Serializable]
+    public class NekoWorksCrypt : ICrypt
+    {
+        byte[]  DefaultKey;
+
+        public NekoWorksCrypt (byte[] key)
+        {
+            DefaultKey = key;
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var key = InitKey (entry.Hash);
+            for (int i = 0; i < count; ++i)
+            {
+                buffer[pos+i] ^= key[(offset + i) % 31];
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+
+        byte[] InitKey (uint hash)
+        {
+            hash &= 0x7FFFFFFF;
+            hash = hash << 31 | hash;
+            var key = DefaultKey.Clone() as byte[];
+            for (int i = 0; i < 31; ++i)
+            {
+                key[i] ^= (byte)hash;
+                hash = (hash & 0xFFFFFFFE) << 23 | hash >> 8;
+            }
+            return key;
+        }
+    }
 }
