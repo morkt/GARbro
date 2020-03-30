@@ -48,6 +48,11 @@ namespace GameRes.Formats.Malie
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
+        public LibOpener ()
+        {
+            Extensions = new string[] { "lib", "sdp" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             var reader = new Reader (file);
