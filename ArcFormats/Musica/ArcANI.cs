@@ -56,6 +56,7 @@ namespace GameRes.Formats.Musica
                 return null;
             using (var input = file.CreateStream())
             {
+                var base_name = Path.GetFileNameWithoutExtension (file.Name);
                 input.Position = 8;
                 var dir = new List<Entry> (count);
                 for (int i = 0; i < count; ++i)
@@ -64,7 +65,7 @@ namespace GameRes.Formats.Musica
                     if (string.IsNullOrWhiteSpace (name))
                         return null;
                     var entry = new Entry {
-                        Name = name,
+                        Name = string.Format ("{0}#{1}", base_name, name),
                         Type = "image",
                         Offset = input.Position,
                     };
