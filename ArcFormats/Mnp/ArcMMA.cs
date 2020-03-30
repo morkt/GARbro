@@ -106,9 +106,9 @@ namespace GameRes.Formats.Mnp
             {
                 for (int i = 0; i < dir.Count; ++i)
                 {
-                    int type = index.Read();
-                    if (-1 == type)
-                        break;
+//                    int type = index.Read();
+//                    if (-1 == type)
+//                        break;
                     var name = index.ReadLine();
                     if (null == name)
                         break;
@@ -173,9 +173,10 @@ namespace GameRes.Formats.Mnp
 
         internal static void Decrypt (byte[] data, int offset, int length)
         {
+            int key_mask = DefaultKey.Length - 1;
             for (int i = 0; i < length; ++i)
             {
-                byte x = (byte)(data[offset+i] ^ DefaultKey[i & 0xF]);
+                byte x = (byte)(data[offset+i] ^ DefaultKey[i & key_mask]);
                 data[offset+i] = Binary.RotByteR (x, 3);
             }
         }
@@ -185,10 +186,23 @@ namespace GameRes.Formats.Mnp
             byte id = input.ReadUInt8();
             if (id != 0xC0)
             {
-                if (id != 0)
-                    throw new InvalidFormatException();
-                input.Read (output, 0, output.Length);
-                return;
+                if ((id ^ DefaultKey[0]) == 0xC0)
+                {
+                    Stream decrypted = input.AsStream;
+                    long start_pos = input.Position;
+                    if (start_pos != 1)
+                        decrypted = new StreamRegion (decrypted, start_pos - 1);
+                    decrypted = new ByteStringEncryptedStream (decrypted, DefaultKey);
+                    input = new BinaryStream (decrypted, input.Name);
+                    input.Position = 1;
+                }
+                else
+                {
+                    if (id != 0)
+                        throw new InvalidFormatException();
+                    input.Read (output, 0, output.Length);
+                    return;
+                }
             }
             int ctl = 0;
             int mask = 0;
@@ -212,13 +226,21 @@ namespace GameRes.Formats.Mnp
                 }
                 else
                 {
-                    output[dst++] = input.ReadUInt8();
+                    output[dst++] = Binary.RotByteL (input.ReadUInt8(), 5);
                 }
                 mask >>= 1;
             }
         }
 
-        static readonly string DefaultKey = "ghTuEiAdjSwElTek";
+        // Izayoi Renka
+//        static readonly string DefaultKey = "ghTuEiAdjSwElTek";
+
+        // Nanairo Kanata
+        // cp932.GetBytes ("w,ozqO%tl(z´1ーw｀y)iEkyzh-if)9")
+        static readonly byte[] DefaultKey = {
+            0x77, 0x2C, 0x6F, 0x7A, 0x71, 0x4F, 0x25, 0x74, 0x6C, 0x28, 0x7A, 0x81, 0x4C, 0x31, 0x81, 0x5B,
+            0x77, 0x81, 0x4D, 0x79, 0x29, 0x69, 0x45, 0x6B, 0x79, 0x7A, 0x68, 0x2D, 0x69, 0x66, 0x29, 0x39,
+        };
     }
 
     internal class MmeBaseDecoder : BinaryImageDecoder
@@ -258,8 +280,8 @@ namespace GameRes.Formats.Mnp
 
         internal void Decrypt ()
         {
-            m_input.Read (m_output, 0, m_output.Length);
-            MmaOpener.Decrypt (m_output, m_header_size, m_output.Length - m_header_size);
+            int length = m_input.Read (m_output, 0, m_output.Length);
+            MmaOpener.Decrypt (m_output, 0, length);
         }
     }
 
@@ -305,6 +327,157 @@ namespace GameRes.Formats.Mnp
             };
             m_output = new byte[entry.UnpackedSize];
             Format = PixelFormats.Gray8;
+        }
+    }
+
+    public enum MnpMethod : int
+    {
+        Scheme03,
+        Scheme06,
+    }
+
+    [Serializable]
+    public class MmaScheme
+    {
+        public byte[]       Key;
+        public MnpMethod    Method;
+    }
+
+    internal interface IMnpDecoder
+    {
+        string ReadMmaListLine (StreamReader input);
+        Stream UnpackEntry (IBinaryStream input, MmaEntry entry);
+    }
+
+    internal abstract class MnpDecoder : IMnpDecoder
+    {
+        protected byte[]    Key;
+
+        protected MnpDecoder (byte[] key)
+        {
+            Key = key;
+        }
+
+        public static IMnpDecoder Create (MmaScheme scheme)
+        {
+            switch (scheme.Method)
+            {
+            case MnpMethod.Scheme03: return new MnpDecoder03 (scheme.Key);
+            case MnpMethod.Scheme06: return new MnpDecoder06 (scheme.Key);
+            default: throw new UnknownEncryptionScheme();
+            }
+        }
+
+        public abstract string ReadMmaListLine (StreamReader input);
+
+        public Stream UnpackEntry (IBinaryStream input, MmaEntry entry)
+        {
+            uint flags = entry.Flags & 6;
+            if (6 == flags && 0 == entry.HeaderSize)
+            {
+                using (input)
+                {
+                    var data = new byte[entry.UnpackedSize];
+                    Unpack (input, data, 0);
+                    return new BinMemoryStream (data, entry.Name);
+                }
+            }
+            else if (4 == flags)
+            {
+                using (input)
+                {
+                    input.Position = (int)entry.HeaderSize;
+                    var data = input.ReadBytes ((int)entry.UnpackedSize);
+                    Decrypt (data, 0, data.Length);
+                    return new BinMemoryStream (data, entry.Name);
+                }
+            }
+            return input.AsStream;
+        }
+
+        protected void Unpack (IBinaryStream input, byte[] output, int dst = 0)
+        {
+            byte id = input.ReadUInt8();
+            if (id != 0xC0)
+            {
+                if (id != 0)
+                    throw new InvalidFormatException();
+                input.Read (output, 0, output.Length);
+                return;
+            }
+            int ctl = 0;
+            int mask = 0;
+            while (dst < output.Length)
+            {
+                if (0 == mask)
+                {
+                    ctl = input.ReadByte();
+                    if (-1 == ctl)
+                        break;
+                    mask = 0x80;
+                }
+                if ((ctl & mask) != 0)
+                {
+                    int offset = input.ReadUInt8() << 8;
+                    offset |= input.ReadUInt8();
+                    int count = (offset & 0x1F) + 3;
+                    offset = (offset >> 5) + 1;
+                    Binary.CopyOverlapped (output, dst - offset, dst, count);
+                    dst += count;
+                }
+                else
+                {
+                    output[dst++] = Binary.RotByteL (input.ReadUInt8(), 5);
+                }
+                mask >>= 1;
+            }
+        }
+
+        protected abstract void UnpackLz (IBinaryStream input, byte[] output);
+
+        internal void Decrypt (byte[] data, int offset, int length)
+        {
+            int key_mask = Key.Length - 1;
+            for (int i = 0; i < length; ++i)
+            {
+                byte x = (byte)(data[offset+i] ^ Key[i & key_mask]);
+                data[offset+i] = Binary.RotByteR (x, 3);
+            }
+        }
+    }
+
+    internal class MnpDecoder03 : MnpDecoder
+    {
+        public MnpDecoder03 (byte[] key) : base (key)
+        {
+        }
+
+        public override string ReadMmaListLine (StreamReader input)
+        {
+            int type = input.Read();
+            if (-1 == type)
+                return null;
+            return input.ReadLine();
+        }
+
+        protected override void UnpackLz (IBinaryStream input, byte[] output)
+        {
+        }
+    }
+
+    internal class MnpDecoder06 : MnpDecoder
+    {
+        public MnpDecoder06 (byte[] key) : base (key)
+        {
+        }
+
+        public override string ReadMmaListLine (StreamReader input)
+        {
+            return input.ReadLine();
+        }
+
+        protected override void UnpackLz (IBinaryStream input, byte[] output)
+        {
         }
     }
 }
