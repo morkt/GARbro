@@ -105,8 +105,8 @@ namespace GameRes.Formats.FC01
         public override ImageData Read (IBinaryStream stream, ImageMetaData info)
         {
             var meta = (McgMetaData)info;
-            byte key = Properties.Settings.Default.MCGLastKey;
-            if (101 == meta.Version)
+            byte key = 0;
+            if (101 == meta.Version || 100 == meta.Version)
             {
                 if (null == LastKey)
                 {
