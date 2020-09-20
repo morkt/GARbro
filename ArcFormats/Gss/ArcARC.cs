@@ -87,10 +87,10 @@ namespace GameRes.Formats.Gss
                 var data = new byte[unpacked_size];
                 switch ((char)pack_method)
                 {
-                case 'D':   UnpackD (input, data); break;
-                case 'R':   UnpackR (input, data); break;
-                case 'H':   UnpackH (input, data); break;
-                case 'W':   UnpackW (input, data); break;
+                case 'D':   UnpackD (input, data); break; //sub_81043C02(v9, v3, v6);
+                case 'R':   UnpackR (input, data); break; //sub_81043AA6(v9, v3)
+                case 'H':   UnpackH (input, data); break; //sub_81043752(v9, v3, v6);
+                case 'W':   UnpackW (input, data); break; //sub_81043414£¬ sub_81043340
                 default:    input.Read (data, 0, data.Length); break;
                 }
                 switch ((char)enc_method)
@@ -111,10 +111,12 @@ namespace GameRes.Formats.Gss
 
         void UnpackD (IBinaryStream input, byte[] output)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            input.Read(output, 0, output.Length);
+            return;
         }
 
-        void UnpackR (IBinaryStream input, byte[] output)
+        void UnpackR (IBinaryStream input, byte[] output) //sub_81043AA6
         {
             int dst = 0;
             while (dst < output.Length)
@@ -178,12 +180,14 @@ namespace GameRes.Formats.Gss
 
         void UnpackH (IBinaryStream input, byte[] output)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            input.Read(output, 0, output.Length);
         }
 
         void UnpackW (IBinaryStream input, byte[] output)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            output = input.ReadBytes(output.Length);
             /*
             int header_length = input.ReadUInt8();
             int shift = input.ReadUInt8();
@@ -250,7 +254,7 @@ namespace GameRes.Formats.Gss
             0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
             0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000
         };
-        static readonly int[] dword_4554E8 = {
+        static readonly int[] dword_4554E8 = { //8107F748
             0x00, 0x00, 0x00, 0x00, 0x07, 0x0F, 0x1F, 0x3F,
             0x7F, 0xFF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF
         };

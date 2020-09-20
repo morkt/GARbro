@@ -3,14 +3,12 @@
 //! \brief      game resources browser.
 //
 
-using System;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.Text;
-using System.Linq;
-using System.Collections.Generic;
-using System.Diagnostics;
 using GameRes;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace GARbro
 {
@@ -90,7 +88,7 @@ namespace GARbro
                         return;
                     }
                     var tag = args[argn+1];
-                    m_image_format = FindFormat (tag);
+                    m_image_format = FindFormat(tag);
                     if (null == m_image_format)
                     {
                         Console.Error.WriteLine ("{0}: unknown format specified", tag);
@@ -149,6 +147,12 @@ namespace GARbro
                     }
                 }
             }
+        }
+
+        private ImageFormat FindFormat(string tag)
+        {
+            var range = FormatCatalog.Instance.LookupExtension<ImageFormat>(tag);
+            return range.FirstOrDefault();
         }
 
         void DeserializeGameData ()
