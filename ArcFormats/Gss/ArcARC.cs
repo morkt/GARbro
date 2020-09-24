@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 
 namespace GameRes.Formats.Gss
@@ -33,96 +34,93 @@ namespace GameRes.Formats.Gss
     [Export(typeof(ArchiveFormat))]
     public class LsdOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "ARC/LSD"; } }
+        public override string Tag { get { return "ARC/LSD"; } }
         public override string Description { get { return "GSS engine resource archive"; } }
-        public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override uint Signature { get { return 0; } }
+        public override bool IsHierarchic { get { return false; } }
+        public override bool CanWrite { get { return false; } }
 
-        public override ArcFile TryOpen (ArcView file)
+        public override ArcFile TryOpen(ArcView file)
         {
-            if (!file.Name.HasExtension (".arc"))
+            if (!file.Name.HasExtension(".arc"))
                 return null;
-            var bin_name = Path.ChangeExtension (file.Name, "BIN");
-            if (!VFS.FileExists (bin_name))
+            var bin_name = Path.ChangeExtension(file.Name, "BIN");
+            if (!VFS.FileExists(bin_name))
                 return null;
-            using (var bin = VFS.OpenView (bin_name))
+            using (var bin = VFS.OpenView(bin_name))
             {
-                if (!bin.View.AsciiEqual (0, "LSDARC V.100"))
+                if (!bin.View.AsciiEqual(0, "LSDARC V.100"))
                     return null;
-                int count = bin.View.ReadInt32 (0xC);
-                if (!IsSaneCount (count))
+                int count = bin.View.ReadInt32(0xC);
+                if (!IsSaneCount(count))
                     return null;
                 using (var index = bin.CreateStream())
                 {
                     index.Position = 0x10;
-                    var dir = new List<Entry> (count);
+                    var dir = new List<Entry>(count);
                     for (int i = 0; i < count; ++i)
                     {
                         var entry = new PackedEntry();
-                        entry.IsPacked     = index.ReadInt32() != 0;
-                        entry.Offset       = index.ReadUInt32();
+                        entry.IsPacked = index.ReadInt32() != 0;
+                        entry.Offset = index.ReadUInt32();
                         entry.UnpackedSize = index.ReadUInt32();
-                        entry.Size         = index.ReadUInt32();
-                        entry.Name         = index.ReadCString();
-                        if (!entry.CheckPlacement (file.MaxOffset))
+                        entry.Size = index.ReadUInt32();
+                        entry.Name = index.ReadCString();
+                        if (!entry.CheckPlacement(file.MaxOffset))
                             return null;
-                        dir.Add (entry);
+                        dir.Add(entry);
                     }
-                    return new ArcFile (file, this, dir);
+                    return new ArcFile(file, this, dir);
                 }
             }
         }
 
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        public override Stream OpenEntry(ArcFile arc, Entry entry)
         {
             var pent = entry as PackedEntry;
-            if (null == pent || !pent.IsPacked || !arc.File.View.AsciiEqual (entry.Offset, "LSD\x1A"))
-                return base.OpenEntry (arc, entry);
-            byte enc_method = arc.File.View.ReadByte (entry.Offset+4);
-            byte pack_method = arc.File.View.ReadByte (entry.Offset+5);
-            uint unpacked_size = arc.File.View.ReadUInt32 (entry.Offset+6);
-            using (var input = arc.File.CreateStream (entry.Offset+12, entry.Size-12))
+            if (null == pent || !pent.IsPacked || !arc.File.View.AsciiEqual(entry.Offset, "LSD\x1A"))
+                return base.OpenEntry(arc, entry);
+            byte enc_method = arc.File.View.ReadByte(entry.Offset + 4);
+            byte pack_method = arc.File.View.ReadByte(entry.Offset + 5);
+            uint unpacked_size = arc.File.View.ReadUInt32(entry.Offset + 6);
+            int len;
+            using (var input = arc.File.CreateStream(entry.Offset + 12, entry.Size - 12))
             {
-                var data = new byte[unpacked_size];
+                var output = new byte[unpacked_size];
                 switch ((char)pack_method)
                 {
-                case 'D':   UnpackD (input, data); break; //sub_81043C02(v9, v3, v6);
-                case 'R':   UnpackR (input, data); break; //sub_81043AA6(v9, v3)
-                case 'H':
-                        var buf_packed = new byte[entry.Size - 12];
-                        input.Read(buf_packed, 0, (int)entry.Size - 12);
-                        UnpackH (buf_packed, data, unpacked_size); 
-                        break; //sub_81043752(v9, v3, v6);
-                case 'W':   UnpackW (input, data); break; //sub_81043414£¬ sub_81043340
-                default:    input.Read (data, 0, data.Length); break;
+                    case 'D': len = UnpackD(input, output); break; //sub_81043C02(v9, v3, v6);
+                    case 'R': len = UnpackR(input, output); break; //sub_81043AA6(v9, v3)
+                    case 'H': //sub_81043752(v9, v3, v6);
+                        {
+                            var buf_packed = new byte[unpacked_size > entry.Size ? unpacked_size : entry.Size];
+                            input.Read(buf_packed, 0, (int)entry.Size - 12);
+                            len = UnpackH(buf_packed, output, unpacked_size);
+                            break;
+                        }
+                    case 'W': len = UnpackW(input, output); break; //sub_81043414£¬ sub_81043340
+                    default: len = input.Read(output, 0, output.Length); break;
                 }
-                switch ((char)enc_method)
-                {
-                case 'B':
-                case 'W':
-                case 'S':
-                    break;
-                }
-                return new BinMemoryStream (data, entry.Name);
+                decrypt(output, len, (char)enc_method);
+                return new BinMemoryStream(output, entry.Name);
             }
         }
 
-        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        public override IImageDecoder OpenImage(ArcFile arc, Entry entry)
         {
             throw new NotImplementedException();
         }
 
-        void UnpackD (IBinaryStream input, byte[] output)
+        int UnpackD(IBinaryStream input, byte[] output)
         {
             throw new NotImplementedException();
             input.Read(output, 0, output.Length);
-            return;
+            return 0;
         }
 
-        void UnpackR (IBinaryStream input, byte[] output) //sub_81043AA6
+        int UnpackR(IBinaryStream input, byte[] output) //sub_81043AA6
         {
-            //throw new NotImplementedException();
+            throw new NotImplementedException();
             int dst = 0;
             while (dst < output.Length)
             {
@@ -142,48 +140,48 @@ namespace GameRes.Formats.Gss
                 }
                 switch (ctl)
                 {
-                case 0xF0: return;
-                case 0x40:
-                    input.Read (output, dst, count);
-                    dst += count;
-                    break;
-
-                case 0xD0:
-                    count = count << 8 | input.ReadUInt8();
-                    input.Read (output, dst, count);
-                    dst += count;
-                    break;
-
-                case 0x80:
-                    {
-                        byte v = input.ReadUInt8();
-                        while (count --> 0)
-                            output[dst++] = v;
+                    case 0xF0: return 0;
+                    case 0x40:
+                        input.Read(output, dst, count);
+                        dst += count;
                         break;
-                    }
 
-                case 0xE0:
-                    {
+                    case 0xD0:
                         count = count << 8 | input.ReadUInt8();
-                        byte v = input.ReadUInt8();
-                        while (count --> 0)
-                            output[dst++] = v;
+                        input.Read(output, dst, count);
+                        dst += count;
                         break;
-                    }
 
-                case 0x00:
-                    dst += count;
-                    break;
+                    case 0x80:
+                        {
+                            byte v = input.ReadUInt8();
+                            while (count-- > 0)
+                                output[dst++] = v;
+                            break;
+                        }
 
-                case 0xC0:
-                    count = count << 8 | input.ReadUInt8();
-                    dst += count;
-                    break;
+                    case 0xE0:
+                        {
+                            count = count << 8 | input.ReadUInt8();
+                            byte v = input.ReadUInt8();
+                            while (count-- > 0)
+                                output[dst++] = v;
+                            break;
+                        }
+
+                    case 0x00:
+                        dst += count;
+                        break;
+
+                    case 0xC0:
+                        count = count << 8 | input.ReadUInt8();
+                        dst += count;
+                        break;
                 }
             }
         }
 
-        unsafe void UnpackH (byte[] buf_packed, byte[] output, uint unpacked_size)
+        int UnpackH(byte[] buf_packed, byte[] output, uint unpacked_size)
         {
 
             // buf = (_BYTE *)&unk_811C6780;
@@ -191,22 +189,22 @@ namespace GameRes.Formats.Gss
             //memset(0x811C6780, 0, 0x2000);                // buf1
             //memset(0x811C8784, 0, 0x800);                 // buf2
             //memset(0x811C8F84, 0, 0x800);                 // buf3
-            var buf = new Byte[0x10000];
+            var buf = new Byte[0x100000];
             Array.Clear(buf, 0, buf.Length);
             const uint buf2_off = 0x2004;
             const uint buf3_off = 0x2804;
             const uint buf4_off = 0x3004; //0x811C9784
 
-            uint cur_addr = 2, next = 2, cur_output_addr=0;
-            int first_char = buf_packed[0];
+            uint cur_addr = 2, next = 2, cur_output_addr = 0;
+            byte first_char = buf_packed[0];
             int v8 = 0;
-            int i2, v28, v29;
-            byte outchar, i1 = 0;
+            int i2, v28;
+            byte outchar, i1 = 0, v29;
             do
             {
                 var v10 = next;
                 int cur_char1 = buf_packed[cur_addr];
-                var v32 =cur_addr + 1;
+                var v32 = cur_addr + 1;
                 ++next;
                 if (cur_char1 != 0)
                 {
@@ -244,7 +242,7 @@ namespace GameRes.Formats.Gss
                                 next = v10 + 4;
                                 i1++;
                             }
-                            
+
                         }
                         else
                         {
@@ -298,17 +296,17 @@ namespace GameRes.Formats.Gss
             } while (v19 != 0x18);
 
             buf[0x301c] = (byte)v18; //unk_811C979C = v18;
-            int v35 = 0;
+            int size_done = 0;
             Int64 v33 = 0;
             Array.Clear(buf, 0x3028, 8);//qword_811C97A8 = 0i64;
             int v23 = (int)unpacked_size;
             while (true)
             {
                 //v24 = next + ((unsigned int)(v33 & 0x1F) >> 3) +((v33 >> 3) & 0xFFFFFFFC);
-                int v24 = (int)(next + ((uint)(v33 & 0x1F)>>3) +((v33 >> 3) & 0xFFFFFFFC));
-                v23 = (int)((v23 & 0xffffff00)  + buf_packed[v24 + 3]); // LOBYTE(v23) = buf_packed[v24 + 3];
-                Int64 v25 = (Int64)((((buf_packed[v24] | (buf_packed[v24 + 1] << 8)) & 0xFF00FFFF) | (buf_packed[v24 + 2] << 16)) & 0xFFFFFF | (v23 << 24));
-                ushort cur_char2 = (ushort)first_char;
+                int v24 = (int)(next + ((uint)(v33 & 0x1F) >> 3) + ((v33 >> 3) & 0xFFFFFFFC)); //this place, out of range
+                v23 = (int)((v23 & 0xffffff00) + buf_packed[v24 + 3]); // LOBYTE(v23) = buf_packed[v24 + 3];
+                int v25 = (int)((((buf_packed[v24] | (buf_packed[v24 + 1] << 8)) & 0xFF00FFFF) | (buf_packed[v24 + 2] << 16)) & 0xFFFFFF | (v23 << 24));
+                byte cur_char2 = first_char;
                 uint v27 = sub_8105E56C((uint)v25, (uint)(v25 >> 32), (uint)((v33 & 0x1F) - (v33 & 0x18)));
                 if (first_char != 0xD)
                 {
@@ -318,12 +316,12 @@ namespace GameRes.Formats.Gss
                         v28 = (int)(v27 & dword_8107F828[2 * cur_char2]);
                         //dword_811C8780 = 2 * v28 + 0x811C6780;  // buf2 - 4
                         var tmp2 = BitConverter.GetBytes(2 * v28 + 0x811C6780);
-                        tmp2.CopyTo(buf, buf2_off - 4);
+                        //tmp2.CopyTo(buf, buf2_off - 4);
                         //if ( cur_char2 == *(_BYTE *)(2 * v28 + 0x811C6781) )// buf1+1
-                        if (cur_char2 == buf[2*v28+1])// buf1+1
+                        if (cur_char2 == buf[2 * v28 + 1])// buf1+1
                             break;
                         cur_char2++;
-                        if ((ushort)cur_char2 == 0xD)
+                        if (cur_char2 == 0xD)
                             goto LABEL_22;
                     }
                     //v30 = *(_BYTE*)(2 * v28 + 0x811C6780);   // buf1
@@ -338,7 +336,7 @@ namespace GameRes.Formats.Gss
                     //v29 = *(_BYTE*)(cur_char2 + 0x811C9784);  // buf4
                     v29 = buf[buf4_off + cur_char2];
                     //if (v29 != *(_BYTE*)(cur_char2 + 0x811C9785))// buf4+1
-                    if (v29 !=  buf[buf4_off + 1 + cur_char2])
+                    if (v29 != buf[buf4_off + 1 + cur_char2])
                         break;
                     LABEL_26: //goto can not jump here
                     if (++cur_char2 == 0x18)
@@ -349,9 +347,9 @@ namespace GameRes.Formats.Gss
                 }
                 //while (*(_DWORD*)(8 * v29 + 0x811C8784) != (v27 & *(_DWORD*)(8 * cur_char2 + 0x8107F828)))// buf2, const1
                 while (BitConverter.ToUInt32(buf, (int)buf2_off + 8 * v29) !=
-                       dword_8107F828[2*cur_char2])
+                       dword_8107F828[2 * cur_char2])
                 {
-                    v29 = (ushort)(v29 + 1) & 0xffff;
+                    v29++;
                     //if ( (unsigned __int16)v29 == *(_BYTE *)(cur_char2 + 0x811C9785) )// buf4+1
                     if (v29 == buf[buf4_off + 1 + cur_char2])
                     {
@@ -378,19 +376,21 @@ namespace GameRes.Formats.Gss
                 //outchar = *(_BYTE*)(8 * v29 + 0x811C8789);     // buf2+5
                 outchar = buf[buf2_off + 5 + 8 * v29];
             LABEL_29:
+                //Debug.WriteLine($"cur_output_addr={cur_output_addr:x}");
                 output[cur_output_addr] = (byte)outchar;
                 //qword_811C97A8 = v33 + (unsigned __int16)cur_char2;
                 var tmp = BitConverter.GetBytes((Int64)v33 + (ushort)cur_char2);
                 tmp.CopyTo(buf, 0x3028);//0x3028
-                v23 =v35 + 1;
+                v23 = size_done + 1;
                 ++cur_output_addr;
                 v33 += (cur_char2 & 0xffff);
-                v35 = v23;
+                size_done = v23;
                 if (v23 >= unpacked_size)
-                    return;
+                    return size_done;
             }
+            return 0;
         }
-        uint  sub_8105E56C(uint result, uint a2, uint a3)
+        uint sub_8105E56C(uint result, uint a2, uint a3)
         {
             if (a3 > 63)
             {
@@ -407,7 +407,7 @@ namespace GameRes.Formats.Gss
             return result;
         }
 
-        void UnpackW (IBinaryStream input, byte[] output)
+        int UnpackW(IBinaryStream input, byte[] output)
         {
             throw new NotImplementedException();
             output = input.ReadBytes(output.Length);
@@ -469,6 +469,11 @@ namespace GameRes.Formats.Gss
             */
         }
 
+        int decrypt(byte[] output, int len, char enc_method) 
+        {
+            return 0;
+        }
+
         static readonly int[] dword_455540 = {
             0x0, 0x0, 0x0, 0x0, 0x3, 0x4, 0x5, 0x6,
             0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE
@@ -494,7 +499,7 @@ namespace GameRes.Formats.Gss
             0x06050403, 0x0A090807, 0x0E0D0C0B, 0x00000000, 0x00000001, 0x00000002, 0x00000004, 0x00000008,
             0x00000010, 0x00000020, 0x00000040, 0x00000080, 0x00000100, 0x00000200, 0x00000400, 0x00000800,
             0x00001000, 0x00002000, 0x00004000, 0x00000000, 0xFFFF0001, 0x00000000, 0x00000000, 0x00000001,
-            0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000001, 
+            0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000001,
         };
     }
 }
