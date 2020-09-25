@@ -183,13 +183,7 @@ namespace GameRes.Formats.Gss
 
         int UnpackH(byte[] buf_packed, byte[] output, uint unpacked_size)
         {
-
-            // buf = (_BYTE *)&unk_811C6780;
-            //cur_output = output;
-            //memset(0x811C6780, 0, 0x2000);                // buf1
-            //memset(0x811C8784, 0, 0x800);                 // buf2
-            //memset(0x811C8F84, 0, 0x800);                 // buf3
-            var buf = new Byte[0x100000];
+            var buf = new Byte[0x10000];
             Array.Clear(buf, 0, buf.Length);
             const uint off2 = 0x2004;
             const uint off3 = 0x2804;
@@ -197,7 +191,7 @@ namespace GameRes.Formats.Gss
 
             uint cur_addr = 2, pre_pos, next_pos = 2, cur_output_addr = 0;
             byte outchar, i1 = 0, i2, v29, first_char = buf_packed[0];
-            int idx1 = 0, v28;
+            int idx1 = 0, v28=0;
             do
             {
                 pre_pos = next_pos;
@@ -252,7 +246,7 @@ namespace GameRes.Formats.Gss
             } while (idx1 != 0x100);
 
             byte idx2 = 0;
-            ushort v19 = 0xD;
+            byte v19 = 0xD;
             do
             {
                 i2 = 0;
@@ -265,7 +259,7 @@ namespace GameRes.Formats.Gss
                         if (buf[buf3_addr + 4] == v19)
                         {
                             Array.Copy(buf, buf3_addr, buf, off2 + 8 * idx2, 4);
-                            Array.Copy(buf, buf3_addr + 1, buf, off2 + 4 + 8 * idx2, 4);  //?
+                            Array.Copy(buf, buf3_addr+4, buf, off2 + 4 + 8 * idx2, 4); 
                             idx2++;
                         }
                         ++i2;
@@ -277,94 +271,66 @@ namespace GameRes.Formats.Gss
             } while (v19 != 0x18);
 
             buf[0x301c] = (byte)idx2; //unk_811C979C = idx2;
-            int size_done = 0;
-            Int64 v33 = 0;
             Array.Clear(buf, 0x3028, 8);//qword_811C97A8 = 0i64;
-            int v23 = (int)unpacked_size;
+            int v23 = (int)unpacked_size, v33=0, size_done = 0;
             while (true)
             {
-                //v24 = next_pos + ((unsigned int)(v33 & 0x1F) >> 3) +((v33 >> 3) & 0xFFFFFFFC);
                 int v24 = (int)(next_pos + ((uint)(v33 & 0x1F) >> 3) + ((v33 >> 3) & 0xFFFFFFFC)); //this place, out of range
-                v23 = (int)((v23 & 0xffffff00) + buf_packed[v24 + 3]); // LOBYTE(v23) = buf_packed[v24 + 3];
-                int v25 = (int)((((buf_packed[v24] | (buf_packed[v24 + 1] << 8)) & 0xFF00FFFF) | (buf_packed[v24 + 2] << 16)) & 0xFFFFFF | (v23 << 24));
+                ulong v25 = BitConverter.ToUInt32(buf_packed, v24);
                 byte cur_char2 = first_char;
                 uint v27 = sub_8105E56C((uint)v25, (uint)(v25 >> 32), (uint)((v33 & 0x1F) - (v33 & 0x18)));
                 if (first_char != 0xD)
                 {
                     while (true)
-                    {
-                        //v28 = v27 & *(_DWORD*)(8 * cur_char2 + 0x8107F828);// const1
+                    { 
                         v28 = (int)(v27 & dword_8107F828[2 * cur_char2]);
-                        //dword_811C8780 = 2 * v28 + 0x811C6780;  // buf2 - 4
-                        var tmp2 = BitConverter.GetBytes(2 * v28 + 0x811C6780);
-                        //tmp2.CopyTo(buf, off2 - 4);
-                        //if ( cur_char2 == *(_BYTE *)(2 * v28 + 0x811C6781) )// buf1+1
+                        BitConverter.GetBytes((int)(2 * v28 + 0x811C6780)).CopyTo(buf, off2 - 4); //must pay attention to the type convert and length
                         if (cur_char2 == buf[2 * v28 + 1])// buf1+1
                             break;
                         cur_char2++;
                         if (cur_char2 == 0xD)
                             goto LABEL_22;
                     }
-                    //v30 = *(_BYTE*)(2 * v28 + 0x811C6780);   // buf1
                     outchar = buf[2 * v28];
                     goto LABEL_29;
                 }
             LABEL_22:
                 if (cur_char2 == 0x18)
                     break;
+            LABEL_26_2:
                 while (true)
                 {
-                    //v29 = *(_BYTE*)(cur_char2 + 0x811C9784);  // buf4
                     v29 = buf[off4 + cur_char2];
-                    //if (v29 != *(_BYTE*)(cur_char2 + 0x811C9785))// buf4+1
                     if (v29 != buf[off4 + 1 + cur_char2])
                         break;
                     LABEL_26: //goto can not jump here
                     if (++cur_char2 == 0x18)
                     {
-                        outchar = buf[off2 + 5 + 8 * v29]; //this seems a hack...
-                        goto LABEL_29;
+                        return 0;
+                        //outchar = buf[off2 + 5 + 8 * v29]; //this seems a hack...
+                        //goto LABEL_29;                   
                     }
                 }
-                //while (*(_DWORD*)(8 * v29 + 0x811C8784) != (v27 & *(_DWORD*)(8 * cur_char2 + 0x8107F828)))// buf2, const1
                 while (BitConverter.ToUInt32(buf, (int)off2 + 8 * v29) !=
-                       dword_8107F828[2 * cur_char2])
+                       (v27 & dword_8107F828[2 * cur_char2]))
                 {
                     v29++;
-                    //if ( (unsigned __int16)v29 == *(_BYTE *)(cur_char2 + 0x811C9785) )// buf4+1
-                    if (v29 == buf[off4 + 1 + cur_char2])
+                    if (v29 == buf[off4 + 1 + cur_char2 ])
                     {
                         if (++cur_char2 == 0x18)
                         {
-                            outchar = buf[off2 + 5 + 8 * v29]; //this seems a hack...
-                            goto LABEL_29;
+                            return 0;
                         }
-                        while (true)
-                        {
-                            //v29 = *(_BYTE*)(cur_char2 + 0x811C9784);  // buf4
-                            v29 = buf[off4 + cur_char2];
-                            //if (v29 != *(_BYTE*)(cur_char2 + 0x811C9785))// buf4+1
-                            if (v29 != buf[off4 + 1 + cur_char2])
-                                break;
-                            if (++cur_char2 == 0x18)
-                            {
-                                outchar = buf[off2 + 5 + 8 * v29]; //this seems a hack...
-                                goto LABEL_29;
-                            }
-                        }
+                        goto LABEL_26_2;
                     }
                 }
-                //outchar = *(_BYTE*)(8 * v29 + 0x811C8789);     // buf2+5
                 outchar = buf[off2 + 5 + 8 * v29];
             LABEL_29:
-                //Debug.WriteLine($"cur_output_addr={cur_output_addr:x}");
                 output[cur_output_addr] = (byte)outchar;
-                //qword_811C97A8 = v33 + (unsigned __int16)cur_char2;
-                var tmp = BitConverter.GetBytes((Int64)v33 + (ushort)cur_char2);
-                tmp.CopyTo(buf, 0x3028);//0x3028
+                BitConverter.GetBytes((Int64)v33 + (ushort)cur_char2).CopyTo(buf, 0x3028);
                 v23 = size_done + 1;
                 ++cur_output_addr;
-                v33 += (cur_char2 & 0xffff);
+                v33 += cur_char2 ;
                 size_done = v23;
                 if (v23 >= unpacked_size)
                     return size_done;
