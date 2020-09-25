@@ -191,88 +191,72 @@ namespace GameRes.Formats.Gss
             //memset(0x811C8F84, 0, 0x800);                 // buf3
             var buf = new Byte[0x100000];
             Array.Clear(buf, 0, buf.Length);
-            const uint buf2_off = 0x2004;
-            const uint buf3_off = 0x2804;
-            const uint buf4_off = 0x3004; //0x811C9784
+            const uint off2 = 0x2004;
+            const uint off3 = 0x2804;
+            const uint off4 = 0x3004; //0x811C9784
 
-            uint cur_addr = 2, next = 2, cur_output_addr = 0;
-            byte first_char = buf_packed[0];
-            int v8 = 0;
-            int i2, v28;
-            byte outchar, i1 = 0, v29;
+            uint cur_addr = 2, pre_pos, next_pos = 2, cur_output_addr = 0;
+            byte outchar, i1 = 0, i2, v29, first_char = buf_packed[0];
+            int idx1 = 0, v28;
             do
             {
-                var v10 = next;
-                int cur_char1 = buf_packed[cur_addr];
-                var v32 = cur_addr + 1;
-                ++next;
+                pre_pos = next_pos;
+                var cur_char1 = buf_packed[cur_addr];
+                var next_addr = cur_addr + 1;
+                next_pos++;
                 if (cur_char1 != 0)
                 {
+                    byte l1 = buf_packed[cur_addr + 1];
+                    byte h1 = buf_packed[cur_addr + 2];
+                    uint t1 = (ushort)(l1 + (h1 << 8));
                     if (cur_char1 >= 8)
                     {
-                        byte v13 = buf_packed[cur_addr + 1];
-                        byte v14 = buf_packed[cur_addr + 2];
                         if (cur_char1 >= 0xD)
                         {
-                            ushort v16 = (ushort)(v13 + (v14 << 8));
-                            if (cur_char1 < 0x10)
+                            uint d;
+                            if (cur_char1 < 0x10) // 2 byte
                             {
-                                //*(_BYTE*)(8 * i1 + 0x811C8F88) = cur_char_1;// buf3 + 4
-                                buf[buf3_off + 4 + 8 * i1] = (byte)cur_char1;
-                                //*(_DWORD*)(8 * i1 + 0x811C8F84) = v16;// buf3
-                                var tmp = BitConverter.GetBytes((uint)v16);
-                                tmp.CopyTo(buf, buf3_off + 8 * i1);
-                                //*(_BYTE*)(8 * i1 + 0x811C8F88) = v8;// bu3 + 4
-                                buf[buf3_off + 4 + 8 * i1] = (byte)v8;
-                                v32 = cur_addr + 3;
-                                next = v10 + 3;
-                                i1++;
+                                d = t1;
+                                next_addr = cur_addr + 3;
+                                next_pos = pre_pos + 3;
                             }
-                            else
+                            else //3 byte
                             {
-                                byte v17 = buf_packed[cur_addr + 3];
-                                //*(_BYTE*)(8 * i1 + 0x811C8F88) = cur_char_1;// buf3+4
-                                buf[buf3_off + 4 + 8 * i1] = (byte)cur_char1;
-                                v32 = cur_addr + 4;
-                                //*(_DWORD*)(8 * i1 + 0x811C8F84) = v16 + (v17 << 16);// buf3
-                                var tmp = BitConverter.GetBytes((uint)(v16 + (v17 << 16)));
-                                tmp.CopyTo(buf, buf3_off + 8 * i1);
-                                //*(_BYTE*)(8 * i1 + 0x811C8F89) = v8;// buf3+5
-                                buf[buf3_off + 5 + 8 * i1] = (byte)cur_char1;
-                                next = v10 + 4;
-                                i1++;
+                                d = (uint)(t1 + (buf_packed[cur_addr + 3] << 16));
+                                next_addr = cur_addr + 4;
+                                next_pos = pre_pos + 4;
                             }
-
+                            buf[off3 + 4 + 8 * i1] = cur_char1;
+                            BitConverter.GetBytes((uint)(d)).CopyTo(buf, off3 + 8 * i1);
+                            buf[off3 + 5 + 8 * i1] = (byte)idx1;
+                            i1++;
                         }
-                        else
+                        else //2byte
                         {
-                            uint v15 = (uint)(v13 & 0xFFFF00FF | ((byte)v14 << 8));
-                            buf[2 * (ushort)v15] = (byte)v8;
-                            buf[2 * (ushort)v15 + 1] = (byte)cur_char1;
-                            v32 = cur_addr + 3;
-                            next = v10 + 3;
+                            buf[2 * t1] = (byte)idx1;
+                            buf[2 * t1 + 1] = cur_char1;
+                            next_addr = cur_addr + 3;
+                            next_pos = pre_pos + 3;
                         }
                     }
-                    else
+                    else // 1byte
                     {
-                        v32 = cur_addr + 2;
-                        next = v10 + 2;
-                        int v12 = buf_packed[cur_addr + 1];
-                        buf[2 * v12] = (byte)v8;
-                        buf[2 * v12 + 1] = (byte)cur_char1;
+                        buf[2 * l1] = (byte)idx1;
+                        buf[2 * l1 + 1] = cur_char1;
+                        next_addr = cur_addr + 2;
+                        next_pos = pre_pos + 2;
                     }
                 }
-                cur_addr = v32;
-                ++v8;
-            } while (v8 != 0x100);
+                cur_addr = next_addr;
+                ++idx1;
+            } while (idx1 != 0x100);
 
-            byte v18 = 0;
+            byte idx2 = 0;
             ushort v19 = 0xD;
             do
             {
                 i2 = 0;
-                // *(_BYTE*)(v19 + 0x811C9784) = v18;         // buf4, buf2+0x1000
-                buf[buf4_off + v19] = (byte)v18;
+                buf[off4 + v19] = (byte)idx2;
                 if (i1 != 0)
                 {
                     int buf3_addr = 0x2804; //buf3_addr = (_BYTE *)&dword_811C8F84;
@@ -280,12 +264,9 @@ namespace GameRes.Formats.Gss
                     {
                         if (buf[buf3_addr + 4] == v19)
                         {
-                            //v22 = *((_DWORD*)buf3 + 1);
-                            //*(_DWORD*)(8 * v18 + 0x811C8788) = v22;// buf2+4
-                            Array.Copy(buf, buf3_addr + 1, buf, buf2_off + 4 + 8 * v18, 4);
-                            //*(_DWORD*)(8 * v18 + 0x811C8784) = *(_DWORD*)buf3;// buf2
-                            Array.Copy(buf, buf3_addr, buf, buf2_off + 8 * v18, 4);
-                            v18++;
+                            Array.Copy(buf, buf3_addr, buf, off2 + 8 * idx2, 4);
+                            Array.Copy(buf, buf3_addr + 1, buf, off2 + 4 + 8 * idx2, 4);  //?
+                            idx2++;
                         }
                         ++i2;
                         buf3_addr += 8;
@@ -295,15 +276,15 @@ namespace GameRes.Formats.Gss
                 v19++;
             } while (v19 != 0x18);
 
-            buf[0x301c] = (byte)v18; //unk_811C979C = v18;
+            buf[0x301c] = (byte)idx2; //unk_811C979C = idx2;
             int size_done = 0;
             Int64 v33 = 0;
             Array.Clear(buf, 0x3028, 8);//qword_811C97A8 = 0i64;
             int v23 = (int)unpacked_size;
             while (true)
             {
-                //v24 = next + ((unsigned int)(v33 & 0x1F) >> 3) +((v33 >> 3) & 0xFFFFFFFC);
-                int v24 = (int)(next + ((uint)(v33 & 0x1F) >> 3) + ((v33 >> 3) & 0xFFFFFFFC)); //this place, out of range
+                //v24 = next_pos + ((unsigned int)(v33 & 0x1F) >> 3) +((v33 >> 3) & 0xFFFFFFFC);
+                int v24 = (int)(next_pos + ((uint)(v33 & 0x1F) >> 3) + ((v33 >> 3) & 0xFFFFFFFC)); //this place, out of range
                 v23 = (int)((v23 & 0xffffff00) + buf_packed[v24 + 3]); // LOBYTE(v23) = buf_packed[v24 + 3];
                 int v25 = (int)((((buf_packed[v24] | (buf_packed[v24 + 1] << 8)) & 0xFF00FFFF) | (buf_packed[v24 + 2] << 16)) & 0xFFFFFF | (v23 << 24));
                 byte cur_char2 = first_char;
@@ -316,7 +297,7 @@ namespace GameRes.Formats.Gss
                         v28 = (int)(v27 & dword_8107F828[2 * cur_char2]);
                         //dword_811C8780 = 2 * v28 + 0x811C6780;  // buf2 - 4
                         var tmp2 = BitConverter.GetBytes(2 * v28 + 0x811C6780);
-                        //tmp2.CopyTo(buf, buf2_off - 4);
+                        //tmp2.CopyTo(buf, off2 - 4);
                         //if ( cur_char2 == *(_BYTE *)(2 * v28 + 0x811C6781) )// buf1+1
                         if (cur_char2 == buf[2 * v28 + 1])// buf1+1
                             break;
@@ -334,47 +315,47 @@ namespace GameRes.Formats.Gss
                 while (true)
                 {
                     //v29 = *(_BYTE*)(cur_char2 + 0x811C9784);  // buf4
-                    v29 = buf[buf4_off + cur_char2];
+                    v29 = buf[off4 + cur_char2];
                     //if (v29 != *(_BYTE*)(cur_char2 + 0x811C9785))// buf4+1
-                    if (v29 != buf[buf4_off + 1 + cur_char2])
+                    if (v29 != buf[off4 + 1 + cur_char2])
                         break;
                     LABEL_26: //goto can not jump here
                     if (++cur_char2 == 0x18)
                     {
-                        outchar = buf[buf2_off + 5 + 8 * v29]; //this seems a hack...
+                        outchar = buf[off2 + 5 + 8 * v29]; //this seems a hack...
                         goto LABEL_29;
                     }
                 }
                 //while (*(_DWORD*)(8 * v29 + 0x811C8784) != (v27 & *(_DWORD*)(8 * cur_char2 + 0x8107F828)))// buf2, const1
-                while (BitConverter.ToUInt32(buf, (int)buf2_off + 8 * v29) !=
+                while (BitConverter.ToUInt32(buf, (int)off2 + 8 * v29) !=
                        dword_8107F828[2 * cur_char2])
                 {
                     v29++;
                     //if ( (unsigned __int16)v29 == *(_BYTE *)(cur_char2 + 0x811C9785) )// buf4+1
-                    if (v29 == buf[buf4_off + 1 + cur_char2])
+                    if (v29 == buf[off4 + 1 + cur_char2])
                     {
                         if (++cur_char2 == 0x18)
                         {
-                            outchar = buf[buf2_off + 5 + 8 * v29]; //this seems a hack...
+                            outchar = buf[off2 + 5 + 8 * v29]; //this seems a hack...
                             goto LABEL_29;
                         }
                         while (true)
                         {
                             //v29 = *(_BYTE*)(cur_char2 + 0x811C9784);  // buf4
-                            v29 = buf[buf4_off + cur_char2];
+                            v29 = buf[off4 + cur_char2];
                             //if (v29 != *(_BYTE*)(cur_char2 + 0x811C9785))// buf4+1
-                            if (v29 != buf[buf4_off + 1 + cur_char2])
+                            if (v29 != buf[off4 + 1 + cur_char2])
                                 break;
                             if (++cur_char2 == 0x18)
                             {
-                                outchar = buf[buf2_off + 5 + 8 * v29]; //this seems a hack...
+                                outchar = buf[off2 + 5 + 8 * v29]; //this seems a hack...
                                 goto LABEL_29;
                             }
                         }
                     }
                 }
                 //outchar = *(_BYTE*)(8 * v29 + 0x811C8789);     // buf2+5
-                outchar = buf[buf2_off + 5 + 8 * v29];
+                outchar = buf[off2 + 5 + 8 * v29];
             LABEL_29:
                 //Debug.WriteLine($"cur_output_addr={cur_output_addr:x}");
                 output[cur_output_addr] = (byte)outchar;
@@ -421,42 +402,42 @@ namespace GameRes.Formats.Gss
             {
                 int bit = v7 & 0x1F;
                 int v9 = (v7 >> 3) & 0x1FFFFFFC;
-                int v10;
+                int pre_addr;
                 if (bit < 0x1C)
                 {
-                    v10 = input.ReadInt32(); //MemInt32(&src[v9]);
+                    pre_addr = input.ReadInt32(); //MemInt32(&src[v9]);
                 }
                 else
                 {
-                    v10 = input.ReadInt32(); //MemInt32(&src[v9 + 1]);
+                    pre_addr = input.ReadInt32(); //MemInt32(&src[v9 + 1]);
                     bit -= 8;
                 }
                 v7 += 5;
-                int v13 = (v10 >> bit) & 0x1F;
+                int l1 = (pre_addr >> bit) & 0x1F;
                 bit = v7 & 0x1F;
                 int v14 = (v7 >> 3) & 0x1FFFFFFC;
                 if (bit < 8)
                 {
-                    v10 = MemInt32(&src[v14]);
+                    pre_addr = MemInt32(&src[v14]);
                 }
                 else if (bit < 0x10)
                 {
-                    v10 = MemInt32(&src[v14 + 1]);
+                    pre_addr = MemInt32(&src[v14 + 1]);
                     bit -= 8;
                 }
                 else if (bit < 0x18)
                 {
-                    v10 = MemInt32(&src[v14 + 2]);
+                    pre_addr = MemInt32(&src[v14 + 2]);
                     bit -= 16;
                 }
                 else
                 {
-                    v10 = MemInt32(&src[v14 + 3]);
+                    pre_addr = MemInt32(&src[v14 + 3]);
                     bit -= 24;
                 }
-                v17 = v13 & 0xF;
-                int sample = dword_455580[v17] + (((v10 >> bit) & (dword_4554E8[v17] >> shift)) << shift);
-                if ((v13 & 0x10) != 0)
+                v17 = l1 & 0xF;
+                int sample = dword_455580[v17] + (((pre_addr >> bit) & (dword_4554E8[v17] >> shift)) << shift);
+                if ((l1 & 0x10) != 0)
                     sample = -sample;
                 LittleEndian.Pack ((short)sample, output, dst);
                 dst += 2;
