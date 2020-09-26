@@ -1,8 +1,8 @@
 //! \file       ArcARC.cs
 //! \date       2018 May 05
-//! \brief      GSS engine resource archive.
+//! \brief      GSS engine resource archive. 
 //
-// Copyright (C) 2018 by morkt
+// Copyright (C) 2018 by morkt, then finished by devseed
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -75,12 +75,12 @@ namespace GameRes.Formats.Gss
             }
         }
 
-        public override Stream OpenEntry(ArcFile arc, Entry entry)
+        unsafe public override Stream OpenEntry(ArcFile arc, Entry entry)
         {
             var pent = entry as PackedEntry;
             if (null == pent || !pent.IsPacked || !arc.File.View.AsciiEqual(entry.Offset, "LSD\x1A"))
                 return base.OpenEntry(arc, entry);
-            byte enc_method = arc.File.View.ReadByte(entry.Offset + 4);
+            char enc_method = (char)arc.File.View.ReadByte(entry.Offset + 4);
             byte pack_method = arc.File.View.ReadByte(entry.Offset + 5);
             uint unpacked_size = arc.File.View.ReadUInt32(entry.Offset + 6);
             int len;
@@ -88,6 +88,7 @@ namespace GameRes.Formats.Gss
             {
                 var buf_packed = new byte[unpacked_size > entry.Size ? unpacked_size : entry.Size];
                 input.Read(buf_packed, 0, (int)entry.Size - 12);
+                input.Seek(0, SeekOrigin.Begin);
                 var output = new byte[unpacked_size];
                 switch ((char)pack_method)
                 {
@@ -96,11 +97,11 @@ namespace GameRes.Formats.Gss
                     case 'H': len = UnpackH(buf_packed, output, unpacked_size);break; //sub_81043752
                     case 'W': var v11 = UnpackW(buf_packed, output, unpacked_size);  //sub_81043414
                               var v12 = buf_packed[0];
-                              len = decrypt(output, v11 - v12, (char)enc_method, v12);
+                              len = decrypt(output, output, v11 - v12, (char)enc_method, v12, v12);
                               break;
                     default: len = input.Read(output, 0, output.Length); break;
                 }
-                decrypt(output, len, (char)enc_method); //sub_81043340
+                len =  decrypt(output, output, len < output.Length ? len:output.Length, (char)enc_method); //sub_81043340
                 return new BinMemoryStream(output, entry.Name);
             }
         }
@@ -179,7 +180,6 @@ namespace GameRes.Formats.Gss
 
         int UnpackR(IBinaryStream input, byte[] output) //sub_81043AA6
         {
-            throw new NotImplementedException();
             int dst = 0;
             while (dst < output.Length)
             {
@@ -238,6 +238,7 @@ namespace GameRes.Formats.Gss
                         break;
                 }
             }
+            return dst;
         }
 
         int UnpackH(byte[] buf_packed, byte[] output, uint unpacked_size)
@@ -416,6 +417,7 @@ namespace GameRes.Formats.Gss
         int UnpackW(byte[] buf_packed, byte[] output, uint unpacked_size)
         {
             throw new NotImplementedException();
+            //not appear in my test game
             /*
             int header_length = input.ReadUInt8();
             int shift = input.ReadUInt8();
@@ -474,9 +476,73 @@ namespace GameRes.Formats.Gss
             */
         }
 
-        int decrypt(byte[] output, int len, char enc_method, int start_pos=0) 
+        int decrypt(byte[] input, byte[] output, int len, char enc_method, int start_input=0, int start_output=0) 
         {
-            return 0;
+            int len_decrypt = len, i;
+            int cur_output_addr = start_output;
+            int cur_addr = start_input;
+            switch (enc_method)
+            {
+                case 'N':
+                    input.CopyTo(output, 0);
+                    break;
+                case 'B': //byte
+                    i = 0;
+                    if (len_decrypt!=0)
+                    {
+                        do
+                        {
+                            var d = input[cur_addr];
+                            var tmp = -d;
+                            if (i != 0)
+                                tmp = input[cur_addr - 1] - d;
+                            i++;
+                            output[cur_output_addr++] = (byte)tmp;
+                            ++cur_addr;
+                        }
+                        while (i != len_decrypt);
+                    }
+                    break;
+                case 'W': //word
+                    len_decrypt = (int)((len + 1) & 0xFFFFFFFE);
+                    i = 0;
+                    if (len_decrypt!=0)
+                    {
+                        do
+                        {
+                            var d = input[cur_addr] | (input[cur_addr+1] << 8);
+                            var tmp = -d;
+                            if (i!=0)
+                                tmp = (input[cur_addr-2] | input[cur_addr-1] << 8) - d;
+                            output[cur_output_addr++] = (byte)(tmp & 0xff);
+                            output[cur_output_addr++] = (byte)(tmp >> 8);
+                            i += 2;
+                            cur_addr += 2;
+                        }
+                        while (i != len_decrypt);
+                    }
+                    break;
+                case 'S': // big endian word
+                    len_decrypt = (int)((len + 1) & 0xFFFFFFFE);
+                    i = 0;
+                    if (len_decrypt!=0)
+                    {
+                        do
+                        {
+                            var d = input[cur_addr+1] | (input[cur_addr] << 8);
+                            var tmp = -d;
+                            if (i!=0)
+                                tmp = (input[cur_addr - 1] | input[cur_addr - 2] << 8) - d;
+                            output[cur_output_addr++] = (byte)(tmp >> 8);
+                            output[cur_output_addr++] = (byte)(tmp & 0xff);
+                            i += 2;
+                            cur_addr += 2;
+                        }
+                        while (i != len_decrypt);
+                    }
+                    break;
+            }
+            return len_decrypt;
         }
 
         static readonly int[] dword_455540 = {
