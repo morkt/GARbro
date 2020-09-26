@@ -86,22 +86,21 @@ namespace GameRes.Formats.Gss
             int len;
             using (var input = arc.File.CreateStream(entry.Offset + 12, entry.Size - 12))
             {
+                var buf_packed = new byte[unpacked_size > entry.Size ? unpacked_size : entry.Size];
+                input.Read(buf_packed, 0, (int)entry.Size - 12);
                 var output = new byte[unpacked_size];
                 switch ((char)pack_method)
                 {
-                    case 'D': len = UnpackD(input, output); break; //sub_81043C02(v9, v3, v6);
-                    case 'R': len = UnpackR(input, output); break; //sub_81043AA6(v9, v3)
-                    case 'H': //sub_81043752(v9, v3, v6);
-                        {
-                            var buf_packed = new byte[unpacked_size > entry.Size ? unpacked_size : entry.Size];
-                            input.Read(buf_packed, 0, (int)entry.Size - 12);
-                            len = UnpackH(buf_packed, output, unpacked_size);
-                            break;
-                        }
-                    case 'W': len = UnpackW(input, output); break; //sub_81043414£¬ sub_81043340
+                    case 'D': len = UnpackD(buf_packed, output, unpacked_size); break; //sub_81043C02, sub_81048646
+                    case 'R': len = UnpackR(input, output); break; //sub_81043AA6
+                    case 'H': len = UnpackH(buf_packed, output, unpacked_size);break; //sub_81043752
+                    case 'W': var v11 = UnpackW(buf_packed, output, unpacked_size);  //sub_81043414
+                              var v12 = buf_packed[0];
+                              len = decrypt(output, v11 - v12, (char)enc_method, v12);
+                              break;
                     default: len = input.Read(output, 0, output.Length); break;
                 }
-                decrypt(output, len, (char)enc_method);
+                decrypt(output, len, (char)enc_method); //sub_81043340
                 return new BinMemoryStream(output, entry.Name);
             }
         }
@@ -111,11 +110,71 @@ namespace GameRes.Formats.Gss
             throw new NotImplementedException();
         }
 
-        int UnpackD(IBinaryStream input, byte[] output)
+        int UnpackD(byte[] buf_packed, byte[] output, uint unpacked_size)
         {
-            throw new NotImplementedException();
-            input.Read(output, 0, output.Length);
-            return 0;
+            int result = 0, i=0, v8, v12;
+            int v3 = 0, qword_811C97A8 = 0;
+            var size1 = unpacked_size >> 1;
+            byte v6, v16;
+            if ((unpacked_size >> 1) != 0)
+            {
+                int cur_output_addr = 0;
+                int cur_pos = 0;
+                do
+                {
+                    v6 = (byte)(v3 & 0x1F);
+                    int v7 = (int)((v3 >> 3) & 0xFFFFFFFC);
+                    if ((int)(v3 & 0x1F) < 28)
+                    {
+                        v8 = BitConverter.ToInt32(buf_packed, v7);     
+                    }
+                    else
+                    {
+                        v8 = BitConverter.ToInt32(buf_packed, v7 + 1);
+                        v6 -= (byte)8;
+                    }
+                    var v23 = v8 >> v6;
+                    qword_811C97A8  +=  5;
+                    byte v10 = (byte)(qword_811C97A8 & 0x1F);
+                    int idx = v23 & 0xF ;
+                    int v11 = (int)(((qword_811C97A8) >> 3) & 0xFFFFFFFC);
+                    if (v10 >= 24)
+                    {
+                        v12 = BitConverter.ToInt32(buf_packed, v11 + 3);
+                        v16 = (byte)(v10 - 24);
+                    }
+                    else if (v10 >= 16)
+                    {
+                            v12 = BitConverter.ToInt32(buf_packed, v11 + 2);
+                            v16 = (byte)(v10 - 16);
+                    }
+                    else
+                    {
+                        if (v10 < 8)
+                        {
+                            v12 = BitConverter.ToInt32(buf_packed, v11);
+                        }
+                        else
+                        {
+                            v12 = BitConverter.ToInt32(buf_packed, v11 + 1);
+                            v10 -= 8;
+                        }
+                        v16 = v10;
+                    }
+                    var v19 = (dword_8107F750[idx] & (v12 >> v16)) + dword_8107F7A4[0x10 + idx];
+                    if ((v23 & 0x10) != 0)
+                        v19 = v19 & 0xffff0000 |  (~v19 & 0xffff);
+                    output[cur_output_addr++] = (byte)(v19); //word
+                    output[cur_output_addr++] = (byte)(v19 >> 8);
+                    qword_811C97A8 += (int)dword_8107F7A4[idx];
+                    ++i;
+                    v3 = qword_811C97A8;
+                    cur_pos += 2;
+                }
+                while (i != size1);
+                result = cur_pos + 2;
+            }
+            return result;
         }
 
         int UnpackR(IBinaryStream input, byte[] output) //sub_81043AA6
@@ -354,10 +413,9 @@ namespace GameRes.Formats.Gss
             return result;
         }
 
-        int UnpackW(IBinaryStream input, byte[] output)
+        int UnpackW(byte[] buf_packed, byte[] output, uint unpacked_size)
         {
             throw new NotImplementedException();
-            output = input.ReadBytes(output.Length);
             /*
             int header_length = input.ReadUInt8();
             int shift = input.ReadUInt8();
@@ -416,7 +474,7 @@ namespace GameRes.Formats.Gss
             */
         }
 
-        int decrypt(byte[] output, int len, char enc_method) 
+        int decrypt(byte[] output, int len, char enc_method, int start_pos=0) 
         {
             return 0;
         }
@@ -433,7 +491,7 @@ namespace GameRes.Formats.Gss
             0x00, 0x00, 0x00, 0x00, 0x07, 0x0F, 0x1F, 0x3F,
             0x7F, 0xFF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF
         };
-        static readonly uint[] dword_8107F828 = { //8107F828
+        static readonly uint[] dword_8107F828 = { 
             0x00000000, 0x00000000, 0x00000001, 0x00000000, 0x00000003, 0x00000000, 0x00000007, 0x00000000,
             0x0000000F, 0x00000000, 0x0000001F, 0x00000000, 0x0000003F, 0x00000000, 0x0000007F, 0x00000000,
             0x000000FF, 0x00000000, 0x000001FF, 0x00000000, 0x000003FF, 0x00000000, 0x000007FF, 0x00000000,
@@ -447,6 +505,26 @@ namespace GameRes.Formats.Gss
             0x00000010, 0x00000020, 0x00000040, 0x00000080, 0x00000100, 0x00000200, 0x00000400, 0x00000800,
             0x00001000, 0x00002000, 0x00004000, 0x00000000, 0xFFFF0001, 0x00000000, 0x00000000, 0x00000001,
             0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000001, 0x00000001,
+        };
+        static readonly uint[] dword_8107F750 ={
+            0x00000000, 0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000F, 0x0000001F, 0x0000003F,
+            0x0000007F, 0x000000FF, 0x000001FF, 0x000003FF, 0x000007FF, 0x00000FFF, 0x00001FFF, 0x00003FFF,
+            0x00007FFF, 0x0000FFFF, 0x0001FFFF, 0x0003FFFF, 0x000FFFFF, 0x00000000, 0x00000000, 0x00000001,
+        };
+        static readonly uint[] dword_8107F7A4 = {
+            0x00000000, 0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004, 0x00000005, 0x00000006,
+            0x00000007, 0x00000008, 0x00000009, 0x0000000A, 0x0000000B, 0x0000000C, 0x0000000D, 0x0000000E,
+            0x00000000, 0x00000001, 0x00000002, 0x00000004, 0x00000008, 0x00000010, 0x00000020, 0x00000040,
+            0x00000080, 0x00000100, 0x00000200, 0x00000400, 0x00000800, 0x00001000, 0x00002000, 0x00004000,
+            0x00000000, 0x00000000, 0x00000000, 0x00000001, 0x00000000, 0x00000003, 0x00000000, 0x00000007,
+            0x00000000, 0x0000000F, 0x00000000, 0x0000001F, 0x00000000, 0x0000003F, 0x00000000, 0x0000007F,
+            0x00000000, 0x000000FF, 0x00000000, 0x000001FF, 0x00000000, 0x000003FF, 0x00000000, 0x000007FF,
+            0x00000000, 0x00000FFF, 0x00000000, 0x00001FFF, 0x00000000, 0x00003FFF, 0x00000000, 0x00007FFF,
+            0x00000000, 0x0000FFFF, 0x00000000, 0x0001FFFF, 0x00000000, 0x0003FFFF, 0x00000000, 0x0007FFFF,
+            0x00000000, 0x000FFFFF, 0x00000000, 0x001FFFFF, 0x00000000, 0x003FFFFF, 0x00000000, 0x007FFFFF,
+            0x00000000, 0x00FFFFFF, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000007,
+            0x0000000F, 0x0000001F, 0x0000003F, 0x0000007F, 0x000000FF, 0x000001FF, 0x000003FF, 0x000007FF,
+            0x00000FFF, 0x00001FFF, 0x00003FFF, 0x00007FFF, 0x0000FFFF, 0x0001FFFF, 0x0003FFFF, 0x000FFFFF,
         };
     }
 }
