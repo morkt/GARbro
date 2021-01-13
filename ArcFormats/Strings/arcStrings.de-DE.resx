@@ -1,0 +1,297 @@
+﻿<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AGSMightBeEncrypted" xml:space="preserve">
+    <value>Archivinhalte sind möglicherweise verschlüsselt.
+Entsprechendes Verschlüsselungsschema wählen.</value>
+  </data>
+  <data name="AMIBaseArchive" xml:space="preserve">
+    <value>Basisarchiv</value>
+  </data>
+  <data name="AMIBaseTooltip" xml:space="preserve">
+    <value>Das neue Archiv enthält auch Einträge aus dem Basisarchiv.</value>
+  </data>
+  <data name="AMIChooseBase" xml:space="preserve">
+    <value>Basisarchiv auswählen</value>
+  </data>
+  <data name="AMIDescription" xml:space="preserve">
+    <value>Amaterasu Translations Muv-Luv Archiv</value>
+  </data>
+  <data name="AMINoFiles" xml:space="preserve">
+    <value>Keine geeigneten Dateien für das AMI-Archiv gefunden.</value>
+  </data>
+  <data name="ArcDefault" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="ArcEncryptedNotice" xml:space="preserve">
+    <value>Archivinhalte sind verschlüsselt.
+Entsprechendes Verschlüsselungsschema wählen.</value>
+  </data>
+  <data name="ArcHex32Bit" xml:space="preserve">
+    <value>32-Bit Hex-Zahl</value>
+  </data>
+  <data name="ArcIgnoreEncryption" xml:space="preserve">
+    <value>Verschlüsselung ignorieren</value>
+  </data>
+  <data name="ArcImageEncrypted" xml:space="preserve">
+    <value>Bild ist verschlüsselt.</value>
+  </data>
+  <data name="ArcNoEncryption" xml:space="preserve">
+    <value>Keine Verschlüsselung</value>
+  </data>
+  <data name="ArcReset" xml:space="preserve">
+    <value>Zurücksetzen</value>
+  </data>
+  <data name="ArcTitleOrPassword" xml:space="preserve">
+    <value>Titel wählen oder Password eingeben</value>
+  </data>
+  <data name="DefaultEncoding" xml:space="preserve">
+    <value>Standardcodierung der Dateinamen</value>
+  </data>
+  <data name="DPKKeys" xml:space="preserve">
+    <value>Verschlüsselungsschlüssel</value>
+  </data>
+  <data name="FJSYSNotice" xml:space="preserve">
+    <value>Das Archiv enthält verschlüsselte Skripte.
+Verschlüsselungsschema wählen oder Passphrase eingeben.</value>
+  </data>
+  <data name="GALChoose" xml:space="preserve">
+    <value>Titel wählen oder Schlüssel eingeben</value>
+  </data>
+  <data name="GRPDescription" xml:space="preserve">
+    <value>âge proprietäres Bildformat</value>
+  </data>
+  <data name="GSCDescription" xml:space="preserve">
+    <value>Liar-soft proprietäres Skriptformat</value>
+  </data>
+  <data name="GYUImageEncrypted" xml:space="preserve">
+    <value>Bild ist verschlüsselt.
+Entsprechendes Verschlüsselungsschema wählen.</value>
+  </data>
+  <data name="INTChooseExe" xml:space="preserve">
+    <value>Ausführbare Datei des Spiels wählen</value>
+  </data>
+  <data name="INTCreationNotice" xml:space="preserve">
+    <value>Die Erstellung verschlüsselter Archive ist nicht implementiert.</value>
+  </data>
+  <data name="INTDescription" xml:space="preserve">
+    <value>CatSystem2-Engine Ressourcenarchiv</value>
+  </data>
+  <data name="INTExeButton" xml:space="preserve">
+    <value>EXE überprüfen</value>
+  </data>
+  <data name="INTExeFiles" xml:space="preserve">
+    <value>Ausführbare Dateien</value>
+  </data>
+  <data name="INTKeyNotFound" xml:space="preserve">
+    <value>Schlüssel in {0} nicht gefunden.</value>
+  </data>
+  <data name="INTKeyRequirement" xml:space="preserve">
+    <value>Der numerische Schlüssel sollte eine 32-Bit-Hexadezimalzahl sein</value>
+  </data>
+  <data name="INTLabelNumericKey" xml:space="preserve">
+    <value>Numerischer Schlüssel</value>
+  </data>
+  <data name="INTMessage1" xml:space="preserve">
+    <value>"EXE überprüfen"-Button drücken, um nach dem Schlüssel in der ausführbaren Datei des Spiels zu suchen.</value>
+  </data>
+  <data name="INTMessage2" xml:space="preserve">
+    <value>Alternativ den Archiv-Verschlüsselungsschlüssel eingeben oder eines der vordefinierten Verschlüsselungsschemata auswählen.</value>
+  </data>
+  <data name="INTNotice" xml:space="preserve">
+    <value>Das Archivverzeichnis ist verschlüsselt.</value>
+  </data>
+  <data name="KCAPDefault" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="KogadoDescription" xml:space="preserve">
+    <value>Kogado Game Engine Ressourcenarchiv</value>
+  </data>
+  <data name="LabelEncScheme" xml:space="preserve">
+    <value>Verschlüsselungsschema</value>
+  </data>
+  <data name="LabelPassphrase" xml:space="preserve">
+    <value>Passphrase</value>
+  </data>
+  <data name="LabelScheme" xml:space="preserve">
+    <value>Schema</value>
+  </data>
+  <data name="LWGDescription" xml:space="preserve">
+    <value>Liar-soft Bildarchiv</value>
+  </data>
+  <data name="MBLNotice" xml:space="preserve">
+    <value>Das Archiv enthält verschlüsselte Skripte.
+Verschlüsselungsschema wählen oder Passphrase eingeben.</value>
+  </data>
+  <data name="MCAEncryptedNotice" xml:space="preserve">
+    <value>Archivinhalte sind verschlüsselt.</value>
+  </data>
+  <data name="MCGChoose" xml:space="preserve">
+    <value>Titel wählen oder Schlüssel eingeben</value>
+  </data>
+  <data name="MCGLabelKey" xml:space="preserve">
+    <value>8-Bit-Verschlüsselungsschlüssel</value>
+  </data>
+  <data name="MsgAddingFile" xml:space="preserve">
+    <value>Datei hinzufügen</value>
+  </data>
+  <data name="MsgCalculatingChecksum" xml:space="preserve">
+    <value>Prüfsumme berechnen...</value>
+  </data>
+  <data name="MsgCompressingIndex" xml:space="preserve">
+    <value>Komprimiere Index...</value>
+  </data>
+  <data name="MsgCreationKeyRequired" xml:space="preserve">
+    <value>Für die Archivierung ist ein Verschlüsselungsschlüssel erforderlich.</value>
+  </data>
+  <data name="MsgEncNotImplemented" xml:space="preserve">
+    <value>Verschlüsselungsmethode nicht implementiert</value>
+  </data>
+  <data name="MsgExtensionTooLong" xml:space="preserve">
+    <value>Die Dateinamenerweiterung zu lang.</value>
+  </data>
+  <data name="MsgFileNameTooLong" xml:space="preserve">
+    <value>Der Dateiname ist zu lang.</value>
+  </data>
+  <data name="MsgIllegalCharacters" xml:space="preserve">
+    <value>Der Dateiname enthält unzulässige Zeichen.</value>
+  </data>
+  <data name="MsgInvalidImageFormat" xml:space="preserve">
+    <value>{0}: Bildformat nicht erkannt.</value>
+  </data>
+  <data name="MsgInvalidVersion" xml:space="preserve">
+    <value>Ungültige Archivversion angegeben.</value>
+  </data>
+  <data name="MsgNoExtension" xml:space="preserve">
+    <value>Dateiname ohne Erweiterung.</value>
+  </data>
+  <data name="MsgTooManyFiles" xml:space="preserve">
+    <value>Die Anzahl der Dateien überschreitet das Archivlimit.</value>
+  </data>
+  <data name="MsgUpdatingIndex" xml:space="preserve">
+    <value>Aktualisiere Index...</value>
+  </data>
+  <data name="MsgWritingIndex" xml:space="preserve">
+    <value>Schreibe Index...</value>
+  </data>
+  <data name="NPACompressContents" xml:space="preserve">
+    <value>Inhalt komprimieren</value>
+  </data>
+  <data name="NPADescription" xml:space="preserve">
+    <value>Nitro + Ressourcenarchiv</value>
+  </data>
+  <data name="NPAKeys" xml:space="preserve">
+    <value>Verschlüsselungsschlüssel
+(erforderlich, auch wenn der Inhalt nicht verschlüsselt ist)</value>
+  </data>
+  <data name="NPASteinsGateDescription" xml:space="preserve">
+    <value>Nitro + Steins;Gate Ressourcenarchiv</value>
+  </data>
+  <data name="NSADescription" xml:space="preserve">
+    <value>NScripter Game Engine Ressourcenarchiv</value>
+  </data>
+  <data name="ODNAudioSampleRate" xml:space="preserve">
+    <value>Standard-Audio-Abtastrate</value>
+  </data>
+  <data name="OGGFixCrc" xml:space="preserve">
+    <value>Ogg-Prüfsummen korrigieren</value>
+  </data>
+  <data name="ONSArchiveType" xml:space="preserve">
+    <value>Archivtyp</value>
+  </data>
+  <data name="ONSCompression" xml:space="preserve">
+    <value>Komprimierung</value>
+  </data>
+  <data name="ONSCompressionNone" xml:space="preserve">
+    <value>keine</value>
+  </data>
+  <data name="PDDescription" xml:space="preserve">
+    <value>Flying Shine Ressourcenarchiv</value>
+  </data>
+  <data name="PDScrambleContents" xml:space="preserve">
+    <value>Inhalt verschlüsseln</value>
+  </data>
+  <data name="RCTApplyMask" xml:space="preserve">
+    <value>Transparenzdaten aus RC8-Bitmap laden</value>
+  </data>
+  <data name="RCTOverlayFrames" xml:space="preserve">
+    <value>Inkrementelle Frames automatisch kombinieren</value>
+  </data>
+  <data name="RPADescription" xml:space="preserve">
+    <value>Ren'Py Game Engine Ressourcenarchiv</value>
+  </data>
+  <data name="RPALabelKey" xml:space="preserve">
+    <value>32-Bit Schlüssel</value>
+  </data>
+  <data name="RPMEncryptedNotice" xml:space="preserve">
+    <value>Die Datei ähnelt einem RPM-Ressourcenarchiv, jedoch schlug das Erraten des Verschlüsselungsschlüssels fehl.
+Das entsprechendes Verschlüsselungsschema muss gewählt werden.</value>
+  </data>
+  <data name="SCRDescription" xml:space="preserve">
+    <value>Amaterasu Translations Muv-Luv Skript Datei</value>
+  </data>
+  <data name="SGLabelEncoding" xml:space="preserve">
+    <value>Dateinamen-Kodierung</value>
+  </data>
+  <data name="TooltipHex" xml:space="preserve">
+    <value>Hex-Zahl</value>
+  </data>
+  <data name="WARCLabelLength" xml:space="preserve">
+    <value>Maximale Dateinamenlänge
+(ohne Erweiterung)</value>
+  </data>
+  <data name="XFLDescription" xml:space="preserve">
+    <value>Liar-soft Ressourcenarchiv</value>
+  </data>
+  <data name="XP3CompressContents" xml:space="preserve">
+    <value>Inhalt komprimieren</value>
+  </data>
+  <data name="XP3CompressHeader" xml:space="preserve">
+    <value>Verzeichnis komprimieren</value>
+  </data>
+  <data name="XP3Description" xml:space="preserve">
+    <value>KiriKiri Game Engine Ressourcenarchiv</value>
+  </data>
+  <data name="XP3EncryptedNotice" xml:space="preserve">
+    <value>Archivinhalte sind möglicherweise verschlüsselt.
+Entsprechendes Verschlüsselungsschema wählen.</value>
+  </data>
+  <data name="XP3LabelVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="XP3RetainStructure" xml:space="preserve">
+    <value>Verzeichnisstruktur beibehalten</value>
+  </data>
+  <data name="YPFDescription" xml:space="preserve">
+    <value>Yu-Ris Game Engine Ressourcenarchiv</value>
+  </data>
+  <data name="YPFLabelKey" xml:space="preserve">
+    <value>8-Bit Verschlüsselungsschlüssel</value>
+  </data>
+  <data name="YPFLabelVersion" xml:space="preserve">
+    <value>Archivversion</value>
+  </data>
+  <data name="YPFNotice" xml:space="preserve">
+    <value>Das Archivverzeichnis ist verschlüsselt.
+Entsprechendes Verschlüsselungsschema wählen.</value>
+  </data>
+  <data name="YPFTryGuess" xml:space="preserve">
+    <value>Versuchen zu erraten</value>
+  </data>
+  <data name="ZIPEncryptedNotice" xml:space="preserve">
+    <value>Archivinhalte sind verschlüsselt.</value>
+  </data>
+  <data name="QLIEDefaultScheme" xml:space="preserve">
+    <value>Standardverschlüsselungsschema verwenden</value>
+  </data>
+</root>

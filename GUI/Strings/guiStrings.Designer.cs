@@ -19,7 +19,7 @@ namespace GARbro.GUI.Strings {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class guiStrings {
@@ -601,6 +601,15 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Troubleshooting....
+        /// </summary>
+        public static string MenuTroubleshooting {
+            get {
+                return ResourceManager.GetString("MenuTroubleshooting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _View.
         /// </summary>
         public static string MenuView {
@@ -669,6 +678,15 @@ namespace GARbro.GUI.Strings {
         public static string MsgDeletedItems2 {
             get {
                 return ResourceManager.GetString("MsgDeletedItems2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        public static string MsgDeletedItems3 {
+            get {
+                return ResourceManager.GetString("MsgDeletedItems3", resourceCulture);
             }
         }
         
@@ -1108,7 +1126,7 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error occured while converting file
+        ///   Looks up a localized string similar to Error occurred while converting file
         ///{0}
         ///{1}.
         /// </summary>
@@ -1119,7 +1137,7 @@ namespace GARbro.GUI.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error occured while extracting file
+        ///   Looks up a localized string similar to Error occurred while extracting file
         ///{0}
         ///{1}.
         /// </summary>

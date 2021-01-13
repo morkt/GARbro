@@ -154,7 +154,7 @@
                 </MenuItem>
                 <MenuItem Header="{x:Static s:guiStrings.MenuHelp}">
                     <MenuItem Header="{x:Static s:guiStrings.MenuAbout}" Command="{x:Static local:Commands.About}"/>
-                    <MenuItem Header="Troubleshooting..." Command="{x:Static local:Commands.TroubleShooting}"/>
+                    <MenuItem Header="{x:Static s:guiStrings.MenuTroubleshooting}" Command="{x:Static local:Commands.TroubleShooting}"/>
                     <MenuItem Header="{x:Static s:guiStrings.MenuCheckUpdates}" Command="{x:Static local:Commands.CheckUpdates}"/>
                 </MenuItem>
             </Menu>
