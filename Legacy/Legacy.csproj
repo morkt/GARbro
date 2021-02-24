@@ -223,12 +223,12 @@
     <Compile Include="Mink\ImageGDF.cs" />
     <Compile Include="Mutation\ImageRBM.cs" />
     <Compile Include="Nabe\ImageYPF.cs" />
-    <Compile Include="Nanami\ArcBMM.cs" />
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
     <Compile Include="PlanTech\ArcPAC.cs" />
     <Compile Include="Zone\ArcPKD.cs" />
     <Compile Include="Zone\ImageBM_.cs" />
+    <None Include="app.config" />
     <None Include="PlanTech\ImagePAC.cs" />
     <Compile Include="Pochette\ImageGDT.cs" />
     <Compile Include="ProjectMyu\ImageKGR.cs" />
@@ -273,6 +273,7 @@
   <ItemGroup>
     <Folder Include="Bom\" />
     <Folder Include="HyperWorks\" />
+    <Folder Include="Nanami\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GARbro.Console", "Console\GARbro.Console.csproj", "{B966F292-431A-4D8A-A1D3-1EB45048A1D2}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -17,6 +17,13 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameRes", "GameRes\GameRes.csproj", "{453C087F-E416-4AE9-8C03-D8760DA0574B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GARbro.GUI", "GUI\GARbro.GUI.csproj", "{2935BE57-C4E0-43E7-86DE-C1848C820B19}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A8865685-27CC-427B-AC38-E48D2AD05DF4} = {A8865685-27CC-427B-AC38-E48D2AD05DF4}
+		{B966F292-431A-4D8A-A1D3-1EB45048A1D2} = {B966F292-431A-4D8A-A1D3-1EB45048A1D2}
+		{C79E82A8-8D32-485D-8442-2D4F71FBB5D5} = {C79E82A8-8D32-485D-8442-2D4F71FBB5D5}
+		{757EB8B1-F62C-4690-AC3D-DAE4A5576B3E} = {757EB8B1-F62C-4690-AC3D-DAE4A5576B3E}
+		{60054FD9-4472-4BB4-9E3D-2F80D3D22468} = {60054FD9-4472-4BB4-9E3D-2F80D3D22468}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image.Convert", "Image.Convert\Image.Convert.csproj", "{757EB8B1-F62C-4690-AC3D-DAE4A5576B3E}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -85,5 +92,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2268C895-E6EA-422C-B5A8-B4B3CA1A8B4B}
 	EndGlobalSection
 EndGlobal
