@@ -16,3 +16,4 @@ Makefile
 packages
 Experimental
 .nuget
+.vs
