@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legacy", "Legacy\Legacy.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Net20", "Net20\Net20.csproj", "{73B6C693-9846-4D33-8300-A80239FCFFF9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemeTool", "SchemeTool\SchemeTool.csproj", "{CF0D6842-D071-49AF-A6B7-D5C5799CE582}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +90,12 @@ Global
 		{73B6C693-9846-4D33-8300-A80239FCFFF9}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{73B6C693-9846-4D33-8300-A80239FCFFF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73B6C693-9846-4D33-8300-A80239FCFFF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF0D6842-D071-49AF-A6B7-D5C5799CE582}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF0D6842-D071-49AF-A6B7-D5C5799CE582}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF0D6842-D071-49AF-A6B7-D5C5799CE582}.Prerelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF0D6842-D071-49AF-A6B7-D5C5799CE582}.Prerelease|Any CPU.Build.0 = Debug|Any CPU
+		{CF0D6842-D071-49AF-A6B7-D5C5799CE582}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF0D6842-D071-49AF-A6B7-D5C5799CE582}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
