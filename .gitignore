@@ -10,10 +10,8 @@ tags
 *.vsp
 *;*
 *~
-Images
 SchemeBuilder
 Makefile
 packages
-Experimental
 .nuget
 .vs
