@@ -25,7 +25,9 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Text;
+using GameRes.Compression;
 using GameRes.Utility;
 
 namespace GameRes.Formats.KiriKiri
@@ -84,6 +86,14 @@ namespace GameRes.Formats.KiriKiri
             if (input.ReadByte() != 4)
                 throw new InvalidFormatException();
             return Binary.BigEndian (input.ReadUInt32());
+        }
+
+        public override Stream OpenEntry(ArcFile arc, Entry entry)
+        {
+            PackedEntry packed_entry = entry as PackedEntry;
+            if (null == packed_entry || packed_entry.Size == packed_entry.UnpackedSize)
+                return arc.File.CreateStream(entry.Offset, entry.Size);
+            return new ZLibStream(arc.File.CreateStream(entry.Offset, entry.Size), CompressionMode.Decompress);
         }
     }
 }
