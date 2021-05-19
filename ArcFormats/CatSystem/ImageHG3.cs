@@ -306,16 +306,16 @@ namespace GameRes.Formats.CatSystem
             int dst = 0;
             for (uint i = 0; i < total; ++i)
             {
-                output[dst++] = pixels[src+2];
-                output[dst++] = pixels[src+1];
                 output[dst++] = pixels[src];
+                output[dst++] = pixels[src+1];
+                output[dst++] = pixels[src+2];
                 output[dst++] = 0xFF;
                 src += src_pixel_size;
             }
 
             m_input.Position = next_section;
             var section_header = m_input.ReadBytes (8);
-            if (!Binary.AsciiEqual (section_header, "img_al\0\0"))
+            if (!Binary.AsciiEqual (section_header, "img_al\0"))
                 return output;
             m_input.Seek (8, SeekOrigin.Current);
             int alpha_size = m_input.ReadInt32();
