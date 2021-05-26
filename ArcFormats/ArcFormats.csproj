@@ -95,6 +95,7 @@
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
     <Compile Include="BlueGale\ImageBBM.cs" />
+    <Compile Include="CatSystem\ArcZT.cs" />
     <Compile Include="JamCreation\ArcDAT.cs" />
     <Compile Include="JamCreation\ImageDPO.cs" />
     <Compile Include="AliceSoft\ArcAAR.cs" />
