@@ -67,6 +67,12 @@ namespace GARbro
 */
         }
 
+        ImageFormat FindFormat(string format)
+        {
+            var range = FormatCatalog.Instance.LookupExtension<ImageFormat>(format);
+            return range.FirstOrDefault();
+        }
+
         void Run (string[] args)
         {
             int argn = 0;
@@ -131,7 +137,7 @@ namespace GARbro
                     Console.Error.WriteLine ("{0}: unknown format", m_arc_name);
                     continue;
                 }
-                var arc = (ArchiveFileSystem)VFS.Top;
+                var arc = ((ArchiveFileSystem)VFS.Top).Source;
                 if (args.Length > argn+1)
                 {
                     for (int i = argn+1; i < args.Length; ++i)
