@@ -19,6 +19,13 @@ namespace GARbro {
 		Rename
 	}
 
+	public enum ConsoleCommand {
+		Invalid,
+		Info,
+		List,
+		Extract
+	}
+
 	class ConsoleBrowser {
 		private string outputDirectory;
 
@@ -55,63 +62,74 @@ namespace GARbro {
 			Console.WriteLine($"                       {fileList.Length} files");
 		}
 
-		private void ExtractFiles(Entry[] fileList, ArcFile arc) {
+		private void Archive_ExtractFiles(Entry[] fileList, ArcFile arc) {
 			Directory.CreateDirectory(outputDirectory);
 
 			var iSkipped = 0;
 			for (var i = 0; i < fileList.Length; i++) {
 				var entry = fileList[i];
-				Console.WriteLine(string.Format("[{0}/{1}] {2}", i + 1, fileList.Length, entry.Name));
-				
+				PrintProgress(i + 1, fileList.Length, entry.Name);
+
 				try {
-					if (imageFormat != null && entry.Type == "image") {
-						ExtractImage(arc, entry, imageFormat);
+					try {
+						if (imageFormat != null && entry.Type == "image") {
+							Archive_ExtractConvertedImage(arc, entry);
+						}
+						else if (convertAudio && entry.Type == "audio") {
+							Archive_ExtractConvertedAudio(arc, entry);
+						}
+						else {
+							Archive_ExtractRaw(arc, entry);
+						}
 					}
-					else if (convertAudio && entry.Type == "audio") {
-						ExtractAudio(arc, entry);
+					catch (TargetException) {
+						iSkipped++;
 					}
-					else {
-						using (var input = arc.OpenEntry(entry))
-						using (var output = CreateNewFile(entry.Name))
-							input.CopyTo(output);
+					catch (InvalidFormatException) {
+						PrintWarning("Invalid file format, extracting as raw");
+						Archive_ExtractRaw(arc, entry);
 					}
 				}
-				catch (TargetException) {
-					iSkipped++;
-				}
-#if !DEBUG
 				catch (Exception e) {
 					PrintError(string.Format($"Failed to extract {entry.Name}: {e.Message}"));
 					if (!ignoreErrors) return;
 
 					iSkipped++;
-				}
+
+#if DEBUG
+					throw e;
 #endif
+				}
 			}
 
 			Console.WriteLine();
 			Console.WriteLine(iSkipped > 0? iSkipped + " files were skipped": "All OK");
 		}
 
-		void ExtractImage(ArcFile arc, Entry entry, ImageFormat targetFormat) {
+		void Archive_ExtractConvertedImage(ArcFile arc, Entry entry) {
+			var targetFormat = imageFormat ?? ImageFormat.Png;
+
 			using (var decoder = arc.OpenImage(entry)) {
-				var src_format = decoder.SourceFormat; // could be null
+				var sourceFormat = decoder.SourceFormat; // Can be null
+				if (autoImageFormat && sourceFormat != null) targetFormat = CommonImageFormats.Contains(sourceFormat.Tag.ToLower())? sourceFormat: ImageFormat.Png;
 
-				if (autoImageFormat && src_format != null) targetFormat = CommonImageFormats.Contains(src_format.Tag.ToLower())? src_format: ImageFormat.Png;
-
-				var target_ext = targetFormat.Extensions.FirstOrDefault() ?? "";
-				var outputName = Path.ChangeExtension(entry.Name, target_ext);
-				if (src_format == targetFormat) {
-					// source format is the same as a target, copy file as is
-					using (var output = CreateNewFile(outputName)) decoder.Source.CopyTo(output);
+				var outputExtension = targetFormat.Extensions.FirstOrDefault() ?? "";
+				var outputName = Path.ChangeExtension(entry.Name, outputExtension);
+				if (sourceFormat == targetFormat) {
+					// Source format is the same as a target, copy file as is
+					using (var outputStream = CreateNewFile(outputName)) {
+						if (outputStream == null) return;
+						decoder.Source.CopyTo(outputStream);
+					}
 					return;
 				}
 
 				var image = decoder.Image;
 				if (adjustImageOffset) image = AdjustImageOffset(image);
 
-				using (var outfile = CreateNewFile(outputName)) {
-					targetFormat.Write(outfile, image);
+				using (var outputStream = CreateNewFile(outputName)) {
+					if (outputStream == null) return;
+					targetFormat.Write(outputStream, image);
 				}
 			}
 		}
@@ -142,7 +160,7 @@ namespace GARbro {
 			return new ImageData(bitmap);
 		}
 
-		void ExtractAudio(ArcFile arc, Entry entry) {
+		void Archive_ExtractConvertedAudio(ArcFile arc, Entry entry) {
 			using (var file = arc.OpenBinaryEntry(entry))
 			using (var sound = AudioFormat.Read(file)) {
 				if (sound == null) throw new InvalidFormatException("Unable to interpret audio format");
@@ -150,38 +168,110 @@ namespace GARbro {
 			}
 		}
 
-		public void ConvertAudio(string filename, SoundInput input) {
-			var source_format = input.SourceFormat;
-			if (CommonAudioFormats.Contains(source_format)) {
-				var output_name = Path.ChangeExtension(filename, source_format);
-				using (var output = CreateNewFile(output_name)) {
-					input.Source.Position = 0;
-					input.Source.CopyTo(output);
-				}
-			}
-			else {
-				var output_name = Path.ChangeExtension(filename, "wav");
-				using (var output = CreateNewFile(output_name)) AudioFormat.Wav.Write(input, output);
+		void Archive_ExtractRaw(ArcFile arc, Entry entry) {
+			using (var input = arc.OpenEntry(entry))
+			using (var outputStream = CreateNewFile(entry.Name)) {
+				if (outputStream == null) return;
+				input.CopyTo(outputStream);
 			}
 		}
 
-		protected Stream CreateNewFile(string filename) {
+		void ConvertAudio(string fileName, SoundInput soundInput) {
+			var sourceFormat = soundInput.SourceFormat;
+
+			if (CommonAudioFormats.Contains(sourceFormat)) {
+				var outputName = Path.ChangeExtension(fileName, sourceFormat);
+				using (var outputStream = CreateNewFile(outputName)) {
+					if (outputStream == null) return;
+					soundInput.Source.Position = 0;
+					soundInput.Source.CopyTo(outputStream);
+				}
+			}
+			else {
+				var outputName = Path.ChangeExtension(fileName, "wav");
+				using (var outputStream = CreateNewFile(outputName)) {
+					if (outputStream == null) return;
+					AudioFormat.Wav.Write(soundInput, outputStream);
+				}
+			}
+		}
+
+		bool ConvertAudio(string fileName, IBinaryStream binaryStream) {
+			using (var soundInput = AudioFormat.Read(binaryStream)) {
+				if (soundInput == null) return false;
+
+				Console.WriteLine($"Converting {soundInput.SourceFormat} audio");
+				ConvertAudio(fileName, soundInput);
+			}
+
+			return true;
+		}
+
+		bool ConvertFile(string file) {
+			var fileName = Path.GetFileName(file);
+			PrintProgress(1, 1, fileName);
+
+			try {
+				using (var binaryStream = BinaryStream.FromFile(file)) {
+					if (!skipImages && ConvertImage(fileName, binaryStream)) return true;
+					if (!skipAudio && ConvertAudio(fileName, binaryStream)) return true;
+					throw new UnknownFormatException();
+				}
+			}
+			catch(Exception e) {
+				PrintError("Failed to convert file: " + e.Message);
+			}
+
+			return false;
+		}
+
+		bool ConvertImage(string fileName, IBinaryStream binaryStream) {
+			var sourceImageFormatTuple = ImageFormat.FindFormat(binaryStream);
+			if (sourceImageFormatTuple == null) return false;
+
+			var sourceImageFormat = sourceImageFormatTuple.Item1;
+			var targetImageFormat = imageFormat;
+
+			binaryStream.Position = 0;
+			var imageData = sourceImageFormat.Read(binaryStream, sourceImageFormatTuple.Item2);
+
+			if (autoImageFormat && sourceImageFormat != null) targetImageFormat = CommonImageFormats.Contains(sourceImageFormat.Tag.ToLower())? sourceImageFormat: ImageFormat.Png;
+
+			//Console.WriteLine($"Converting {sourceImageFormat.Tag} to {targetImageFormat.Tag}");
+			var outputExtension = targetImageFormat.Extensions.FirstOrDefault() ?? "";
+			var outputName = Path.ChangeExtension(fileName, outputExtension);
+			
+			if (sourceImageFormat == targetImageFormat) {
+				PrintWarning("Input and output format are identical. No conversion neccessary");
+				return true;
+			}
+
+			using (var outputStream = CreateNewFile(outputName)) {
+				if (outputStream == null) return true;
+				imageFormat.Write(outputStream, imageData);
+			}
+
+			return true;
+		}
+
+		Stream CreateNewFile(string filename) {
 			var path = Path.Combine(outputDirectory, filename);
 			path = Path.GetFullPath(path);
 			Directory.CreateDirectory(Path.GetDirectoryName(path));
 
 			if (File.Exists(path)) {
 				path = OverwritePrompt(path);
-				if (path == null) throw new TargetException();
+				if (path == null) return null;
 			}
 
 			return File.Open(path, FileMode.Create);
 		}
 
 		void Run(string[] args) {
-			var command = args.Length < 1? "h": args[0];
+			var commandString = args.Length < 1? "h": args[0];
+			ConsoleCommand command;
 
-			switch (command) {
+			switch (commandString) {
 				case "h":
 				case "-h":
 				case "--help":
@@ -192,12 +282,20 @@ namespace GARbro {
 				case "f":
 					ListFormats();
 					return;
+				case "i":
+					command = ConsoleCommand.Info;
+					break;
+				case "l":
+					command = ConsoleCommand.List;
+					break;
+				case "x":
+					command = ConsoleCommand.Extract;
+					break;
+				default:
+					PrintError(File.Exists(commandString) ? "No command specified. Use -h command line parameter to show help." : "Invalid command: " + commandString);
+					return;
 			}
 
-			if (command.Length != 1) {
-				PrintError(File.Exists(command)? "No command specified. Use -h command line parameter to show help.": "Invalid command: " + command);
-				return;
-			}
 			if (args.Length < 2) {
 				PrintError("No archive file specified");
 				return;
@@ -289,14 +387,23 @@ namespace GARbro {
 				VFS.ChDir(inputFile);
 			}
 			catch (Exception) {
-				PrintError("Input file has an unknown format");
+				//Console.WriteLine("Input file is not an archive");
+				ProcessNonArchiveFile(inputFile, command);
 				return;
 			}
 
-			var m_fs = (ArchiveFileSystem) VFS.Top;
-			var fileList = m_fs.GetFilesRecursive().Where(e => e.Offset >= 0);
+			ProcessArchiveFile(command);
+		}
 
-			if (skipImages || skipScript || skipAudio|| fileFilter != null) {
+		/// <summary>
+		/// Helper function used if the input file is an archive
+		/// </summary>
+		/// <param name="command"></param>
+		void ProcessArchiveFile(ConsoleCommand command) {
+			var archiveFileSystem = (ArchiveFileSystem) VFS.Top;
+			var fileList = archiveFileSystem.GetFilesRecursive().Where(e => e.Offset >= 0);
+
+			if (skipImages || skipScript || skipAudio || fileFilter != null) {
 				fileList = fileList.Where(f => !(skipImages && f.Type == "image") &&
 											   !(skipScript && f.Type == "script") &&
 											   !(skipAudio && f.Type == "audio") &&
@@ -314,16 +421,70 @@ namespace GARbro {
 			Console.WriteLine(fileArray[0].Offset);
 
 			switch (command) {
-				case "i":
-					Console.WriteLine(m_fs.Source.Tag);
+				case ConsoleCommand.Info:
+					Console.WriteLine(archiveFileSystem.Source.Tag);
 					break;
-				case "l":
+				case ConsoleCommand.List:
 					ListFiles(fileArray);
 					break;
-				case "x":
-					ExtractFiles(fileArray, m_fs.Source);
+				case ConsoleCommand.Extract:
+					Archive_ExtractFiles(fileArray, archiveFileSystem.Source);
 					break;
 			}
+		}
+
+		/// <summary>
+		/// Helper function used if the input file is not an archive, e.g. encrypted image/audio.
+		/// Theses files use other data structures and need to implement the command line actions differently.
+		/// </summary>
+		/// <param name="file">Full path to the input file</param>
+		/// <param name="command"></param>
+		void ProcessNonArchiveFile(string file, ConsoleCommand command) {
+			var fileName = Path.GetFileName(file);
+			if (fileFilter != null && fileFilter.IsMatch(fileName)) PrintError("No files match the given filter");
+
+			switch (command) {
+				case ConsoleCommand.Info:
+					Console.WriteLine(IdentifyNonArchiveFile(file));
+					break;
+				case ConsoleCommand.List:
+					if (IdentifyNonArchiveFile(file) == null) break;
+
+					var entry = new Entry() {
+						Name = fileName,
+						Offset = 0
+					};
+					ListFiles(new Entry[] { entry });
+					break;
+				case ConsoleCommand.Extract:
+					if (ConvertFile(file)) Console.WriteLine("All OK");
+					break;
+			}
+		}
+
+		string IdentifyNonArchiveFile(string file) {
+			try {
+				using (var binaryStream = BinaryStream.FromFile(file)) {
+					try {
+						var image = ImageFormat.FindFormat(binaryStream);
+						if (image != null) return image.Item1.Tag;
+					}
+					catch (Exception) {}
+
+					try {
+						var audio = AudioFormat.Read(binaryStream);
+						if (audio != null) return audio.SourceFormat;
+					}
+					catch (Exception) {}
+
+					throw new UnknownFormatException();
+				}
+			}
+			catch (Exception) {
+				PrintError("Input file has an unknown format");
+			}
+
+			return null;
 		}
 
 		void DeserializeGameData() {
@@ -357,6 +518,14 @@ namespace GARbro {
 			//Console.WriteLine(FormatCatalog.Instance.ArcFormats.Count() + " supported formats");
 		}
 
+		static void PrintProgress(int current, int total, string fileName) {
+			Console.WriteLine(string.Format("[{0}/{1}] {2}", current, total, fileName));
+		}
+
+		static void PrintWarning(string msg) {
+			Console.WriteLine("Warning: " + msg);
+		}
+
 		static void PrintError(string msg) {
 			Console.WriteLine("Error: " + msg);
 		}
@@ -375,7 +544,9 @@ namespace GARbro {
 			Console.WriteLine(string.Format($"The file {filename} already exists. Overwrite? [Y]es | [N]o | [A]lways | n[E]ver | [R]ename | A[l]ways rename"));
 
 			while (true) {
-				switch (Console.Read()) {
+				var key = Console.ReadKey().KeyChar;
+				Console.WriteLine();
+				switch (key) {
 					case 'y':
 					case 'Y':
 						return filename;
@@ -426,7 +597,7 @@ namespace GARbro {
 
 		static void Main(string[] args) {
 			Console.OutputEncoding = Encoding.UTF8;
-			Console.WriteLine(string.Format("GARbro - Game Resource browser, version {0}\n2014-2019 by mørkt, published under a MIT license", Assembly.GetAssembly(typeof(FormatCatalog)).GetName().Version));
+			Console.WriteLine(string.Format("GARbro - Game Resource browser, version {0}\n2014-2020 by mørkt, published under a MIT license", Assembly.GetAssembly(typeof(FormatCatalog)).GetName().Version));
 			Console.WriteLine("-----------------------------------------------------------------------------\n");
 
 			FormatCatalog.Instance.ParametersRequest += OnParametersRequest;
