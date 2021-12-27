@@ -196,7 +196,10 @@ namespace GameRes.Formats.NeXAS
                 }
             case Compression.Zstd:
                 {
-                    if (entry.Name.Contains(".png") || entry.Name.Contains(".fnt") || entry.Name.Contains(".ogg"))
+                    if (entry.Name.Contains(".png") || 
+                        entry.Name.Contains(".fnt") || 
+                        entry.Name.Contains(".ogg") ||
+                        entry.Name.Contains(".wav"))
                         return input;
                     return new ZstandardStream(input, System.IO.Compression.CompressionMode.Decompress);
                 }
