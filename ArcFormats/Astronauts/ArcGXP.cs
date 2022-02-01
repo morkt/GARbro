@@ -41,19 +41,47 @@ namespace GameRes.Formats.Astronauts
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
+        private bool UseNameAsKey { get; set; }
+
         static readonly byte[] KnownKey = {
             0x40, 0x21, 0x28, 0x38, 0xA6, 0x6E, 0x43, 0xA5, 0x40, 0x21, 0x28, 0x38, 0xA6, 0x43, 0xA5, 0x64,
             0x3E, 0x65, 0x24, 0x20, 0x46, 0x6E, 0x74,
         };
 
-        public override ArcFile TryOpen (ArcView file)
+        public override ArcFile TryOpen(ArcView file)
+        {
+            UseNameAsKey = false;
+            ArcFile arc = TryOpenOrg(file);
+            if(arc == null)
+            {
+                //try use arc name as key
+                UseNameAsKey = true;
+                arc = TryOpenOrg(file);
+            }
+            return arc;
+        }
+
+        public ArcFile TryOpenOrg (ArcView file)
         {
             int count = file.View.ReadInt32 (0x18);
             if (!IsSaneCount (count))
                 return null;
-
+            string arcName = Path.GetFileName(file.Name);
+            byte[] arcNameBytes = Encoding.ASCII.GetBytes(arcName);
             long base_offset = file.View.ReadInt64 (0x28);
-            uint entry_key = KnownKey[0] | (1u^KnownKey[1]) << 8 | (2u^KnownKey[2]) << 16 | (3u^KnownKey[3]) << 24;
+            uint entry_key = 0;
+            if(UseNameAsKey)
+            {
+                byte b1 = (byte)(KnownKey[0] ^ arcNameBytes[0]);
+                byte b2 = (byte)(1u ^ KnownKey[1] ^ arcNameBytes[1 % arcNameBytes.Length]);
+                byte b3 = (byte)(2u ^ KnownKey[2] ^ arcNameBytes[2 % arcNameBytes.Length]);
+                byte b4 = (byte)(3u ^ KnownKey[3] ^ arcNameBytes[3 % arcNameBytes.Length]);
+                entry_key = (uint)(b1 | b2 << 8 | b3 << 16 | b4 << 24);
+            }
+            else
+            {
+                entry_key = KnownKey[0] | (1u ^ KnownKey[1]) << 8 | (2u ^ KnownKey[2]) << 16 | (3u ^ KnownKey[3]) << 24;
+            }
             uint index_offset = 0x30;
             var entry_buffer = new byte[0x100];
             var dir = new List<Entry> (count);
@@ -66,7 +94,15 @@ namespace GameRes.Formats.Astronauts
                     entry_buffer = new byte[entry_length];
                 if (entry_length != file.View.Read (index_offset, entry_buffer, 0, entry_length))
                     return null;
-                Decrypt (entry_buffer, entry_length);
+                if (UseNameAsKey)
+                {
+                    Decrypt(entry_buffer, entry_length, arcNameBytes);
+                }
+                else
+                {
+                    Decrypt(entry_buffer, entry_length);
+                }
+
                 int name_length = LittleEndian.ToInt32 (entry_buffer, 0xC) * 2; // length in characters
                 if (name_length >= entry_length)
                     return null;
@@ -85,15 +121,29 @@ namespace GameRes.Formats.Astronauts
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            Decrypt (data, entry.Size);
+            if (UseNameAsKey)
+            {
+                string name = Path.GetFileName(arc.File.Name);
+                byte[] nameBytes = Encoding.ASCII.GetBytes(name);
+                Decrypt(data, entry.Size, nameBytes);
+            }
+            else
+            {
+                Decrypt(data, entry.Size);
+            }
             return new BinMemoryStream (data, entry.Name);
         }
 
-        static void Decrypt (byte[] data, uint length)
+        static void Decrypt (byte[] data, uint length, byte[] keyStrBytes=null)
         {
             for (uint i = 0; i < length; ++i)
             {
-                data[i] ^= (byte)(i ^ KnownKey[i % KnownKey.Length]);
+                byte xorK = (byte)(i ^ KnownKey[i % KnownKey.Length]);
+                if(keyStrBytes != null)
+                {
+                    xorK ^= keyStrBytes[i % keyStrBytes.Length];
+                }
+                data[i] ^= xorK;
             }
         }
     }
