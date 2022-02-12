@@ -649,6 +649,7 @@ namespace GameRes.Formats.Kaguya
             {
                 table.Add (new Tuple<string, Decryptor> ("AN00", (a, e) => DecryptAn00 (a, e)));
                 table.Add (new Tuple<string, Decryptor> ("AN21", (a, e) => DecryptAn21 (a, e)));
+                table.Add (new Tuple<string, Decryptor> ("PL10", (a, e) => DecryptPL10 (a, e)));
             }
             m_type_table = table.ToArray();
         }
@@ -716,6 +717,18 @@ namespace GameRes.Formats.Kaguya
             offset += 12;
             DecryptData (data, offset, channels * w * h);
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        Stream DecryptPL10(LinkArchive arc, LinkEntry entry)
+        {
+            var data = arc.File.View.ReadBytes(entry.Offset, entry.Size);
+            int offset = 30;
+            int w = data.ToInt32(offset);
+            int h = data.ToInt32(offset + 4);
+            int channels = data.ToInt32(offset + 8);
+            offset += 12;
+            DecryptData(data, offset, channels * w * h);
+            return new BinMemoryStream(data, entry.Name);
         }
 
         void DecryptData (byte[] data, int index, int length)
