@@ -648,6 +648,7 @@ namespace GameRes.Formats.Kaguya
             if (anm_encrypted)
             {
                 table.Add (new Tuple<string, Decryptor> ("AN00", (a, e) => DecryptAn00 (a, e)));
+                table.Add (new Tuple<string, Decryptor> ("AN20", (a, e) => DecryptAn20 (a, e)));
                 table.Add (new Tuple<string, Decryptor> ("AN21", (a, e) => DecryptAn21 (a, e)));
                 table.Add (new Tuple<string, Decryptor> ("PL00", (a, e) => DecryptPL00 (a, e)));
                 table.Add (new Tuple<string, Decryptor> ("PL10", (a, e) => DecryptPL10 (a, e)));
@@ -690,6 +691,42 @@ namespace GameRes.Formats.Kaguya
                 frame_offset += size + 8;
             }
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        Stream DecryptAn20(LinkArchive arc, LinkEntry entry)
+        {
+            var data = arc.File.View.ReadBytes(entry.Offset, entry.Size);
+            int count = data.ToUInt16(4);
+            int offset = 8;
+            for (int i = 0; i < count; ++i)
+            {
+                switch (data[offset++])
+                {
+                    case 0: break;
+                    case 1: offset += 8; break;
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5: offset += 4; break;
+                    default: return new BinMemoryStream(data, entry.Name);
+                }
+            }
+            count = data.ToUInt16(offset);
+            offset += 2 + count * 8;
+            int frame_count = data.ToInt16(offset);
+            offset += 18;
+            for(int i = 0; i < frame_count; ++i)
+            {
+                offset += 8;
+                int w = data.ToInt32(offset);
+                int h = data.ToInt32(offset + 4);
+                int channels = data.ToInt32(offset + 8);
+                int frame_size = channels * w * h;
+                offset += 12;
+                DecryptData(data, offset, frame_size);
+                offset += frame_size;
+            }
+            return new BinMemoryStream(data, entry.Name);
         }
 
         Stream DecryptAn21 (LinkArchive arc, LinkEntry entry)
