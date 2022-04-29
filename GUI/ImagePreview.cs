@@ -271,7 +271,7 @@ namespace GARbro.GUI
                     ImageCanvas.Source = bitmap;
                     ApplyDownScaleSetting();
                     SetStatusText (string.Format (guiStrings.MsgImageSize, bitmap.PixelWidth,
-                                                  bitmap.PixelHeight, bitmap.Format.BitsPerPixel, format.Tag));
+                                                  bitmap.PixelHeight, bitmap.Format.BitsPerPixel, format?.Tag ?? "?"));
                 }
             });
         }
