@@ -123,6 +123,88 @@ namespace GameRes.Formats.Kaguya
     }
 
     [Export(typeof(ArchiveFormat))]
+    public class An10Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "AN10/KAGUYA"; } }
+        public override string Description { get { return "KaGuYa script engine animation resource"; } }
+        public override uint     Signature { get { return 0x30314E41; } } // 'AN10'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public An10Opener ()
+        {
+            Extensions = new string[] { "anm" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int frame_count = file.View.ReadInt16 (0x14);
+            uint current_offset = 0x18 + (uint)frame_count * 4;
+            int count = file.View.ReadInt16 (current_offset);
+            if (!IsSaneCount (count))
+                return null;
+            var base_info = new ImageMetaData
+            {
+                OffsetX     = file.View.ReadInt32 (4),
+                OffsetY     = file.View.ReadInt32 (8),
+                Width       = file.View.ReadUInt32 (0x0C),
+                Height      = file.View.ReadUInt32 (0x10),
+                BPP         = 32,
+            };
+            current_offset += 2;
+            string base_name = Path.GetFileNameWithoutExtension (file.Name);
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                uint width  = file.View.ReadUInt32 (current_offset+8);
+                uint height = file.View.ReadUInt32 (current_offset+12);
+                uint channels = file.View.ReadUInt32 (current_offset+16);
+                var entry = new Entry
+                {
+                    Name = string.Format ("{0}#{1:D2}", base_name, i),
+                    Type = "image",
+                    Offset = current_offset,
+                    Size = 0x14 + channels*width*height,
+                };
+                dir.Add (entry);
+                current_offset += entry.Size;
+            }
+            return new AnmArchive (file, this, dir, base_info);
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var base_info = ((AnmArchive)arc).ImageInfo;
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new An10Decoder (input, base_info);
+        }
+    }
+
+    internal class An10Decoder : BinaryImageDecoder
+    {
+        public An10Decoder (IBinaryStream input, ImageMetaData base_info) : base (input)
+        {
+            Info = new ImageMetaData
+            {
+                OffsetX = base_info.OffsetX + m_input.ReadInt32(),
+                OffsetY = base_info.OffsetY + m_input.ReadInt32(),
+                Width   = m_input.ReadUInt32(),
+                Height  = m_input.ReadUInt32(),
+                BPP     = m_input.ReadInt32() * 8,
+            };
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = 0x14;
+            int stride = Info.BPP / 8 * (int)Info.Width;
+            var pixels = m_input.ReadBytes (stride*(int)Info.Height);
+            PixelFormat format = 24 == Info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+            return ImageData.CreateFlipped (Info, format, null, pixels, stride);
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
     public class An20Opener : ArchiveFormat
     {
         public override string         Tag { get { return "AN20/KAGUYA"; } }
