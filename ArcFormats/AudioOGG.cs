@@ -40,13 +40,13 @@ namespace GameRes.Formats
         {
             get
             {
-                return (long)(m_reader.DecodedTime.TotalSeconds * m_reader.SampleRate * m_reader.Channels * sizeof(float));
+                return (long)(m_reader.TimePosition.TotalSeconds * m_reader.SampleRate * m_reader.Channels * sizeof(float));
             }
             set
             {
                 if (value < 0 || value > Length) throw new ArgumentOutOfRangeException("value");
 
-                m_reader.DecodedTime = TimeSpan.FromSeconds((double)value / m_reader.SampleRate / m_reader.Channels / sizeof(float));
+                m_reader.TimePosition = TimeSpan.FromSeconds((double)value / m_reader.SampleRate / m_reader.Channels / sizeof(float));
             }
         }
 
@@ -75,7 +75,7 @@ namespace GameRes.Formats
 
         public override void Reset ()
         {
-            m_reader.DecodedTime = TimeSpan.FromSeconds (0);
+            m_reader.TimePosition = TimeSpan.FromSeconds (0);
         }
 
         // This buffer can be static because it can only be used by 1 instance per thread
