@@ -84,7 +84,7 @@ namespace GameRes.Formats.Qlie
         public PackOpener ()
         {
             Extensions = new string [] { "pack" };
-            ContainedFormats = new[] { "ABMP/QLIE", "DPNG", "PNG", "JPEG", "OGG", "WAV" };
+            ContainedFormats = new[] { "ABMP/QLIE", "DPNG", "ARGB", "PNG", "JPEG", "OGG", "WAV" };
         }
 
         /// <summary>
