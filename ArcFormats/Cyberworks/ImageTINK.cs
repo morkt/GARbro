@@ -145,6 +145,8 @@ namespace GameRes.Formats.Cyberworks
                     {
                         var size_buf = new byte[4];
                         input.Read (size_buf, 0 , 4);
+                        if ('c' == type)
+                            input.ReadByte();
                         var decoder = new PngBitmapDecoder (input, BitmapCreateOptions.None,
                                                             BitmapCacheOption.OnLoad);
                         BitmapSource frame = decoder.Frames[0];
