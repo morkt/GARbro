@@ -240,7 +240,7 @@ namespace GARbro.GUI
             {
                 using (var data = VFS.OpenImage (preview.Entry))
                 {
-                    SetPreviewImage (preview, data.Image.Bitmap);
+                    SetPreviewImage (preview, data.Image.Bitmap, data.SourceFormat);
                 }
             }
             catch (Exception X)
@@ -250,7 +250,7 @@ namespace GARbro.GUI
             }
         }
 
-        void SetPreviewImage (PreviewFile preview, BitmapSource bitmap)
+        void SetPreviewImage (PreviewFile preview, BitmapSource bitmap, ImageFormat format)
         {
             if (bitmap.DpiX != Desktop.DpiX || bitmap.DpiY != Desktop.DpiY)
             {
@@ -271,7 +271,7 @@ namespace GARbro.GUI
                     ImageCanvas.Source = bitmap;
                     ApplyDownScaleSetting();
                     SetStatusText (string.Format (guiStrings.MsgImageSize, bitmap.PixelWidth,
-                                                  bitmap.PixelHeight, bitmap.Format.BitsPerPixel));
+                                                  bitmap.PixelHeight, bitmap.Format.BitsPerPixel, format.Tag));
                 }
             });
         }

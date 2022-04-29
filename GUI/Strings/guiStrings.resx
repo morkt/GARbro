@@ -232,7 +232,7 @@
     <value>Extracting files from {0} to {1}</value>
   </data>
   <data name="MsgImageSize" xml:space="preserve">
-    <value>Image {0} x {1} x {2}bpp</value>
+    <value>Image {0} x {1} x {2}bpp [{3}]</value>
   </data>
   <data name="MsgNoFiles" xml:space="preserve">
     <value>no files to extract</value>

@@ -226,7 +226,7 @@
     <value>Извлекаются файлы из {0} в {1}</value>
   </data>
   <data name="MsgImageSize" xml:space="preserve">
-    <value>Изображение {0} x {1} x {2}bpp</value>
+    <value>Изображение {0} x {1} x {2}bpp [{3}]</value>
   </data>
   <data name="MsgNoFiles" xml:space="preserve">
     <value>отсутствуют файлы, удовлетворяющие выбранным критериям</value>
