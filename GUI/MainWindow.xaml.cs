@@ -1136,10 +1136,9 @@ namespace GARbro.GUI
                         GARbro.Shell.File.Delete (file_list);
                         count = file_list.Count();
                     }
-                    catch
+                    finally
                     {
                         ResumeWatchDirectoryChanges();
-                        throw;
                     }
                     RefreshView();
                     SetStatusText (Localization.Format ("MsgDeletedItems", count));
