@@ -1133,7 +1133,8 @@ namespace GARbro.GUI
                     try
                     {
                         var file_list = items.Select (entry => Path.Combine (CurrentPath, entry.Name));
-                        GARbro.Shell.File.Delete (file_list);
+                        if (!GARbro.Shell.File.Delete (file_list, new WindowInteropHelper(this).Handle))
+                            throw new ApplicationException ("Delete operation failed.");
                         count = file_list.Count();
                     }
                     finally
