@@ -321,6 +321,7 @@
     <Compile Include="ScenePlayer\ArcPMX.cs" />
     <Compile Include="Scoop\ArcGX.cs" />
     <Compile Include="Scoop\ImageSCP.cs" />
+    <Compile Include="Seraphim\ArcArchAngel.cs" />
     <Compile Include="Seraphim\ArcCP3.cs" />
     <Compile Include="Seraphim\ArcMC.cs" />
     <Compile Include="Seraphim\ArcSCN.cs" />
@@ -637,6 +638,7 @@
     <Compile Include="TanukiSoft\ArcTAC.cs" />
     <Compile Include="TanukiSoft\ImageAF.cs" />
     <Compile Include="Taskforce\ArcDAT.cs" />
+    <Compile Include="TechnoBrain\ArcIPQ.cs" />
     <Compile Include="TechnoBrain\AudioWAPE.cs" />
     <Compile Include="TechnoBrain\ImageIPF.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
@@ -784,6 +786,7 @@
     <Compile Include="Unity\AssetReader.cs" />
     <Compile Include="Unity\AudioClip.cs" />
     <Compile Include="Unity\AudioFSB5.cs" />
+    <Compile Include="Unity\Bc7Decoder.cs" />
     <Compile Include="Unity\BundleStream.cs" />
     <Compile Include="Unity\Gx4Lib\ArcDAT.cs" />
     <Compile Include="Unity\OggStream.cs" />
