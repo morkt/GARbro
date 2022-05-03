@@ -124,6 +124,7 @@ namespace GameRes.Formats.Seraphim
         {
             // common case for 256-colors images
             Signatures = new uint[] { 0x01004243, 0 };
+            Extensions = new string[] { "CB", "CLB" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -133,18 +134,18 @@ namespace GameRes.Formats.Seraphim
                 return null;
             int colors = header.ToUInt16 (2);
             int packed_size = header.ToInt32 (12);
-            if (packed_size <= 0 || packed_size > stream.Length-0x10)
+            if (packed_size <= 0 /*|| packed_size > stream.Length-0x10*/)
                 return null;
-            uint width  = header.ToUInt16 (8);
-            uint height = header.ToUInt16 (10);
-            if (0 == width || 0 == height)
+            int width  = header.ToInt16 (8);
+            int height = header.ToInt16 (10);
+            if (width <= 0 || height <= 0 || colors > 0x100)
                 return null;
             return new SeraphMetaData
             {
                 OffsetX = header.ToInt16 (4),
                 OffsetY = header.ToInt16 (6),
-                Width   = width,
-                Height  = height,
+                Width   = (uint)width,
+                Height  = (uint)height,
                 BPP     = 8,
                 PackedSize = packed_size,
                 Colors  = colors,
@@ -363,7 +364,7 @@ namespace GameRes.Formats.Seraphim
         private byte[] UnpackBytes () // sub_403ED0
         {
             int total = m_width * m_height;
-            var output = new byte[total];
+            var output = new byte[total + m_width];
             int dst = 0;
             while ( dst < total )
             {
@@ -450,9 +451,9 @@ namespace GameRes.Formats.Seraphim
                 }
                 else
                 {
-                    int v36 = m_input.ReadByte() | ((next & 0xF) << 8);
+                    int offset = m_input.ReadByte() | ((next & 0xF) << 8);
                     count = m_input.ReadByte() + 1;
-                    int src = dst - 1 - v36;
+                    int src = dst - 1 - offset;
                     Binary.CopyOverlapped (output, src, dst, count);
                 }
                 dst += count;
