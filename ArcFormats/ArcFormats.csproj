@@ -211,6 +211,7 @@
     <Compile Include="Interheart\ArcFPK2.cs" />
     <Compile Include="Interheart\ImageCandy.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
+    <Compile Include="Kaguya\ArcPLT.cs" />
     <Compile Include="Key\ArcPAK.cs" />
     <Compile Include="Key\AudioOGGPAK.cs" />
     <Compile Include="Key\ImageCZ.cs" />
