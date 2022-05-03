@@ -42,12 +42,19 @@ namespace GameRes.Formats.Unity
         public override ArcFile TryOpen (ArcView file)
         {
             uint header_size = Binary.BigEndian (file.View.ReadUInt32 (0));
-            uint file_size = Binary.BigEndian (file.View.ReadUInt32 (4));
-            if (file_size != file.MaxOffset || header_size > file_size || 0 == header_size)
-                return null;
+            long file_size = Binary.BigEndian (file.View.ReadUInt32 (4));
             int format = Binary.BigEndian (file.View.ReadInt32 (8));
-            uint data_offset = Binary.BigEndian (file.View.ReadUInt32 (12));
-            if (format <= 0 || format > 0x100 || data_offset >= file_size || data_offset < header_size)
+            if (format <= 0 || format > 0x100)
+                return null;
+            long data_offset = Binary.BigEndian (file.View.ReadUInt32 (12));
+            if (format >= 22)
+            {
+                header_size = Binary.BigEndian (file.View.ReadUInt32 (0x14));
+                file_size = Binary.BigEndian (file.View.ReadInt64 (0x18));
+                data_offset = Binary.BigEndian (file.View.ReadInt64 (0x20));
+            }
+            if (file_size != file.MaxOffset || header_size > file_size || 0 == header_size
+                || data_offset >= file_size || data_offset < header_size)
                 return null;
             using (var stream = file.CreateStream())
             using (var input = new AssetReader (stream))
@@ -84,7 +91,7 @@ namespace GameRes.Formats.Unity
             {
                 reader.SetupReaders (obj.Asset);
                 var tex = new Texture2D();
-                tex.Load (reader, obj.Asset.Tree.Version);
+                tex.Load (reader, obj.Asset.Tree);
                 if (0 == tex.m_DataLength)
                 {
                     reader.Dispose();

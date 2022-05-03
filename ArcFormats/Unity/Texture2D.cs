@@ -97,12 +97,17 @@ namespace GameRes.Formats.Unity
             m_DataLength = reader.ReadInt32();
         }
 
-        public void Load (AssetReader reader, string version)
+        public void Load (AssetReader reader, UnityTypeData type)
         {
-            if (version != "2017.3.1f1")
+            if ("2021.1.3f1" == type.Version) // type.Hashes[28] == [0D 08 41 4C FD 5B DB 0D 22 79 20 11 BD A9 AB 26]
+            {
+                Load2021 (reader);
+                return;
+            }
+            if (type.Version != "2017.3.1f1")
             {
                 Load (reader);
-                if (0 == m_DataLength && version.StartsWith ("2017.")) // "2017.2.0f3" || "2017.1.1p1"
+                if (0 == m_DataLength && type.Version.StartsWith ("2017.")) // "2017.2.0f3" || "2017.1.1p1"
                     reader.ReadInt64();
                 return;
             }
@@ -127,6 +132,35 @@ namespace GameRes.Formats.Unity
             reader.ReadInt32(); // m_WrapW
             reader.ReadInt32(); // m_LightmapFormat 
             m_ColorSpace = reader.ReadInt32();
+            m_DataLength = reader.ReadInt32();
+        }
+
+        public void Load2021 (AssetReader reader)
+        {
+            m_Name = reader.ReadString();
+            reader.Align();
+            reader.ReadInt32(); // m_ForcedFallbackFormat
+            reader.ReadInt32(); // m_DownscaleFallback
+            m_Width = reader.ReadInt32();
+            m_Height = reader.ReadInt32();
+            m_CompleteImageSize = reader.ReadInt32();
+            reader.ReadInt32(); // m_MipsStripped;
+            m_TextureFormat = (TextureFormat)reader.ReadInt32();
+            m_MipCount = reader.ReadInt32();
+            m_IsReadable = reader.ReadBool();
+            reader.Align();
+            reader.ReadInt32(); // m_StreamingMipmapsPriority
+            m_ImageCount = reader.ReadInt32();
+            m_TextureDimension = reader.ReadInt32();
+            m_FilterMode = reader.ReadInt32();
+            m_Aniso = reader.ReadInt32();
+            m_MipBias = reader.ReadFloat();
+            m_WrapMode = reader.ReadInt32(); // m_WrapU
+            reader.ReadInt32(); // m_WrapV
+            reader.ReadInt32(); // m_WrapW
+            reader.ReadInt32(); // m_LightmapFormat 
+            m_ColorSpace = reader.ReadInt32();
+            reader.ReadInt32();
             m_DataLength = reader.ReadInt32();
         }
 
@@ -243,6 +277,12 @@ namespace GameRes.Formats.Unity
                 pixels = ConvertArgb16 (m_texture.m_Data);
                 break;
 
+            case TextureFormat.BC7:
+                {
+                    var decoder = new Bc7Decoder (m_texture.m_Data, Info);
+                    pixels = decoder.Unpack();
+                    break;
+                }
             default:
                 throw new NotImplementedException (string.Format ("Not supported Unity Texture2D format '{0}'.", m_texture.m_TextureFormat));
             }
