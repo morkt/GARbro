@@ -711,6 +711,11 @@ namespace GameRes.Formats.Kaguya
 
         delegate Stream Decryptor (LinkArchive arc, LinkEntry entry);
 
+        static readonly ResourceInstance<AnmOpener>  An00 = new ResourceInstance<AnmOpener> ("ANM/KAGUYA");
+        static readonly ResourceInstance<An10Opener> An10 = new ResourceInstance<An10Opener> ("AN10/KAGUYA");
+        static readonly ResourceInstance<An20Opener> An20 = new ResourceInstance<An20Opener> ("AN20/KAGUYA");
+        static readonly ResourceInstance<Pl00Opener> Pl00 = new ResourceInstance<Pl00Opener> ("PLT/KAGUYA");
+
         public LinkEncryption (byte[] key, bool anm_encrypted = true)
         {
             if (null == key || 0 == key.Length)
@@ -725,8 +730,12 @@ namespace GameRes.Formats.Kaguya
             };
             if (anm_encrypted)
             {
-                table.Add (new Tuple<string, Decryptor> ("AN00", (a, e) => DecryptAn00 (a, e)));
+                table.Add (new Tuple<string, Decryptor> ("AN00", (a, e) => DecryptAnm (a, e, An00.Value)));
+                table.Add (new Tuple<string, Decryptor> ("AN10", (a, e) => DecryptAnm (a, e, An10.Value)));
+                table.Add (new Tuple<string, Decryptor> ("AN20", (a, e) => DecryptAnm (a, e, An20.Value)));
                 table.Add (new Tuple<string, Decryptor> ("AN21", (a, e) => DecryptAn21 (a, e)));
+                table.Add (new Tuple<string, Decryptor> ("PL00", (a, e) => DecryptAnm (a, e, Pl00.Value)));
+                table.Add (new Tuple<string, Decryptor> ("PL10", (a, e) => DecryptPl10 (a, e)));
             }
             m_type_table = table.ToArray();
         }
@@ -750,22 +759,20 @@ namespace GameRes.Formats.Kaguya
             return new PrefixStream (header, body);
         }
 
-        Stream DecryptAn00 (LinkArchive arc, LinkEntry entry)
+        Stream DecryptAnm (LinkArchive arc, LinkEntry entry, IAnmReader reader)
         {
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            int frame_offset = 0x18 + data.ToUInt16 (0x14) * 4;
-            int count = data.ToUInt16 (frame_offset);
-            frame_offset += 10;
-            for (int i = 0; i < count; ++i)
+            var input = new BinMemoryStream (data, entry.Name);
+            var dir = reader.GetFramesList (input);
+            if (dir != null)
             {
-                int w = data.ToInt32 (frame_offset);
-                int h = data.ToInt32 (frame_offset+4);
-                int size = 4 * w * h;
-                frame_offset += 8;
-                DecryptData (data, frame_offset, size);
-                frame_offset += size + 8;
+                foreach (AnmEntry frame in dir)
+                {
+                    DecryptData (data, (int)frame.ImageDataOffset, (int)frame.ImageDataSize);
+                }
             }
-            return new BinMemoryStream (data, entry.Name);
+            input.Position = 0;
+            return input;
         }
 
         Stream DecryptAn21 (LinkArchive arc, LinkEntry entry)
@@ -788,6 +795,18 @@ namespace GameRes.Formats.Kaguya
             }
             count = data.ToUInt16 (offset);
             offset += 2 + count * 8 + 0x21;
+            int w = data.ToInt32 (offset);
+            int h = data.ToInt32 (offset+4);
+            int channels = data.ToInt32 (offset+8);
+            offset += 12;
+            DecryptData (data, offset, channels * w * h);
+            return new BinMemoryStream (data, entry.Name);
+        }
+
+        Stream DecryptPl10 (LinkArchive arc, LinkEntry entry)
+        {
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            int offset = 30;
             int w = data.ToInt32 (offset);
             int h = data.ToInt32 (offset+4);
             int channels = data.ToInt32 (offset+8);
