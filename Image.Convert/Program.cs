@@ -7,7 +7,7 @@ using GameRes;
 
 namespace GARbro
 {
-    class ImageConverter
+    public class ImageConverter
     {
         static string ProgramName
         {
@@ -36,7 +36,7 @@ namespace GARbro
             }
         }
 
-        ImageFormat FindFormat (string format)
+        public static ImageFormat FindFormat (string format)
         {
             var range = FormatCatalog.Instance.LookupExtension<ImageFormat> (format);
             return range.FirstOrDefault();

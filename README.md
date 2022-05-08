@@ -1,7 +1,10 @@
 GARbro
 ======
 
-Visual Novels resource browser.
+Visual Novels resource browser.  
+Mod by Devseed. Adding support to:  
+* *.arc, *.bin in gss/ArcARC.cs  
+   月影の鎖 -錯乱パラノイア PSP, PSV
 
 Requires .NET Framework v4.6 or newer (https://www.microsoft.com/net)
 
