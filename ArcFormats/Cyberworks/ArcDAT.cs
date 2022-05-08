@@ -205,7 +205,10 @@ namespace GameRes.Formats.Cyberworks
             string game_name = arc_name != "Arc06.dat" ? TryParseMeta (VFS.CombinePath (dir_name, "Arc06.dat")) : null;
             Tuple<string, int> parsed = null;
             if (string.IsNullOrEmpty (game_name))
+            {
+                game_name = TryParseMeta (VFS.CombinePath (dir_name, "Arc00.dat"));
                 parsed = s_name_parsers.Select (p => p.ParseName (arc_name)).FirstOrDefault (p => p != null);
+            }
             else // Shukujo no Tsuyagoto special case
                 parsed = OldDatOpener.ArcNameParser.ParseName (arc_name);
             if (null == parsed)
@@ -217,7 +220,7 @@ namespace GameRes.Formats.Cyberworks
             var toc = ReadToc (toc_name, 8);
             if (null == toc)
                 return null;
-            using (var index = new ArcIndexReader (toc, file, arc_idx))
+            using (var index = new ArcIndexReader (toc, file, arc_idx, game_name))
             {
                 if (!index.Read())
                     return null;
@@ -311,10 +314,8 @@ namespace GameRes.Formats.Cyberworks
             if ('c' == type || 'b' == type)
             {
                 uint img_size = Binary.BigEndian (input.ReadUInt32());
-                if (input.Length - 5 == img_size)
-                {
-                    input = BinaryStream.FromStream (new StreamRegion (input.AsStream, 5, img_size), input.Name);
-                }
+                long start_pos = input.Length - img_size;
+                input = BinaryStream.FromStream (new StreamRegion (input.AsStream, start_pos, img_size), input.Name);
             }
             else if (scheme != null && ('a' == type || 'd' == type) && input.Length > 21)
             {
@@ -618,9 +619,13 @@ namespace GameRes.Formats.Cyberworks
             return true;
         }
 
+        uint m_fault_id = 100000;
+
         internal PackedEntry ReadEntryInfo ()
         {
             uint id = m_index.ReadUInt32();
+            if (id > m_fault_id)
+                id = m_fault_id++;
             var entry = new PackedEntry { Name = id.ToString ("D6") };
             entry.UnpackedSize = m_index.ReadUInt32();
             entry.Size = m_index.ReadUInt32();
@@ -650,10 +655,14 @@ namespace GameRes.Formats.Cyberworks
     internal class ArcIndexReader : IndexReader
     {
         int     m_arc_number;
+        string  m_game_name;
+        bool    m_ignore_b_files = false;
 
-        public ArcIndexReader (byte[] toc, ArcView file, int arc_number) : base (toc, file)
+        public ArcIndexReader (byte[] toc, ArcView file, int arc_number, string game_name = null) : base (toc, file)
         {
             m_arc_number = arc_number;
+            m_game_name = game_name;
+            m_ignore_b_files = m_game_name == "ドキドキ母娘レッスン ～教えて♪Ｈなお勉強～";
         }
 
         char[]  m_type = new char[2];
@@ -677,7 +686,7 @@ namespace GameRes.Formats.Cyberworks
                     ext = new string (m_type);
                 else
                     ext = new string (m_type[0], 1);
-                if ("b0" == ext || "n0" == ext || "o0" == ext || "0b" == ext || "b" == ext)
+                if ("b0" == ext || "n0" == ext || "o0" == ext || "0b" == ext || ("b" == ext && !m_ignore_b_files))
                 {
                     entry.Type = "image";
                     HasImages = true;

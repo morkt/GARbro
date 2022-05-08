@@ -82,6 +82,7 @@ namespace GameRes.Formats.Seraphim
         public ArchPacOpener ()
         {
             Extensions = new string[] { "dat" };
+            ContainedFormats = new[] { "CB" };
         }
 
         public override ArcFile TryOpen (ArcView file)

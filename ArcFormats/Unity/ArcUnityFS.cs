@@ -87,6 +87,7 @@ namespace GameRes.Formats.Unity
                 case 1:
                     index_data = UnpackLzma (packed, index_size);
                     break;
+                case 2:
                 case 3:
                     index_data = new byte[index_size];
                     Lz4Compressor.DecompressBlock (packed, packed.Length, index_data, index_data.Length);
