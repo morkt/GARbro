@@ -56,6 +56,7 @@ namespace GameRes.Formats.KiriKiri
         public ICrypt             Cipher { get; set; }
         public List<Xp3Segment> Segments { get { return m_segments; } }
         public uint                 Hash { get; set; }
+        public object              Extra { get; set; }
     }
 
     public class Xp3Options : ResourceOptions
@@ -145,6 +146,7 @@ namespace GameRes.Formats.KiriKiri
             using (var header = new BinaryReader (header_stream, Encoding.Unicode))
             using (var filename_map = new FilenameMap())
             {
+                Dictionary<string, HxEntry> hx_entry_info = null;
                 while (-1 != header.PeekChar())
                 {
                     uint entry_signature = header.ReadUInt32();
@@ -208,7 +210,6 @@ namespace GameRes.Formats.KiriKiri
                                     goto NextEntry;
                                 }
                                 entry.Name = name;
-                                entry.Type = FormatCatalog.Instance.GetTypeFromName (name, ContainedFormats);
                                 entry.IsEncrypted = !(entry.Cipher is NoCrypt)
                                     && !(entry.Cipher.StartupTjsNotEncrypted && "startup.tjs" == name);
                                 break;
@@ -253,6 +254,34 @@ namespace GameRes.Formats.KiriKiri
                             {
                                 DeobfuscateEntry (entry);
                             }
+                            if (null != hx_entry_info)
+                            {
+                                if (hx_entry_info.TryGetValue (entry.Name, out HxEntry info))
+                                {
+                                    entry.Extra = info;
+
+                                    var sb = new StringBuilder ();
+                                    if (!string.IsNullOrEmpty (info.Path))
+                                    {
+                                        sb.Append (info.Path);
+                                        if (!info.Path.EndsWith ("/") && !info.Path.EndsWith ("\\"))
+                                            sb.Append ('/');
+                                    }
+                                    if (!string.IsNullOrEmpty (info.Name))
+                                    {
+                                        sb.Append (info.Name);
+                                        if (sb.Length > 0)
+                                            entry.Name = sb.ToString ();
+                                    }
+                                    else
+                                    {
+                                        sb.Append (entry.Name);
+                                        if (sb.Length > 0)
+                                            entry.Name = sb.ToString ();
+                                    }
+                                }
+                            }
+                            entry.Type = FormatCatalog.Instance.GetTypeFromName(entry.Name, ContainedFormats);
                             dir.Add (entry);
                         }
                     }
@@ -269,6 +298,22 @@ namespace GameRes.Formats.KiriKiri
                                 var crypt = crypt_algorithm.Value as SenrenCxCrypt;
                                 crypt.ReadYuzNames (yuz, filename_map);
                             }
+                        }
+                    }
+                    else if (0x34767848 == entry_signature) // "Hxv4"
+                    {
+                        if (crypt_algorithm.Value is HxCrypt)
+                        {
+                            try
+                            {
+                                var offset = header.ReadInt64 () + base_offset;
+                                var size = header.ReadUInt32 ();
+                                var flags = header.ReadUInt16 ();
+                                var hx = file.View.ReadBytes (offset, size);
+                                var crypt = crypt_algorithm.Value as HxCrypt;
+                                hx_entry_info = crypt.ReadIndex (hx);
+                            }
+                            catch (Exception) { /* ignore parse error */ }
                         }
                     }
                     else if (entry_size > 7)
