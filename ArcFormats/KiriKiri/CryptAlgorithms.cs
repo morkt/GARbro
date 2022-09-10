@@ -103,6 +103,7 @@ namespace GameRes.Formats.KiriKiri
             var header = new byte[5];
             input.Read (header, 0, 5);
             uint signature = header.ToUInt32 (0);
+            GuessEntryTypeBySignature (entry, signature);
             if (0x184D2204 == signature) // LZ4 magic
             {
                 // assume no scripts are compressed using LZ4, return decompressed stream right away
@@ -196,6 +197,25 @@ namespace GameRes.Formats.KiriKiri
                 input.Dispose();
                 return output;
             }
+        }
+
+        static readonly Dictionary<uint, string> FileTypesMap = new Dictionary<uint, string>
+        {
+            { 0x5367674f, "audio" }, // OGG
+            { 0x46464952, "audio" }, // WAV
+            { 0x474e5089, "image" }, // PNG
+            { 0xe0ffd8ff, "image" }, // JPG
+            { 0x30474c54, "image" }, // TLG
+            { 0x35474c54, "image" }, // TLG
+            { 0x36474c54, "image" }, // TLG
+            { 0x35474cab, "image" }, // TLG
+            { 0x584d4b4a, "image" }, // TLG
+        };
+
+        internal void GuessEntryTypeBySignature(Entry entry, uint signature)
+        {
+            if (FileTypesMap.TryGetValue (signature, out var type))
+                entry.Type = type;
         }
     }
 
