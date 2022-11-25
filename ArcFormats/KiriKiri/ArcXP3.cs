@@ -311,7 +311,7 @@ namespace GameRes.Formats.KiriKiri
                                 var flags = header.ReadUInt16 ();
                                 var hx = file.View.ReadBytes (offset, size);
                                 var crypt = crypt_algorithm.Value as HxCrypt;
-                                hx_entry_info = crypt.ReadIndex (hx);
+                                hx_entry_info = crypt.ReadIndex (Path.GetFileName (file.Name), hx);
                             }
                             catch (Exception) { /* ignore parse error */ }
                         }

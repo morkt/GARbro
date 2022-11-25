@@ -37,6 +37,13 @@ using System.Text;
 namespace GameRes.Formats.KiriKiri
 {
     [Serializable]
+    public class HxIndexKey
+    {
+        public byte[] Key1; // 32 bytes
+        public byte[] Key2; // 16 bytes
+    }
+
+    [Serializable]
     public class HxCrypt : CxEncryption
     {
         public byte[]  IndexKey1; // 32 bytes
@@ -44,6 +51,7 @@ namespace GameRes.Formats.KiriKiri
         public ulong   FilterKey;
         public int     RandomType;
         public string  NamesFile;
+        public Dictionary<string, HxIndexKey> IndexKeyDict;
 
         public HxCrypt(CxScheme scheme) : base(scheme)
         {
@@ -80,16 +88,26 @@ namespace GameRes.Formats.KiriKiri
             return new string(result);
         }
 
-        internal virtual Dictionary<string, HxEntry> ReadIndex(byte[] data)
+        internal virtual Dictionary<string, HxEntry> ReadIndex(string arc_name, byte[] data)
         {
             if (data.Length <= 20) // 16 + 4
                 return null;
-            if (null == IndexKey1 || IndexKey1.Length != 32)
+            var index_key1 = IndexKey1;
+            var index_key2 = IndexKey2;
+            if (null != IndexKeyDict)
+            {
+                if (IndexKeyDict.TryGetValue (arc_name, out HxIndexKey arc_index_key))
+                {
+                    index_key1 = arc_index_key.Key1;
+                    index_key2 = arc_index_key.Key2;
+                }
+            }
+            if (null == index_key1 || index_key1.Length != 32)
                 return null;
-            if (null == IndexKey2 || IndexKey2.Length != 16)
+            if (null == index_key2 || index_key2.Length != 16)
                 return null;
             var seed = new uint[] { 1, 0 };
-            var crypt = new HxChachaDecryptor (IndexKey1, IndexKey2, seed);
+            var crypt = new HxChachaDecryptor (index_key1, index_key2, seed);
             var buf = new byte[data.Length-16];
             crypt.Decrypt (data, 16, buf, 0, buf.Length);
             Stream index_stream = null;
@@ -154,6 +172,7 @@ namespace GameRes.Formats.KiriKiri
                         entry_info.Name = name_str;
                     entry_info.Key = (long)entry_key;
                     var id = (uint)entry_id;
+                    entry_info.Id = (long)entry_id;
                     var uname = GetUnicodeName (id);
                     entry_info_map.Add (uname, entry_info);
                 }
@@ -229,7 +248,9 @@ namespace GameRes.Formats.KiriKiri
                 return;
             if (null != info.Filter)
                 return;
-            var entry_key = (ulong)info.Key ^ FilterKey;
+            var entry_key = (ulong)info.Key;
+            if (0 == (info.Id & 0x100000000))
+                entry_key ^= FilterKey;
             var header_key = ~entry_key;
             var key = CreateFilterKey (entry_key, header_key);
             info.Filter = new HxFilter (key);
@@ -291,6 +312,7 @@ namespace GameRes.Formats.KiriKiri
     {
         public string   Path;
         public string   Name;
+        public long     Id;
         public long     Key;
         public HxFilter Filter;
     }
