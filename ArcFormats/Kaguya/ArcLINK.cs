@@ -65,7 +65,7 @@ namespace GameRes.Formats.Kaguya
         {
             int version = file.View.ReadByte (4) - '0';
             if (version < 3 || version > 6)
-                return null;
+                return ReadOldIndex (file);
 
             using (var reader = LinkReader.Create (file, version))
             {
@@ -87,7 +87,22 @@ namespace GameRes.Formats.Kaguya
         {
             var lent = entry as LinkEntry;
             if (null == lent || (!lent.IsPacked && !lent.IsEncrypted))
+            {
+                if (entry.Size > 8)
+                {
+                    uint unpacked_size = arc.File.View.ReadUInt32 (entry.Offset);
+                    int id = arc.File.View.ReadUInt16 (entry.Offset+5);
+                    if (id == 0x4D42) // 'BM'
+                    {
+                        using (var input = arc.File.CreateStream (entry.Offset+4, entry.Size-4, entry.Name))
+                        {
+                            var data = Lin2Opener.UnpackLzss (input, unpacked_size);
+                            return new BinMemoryStream (data, entry.Name);
+                        }
+                    }
+                }
                 return base.OpenEntry (arc, entry);
+            }
             if (lent.IsEncrypted)
             {
                 var larc = arc as LinkArchive;
@@ -101,6 +116,35 @@ namespace GameRes.Formats.Kaguya
                 bmr.Unpack();
                 return new BinMemoryStream (bmr.Data, entry.Name);
             }
+        }
+
+        internal ArcFile ReadOldIndex (ArcView file)
+        {
+            int count = file.View.ReadInt32 (4);
+            if (!IsSaneCount (count))
+                return null;
+
+            var dir = new List<Entry> (count);
+            using (var index = file.CreateStream())
+            {
+                index.Position = 8;
+                uint names_size = index.ReadUInt32();
+                for (int i = 0; i < count; ++i)
+                {
+                    var name = index.ReadCString();
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    dir.Add (entry);
+                }
+                index.Position = 12 + names_size;
+                foreach (var entry in dir)
+                {
+                    entry.Offset = index.ReadUInt32();
+                    entry.Size   = index.ReadUInt32();
+                    if (!entry.CheckPlacement (file.MaxOffset))
+                        return null;
+                }
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 
@@ -440,9 +484,15 @@ namespace GameRes.Formats.Kaguya
             var header = input.ReadHeader (0x11);
             if (header.AsciiEqual ("[SCR-PARAMS]v0"))
             {
-                var version = Version.Parse (header.GetCString (13, 4));
+                Version version;
+                if ('.' == header[15])
+                    version = Version.Parse (header.GetCString (13, 4));
+                else
+                    version = new Version (header[14] - '0', 0);
                 if (2 == version.Major)
                     return new ParamsV2Deserializer (input, version);
+                else if (version.Major < 5)
+                    return new ParamsV4Deserializer (input, version);
                 else if (5 == version.Major && (version.Minor >= 4 && version.Minor <= 7))
                     return new ParamsV5Deserializer (input, version);
             }
@@ -499,6 +549,22 @@ namespace GameRes.Formats.Kaguya
                 SkipString();
             }
         }
+
+        protected void ReadHeader (int start)
+        {
+            m_input.Position = start;
+            SkipChunk();
+            m_title = ReadString();
+            if (m_version.Major < 3)
+                m_input.ReadCString();
+            SkipString();
+            SkipString();
+            m_input.ReadByte();
+            SkipString();
+            SkipString();
+            SkipDict();
+            m_input.ReadByte();
+        }
     }
 
     internal class ParamsV2Deserializer : ParamsDeserializer
@@ -515,17 +581,7 @@ namespace GameRes.Formats.Kaguya
 
         public override byte[] GetKey ()
         {
-            m_input.Position = 0x17;
-            SkipChunk();
-            m_title = ReadString();
-            m_input.ReadCString();
-            SkipString();
-            SkipString();
-            m_input.ReadByte();
-            SkipString();
-            SkipString();
-            SkipDict();
-            m_input.ReadByte();
+            ReadHeader (0x17);
 
             if ("幼なじみと甘～くエッチに過ごす方法" == m_title)
             {
@@ -565,6 +621,37 @@ namespace GameRes.Formats.Kaguya
         }
     }
 
+    internal class ParamsV4Deserializer : ParamsDeserializer
+    {
+        public ParamsV4Deserializer (IBinaryStream input, Version version) : base (input, version)
+        {
+        }
+
+        public override byte[] GetKey ()
+        {
+            ReadHeader (0x19);
+
+            Skip (m_version.Major < 5 ? 12 : 11);
+            int count = m_input.ReadUInt8();
+            for (int i = 0; i < count; ++i)
+            {
+                m_input.ReadByte();
+                SkipChunk();
+                SkipArray();
+                SkipArray();
+            }
+            SkipDict();
+            count = m_input.ReadUInt8();
+            for (int i = 0; i < count; ++i)
+            {
+                SkipChunk();
+                SkipArray();
+                SkipArray();
+            }
+            return ReadKey();
+        }
+    }
+
     internal class ParamsV5Deserializer : ParamsDeserializer
     {
         public ParamsV5Deserializer (IBinaryStream input, Version version) : base (input, version)
@@ -573,18 +660,9 @@ namespace GameRes.Formats.Kaguya
 
         public override byte[] GetKey ()
         {
-            // ハラミタマ
-            m_input.Position = 0x1B;
-            SkipChunk();
-            m_title = ReadString();
-            SkipString();
-            SkipString();
-            m_input.ReadByte();
-            SkipString();
-            SkipString();
-            SkipDict();
+            ReadHeader (0x1B);
 
-            Skip (m_version.Minor <= 4 ? 0x10 : 0x11);
+            Skip (m_version.Minor <= 4 ? 15 : 16);
             for (int i = 0; i < 3; ++i)
             {
                 if (0 != m_input.ReadUInt8())
@@ -633,6 +711,11 @@ namespace GameRes.Formats.Kaguya
 
         delegate Stream Decryptor (LinkArchive arc, LinkEntry entry);
 
+        static readonly ResourceInstance<AnmOpener>  An00 = new ResourceInstance<AnmOpener> ("ANM/KAGUYA");
+        static readonly ResourceInstance<An10Opener> An10 = new ResourceInstance<An10Opener> ("AN10/KAGUYA");
+        static readonly ResourceInstance<An20Opener> An20 = new ResourceInstance<An20Opener> ("AN20/KAGUYA");
+        static readonly ResourceInstance<Pl00Opener> Pl00 = new ResourceInstance<Pl00Opener> ("PLT/KAGUYA");
+
         public LinkEncryption (byte[] key, bool anm_encrypted = true)
         {
             if (null == key || 0 == key.Length)
@@ -675,13 +758,12 @@ namespace GameRes.Formats.Kaguya
             return new PrefixStream (header, body);
         }
 
-        Stream DecryptAn00 (LinkArchive arc, LinkEntry entry)
+        Stream DecryptAnm (LinkArchive arc, LinkEntry entry, IAnmReader reader)
         {
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            int frame_offset = 0x18 + data.ToUInt16 (0x14) * 4;
-            int count = data.ToUInt16 (frame_offset);
-            frame_offset += 10;
-            for (int i = 0; i < count; ++i)
+            var input = new BinMemoryStream (data, entry.Name);
+            var dir = reader.GetFramesList (input);
+            if (dir != null)
             {
                 int w = data.ToInt32 (frame_offset);
                 int h = data.ToInt32 (frame_offset+4);

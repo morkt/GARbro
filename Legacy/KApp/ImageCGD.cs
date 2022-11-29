@@ -39,10 +39,17 @@ namespace GameRes.Formats.KApp
         public override string Description { get { return "KApp compressed image format"; } }
         public override uint     Signature { get { return 0x6F6F746B; } } // 'ktool210'
 
+        public CgdFormat ()
+        {
+            Signatures = new uint[] { 0x6F6F746B, 0x65697073 };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x18);
-            if (!header.AsciiEqual ("ktool210") || header.ToInt32 (8) != 1)
+            if (header.ToInt32 (8) != 1)
+                return null;
+            if (!header.AsciiEqual ("ktool210") && !header.AsciiEqual ("spiel100"))
                 return null;
             uint offset = header.ToUInt32 (0x10) & 0x7FFFFFFF;
             return CgdMetaData.FromStream (file, offset);

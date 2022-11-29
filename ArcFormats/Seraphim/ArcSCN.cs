@@ -112,7 +112,7 @@ namespace GameRes.Formats.Seraphim
             }
         }
 
-        internal byte[] LzDecompress (IBinaryStream input)
+        internal static byte[] LzDecompress (IBinaryStream input)
         {
             int unpacked_size = input.ReadInt32();
             var data = new byte[unpacked_size];

@@ -97,13 +97,13 @@ namespace GameRes.Formats.Unity
 
     internal class StreamingInfo
     {
-        public uint     Offset;
+        public long     Offset;
         public uint     Size;
         public string   Path;
 
         public void Load (AssetReader reader)
         {
-            Offset = reader.ReadUInt32();
+            Offset = reader.ReadOffset();
             Size = reader.ReadUInt32();
             Path = reader.ReadString();
         }

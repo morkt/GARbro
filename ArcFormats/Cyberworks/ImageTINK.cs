@@ -2,7 +2,7 @@
 //! \date       Fri Jun 17 18:49:04 2016
 //! \brief      Tinker Bell encrypted image file.
 //
-// Copyright (C) 2016-2017 by morkt
+// Copyright (C) 2016-2022 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using GameRes.Utility;
 
 namespace GameRes.Formats.Cyberworks
 {
@@ -145,9 +146,17 @@ namespace GameRes.Formats.Cyberworks
                     {
                         var size_buf = new byte[4];
                         input.Read (size_buf, 0 , 4);
-                        var decoder = new PngBitmapDecoder (input, BitmapCreateOptions.None,
-                                                            BitmapCacheOption.OnLoad);
-                        BitmapSource frame = decoder.Frames[0];
+                        int png_size = BigEndian.ToInt32 (size_buf, 0);
+                        BitmapSource frame;
+                        // work-around for possible extra padding before PNG data
+                        using (var membuf = new MemoryStream (png_size+4))
+                        {
+                            input.CopyTo (membuf);
+                            membuf.Seek (-png_size, SeekOrigin.End);
+                            var decoder = new PngBitmapDecoder (membuf, BitmapCreateOptions.None,
+                                                                BitmapCacheOption.OnLoad);
+                            frame = decoder.Frames[0];
+                        }
                         Info.Width = (uint)frame.PixelWidth;
                         Info.Height = (uint)frame.PixelHeight;
                         if (frame.Format.BitsPerPixel != 32)

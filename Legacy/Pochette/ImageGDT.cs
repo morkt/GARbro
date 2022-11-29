@@ -27,6 +27,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace GameRes.Formats.Pochette
@@ -93,15 +94,21 @@ namespace GameRes.Formats.Pochette
 
         BitmapSource BlendBaseLine (BitmapSource overlay, GdtMetaData meta)
         {
-            string base_name = VFS.ChangeFileName (meta.FileName, meta.BaseLine+".gdt");
+            string base_name = VFS.ChangeFileName (meta.FileName, meta.BaseLine);
             if (!VFS.FileExists (base_name))
-                return overlay;
+            {
+                base_name += ".gdt";
+                if (!VFS.FileExists (base_name))
+                    return overlay;
+            }
             using (var base_file = VFS.OpenBinaryStream (base_name))
             {
                 var base_info = ReadMetaData (base_file) as GdtMetaData;
                 if (null == base_info)
                     return overlay;
                 var base_image = ReadBitmapSource (base_file, base_info);
+                if (base_image.Format.BitsPerPixel < 24)
+                    base_image = new FormatConvertedBitmap (base_image, PixelFormats.Bgr32, null, 0);
                 var canvas = new WriteableBitmap (base_image);
                 int canvas_bpp = canvas.Format.BitsPerPixel;
                 if (canvas_bpp != overlay.Format.BitsPerPixel)

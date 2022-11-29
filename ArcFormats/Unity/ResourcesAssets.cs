@@ -61,7 +61,7 @@ namespace GameRes.Formats.Unity
                 case 28: // Texture2D
                     {
                         var tex = new Texture2D();
-                        tex.Load (input, asset.Tree.Version);
+                        tex.Load (input, asset.Tree);
                         if (0 == tex.m_DataLength)
                         {
                             var stream_data = new StreamingInfo();

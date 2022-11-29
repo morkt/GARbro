@@ -1,4 +1,8 @@
-// Copyright (C) 2022 by morkt
+//! \file       ImageI24.cs
+//! \date       2019 Jun 22
+//! \brief      HyperWorks image format.
+//
+// Copyright (C) 2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,29 +27,36 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
-namespace GameRes.Formats.??????
+namespace GameRes.Formats.HyperWorks
 {
     [Export(typeof(ImageFormat))]
-    public class xxxFormat : ImageFormat
+    public class I24Format : ImageFormat
     {
-        public override string         Tag { get { return "xxx"; } }
-        public override string Description { get { return "?????? image format"; } }
-        public override uint     Signature { get { return 0; } }
+        public override string         Tag { get { return "I24"; } }
+        public override string Description { get { return "HyperWorks image format"; } }
+        public override uint     Signature { get { return 0x41343249; } } // 'I24A'
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
+            var header = file.ReadHeader (0x18);
+            int bpp = header.ToInt16 (0x10);
+            if (bpp != 24)
+                return null;
+            return new ImageMetaData {
+                Width  = header.ToUInt16 (0xC),
+                Height = header.ToUInt16 (0xE),
+                BPP    = bpp,
+            };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var meta = (xxxMetaData)info;
-
             return ImageData.Create (info, format, palette, pixels);
         }
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new System.NotImplementedException ("xxxFormat.Write not implemented");
+            throw new System.NotImplementedException ("I24Format.Write not implemented");
         }
     }
 }

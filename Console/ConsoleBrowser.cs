@@ -96,7 +96,7 @@ namespace GARbro
                         return;
                     }
                     var tag = args[argn+1];
-                    m_image_format = FindFormat (tag);
+                    m_image_format = ImageFormat.FindByTag (tag);
                     if (null == m_image_format)
                     {
                         Console.Error.WriteLine ("{0}: unknown format specified", tag);
@@ -132,7 +132,7 @@ namespace GARbro
                 {
                     VFS.ChDir (m_arc_name);
                 }
-                catch (Exception X)
+                catch (Exception)
                 {
                     Console.Error.WriteLine ("{0}: unknown format", m_arc_name);
                     continue;
@@ -174,8 +174,9 @@ namespace GARbro
         static void Usage ()
         {
             Console.WriteLine ("Usage: gameres [OPTIONS] ARC [ENTRIES]");
-            Console.WriteLine ("    -l   list recognized archive formats");
-            Console.WriteLine ("    -x   extract all files");
+            Console.WriteLine ("    -l          list recognized archive formats");
+            Console.WriteLine ("    -x          extract all files");
+            Console.WriteLine ("    -c FORMAT   convert images to specified format");
             Console.WriteLine ("Without options displays contents of specified archive.");
         }
 

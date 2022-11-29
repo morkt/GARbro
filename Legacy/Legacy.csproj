@@ -103,6 +103,7 @@
     <Compile Include="FazeX\ImageFGP.cs" />
     <Compile Include="HillField\ImageIMA.cs" />
     <Compile Include="HillField\ImageIMG.cs" />
+    <Compile Include="hmp\ImageALP.cs" />
     <Compile Include="KApp\ArcASD.cs" />
     <Compile Include="KApp\ImageCGD.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
@@ -226,6 +227,7 @@
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
     <Compile Include="PlanTech\ArcPAC.cs" />
+    <Compile Include="Zenos\ImagePNX.cs" />
     <Compile Include="Zone\ArcPKD.cs" />
     <Compile Include="Zone\ImageBM_.cs" />
     <None Include="app.config" />

@@ -232,7 +232,7 @@
     <value>{0}에서 {1}로 파일 추출하기</value>
   </data>
   <data name="MsgImageSize" xml:space="preserve">
-    <value>이미지 {0} x {1} x {2}bpp</value>
+    <value>이미지 {0} x {1} x {2}bpp [{3}]</value>
   </data>
   <data name="MsgNoFiles" xml:space="preserve">
     <value>추출할 파일이 없음</value>

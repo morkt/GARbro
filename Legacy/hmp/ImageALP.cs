@@ -1,3 +1,7 @@
+//! \file       ImageALP.cs
+//! \date       2022 Apr 22
+//! \brief      BeF bitmap mask
+//
 // Copyright (C) 2022 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,28 +24,37 @@
 //
 
 using System.ComponentModel.Composition;
+using System.IO;
+using System.Windows.Media;
 
-namespace GameRes.Formats.??????
+namespace GameRes.Formats.Hmp
 {
-    [Export(typeof(AudioFormat))]
-    public class xxxAudio : AudioFormat
+    [Export(typeof(ImageFormat))]
+    [ExportMetadata("Priority", -1)]
+    public class AlpFormat : ImageFormat
     {
-        public override string         Tag { get { return "xxx"; } }
-        public override string Description { get { return "?????? audio resource"; } }
+        public override string         Tag { get { return "ALP/BeF"; } }
+        public override string Description { get { return "BeF bitmap mask format"; } }
         public override uint     Signature { get { return 0; } }
-        public override bool      CanWrite { get { return false; } }
 
-        public override SoundInput TryOpen (IBinaryStream file)
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var format = new WaveFormat {
-                FormatTag = 1,
-                Channels = 1,
-                SamplesPerSecond = 44100,
-                BlockAlign = 2,
-                BitsPerSample = 16,
-            };
-            format.SetBPS();
-            return new RawPcmInput (file.AsStream, format);
+            if (!file.Name.HasExtension (".alp") || file.Length != 0x25800)
+                return null;
+            return new ImageMetaData { Width = 320, Height = 480, BPP = 8 };
+        }
+
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
+        {
+            var pixels = file.ReadBytes (0x25800);
+            for (int i = 0; i < pixels.Length; ++i)
+                pixels[i] = (byte)(pixels[i] * 0xFF / 0x40);
+            return ImageData.Create (info, PixelFormats.Gray8, null, pixels);
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("AlpFormat.Write not implemented");
         }
     }
 }

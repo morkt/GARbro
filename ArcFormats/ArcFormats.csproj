@@ -63,6 +63,7 @@
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\netstandard1.1\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
@@ -92,6 +93,15 @@
     </Reference>
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\netstandard1.1\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.5.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.6.0\lib\netstandard1.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
@@ -120,6 +130,8 @@
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
     <Compile Include="BlueGale\ImageBBM.cs" />
+    <Compile Include="Hypatia\ArcLPK.cs" />
+    <Compile Include="Hypatia\ImageLSG.cs" />
     <Compile Include="JamCreation\ArcDAT.cs" />
     <Compile Include="JamCreation\ImageDPO.cs" />
     <Compile Include="AliceSoft\ArcAAR.cs" />
@@ -226,6 +238,7 @@
     <Compile Include="Ivory\ArcSG.cs" />
     <Compile Include="Kaguya\ArcPL00.cs" />
     <Compile Include="Kaguya\ArcPL10.cs" />
+    <Compile Include="Kaguya\ArcPLT.cs" />
     <Compile Include="Key\ArcPAK.cs" />
     <Compile Include="Key\AudioOGGPAK.cs" />
     <Compile Include="Key\ImageCZ.cs" />
@@ -324,6 +337,7 @@
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="Qlie\ImageABMP.cs" />
+    <Compile Include="Qlie\ImageARGB.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
     <Compile Include="RealLive\ArcSEEN.cs" />
     <Compile Include="RealLive\ImageG00Jpeg.cs" />
@@ -336,6 +350,7 @@
     <Compile Include="ScenePlayer\ArcPMX.cs" />
     <Compile Include="Scoop\ArcGX.cs" />
     <Compile Include="Scoop\ImageSCP.cs" />
+    <Compile Include="Seraphim\ArcArchAngel.cs" />
     <Compile Include="Seraphim\ArcCP3.cs" />
     <Compile Include="Seraphim\ArcMC.cs" />
     <Compile Include="Seraphim\ArcSCN.cs" />
@@ -652,6 +667,7 @@
     <Compile Include="TanukiSoft\ArcTAC.cs" />
     <Compile Include="TanukiSoft\ImageAF.cs" />
     <Compile Include="Taskforce\ArcDAT.cs" />
+    <Compile Include="TechnoBrain\ArcIPQ.cs" />
     <Compile Include="TechnoBrain\AudioWAPE.cs" />
     <Compile Include="TechnoBrain\ImageIPF.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
@@ -792,12 +808,14 @@
     <Compile Include="BlackCyc\ArcVPK.cs" />
     <Compile Include="Unity\ArcASSET.cs" />
     <Compile Include="Unity\ArcBIN.cs" />
+    <Compile Include="Unity\ArcDSM.cs" />
     <Compile Include="Unity\ArcSpVM.cs" />
     <Compile Include="Unity\ArcUnityFS.cs" />
     <Compile Include="Unity\Asset.cs" />
     <Compile Include="Unity\AssetReader.cs" />
     <Compile Include="Unity\AudioClip.cs" />
     <Compile Include="Unity\AudioFSB5.cs" />
+    <Compile Include="Unity\Bc7Decoder.cs" />
     <Compile Include="Unity\BundleStream.cs" />
     <None Include="packages.config" />
     <None Include="Unity\Gx4Lib\ArcDAT.cs" />

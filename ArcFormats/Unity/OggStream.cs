@@ -208,7 +208,7 @@ namespace GameRes.Formats.Vorbis
                 GranuleVals[LacingFill + i] = GranulePos;
             }
             LacingVals[LacingFill + i] = bytes % 0xFF;
-            GranulePos = GranuleVals[LacingFill+i] = GranulePos;
+            GranulePos = GranuleVals[LacingFill+i] = op.GranulePos;
 
             // flag the first segment as the beginning of the packet
             LacingVals[LacingFill] |= 0x100;

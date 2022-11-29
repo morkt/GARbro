@@ -1,4 +1,8 @@
-// Copyright (C) 2022 by morkt
+//! \file       ArcLPC.cs
+//! \date       2019 Jan 15
+//! \brief      Kogado Stduio multi-frame image.
+//
+// Copyright (C) 2019 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -19,29 +23,39 @@
 // IN THE SOFTWARE.
 //
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 
-namespace GameRes.Formats.??????
+namespace GameRes.Formats.Kogado
 {
-    [Export(typeof(AudioFormat))]
-    public class xxxAudio : AudioFormat
+    [Export(typeof(ArchiveFormat))]
+    public class LpcOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "xxx"; } }
-        public override string Description { get { return "?????? audio resource"; } }
+        public override string         Tag { get { return "LPC"; } }
+        public override string Description { get { return "Kogado Studio multi-frame image"; } }
         public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        public override SoundInput TryOpen (IBinaryStream file)
+        public override ArcFile TryOpen (ArcView file)
         {
-            var format = new WaveFormat {
-                FormatTag = 1,
-                Channels = 1,
-                SamplesPerSecond = 44100,
-                BlockAlign = 2,
-                BitsPerSample = 16,
-            };
-            format.SetBPS();
-            return new RawPcmInput (file.AsStream, format);
+            if (!file.Name.HasExtension ("LPC"))
+                return null;
+            int count = file.View.ReadInt32 (4);
+            if (!IsSaneCount (count))
+                return null;
+
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                var entry = Create<Entry> (name);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 }

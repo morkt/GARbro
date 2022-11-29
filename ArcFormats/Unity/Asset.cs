@@ -41,7 +41,7 @@ namespace GameRes.Formats.Unity
     internal class Asset
     {
         int                     m_format;
-        uint                    m_data_offset;
+        long                    m_data_offset;
         bool                    m_is_little_endian;
         UnityTypeData           m_tree = new UnityTypeData();
         Dictionary<long, int>   m_adds;
@@ -63,6 +63,13 @@ namespace GameRes.Formats.Unity
             m_data_offset  = input.ReadUInt32();
             if (m_format >= 9)
                 m_is_little_endian = 0 == input.ReadInt32();
+            if (m_format >= 22)
+            {
+                input.ReadInt32();  // header_size
+                input.ReadInt64();  // file_size
+                m_data_offset = input.ReadInt64();
+                input.ReadInt64();
+            }
             input.SetupReaders (this);
             m_tree.Load (input);
 
@@ -176,7 +183,8 @@ namespace GameRes.Formats.Unity
         public void Load (AssetReader reader)
         {
             PathId = reader.ReadId();
-            Offset = reader.ReadUInt32() + Asset.DataOffset;
+            Offset = reader.ReadOffset();
+            Offset += Asset.DataOffset;
             Size = reader.ReadUInt32();
             if (Asset.Format < 17)
             {
