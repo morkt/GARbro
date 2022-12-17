@@ -228,6 +228,7 @@
     <Compile Include="Interheart\ArcFPK2.cs" />
     <Compile Include="Interheart\ImageCandy.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
+    <Compile Include="Kaguya\ArcAF.cs" />
     <Compile Include="Kaguya\ArcPL00.cs" />
     <Compile Include="Kaguya\ArcPL10.cs" />
     <Compile Include="Kaguya\ArcPLT.cs" />
