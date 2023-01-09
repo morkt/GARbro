@@ -28,15 +28,23 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace GameRes.Formats.Sakana
 {
     internal class SxEntry : PackedEntry
     {
+        public int      Storage;
         public ushort   Flags;
 
         public bool IsEncrypted  { get { return 0 == (Flags & 0x10); } }
+    }
+
+    internal class SxStorage
+    {
+        public uint Size;
+        public ulong Timestamp;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -52,9 +60,7 @@ namespace GameRes.Formats.Sakana
         
         public override ArcFile TryOpen (ArcView file)
         {
-            var base_name = Path.GetFileName (file.Name);
-            var sx_name = base_name.Substring (0, 4) + "(00).sx";
-            sx_name = VFS.ChangeFileName (file.Name, sx_name);
+            var sx_name = FindSxName (file.Name);
             if (!VFS.FileExists (sx_name) || file.Name.Equals (sx_name, StringComparison.InvariantCultureIgnoreCase))
                 return null;
             byte[] index_data;
@@ -140,6 +146,20 @@ namespace GameRes.Formats.Sakana
                 }
             }
         }
+
+        internal static string FindSxName(string name)
+        {
+            var base_name = Path.GetFileName (name);
+            var file_name = Path.GetFileNameWithoutExtension (base_name);
+            for (var i = 1; i <= file_name.Length; i++)
+            {
+                var sx_name = file_name.Substring (0, i) + "(00).sx";
+                sx_name = VFS.ChangeFileName (name, sx_name);
+                if (VFS.FileExists (sx_name))
+                    return sx_name;
+            }
+            return name;
+        }
     }
 
     internal class SxIndexDeserializer
@@ -170,36 +190,47 @@ namespace GameRes.Formats.Sakana
             m_dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                m_index.ReadUInt16();
+                m_index.ReadByte();
+                int storage  = m_index.ReadByte();
                 ushort flags = Binary.BigEndian (m_index.ReadUInt16());
                 uint offset  = Binary.BigEndian (m_index.ReadUInt32());
                 uint size    = Binary.BigEndian (m_index.ReadUInt32());
                 var entry = new SxEntry {
+                    Storage = storage,
                     Flags  = flags,
                     Offset = (long)offset << 4,
                     Size   = size,
                     IsPacked = 0 != (flags & 0x03),
                 };
-                if (!entry.CheckPlacement (m_max_offset))
-                    return null;
                 m_dir.Add (entry);
             }
 
             count = Binary.BigEndian (m_index.ReadUInt16());
+            var storages = new List<SxStorage>(count);
             for (int i = 0; i < count; ++i)
             {
                 m_index.ReadUInt32();
                 m_index.ReadUInt32();
                 m_index.ReadUInt32();
-                Binary.BigEndian (m_index.ReadUInt32()); // archive body length
-                m_index.ReadUInt64();
-                m_index.Seek (16, SeekOrigin.Current); // MD5 sum
+                var storage = new SxStorage {
+                    Size = Binary.BigEndian (m_index.ReadUInt32()) << 4,
+                    Timestamp = Binary.BigEndian (m_index.ReadUInt64()),
+                };
+                storages.Add (storage);
+                m_index.Seek (16, SeekOrigin.Current); // MD5
             }
 
             count = Binary.BigEndian (m_index.ReadUInt16());
             if (count > 0)
                 m_index.Seek (count * 24, SeekOrigin.Current);
             DeserializeTree();
+            // Remove entries in other archives
+            // Note using file size as archive identification can be problematic, but faster than MD5
+            var current_storage = storages.FindIndex (s => m_max_offset == s.Size);
+            if (-1 != current_storage)
+            {
+                m_dir = m_dir.Where (e => e.CheckPlacement (m_max_offset) && (e as SxEntry).Storage == current_storage).ToList();
+            }
             return m_dir;
         }
 
