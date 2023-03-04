@@ -1513,4 +1513,46 @@ namespace GameRes.Formats.KiriKiri
             }
         }
     }
+
+    [Serializable]
+    public class SyangrilaSmartCrypt : ICrypt
+    {
+        byte[] GetKey (uint hash)
+        {
+            return new byte[5]
+            {
+                (byte)(hash >> 5),
+                (byte)(hash >> 5),
+                (byte)(hash >> 7),
+                (byte)(hash >> 1),
+                (byte)(hash >> 4),
+            };
+        }
+
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            var key = GetKey (entry.Hash);
+            if (offset <= 0x64)
+                return (byte)(value ^ key[4]);
+            else
+                return (byte)(value ^ key[offset & 3]);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var key = GetKey (entry.Hash);
+            for (var i = 0; i < count; i++)
+            {
+                if (offset+i <= 0x64)
+                    buffer[pos+i] ^= key[4];
+                else
+                    buffer[pos+i] ^= key[(offset+i) & 3];
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+    }
 }
