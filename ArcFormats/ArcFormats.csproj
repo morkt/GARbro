@@ -239,6 +239,7 @@
     <Compile Include="Kid\AudioWAF.cs" />
     <Compile Include="Kid\ImagePRT.cs" />
     <Compile Include="KiriKiri\HxCrypt.cs" />
+    <Compile Include="KiriKiri\HxCryptLite.cs" />
     <Compile Include="KiriKiri\MoreCrypt.cs" />
     <Compile Include="KiriKiri\YuzCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
