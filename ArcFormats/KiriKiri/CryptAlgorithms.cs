@@ -212,7 +212,7 @@ namespace GameRes.Formats.KiriKiri
             { 0x584d4b4a, "image" }, // TLG
         };
 
-        internal void GuessEntryTypeBySignature(Entry entry, uint signature)
+        internal void GuessEntryTypeBySignature (Entry entry, uint signature)
         {
             if (FileTypesMap.TryGetValue (signature, out var type))
                 entry.Type = type;

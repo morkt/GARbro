@@ -88,12 +88,12 @@ namespace GameRes.Formats.KiriKiri
             return Binary.BigEndian (input.ReadUInt32());
         }
 
-        public override Stream OpenEntry(ArcFile arc, Entry entry)
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             PackedEntry packed_entry = entry as PackedEntry;
             if (null == packed_entry || packed_entry.Size == packed_entry.UnpackedSize)
-                return arc.File.CreateStream(entry.Offset, entry.Size);
-            return new ZLibStream(arc.File.CreateStream(entry.Offset, entry.Size), CompressionMode.Decompress);
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            return new ZLibStream (arc.File.CreateStream (entry.Offset, entry.Size), CompressionMode.Decompress);
         }
     }
 }

@@ -40,8 +40,8 @@ namespace GameRes.Formats.Kaguya
     {
         public readonly LinkEncryption Encryption;
 
-        public LinkArchive(ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, LinkEncryption enc)
-            : base(arc, impl, dir)
+        public LinkArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, LinkEncryption enc)
+            : base (arc, impl, dir)
         {
             Encryption = enc;
         }
@@ -50,24 +50,24 @@ namespace GameRes.Formats.Kaguya
     [Export(typeof(ArchiveFormat))]
     public class LinkOpener : ArchiveFormat
     {
-        public override string Tag { get { return "ARC/LINK"; } }
+        public override string         Tag { get { return "ARC/LINK"; } }
         public override string Description { get { return "KaGuYa script engine resource archive"; } }
-        public override uint Signature { get { return 0x4B4E494C; } } // 'LINK'
-        public override bool IsHierarchic { get { return false; } }
-        public override bool CanWrite { get { return false; } }
+        public override uint     Signature { get { return 0x4B4E494C; } } // 'LINK'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
 
-        public LinkOpener()
+        public LinkOpener ()
         {
             Extensions = new string[] { "arc" };
         }
 
-        public override ArcFile TryOpen(ArcView file)
+        public override ArcFile TryOpen (ArcView file)
         {
-            int version = file.View.ReadByte(4) - '0';
+            int version = file.View.ReadByte (4) - '0';
             if (version < 3 || version > 6)
-                return ReadOldIndex(file);
+                return ReadOldIndex (file);
 
-            using (var reader = LinkReader.Create(file, version))
+            using (var reader = LinkReader.Create (file, version))
             {
                 var dir = reader.ReadIndex();
                 if (null == dir)
@@ -77,54 +77,54 @@ namespace GameRes.Formats.Kaguya
                 {
                     var enc = reader.GetEncryption();
                     if (enc != null)
-                        return new LinkArchive(file, this, dir, enc);
+                        return new LinkArchive (file, this, dir, enc);
                 }
-                return new ArcFile(file, this, dir);
+                return new ArcFile (file, this, dir);
             }
         }
 
-        public override Stream OpenEntry(ArcFile arc, Entry entry)
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             var lent = entry as LinkEntry;
             if (null == lent || (!lent.IsPacked && !lent.IsEncrypted))
             {
                 if (entry.Size > 8)
                 {
-                    uint unpacked_size = arc.File.View.ReadUInt32(entry.Offset);
-                    int id = arc.File.View.ReadUInt16(entry.Offset + 5);
+                    uint unpacked_size = arc.File.View.ReadUInt32 (entry.Offset);
+                    int id = arc.File.View.ReadUInt16 (entry.Offset+5);
                     if (id == 0x4D42) // 'BM'
                     {
-                        using (var input = arc.File.CreateStream(entry.Offset + 4, entry.Size - 4, entry.Name))
+                        using (var input = arc.File.CreateStream (entry.Offset+4, entry.Size-4, entry.Name))
                         {
-                            var data = Lin2Opener.UnpackLzss(input, unpacked_size);
-                            return new BinMemoryStream(data, entry.Name);
+                            var data = Lin2Opener.UnpackLzss (input, unpacked_size);
+                            return new BinMemoryStream (data, entry.Name);
                         }
                     }
                 }
-                return base.OpenEntry(arc, entry);
+                return base.OpenEntry (arc, entry);
             }
             if (lent.IsEncrypted)
             {
                 var larc = arc as LinkArchive;
                 if (null == larc)
-                    return base.OpenEntry(arc, entry);
-                return larc.Encryption.DecryptEntry(larc, lent);
+                    return base.OpenEntry (arc, entry);
+                return larc.Encryption.DecryptEntry (larc, lent);
             }
-            using (var input = arc.File.CreateStream(entry.Offset, entry.Size))
-            using (var bmr = new BmrDecoder(input))
+            using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
+            using (var bmr = new BmrDecoder (input))
             {
                 bmr.Unpack();
-                return new BinMemoryStream(bmr.Data, entry.Name);
+                return new BinMemoryStream (bmr.Data, entry.Name);
             }
         }
 
-        internal ArcFile ReadOldIndex(ArcView file)
+        internal ArcFile ReadOldIndex (ArcView file)
         {
-            int count = file.View.ReadInt32(4);
-            if (!IsSaneCount(count))
+            int count = file.View.ReadInt32 (4);
+            if (!IsSaneCount (count))
                 return null;
 
-            var dir = new List<Entry>(count);
+            var dir = new List<Entry> (count);
             using (var index = file.CreateStream())
             {
                 index.Position = 8;
@@ -132,29 +132,29 @@ namespace GameRes.Formats.Kaguya
                 for (int i = 0; i < count; ++i)
                 {
                     var name = index.ReadCString();
-                    var entry = FormatCatalog.Instance.Create<Entry>(name);
-                    dir.Add(entry);
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    dir.Add (entry);
                 }
                 index.Position = 12 + names_size;
                 foreach (var entry in dir)
                 {
                     entry.Offset = index.ReadUInt32();
-                    entry.Size = index.ReadUInt32();
-                    if (!entry.CheckPlacement(file.MaxOffset))
+                    entry.Size   = index.ReadUInt32();
+                    if (!entry.CheckPlacement (file.MaxOffset))
                         return null;
                 }
             }
-            return new ArcFile(file, this, dir);
+            return new ArcFile (file, this, dir);
         }
     }
 
     internal class LinkReader : IDisposable
     {
-        IBinaryStream m_input;
-        readonly long m_max_offset;
-        bool m_has_encrypted;
+        IBinaryStream   m_input;
+        readonly long   m_max_offset;
+        bool            m_has_encrypted;
 
-        protected LinkReader(ArcView file)
+        protected LinkReader (ArcView file)
         {
             m_input = file.CreateStream();
             m_max_offset = file.MaxOffset;
@@ -162,31 +162,31 @@ namespace GameRes.Formats.Kaguya
         }
 
         public IBinaryStream Input { get { return m_input; } }
-        public bool HasEncrypted { get { return m_has_encrypted; } }
+        public bool   HasEncrypted { get { return m_has_encrypted; } }
 
-        public static LinkReader Create(ArcView file, int version)
+        public static LinkReader Create (ArcView file, int version)
         {
             if (version < 4)
-                return new LinkReader(file);
+                return new LinkReader (file);
             else if (version < 6)
-                return new Link4Reader(file);
+                return new Link4Reader (file);
             else
-                return new Link6Reader(file);
+                return new Link6Reader (file);
         }
 
-        protected virtual long GetDataOffset()
+        protected virtual long GetDataOffset ()
         {
             return 8;
         }
 
-        protected virtual string ReadName()
+        protected virtual string ReadName ()
         {
             int name_length = m_input.ReadUInt8();
-            Skip(2);
-            return m_input.ReadCString(name_length);
+            Skip (2);
+            return m_input.ReadCString (name_length);
         }
 
-        public List<Entry> ReadIndex()
+        public List<Entry> ReadIndex ()
         {
             m_input.Position = GetDataOffset();
 
@@ -200,19 +200,19 @@ namespace GameRes.Formats.Kaguya
                     break;
                 if (size < 0x10)
                     return null;
-                int flags = m_input.ReadUInt16();
+                int flags = m_input.ReadUInt16 ();
                 bool is_compressed = (flags & 3) != 0;
-                Skip(7);
+                Skip (7);
                 var name = ReadName();
-                if (string.IsNullOrEmpty(name))
+                if (string.IsNullOrEmpty (name))
                     return null;
-                var entry = FormatCatalog.Instance.Create<LinkEntry>(name);
+                var entry = FormatCatalog.Instance.Create<LinkEntry> (name);
                 entry.Offset = m_input.Position;
-                entry.Size = size - (uint)(entry.Offset - base_offset);
+                entry.Size   = size - (uint)(entry.Offset - base_offset);
                 if (is_compressed)
                 {
-                    m_input.Read(header, 0, 4);
-                    if (header.AsciiEqual("BMR"))
+                    m_input.Read (header, 0, 4);
+                    if (header.AsciiEqual ("BMR"))
                     {
                         entry.IsPacked = true;
                         entry.UnpackedSize = m_input.ReadUInt32();
@@ -220,40 +220,40 @@ namespace GameRes.Formats.Kaguya
                 }
                 entry.IsEncrypted = (flags & 4) != 0;
                 m_has_encrypted = m_has_encrypted || entry.IsEncrypted;
-                dir.Add(entry);
+                dir.Add (entry);
                 m_input.Position = entry.Offset + entry.Size;
             }
             return dir;
         }
 
-        public virtual LinkEncryption GetEncryption()
+        public virtual LinkEncryption GetEncryption ()
         {
-            var params_dir = VFS.GetDirectoryName(m_input.Name);
-            var params_dat = VFS.CombinePath(params_dir, "params.dat");
-            if (!VFS.FileExists(params_dat))
+            var params_dir = VFS.GetDirectoryName (m_input.Name);
+            var params_dat = VFS.CombinePath (params_dir, "params.dat");
+            if (!VFS.FileExists (params_dat))
                 return null;
 
-            using (var input = VFS.OpenBinaryStream(params_dat))
+            using (var input = VFS.OpenBinaryStream (params_dat))
             {
-                var param = ParamsDeserializer.Create(input);
+                var param = ParamsDeserializer.Create (input);
                 return param.GetEncryption();
             }
         }
 
-        protected void Skip(int amount)
+        protected void Skip (int amount)
         {
-            m_input.Seek(amount, SeekOrigin.Current);
+            m_input.Seek (amount, SeekOrigin.Current);
         }
 
         #region IDisposable Members
-        public void Dispose()
+        public void Dispose ()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            Dispose (true);
+            GC.SuppressFinalize (this);
         }
 
         bool _disposed = false;
-        protected virtual void Dispose(bool disposing)
+        protected virtual void Dispose (bool disposing)
         {
             if (!_disposed)
             {
@@ -267,11 +267,11 @@ namespace GameRes.Formats.Kaguya
 
     internal class Link4Reader : LinkReader
     {
-        public Link4Reader(ArcView file) : base(file)
+        public Link4Reader (ArcView file) : base (file)
         {
         }
 
-        protected override long GetDataOffset()
+        protected override long GetDataOffset ()
         {
             return 0xA;
         }
@@ -279,11 +279,11 @@ namespace GameRes.Formats.Kaguya
 
     internal class Link6Reader : LinkReader
     {
-        public Link6Reader(ArcView file) : base(file)
+        public Link6Reader (ArcView file) : base (file)
         {
         }
 
-        protected override long GetDataOffset()
+        protected override long GetDataOffset ()
         {
             Input.Position = 7;
             return 8 + Input.ReadUInt8();
@@ -291,29 +291,29 @@ namespace GameRes.Formats.Kaguya
 
         byte[] name_buffer = new byte[0x100];
 
-        protected override string ReadName()
+        protected override string ReadName ()
         {
             int name_length = Input.ReadUInt16();
             if (name_length > 0x400)
                 throw new InvalidFormatException();
             if (name_length > name_buffer.Length)
                 name_buffer = new byte[name_length];
-            Input.Read(name_buffer, 0, name_length);
-            return Encoding.Unicode.GetString(name_buffer, 0, name_length);
+            Input.Read (name_buffer, 0, name_length);
+            return Encoding.Unicode.GetString (name_buffer, 0, name_length);
         }
     }
 
     internal class BmrDecoder : IDisposable
     {
-        byte[] m_output;
-        MsbBitStream m_input;
-        int m_final_size;
-        int m_step;
-        int m_key;
+        byte[]          m_output;
+        MsbBitStream    m_input;
+        int             m_final_size;
+        int             m_step;
+        int             m_key;
 
         public byte[] Data { get { return m_output; } }
 
-        public BmrDecoder(IBinaryStream input)
+        public BmrDecoder (IBinaryStream input)
         {
             input.Position = 3;
             m_step = input.ReadUInt8();
@@ -321,20 +321,20 @@ namespace GameRes.Formats.Kaguya
             m_key = input.ReadInt32();
             int unpacked_size = input.ReadInt32();
             m_output = new byte[unpacked_size];
-            m_input = new MsbBitStream(input.AsStream, true);
+            m_input = new MsbBitStream (input.AsStream, true);
         }
 
-        public void Unpack()
+        public void Unpack ()
         {
             m_input.Input.Position = 0x14;
             UnpackHuffman();
             UndoMoveToFront();
-            m_output = Decode(m_output, m_key);
+            m_output = Decode (m_output, m_key);
             if (m_step != 0)
-                m_output = DecompressRLE(m_output);
+                m_output = DecompressRLE (m_output);
         }
 
-        byte[] DecompressRLE(byte[] input)
+        byte[] DecompressRLE (byte[] input)
         {
             var result = new byte[m_final_size];
             int src = 0;
@@ -353,7 +353,7 @@ namespace GameRes.Formats.Kaguya
                         int count = input[src++];
                         if (0 != (count & 0x80))
                             count = input[src++] + ((count & 0x7F) << 8) + 128;
-                        while (count-- > 0 && dst < result.Length)
+                        while (count --> 0 && dst < result.Length)
                         {
                             result[dst] = v2;
                             dst += m_step;
@@ -372,7 +372,7 @@ namespace GameRes.Formats.Kaguya
         }
 
 
-        void UndoMoveToFront()
+        void UndoMoveToFront ()
         {
             var dict = new byte[256];
             for (int i = 0; i < 256; ++i)
@@ -383,13 +383,13 @@ namespace GameRes.Formats.Kaguya
                 m_output[i] = dict[v];
                 for (int j = v; j > 0; --j)
                 {
-                    dict[j] = dict[j - 1];
+                    dict[j] = dict[j-1];
                 }
                 dict[0] = m_output[i];
             }
         }
 
-        byte[] Decode(byte[] input, int key)
+        byte[] Decode (byte[] input, int key)
         {
             var freq_table = new int[256];
             for (int i = 0; i < input.Length; ++i)
@@ -398,10 +398,10 @@ namespace GameRes.Formats.Kaguya
             }
             for (int i = 1; i < 256; ++i)
             {
-                freq_table[i] += freq_table[i - 1];
+                freq_table[i] += freq_table[i-1];
             }
             var distrib_table = new int[input.Length];
-            for (int i = input.Length - 1; i >= 0; --i)
+            for (int i = input.Length-1; i >= 0; --i)
             {
                 int v = input[i];
                 int freq = --freq_table[v];
@@ -417,10 +417,10 @@ namespace GameRes.Formats.Kaguya
             return copy_out;
         }
 
-        ushort m_token;
-        ushort[,] m_tree = new ushort[2, 256];
+        ushort      m_token;
+        ushort[,]   m_tree = new ushort[2,256];
 
-        void UnpackHuffman()
+        void UnpackHuffman ()
         {
             m_token = 256;
             ushort root = CreateHuffmanTree();
@@ -433,30 +433,30 @@ namespace GameRes.Formats.Kaguya
                     int bit = m_input.GetNextBit();
                     if (-1 == bit)
                         throw new EndOfStreamException();
-                    symbol = m_tree[bit, symbol - 256];
+                    symbol = m_tree[bit,symbol-256];
                 }
                 m_output[dst++] = (byte)symbol;
             }
         }
 
-        ushort CreateHuffmanTree()
+        ushort CreateHuffmanTree ()
         {
             if (0 != m_input.GetNextBit())
             {
                 ushort v = m_token++;
-                m_tree[0, v - 256] = CreateHuffmanTree();
-                m_tree[1, v - 256] = CreateHuffmanTree();
+                m_tree[0,v-256] = CreateHuffmanTree();
+                m_tree[1,v-256] = CreateHuffmanTree();
                 return v;
             }
             else
             {
-                return (ushort)m_input.GetBits(8);
+                return (ushort)m_input.GetBits (8);
             }
         }
 
         #region IDisposable Members
         bool _disposed = false;
-        public void Dispose()
+        public void Dispose ()
         {
             if (!_disposed)
             {
@@ -469,78 +469,78 @@ namespace GameRes.Formats.Kaguya
 
     internal abstract class ParamsDeserializer
     {
-        protected IBinaryStream m_input;
-        protected string m_title;
-        protected Version m_version;
+        protected IBinaryStream     m_input;
+        protected string            m_title;
+        protected Version           m_version;
 
-        protected ParamsDeserializer(IBinaryStream input, Version version)
+        protected ParamsDeserializer (IBinaryStream input, Version version)
         {
             m_input = input;
             m_version = version;
         }
 
-        public static ParamsDeserializer Create(IBinaryStream input)
+        public static ParamsDeserializer Create (IBinaryStream input)
         {
-            var header = input.ReadHeader(0x11);
-            if (header.AsciiEqual("[SCR-PARAMS]v0"))
+            var header = input.ReadHeader (0x11);
+            if (header.AsciiEqual ("[SCR-PARAMS]v0"))
             {
                 Version version;
                 if ('.' == header[15])
-                    version = Version.Parse(header.GetCString(13, 4));
+                    version = Version.Parse (header.GetCString (13, 4));
                 else
-                    version = new Version(header[14] - '0', 0);
+                    version = new Version (header[14] - '0', 0);
                 if (2 == version.Major)
-                    return new ParamsV2Deserializer(input, version);
+                    return new ParamsV2Deserializer (input, version);
                 else if (version.Major < 5)
-                    return new ParamsV4Deserializer(input, version);
+                    return new ParamsV4Deserializer (input, version);
                 else if (5 == version.Major && (version.Minor >= 4 && version.Minor <= 7))
-                    return new ParamsV5Deserializer(input, version);
+                    return new ParamsV5Deserializer (input, version);
             }
             throw new UnknownEncryptionScheme();
         }
 
-        public virtual LinkEncryption GetEncryption()
+        public virtual LinkEncryption GetEncryption ()
         {
-            return new LinkEncryption(GetKey());
+            return new LinkEncryption (GetKey());
         }
 
-        public abstract byte[] GetKey();
+        public abstract byte[] GetKey ();
 
-        protected byte[] ReadKey()
+        protected byte[] ReadKey ()
         {
             int key_length = m_input.ReadInt32();
-            return m_input.ReadBytes(key_length);
+            return m_input.ReadBytes (key_length);
         }
 
-        protected virtual string ReadString()
+        protected virtual string ReadString ()
         {
             int length = m_input.ReadUInt8();
-            return m_input.ReadCString(length);
+            return m_input.ReadCString (length);
         }
 
-        protected virtual void SkipString()
+        protected virtual void SkipString ()
         {
             SkipChunk();
         }
 
-        protected void Skip(int amount)
+        protected void Skip (int amount)
         {
-            m_input.Seek(amount, SeekOrigin.Current);
+            m_input.Seek (amount, SeekOrigin.Current);
         }
 
-        protected void SkipChunk()
+        protected void SkipChunk ()
         {
-            Skip(m_input.ReadUInt8());
+            Skip (m_input.ReadUInt8());
         }
 
-        protected void SkipArray()
+        protected void SkipArray ()
         {
             int count = m_input.ReadUInt8();
             for (int i = 0; i < count; ++i)
                 SkipChunk();
         }
 
-        protected void SkipDict()
+        protected void SkipDict ()
         {
             int count = m_input.ReadUInt8();
             for (int i = 0; i < count; ++i)
@@ -550,7 +550,7 @@ namespace GameRes.Formats.Kaguya
             }
         }
 
-        protected void ReadHeader(int start)
+        protected void ReadHeader (int start)
         {
             m_input.Position = start;
             SkipChunk();
@@ -569,19 +569,19 @@ namespace GameRes.Formats.Kaguya
 
     internal class ParamsV2Deserializer : ParamsDeserializer
     {
-        public ParamsV2Deserializer(IBinaryStream input, Version version) : base(input, version)
+        public ParamsV2Deserializer (IBinaryStream input, Version version) : base (input, version)
         {
         }
 
-        public override LinkEncryption GetEncryption()
+        public override LinkEncryption GetEncryption ()
         {
             var key = GetKey();
-            return new LinkEncryption(key, m_title != "幼なじみと甘～くエッチに過ごす方法");
+            return new LinkEncryption (key, m_title != "幼なじみと甘～くエッチに過ごす方法");
         }
 
-        public override byte[] GetKey()
+        public override byte[] GetKey ()
         {
-            ReadHeader(0x17);
+            ReadHeader (0x17);
 
             if ("幼なじみと甘～くエッチに過ごす方法" == m_title)
             {
@@ -596,7 +596,7 @@ namespace GameRes.Formats.Kaguya
                 SkipArray();
                 SkipArray();
                 m_input.ReadInt32();
-                return m_input.ReadBytes(240000);
+                return m_input.ReadBytes (240000);
             }
             else // 毎日がＭ！
             {
@@ -623,15 +623,15 @@ namespace GameRes.Formats.Kaguya
 
     internal class ParamsV4Deserializer : ParamsDeserializer
     {
-        public ParamsV4Deserializer(IBinaryStream input, Version version) : base(input, version)
+        public ParamsV4Deserializer (IBinaryStream input, Version version) : base (input, version)
         {
         }
 
-        public override byte[] GetKey()
+        public override byte[] GetKey ()
         {
-            ReadHeader(0x19);
+            ReadHeader (0x19);
 
-            Skip(m_version.Major < 5 ? 12 : 11);
+            Skip (m_version.Major < 5 ? 12 : 11);
             int count = m_input.ReadUInt8();
             for (int i = 0; i < count; ++i)
             {
@@ -654,72 +654,72 @@ namespace GameRes.Formats.Kaguya
 
     internal class ParamsV5Deserializer : ParamsDeserializer
     {
-        public ParamsV5Deserializer(IBinaryStream input, Version version) : base(input, version)
+        public ParamsV5Deserializer (IBinaryStream input, Version version) : base (input, version)
         {
         }
 
-        public override byte[] GetKey()
+        public override byte[] GetKey ()
         {
-            ReadHeader(0x1B);
+            ReadHeader (0x1B);
 
-            Skip(m_version.Minor <= 4 ? 15 : 16);
+            Skip (m_version.Minor <= 4 ? 15 : 16);
             for (int i = 0; i < 3; ++i)
             {
                 if (0 != m_input.ReadUInt8())
                     SkipTree();
             }
-            Skip(m_input.ReadInt32() * 0xC);
+            Skip (m_input.ReadInt32() * 0xC);
             return ReadKey();
         }
 
-        protected override void SkipString()
+        protected override void SkipString ()
         {
             int length = m_input.ReadUInt16();
-            Skip(length);
+            Skip (length);
         }
 
         byte[] name_buffer = new byte[0x100];
 
-        protected override string ReadString()
+        protected override string ReadString ()
         {
             int length = m_input.ReadUInt16();
             if (length > name_buffer.Length)
                 name_buffer = new byte[length];
-            m_input.Read(name_buffer, 0, length);
-            return Encoding.Unicode.GetString(name_buffer, 0, length);
+            m_input.Read (name_buffer, 0, length);
+            return Encoding.Unicode.GetString (name_buffer, 0, length);
         }
 
-        protected void SkipTree()
+        protected void SkipTree ()
         {
             SkipString();
             int count = m_input.ReadInt32();
-            while (count-- > 0)
+            while (count --> 0)
             {
                 SkipString();
                 SkipString();
             }
             count = m_input.ReadInt32();
-            while (count-- > 0)
+            while (count --> 0)
                 SkipTree();
         }
     }
 
     internal class LinkEncryption
     {
-        byte[] m_key;
+        byte[]   m_key;
         Tuple<string, Decryptor>[] m_type_table;
 
-        delegate Stream Decryptor(LinkArchive arc, LinkEntry entry);
+        delegate Stream Decryptor (LinkArchive arc, LinkEntry entry);
 
-        static readonly ResourceInstance<AnmOpener> An00 = new ResourceInstance<AnmOpener>("ANM/KAGUYA");
-        static readonly ResourceInstance<An10Opener> An10 = new ResourceInstance<An10Opener>("AN10/KAGUYA");
-        static readonly ResourceInstance<An20Opener> An20 = new ResourceInstance<An20Opener>("AN20/KAGUYA");
-        static readonly ResourceInstance<Pl00Opener> Pl00 = new ResourceInstance<Pl00Opener>("PLT/KAGUYA");
+        static readonly ResourceInstance<AnmOpener>  An00 = new ResourceInstance<AnmOpener> ("ANM/KAGUYA");
+        static readonly ResourceInstance<An10Opener> An10 = new ResourceInstance<An10Opener> ("AN10/KAGUYA");
+        static readonly ResourceInstance<An20Opener> An20 = new ResourceInstance<An20Opener> ("AN20/KAGUYA");
+        static readonly ResourceInstance<Pl00Opener> Pl00 = new ResourceInstance<Pl00Opener> ("PLT/KAGUYA");
 
-        public LinkEncryption(byte[] key, bool anm_encrypted = true)
+        public LinkEncryption (byte[] key, bool anm_encrypted = true)
         {
             if (null == key || 0 == key.Length)
-                throw new ArgumentException("Invalid encryption key");
+                throw new ArgumentException ("Invalid encryption key");
             m_key = key;
             var table = new List<Tuple<string, Decryptor>>
             {
@@ -730,96 +730,96 @@ namespace GameRes.Formats.Kaguya
             };
             if (anm_encrypted)
             {
-                table.Add(new Tuple<string, Decryptor>("AN00", (a, e) => DecryptAnm(a, e, An00.Value)));
-                table.Add(new Tuple<string, Decryptor>("AN10", (a, e) => DecryptAnm(a, e, An10.Value)));
-                table.Add(new Tuple<string, Decryptor>("AN20", (a, e) => DecryptAnm(a, e, An20.Value)));
-                table.Add(new Tuple<string, Decryptor>("AN21", (a, e) => DecryptAn21(a, e)));
-                table.Add(new Tuple<string, Decryptor>("PL00", (a, e) => DecryptAnm(a, e, Pl00.Value)));
-                table.Add(new Tuple<string, Decryptor>("PL10", (a, e) => DecryptPl10(a, e)));
+                table.Add (new Tuple<string, Decryptor> ("AN00", (a, e) => DecryptAnm (a, e, An00.Value)));
+                table.Add (new Tuple<string, Decryptor> ("AN10", (a, e) => DecryptAnm (a, e, An10.Value)));
+                table.Add (new Tuple<string, Decryptor> ("AN20", (a, e) => DecryptAnm (a, e, An20.Value)));
+                table.Add (new Tuple<string, Decryptor> ("AN21", (a, e) => DecryptAn21 (a, e)));
+                table.Add (new Tuple<string, Decryptor> ("PL00", (a, e) => DecryptAnm (a, e, Pl00.Value)));
+                table.Add (new Tuple<string, Decryptor> ("PL10", (a, e) => DecryptPl10 (a, e)));
             }
             m_type_table = table.ToArray();
         }
 
-        public Stream DecryptEntry(LinkArchive arc, LinkEntry entry)
+        public Stream DecryptEntry (LinkArchive arc, LinkEntry entry)
         {
-            var header = arc.File.View.ReadBytes(entry.Offset, 4);
+            var header = arc.File.View.ReadBytes (entry.Offset, 4);
             foreach (var type in m_type_table)
             {
-                if (header.AsciiEqual(type.Item1))
-                    return type.Item2(arc, entry);
+                if (header.AsciiEqual (type.Item1))
+                    return type.Item2 (arc, entry);
             }
-            return arc.File.CreateStream(entry.Offset, entry.Size);
+            return arc.File.CreateStream (entry.Offset, entry.Size);
         }
 
-        Stream DecryptImage(LinkArchive arc, LinkEntry entry, uint data_offset)
+        Stream DecryptImage (LinkArchive arc, LinkEntry entry, uint data_offset)
         {
-            var header = arc.File.View.ReadBytes(entry.Offset, data_offset);
-            Stream body = arc.File.CreateStream(entry.Offset + data_offset, entry.Size - data_offset);
-            body = new ByteStringEncryptedStream(body, m_key);
-            return new PrefixStream(header, body);
+            var header = arc.File.View.ReadBytes (entry.Offset, data_offset);
+            Stream body = arc.File.CreateStream (entry.Offset+data_offset, entry.Size-data_offset);
+            body = new ByteStringEncryptedStream (body, m_key);
+            return new PrefixStream (header, body);
         }
 
-        Stream DecryptAnm(LinkArchive arc, LinkEntry entry, IAnmReader reader)
+        Stream DecryptAnm (LinkArchive arc, LinkEntry entry, IAnmReader reader)
         {
-            var data = arc.File.View.ReadBytes(entry.Offset, entry.Size);
-            var input = new BinMemoryStream(data, entry.Name);
-            var dir = reader.GetFramesList(input);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            var input = new BinMemoryStream (data, entry.Name);
+            var dir = reader.GetFramesList (input);
             if (dir != null)
             {
                 foreach (AnmEntry frame in dir)
                 {
-                    DecryptData(data, (int)frame.ImageDataOffset, (int)frame.ImageDataSize);
+                    DecryptData (data, (int)frame.ImageDataOffset, (int)frame.ImageDataSize);
                 }
             }
             input.Position = 0;
             return input;
         }
 
-        Stream DecryptAn21(LinkArchive arc, LinkEntry entry)
+        Stream DecryptAn21 (LinkArchive arc, LinkEntry entry)
         {
-            var data = arc.File.View.ReadBytes(entry.Offset, entry.Size);
-            int count = data.ToUInt16(4);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
+            int count = data.ToUInt16 (4);
             int offset = 8;
             for (int i = 0; i < count; ++i)
             {
                 switch (data[offset++])
                 {
-                    case 0: break;
-                    case 1: offset += 8; break;
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5: offset += 4; break;
-                    default: return new BinMemoryStream(data, entry.Name);
+                case 0: break;
+                case 1: offset += 8; break;
+                case 2:
+                case 3:
+                case 4:
+                case 5: offset += 4; break;
+                default: return new BinMemoryStream (data, entry.Name);
                 }
             }
-            count = data.ToUInt16(offset);
+            count = data.ToUInt16 (offset);
             offset += 2 + count * 8 + 0x21;
-            int w = data.ToInt32(offset);
-            int h = data.ToInt32(offset + 4);
-            int channels = data.ToInt32(offset + 8);
+            int w = data.ToInt32 (offset);
+            int h = data.ToInt32 (offset+4);
+            int channels = data.ToInt32 (offset+8);
             offset += 12;
-            DecryptData(data, offset, channels * w * h);
-            return new BinMemoryStream(data, entry.Name);
+            DecryptData (data, offset, channels * w * h);
+            return new BinMemoryStream (data, entry.Name);
         }
 
-        Stream DecryptPl10(LinkArchive arc, LinkEntry entry)
+        Stream DecryptPl10 (LinkArchive arc, LinkEntry entry)
         {
-            var data = arc.File.View.ReadBytes(entry.Offset, entry.Size);
+            var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             int offset = 30;
-            int w = data.ToInt32(offset);
-            int h = data.ToInt32(offset + 4);
-            int channels = data.ToInt32(offset + 8);
+            int w = data.ToInt32 (offset);
+            int h = data.ToInt32 (offset+4);
+            int channels = data.ToInt32 (offset+8);
             offset += 12;
-            DecryptData(data, offset, channels * w * h);
-            return new BinMemoryStream(data, entry.Name);
+            DecryptData (data, offset, channels * w * h);
+            return new BinMemoryStream (data, entry.Name);
         }
 
-        void DecryptData(byte[] data, int index, int length)
+        void DecryptData (byte[] data, int index, int length)
         {
             while (length > 0)
             {
-                int count = Math.Min(length, m_key.Length);
+                int count = Math.Min (length, m_key.Length);
                 for (int i = 0; i < count; ++i)
                 {
                     data[index++] ^= m_key[i];
