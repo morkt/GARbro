@@ -1,4 +1,4 @@
-// Copyright (C) 2022 by morkt
+// Copyright (C) 2023 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -29,11 +29,11 @@ namespace GameRes.Formats.??????
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "ARC"; } }
-        public override string Description { get { return "?????? engine resource archive"; } }
-        public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override string         Tag { get => "ARC"; }
+        public override string Description { get => "?????? engine resource archive"; }
+        public override uint     Signature { get => 0; }
+        public override bool  IsHierarchic { get => false; }
+        public override bool      CanWrite { get => false; }
 
         public override ArcFile TryOpen (ArcView file)
         {

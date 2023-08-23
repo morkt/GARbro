@@ -34,6 +34,7 @@ namespace GameRes.Formats.Lambda
     internal class ClsMetaData : ImageMetaData
     {
         public int FrameOffset;
+        public bool IsCompressed;
     }
 
     [Export(typeof(ImageFormat))]
@@ -67,8 +68,7 @@ namespace GameRes.Formats.Lambda
             int y = file.ReadInt32();
 
             file.Position = frame_offset+0x30;
-            if (file.ReadByte() != 1)
-                return null;
+            bool compressed = file.ReadByte() != 0;
             int format = file.ReadByte();
             if (format != 4 && format != 5 && format != 2)
                 return null;
@@ -79,6 +79,7 @@ namespace GameRes.Formats.Lambda
                 OffsetY = y,
                 BPP = 8 * (format - 1),
                 FrameOffset = frame_offset,
+                IsCompressed = compressed,
             };
         }
 
@@ -104,6 +105,7 @@ namespace GameRes.Formats.Lambda
         int             m_channels;
         int             m_base_offset;
         int[]           m_rows_sizes;
+        bool            m_compressed;
 
         public PixelFormat    Format { get; private set; }
         public BitmapPalette Palette { get; private set; }
@@ -112,6 +114,7 @@ namespace GameRes.Formats.Lambda
         {
             m_input = input;
             m_base_offset = info.FrameOffset;
+            m_compressed = info.IsCompressed;
             m_width = (int)info.Width;
             m_height = (int)info.Height;
             m_channels = info.BPP / 8;
@@ -120,7 +123,7 @@ namespace GameRes.Formats.Lambda
             else if (4 == m_channels)
                 Format = PixelFormats.Bgra32;
             else
-                Format = PixelFormats.Bgr32;
+                Format = PixelFormats.Bgr24;
             m_channel = new byte[m_width * m_height];
             m_rows_sizes = new int[m_height];
         }
@@ -148,13 +151,20 @@ namespace GameRes.Formats.Lambda
                 UnpackChannel (sizes[0]);
                 return m_channel;
             }
-            var output = new byte[m_width * m_height * 4];
+            else if (!m_compressed)
+            {
+                var pixels = new byte[sizes[0]];
+                SetPosition (offsets[0]);
+                m_input.Read (pixels, 0, pixels.Length);
+                return pixels;
+            }
+            var output = new byte[m_width * m_height * m_channels];
             for (int i = 0; i < m_channels; ++i)
             {
                 SetPosition (offsets[i]);
                 UnpackChannel (sizes[i]);
                 int src = 0;
-                for (int dst = ChannelOrder[i]; dst < output.Length; dst += 4)
+                for (int dst = ChannelOrder[i]; dst < output.Length; dst += m_channels)
                 {
                     output[dst] = m_channel[src++];
                 }
@@ -169,6 +179,11 @@ namespace GameRes.Formats.Lambda
 
         void UnpackChannel (int size)
         {
+            if (!m_compressed)
+            {
+                ReadV0 (size);
+                return;
+            }
             int method = Binary.BigEndian (m_input.ReadUInt16());
             if (method > 1)
                 throw new InvalidFormatException();

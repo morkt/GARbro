@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using GameRes.Formats.Cmvs;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Purple
@@ -133,16 +134,36 @@ namespace GameRes.Formats.Purple
 
             var index_copy = new CowArray<byte> (index, 0, file_table_size).ToArray();
             var cmvs_md5 = cpz.CmvsMd5.Clone() as uint[];
-            foreach (var scheme in KnownSchemes.Values.Where (s => s.Version == cpz.Version))
+            var scheme = CreateCpz5Scheme(Md5Variant.Mirai);
+//            foreach (var scheme in KnownSchemes.Values.Where (s => s.Version == cpz.Version))
             {
                 var arc = ReadIndex (file, scheme, cpz, index, arc_key);
                 if (null != arc)
                     return arc;
                 // both CmvsMd5 and index was altered by ReadIndex in decryption attempt
                 Array.Copy (cmvs_md5, cpz.CmvsMd5, 4);
-                Array.Copy (index, index_copy, file_table_size);
+                Array.Copy (index_copy, index, file_table_size);
             }
             throw new UnknownEncryptionScheme();
+        }
+
+        static uint[] DefaultCpz5Secret = {
+            0xCD90F089, 0xE982B782, 0xA282AB88, 0xCD82718E, 0x52838A83, 0xA882AA82, 0x7592648E, 0xB582AB82,
+            0xE182BF82, 0xDC82A282, 0x4281B782, 0xED82F48E, 0xBF82EA82, 0xA282E182, 0xB782DC82, 0x6081E682,
+            0xC6824181, 0xA482A282, 0xE082A982, 0xF48EA482, 0xBF82C182, 0xA282E182, 0xB582DC82, 0xF481BD82,
+        };
+
+        static CmvsScheme CreateCpz5Scheme(Md5Variant md5)
+        {
+            return new CmvsScheme
+            {
+                Version = 5,
+                Cpz5Secret = DefaultCpz5Secret,
+                Md5Variant = md5,
+                DecoderFactor = 0x1A743125,
+                EntryInitKey = 0x2547A39E,
+                EntryTailKey = 0xBC,
+            };
         }
 
         internal ArcFile ReadIndex (ArcView file, CmvsScheme scheme, CpzHeader cpz, byte[] index, ArchiveKey arc_key)

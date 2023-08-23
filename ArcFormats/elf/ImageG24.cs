@@ -40,7 +40,7 @@ namespace GameRes.Formats.Elf
 
         public G24Format ()
         {
-            Extensions = new string[] { "g24", "g16" };
+            Extensions = new string[] { "g24", "g16", "g32" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream input)
@@ -57,7 +57,8 @@ namespace GameRes.Formats.Elf
                 Height = (uint)h,
                 OffsetX = x,
                 OffsetY = y,
-                BPP = input.Name.HasExtension (".G16") ? 16 : 24
+                BPP = input.Name.HasExtension (".G16") ? 16
+                    : input.Name.HasExtension (".G32") ? 32 : 24
             };
         }
 
@@ -70,7 +71,9 @@ namespace GameRes.Formats.Elf
             {
                 if (pixels.Length != reader.Read (pixels, 0, pixels.Length))
                     throw new InvalidFormatException();
-                var format = 24 == info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgr555;
+                var format = 24 == info.BPP ? PixelFormats.Bgr24
+                           : 32 == info.BPP ? PixelFormats.Bgra32 
+                                            : PixelFormats.Bgr555;
                 return ImageData.CreateFlipped (info, format, null, pixels, stride);
             }
         }

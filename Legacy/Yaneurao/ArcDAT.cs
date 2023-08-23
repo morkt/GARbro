@@ -31,6 +31,8 @@ using GameRes.Compression;
 
 // [030704][Error] Kakoi ~Zetsubou no Shojo Kangokujima~
 // [040227][Deko Pon!] Itsuka Furu Yuki
+// [051216][Studio Ebisu] Nyuu wa SHOCK!! ~Pai o Torimodose!~
+// [100126][Yaoyorozu-Kobo] Toraware no Seikishi Riisha
 
 namespace GameRes.Formats.Yaneurao
 {

@@ -77,7 +77,13 @@ namespace GameRes.Formats.Rugp
                             Size    = node.Size
                           };
                 if (!dir.Any())
-                    return null;
+                {
+                    var box_ref = nodes.FirstOrDefault (n => n.ClassName == "CBoxOcean");
+                    if (null == box_ref)
+                        return null;
+                    var box = reader.ReadObject (box_ref);
+                    nodes = reader.Arc.LoadArray.OfType<COceanNode>();
+                }
                 return new ArcFile (file, this, dir.ToList());
             }
         }
@@ -307,7 +313,7 @@ namespace GameRes.Formats.Rugp
         public int GetObjectSchema ()
         {
             int schema = m_objectSchema;
-            m_objectSchema = -1;
+//            m_objectSchema = -1;
             return schema;
         }
 
@@ -329,9 +335,12 @@ namespace GameRes.Formats.Rugp
 
         public CObject ReadObject (COceanNode node)
         {
+            m_field_60 = false;
             var obj = CreateObject (node.Name);
             PopulateLoadArray();
             m_input.Position = ((long)node.Offset << m_shift);
+//            if (node.Name != "CrelicUnitedGameProject")
+//                m_input.Seek (3, SeekOrigin.Current);
             int f1 = ReadByte() & 3;
             int f2 = ReadByte();
             int f3 = ReadByte();
@@ -700,7 +709,7 @@ namespace GameRes.Formats.Rugp
                     class_ref = LoadRuntimeClass (out schema);
                 if (null == class_ref)
                     throw new InvalidFormatException();
-//                m_objectSchema = (int)schema;
+                m_objectSchema = (int)schema;
 
                 m_LoadArray.Add (class_ref);
             }
@@ -957,6 +966,7 @@ namespace GameRes.Formats.Rugp
             { "CrelicUnitedGameProject", new CObjectFactory<CrelicUnitedGameProject>() },
             { "CStdb", new CObjectFactory<CStdb>() },
             { "CObjectOcean", new CObjectFactory<CObjectOcean>() },
+            { "CBoxOcean", new CObjectFactory<CBoxOcean>() },
         };
     }
 
@@ -1351,11 +1361,74 @@ namespace GameRes.Formats.Rugp
 
     internal class CBoxOcean : CObject
     {
-        public CObject  field_10;
+        public CObject          field_10;
+        public CObject          field_14;
+        public List<CObject>    field_18 = new List<CObject>();
+        public List<string>     field_118 = new List<string>();
+        public CObject          field_198;
+        public List<CObject>    m_box_list = new List<CObject>();
+
+        static CObject          static_cui = null;
 
         public override void Deserialize (CRioArchive arc)
         {
             field_10 = arc.ReadRioReference ("CFrameBuffer");
+            int schema = arc.GetObjectSchema();
+            if (schema < 3)
+            {
+                for (int i = 0; i < 32; ++i)
+                {
+                    var box = arc.ReadRioReference ("CBox");
+                    m_box_list.Add (box);
+                }
+            }
+            if (schema >= 2)
+            {
+                field_14 = arc.ReadRioReference ("CSbm");
+                if (schema < 6)
+                {
+                    field_18.Add (arc.ReadRioReference ("CSbm"));
+                }
+                else
+                {
+                    int ref_count = 15;
+                    int str_count = 0;
+                    if (schema >= 7)
+                    {
+                        ref_count = 32;
+                        str_count = 32;
+                    }
+                    for (int i = 0; i < ref_count; ++i)
+                    {
+                        field_18.Add (arc.ReadRioReference ("CSbm"));
+                    }
+                    for (int i = 0; i < str_count; ++i)
+                    {
+                        field_118.Add (arc.ReadString());
+                    }
+                }
+                field_198 = arc.ReadRioReference ("CUnitedMenu");
+                if (schema >= 4)
+                {
+                    ReadCui (arc);
+                    if (schema >= 5)
+                    {
+                        var cui = arc.ReadRioReference ("CUI");
+                        if (cui != static_cui)
+                        {
+                            ReadCui (arc);
+                        }
+                    }
+                }
+            }
+        }
+
+        void ReadCui (CRioArchive arc)
+        {
+            while (arc.ReadByte() != 0)
+            {
+                var cui = arc.ReadRioReference ("CUI");
+            }
         }
     }
 

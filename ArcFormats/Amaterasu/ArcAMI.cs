@@ -339,7 +339,7 @@ namespace GameRes.Formats.Amaterasu
     }
 
     [Export(typeof(ScriptFormat))]
-    public class ScrFormat : ScriptFormat
+    public class ScrFormat : GenericScriptFormat
     {
         public override string Tag { get { return "SCR/AMI"; } }
         public override string Description { get { return Strings.arcStrings.SCRDescription; } }

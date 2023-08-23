@@ -37,6 +37,8 @@ namespace GameRes.Formats
         ArcView                     m_file;
         Dictionary<string, Section> m_section_table;
         Section                     m_overlay;
+        uint                        m_image_base = 0;
+        List<ImageSection>          m_section_list;
 
         public ExeFile (ArcView file)
         {
@@ -79,6 +81,16 @@ namespace GameRes.Formats
             }
         }
 
+        public uint ImageBase
+        {
+            get
+            {
+                if (0 == m_image_base)
+                    InitImageBase();
+                return m_image_base;
+            }
+        }
+
         /// <summary>
         /// Structure representing section of executable file in the form of its offset and size.
         /// </summary>
@@ -86,6 +98,16 @@ namespace GameRes.Formats
         {
             public long Offset;
             public uint Size;
+        }
+
+        public class ImageSection // IMAGE_SECTION_HEADER
+        {
+            public string   Name;
+            public uint     VirtualSize;
+            public uint     VirtualAddress;
+            public uint     SizeOfRawData;
+            public uint     PointerToRawData;
+            public uint     Characteristics;
         }
 
         /// <summary>
@@ -140,6 +162,16 @@ namespace GameRes.Formats
             return -1;
         }
 
+        public Section SectionByOffset (long offset)
+        {
+            foreach (var section in Sections.Values)
+            {
+                if (offset >= section.Offset && offset < section.Offset + section.Size)
+                    return section;
+            }
+            return new Section { Offset = Whole.Size, Size = 0 };
+        }
+
         public long FindAsciiString (Section section, string seq, int step = 1)
         {
             return FindString (section, Encoding.ASCII.GetBytes (seq), step);
@@ -152,26 +184,101 @@ namespace GameRes.Formats
             return FindString (section, bytes, step);
         }
 
+        /// <summary>
+        /// Convert virtual address into raw file offset.
+        /// </summary>
+        public long GetAddressOffset (uint address)
+        {
+            var section = GetAddressSection (address);
+            if (null == section)
+                return m_file.MaxOffset;
+            uint rva = address - ImageBase;
+            return section.PointerToRawData + (rva - section.VirtualAddress);
+        }
+
+        public string GetCString (uint address)
+        {
+            return GetCString (address, Encodings.cp932);
+        }
+
+        static readonly byte[] ZeroByte = new byte[1] { 0 };
+
+        /// <summary>
+        /// Returns null-terminated string from specified virtual address.
+        /// </summary>
+        public string GetCString (uint address, Encoding enc)
+        {
+            var section = GetAddressSection (address);
+            if (null == section)
+                return null;
+            uint rva = address - ImageBase;
+            uint offset = section.PointerToRawData + (rva - section.VirtualAddress);
+            uint size   = section.PointerToRawData + section.SizeOfRawData - offset;
+            long eos = FindString (new Section { Offset = offset, Size = size }, ZeroByte);
+            if (eos < 0)
+                return null;
+            return View.ReadString (offset, (uint)(eos - offset), enc);
+        }
+
+        private ImageSection GetAddressSection (uint address)
+        {
+            var img_base = ImageBase;
+            if (address < img_base)
+                throw new ArgumentException ("Invalid virtual address.");
+            if (null == m_section_list)
+                InitSectionTable();
+            uint rva = address - img_base;
+            foreach (var section in m_section_list)
+            {
+                if (rva >= section.VirtualAddress && rva < section.VirtualAddress + section.SizeOfRawData)
+                    return section;
+            }
+            return null;
+        }
+
+        private void InitImageBase ()
+        {
+            long hdr_offset = GetHeaderOffset() + 0x18;
+            if (View.ReadUInt16 (hdr_offset) != 0x010B)
+                throw new InvalidFormatException ("File is not a valid Windows 32-bit executable.");
+            m_image_base = View.ReadUInt32 (hdr_offset+0x1C); // ImageBase
+        }
+
+        private long GetHeaderOffset ()
+        {
+            long pe_offset = View.ReadUInt32 (0x3C);
+            if (pe_offset >= m_file.MaxOffset-0x58 || !View.AsciiEqual (pe_offset, "PE\0\0"))
+                throw new InvalidFormatException ("File is not a valid Windows 32-bit executable.");
+            return pe_offset;
+        }
+
         private void InitSectionTable ()
         {
-            long pe_offset = m_file.View.ReadUInt32 (0x3C);
-            if (pe_offset >= m_file.MaxOffset-0x58 || !m_file.View.AsciiEqual (pe_offset, "PE\0\0"))
-                throw new InvalidFormatException ("File is not a valid win32 executable.");
-
-            int opt_header = m_file.View.ReadUInt16 (pe_offset+0x14); // SizeOfOptionalHeader
-            long offset = m_file.View.ReadUInt32 (pe_offset+0x54); // SizeOfHeaders
+            long pe_offset = GetHeaderOffset();
+            int opt_header = View.ReadUInt16 (pe_offset+0x14); // SizeOfOptionalHeader
             long section_table = pe_offset+opt_header+0x18;
-            int count = m_file.View.ReadUInt16 (pe_offset+6); // NumberOfSections
+            long offset = View.ReadUInt32 (pe_offset+0x54); // SizeOfHeaders
+            int count = View.ReadUInt16 (pe_offset+6); // NumberOfSections
             var table = new Dictionary<string, Section> (count);
+            var list = new List<ImageSection> (count);
             if (section_table + 0x28*count < m_file.MaxOffset)
             {
                 for (int i = 0; i < count; ++i)
                 {
-                    var name = m_file.View.ReadString (section_table, 8);
-                    var section = new Section {
-                        Size  = m_file.View.ReadUInt32 (section_table+0x10), 
-                        Offset = m_file.View.ReadUInt32 (section_table+0x14)
+                    var name = View.ReadString (section_table, 8);
+                    var img_section = new ImageSection {
+                        Name = name,
+                        VirtualSize      = View.ReadUInt32 (section_table+0x08),
+                        VirtualAddress   = View.ReadUInt32 (section_table+0x0C),
+                        SizeOfRawData    = View.ReadUInt32 (section_table+0x10), 
+                        PointerToRawData = View.ReadUInt32 (section_table+0x14),
+                        Characteristics  = View.ReadUInt32 (section_table+0x24),
                     };
+                    var section = new Section {
+                        Offset = img_section.PointerToRawData,
+                        Size  = img_section.SizeOfRawData
+                    };
+                    list.Add (img_section);
                     if (!table.ContainsKey (name))
                         table.Add (name, section);
                     if (0 != section.Size)
@@ -183,6 +290,7 @@ namespace GameRes.Formats
             m_overlay.Offset = offset;
             m_overlay.Size = (uint)(m_file.MaxOffset - offset);
             m_section_table = table;
+            m_section_list = list;
         }
 
         /// <summary>

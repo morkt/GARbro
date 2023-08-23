@@ -47,12 +47,15 @@ namespace GameRes.Formats.Seraphim
 
         public SeraphCfImage ()
         {
-            Extensions = new string[] { "cts" };
+            Signatures = new [] { 0x4643u, 0x024643u, 0x044643u, 0x074643u, 0x094643u, 0x144643u, 0u };
+            Extensions = new [] { "cts" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x10);
+            if ('C' != header[0] || 'F' != header[1] || 0 != header[3])
+                return null;
             int packed_size = header.ToInt32 (12);
             if (packed_size <= 0 || packed_size > stream.Length-0x10)
                 return null;

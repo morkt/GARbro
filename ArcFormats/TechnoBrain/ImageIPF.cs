@@ -93,7 +93,7 @@ namespace GameRes.Formats.TechnoBrain
             if (0x20706D62 != file.ReadInt32()) // 'bmp '
                 return false;
             int bmp_size = file.ReadInt32();
-            if (bmp_size <= 0x20)
+            if (bmp_size < 0x1C)
                 return false;
             info.BmpOffset = file.Position + 0x18;
             info.Width  = file.ReadUInt16();

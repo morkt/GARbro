@@ -1,4 +1,4 @@
-// Copyright (C) 2022 by morkt
+// Copyright (C) 2023 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,9 +28,9 @@ namespace GameRes.Formats.??????
     [Export(typeof(ImageFormat))]
     public class xxxFormat : ImageFormat
     {
-        public override string         Tag { get { return "xxx"; } }
-        public override string Description { get { return "?????? image format"; } }
-        public override uint     Signature { get { return 0; } }
+        public override string         Tag { get => "xxx"; }
+        public override string Description { get => "?????? image format"; }
+        public override uint     Signature { get => 0; }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {

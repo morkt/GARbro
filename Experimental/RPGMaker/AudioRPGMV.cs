@@ -35,6 +35,11 @@ namespace GameRes.Formats.RPGMaker
         public override uint     Signature { get { return 0x4D475052; } } // 'RPGMV'
         public override bool      CanWrite { get { return false; } }
 
+        public RpgmvoAudio ()
+        {
+            Extensions = new[] { "rpgmvo", "ogg_" };
+        }
+
         public override SoundInput TryOpen (IBinaryStream file)
         {
             var header = file.ReadHeader (0x14);

@@ -43,6 +43,7 @@ namespace GameRes.Formats.Will
         {
             Extensions = new string[] { "wsm" };
             Signatures = new uint[] { 0x324D5357, 0x334D5357 };
+            ContainedFormats = new[] { "WAV" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -71,6 +72,7 @@ namespace GameRes.Formats.Will
                 dir.Add (entry);
             }
             int index_offset = 0;
+            var names = new HashSet<string>();
             for (int i = 0; i < count; ++i)
             {
                 int entry_pos = index.ToInt32 (index_offset);
@@ -83,8 +85,20 @@ namespace GameRes.Formats.Will
                 int entry_idx = index[entry_pos+3];
                 if (entry_idx >= dir.Count)
                     return null;
+                if (0 == entry_idx)
+                    entry_idx = i;
                 var entry = dir[entry_idx];
-                entry.Name = string.Format ("{0:D2}_{1}.wav", entry_idx, name);
+                entry.Name = name + ".wav";
+                names.Add (entry.Name);
+            }
+            if (names.Count != dir.Count)
+            {
+                // make filenames unique by prepending index number
+                for (int i = 0; i < dir.Count; ++i)
+                {
+                    var entry = dir[i];
+                    entry.Name = string.Format("{0:D2}_{1}", i, entry.Name);
+                }
             }
             return new ArcFile (file, this, dir);
         }

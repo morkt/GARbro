@@ -27,17 +27,26 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
+using GameRes.Formats.Maika;
+using GameRes.Utility;
 
 namespace GameRes.Formats.BellDa
 {
     [Export(typeof(ArchiveFormat))]
-    public sealed class BldOpener : ArchiveFormat
+    public sealed class BldOpener : Mk2Opener
     {
         public override string         Tag { get { return "DAT/BLD"; } }
         public override string Description { get { return "BELL-DA resource archive"; } }
         public override uint     Signature { get { return 0x30444C42; } } // 'BLD0'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
+
+        public BldOpener ()
+        {
+            Signatures = new[] { this.Signature };
+            Settings = null;
+            Scheme = null;
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -65,27 +74,6 @@ namespace GameRes.Formats.BellDa
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);
-        }
-
-        public override Stream OpenEntry (ArcFile arc, Entry entry)
-        {
-            // XXX compression method identical to Maika.Mk2Opener
-            var pent = (PackedEntry)entry;
-            if (null == pent || !pent.IsPacked)
-            {
-                var id_str = arc.File.View.ReadString (entry.Offset, 2);
-                if (id_str != "B1" && id_str != "C1" && id_str != "D1" && id_str != "E1")
-                    return base.OpenEntry (arc, entry);
-                uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+2);
-                if (packed_size != entry.Size - 10)
-                    return base.OpenEntry (arc, entry);
-                pent.Size = packed_size;
-                pent.UnpackedSize = arc.File.View.ReadUInt32 (entry.Offset+6);
-                pent.Offset += 10;
-                pent.IsPacked = true;
-            }
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new LzssStream (input);
         }
     }
 }

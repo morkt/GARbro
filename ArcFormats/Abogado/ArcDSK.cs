@@ -53,6 +53,7 @@ namespace GameRes.Formats.Abogado
             { "PCM1",   "ADP" },
             { "PCM2",   "ADP" },
             { "PCM",    "ADP" },
+            { "ADPCM",  "ADP" },
             { "GRAPHIC", "KG" },
             { "GRPFILE", "KG" },
             { "EFCFILE", "ADP" },

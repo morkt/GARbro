@@ -32,13 +32,13 @@ using System.Text;
 using GameRes.Compression;
 using GameRes.Utility;
 
-namespace GameRes.Formats.Selen
+namespace GameRes.Formats.Macromedia
 {
     [Export(typeof(ArchiveFormat))]
     public class CctOpener : ArchiveFormat
     {
         public override string         Tag { get { return "CCT"; } }
-        public override string Description { get { return "Macromedia Director resource archive"; } }
+        public override string Description { get { return "Macromedia Shockwave resource archive"; } }
         public override uint     Signature { get { return 0x52494658; } } // 'XFIR'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }

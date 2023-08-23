@@ -142,7 +142,7 @@ namespace GameRes.Formats.Maika
 
             Stream input;
             // XXX scrambling might be applicable for 'E1' signatures only
-            if (scheme.ScrambledSize > 0)
+            if (0x3145 == signature && scheme.ScrambledSize > 0)
             {
                 var prefix = arc.File.View.ReadBytes (entry.Offset+10, scheme.ScrambledSize);
                 foreach (var pair in scheme.ScrambleMap)

@@ -40,6 +40,7 @@ namespace GameRes.Formats.Will
         public MbfOpener ()
         {
             Signatures = new uint[] { 0x3046424D, 0x3146424D };
+            ContainedFormats = new[] { "BC" };
         }
 
         public override ArcFile TryOpen (ArcView file)

@@ -54,6 +54,11 @@ namespace GameRes.Formats.FrontWing
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
 
+        public FltOpener()
+        {
+            ContainedFormats = new[] { "FG/FWGI", "OGG", "DAT/GENERIC" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "PACKDATA0000"))
@@ -130,4 +135,9 @@ namespace GameRes.Formats.FrontWing
             0x22, 0x45, 0xF2, 0x65, 0x74, 0x34, 0x35, 0xDE, 0x59, 0x27, 0xA3, 0xFB, 0x0C, 0x80, 0x32, 0xFF,
         };
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "CSF")]
+    [ExportMetadata("Target", "DAT/GENERIC")]
+    public class CsfFormat : ResourceAlias { }
 }

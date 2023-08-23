@@ -78,4 +78,9 @@ namespace GameRes.Formats.Abel
     [ExportMetadata("Extension", "ALP")]
     [ExportMetadata("Target", "DAT/GENERIC")]
     public class AlpFormat : ResourceAlias { }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "JCP")]
+    [ExportMetadata("Target", "WAV")]
+    public class JcpFormat : ResourceAlias { }
 }

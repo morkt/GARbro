@@ -62,6 +62,11 @@ namespace GameRes.Formats.ExHibit
         public override string Description { get { return "ExHIBIT engine image format"; } }
         public override uint     Signature { get { return 0x1A555947; } } // 'GYU'
 
+        public GyuFormat ()
+        {
+            Extensions = new[] { "gyu", "lvg" };
+        }
+
         GyuMap DefaultScheme = new GyuMap {
             NumericKeys = new Dictionary<string, Dictionary<int, uint>>(),
             StringKeys  = new Dictionary<string, Dictionary<string, uint>>(),

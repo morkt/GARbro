@@ -120,6 +120,8 @@ namespace GameRes.Formats.Seraphim
 
         List<Entry> ReadIndex (ArcView file, long index_offset, long max_offset)
         {
+            if (index_offset >= max_offset)
+                return null;
             int base_count = file.View.ReadInt32 (index_offset);
             int file_count = file.View.ReadInt32 (index_offset + 4);
             index_offset += 8;
@@ -220,7 +222,9 @@ namespace GameRes.Formats.Seraphim
             {
                 uint width  = input.ReadUInt16();
                 uint height = input.ReadUInt16();
-                if (width > 0x4100 || 0 == width || 0 == height || width * height * 3 + 4 != input.Length)
+                uint plane_size = width * height;
+                uint total_size = (uint)(input.Length - 4);
+                if (width > 0x4100 || 0 == width || 0 == height || (total_size % plane_size) != 0)
                 {
                     input.Position = 0;
                     return new ImageFormatDecoder (input);

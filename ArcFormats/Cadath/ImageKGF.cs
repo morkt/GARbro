@@ -136,14 +136,18 @@ namespace GameRes.Formats.Cadath
                 if (0 != (bits[i >> 3] & 1))
                 {
                     byte v = m_input.ReadUInt8();
-                    int count = m_input.ReadUInt8() + 3;
+                    int count = Math.Min (m_input.ReadUInt8() + 3, data.Length - dst);
                     for (int j = 0; j < count; ++j)
+                    {
                         data[dst++] = v;
+                    }
                 }
                 else
                 {
                     data[dst++] = m_input.ReadUInt8();
                 }
+                if (dst >= data.Length)
+                    break;
                 bits[i >> 3] >>= 1;
             }
             CopyChannels (data);

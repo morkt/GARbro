@@ -29,9 +29,10 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
-namespace GameRes.Formats.Selen
+namespace GameRes.Formats.Macromedia
 {
     [Export(typeof(ImageFormat))]
     public class BitdFormat : ImageFormat
@@ -201,5 +202,135 @@ namespace GameRes.Formats.Selen
                 }
             }
         }
+    }
+
+    internal class BitdDecoder : IImageDecoder
+    {
+        Stream  m_input;
+        byte[]  m_output;
+        int     m_width;
+        int     m_height;
+        int     m_stride;
+        ImageMetaData   m_info;
+        ImageData       m_image;
+        BitmapPalette   m_palette;
+
+        public Stream            Source { get => m_input; }
+        public ImageFormat SourceFormat { get => null; }
+        public ImageMetaData       Info { get => m_info; }
+        public ImageData          Image { get => m_image ?? (m_image = GetImageData()); }
+        public PixelFormat       Format { get; private set; }
+
+        public BitdDecoder (Stream input, ImageMetaData info, BitmapPalette palette)
+        {
+            m_input = input;
+            m_info = info;
+            m_width = info.iWidth;
+            m_height = info.iHeight;
+            m_stride = (m_width * m_info.BPP + 7) / 8;
+            m_stride = (m_stride + 1) & ~1;
+            m_output = new byte[m_stride * m_height];
+            Format = info.BPP ==  4 ? PixelFormats.Indexed4
+                   : info.BPP ==  8 ? PixelFormats.Indexed8
+                   : info.BPP == 16 ? PixelFormats.Bgr555
+                                    : PixelFormats.Bgr32;
+            m_palette = palette;
+        }
+
+        protected ImageData GetImageData ()
+        {
+            if (Info.BPP <= 8)
+                Unpack8bpp();
+            else
+                UnpackChannels (Info.BPP / 8);
+            return ImageData.Create (m_info, Format, m_palette, m_output, m_stride);
+        }
+
+        void Unpack8bpp ()
+        {
+            for (int line = 0; line < m_output.Length; line += m_stride)
+            {
+                int x = 0;
+                while (x < m_stride)
+                {
+                    int b = m_input.ReadByte();
+                    if (-1 == b)
+                        throw new InvalidFormatException ("Unexpected end of file");
+                    int count = b;
+                    if (b > 0x7f)
+                        count = (byte)-(sbyte)b;
+                    ++count;
+                    if (x + count > m_stride)
+                        throw new InvalidFormatException();
+                    if (b > 0x7f)
+                    {
+                        b = m_input.ReadByte();
+                        if (-1 == b)
+                            throw new InvalidFormatException ("Unexpected end of file");
+                        for (int i = 0; i < count; ++i)
+                            m_output[line + x++] = (byte)b;
+                    }
+                    else
+                    {
+                        m_input.Read (m_output, line + x, count);
+                        x += count;
+                    }
+                }
+            }
+        }
+
+        public void UnpackChannels (int channels)
+        {
+            var scan_line = new byte[m_stride];
+            for (int line = 0; line < m_output.Length; line += m_stride)
+            {
+                int x = 0;
+                while (x < m_stride)
+                {
+                    int b = m_input.ReadByte();
+                    if (-1 == b)
+                        throw new InvalidFormatException ("Unexpected end of file");
+                    int count = b;
+                    if (b > 0x7f)
+                        count = (byte)-(sbyte)b;
+                    ++count;
+                    if (x + count > m_stride)
+                        throw new InvalidFormatException();
+                    if (b > 0x7f)
+                    {
+                        b = m_input.ReadByte();
+                        if (-1 == b)
+                            throw new InvalidFormatException ("Unexpected end of file");
+                        for (int i = 0; i < count; ++i)
+                            scan_line[x++] = (byte)b;
+                    }
+                    else
+                    {
+                        m_input.Read (scan_line, x, count);
+                        x += count;
+                    }
+                }
+                int dst = line;
+                for (int i = 0; i < m_width; ++i)
+                {
+                    for (int src = m_width * (channels - 1); src >= 0; src -= m_width)
+                        m_output[dst++] = scan_line[i + src];
+                }
+            }
+        }
+
+        #region IDisposable Members
+        bool m_disposed = false;
+
+        public void Dispose ()
+        {
+            if (!m_disposed)
+            {
+                m_input.Dispose();
+                m_disposed = true;
+            }
+            GC.SuppressFinalize (this);
+        }
+        #endregion
     }
 }

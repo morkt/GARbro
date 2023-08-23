@@ -97,7 +97,7 @@ namespace GameRes.Formats.AliceSoft
             return ImageData.Create (info, format, null, reader.Data, stride);
         }
 
-        internal class Reader
+        internal class Reader : IBaseImageReader
         {
             byte[]  m_input;
             byte[]  m_alpha;

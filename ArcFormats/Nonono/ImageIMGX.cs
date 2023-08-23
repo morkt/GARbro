@@ -64,7 +64,12 @@ namespace GameRes.Formats.Nonono
             using (var input = new MemoryStream (bitmap, header_size, bitmap.Length - header_size))
             {
                 if (8 == m_info.BPP)
-                    palette = ImageFormat.ReadPalette (input);
+                {
+                    int num_colors = bitmap.ToInt32 (0x20);
+                    if (0 == num_colors)
+                        num_colors = 0x100;
+                    palette = ImageFormat.ReadPalette (input, num_colors);
+                }
                 input.Read (pixels, 0, pixels.Length);
             }
             PixelFormat format = 8 == m_info.BPP ? PixelFormats.Indexed8

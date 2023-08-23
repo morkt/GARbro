@@ -84,6 +84,9 @@ namespace GameRes.Formats.Rpm
         /// <summary>Minimum entry length across all possible archive schemes.</summary>
         const int MinEntryLength = 0x24;
 
+        // largest size should be first
+        static readonly int[] PossibleNameSizes = new[] { 0x20, 0x18 };
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
@@ -94,7 +97,7 @@ namespace GameRes.Formats.Rpm
                 return null;
 
             var index_reader = new ArcIndexReader (file, count, is_compressed != 0);
-            var scheme = index_reader.GuessScheme (8, new int[] { 0x20, 0x18 });
+            var scheme = index_reader.GuessScheme (8, PossibleNameSizes);
             // additional checks to avoid dialog popup on false positives
             if (null == scheme && KnownSchemes.Count > 0 && file.Name.HasExtension (".arc"))
             {

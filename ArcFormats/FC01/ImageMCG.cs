@@ -112,6 +112,7 @@ namespace GameRes.Formats.FC01
                 {
                     var options = Query<McgOptions> (arcStrings.ArcImageEncrypted);
                     key = options.Key;
+                    LastKey = key;
                 }
                 else
                     key = LastKey.Value;

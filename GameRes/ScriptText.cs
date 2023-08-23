@@ -30,12 +30,51 @@ namespace GameRes
     {
         public override string Type { get { return "script"; } }
 
+        public abstract bool IsScript (IBinaryStream file);
+
+        public abstract Stream ConvertFrom (IBinaryStream file);
+        public abstract Stream ConvertBack (IBinaryStream file);
+
         public abstract ScriptData Read (string name, Stream file);
         public abstract void Write (Stream file, ScriptData script);
+
+        public static ScriptFormat FindFormat (IBinaryStream file)
+        {
+            foreach (var impl in FormatCatalog.Instance.FindFormats<ScriptFormat> (file.Name, file.Signature))
+            {
+                try
+                {
+                    file.Position = 0;
+                    if (impl.IsScript (file))
+                        return impl;
+                }
+                catch (System.OperationCanceledException)
+                {
+                    throw;
+                }
+                catch { }
+            }
+            return null;
+        }
     }
 
     public abstract class GenericScriptFormat : ScriptFormat
     {
+        public override bool IsScript (IBinaryStream file)
+        {
+            return false;
+        }
+
+        public override Stream ConvertFrom (IBinaryStream file)
+        {
+            return file.AsStream;
+        }
+
+        public override Stream ConvertBack (IBinaryStream file)
+        {
+            return file.AsStream;
+        }
+
         public override ScriptData Read (string name, Stream file)
         {
             throw new System.NotImplementedException();

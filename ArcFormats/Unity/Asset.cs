@@ -93,8 +93,9 @@ namespace GameRes.Formats.Unity
                 for (int i = 0; i < count; ++i)
                 {
                     input.Align();
+                    var file_id = input.ReadInt32();
                     var id = input.ReadId();
-                    m_adds[id] = input.ReadInt32();
+                    m_adds[id] = file_id;
                 }
             }
             if (Format >= 6)
@@ -353,8 +354,11 @@ namespace GameRes.Formats.Unity
         {
             int count = reader.ReadInt32();
             int buffer_bytes = reader.ReadInt32();
-            var node_data = reader.ReadBytes (24 * count);
+            int node_size = m_format >= 18 ? 32 : 24;
+            var node_data = reader.ReadBytes (node_size * count);
             m_data = reader.ReadBytes (buffer_bytes);
+            if (m_format >= 21)
+                reader.Skip (4);
 
             var parents = new Stack<TypeTree>();
             parents.Push (this);
@@ -384,6 +388,8 @@ namespace GameRes.Formats.Unity
                     current.Size = buf.ReadInt32();
                     current.Index = buf.ReadUInt32();
                     current.Flags = buf.ReadInt32();
+                    if (m_format >= 18)
+                        buf.ReadInt64();
                 }
             }
         }
