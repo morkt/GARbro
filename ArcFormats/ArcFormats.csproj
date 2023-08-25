@@ -829,8 +829,7 @@
     <Compile Include="Unity\AudioFSB5.cs" />
     <Compile Include="Unity\Bc7Decoder.cs" />
     <Compile Include="Unity\BundleStream.cs" />
-    <None Include="packages.config" />
-    <None Include="Unity\Gx4Lib\ArcDAT.cs" />
+    <Compile Include="Unity\Gx4Lib\ArcDAT.cs" />
     <Compile Include="Unity\OggStream.cs" />
     <Compile Include="Unity\PMaster\ArcDAT.cs" />
     <Compile Include="Unity\ResourcesAssets.cs" />
@@ -847,6 +846,7 @@
     <Compile Include="VnEngine\ArcAXR.cs" />
     <Compile Include="VnEngine\ImageZAW.cs" />
     <EmbeddedResource Include="Abogado\keytable.dat" />
+    <None Include="packages.config" />
     <EmbeddedResource Include="Strings\arcStrings.ja-JP.resx" />
     <EmbeddedResource Include="Unity\strings.dat" />
     <None Include="WebP\Alpha.cs" />
@@ -1070,6 +1070,10 @@
     <ProjectReference Include="..\GameRes\GameRes.csproj">
       <Project>{453c087f-e416-4ae9-8c03-d8760da0574b}</Project>
       <Name>GameRes</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Net20\Net20.csproj">
+      <Project>{73b6c693-9846-4d33-8300-a80239fcfff9}</Project>
+      <Name>Net20</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
