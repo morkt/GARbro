@@ -23,13 +23,15 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
+using ICSharpCode.SharpZipLib.BZip2;
 
 // [000224][Uran] P.S. 3 ~Harem Night~
+// [980828][Uran] College Terra Story
+// [971218][Uran] GirlDollToy
 
 namespace GameRes.Formats.Uran
 {
@@ -38,9 +40,7 @@ namespace GameRes.Formats.Uran
         public byte     Method;
     }
 
-#if DEBUG
     [Export(typeof(ArchiveFormat))]
-#endif
     public class NclOpener : ArchiveFormat
     {
         public override string         Tag { get { return "NCL"; } }
@@ -96,9 +96,7 @@ namespace GameRes.Formats.Uran
                 if (2 == nclent.Method)
                     input = new ZLibStream (input, CompressionMode.Decompress);
                 else if (3 == nclent.Method)
-                {
-                    // XXX bzip2 compression not implemented
-                }
+                    input = new BZip2InputStream (input);
             }
             return input;
         }
@@ -130,7 +128,7 @@ namespace GameRes.Formats.Uran
             int b = BaseStream.ReadByte();
             if (-1 != b)
             {
-                b -= m_key;
+                b = (byte)(b - m_key);
             }
             return b;
         }

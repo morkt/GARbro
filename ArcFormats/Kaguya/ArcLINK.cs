@@ -228,8 +228,7 @@ namespace GameRes.Formats.Kaguya
 
         public virtual LinkEncryption GetEncryption ()
         {
-            var params_dir = VFS.GetDirectoryName (m_input.Name);
-            var params_dat = VFS.CombinePath (params_dir, "params.dat");
+            var params_dat = VFS.ChangeFileName (m_input.Name, "params.dat");
             if (!VFS.FileExists (params_dat))
                 return null;
 
@@ -555,8 +554,10 @@ namespace GameRes.Formats.Kaguya
             m_input.Position = start;
             SkipChunk();
             m_title = ReadString();
-            if (m_version.Major < 3)
+            if (m_version.Major < 2)
                 m_input.ReadCString();
+//            else
+//                SkipString();
             SkipString();
             SkipString();
             m_input.ReadByte();
@@ -583,7 +584,7 @@ namespace GameRes.Formats.Kaguya
         {
             ReadHeader (0x17);
 
-            if ("幼なじみと甘～くエッチに過ごす方法" == m_title)
+            if ("幼なじみと甘～くエッチに過ごす方法" == m_title || "艶女医" == m_title)
             {
                 int count = m_input.ReadUInt8();
                 for (int i = 0; i < count; ++i)
@@ -595,8 +596,15 @@ namespace GameRes.Formats.Kaguya
                 }
                 SkipArray();
                 SkipArray();
-                m_input.ReadInt32();
-                return m_input.ReadBytes (240000);
+                if ("幼なじみと甘～くエッチに過ごす方法" == m_title)
+                {
+                    m_input.ReadInt32();
+                    return m_input.ReadBytes (240000);
+                }
+                else
+                {
+                    return ReadKey();
+                }
             }
             else // 毎日がＭ！
             {

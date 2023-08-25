@@ -83,126 +83,33 @@ namespace GameRes.Formats.Apricot
                         dir.Add (entry);
                     }
                 }
-                return new Mpf2Archive (file, this, dir, arc_list);
+                var parts = new List<ArcView> (arc_list.Count);
+                try
+                {
+                    foreach (var arc_entry in arc_list)
+                    {
+                        var arc_file = VFS.OpenView (arc_entry);
+                        parts.Add (arc_file);
+                    }
+                }
+                catch
+                {
+                    foreach (var part in parts)
+                        part.Dispose();
+                    throw;
+                }
+                return new MultiFileArchive (file, this, dir, parts);
             }
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var mpf = (Mpf2Archive)arc;
-            var input = mpf.ViewChain.CreateStream (entry.Offset, entry.Size);
+            var mpf = (MultiFileArchive)arc;
+            var input = mpf.OpenStream (entry);
             var pent = entry as PackedEntry;
             if (pent != null && pent.IsPacked)
                 input = new ZLibStream (input, CompressionMode.Decompress);
             return input;
-        }
-    }
-
-    internal class Mpf2Archive : ArcFile
-    {
-        ArcViewChain    m_parts;
-
-        public ArcViewChain ViewChain { get { return m_parts; } }
-
-        public Mpf2Archive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, IReadOnlyList<Entry> arc_list)
-            : base (arc, impl, dir)
-        {
-            m_parts = new ArcViewChain (arc, arc_list);
-        }
-
-        bool m_disposed = false;
-        protected override void Dispose (bool disposing)
-        {
-            if (disposing && !m_disposed)
-            {
-                if (m_parts != null)
-                    m_parts.Dispose();
-                m_disposed = true;
-            }
-        }
-    }
-
-    internal sealed class ArcViewChain : IDisposable
-    {
-        ArcView                 m_file;
-        IReadOnlyList<ArcView>  m_parts;
-
-        public IEnumerable<ArcView> Parts {
-            get {
-                yield return m_file;
-                if (m_parts != null)
-                    foreach (var part in m_parts)
-                        yield return part;
-            }
-        }
-
-        public ArcViewChain (ArcView file, IReadOnlyList<Entry> arc_list)
-        {
-            var parts = new List<ArcView> (arc_list.Count);
-            try
-            {
-                foreach (var arc_entry in arc_list)
-                {
-                    var arc_file = VFS.OpenView (arc_entry);
-                    parts.Add (arc_file);
-                }
-            }
-            catch
-            {
-                foreach (var part in parts)
-                    part.Dispose();
-                throw;
-            }
-            m_file = file;
-            m_parts = parts;
-        }
-
-        public Stream CreateStream (long offset, uint size)
-        {
-            Stream input = null;
-            try
-            {
-                long part_offset = 0;
-                long entry_start = offset;
-                long entry_end   = offset + size;
-                foreach (var part in Parts)
-                {
-                    long part_end_offset = part_offset + part.MaxOffset;
-                    if (entry_start < part_end_offset)
-                    {
-                        uint part_size = (uint)Math.Min (entry_end - entry_start, part_end_offset - entry_start);
-                        var entry_part = part.CreateStream (entry_start - part_offset, part_size);
-                        if (input != null)
-                            input = new ConcatStream (input, entry_part);
-                        else
-                            input = entry_part;
-                        entry_start += part_size;
-                        if (entry_start >= entry_end)
-                            break;
-                    }
-                    part_offset = part_end_offset;
-                }
-                return input ?? Stream.Null;
-            }
-            catch
-            {
-                if (input != null)
-                    input.Dispose();
-                throw;
-            }
-        }
-
-        bool m_disposed = false;
-        public void Dispose ()
-        {
-            if (m_disposed)
-                return;
-            if (m_parts != null)
-            {
-                foreach (var arc in m_parts)
-                    arc.Dispose();
-            }
-            m_disposed = true;
         }
     }
 }

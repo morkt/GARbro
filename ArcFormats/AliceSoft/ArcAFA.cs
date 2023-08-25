@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Text;
 using GameRes.Compression;
 
 namespace GameRes.Formats.AliceSoft
@@ -39,6 +40,16 @@ namespace GameRes.Formats.AliceSoft
         public override uint     Signature { get { return 0x48414641; } } // 'AFAH'
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
+
+        public AfaOpener ()
+        {
+            ContainedFormats = new[] { "QNT", "AJP", "DCF", "OGG" };
+            Settings = new[] { AfaEncoding };
+        }
+
+        internal readonly EncodingSetting AfaEncoding = new EncodingSetting ("AFAEncodingCP", "DefaultEncoding");
+
+        internal Encoding NameEncoding { get { return AfaEncoding.Get<Encoding>(); } }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -54,6 +65,7 @@ namespace GameRes.Formats.AliceSoft
             if (!IsSaneCount (count))
                 return null;
 
+            var default_enc = NameEncoding;
             var dir = new List<Entry> (count);
             var name_buf = new byte[0x40];
             using (var input = file.CreateStream (0x2C, packed_size))
@@ -70,7 +82,7 @@ namespace GameRes.Formats.AliceSoft
                         name_buf = new byte[index_step];
                     if (index_step != index.Read (name_buf, 0, index_step))
                         return null;
-                    var name = Encodings.cp932.GetString (name_buf, 0, name_length);
+                    var name = default_enc.GetString (name_buf, 0, name_length);
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
                     index.ReadInt32();
                     index.ReadInt32();

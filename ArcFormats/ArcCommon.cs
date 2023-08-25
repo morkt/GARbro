@@ -350,4 +350,10 @@ namespace GameRes.Formats
         public override string Description { get { return "Unidentified data file"; } }
         public override uint     Signature { get { return 0; } }
     }
+
+    // [970725][Guilty] Onii-chan e
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "GLT")]
+    [ExportMetadata("Target", "BMP")]
+    public class GltFormat : ResourceAlias { }
 }

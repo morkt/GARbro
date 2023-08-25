@@ -176,6 +176,7 @@ namespace GameRes.Formats.Marble
                         if (3 == b)
                         {
                             length += 9;
+//                            length = Math.Min(m_output.Length - dst, length);
                             int read = m_input.Read (m_output, dst, length);
                             if (read < length)
                                 break;

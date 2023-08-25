@@ -44,9 +44,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=1.0.0.999, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\SharpZipLib.1.1.0\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=1.3.3.11, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpZipLib.1.3.3\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
@@ -89,6 +88,11 @@
     <Compile Include="Artel\ImageMRL.cs" />
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
+    <Compile Include="BlackButterfly\ArcDAT.cs" />
+    <Compile Include="CottonClub\ImageLMG.cs" />
+    <Compile Include="Herb\ArcPAK.cs" />
+    <Compile Include="Herb\ImageGRP.cs" />
+    <Compile Include="James\ImageJMG.cs" />
     <Compile Include="BRoom\ArcCPC.cs" />
     <Compile Include="BRoom\ArcPK.cs" />
     <Compile Include="BRoom\AudioEZS.cs" />
@@ -101,10 +105,15 @@
     <Compile Include="Electriciteit\ArcPKK.cs" />
     <Compile Include="Eye\ImageCSF.cs" />
     <Compile Include="FazeX\ImageFGP.cs" />
+    <Compile Include="Giga\ArcALL.cs" />
     <Compile Include="HillField\ImageIMA.cs" />
     <Compile Include="HillField\ImageIMG.cs" />
     <Compile Include="hmp\ImageALP.cs" />
+    <Compile Include="hmp\ImageCBF.cs" />
+    <Compile Include="HyperWorks\ArcPAK.cs" />
+    <Compile Include="HyperWorks\ImageI24.cs" />
     <Compile Include="KApp\ArcASD.cs" />
+    <Compile Include="KApp\ArcCGD.cs" />
     <Compile Include="KApp\ImageCGD.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
@@ -123,7 +132,10 @@
     <Compile Include="Mink\ImageFD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
     <Compile Include="Nyoken\ArcZLK.cs" />
+    <Compile Include="Paprika\ArcPKDAT.cs" />
+    <Compile Include="Paprika\ImageNP.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
+    <Compile Include="Pias\ArcDAT.cs" />
     <Compile Include="PineSoft\ArcCMB.cs" />
     <Compile Include="PineSoft\ArcVoice.cs" />
     <Compile Include="PineSoft\AudioCMB.cs" />
@@ -178,7 +190,10 @@
     <Compile Include="Rune\ArcYK.cs" />
     <Compile Include="Sarang\ImageABC.cs" />
     <Compile Include="Sogna\ArcSGS.cs" />
+    <Compile Include="SplushWave\ArcDAT.cs" />
+    <Compile Include="SplushWave\ImageSWG.cs" />
     <Compile Include="StudioEbisu\ArcEP1.cs" />
+    <Compile Include="StudioFoma\ArcARC.cs" />
     <Compile Include="System21\ImageTEX.cs" />
     <Compile Include="Tako\ArcMPK.cs" />
     <Compile Include="Tetratech\ArcBND.cs" />
@@ -195,6 +210,8 @@
     <Compile Include="Unknown\ArcAQA.cs" />
     <Compile Include="Unknown\AudioMSF.cs" />
     <Compile Include="Unknown\ImageCTF.cs" />
+    <Compile Include="Uran\ImageDAR.cs" />
+    <Compile Include="Uran\ImageNCL.cs" />
     <Compile Include="Wing\ImageGEM.cs" />
     <Compile Include="Witch\ArcDAT.cs" />
     <Compile Include="Witch\ArcPCD.cs" />
@@ -231,6 +248,7 @@
     <Compile Include="Zone\ArcPKD.cs" />
     <Compile Include="Zone\ImageBM_.cs" />
     <None Include="app.config" />
+    <None Include="packages.config" />
     <None Include="PlanTech\ImagePAC.cs" />
     <Compile Include="Pochette\ImageGDT.cs" />
     <Compile Include="ProjectMyu\ImageKGR.cs" />

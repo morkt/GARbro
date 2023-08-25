@@ -24,7 +24,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
@@ -50,14 +49,16 @@ namespace GameRes.Formats.Abel
 
         public GpsFormat ()
         {
-            Extensions = new string[] { "gps", "cmp" };
+            Extensions = new[] { "gps", "gp2", "cmp" };
+            Signatures = new[] { 0x535047u, 0x325047u }; // 'GPS', 'GP2'
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x29);
+            bool is_gp2 = header.AsciiEqual ("GP2");
             var gps = new GpsMetaData();
-            if (header.ToUInt32 (4) == 0xCCCCCCCC)
+            if (!is_gp2 && header.ToUInt32 (4) == 0xCCCCCCCC)
             {
                 gps.HeaderSize  = 0x19;
                 gps.Compression = 2;
@@ -69,6 +70,8 @@ namespace GameRes.Formats.Abel
                 gps.HeaderSize  = 0x29;
                 gps.Compression = header[0x10];
                 gps.UnpackedSize = header.ToInt32 (0x11);
+                if (is_gp2)
+                    gps.UnpackedSize = - 1 - gps.UnpackedSize;
                 gps.PackedSize  = header.ToInt32 (0x15);
                 gps.Width       = header.ToUInt32 (0x19);
                 gps.Height      = header.ToUInt32 (0x1D);

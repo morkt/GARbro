@@ -47,7 +47,7 @@ namespace GameRes.Formats.Seraphim
             Extensions = new string[] { "dat" };
         }
 
-        static readonly Regex   VoiceRe = new Regex (@"^Voice\d\.dat$", RegexOptions.IgnoreCase);
+        static readonly Regex   VoiceRe = new Regex (@"^Voice(?:\d|pac)\.dat$", RegexOptions.IgnoreCase);
 
         public override ArcFile TryOpen (ArcView file)
         {

@@ -31,7 +31,7 @@ using System.IO;
 namespace GameRes.Formats.KApp
 {
     [Export(typeof(ArchiveFormat))]
-    public class AsdOpener : ArchiveFormat
+    public class AsdKToolOpener : ArchiveFormat
     {
         public override string         Tag { get { return "ASD/KTOOL"; } }
         public override string Description { get { return "KApp engine resource archive"; } }
@@ -120,6 +120,84 @@ namespace GameRes.Formats.KApp
                 output.Position = 0;
                 return output;
             }
+        }
+    }
+
+    internal class AsdArchive : ArcFile
+    {
+        public byte     Format;
+
+        public AsdArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir) : base (arc, impl, dir)
+        {
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class AsdAudioOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "ASD/SPIEL"; } }
+        public override string Description { get { return "Spiel audio archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.Name.HasExtension (".asd"))
+                return null;
+            byte format = file.View.ReadByte (0);
+            if (format != 1 && format != 2)
+                return null;
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
+            uint index_pos = 0x10;
+            uint next_offset = file.View.ReadUInt32 (index_pos);
+            var dir = new List<Entry>();
+            while (next_offset != 0xFFFFFFFF)
+            {
+                index_pos += 4;
+                var entry = new Entry {
+                    Name = string.Format ("{0}#{1:D4}", base_name, dir.Count),
+                    Type = "audio",
+                    Offset = next_offset,
+                };
+                next_offset = file.View.ReadUInt32 (index_pos);
+                if (next_offset != 0xFFFFFFFF)
+                    entry.Size = (uint)(next_offset - entry.Offset);
+                else
+                    entry.Size = (uint)(file.MaxOffset - entry.Offset);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+            }
+            if (0 == dir.Count)
+                return null;
+            return new AsdArchive (file, this, dir) { Format = format };
+        }
+
+        public override Stream OpenEntry (ArcFile a, Entry entry)
+        {
+            var arc = (AsdArchive)a;
+            var view = arc.File.View;
+            uint data_size = view.ReadUInt32 (entry.Offset);
+            if (2 == arc.Format) // MP3
+                return arc.File.CreateStream (entry.Offset+0x10, data_size);
+
+            var format = new WaveFormat {
+                FormatTag           = view.ReadUInt16 (entry.Offset+8),
+                Channels            = view.ReadUInt16 (entry.Offset+0xA),
+                SamplesPerSecond    = view.ReadUInt32 (entry.Offset+0xC),
+                AverageBytesPerSecond = view.ReadUInt32 (entry.Offset+0x10),
+                BlockAlign          = view.ReadUInt16 (entry.Offset+0x14),
+                BitsPerSample       = view.ReadUInt16 (entry.Offset+0x16),
+            };
+            byte[] header;
+            using (var riff = new MemoryStream())
+            {
+                WaveAudio.WriteRiffHeader (riff, format, data_size);
+                header = riff.ToArray();
+            }
+            var input = arc.File.CreateStream (entry.Offset+0x20, entry.Size-0x20);
+            return new PrefixStream (header, input);
         }
     }
 }

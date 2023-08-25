@@ -41,6 +41,11 @@ namespace GameRes.Formats.Lilim
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public AosOpener ()
+        {
+            ContainedFormats = new[] { "BMP", "ABM", "IMG/BMP", "DAT/GENERIC", "OGG" };
+        }
+
         static readonly byte[] IndexLink = Enumerable.Repeat<byte> (0xff, 0x10).ToArray();
         static readonly byte[] IndexEnd  = Enumerable.Repeat<byte> (0, 0x10).ToArray();
 

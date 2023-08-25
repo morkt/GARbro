@@ -43,7 +43,7 @@ namespace GameRes.Formats.CandySoft
         public FpkOpener ()
         {
             Signatures = new uint[] { 0, 1 };
-            ContainedFormats = new[] { "BMP", "KG", "OGG", "SCR", "TXT" };
+            ContainedFormats = new[] { "BMP", "KG", "OGG", "SCR", "TXT", "DAT/GENERIC" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -134,19 +134,19 @@ namespace GameRes.Formats.CandySoft
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            if (entry.Size <= 8)
-                return input;
-            var sign = input.Signature;
-            if (0x32434c5a != sign) // 'ZLC2'
-                return input;
-
-            using (input)
-            using (var reader = new Zlc2Reader (input, (int)entry.Size))
+            IBinaryStream input = arc.File.CreateStream (entry.Offset, entry.Size);
+            while (input.Length > 8 && input.Signature == 0x32434C5A) // 'ZLC2'
             {
-                reader.Unpack();
-                return new BinMemoryStream (reader.Data, entry.Name);
+                IBinaryStream unpacked;
+                using (input)
+                using (var reader = new Zlc2Reader (input, (int)input.Length))
+                {
+                    reader.Unpack();
+                    unpacked = new BinMemoryStream (reader.Data, entry.Name);
+                }
+                input = unpacked;
             }
+            return input.AsStream;
         }
     }
 

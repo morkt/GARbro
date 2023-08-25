@@ -57,6 +57,7 @@ namespace GameRes.Formats.Xuse
         {
             Extensions = new string[] { "wag", "4ag", "004" };
             Signatures = new uint[] { 0x40474157, 0x34464147 }; // 'GAF4'
+//            ContainedFormats = new [] { "PNG", "P/4AG" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -284,7 +285,7 @@ namespace GameRes.Formats.Xuse
                 return entry;
             }
 
-            static readonly Regex DriveRe = new Regex (@"^(?:.+:)?\\+");
+            static readonly Regex DriveRe = new Regex (@"^(?:.+:|\.\.)?\\+");
         }
     }
 }

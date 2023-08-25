@@ -39,7 +39,7 @@ namespace GameRes.Formats.Kaguya
     [Export(typeof(ArchiveFormat))]
     public class ArcOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "ARI"; } }
+        public override string         Tag { get { return "ARC/ARI"; } }
         public override string Description { get { return "KaGuYa script engine resource archive"; } }
         public override uint     Signature { get { return 0x314c4657; } } // 'WFL1'
         public override bool  IsHierarchic { get { return true; } }
@@ -48,11 +48,12 @@ namespace GameRes.Formats.Kaguya
         public ArcOpener ()
         {
             Extensions = new string[] { "arc" };
+            ContainedFormats = new[] { "AP", "APS3", "OGG", "DAT/GENERIC" };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            var reader = new IndexReader();
+            var reader = new IndexReader (this);
             var dir = reader.ReadIndex (file);
             if (null == dir || 0 == dir.Count)
                 return null;
@@ -77,8 +78,14 @@ namespace GameRes.Formats.Kaguya
 
     internal class IndexReader
     {
+        ArchiveFormat   m_format;
         byte[]          m_name_buf = new byte[0x20];
         List<Entry>     m_dir = new List<Entry>();
+
+        public IndexReader (ArchiveFormat format)
+        {
+            m_format = format;
+        }
 
         public List<Entry> ReadIndex (ArcView file)
         {
@@ -163,7 +170,7 @@ namespace GameRes.Formats.Kaguya
             else if (1 == entry.Mode)
                 entry.Type = "image";
             else
-                entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name, m_format.ContainedFormats);
         }
 
         string ReadName (ArcView file, long offset, int name_len)
@@ -246,4 +253,9 @@ namespace GameRes.Formats.Kaguya
         }
         #endregion
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "TBL")]
+    [ExportMetadata("Target", "DAT/GENERIC")]
+    public class TblFormat : ResourceAlias { }
 }

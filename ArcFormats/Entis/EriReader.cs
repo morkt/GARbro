@@ -56,6 +56,7 @@ namespace GameRes.Formats.Entis
         float[]         m_ptrMatrixBuf;
         float[]         m_ptrIQParamBuf;
         byte[]          m_ptrIQParamTable;
+//        float[]         m_ptrBuffer2;
 
         sbyte[]         m_ptrBlockLineBuf;
         sbyte[]         m_ptrNextBlockBuf;
@@ -769,6 +770,7 @@ namespace GameRes.Formats.Entis
         {
             throw new NotImplementedException();
             /*
+
             if (m_nChannelCount < 3)
                 throw new InvalidFormatException();
             m_nDstPixelBytes = m_info.BPP >> 3;
@@ -1135,6 +1137,42 @@ namespace GameRes.Formats.Entis
                 ptrSrcLine += m_nBlockSize;
                 ptrDstLine += m_nDstLineBytes;
             }
+        }
+
+        void LossyRestoreRGB24_V9 ()
+        {
+            /*
+            int nLineOffset = 0;
+            int nBytesPerPixel = m_nDstPixelBytes;
+            int ptrDstLine = m_ptrDstBlock;
+
+            for (uint y = 0; y < m_nDstHeight; ++y)
+            {
+                int nOffsetPos = nLineOffset;
+                int ptrNextDst = ptrDstLine;
+
+                for (uint x = 0; x < m_nDstWidth; ++x)
+                {
+                    m_output[ptrNextDst  ] = RoundR32ToByte (m_ptrBuffer2[0][nOffsetPos]);
+                    m_output[ptrNextDst+1] = RoundR32ToByte (m_ptrBuffer2[1][nOffsetPos]);
+                    m_output[ptrNextDst+2] = RoundR32ToByte (m_ptrBuffer2[2][nOffsetPos]);
+                    ++nOffsetPos;
+                    ptrNextDst += nBytesPerPixel;
+                }
+                nLineOffset += m_nBlockSize;
+                ptrDstLine += m_nDstLineBytes;
+            }
+            */
+        }
+
+        static byte RoundR32ToByte (float r)
+        {
+            int n = Erisa.RoundR32ToInt (r);
+            if (n < 0)
+                return 0;
+            else if (n >= 0x100)
+                return 0xFF;
+            return (byte)n;
         }
 
         void RestoreDeltaRGBA32 ()

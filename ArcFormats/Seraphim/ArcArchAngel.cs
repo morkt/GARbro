@@ -28,6 +28,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [960920][Petit] Trouble Outsiders
+// [980220][Euphony Production] Happening Journey
+
 namespace GameRes.Formats.ArchAngel
 {
     [Export(typeof(ArchiveFormat))]
@@ -44,7 +47,7 @@ namespace GameRes.Formats.ArchAngel
             ContainedFormats = new[] { "CB" };
         }
 
-        static readonly string[] DefaultSections = { "image", "script", null };
+        static readonly string[] DefaultSections = { "image", "script", "" };
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -54,13 +57,7 @@ namespace GameRes.Formats.ArchAngel
             int file_count = file.View.ReadInt16 (0);
             if (!IsSaneCount (file_count))
                 return null;
-            uint index_pos = 2;
-            var size_table = new uint[file_count];
-            for (int i = 0; i < file_count; ++i)
-            {
-                size_table[i] = file.View.ReadUInt32 (index_pos);
-                index_pos += 4;
-            }
+            long index_pos = 2 + 4 * file_count;
             var section_table = new SortedDictionary<int, uint>();
             uint min_offset = (uint)file.MaxOffset;
             while (index_pos + 6 <= min_offset)
@@ -76,26 +73,34 @@ namespace GameRes.Formats.ArchAngel
             }
             var dir = new List<Entry> (file_count);
             int section_num = 0;
+            Func<string> get_type;
+            if (section_table.Count == DefaultSections.Length)
+                get_type = () => DefaultSections[section_num];
+            else
+                get_type = () => section_num > 0 ? "image" : "";
             foreach (var section in section_table)
             {
                 int i = section.Key;
                 uint base_offset = section.Value;
                 do
                 {
-                    uint size = size_table[i];
-                    var entry = new PackedEntry {
-                        Name = string.Format ("{0}-{1:D6}", section_num, i),
-                        Offset = base_offset,
-                        Size = size,
-                    };
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    if (section_num < DefaultSections.Length && DefaultSections[section_num] != null)
-                        entry.Type = DefaultSections[section_num];
-                    if ("script" == entry.Type)
-                        entry.IsPacked = true;
-                    dir.Add (entry);
-                    base_offset += size;
+                    uint size = file.View.ReadUInt32 (2 + i * 4);
+                    if (size > 0)
+                    {
+                        var entry = new PackedEntry
+                        {
+                            Name = string.Format("{0}-{1:D6}", section_num, i),
+                            Type = get_type(),
+                            Offset = base_offset,
+                            Size = size,
+                        };
+                        if (!entry.CheckPlacement(file.MaxOffset))
+                            return null;
+                        if ("script" == entry.Type)
+                            entry.IsPacked = true;
+                        dir.Add(entry);
+                        base_offset += size;
+                    }
                     ++i;
                 }
                 while (i < file_count && !section_table.ContainsKey (i));

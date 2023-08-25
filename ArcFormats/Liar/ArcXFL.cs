@@ -181,7 +181,7 @@ namespace GameRes.Formats.Liar
     }
 
     //[Export(typeof(ScriptFormat))]
-    public class GscFormat : ScriptFormat
+    public class GscFormat : GenericScriptFormat
     {
         public override string Tag { get { return "GSC"; } }
         public override string Description { get { return Strings.arcStrings.GSCDescription; } }

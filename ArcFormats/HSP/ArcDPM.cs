@@ -42,7 +42,7 @@ namespace GameRes.Formats.HSP
 
         public DpmOpener ()
         {
-            Extensions = new string[] { "dpm", "bin" };
+            Extensions = new string[] { "dpm", "bin", "dat" };
             Signatures = new uint[] { 0x584D5044, 0 };
         }
 

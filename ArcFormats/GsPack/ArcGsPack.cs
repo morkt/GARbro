@@ -230,7 +230,7 @@ namespace GameRes.Formats.Gs
     }
 
     [Export(typeof(ScriptFormat))]
-    public class GsScriptFormat : ScriptFormat
+    public class GsScriptFormat : GenericScriptFormat
     {
         public override string         Tag { get { return "SCW"; } }
         public override string Description { get { return "GsWin script file"; } }
@@ -239,16 +239,6 @@ namespace GameRes.Formats.Gs
         public GsScriptFormat ()
         {
             Signatures = new uint[] { 0x20574353, 0x35776353, 0x34776353 };
-        }
-
-        public override ScriptData Read (string name, Stream file)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Write (Stream file, ScriptData script)
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -45,13 +45,17 @@ namespace GameRes.Formats.Mink
 
         public FcFormat ()
         {
-            Signatures = new uint[] { 0x01184346, 0x00184346, 0x00204346, 0 };
+            // 'Fc' is same as 'FC' but has checksum byte appended at the end
+            Signatures = new uint[] {
+                0x00184346, 0x01184346, 0x00204346, 0x01204346,
+                0x00186346, 0x01186346, 0x00206346, 0x01206346,
+            };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (8);
-            if (!header.AsciiEqual ("FC"))
+            if (header[0] != 'F' || (header[1] & 0xDF) != 'C')
                 return null;
             int bpp = header[2];
             if (bpp != 24 && bpp != 32)
@@ -101,6 +105,22 @@ namespace GameRes.Formats.Mink
                 RestoreRgb (output);
             PixelFormat format = 32 == m_info.BPP ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             return ImageData.CreateFlipped (m_info, format, null, output, m_info.iWidth * 4);
+        }
+
+        unsafe internal static bool Checksum (byte[] input) // for reference
+        {
+            int length = (input.Length - 1) / 4;
+            fixed (byte* data8 = &input[0])
+            {
+                uint* data32 = (uint*)data8;
+                uint checksum = 0x8801;
+                for (int i = 0; i < length; ++i)
+                {
+                    checksum += data32[i];
+                }
+                byte sum = (byte)(checksum ^ (checksum >> 8) ^ (checksum >> 16) ^ (checksum >> 24));
+                return input[input.Length-1] == sum;
+            }
         }
 
         void UnpackRgb (uint[] output)

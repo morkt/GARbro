@@ -801,5 +801,17 @@ namespace GameRes.Formats.Properties {
                 this["SJDatTitle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("932")]
+        public int AFAEncodingCP {
+            get {
+                return ((int)(this["AFAEncodingCP"]));
+            }
+            set {
+                this["AFAEncodingCP"] = value;
+            }
+        }
     }
 }

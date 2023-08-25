@@ -104,13 +104,42 @@ namespace GameRes.Formats.Unity
                 Load2021 (reader);
                 return;
             }
-            if (type.Version != "2017.3.1f1")
+            if (type.Version != "2017.3.1f1" && type.Version != "2019.3.0f1" && type.Version != "2017.4.3f1")
             {
                 Load (reader);
                 if (0 == m_DataLength && type.Version.StartsWith ("2017.")) // "2017.2.0f3" || "2017.1.1p1"
                     reader.ReadInt64();
                 return;
             }
+            // type hash = [1E 87 D8 2D 4F D0 58 50 9A 3C 78 66 DB 0E 73 56]
+            m_Name = reader.ReadString();
+            reader.Align();
+            reader.ReadInt32(); // m_ForcedFallbackFormat
+            reader.ReadInt32(); // m_DownscaleFallback
+            m_Width = reader.ReadInt32();
+            m_Height = reader.ReadInt32();
+            m_CompleteImageSize = reader.ReadInt32();
+            m_TextureFormat = (TextureFormat)reader.ReadInt32();
+            m_MipCount = reader.ReadInt32();
+            m_IsReadable = reader.ReadBool();
+            reader.Align();
+            if ("2019.3.0f1" == type.Version) // type hash = [EE 6C 40 81 7D 29 51 92 9C DB 4F 5A 60 87 4F 5D]
+                reader.ReadInt32(); // m_StreamingMipmapsPriority
+            m_ImageCount = reader.ReadInt32();
+            m_TextureDimension = reader.ReadInt32();
+            m_FilterMode = reader.ReadInt32();
+            m_Aniso = reader.ReadInt32();
+            m_MipBias = reader.ReadFloat();
+            m_WrapMode = reader.ReadInt32(); // m_WrapU
+            reader.ReadInt32(); // m_WrapV
+            reader.ReadInt32(); // m_WrapW
+            reader.ReadInt32(); // m_LightmapFormat 
+            m_ColorSpace = reader.ReadInt32();
+            m_DataLength = reader.ReadInt32();
+        }
+
+        public void Load2017 (AssetReader reader)
+        {
             m_Name = reader.ReadString();
             reader.Align();
             reader.ReadInt32(); // m_ForcedFallbackFormat

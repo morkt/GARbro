@@ -34,6 +34,24 @@ namespace GameRes.Formats.Nonono
         public int  Seed;
     }
 
+    internal class NpfArchive : ArcFile
+    {
+        public readonly IRandomGenerator KeyGenerator;
+
+        public NpfArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, IRandomGenerator rnd)
+            : base (arc, impl, dir)
+        {
+            KeyGenerator = rnd;
+        }
+    }
+
+    internal interface IRandomGenerator
+    {
+        void SRand (int seed);
+
+        int Rand ();
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class NpfOpener : ArchiveFormat
     {
@@ -49,8 +67,28 @@ namespace GameRes.Formats.Nonono
         {
             if (file.View.ReadInt32 (4) != 4 || file.View.ReadInt32 (8) != 1)
                 return null;
+
+            foreach (var rnd in GetGenerators())
+            {
+                var dir = ReadIndex (file, rnd);
+                if (dir != null)
+                {
+                    return new NpfArchive (file, this, dir, rnd);
+                }
+            }
+            return null;
+        }
+
+        internal IEnumerable<IRandomGenerator> GetGenerators ()
+        {
+            yield return new RandomGenerator1 (DefaultSeed);
+            yield return new RandomGenerator2 (DefaultSeed);
+        }
+
+        List<Entry> ReadIndex (ArcView file, IRandomGenerator rnd)
+        {
             var header = file.View.ReadBytes (12, 20);
-            var rnd = new RandomGenerator (DefaultSeed);
+//            rnd.SRand (DefaultSeed); // generator already seeded by GetGenerators()
             Decrypt (header, 0, header.Length, rnd);
             if (!header.AsciiEqual ("FAT "))
                 return null;
@@ -84,16 +122,16 @@ namespace GameRes.Formats.Nonono
                 pos += 20;
                 name_pos += name_length;
             }
-            return new ArcFile (file, this, dir);
+            return dir;
         }
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var nent = entry as NpfEntry;
-            if (null == nent)
-                return base.OpenEntry (arc, entry);
+            var narc = (NpfArchive)arc;
+            var nent = (NpfEntry)entry;
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
-            var rnd = new RandomGenerator (nent.Seed);
+            var rnd = narc.KeyGenerator;
+            rnd.SRand (nent.Seed);
             Decrypt (data, 0, data.Length, rnd);
             return new BinMemoryStream (data, entry.Name);
         }
@@ -106,20 +144,20 @@ namespace GameRes.Formats.Nonono
             return new ImgXDecoder (input);
         }
 
-        internal void Decrypt (byte[] data, int pos, int count, RandomGenerator rnd)
+        internal void Decrypt (byte[] data, int pos, int count, IRandomGenerator rnd)
         {
             for (int i = 0; i < count; ++i)
                 data[pos + i] ^= (byte)rnd.Rand();
         }
     }
 
-    internal class RandomGenerator
+    internal class RandomGenerator1 : IRandomGenerator
     {
         int      m_seed;
 
         const int DefaultSeed = 0x67895;
 
-        public RandomGenerator (int seed = DefaultSeed)
+        public RandomGenerator1 (int seed = DefaultSeed)
         {
             SRand (seed);
         }
@@ -139,6 +177,32 @@ namespace GameRes.Formats.Nonono
             m_seed ^= (((m_seed >> 1) ^ m_seed) >> 3)
                     ^ (((m_seed << 1) ^ m_seed) << 3);
             return m_seed;
+        }
+    }
+
+    internal class RandomGenerator2 : IRandomGenerator
+    {
+        int     m_seed1;
+        int     m_seed2;
+
+        const int DefaultSeed = 0x67895;
+
+        public RandomGenerator2 (int seed = DefaultSeed)
+        {
+            SRand (seed);
+        }
+
+        public void SRand (int seed)
+        {
+            m_seed1 = seed;
+            m_seed2 = ((seed >> 12) ^ (seed << 18)) - 0x579E2B8D;
+        }
+
+        public int Rand ()
+        {
+            int n = m_seed2 + ((m_seed1 >> 10) ^ (m_seed1 << 14));
+            m_seed2 = n - 0x15633649 + ((m_seed2 >> 12) ^ (m_seed2 << 18));
+            return m_seed2;
         }
     }
 }
