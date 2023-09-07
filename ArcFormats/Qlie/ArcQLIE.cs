@@ -126,16 +126,32 @@ namespace GameRes.Formats.Qlie
                 }
                 var enc = QlieEncryption.Create (file, index.PackVersion, arc_key);
                 List<Entry> dir = null;
-                try
+                if (index.PackVersion.Major > 1)
                 {
                     dir = index.Read (enc, key_file, use_pack_keyfile);
                 }
-                catch
+                else
                 {
-                    if (index.PackVersion.Major == 1)
+                    // PackVer1.0 is a total mess -- it could either use
+                    //  • V1 index layout and V1 encryption
+                    //  • V1 index layout and V2 encryption
+                    //  • V2 index layout and V2 encryption
+                    // all with the same 'FilePackVer1.0' signature
+                    var possibleEncs = new IEncryption[] {
+                        enc, new EncryptionV2 (IndexLayout.WithoutHash), new EncryptionV2()
+                    };
+                    foreach (var v1enc in possibleEncs)
                     {
-                        enc = new EncryptionV2();
-                        dir = index.Read (enc, key_file, use_pack_keyfile);
+                        try
+                        {
+                            dir = index.Read (v1enc, key_file, use_pack_keyfile);
+                            if (dir != null)
+                            {
+                                enc = v1enc;
+                                break;
+                            }
+                        }
+                        catch { }
                     }
                 }
                 if (null == dir)
@@ -400,6 +416,8 @@ namespace GameRes.Formats.Qlie
             for (int i = 0; i < m_count; ++i)
             {
                 int name_length = m_index.ReadUInt16();
+                if (name_length > 0x100) // invalid encryption version
+                    return null;
                 if (enc.IsUnicode)
                     name_length *= 2;
                 if (name_length > m_name_buffer.Length)
@@ -418,8 +436,8 @@ namespace GameRes.Formats.Qlie
                 entry.UnpackedSize = m_index.ReadUInt32();    // [+0C]
                 entry.IsPacked    = 0 != m_index.ReadInt32(); // [+10]
                 entry.EncryptionMethod = m_index.ReadInt32(); // [+14]
-                if (m_pack_version.Major > 1)
-                    entry.Hash = m_index.ReadUInt32();            // [+18]
+                if (enc.IndexLayout == IndexLayout.WithHash)
+                    entry.Hash = m_index.ReadUInt32();        // [+18]
                 entry.KeyFile = key_file;
                 if (read_pack_keyfile && entry.Name.Contains ("pack_keyfile"))
                 {
