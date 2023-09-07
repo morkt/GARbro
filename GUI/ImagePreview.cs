@@ -79,9 +79,9 @@ namespace GARbro.GUI
             public string Name { get; set; }
             public Entry Entry { get; set; }
 
-            public bool IsEqual (IEnumerable<string> path, string name)
+            public bool IsEqual (IEnumerable<string> path, Entry entry)
             {
-                return Path != null && path.SequenceEqual (Path) && name.Equals (Name);
+                return Path != null && path.SequenceEqual (Path) && Entry == entry;
             }
         }
 
@@ -139,7 +139,7 @@ namespace GARbro.GUI
         /// </summary>
         private void PreviewEntry (Entry entry)
         {
-            if (m_current_preview.IsEqual (ViewModel.Path, entry.Name))
+            if (m_current_preview.IsEqual (ViewModel.Path, entry))
                 return;
             UpdatePreviewPane (entry);
         }
