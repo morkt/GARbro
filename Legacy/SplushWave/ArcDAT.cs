@@ -27,6 +27,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Windows.Media;
+
+// [030817][Splush Wave] Knock Out -Taisengata Datsui Mahjong-
 
 namespace GameRes.Formats.SplushWave
 {
@@ -128,6 +131,93 @@ namespace GameRes.Formats.SplushWave
                 }
             }
             return new BinMemoryStream (output, 0, dst);
+        }
+
+        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        {
+            var fent = (FlkEntry)entry;
+            var input = BinaryStream.FromStream (OpenEntry (arc, fent), fent.Name);
+            if ((fent.Flags & 0x10) == 0)
+                return ImageFormatDecoder.Create (input);
+            try
+            {
+                var info = Swg.ReadMetaData (input) as SwgMetaData;
+                if (null == info)
+                {
+                    input.Position = 0;
+                    return new ImageFormatDecoder(input);
+                }
+                return new Swg1ImageDecoder (input, info);
+            }
+            catch
+            {
+                input.Dispose();
+                throw;
+            }
+        }
+
+        static readonly ResourceInstance<SwgFormat> s_swg = new ResourceInstance<SwgFormat> ("SWG");
+
+        internal static SwgFormat Swg { get => s_swg.Value; }
+    }
+
+    internal sealed class Swg1ImageDecoder : BinaryImageDecoder
+    {
+        SwgMetaData     m_info;
+
+        public Swg1ImageDecoder (IBinaryStream input, SwgMetaData info) : base (input, info)
+        {
+            SourceFormat = DatOpener.Swg;
+            m_info = info;
+        }
+
+        static readonly byte[] PlaneMap = { 3, 2, 1, 0 };
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = m_info.DataOffset;
+            int stride = 4 * m_info.iWidth;
+            int plane_size = m_info.iWidth * m_info.iHeight;
+            var output = new byte[stride * m_info.iHeight];
+            ushort[] ctl_buf = new ushort[m_info.iHeight];
+            for (int c = 0; c < 4; ++c)
+            {
+                int compress_method = ReadU16BE();
+                if (0 == compress_method)
+                {
+                    int dst = PlaneMap[c] + stride * (m_info.iHeight - 1);
+                    for (int y = 0; y < m_info.iHeight; ++y)
+                    {
+                        for (int x = 0; x < stride; x += 4)
+                        {
+                            output[dst+x] = m_input.ReadUInt8();
+                        }
+                        dst -= stride;
+                    }
+                    continue;
+                }
+                if (compress_method != 1)
+                    throw new InvalidFormatException();
+                for (int y = 0; y < m_info.iHeight; ++y)
+                {
+                    ctl_buf[y] = ReadU16BE();
+                }
+                int row = PlaneMap[c];
+                for (int y = 0; y < m_info.iHeight; ++y)
+                {
+                    int dst = row;
+                    int row_size = ctl_buf[y];
+                    SwgFormat.DecompressRow (m_input, row_size, output, dst, 4);
+                    row += stride;
+                }
+            }
+            return ImageData.Create (m_info, PixelFormats.Bgra32, null, output, stride);
+        }
+
+        ushort ReadU16BE ()
+        {
+            ushort le = m_input.ReadUInt16();
+            return (ushort)(le >> 8 | le << 8);
         }
     }
 }

@@ -23,22 +23,32 @@
 // IN THE SOFTWARE.
 //
 
-using GameRes.Utility;
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
 
+// [970905][Ucom] Winter Kiss
 // [980626][Love Gun] ACE OF SPADES 2
 
 namespace GameRes.Formats.HyperWorks
 {
+    internal class I24MetaData : ImageMetaData
+    {
+        public byte Version;
+    }
+
     [Export(typeof(ImageFormat))]
     public class I24Format : ImageFormat
     {
-        public override string         Tag { get { return "I24"; } }
-        public override string Description { get { return "HyperWorks image format"; } }
-        public override uint     Signature { get { return 0x41343249; } } // 'I24A'
+        public override string         Tag => "I24";
+        public override string Description => "HyperWorks RGB image format";
+        public override uint     Signature => 0x41343249; // 'I24A'
+
+        public I24Format ()
+        {
+            Signatures = new[] { 0x41343249u, 0x20343249u };
+        }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
@@ -46,16 +56,17 @@ namespace GameRes.Formats.HyperWorks
             int bpp = header.ToInt16 (0x10);
             if (bpp != 24)
                 return null;
-            return new ImageMetaData {
+            return new I24MetaData {
                 Width  = header.ToUInt16 (0xC),
                 Height = header.ToUInt16 (0xE),
                 BPP    = bpp,
+                Version = header[3],
             };
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var reader = new I24Decoder (file, info);
+            var reader = new I24Decoder (file, (I24MetaData)info);
             return reader.Unpack();
         }
 
@@ -68,9 +79,9 @@ namespace GameRes.Formats.HyperWorks
     internal class I24Decoder
     {
         IBinaryStream   m_input;
-        ImageMetaData   m_info;
+        I24MetaData     m_info;
 
-        public I24Decoder (IBinaryStream input, ImageMetaData info)
+        public I24Decoder (IBinaryStream input, I24MetaData info)
         {
             m_input = input;
             m_info = info;
@@ -170,14 +181,24 @@ namespace GameRes.Formats.HyperWorks
                     short s2 = shift_table[shift_idx + 1];
                     if (shift_token != 0)
                     {
-                        while (shift_token --> 0)
+                        if (m_info.Version == 'A')
                         {
-                            shift_table[shift_idx]   = shift_table[shift_idx - 2];
-                            shift_table[shift_idx+1] = shift_table[shift_idx - 1];
-                            shift_idx -= 2;
+                            while (shift_idx > 0)
+                            {
+                                shift_table[shift_idx]   = shift_table[shift_idx - 2];
+                                shift_table[shift_idx+1] = shift_table[shift_idx - 1];
+                                shift_idx -= 2;
+                            }
+                            shift_table[0] = s1;
+                            shift_table[1] = s2;
                         }
-                        shift_table[0] = s1;
-                        shift_table[1] = s2;
+                        else
+                        {
+                            shift_table[shift_idx    ] = shift_table[shift_idx - 2];
+                            shift_table[shift_idx + 1] = shift_table[shift_idx - 1];
+                            shift_table[shift_idx - 2] = s1;
+                            shift_table[shift_idx - 1] = s2;
+                        }
                     }
                     int src = 4 * (x + s1);
                     if (color_token >= 216)

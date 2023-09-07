@@ -1,8 +1,8 @@
-//! \file       ArcK3.cs
-//! \date       2018 Feb 09
-//! \brief      Toyo GSX resource archive.
+//! \file       ArcK5.cs
+//! \date       2023 Aug 27
+//! \brief      GSX engine resource archive.
 //
-// Copyright (C) 2018 by morkt
+// Copyright (C) 2023 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -25,43 +25,44 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-
-// [000225][Light Plan] My Fair Link Yousei Byakuya Monogatari
+using System.IO;
+using System.Text;
 
 namespace GameRes.Formats.Gsx
 {
     [Export(typeof(ArchiveFormat))]
-    public class K3Opener : ArchiveFormat
+    public class K5Opener : ArchiveFormat
     {
-        public override string         Tag { get { return "K3"; } }
-        public override string Description { get { return "Toyo GSX resource archive"; } }
-        public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override string         Tag => "K5";
+        public override string Description => "GSX engine resource archive";
+        public override uint     Signature => 0x01354B; // 'K5'
+        public override bool  IsHierarchic => true;
+        public override bool      CanWrite => false;
+
+        public K5Opener ()
+        {
+            ContainedFormats = new[] { "K4", "OGG" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "K3"))
-                return null;
-            int count = file.View.ReadInt32 (2);
+            int count = file.View.ReadInt32 (4);
             if (!IsSaneCount (count))
                 return null;
-            uint index_offset = 6;
-            long base_offset = index_offset + count * 0x40;
+            uint index_offset = file.View.ReadUInt32 (8);
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                uint offset = file.View.ReadUInt32 (index_offset);
-                uint size = file.View.ReadUInt32 (index_offset+4);
-                int type = file.View.ReadInt32 (index_offset+0xC);
-                var name = file.View.ReadString (index_offset+0x20, 0x20);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = base_offset + offset;
-                entry.Size = size;
+                var dir_name = file.View.ReadString (index_offset,      0x80, Encoding.Unicode);
+                var name     = file.View.ReadString (index_offset+0x80, 0x40, Encoding.Unicode);
+                name = Path.Combine (dir_name, name);
+                var entry = Create<Entry> (name);
+                entry.Offset = file.View.ReadUInt32 (index_offset+0xC8);
+                entry.Size   = file.View.ReadUInt32 (index_offset+0xCC);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
-                index_offset += 0x40;
+                index_offset += 0x100;
             }
             return new ArcFile (file, this, dir);
         }
