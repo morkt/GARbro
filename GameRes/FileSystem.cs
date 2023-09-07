@@ -263,7 +263,9 @@ namespace GameRes
 
         public bool FileExists (string filename)
         {
-            return m_dir.ContainsKey (CombinePath (CurrentDirectory, filename));
+            return m_dir.ContainsKey (filename)
+                || !string.IsNullOrEmpty (CurrentDirectory)
+                   && m_dir.ContainsKey (CombinePath (CurrentDirectory, filename));
         }
 
         public Stream OpenStream (Entry entry)
@@ -407,6 +409,8 @@ namespace GameRes
         {
             Entry entry = null;
             if (m_dir.TryGetValue (filename, out entry))
+                return entry;
+            if (m_dir.TryGetValue (CombinePath (CurrentDirectory, filename), out entry))
                 return entry;
             var dir_name = filename + PathDelimiter;
             if (m_dir.Keys.Any (n => n.StartsWith (dir_name)))
