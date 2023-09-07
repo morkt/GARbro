@@ -220,6 +220,13 @@ namespace GameRes
                 file.Read (pixels, dst, stride);
                 for (int x = 3; !has_alpha && x < stride; x += 4)
                     has_alpha = pixels[dst+x] != 0;
+                /* // sometimes alpha channel is inverted
+                for (int x = 3; x < stride; x += 4)
+                {
+                    pixels[dst+x] ^= 0xFF;
+                    has_alpha = has_alpha || pixels[dst+x] != 0;
+                }
+                */
             }
             PixelFormat format = has_alpha ? PixelFormats.Bgra32 : PixelFormats.Bgr32;
             return ImageData.Create (info, format, null, pixels, stride);
