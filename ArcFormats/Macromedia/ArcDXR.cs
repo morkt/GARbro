@@ -51,7 +51,7 @@ namespace GameRes.Formats.Macromedia
         }
 
         internal static readonly HashSet<string> RawChunks = new HashSet<string> {
-            "RTE0", "RTE1", "FXmp", "VWFI", "VWSC", "Lscr", "STXT",
+            "RTE0", "RTE1", "FXmp", "VWFI", "VWSC", "Lscr", "STXT", "XMED", "snd "
         };
 
         internal bool ConvertText = true;
@@ -73,9 +73,11 @@ namespace GameRes.Formats.Macromedia
                 ImportMedia (dir_file, dir);
                 foreach (MemoryMapEntry entry in dir_file.MMap.Dir)
                 {
-                    if (RawChunks.Contains (entry.FourCC))
+                    if (entry.Size != 0 && RawChunks.Contains (entry.FourCC))
                     {
                         entry.Name = string.Format ("{0:D6}.{1}", entry.Id, entry.FourCC.Trim());
+                        if ("snd " == entry.FourCC)
+                            entry.Type = "audio";
                         dir.Add (entry);
                     }
                 }
@@ -98,6 +100,8 @@ namespace GameRes.Formats.Macromedia
 
         internal Stream OpenSound (ArcFile arc, SoundEntry entry)
         {
+            if (null == entry.Header)
+                return base.OpenEntry (arc, entry);
             var header = arc.File.View.ReadBytes (entry.Header.Offset, entry.Header.Size);
             var format = entry.DeserializeHeader (header);
             var riff = new MemoryStream (0x2C);
@@ -147,11 +151,30 @@ namespace GameRes.Formats.Macromedia
 
         Entry ImportSound (CastMember sound, DirectorFile dir_file)
         {
-            var sndHrec = dir_file.KeyTable.FindByCast (sound.Id, "sndH");
-            var sndSrec = dir_file.KeyTable.FindByCast (sound.Id, "sndS");
+            var name = sound.Info.Name;
+            KeyTableEntry sndHrec = null, sndSrec = null;
+            foreach (var elem in dir_file.KeyTable.Table.Where (e => e.CastId == sound.Id))
+            {
+                if ("ediM" == elem.FourCC)
+                {
+                    var ediM = dir_file.MMap[elem.Id];
+                    if (string.IsNullOrEmpty (name))
+                        name = ediM.Id.ToString ("D6");
+                    return new Entry
+                    {
+                        Name   = name + ".mp3",
+                        Type   = "audio",
+                        Offset = ediM.Offset,
+                        Size   = ediM.Size,
+                    };
+                }
+                if (null == sndHrec && "sndH" == elem.FourCC)
+                    sndHrec = elem;
+                else if (null == sndSrec && "sndS" == elem.FourCC)
+                    sndSrec = elem;
+            }
             if (sndHrec == null || sndSrec == null)
                 return null;
-            var name = sound.Info.Name;
             var sndH = dir_file.MMap[sndHrec.Id];
             var sndS = dir_file.MMap[sndSrec.Id];
             if (string.IsNullOrEmpty (name))
@@ -168,7 +191,15 @@ namespace GameRes.Formats.Macromedia
 
         Entry ImportBitmap (CastMember bitmap, DirectorFile dir_file, Cast cast)
         {
-            var bitd = dir_file.KeyTable.FindByCast (bitmap.Id, "BITD");
+//            var bitd = dir_file.KeyTable.FindByCast (bitmap.Id, "BITD");
+            KeyTableEntry bitd = null, alfa = null;
+            foreach (var elem in dir_file.KeyTable.Table.Where (e => e.CastId == bitmap.Id))
+            {
+                if (null == bitd && "BITD" == elem.FourCC)
+                    bitd = elem;
+                else if (null == alfa && "ALFA" == elem.FourCC)
+                    alfa = elem;
+            }
             if (bitd == null)
                 return null;
             var entry = new BitmapEntry();
@@ -188,6 +219,8 @@ namespace GameRes.Formats.Macromedia
                 if (clut != null)
                     entry.PaletteRef = dir_file.MMap[clut.Id];
             }
+            if (alfa != null)
+                entry.AlphaRef = dir_file.MMap[alfa.Id];
             return entry;
         }
 
@@ -214,13 +247,27 @@ namespace GameRes.Formats.Macromedia
                 case -101:  palette = Palettes.SystemWindows; break;
                 }
             }
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
             var info = new ImageMetaData {
                 Width = (uint)(bent.Right - bent.Left),
                 Height = (uint)(bent.Bottom - bent.Top),
                 BPP = bent.BitDepth
             };
-            return new BitdDecoder (input.AsStream, info, palette);
+            byte[] alpha_channel = null;
+            if (bent.AlphaRef != null)
+            {
+                using (var alpha = arc.File.CreateStream (bent.AlphaRef.Offset, bent.AlphaRef.Size))
+                {
+                    var alpha_info = new ImageMetaData {
+                        Width = info.Width,
+                        Height = info.Height,
+                        BPP = 8,
+                    };
+                    var decoder = new BitdDecoder (alpha, alpha_info, null);
+                    alpha_channel = decoder.Unpack8bpp();
+                }
+            }
+            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            return new BitdDecoder (input.AsStream, info, palette) { AlphaChannel = alpha_channel };
         }
 
         BitmapPalette ReadPalette (byte[] data)
@@ -246,6 +293,7 @@ namespace GameRes.Formats.Macromedia
         public int  BitDepth;
         public int  Palette;
         public Entry PaletteRef;
+        public Entry AlphaRef;
 
         public void DeserializeHeader (byte[] data)
         {
