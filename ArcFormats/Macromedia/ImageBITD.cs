@@ -215,11 +215,12 @@ namespace GameRes.Formats.Macromedia
         ImageData       m_image;
         BitmapPalette   m_palette;
 
-        public Stream            Source { get => m_input; }
-        public ImageFormat SourceFormat { get => null; }
-        public ImageMetaData       Info { get => m_info; }
-        public ImageData          Image { get => m_image ?? (m_image = GetImageData()); }
+        public Stream            Source => m_input;
+        public ImageFormat SourceFormat => null;
+        public ImageMetaData       Info => m_info;
+        public ImageData          Image => m_image ?? (m_image = GetImageData());
         public PixelFormat       Format { get; private set; }
+        public byte[]      AlphaChannel { get; set; }
 
         public BitdDecoder (Stream input, ImageMetaData info, BitmapPalette palette)
         {
@@ -230,7 +231,8 @@ namespace GameRes.Formats.Macromedia
             m_stride = (m_width * m_info.BPP + 7) / 8;
             m_stride = (m_stride + 1) & ~1;
             m_output = new byte[m_stride * m_height];
-            Format = info.BPP ==  4 ? PixelFormats.Indexed4
+            Format = info.BPP ==  2 ? PixelFormats.Indexed2
+                   : info.BPP ==  4 ? PixelFormats.Indexed4
                    : info.BPP ==  8 ? PixelFormats.Indexed8
                    : info.BPP == 16 ? PixelFormats.Bgr555
                                     : PixelFormats.Bgr32;
@@ -239,14 +241,46 @@ namespace GameRes.Formats.Macromedia
 
         protected ImageData GetImageData ()
         {
+            m_input.Position = 0;
             if (Info.BPP <= 8)
                 Unpack8bpp();
             else
                 UnpackChannels (Info.BPP / 8);
+            if (AlphaChannel != null)
+            {
+                if (Info.BPP != 32)
+                {
+                    BitmapSource bitmap = BitmapSource.Create (Info.iWidth, Info.iHeight, ImageData.DefaultDpiX, ImageData.DefaultDpiY, Format, m_palette, m_output, m_stride);
+                    bitmap = new FormatConvertedBitmap (bitmap, PixelFormats.Bgr32, null, 0);
+                    m_stride = bitmap.PixelWidth * 4;
+                    m_output = new byte[bitmap.PixelHeight * m_stride];
+                    bitmap.CopyPixels (m_output, m_stride, 0);
+                }
+                ApplyAlphaChannel (AlphaChannel);
+                Format = PixelFormats.Bgra32;
+            }
             return ImageData.Create (m_info, Format, m_palette, m_output, m_stride);
         }
 
-        void Unpack8bpp ()
+        void ApplyAlphaChannel (byte[] alpha)
+        {
+            int alpha_stride = (m_width + 1) & ~1;
+            int src = 0;
+            int pdst = 3;
+            for (int y = 0; y < m_height; ++y)
+            {
+                int dst = pdst;
+                for (int x = 0; x < m_width; ++x)
+                {
+                    m_output[dst] = alpha[src+x];
+                    dst += 4;
+                }
+                src += alpha_stride;
+                pdst += m_stride;
+            }
+        }
+
+        public byte[] Unpack8bpp ()
         {
             for (int line = 0; line < m_output.Length; line += m_stride)
             {
@@ -277,6 +311,7 @@ namespace GameRes.Formats.Macromedia
                     }
                 }
             }
+            return m_output;
         }
 
         public void UnpackChannels (int channels)
