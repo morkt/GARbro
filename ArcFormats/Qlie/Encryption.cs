@@ -33,6 +33,8 @@ namespace GameRes.Formats.Qlie
     {
         bool IsUnicode { get; }
 
+        IndexLayout IndexLayout { get; }
+
         uint CalculateHash (byte[] data, int length);
 
         string DecryptName (byte[] name, int name_length);
@@ -40,9 +42,17 @@ namespace GameRes.Formats.Qlie
         void DecryptEntry (byte[] data, int offset, int length, QlieEntry entry);
     }
 
+    internal enum IndexLayout
+    {
+        WithoutHash,
+        WithHash
+    }
+
     internal abstract class QlieEncryption : IEncryption
     {
-        public virtual bool IsUnicode { get { return false; } }
+        public virtual bool IsUnicode => false;
+
+        public virtual IndexLayout IndexLayout => IndexLayout.WithHash;
 
         /// <summary>
         /// Hash generated from the key data contained within archive index.
@@ -77,6 +87,8 @@ namespace GameRes.Formats.Qlie
 
     internal class EncryptionV1 : QlieEncryption
     {
+        public override IndexLayout IndexLayout => IndexLayout.WithoutHash;
+
         public EncryptionV1 ()
         {
             NameKey = 0xC4;
@@ -126,10 +138,15 @@ namespace GameRes.Formats.Qlie
 
     internal class EncryptionV2 : QlieEncryption
     {
-        public EncryptionV2 ()
+        public override IndexLayout IndexLayout => m_layout;
+
+        private IndexLayout m_layout;
+
+        public EncryptionV2 (IndexLayout layout = IndexLayout.WithHash)
         {
             NameKey = 0xC4;
             ArcKey = 0;
+            m_layout = layout;
         }
 
         public override uint CalculateHash (byte[] data, int length)
