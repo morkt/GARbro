@@ -440,9 +440,22 @@ namespace GameRes
                 {
                     byte* s = m_mem + (offset - m_offset);
                     uint string_length = 0;
-                    while (string_length < size && 0 != s[string_length])
+                    // enc.WindowsCodePage property might throw an exception for some encodings, while
+                    // CodePage is just a direct field access.
+                    if (enc.CodePage == 1200 || enc.CodePage == 1201) // for UTF-16 encodings stop marker is 2-bytes long
                     {
-                        ++string_length;
+                        ushort* u = (ushort*)s;
+                        while (string_length + 1 < size && 0 != u[string_length >> 1])
+                        {
+                            string_length += 2;
+                        }
+                    }
+                    else
+                    {
+                        while (string_length < size && 0 != s[string_length])
+                        {
+                            ++string_length;
+                        }
                     }
                     return new string ((sbyte*)s, 0, (int)string_length, enc);
                 }
