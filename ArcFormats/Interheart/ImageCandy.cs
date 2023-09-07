@@ -48,7 +48,7 @@ namespace GameRes.Formats.Interheart
 
         public CandyFormat ()
         {
-            Signatures = new uint[] { 0x0E00, 0 };
+            Signatures = new uint[] { 0x0E00, 0x80020A00, 0 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
@@ -82,7 +82,7 @@ namespace GameRes.Formats.Interheart
             }
             else
                 return null;
-            if (info.Version != 1 && info.Version != 2 || info.BPP < 8 || info.BPP > 32)
+            if (info.Version != 1 && info.Version != 2 || info.BPP < 1 || info.BPP > 32)
                 return null;
             return info;
         }
@@ -91,7 +91,7 @@ namespace GameRes.Formats.Interheart
         {
             var reader = new CandyDecoder (file, (CandyMetaData)info);
             var pixels = reader.Unpack();
-            return ImageData.Create (info, reader.Format, reader.Palette, pixels);
+            return ImageData.Create (info, reader.Format, reader.Palette, pixels, reader.Stride);
         }
 
         public override void Write (Stream file, ImageData image)
@@ -113,6 +113,7 @@ namespace GameRes.Formats.Interheart
 
         public PixelFormat    Format { get; private set; }
         public BitmapPalette Palette { get; private set; }
+        public int            Stride { get { return m_stride; } }
 
         public CandyDecoder (IBinaryStream input, CandyMetaData info)
         {
@@ -133,6 +134,12 @@ namespace GameRes.Formats.Interheart
                 m_stride = m_width * 4;
                 Format = PixelFormats.Bgra32;
             }
+            else if (1 == info.BPP)
+            {
+                m_pixel_size = 1;
+                m_stride = (m_width + 7) / 8;
+                Format = PixelFormats.Indexed1;
+            }
             else
             {
                 m_pixel_size = 1;
@@ -148,6 +155,8 @@ namespace GameRes.Formats.Interheart
             if (m_colors > 0)
                 Palette = ReadPalette();
             LzUnpack();
+            if (1 == m_info.BPP)
+                return m_output;
             return RestorePixels();
         }
 
