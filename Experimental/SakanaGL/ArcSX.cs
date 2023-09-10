@@ -36,17 +36,10 @@ namespace GameRes.Formats.Sakana
 {
     internal class SxEntry : PackedEntry
     {
-        public int      Storage;
         public ushort   Flags;
         public ushort   ArcIndex;
 
         public bool IsEncrypted  { get { return 0 == (Flags & 0x10); } }
-    }
-
-    internal class SxStorage
-    {
-        public uint Size;
-        public ulong Timestamp;
     }
 
     [Export(typeof(ArchiveFormat))]
@@ -166,20 +159,6 @@ namespace GameRes.Formats.Sakana
                 }
             }
         }
-
-        internal static string FindSxName(string name)
-        {
-            var base_name = Path.GetFileName (name);
-            var file_name = Path.GetFileNameWithoutExtension (base_name);
-            for (var i = 1; i <= file_name.Length; i++)
-            {
-                var sx_name = file_name.Substring (0, i) + "(00).sx";
-                sx_name = VFS.ChangeFileName (name, sx_name);
-                if (VFS.FileExists (sx_name))
-                    return sx_name;
-            }
-            return name;
-        }
     }
 
     internal class SxIndexDeserializer
@@ -215,7 +194,6 @@ namespace GameRes.Formats.Sakana
                 uint offset  = Binary.BigEndian (m_index.ReadUInt32());
                 uint size    = Binary.BigEndian (m_index.ReadUInt32());
                 var entry = new SxEntry {
-                    Storage = storage,
                     Flags  = flags,
                     Offset = (long)offset << 4,
                     Size   = size,
