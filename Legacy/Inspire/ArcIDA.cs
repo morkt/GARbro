@@ -30,25 +30,31 @@ using System.IO;
 using System.Text;
 using GameRes.Compression;
 
+// [971205][Azlocks] Isle Mystique
 // [991001][Inspire] days innocent
 // [000707][inspire] ambience
 
 namespace GameRes.Formats.Inspire
 {
-    internal class IdaEntry : Entry
+    internal class IdaEntry : PackedEntry
     {
         public uint Flags;
         public uint Key;
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class PakOpener : ArchiveFormat
+    public class IdaOpener : ArchiveFormat
     {
         public override string         Tag { get { return "IDA"; } }
         public override string Description { get { return "Inspire resource archive"; } }
         public override uint     Signature { get { return 0x464158; } } // 'XAF'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
+
+        public IdaOpener ()
+        {
+            Extensions = new[] { "ida", "mha" };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -58,8 +64,9 @@ namespace GameRes.Formats.Inspire
             using (var index = file.CreateStream())
             {
                 var dir = new List<Entry>();
+                bool has_packed = false;
                 long index_pos = 8;
-                for (;;)
+                do
                 {
                     index.Position = index_pos;
                     uint entry_length = index.ReadUInt32();
@@ -76,15 +83,27 @@ namespace GameRes.Formats.Inspire
 
                     var entry = FormatCatalog.Instance.Create<IdaEntry> (name);
                     entry.Offset = offset;
-                    entry.Size   = size;
-                    if (!entry.CheckPlacement (file.MaxOffset))
+                    entry.Size   = entry.UnpackedSize = size;
+                    if (offset > file.MaxOffset || offset < index_pos)
                         return null;
+                    entry.IsPacked = (flags & 0x14) != 0;
                     entry.Flags = flags;
                     entry.Key = key;
+                    has_packed = has_packed || entry.IsPacked;
                     dir.Add (entry);
                 }
+                while (index_pos < dir[0].Offset);
                 if (0 == dir.Count)
                     return null;
+                if (has_packed) // set proper sizes
+                {
+                    long last_offset = file.MaxOffset;
+                    for (int i = dir.Count - 1; i >= 0; --i)
+                    {
+                        dir[i].Size = (uint)(last_offset - dir[i].Offset);
+                        last_offset = dir[i].Offset;
+                    }
+                }
                 return new ArcFile (file, this, dir);
             }
         }

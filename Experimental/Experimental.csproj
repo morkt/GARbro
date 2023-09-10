@@ -150,6 +150,8 @@
     <Compile Include="Cabinet\ArcCAB.cs" />
     <Compile Include="CellWorks\ArcDB.cs" />
     <Compile Include="Artemis\GplexBuffers.cs" />
+    <Compile Include="Microsoft\ArcEXE.cs" />
+    <Compile Include="Microsoft\ArcNE.cs" />
     <Compile Include="Opus\AudioOPUS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RPGMaker\ArcRGSS.cs" />

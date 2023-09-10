@@ -30,6 +30,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace GameRes.Formats.Sakana
 {
@@ -37,6 +38,7 @@ namespace GameRes.Formats.Sakana
     {
         public int      Storage;
         public ushort   Flags;
+        public ushort   ArcIndex;
 
         public bool IsEncrypted  { get { return 0 == (Flags & 0x10); } }
     }
@@ -57,11 +59,23 @@ namespace GameRes.Formats.Sakana
         public override bool      CanWrite { get { return false; } }
 
         const uint DefaultKey = 0x2E76034B;
+        static readonly Regex ArchiveNameRe = new Regex (@"^(.*)-([^-]+)$");
         
         public override ArcFile TryOpen (ArcView file)
         {
-            var sx_name = FindSxName (file.Name);
-            if (!VFS.FileExists (sx_name) || file.Name.Equals (sx_name, StringComparison.InvariantCultureIgnoreCase))
+            var base_name = Path.GetFileNameWithoutExtension (file.Name);
+            var sx_name = base_name.Substring (0, 4) + "(00).sx";
+            sx_name = VFS.ChangeFileName (file.Name, sx_name);
+            if (!VFS.FileExists (sx_name))
+            {
+                var match = ArchiveNameRe.Match (base_name);
+                if (!match.Success)
+                    return null;
+                sx_name = VFS.ChangeFileName (file.Name, match.Groups[1] + "(00).sx");
+                if (!VFS.FileExists (sx_name))
+                    return null;
+            }
+            if (file.Name.Equals (sx_name, StringComparison.OrdinalIgnoreCase))
                 return null;
             byte[] index_data;
             using (var sx = VFS.OpenView (sx_name))
@@ -86,6 +100,8 @@ namespace GameRes.Formats.Sakana
             {
                 var reader = new SxIndexDeserializer (index, file.MaxOffset);
                 var dir = reader.Deserialize();
+                if (null == dir || dir.Count == 0)
+                    return null;
                 return new ArcFile (file, this, dir);
             }
         }
@@ -103,7 +119,11 @@ namespace GameRes.Formats.Sakana
                 DecryptData (input, key_lo, key_hi);
             }
             if (sx_entry.IsPacked)
+            {
                 input = UnpackZstd (input);
+                if (sx_entry.UnpackedSize == 0)
+                    sx_entry.UnpackedSize = (uint)input.Length;
+            }
             return new BinMemoryStream (input, entry.Name);
         }
 
@@ -190,8 +210,7 @@ namespace GameRes.Formats.Sakana
             m_dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                m_index.ReadByte();
-                int storage  = m_index.ReadByte();
+                ushort arc   = Binary.BigEndian (m_index.ReadUInt16());
                 ushort flags = Binary.BigEndian (m_index.ReadUInt16());
                 uint offset  = Binary.BigEndian (m_index.ReadUInt32());
                 uint size    = Binary.BigEndian (m_index.ReadUInt32());
@@ -201,35 +220,32 @@ namespace GameRes.Formats.Sakana
                     Offset = (long)offset << 4,
                     Size   = size,
                     IsPacked = 0 != (flags & 0x03),
+                    ArcIndex = arc,
                 };
                 m_dir.Add (entry);
             }
 
-            count = Binary.BigEndian (m_index.ReadUInt16());
-            var storages = new List<SxStorage>(count);
-            for (int i = 0; i < count; ++i)
+            int arc_count = Binary.BigEndian (m_index.ReadUInt16());
+            int arc_index = -1;
+            for (int i = 0; i < arc_count; ++i)
             {
                 m_index.ReadUInt32();
                 m_index.ReadUInt32();
                 m_index.ReadUInt32();
-                var storage = new SxStorage {
-                    Size = Binary.BigEndian (m_index.ReadUInt32()) << 4,
-                    Timestamp = Binary.BigEndian (m_index.ReadUInt64()),
-                };
-                storages.Add (storage);
-                m_index.Seek (16, SeekOrigin.Current); // MD5
+                long arc_size = (long)Binary.BigEndian (m_index.ReadUInt32()) << 4; // archive body length
+                if (m_max_offset == arc_size)
+                    arc_index = i;
+                m_index.ReadUInt64();
+                m_index.Seek (16, SeekOrigin.Current); // MD5 sum
             }
 
             count = Binary.BigEndian (m_index.ReadUInt16());
             if (count > 0)
                 m_index.Seek (count * 24, SeekOrigin.Current);
             DeserializeTree();
-            // Remove entries in other archives
-            // Note using file size as archive identification can be problematic, but faster than MD5
-            var current_storage = storages.FindIndex (s => m_max_offset == s.Size);
-            if (-1 != current_storage)
+            if (arc_count > 1 && arc_index != -1)
             {
-                m_dir = m_dir.Where (e => e.CheckPlacement (m_max_offset) && (e as SxEntry).Storage == current_storage).ToList();
+                return m_dir.Where (e => (e as SxEntry).ArcIndex == arc_index).ToList();
             }
             return m_dir;
         }

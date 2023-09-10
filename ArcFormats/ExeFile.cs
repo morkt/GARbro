@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using GameRes.Utility;
@@ -302,31 +303,97 @@ namespace GameRes.Formats
 
             public ResourceAccessor (string filename)
             {
+                const uint LOAD_LIBRARY_AS_DATAFILE       = 0x02;
                 const uint LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x20;
 
-                m_exe = NativeMethods.LoadLibraryEx (filename, IntPtr.Zero, LOAD_LIBRARY_AS_IMAGE_RESOURCE);
+                m_exe = NativeMethods.LoadLibraryEx (filename, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE|LOAD_LIBRARY_AS_IMAGE_RESOURCE);
                 if (IntPtr.Zero == m_exe)
                     throw new Win32Exception (Marshal.GetLastWin32Error());
             }
 
             public byte[] GetResource (string name, string type)
             {
-                if (m_disposed)
-                    throw new ObjectDisposedException ("Access to disposed ResourceAccessor object failed.");
-                var res = NativeMethods.FindResource (m_exe, name, type);
+                var res = FindResource (name, type);
                 if (IntPtr.Zero == res)
                     return null;
-                var glob = NativeMethods.LoadResource (m_exe, res);
-                if (IntPtr.Zero == glob)
-                    return null;
-                uint size = NativeMethods.SizeofResource (m_exe, res);
-                var src = NativeMethods.LockResource (glob);
+                var src = LockResource (res);
                 if (IntPtr.Zero == src)
                     return null;
-
+                uint size = NativeMethods.SizeofResource (m_exe, res);
                 var dst = new byte[size];
                 Marshal.Copy (src, dst, 0, dst.Length);
                 return dst;
+            }
+
+            public int ReadResource (string name, string type, byte[] dest, int pos)
+            {
+                var res = FindResource (name, type);
+                if (IntPtr.Zero == res)
+                    return 0;
+                var src = LockResource (res);
+                if (IntPtr.Zero == src)
+                    return 0;
+                int length = (int)NativeMethods.SizeofResource (m_exe, res);
+                length = Math.Min (dest.Length - pos, length);
+                Marshal.Copy (src, dest, pos, length);
+                return length;
+            }
+
+            public uint GetResourceSize (string name, string type)
+            {
+                var res = FindResource (name, type);
+                if (IntPtr.Zero == res)
+                    return 0;
+                return NativeMethods.SizeofResource (m_exe, res);
+            }
+
+            private IntPtr FindResource (string name, string type)
+            {
+                if (m_disposed)
+                    throw new ObjectDisposedException ("Access to disposed ResourceAccessor object failed.");
+                return NativeMethods.FindResource (m_exe, name, type);
+            }
+
+            private IntPtr LockResource (IntPtr res)
+            {
+                var glob = NativeMethods.LoadResource (m_exe, res);
+                if (IntPtr.Zero == glob)
+                    return IntPtr.Zero;
+                return NativeMethods.LockResource (glob);
+            }
+
+            public IEnumerable<string> EnumTypes ()
+            {
+                var types = new List<string>();
+                if (!NativeMethods.EnumResourceTypes (m_exe, (m, t, p) => AddResourceName (types, t), IntPtr.Zero))
+                    return Enumerable.Empty<string>();
+                return types;
+            }
+
+            public IEnumerable<string> EnumNames (string type)
+            {
+                var names = new List<string>();
+                if (!NativeMethods.EnumResourceNames (m_exe, type, (m, t, n, p) => AddResourceName (names, n), IntPtr.Zero))
+                    return Enumerable.Empty<string>();
+                return names;
+            }
+
+            private static bool AddResourceName (List<string> list, IntPtr name)
+            {
+                list.Add (ResourceNameToString (name));
+                return true; 
+            }
+
+            private static string ResourceNameToString (IntPtr resName)
+            {
+                if ((resName.ToInt64() >> 16) == 0)
+                {
+                    return "#" + resName.ToString();
+                }
+                else
+                {
+                    return Marshal.PtrToStringUni (resName);
+                }
             }
 
             #region IDisposable implementation
@@ -363,7 +430,7 @@ namespace GameRes.Formats
         [return: MarshalAs(UnmanagedType.Bool)]
         static internal extern bool FreeLibrary (IntPtr hModule);
 
-        [DllImport( "kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         static internal extern IntPtr FindResource (IntPtr hModule, string lpName, string lpType);
 
         [DllImport("Kernel32.dll", SetLastError = true)]
@@ -374,5 +441,22 @@ namespace GameRes.Formats
 
         [DllImport("kernel32.dll")]
         static internal extern IntPtr LockResource (IntPtr hResData);
+
+        internal delegate bool EnumResTypeProc (IntPtr hModule, IntPtr lpszType, IntPtr lParam);
+        internal delegate bool EnumResNameProc (IntPtr hModule, IntPtr lpszType, IntPtr lpszName, IntPtr lParam);
+        internal delegate bool EnumResLangProc (IntPtr hModule, IntPtr lpszType, IntPtr lpszName, ushort wIDLanguage, IntPtr lParam);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern bool EnumResourceTypes (IntPtr hModule, [MarshalAs(UnmanagedType.FunctionPtr)] EnumResTypeProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern bool EnumResourceNames (IntPtr hModule, IntPtr lpszType, EnumResNameProc lpEnumFunc, IntPtr lParam);
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern bool EnumResourceNames (IntPtr hModule, string lpszType, EnumResNameProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern bool EnumResourceLanguages (IntPtr hModule, IntPtr lpszType, string lpName, EnumResLangProc lpEnumFunc, IntPtr lParam);
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern bool EnumResourceLanguages (IntPtr hModule, string lpszType, string lpName, EnumResLangProc lpEnumFunc, IntPtr lParam);
     }
 }

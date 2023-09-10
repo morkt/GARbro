@@ -23,8 +23,11 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
+using System.Linq;
 using System.Windows.Media;
 
 namespace GameRes.Formats.Kaguya
@@ -96,6 +99,103 @@ namespace GameRes.Formats.Kaguya
             var pixels = m_input.ReadBytes (stride*Info.iHeight);
             PixelFormat format = 24 == Info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
             return ImageData.CreateFlipped (Info, format, null, pixels, stride);
+        }
+    }
+
+    internal class Pl10Entry : An21Entry
+    {
+        public ImageMetaData Info;
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Pl10Opener : An21Opener
+    {
+        public override string         Tag { get => "PL10"; }
+        public override uint     Signature { get => 0x30314C50; } // 'PL10'
+
+        public Pl10Opener ()
+        {
+            Extensions = new string[] { "plt" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            using (var input = file.CreateStream())
+            {
+                var base_info = GetBaseInfo (input);
+                var dir = GetFramesList (input);
+                if (null == dir)
+                    return null;
+                string base_name = Path.GetFileNameWithoutExtension (file.Name);
+                foreach (Pl10Entry entry in dir)
+                {
+                    entry.Name = string.Format ("{0}#{1:D2}", base_name, entry.FrameIndex);
+                    entry.Type = "image";
+                }
+                var first = (Pl10Entry)dir[0];
+                base_info.BPP = first.Info.BPP;
+                return new An21Archive (file, this, dir, base_info);
+            }
+        }
+
+        internal ImageMetaData GetBaseInfo (IBinaryStream input)
+        {
+            input.Position = 6;
+            return new ImageMetaData
+            {
+                OffsetX     = input.ReadInt32(),
+                OffsetY     = input.ReadInt32(),
+                Width       = input.ReadUInt32(),
+                Height      = input.ReadUInt32(),
+            };
+        }
+
+        internal List<Entry> GetFramesList (IBinaryStream file)
+        {
+            file.Position = 4;
+            int count = file.ReadInt16();
+            if (!IsSaneCount (count))
+                return null;
+            var dir = new List<Entry> (count);
+            long current_offset = 0x16;
+            file.Position = current_offset;
+            var frame_info = new ImageMetaData {
+                OffsetX = file.ReadInt32(),
+                OffsetY = file.ReadInt32(),
+                Width  = file.ReadUInt32(),
+                Height = file.ReadUInt32(),
+                BPP    = file.ReadInt32() * 8,
+            };
+            uint depth = (uint)frame_info.BPP / 8;
+            uint image_size = depth * frame_info.Width * frame_info.Height;
+            var entry = new Pl10Entry
+            {
+                Offset = current_offset + 0x14,
+                Size = image_size,
+                FrameIndex = 0,
+                RleStep = 0,
+                Info = frame_info,
+            };
+            dir.Add (entry);
+            for (int i = 1; i < count; ++i)
+            {
+                current_offset = entry.Offset + entry.Size;
+                file.Position = current_offset;
+                byte rle_step = file.ReadUInt8();
+                uint packed_size = file.ReadUInt32();
+                entry = new Pl10Entry
+                {
+                    Offset = current_offset + 5,
+                    Size = packed_size,
+                    UnpackedSize = image_size,
+                    IsPacked = true,
+                    FrameIndex = i,
+                    RleStep = rle_step,
+                    Info = frame_info,
+                };
+                dir.Add (entry);
+            }
+            return dir;
         }
     }
 }

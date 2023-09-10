@@ -37,6 +37,11 @@ namespace GameRes.Formats.ISM
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public IsaOpener ()
+        {
+            ContainedFormats = new[] { "ISG", "PNG/ISM", "OGG", };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             if (!file.View.AsciiEqual (4, "ARCHIVED"))
@@ -87,6 +92,13 @@ namespace GameRes.Formats.ISM
                 entry.Size = m_file.View.ReadUInt32 (index_offset+8);
                 if (!entry.CheckPlacement (m_file.MaxOffset))
                     return null;
+                if (string.IsNullOrEmpty (entry.Type) && name_length < 0x20) // try to fix truncated extension
+                {
+                    if (name.EndsWith (".OG"))
+                        entry.Type = "audio";
+                    else if (name.EndsWith (".PN"))
+                        entry.Type = "image";
+                }
                 m_dir.Add (entry);
                 index_offset += record_length;
             }

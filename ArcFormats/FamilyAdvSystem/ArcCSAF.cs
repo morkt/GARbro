@@ -2,7 +2,7 @@
 //! \date       2019 Jan 01
 //! \brief      Family Adv System resource archive.
 //
-// Copyright (C) 2019 by morkt
+// Copyright (C) 2019-2023 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -34,6 +34,11 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.FamilyAdvSystem
 {
+    [Serializable]
+    public class FamilyAdvScheme : ResourceScheme
+    {
+        public IDictionary<string, string>  KnownKeys;
+    }
 
     [Export(typeof(ArchiveFormat))]
     public class CsafOpener : ArchiveFormat
@@ -70,8 +75,9 @@ namespace GameRes.Formats.FamilyAdvSystem
             {
                 if (is_encrypted)
                 {
+                    var key = QueryEncryptionKey (file);
                     file.View.Read (0x20, index, 0, index_size);
-                    enc = new CsafEncryption (DefaultKey, DefaultIV);
+                    enc = new CsafEncryption (key, DefaultIV);
                     using (var decryptor = enc.CreateDecryptor (0))
                     using (var enc_names = file.CreateStream (0x20 + index_size, names_size))
                     using (var dec_names = new InputCryptoStream (enc_names, decryptor))
@@ -135,6 +141,27 @@ namespace GameRes.Formats.FamilyAdvSystem
                 return base.OpenEntry (arc, entry);
             var input = new CsafStream (carc);
             return new StreamRegion (input, entry.Offset, entry.Size);
+        }
+
+        internal string QueryEncryptionKey (ArcView file)
+        {
+            var title = FormatCatalog.Instance.LookupGame (file.Name);
+            if (string.IsNullOrEmpty (title))
+                return DefaultKey;
+            string key;
+            if (!KnownKeys.TryGetValue (title, out key))
+                return DefaultKey;
+            return key;
+        }
+
+        FamilyAdvScheme DefaultScheme = new FamilyAdvScheme { KnownKeys = new Dictionary<string, string>() };
+
+        internal IDictionary<string, string> KnownKeys { get { return DefaultScheme.KnownKeys; } }
+
+        public override ResourceScheme Scheme
+        {
+            get { return DefaultScheme; }
+            set { DefaultScheme = (FamilyAdvScheme)value; }
         }
     }
 

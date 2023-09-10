@@ -330,8 +330,8 @@ namespace GameRes.Formats.Macromedia
         {
             int rsize = m_bits.GetBits (5);
             m_dim.X = GetSignedBits (rsize);
+            m_dim.Width = GetSignedBits (rsize) - m_dim.X;
             m_dim.Y = GetSignedBits (rsize);
-            m_dim.Width  = GetSignedBits (rsize) - m_dim.X;
             m_dim.Height = GetSignedBits (rsize) - m_dim.Y;
         }
 

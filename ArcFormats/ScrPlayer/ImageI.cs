@@ -278,11 +278,11 @@ namespace GameRes.Formats.ScrPlayer
         #endregion
 
         #region Bitmap tables
-        static readonly Lazy<byte[]> s_control_table1 = new Lazy<byte[]> (() => LoadResource ("ControlTable1"));
-        static readonly Lazy<byte[]> s_control_table2 = new Lazy<byte[]> (() => LoadResource ("ControlTable2"));
-        static readonly Lazy<byte[]> s_control_table32 = new Lazy<byte[]> (() => LoadResource ("ControlTable32"));
-        static readonly Lazy<byte[]> s_color_bits1 = new Lazy<byte[]> (() => LoadResource ("ColorBitsTable1"));
-        static readonly Lazy<byte[]> s_color_bits2 = new Lazy<byte[]> (() => LoadResource ("ColorBitsTable2"));
+        static readonly Lazy<byte[]> s_control_table1 = new Lazy<byte[]> (() => LoadResource ("IControlTable1"));
+        static readonly Lazy<byte[]> s_control_table2 = new Lazy<byte[]> (() => LoadResource ("IControlTable2"));
+        static readonly Lazy<byte[]> s_control_table32 = new Lazy<byte[]> (() => LoadResource ("IControlTable32"));
+        static readonly Lazy<byte[]> s_color_bits1 = new Lazy<byte[]> (() => LoadResource ("IColorBitsTable1"));
+        static readonly Lazy<byte[]> s_color_bits2 = new Lazy<byte[]> (() => LoadResource ("IColorBitsTable2"));
 
         static byte[] ControlTable1   { get { return s_control_table1.Value; } }
         static byte[] ControlTable2   { get { return s_control_table2.Value; } }
@@ -390,7 +390,7 @@ namespace GameRes.Formats.ScrPlayer
                 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
             }
         };
-        static readonly int[] OffsetTable = {
+        internal static readonly int[] OffsetTable = {
             -1, 0, 0, 1, 1, 1, -1, 1, 2, 1, -2, 1, -2, 0, 0, 2, 1, 2, -1, 2, -3, 0,
         };
         #endregion

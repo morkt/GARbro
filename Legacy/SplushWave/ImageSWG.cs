@@ -68,7 +68,7 @@ namespace GameRes.Formats.SplushWave
         {
             var meta = (SwgMetaData)info;
             PixelFormat format = meta.BPP == 8  ? PixelFormats.Indexed8
-                               : meta.BPP == 32 ? PixelFormats.Bgr32 : PixelFormats.Bgr24;
+                               : meta.BPP == 32 ? PixelFormats.Bgra32 : PixelFormats.Bgr24;
             BitmapPalette palette = null;
             if (meta.BPP == 8)
             {
@@ -77,36 +77,40 @@ namespace GameRes.Formats.SplushWave
             }
             int stride = meta.iWidth * meta.BPP / 8;
             file.Position = meta.DataOffset;
-//            var pixels = new byte[stride * meta.iHeight];
-            var pixels = new byte[4 * meta.iWidth * meta.iHeight];
+            var pixels = new byte[stride * meta.iHeight];
             if (!meta.IsCompressed)
             {
                 file.Read (pixels, 0, pixels.Length);
                 return ImageData.CreateFlipped (meta, format, palette, pixels, stride);
             }
-            var input = file.ReadBytes ((int)(file.Length - file.Position));
-            if (!Decompress (input, pixels, meta.Depth + 2, meta.iWidth, meta.iHeight))
+            if (!Decompress (file, pixels, meta.Depth + 2, meta.iWidth, meta.iHeight))
                 throw new InvalidFormatException ("Invalid SWG file.");
             return ImageData.CreateFlipped (meta, format, palette, pixels, stride);
         }
 
-        bool Decompress (byte[] input, byte[] output, int channels, int width, int height)
+        static readonly byte[] PlaneMap = { 2, 1, 0, 3 };
+
+        bool Decompress (IBinaryStream input, byte[] output, int channels, int width, int height)
         {
-            int src = 0;
-            if (input[0] != 0 || input[1] != 1)
+            long start_pos = input.Position;
+            byte hi = input.ReadUInt8();
+            byte lo = input.ReadUInt8();
+            if (hi != 0 || lo != 1)
             {
+                input.Position = start_pos;
                 int n = 0;
                 for (int i = 0; i < channels; ++i)
                 {
-                    if (0 == input[i])
+                    if (0 == input.ReadByte())
                         ++n;
                 }
                 if (n != channels)
                     return false;
-                src = 4;
+                input.Position = start_pos + 4;
+                hi = input.ReadUInt8();
+                lo = input.ReadUInt8();
             }
-            int compress_method = input[src+1] + (input[src] << 8);
-            src += 2;
+            int compress_method = lo | hi << 8;
             if (0 == compress_method)
             {
                 for (int i = 0; i < channels; ++i)
@@ -115,7 +119,7 @@ namespace GameRes.Formats.SplushWave
                     int count = height * width;
                     while (count --> 0)
                     {
-                        output[pos] = input[src++];
+                        output[pos] = input.ReadUInt8();
                         pos += channels;
                     }
                 }
@@ -123,61 +127,55 @@ namespace GameRes.Formats.SplushWave
             }
             if (compress_method != 1)
                 return false;
-            int dst = 0;
-            int v33 = src;
-            int v37 = height * channels;
-            src += 2 * v37;
-            for (int row = 0; row < v37; ++row)
+            int stride = width * channels;
+            var row_sizes = input.ReadBytes (2 * height * channels);
+            int ctl_pos = 0;
+            for (int c = 0; c < channels; ++c)
+            for (int y = height - 1; y >= 0; --y)
             {
-                int y = row % height;
-                dst = channels * (width * (height - y - 1) + 1) - row / height - 1;
-                if (dst > output.Length)
-                    return true;
-                int v24 = 0;
-                int v36 = input[v33+1] + (input[v33] << 8);
-                v33 += 2;
-                do
-                {
-                    byte lo = input[src];
-                    byte hi = input[src+1];
-                    if (lo != 0)
-                    {
-                        if (lo < 0x81)
-                        {
-                            ++src;
-                            int count = lo + 1;
-                            v24 += count + 1;
-                            while (count --> 0)
-                            {
-                                output[dst] = input[src++];
-                                dst += channels;
-                            }
-                        }
-                        else
-                        {
-                            src += 2;
-                            v24 += 2;
-                            int count = Math.Min (0x101 - lo, output.Length - dst);
-                            while (count --> 0)
-                            {
-                                output[dst] = hi;
-                                dst += channels;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        src += 2;
-                        v24 += 2;
-                        output[dst] = hi;
-                        dst += channels;
-                    }
-                    if (dst >= output.Length)
-                        return true;
-                }
-                while (v24 < v36);
+                int dst = stride * y + PlaneMap[c];
+                int row_size = row_sizes[ctl_pos+1] | row_sizes[ctl_pos] << 8;
+                ctl_pos += 2;
+                DecompressRow (input, row_size, output, dst, channels);
             }
             return true;
+        }
+
+        internal static void DecompressRow (IBinaryStream input, int row_size, byte[] output, int dst, int step)
+        {
+            int x = 0;
+            while (x < row_size)
+            {
+                byte ctl = input.ReadUInt8();
+                if (ctl == 0)
+                {
+                    byte v = input.ReadUInt8();
+                    x += 2;
+                    output[dst] = v;
+                    dst += step;
+                }
+                else if (ctl < 0x81u)
+                {
+                    int count = ctl + 1;
+                    x += count + 1;
+                    while (count --> 0)
+                    {
+                        output[dst] = input.ReadUInt8();
+                        dst += step;
+                    }
+                }
+                else
+                {
+                    byte v = input.ReadUInt8();
+                    x += 2;
+                    int count = 0x101 - ctl;
+                    while (count --> 0)
+                    {
+                        output[dst] = v;
+                        dst += step;
+                    }
+                }
+            }
         }
 
         public override void Write (Stream file, ImageData image)
