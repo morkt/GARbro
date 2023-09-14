@@ -89,6 +89,7 @@
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
     <Compile Include="BlackButterfly\ArcDAT.cs" />
+    <Compile Include="Bom\ImageGRP.cs" />
     <Compile Include="CottonClub\ImageLMG.cs" />
     <Compile Include="Gsx\ArcK5.cs" />
     <Compile Include="Gsx\ImageK4.cs" />
@@ -123,6 +124,8 @@
     <Compile Include="KeroQ\ImageCBM.cs" />
     <Compile Include="KeroQ\ImageKGD.cs" />
     <Compile Include="KeroQ\ImageKGD1.cs" />
+    <Compile Include="Koei\ArcYK.cs" />
+    <Compile Include="Koei\YkTables.cs" />
     <Compile Include="Kurumi\ImageGRA.cs" />
     <Compile Include="Lazycrew\ArcDAT.cs" />
     <Compile Include="Lazycrew\ImageDAT.cs" />
@@ -136,6 +139,7 @@
     <Compile Include="Mink\ImageFC.cs" />
     <Compile Include="Mink\ImageFD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
+    <Compile Include="Nug\ArcDAT.cs" />
     <Compile Include="Nyoken\ArcZLK.cs" />
     <Compile Include="Omi\ArcDAT.cs" />
     <Compile Include="Paprika\ArcPKDAT.cs" />
@@ -299,9 +303,7 @@
       <Name>GameRes</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Bom\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)
