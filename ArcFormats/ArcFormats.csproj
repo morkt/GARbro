@@ -106,6 +106,8 @@
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
     <Compile Include="AIRNovel\ArcAIR.cs" />
+    <Compile Include="FC01\ArcBDT.cs" />
+    <Compile Include="FC01\BdtTables.cs" />
     <Compile Include="GScripter\ArcDATA.cs" />
     <Compile Include="Ism\ImagePNG.cs" />
     <Compile Include="Kogado\ArcARC.cs" />
@@ -149,6 +151,7 @@
     <Compile Include="Macromedia\Palettes.cs" />
     <Compile Include="Mugi\ArcBIN.cs" />
     <Compile Include="NScripter\Script.cs" />
+    <Compile Include="Psp\ArcQPK.cs" />
     <Compile Include="ScrPlayer\ImageIMG.cs" />
     <Compile Include="Software House Parsley\ArcScn.cs" />
     <Compile Include="TechGian\ArcBIN.cs" />
@@ -726,7 +729,7 @@
     <Compile Include="AZSys\ArcAZSys.cs" />
     <Compile Include="Ethornell\ArcBGI.cs" />
     <Compile Include="Ffa\ArcBlackPackage.cs" />
-    <Compile Include="Macromedia\ArcCCT.cs" />
+    <None Include="Macromedia\ArcCCT.cs" />
     <Compile Include="Cherry\ArcCherry.cs" />
     <Compile Include="Circus\ArcCircus.cs" />
     <Compile Include="ArcCommon.cs" />

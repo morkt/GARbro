@@ -103,14 +103,14 @@ namespace GameRes.Formats
         {
             bool ext_is_empty = string.IsNullOrEmpty (ext);
             if (!ext_is_empty && '.' == ext[0])
-                return filename.EndsWith (ext, StringComparison.InvariantCultureIgnoreCase);
+                return filename.EndsWith (ext, StringComparison.OrdinalIgnoreCase);
             int ext_start = GetExtensionIndex (filename);
             // filename extension length
             int l_ext_length = filename.Length - ext_start;
             if (ext_is_empty)
                 return 0 == l_ext_length;
             return (l_ext_length == ext.Length
-                    && filename.EndsWith (ext, StringComparison.InvariantCultureIgnoreCase));
+                    && filename.EndsWith (ext, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace GameRes.Formats
                 }
                 else if ('.' == ext[0] || l_ext_length == ext.Length)
                 {
-                    if (filename.EndsWith (ext, StringComparison.InvariantCultureIgnoreCase))
+                    if (filename.EndsWith (ext, StringComparison.OrdinalIgnoreCase))
                         return true;
                 }
             }

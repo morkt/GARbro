@@ -102,8 +102,10 @@ namespace GameRes.Formats.FC01
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var aent = (AgsiEntry)entry;
+            var aent = entry as AgsiEntry;
             var aarc = arc as AgsiArchive;
+            if (null == aent)
+                return base.OpenEntry (arc, entry);
             Stream input;
             if (!aent.IsEncrypted)
                 input = arc.File.CreateStream (entry.Offset, entry.Size);
@@ -202,16 +204,16 @@ namespace GameRes.Formats.FC01
         ArcView     m_file;
         int         m_count;
         int         m_record_size;
-        uint        m_data_offset;
 
         public bool IsEncrypted { get; set; }
+        public uint  DataOffset { get; set; }
 
-        public IndexReader (ArcView file, int count, int record_size, bool is_encrypted)
+        public IndexReader (ArcView file, int count, int record_size, bool is_encrypted = false)
         {
             m_file = file;
             m_count = count;
             m_record_size = record_size;
-            m_data_offset = (uint)(0xC + m_count * m_record_size);
+            DataOffset = (uint)(0xC + m_count * m_record_size);
             IsEncrypted = is_encrypted;
         }
 
@@ -239,7 +241,7 @@ namespace GameRes.Formats.FC01
             if (!ArchiveFormat.IsSaneCount (count) || record_size <= 0x10 || record_size > 0x100)
                 return null;
             var reader = new IndexReader (file, count, record_size, is_encrypted);
-            if (reader.m_data_offset >= file.MaxOffset)
+            if (reader.DataOffset >= file.MaxOffset)
                 return null;
             return reader;
         }
@@ -247,29 +249,32 @@ namespace GameRes.Formats.FC01
         public List<Entry> ReadIndex ()
         {
             using (var index = OpenIndex())
+                return ReadIndex (index);
+        }
+
+        public List<Entry> ReadIndex (IBinaryStream index)
+        {
+            int name_size = m_record_size - 0x10;
+            var dir = new List<Entry> (m_count);
+            for (int i = 0; i < m_count; ++i)
             {
-                int name_size = m_record_size - 0x10;
-                var dir = new List<Entry> (m_count);
-                for (int i = 0; i < m_count; ++i)
-                {
-                    var entry = new AgsiEntry();
-                    entry.UnpackedSize = index.ReadUInt32();
-                    entry.Size         = index.ReadUInt32();
-                    entry.Method       = index.ReadInt32();
-                    entry.Offset       = index.ReadUInt32() + m_data_offset;
-                    if (!entry.CheckPlacement (m_file.MaxOffset))
-                        return null;
-                    var name = index.ReadCString (name_size);
-                    if (string.IsNullOrEmpty (name))
-                        return null;
-                    entry.Name = name;
-                    entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
-                    entry.IsPacked = entry.Method != 0 && entry.Method != 3;
-                    entry.IsSpecial = name.Equals ("Copyright.Dat", StringComparison.OrdinalIgnoreCase);
-                    dir.Add (entry);
-                }
-                return dir;
+                var entry = new AgsiEntry();
+                entry.UnpackedSize = index.ReadUInt32();
+                entry.Size         = index.ReadUInt32();
+                entry.Method       = index.ReadInt32();
+                entry.Offset       = index.ReadUInt32() + DataOffset;
+                if (!entry.CheckPlacement (m_file.MaxOffset))
+                    return null;
+                var name = index.ReadCString (name_size);
+                if (string.IsNullOrEmpty (name))
+                    return null;
+                entry.Name = name;
+                entry.Type = FormatCatalog.Instance.GetTypeFromName (name);
+                entry.IsPacked = entry.Method != 0 && entry.Method != 3;
+                entry.IsSpecial = name.Equals ("Copyright.Dat", StringComparison.OrdinalIgnoreCase);
+                dir.Add (entry);
             }
+            return dir;
         }
 
         IBinaryStream OpenIndex ()

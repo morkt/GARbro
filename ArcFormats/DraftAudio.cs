@@ -26,10 +26,10 @@ namespace GameRes.Formats.??????
     [Export(typeof(AudioFormat))]
     public class xxxAudio : AudioFormat
     {
-        public override string         Tag { get => "xxx"; }
-        public override string Description { get => "?????? audio resource"; }
-        public override uint     Signature { get => 0; }
-        public override bool      CanWrite { get => false; }
+        public override string         Tag => "xxx";
+        public override string Description => "?????? audio resource";
+        public override uint     Signature => 0;
+        public override bool      CanWrite => false;
 
         public override SoundInput TryOpen (IBinaryStream file)
         {

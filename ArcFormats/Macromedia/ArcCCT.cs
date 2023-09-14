@@ -198,10 +198,10 @@ namespace GameRes.Formats.Macromedia
             if (t >= 0)
             {
                 string ext = new string (type_buf, 0, t+1);
-                return string.Format ("{0:X8}.{1}", id, ext.ToLowerInvariant());
+                return string.Format ("{0:D8}.{1}", id, ext.ToLowerInvariant());
             }
             else
-                return id.ToString ("X8");
+                return id.ToString ("D8");
         }
 
         byte[] ZlibUnpack (long offset, uint size, out int actual_size, int unpacked_size_hint = 0)

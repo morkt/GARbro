@@ -44,7 +44,7 @@ namespace GameRes.Formats.LiveMaker
 
         public VffOpener ()
         {
-            Extensions = new string[] { "dat" };
+            Extensions = new string[] { "dat", "exe" };
             Signatures = new uint[] { 0x666676, 0 };
         }
 

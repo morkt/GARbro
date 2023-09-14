@@ -31,10 +31,12 @@ namespace GameRes.Formats.Macromedia
     [Export(typeof(AudioFormat))]
     public class SndAudio : AudioFormat
     {
-        public override string         Tag { get => "SND"; }
-        public override string Description { get => "Macromedia Director audio resource"; }
-        public override uint     Signature { get => 0; }
-        public override bool      CanWrite { get => false; }
+        public override string         Tag => "SND";
+        public override string Description => "Macromedia Director audio resource";
+        public override uint     Signature => 0;
+        public override bool      CanWrite => false;
+
+        static readonly ResourceInstance<AudioFormat> Mp3 = new ResourceInstance<AudioFormat> ("MP3");
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
@@ -83,6 +85,13 @@ namespace GameRes.Formats.Macromedia
             if (bps != 16 && bps != 8)
                 return null;
 
+            // try mp3
+            var samples_stream = new StreamRegion (reader.Source, reader.Position);
+            var mp3_input = new BinaryStream (samples_stream, file.Name);
+            var mp3 = Mp3.Value.TryOpen (mp3_input);
+            if (mp3 != null)
+                return mp3;
+
             var format = new WaveFormat {
                 FormatTag = 1,
                 Channels = channels,
@@ -93,8 +102,7 @@ namespace GameRes.Formats.Macromedia
             format.SetBPS();
             if (8 == bps)
             {
-                var data = new StreamRegion (file.AsStream, file.Position);
-                return new RawPcmInput (data, format);
+                return new RawPcmInput (samples_stream, format);
             }
             int sample_count = frames_count * channels;
             var samples = file.ReadBytes (sample_count);
