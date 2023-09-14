@@ -42,6 +42,13 @@ namespace GameRes
             encoding.DecoderFallback = DecoderFallback.ExceptionFallback;
             return encoding;
         }
+
+        public static bool IsUtf16 (this Encoding enc)
+        {
+            // enc.WindowsCodePage property might throw an exception for some encodings, while
+            // CodePage is just a direct field access.
+            return (enc.CodePage == 1200 || enc.CodePage == 1201); // enc is UnicodeEncoding
+        }
     }
 
     public static class StreamExtension
@@ -440,9 +447,7 @@ namespace GameRes
                 {
                     byte* s = m_mem + (offset - m_offset);
                     uint string_length = 0;
-                    // enc.WindowsCodePage property might throw an exception for some encodings, while
-                    // CodePage is just a direct field access.
-                    if (enc.CodePage == 1200 || enc.CodePage == 1201) // for UTF-16 encodings stop marker is 2-bytes long
+                    if (enc.IsUtf16()) // for UTF-16 encodings stop marker is 2-bytes long
                     {
                         ushort* u = (ushort*)s;
                         while (string_length + 1 < size && 0 != u[string_length >> 1])
