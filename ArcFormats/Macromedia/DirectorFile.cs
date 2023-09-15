@@ -23,9 +23,11 @@
 // IN THE SOFTWARE.
 //
 
+using GameRes.Compression;
 using GameRes.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -66,24 +68,53 @@ namespace GameRes.Formats.Macromedia
 
     internal class DirectorFile
     {
+        List<DirectorEntry> m_dir;
+        Dictionary<int, DirectorEntry> m_index = new Dictionary<int, DirectorEntry>();
         MemoryMap       m_mmap = new MemoryMap();
         KeyTable        m_keyTable = new KeyTable();
         DirectorConfig  m_config = new DirectorConfig();
         List<Cast>      m_casts = new List<Cast>();
+        Dictionary<int, byte[]> m_ilsMap = new Dictionary<int, byte[]>();
 
-        public MemoryMap    MMap     => m_mmap;
+        public bool IsAfterBurned { get; private set; }
+
+        public MemoryMap        MMap => m_mmap;
         public KeyTable     KeyTable => m_keyTable;
         public DirectorConfig Config => m_config;
-        public List<Cast>   Casts    => m_casts;
+        public List<Cast>      Casts => m_casts;
+        public List<DirectorEntry>            Directory => m_dir;
+        public Dictionary<int, DirectorEntry> Index     => m_index;
+
+        public DirectorEntry Find (string four_cc) => Directory.Find (e => e.FourCC == four_cc);
+
+        public DirectorEntry FindById (int id)
+        {
+            DirectorEntry entry;
+            m_index.TryGetValue (id, out entry);
+            return entry;
+        }
 
         public bool Deserialize (SerializationContext context, Reader reader)
         {
             reader.Position = 8;
             string codec = reader.ReadFourCC();
-            if (codec != "MV93" && codec != "MC95")
+            if (codec == "MV93" || codec == "MC95")
+            {
+                if (!ReadMMap (context, reader))
+                    return false;
+            }
+            else if (codec == "FGDC" || codec == "FGDM")
+            {
+                IsAfterBurned = true;
+                if (!ReadAfterBurner (context, reader))
+                    return false;
+            }
+            else
+            {
+                Trace.WriteLine (string.Format ("Unknown codec '{0}'", codec), "DXR");
                 return false;
-            return ReadMMap (context, reader)
-                && ReadKeyTable (context, reader)
+            }
+            return ReadKeyTable (context, reader)
                 && ReadConfig (context, reader)
                 && ReadCasts (context, reader);
         }
@@ -99,25 +130,129 @@ namespace GameRes.Formats.Macromedia
                 return false;
             reader.Position = mmap_pos + 8;
             MMap.Deserialize (context, reader);
+            m_dir = MMap.Dir;
+            for (int i = 0; i < m_dir.Count; ++i)
+            {
+                m_index[i] = m_dir[i];
+            }
             return true;
+        }
+
+        bool ReadAfterBurner (SerializationContext context, Reader reader)
+        {
+            if (reader.ReadFourCC() != "Fver")
+                return false;
+            int length = reader.ReadVarInt();
+            long next_pos = reader.Position + length;
+            int version = reader.ReadVarInt();
+            if (version > 0x400)
+            {
+                reader.ReadVarInt(); // imap version
+                reader.ReadVarInt(); // director version
+            }
+            if (version > 0x500)
+            {
+                int str_len = reader.ReadU8();
+                reader.Skip (str_len); // version string
+            }
+
+            reader.Position = next_pos;
+            if (reader.ReadFourCC() != "Fcdr")
+                return false;
+            // skip compression table, assume everything is zlib-compressed
+            length = reader.ReadVarInt();
+
+            reader.Position += length;
+            if (reader.ReadFourCC() != "ABMP")
+                return false;
+            length = reader.ReadVarInt();
+            next_pos = reader.Position + length;
+            reader.ReadVarInt(); // compression type, index within 'Fcdr' compression table
+            int unpacked_size = reader.ReadVarInt();
+            using (var abmp = new ZLibStream (reader.Source, CompressionMode.Decompress, true))
+            {
+                var abmp_reader = new Reader (abmp, reader.ByteOrder);
+                if (!ReadABMap (context, abmp_reader))
+                    return false;
+            }
+
+            reader.Position = next_pos;
+            if (reader.ReadFourCC() != "FGEI")
+                return false;
+            reader.ReadVarInt();
+            long base_offset = reader.Position;
+            foreach (var entry in m_dir)
+            {
+                m_index[entry.Id] = entry;
+                if (entry.Offset >= 0)
+                    entry.Offset += base_offset;
+            }
+            var ils_chunk = FindById (2);
+            if (null == ils_chunk)
+                return false;
+            using (var ils = new ZLibStream (reader.Source, CompressionMode.Decompress, true))
+            {
+                uint pos = 0;
+                var ils_reader = new Reader (ils, reader.ByteOrder);
+                while (pos < ils_chunk.UnpackedSize)
+                {
+                    int id = ils_reader.ReadVarInt();
+                    var chunk = m_index[id];
+                    m_ilsMap[id] = ils_reader.ReadBytes ((int)chunk.Size);
+                    pos += ils_reader.GetVarIntLength ((uint)id) + chunk.Size;
+                }
+            }
+            return true;
+        }
+
+        bool ReadABMap (SerializationContext context, Reader reader)
+        {
+            reader.ReadVarInt();
+            reader.ReadVarInt();
+            int count = reader.ReadVarInt();
+            m_dir = new List<DirectorEntry> (count);
+            for (int i = 0; i < count; ++ i)
+            {
+                var entry = new AfterBurnerEntry();
+                entry.Deserialize (context, reader);
+                m_dir.Add (entry);
+            }
+            return true;
+        }
+
+        Reader GetChunkReader (DirectorEntry chunk, Reader reader)
+        {
+            if (-1 == chunk.Offset)
+            {
+                byte[] chunk_data;
+                if (!m_ilsMap.TryGetValue (chunk.Id, out chunk_data))
+                    throw new InvalidFormatException (string.Format ("Can't find chunk {0} in ILS", chunk.FourCC));
+                var input = new BinMemoryStream (chunk_data, null);
+                reader = new Reader (input, reader.ByteOrder);
+            }
+            else
+            {
+                reader.Position = chunk.Offset;
+            }
+            return reader;
         }
 
         bool ReadKeyTable (SerializationContext context, Reader reader)
         {
-            var key_chunk = MMap.Find ("KEY*");
+            var key_chunk = Find ("KEY*");
             if (null == key_chunk)
                 return false;
-            reader.Position = key_chunk.Offset;
+            reader = GetChunkReader (key_chunk, reader);
             KeyTable.Deserialize (context, reader);
             return true;
         }
 
         bool ReadConfig (SerializationContext context, Reader reader)
         {
-            var config_chunk = MMap.Find ("VWCF") ?? MMap.Find ("DRCF");
+            var config_chunk = Find ("VWCF") ?? Find ("DRCF");
             if (null == config_chunk)
                 return false;
-            reader.Position = config_chunk.Offset;
+            reader = GetChunkReader (config_chunk, reader);
             Config.Deserialize (context, reader);
             context.Version = Config.Version;
             return true;
@@ -125,21 +260,23 @@ namespace GameRes.Formats.Macromedia
 
         bool ReadCasts (SerializationContext context, Reader reader)
         {
+            Reader cas_reader;
             if (context.Version > 1200)
             {
-                var mcsl = MMap.Find ("MCsL");
+                var mcsl = Find ("MCsL");
                 if (mcsl != null)
                 {
-                    reader.Position = mcsl.Offset;
+                    var mcsl_reader = GetChunkReader (mcsl, reader);
                     var cast_list = new CastList();
-                    cast_list.Deserialize (context, reader);
+                    cast_list.Deserialize (context, mcsl_reader);
                     foreach (var entry in cast_list.Entries)
                     {
                         var key_entry = KeyTable.FindByCast (entry.Id, "CAS*");
                         if (key_entry != null)
                         {
-                            var mmap_entry = MMap[key_entry.Id];
-                            var cast = new Cast (context, reader, mmap_entry);
+                            var cas_entry = Index[key_entry.Id];
+                            cas_reader = GetChunkReader (cas_entry, reader);
+                            var cast = new Cast (context, cas_reader, cas_entry);
                             if (!PopulateCast (cast, context, reader, entry))
                                 return false;
                             Casts.Add (cast);
@@ -148,11 +285,12 @@ namespace GameRes.Formats.Macromedia
                     return true;
                 }
             }
-            var cas_chunk = MMap.Find ("CAS*");
+            var cas_chunk = Find ("CAS*");
             if (null == cas_chunk)
                 return false;
             var new_entry = new CastListEntry { Name = "internal", Id = 0x400, MinMember = Config.MinMember };
-            var new_cast = new Cast (context, reader, cas_chunk);
+            cas_reader = GetChunkReader (cas_chunk, reader);
+            var new_cast = new Cast (context, cas_reader, cas_chunk);
             if (!PopulateCast (new_cast, context, reader, new_entry))
                 return false;
             Casts.Add (new_cast);
@@ -162,30 +300,16 @@ namespace GameRes.Formats.Macromedia
         public bool PopulateCast (Cast cast, SerializationContext context, Reader reader, CastListEntry entry)
         {
             cast.Name = entry.Name;
-            /*
-            var lctx_ref = KeyTable.Table.Find (e => e.CastId == entry.Id && (e.FourCC == "Lctx" || e.FourCC == "LctX"));
-            MemoryMapEntry lctx_chunk = null;
-            if (lctx_ref != null)
-                lctx_chunk = MMap[lctx_ref.Id];
-            else
-                lctx_chunk = MMap.Dir.Find (e => e.FourCC == "Lctx" || e.FourCC == "LctX");
-            if (null == lctx_chunk)
-                return false;
-            reader.Position = lctx_chunk.Offset;
-            var lctx = new ScriptContext();
-            lctx.Deserialize (context, reader);
-            cast.Context = lctx;
-            */
             for (int i = 0; i < cast.Index.Length; ++i)
             {
                 int chunk_id = cast.Index[i];
                 if (chunk_id > 0)
                 {
-                    var chunk = MMap[chunk_id];
+                    var chunk = this.Index[chunk_id];
                     var member = new CastMember();
                     member.Id = chunk_id;
-                    reader.Position = chunk.Offset;
-                    member.Deserialize (context, reader);
+                    var cast_reader = GetChunkReader (chunk, reader);
+                    member.Deserialize (context, cast_reader);
                     cast.Members[member.Id] = member;
                 }
             }
@@ -293,11 +417,10 @@ namespace GameRes.Formats.Macromedia
         public string   Name;
         public Dictionary<int, CastMember> Members = new Dictionary<int, CastMember>();
 
-        public Cast (SerializationContext context, Reader reader, MemoryMapEntry entry)
+        public Cast (SerializationContext context, Reader reader, DirectorEntry entry)
         {
             int count = (int)(entry.Size / 4);
             Index = new int[count];
-            reader.Position = entry.Offset;
             Deserialize (context, reader);
         }
 
@@ -389,54 +512,6 @@ namespace GameRes.Formats.Macromedia
         public int      MinMember;
         public int      MaxMember;
         public int      Id;
-    }
-
-    internal class ScriptContext
-    {
-        public int EntriesOffset;
-        public int LnamChunkId;
-        public int ValidCount;
-        public ushort Flags;
-        public short FreePtr;
-        public List<ScriptContextMap>   ChunkMap = new List<ScriptContextMap>();
-
-        public void Deserialize (SerializationContext context, Reader reader)
-        {
-            long base_offset = reader.Position;
-            reader = reader.CloneUnless (ByteOrder.BigEndian);
-            reader.Skip (8);
-            int count = reader.ReadI32();
-            reader.Skip (4);
-            EntriesOffset = reader.ReadU16();
-            reader.Skip (14);
-            LnamChunkId = reader.ReadI32();
-            ValidCount = reader.ReadU16();
-            Flags = reader.ReadU16();
-            FreePtr = reader.ReadI16();
-            reader.Position = base_offset + EntriesOffset;
-
-            ChunkMap.Clear();
-            ChunkMap.Capacity = count;
-            for (int i = 0; i < count; ++i)
-            {
-                var entry = new ScriptContextMap();
-                entry.Deserialize (context, reader);
-                ChunkMap.Add (entry);
-            }
-        }
-    }
-
-    internal class ScriptContextMap
-    {
-        public int  Key;
-        public int  ChunkId;
-
-        public void Deserialize (SerializationContext context, Reader reader)
-        {
-            Key = reader.ReadI32();
-            ChunkId = reader.ReadI32();
-            reader.Skip (4);
-        }
     }
 
     internal class DirectorConfig
@@ -548,11 +623,9 @@ namespace GameRes.Formats.Macromedia
         public int      ChunkCountMax;
         public int      ChunkCountUsed;
         public int      FreeHead;
-        public readonly List<MemoryMapEntry> Dir = new List<MemoryMapEntry>();
+        public readonly List<DirectorEntry> Dir = new List<DirectorEntry>();
 
-        public MemoryMapEntry this[int index] => Dir[index];
-
-        public MemoryMapEntry Find (string four_cc) => Dir.Find (e => e.FourCC == four_cc);
+        public DirectorEntry this[int index] => Dir[index];
 
         public void Deserialize (SerializationContext context, Reader reader)
         {
@@ -582,10 +655,14 @@ namespace GameRes.Formats.Macromedia
         }
     }
 
-    internal class MemoryMapEntry : Entry
+    internal class DirectorEntry : PackedEntry
     {
         public int      Id;
         public string   FourCC;
+    }
+
+    internal class MemoryMapEntry : DirectorEntry
+    {
         public ushort   Flags;
 
         public MemoryMapEntry (int id = 0)
@@ -596,10 +673,28 @@ namespace GameRes.Formats.Macromedia
         public void Deserialize (SerializationContext context, Reader reader)
         {
             FourCC = reader.ReadFourCC();
-            Size = reader.ReadU32();
+            Size   = reader.ReadU32();
             Offset = reader.ReadU32() + 8;
-            Flags = reader.ReadU16();
-            int Next = reader.ReadI32();
+            Flags  = reader.ReadU16();
+            reader.ReadI32(); // next
+            UnpackedSize = Size;
+            IsPacked = false;
+        }
+    }
+
+    internal class AfterBurnerEntry : DirectorEntry
+    {
+        public int      CompMethod;
+
+        public void Deserialize (SerializationContext context, Reader reader)
+        {
+            Id           = reader.ReadVarInt();
+            Offset       = reader.ReadVarInt();
+            Size         = (uint)reader.ReadVarInt();
+            UnpackedSize = (uint)reader.ReadVarInt();
+            CompMethod   = reader.ReadVarInt(); // assume zlib
+            FourCC       = reader.ReadFourCC();
+            IsPacked     = Size != UnpackedSize;
         }
     }
 
@@ -619,7 +714,7 @@ namespace GameRes.Formats.Macromedia
             SetByteOrder (e);
         }
 
-        public Stream Source { get => m_input; }
+        public Stream Source => m_input;
 
         public ByteOrder ByteOrder { get; private set; }
 
@@ -699,6 +794,32 @@ namespace GameRes.Formats.Macromedia
             if (m_input.Read (buffer, 0, length) < length)
                 throw new EndOfStreamException();
             return buffer;
+        }
+
+        public int ReadVarInt ()
+        {
+            int n = 0;
+            for (int i = 0; i < 5; ++i)
+            {
+                int bits = m_input.ReadByte();
+                if (-1 == bits)
+                    throw new EndOfStreamException();
+                n = n << 7 | bits & 0x7F;
+                if (0 == (bits & 0x80))
+                    return n;
+            }
+            throw new InvalidFormatException();
+        }
+
+        public uint GetVarIntLength (uint i)
+        {
+            uint n = 1;
+            while (i > 0x7F)
+            {
+                i >>= 7;
+                ++n;
+            }
+            return n;
         }
 
         public Reader CloneUnless (ByteOrder order)

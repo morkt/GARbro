@@ -589,14 +589,13 @@ namespace GameRes
 
         public string ReadCString (int length, Encoding enc)
         {
-            length = Math.Min (length, m_length - m_position);
             int start = m_start+m_position;
-            int i = Array.IndexOf<byte> (m_source, 0, start, length);
-            if (-1 == i)
-                i = start+length;
-            string s = enc.GetString (m_source, start, i-start);
+            length = Math.Min (length, m_length - m_position);
+            int eos_pos = FindEoS (start, length, enc);
+            if (-1 == eos_pos)
+                eos_pos = start+length;
             m_position += length;
-            return s;
+            return enc.GetString (m_source, start, eos_pos-start);
         }
 
         public string ReadCString ()
@@ -607,17 +606,19 @@ namespace GameRes
         public string ReadCString (Encoding enc)
         {
             int start = m_start+m_position;
-            int eos_pos = Array.IndexOf<byte> (m_source, 0, start, m_length-m_position);
+            int length = m_length-m_position;
+            int eos_pos = FindEoS (start, length, enc);
             int count;
             if (-1 == eos_pos)
             {
-                count = m_length - m_position;
+                count = length;
                 m_position = m_length;
             }
             else
             {
                 count = eos_pos - start;
-                m_position += count + 1;
+                int eos_size = enc.IsUtf16() ? 2 : 1;
+                m_position += count + eos_size;
             }
             return enc.GetString (m_source, start, count);
         }
@@ -629,6 +630,27 @@ namespace GameRes
             Buffer.BlockCopy (m_source, m_start+m_position, buffer, 0, count);
             m_position += count;
             return buffer;
+        }
+
+        internal int FindEoS (int start, int length, Encoding enc)
+        {
+            int eos_pos = -1;
+            if (enc.IsUtf16())
+            {
+                for (int i = start+1; i < start+length; i += 2)
+                {
+                    if (m_source[i-1] == 0 && m_source[i] == 0)
+                    {
+                        eos_pos = i - 1;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                eos_pos = Array.IndexOf<byte> (m_source, 0, start, length);
+            }
+            return eos_pos;
         }
 
         #region IO.Stream Members

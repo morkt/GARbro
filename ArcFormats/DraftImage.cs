@@ -28,9 +28,9 @@ namespace GameRes.Formats.??????
     [Export(typeof(ImageFormat))]
     public class xxxFormat : ImageFormat
     {
-        public override string         Tag { get => "xxx"; }
-        public override string Description { get => "?????? image format"; }
-        public override uint     Signature { get => 0; }
+        public override string         Tag => "xxx";
+        public override string Description => "?????? image format";
+        public override uint     Signature => 0;
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {

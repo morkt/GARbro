@@ -29,10 +29,12 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace GameRes.Formats.Microsoft
 {
     [Export(typeof(ArchiveFormat))]
+    [ExportMetadata("Priority", -1)]
     public class ExeOpener : ArchiveFormat
     {
         public override string         Tag { get => "EXE"; }
@@ -49,6 +51,7 @@ namespace GameRes.Formats.Microsoft
         static readonly Dictionary<string, string> RuntimeTypeMap = new Dictionary<string, string>() {
             { "#2",  "RT_BITMAP" },
             { "#10", "RT_RCDATA" },
+            { "#16", "RT_VERSION" },
         };
 
         static readonly Dictionary<string, string> ExtensionTypeMap = new Dictionary<string, string>() {
@@ -59,6 +62,8 @@ namespace GameRes.Formats.Microsoft
             { "#2",   ".BMP" },
             { "#10",  ".BIN" },
         };
+
+        bool OpenRtVersionAsText = true;
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -85,7 +90,7 @@ namespace GameRes.Formats.Microsoft
                         var entry = Create<ResourceEntry> (full_name);
                         entry.NativeName = name;
                         entry.NativeType = type;
-                        entry.Offset = 0;
+                        entry.Offset = 0; // bogus XXX
                         entry.Size = res.GetResourceSize (name, type);
                         dir.Add (entry);
                     }
@@ -111,6 +116,8 @@ namespace GameRes.Formats.Microsoft
             var data = rarc.Accessor.GetResource (rent.NativeName, rent.NativeType);
             if (null == data)
                 return Stream.Null;
+            if (rent.NativeType == "#16" && OpenRtVersionAsText)
+                return OpenVersion (data, rent.Name);
             return new BinMemoryStream (data, rent.Name);
         }
 
@@ -130,7 +137,7 @@ namespace GameRes.Formats.Microsoft
             int bits_length = bitmap.ToInt32 (0x22);
             int bits_pos = length - bits_length;
             if (bits_length == 0)
-                bits_pos = bitmap.ToInt32 (14) + 22;
+                bits_pos = bitmap.ToInt32 (14) + 14;
             LittleEndian.Pack (bits_pos, bitmap, 10);
 
             var bm = new BinMemoryStream (bitmap, 0, length, entry.Name);
@@ -149,6 +156,70 @@ namespace GameRes.Formats.Microsoft
             if (id.Length > 1 && id[0] == '#' && char.IsDigit (id[1]))
                 id = id.Substring (1).PadLeft (5, '0');
             return id;
+        }
+
+        static readonly byte[] VS_VERSION_INFO = Encoding.Unicode.GetBytes ("VS_VERSION_INFO");
+
+        Stream OpenVersion (byte[] data, string name)
+        {
+            var input = new BinMemoryStream (data, name);
+            for (;;)
+            {
+                if (input.ReadUInt16() != data.Length)
+                    break;
+                int value_length = input.ReadUInt16();
+                int type = input.ReadUInt16();
+                if (0 == value_length || type != 0)
+                    break;
+                if (input.ReadCString (Encoding.Unicode) != "VS_VERSION_INFO")
+                    break;
+                long pos = (input.Position + 3) & -4L;
+                input.Position = pos;
+                if (input.ReadUInt32() != 0xFEEF04BDu)
+                    break;
+                input.Position = pos + value_length;
+                int str_info_length = input.ReadUInt16();
+                value_length = input.ReadUInt16();
+                type = input.ReadUInt16();
+                if (value_length != 0)
+                    break;
+                if (input.ReadCString (Encoding.Unicode) != "StringFileInfo")
+                    break;
+                pos = (input.Position + 3) & -4L;
+                input.Position = pos;
+                int info_length = input.ReadUInt16();
+                long end_pos = pos + info_length;
+                value_length = input.ReadUInt16();
+                type = input.ReadUInt16();
+                if (value_length != 0)
+                    break;
+                var output = new MemoryStream();
+                using (var text = new StreamWriter (output, new UTF8Encoding (false), 512, true))
+                {
+                    string block_name = input.ReadCString (Encoding.Unicode);
+                    text.WriteLine ("BLOCK \"{0}\"\n{{", block_name);
+                    long next_pos = (input.Position + 3) & -4L;
+                    while (next_pos < end_pos)
+                    {
+                        input.Position = next_pos;
+                        info_length = input.ReadUInt16();
+                        value_length = input.ReadUInt16();
+                        type = input.ReadUInt16();
+                        next_pos = (next_pos + info_length + 3) & -4L;
+                        string key = input.ReadCString (Encoding.Unicode);
+                        input.Position = (input.Position + 3) & -4L;
+                        string value = value_length != 0 ? input.ReadCString (value_length * 2, Encoding.Unicode)
+                                                         : String.Empty;
+                        text.WriteLine ("\tVALUE \"{0}\", \"{1}\"", key, value);
+                    }
+                    text.WriteLine ("}");
+                }
+                input.Dispose();
+                output.Position = 0;
+                return output;
+            }
+            input.Position = 0;
+            return input;
         }
     }
 

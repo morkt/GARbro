@@ -29,11 +29,11 @@ namespace GameRes.Formats.??????
     [Export(typeof(ArchiveFormat))]
     public class PakOpener : ArchiveFormat
     {
-        public override string         Tag { get => "ARC"; }
-        public override string Description { get => "?????? engine resource archive"; }
-        public override uint     Signature { get => 0; }
-        public override bool  IsHierarchic { get => false; }
-        public override bool      CanWrite { get => false; }
+        public override string         Tag => "ARC";
+        public override string Description => "?????? engine resource archive";
+        public override uint     Signature => 0;
+        public override bool  IsHierarchic => false;
+        public override bool      CanWrite => false;
 
         public override ArcFile TryOpen (ArcView file)
         {
@@ -50,6 +50,11 @@ namespace GameRes.Formats.??????
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            return base.OpenEntry (arc, entry);
         }
     }
 }

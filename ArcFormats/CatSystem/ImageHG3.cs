@@ -30,6 +30,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using GameRes.Compression;
 using GameRes.Utility;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GameRes.Formats.CatSystem
 {
@@ -285,9 +287,10 @@ namespace GameRes.Formats.CatSystem
         byte[] UnpackJpeg ()
         {
             Flipped = false;
-            m_input.ReadInt32();
+            var toc = ReadSections();
+
+            m_input.Position = toc["img_jpg"] + 12;
             var jpeg_size = m_input.ReadInt32();
-            long next_section = Source.Position + jpeg_size;
             BitmapSource frame;
             using (var jpeg = new StreamRegion (Source, Source.Position, jpeg_size, true))
             {
@@ -297,40 +300,69 @@ namespace GameRes.Formats.CatSystem
             if (frame.Format.BitsPerPixel < 24)
                 throw new NotSupportedException ("Not supported HG-3 JPEG color depth");
             int src_pixel_size = frame.Format.BitsPerPixel/8;
-            int stride = (int)m_info.Width * src_pixel_size;
-            var pixels = new byte[stride*(int)m_info.Height];
+            int stride = m_info.iWidth * src_pixel_size;
+            var pixels = new byte[stride * m_info.iHeight];
             frame.CopyPixels (pixels, stride, 0);
-            var output = new byte[m_info.Width*m_info.Height*4];
-            uint total = m_info.Width * m_info.Height;
+
+            int total = m_info.iWidth * m_info.iHeight;
+            byte[] alpha = null;
+            if (toc.ContainsKey ("img_al"))
+                alpha = ReadAlpha (toc["img_al"]);
+            else
+                alpha = Enumerable.Repeat<byte> (0xFF, total).ToArray();
+
+            bool swap_rgb = toc.ContainsKey ("imgmode"); // XXX ???
+
+            var output = new byte[total * 4];
             int src = 0;
             int dst = 0;
+            int src_A = 0;
+            int src_R = 2, src_G = 1, src_B = 0;
+            if (swap_rgb)
+            {
+                src_R = 0;
+                src_B = 2;
+            }
             for (uint i = 0; i < total; ++i)
             {
-                output[dst++] = pixels[src+2];
-                output[dst++] = pixels[src+1];
-                output[dst++] = pixels[src];
-                output[dst++] = 0xFF;
+                output[dst++] = pixels[src+src_B];
+                output[dst++] = pixels[src+src_G];
+                output[dst++] = pixels[src+src_R];
+                output[dst++] = alpha[src_A++];
                 src += src_pixel_size;
             }
+            return output;
+        }
 
-            m_input.Position = next_section;
-            var section_header = m_input.ReadBytes (8);
-            if (!Binary.AsciiEqual (section_header, "img_al\0\0"))
-                return output;
-            m_input.Seek (8, SeekOrigin.Current);
+        byte[] ReadAlpha (long start_pos)
+        {
+            m_input.Position = start_pos + 0x10;
+            int packed_size = m_input.ReadInt32();
             int alpha_size = m_input.ReadInt32();
-            using (var alpha_in = new StreamRegion (Source, Source.Position+4, alpha_size, true))
+            using (var alpha_in = new StreamRegion (Source, Source.Position, packed_size, true))
             using (var alpha = new ZLibStream (alpha_in, CompressionMode.Decompress))
             {
-                for (int i = 3; i < output.Length; i += 4)
-                {
-                    int b = alpha.ReadByte();
-                    if (-1 == b)
-                        throw new EndOfStreamException();
-                    output[i] = (byte)b;
-                }
-                return output;
+                var alpha_data = new byte[alpha_size];
+                alpha.Read (alpha_data, 0, alpha_size);
+                return alpha_data;
             }
+        }
+
+        Dictionary<string, long> ReadSections ()
+        {
+            long next_offset = m_info.HeaderSize;
+            var toc = new Dictionary<string, long>();
+            uint section_size;
+            do
+            {
+                m_input.Position = next_offset;
+                var section_name = m_input.ReadCString (8);
+                section_size = m_input.ReadUInt32();
+                toc[section_name] = next_offset;
+                next_offset += section_size;
+            }
+            while (section_size != 0);
+            return toc;
         }
 
         byte[] UnpackWebp ()
