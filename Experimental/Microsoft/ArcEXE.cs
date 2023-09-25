@@ -37,11 +37,11 @@ namespace GameRes.Formats.Microsoft
     [ExportMetadata("Priority", -1)]
     public class ExeOpener : ArchiveFormat
     {
-        public override string         Tag { get => "EXE"; }
-        public override string Description { get => "Windows executable resources"; }
-        public override uint     Signature { get => 0; }
-        public override bool  IsHierarchic { get => true; }
-        public override bool      CanWrite { get => false; }
+        public override string         Tag => "EXE";
+        public override string Description => "Windows executable resources";
+        public override uint     Signature => 0;
+        public override bool  IsHierarchic => true;
+        public override bool      CanWrite => false;
 
         public ExeOpener ()
         {
@@ -157,8 +157,6 @@ namespace GameRes.Formats.Microsoft
                 id = id.Substring (1).PadLeft (5, '0');
             return id;
         }
-
-        static readonly byte[] VS_VERSION_INFO = Encoding.Unicode.GetBytes ("VS_VERSION_INFO");
 
         Stream OpenVersion (byte[] data, string name)
         {
