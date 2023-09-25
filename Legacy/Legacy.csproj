@@ -89,8 +89,10 @@
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
     <Compile Include="BlackButterfly\ArcDAT.cs" />
+    <Compile Include="Blucky\Aliases.cs" />
     <Compile Include="Bom\ImageGRP.cs" />
     <Compile Include="CottonClub\ImageLMG.cs" />
+    <Compile Include="Grocer\ImagePIC.cs" />
     <Compile Include="Gsx\ArcK5.cs" />
     <Compile Include="Gsx\ImageK4.cs" />
     <Compile Include="Herb\ArcPAK.cs" />
@@ -144,6 +146,8 @@
     <Compile Include="Omi\ArcDAT.cs" />
     <Compile Include="Paprika\ArcPKDAT.cs" />
     <Compile Include="Paprika\ImageNP.cs" />
+    <Compile Include="Pearl\ArcARY.cs" />
+    <Compile Include="Pearl\ImagePL4.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
     <Compile Include="Pias\ArcDAT.cs" />
     <Compile Include="PineSoft\ArcCMB.cs" />
@@ -156,6 +160,9 @@
     <Compile Include="ProjectMyu\ImageGAM.cs" />
     <Compile Include="Ransel\ArcBCD.cs" />
     <Compile Include="Rare\ArcX.cs" />
+    <Compile Include="RedZone\ArcPAK.cs" />
+    <Compile Include="Adv98\ImageGPC.cs" />
+    <Compile Include="RedZone\ScriptQDO.cs" />
     <Compile Include="Regrips\AudioWRG.cs" />
     <Compile Include="Regrips\ImagePRG.cs" />
     <Compile Include="Rhss\ArcCRG.cs" />

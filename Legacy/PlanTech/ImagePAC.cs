@@ -29,9 +29,7 @@ using System.Windows.Media;
 
 namespace GameRes.Formats.PlanTech
 {
-#if DEBUG
     [Export(typeof(ImageFormat))]
-#endif
     public class PacFormat : ImageFormat
     {
         public override string         Tag { get { return "PAC/PLANTECH"; } }
