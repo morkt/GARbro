@@ -729,7 +729,6 @@
     <Compile Include="AZSys\ArcAZSys.cs" />
     <Compile Include="Ethornell\ArcBGI.cs" />
     <Compile Include="Ffa\ArcBlackPackage.cs" />
-    <None Include="Macromedia\ArcCCT.cs" />
     <Compile Include="Cherry\ArcCherry.cs" />
     <Compile Include="Circus\ArcCircus.cs" />
     <Compile Include="ArcCommon.cs" />

@@ -1,6 +1,6 @@
 //! \file       AudioEDIM.cs
 //! \date       Fri Jun 26 06:52:33 2015
-//! \brief      Selen wrapper around MP3 stream.
+//! \brief      Macromedia Director wrapper around MP3 stream.
 //
 // Copyright (C) 2015 by morkt
 //
@@ -33,7 +33,7 @@ namespace GameRes.Formats.Selen
     public class EdimAudio : Mp3Audio
     {
         public override string         Tag { get { return "EDIM"; } }
-        public override string Description { get { return "Selen audio format (MP3)"; } }
+        public override string Description { get { return "Macromedia Director audio format (MP3)"; } }
         public override uint     Signature { get { return 0x40010000; } }
         public override bool      CanWrite { get { return false; } }
 

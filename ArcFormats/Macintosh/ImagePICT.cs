@@ -190,6 +190,9 @@ namespace GameRes.Formats.Apple
                         break;
                     }
 
+                case 0x001E: // DefHilite
+                    break;
+
                 case 0x0090:
                 case 0x0091:
                 case 0x0098:

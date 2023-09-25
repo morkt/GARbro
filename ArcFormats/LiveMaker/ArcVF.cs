@@ -45,7 +45,7 @@ namespace GameRes.Formats.LiveMaker
         public VffOpener ()
         {
             Extensions = new string[] { "dat", "exe" };
-            Signatures = new uint[] { 0x666676, 0 };
+            Signatures = new uint[] { 0x666676, 0x00905A4D, 0 };
         }
 
         public override ArcFile TryOpen (ArcView file)

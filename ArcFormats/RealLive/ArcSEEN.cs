@@ -111,7 +111,7 @@ namespace GameRes.Formats.RealLive
                     int offset = input.ReadUInt16();
                     int count = (offset & 0xF) + 2;
                     offset >>= 4;
-                    Binary.CopyOverlapped (output, dst-offset, dst, count);
+                    Binary.CopyOverlapped (output, dst-offset-1, dst, count);
                     dst += count;
                 }
             }

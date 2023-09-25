@@ -38,17 +38,18 @@ namespace GameRes.Formats
 
         public MbImageFormat ()
         {
-            Extensions = new[] { "bmp", "gra" };
+            Extensions = new[] { "bmp", "gra", "xxx" };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             int c1 = stream.ReadByte();
             int c2 = stream.ReadByte();
+            // MB/MC/MK/CL
             switch (c1)
             {
             case 'M':
-                if ('B' != c2 && 'C' != c2)
+                if ('B' != c2 && 'C' != c2 && 'K' != c2)
                     return null;
                 break;
             case 'C':

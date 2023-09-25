@@ -105,7 +105,7 @@ namespace GameRes.Formats.YuRis
 
         public YpfOpener ()
         {
-            Signatures = new uint[] { 0x00465059, 0 };
+            Signatures = new uint[] { 0x00465059, 0x00905A4D, 0 };
         }
 
         static public Dictionary<string, YpfScheme> KnownSchemes { get { return DefaultScheme.KnownSchemes; } }
