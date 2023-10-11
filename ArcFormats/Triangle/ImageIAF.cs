@@ -100,7 +100,7 @@ namespace GameRes.Formats.Triangle
                 return null;
             unpacked_size &= (int)~0xC0000000;
             stream.Position = data_offset;
-            byte[] bmp = UnpackBitmap (stream.AsStream, pack_type, packed_size, 0x26);
+            byte[] bmp = UnpackBitmap (stream, pack_type, packed_size, 0x26);
             if (bmp[0] != 'B' && bmp[0] != 'C' || bmp[1] != 'M')
                 return null;
             return new IafMetaData
@@ -121,7 +121,7 @@ namespace GameRes.Formats.Triangle
         {
             var meta = (IafMetaData)info;
             stream.Position = meta.DataOffset;
-            var bitmap = UnpackBitmap (stream.AsStream, meta.PackType, meta.PackedSize, meta.UnpackedSize);
+            var bitmap = UnpackBitmap (stream, meta.PackType, meta.PackedSize, meta.UnpackedSize);
             if ('C' == bitmap[0])
             {
                 bitmap[0] = (byte)'B';
@@ -155,19 +155,24 @@ namespace GameRes.Formats.Triangle
                 return Bmp.Read (bmp, info);
         }
 
-        internal static byte[] UnpackBitmap (Stream stream, int pack_type, int packed_size, int unpacked_size)
+        internal static byte[] UnpackBitmap (IBinaryStream stream, int pack_type, int packed_size, int unpacked_size)
         {
             if (2 == pack_type)
             {
+                uint signature = stream.ReadUInt32();
+                stream.Seek (-4, SeekOrigin.Current);
                 using (var reader = new RleReader (stream, packed_size, unpacked_size))
                 {
-                    reader.Unpack();
+                    if (0x014D0142 == signature)
+                        reader.UnpackV2();
+                    else
+                        reader.Unpack();
                     return reader.Data;
                 }
             }
             else if (0 == pack_type)
             {
-                using (var reader = new LzssReader (stream, packed_size, unpacked_size))
+                using (var reader = new LzssReader (stream.AsStream, packed_size, unpacked_size))
                 {
                     reader.Unpack();
                     return reader.Data;
@@ -261,15 +266,15 @@ namespace GameRes.Formats.Triangle
 
     internal class RleReader : IDataUnpacker, IDisposable
     {
-        BinaryReader    m_input;
+        IBinaryStream   m_input;
         byte[]          m_output;
         int             m_size;
 
         public byte[] Data { get { return m_output; } }
 
-        public RleReader (Stream input, int input_length, int output_length)
+        public RleReader (IBinaryStream input, int input_length, int output_length)
         {
-            m_input = new ArcView.Reader (input);
+            m_input = input;
             m_output = new byte[output_length];
             m_size = input_length;
         }
@@ -280,8 +285,8 @@ namespace GameRes.Formats.Triangle
             int dst = 0;
             while (dst < m_output.Length && src < m_size)
             {
-                byte b = m_input.ReadByte();
-                int count = m_input.ReadByte();
+                byte b = m_input.ReadUInt8();
+                int count = m_input.ReadUInt8();
                 src += 2;
                 count = Math.Min (count, m_output.Length - dst);
                 for (int i = 0; i < count; i++)
@@ -295,11 +300,11 @@ namespace GameRes.Formats.Triangle
             int dst = 0;
             while (dst < m_output.Length && src < m_size)
             {
-                byte ctl = m_input.ReadByte();
+                byte ctl = m_input.ReadUInt8();
                 ++src;
                 if (0 == ctl)
                 {
-                    int count = m_input.ReadByte();
+                    int count = m_input.ReadUInt8();
                     ++src;
                     count = Math.Min (count, m_output.Length - dst);
                     int read = m_input.Read (m_output, dst, count);
@@ -309,7 +314,7 @@ namespace GameRes.Formats.Triangle
                 else
                 {
                     int count = ctl;
-                    byte b = m_input.ReadByte();
+                    byte b = m_input.ReadUInt8();
                     ++src;
                     count = Math.Min (count, m_output.Length - dst);
 
@@ -320,24 +325,8 @@ namespace GameRes.Formats.Triangle
         }
 
         #region IDisposable Members
-        bool disposed = false;
-
         public void Dispose ()
         {
-            Dispose (true);
-            GC.SuppressFinalize (this);
-        }
-
-        protected virtual void Dispose (bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    m_input.Dispose();
-                }
-                disposed = true;
-            }
         }
         #endregion
     }

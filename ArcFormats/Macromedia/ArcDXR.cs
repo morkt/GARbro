@@ -49,7 +49,7 @@ namespace GameRes.Formats.Macromedia
 
         public DxrOpener ()
         {
-            Extensions = new[] { "dxr", "cxt", "cct", "dcr", "exe" };
+            Extensions = new[] { "dxr", "cxt", "cct", "dcr", "dir", "exe" };
             Signatures = new[] { SignatureXFIR, SignatureRIFX, 0x00905A4Du, 0u };
         }
 
@@ -411,7 +411,7 @@ namespace GameRes.Formats.Macromedia
                 pos = exe.Overlay.Offset;
                 if (pos >= file.MaxOffset)
                     return 0;
-                if (file.View.AsciiEqual (pos, "10JP"))
+                if (file.View.AsciiEqual (pos, "10JP") || file.View.AsciiEqual (pos, "59JP"))
                 {
                     pos = file.View.ReadUInt32 (pos+4);
                 }
@@ -436,7 +436,8 @@ namespace GameRes.Formats.Macromedia
                     // only the first XFIR entry is matched here, but archive may contain multiple sub-archives.
                     if (entry.FourCC == "File")
                     {
-                        if (file.View.AsciiEqual (entry.Offset-8, "XFIR"))
+                        if (file.View.AsciiEqual (entry.Offset-8, "XFIR")
+                            && !file.View.AsciiEqual (entry.Offset, "artX"))
                             return entry.Offset-8;
                     }
                 }
@@ -469,12 +470,15 @@ namespace GameRes.Formats.Macromedia
                 Left   = reader.ReadI16();
                 Bottom = reader.ReadI16();
                 Right  = reader.ReadI16();
-                reader.Skip (0x0C);
-                BitDepth = reader.ReadU16() & 0xFF; // ???
-                if (data.Length >= 0x1C)
+                if (data.Length > 0x16)
                 {
-                    reader.Skip (2);
-                    Palette = reader.ReadI16();
+                    reader.Skip (0x0C);
+                    BitDepth = reader.ReadU16() & 0xFF; // ???
+                    if (data.Length >= 0x1C)
+                    {
+                        reader.Skip (2);
+                        Palette = reader.ReadI16();
+                    }
                 }
             }
         }

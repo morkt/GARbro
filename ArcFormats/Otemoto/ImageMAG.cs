@@ -45,7 +45,7 @@ namespace GameRes.Formats.Otemoto
     [Export(typeof(ImageFormat))]
     public class MagFormat : ImageFormat
     {
-        public override string         Tag { get { return "MAG"; } }
+        public override string         Tag { get { return "MAG/MAKI02"; } }
         public override string Description { get { return "Otemoto image format"; } }
         public override uint     Signature { get { return 0x494B414D; } } // 'MAKI02'
 

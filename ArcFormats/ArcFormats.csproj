@@ -106,6 +106,7 @@
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
     <Compile Include="AIRNovel\ArcAIR.cs" />
+    <Compile Include="CsWare\ImageGDT.cs" />
     <Compile Include="FC01\ArcBDT.cs" />
     <Compile Include="FC01\BdtTables.cs" />
     <Compile Include="GScripter\ArcDATA.cs" />
@@ -153,6 +154,8 @@
     <Compile Include="NScripter\Script.cs" />
     <Compile Include="Psp\ArcQPK.cs" />
     <Compile Include="ScrPlayer\ImageIMG.cs" />
+    <Compile Include="SingleFileArchive.cs" />
+    <Compile Include="Software House Parsley\ArcCG3.cs" />
     <Compile Include="Software House Parsley\ArcScn.cs" />
     <Compile Include="TechGian\ArcBIN.cs" />
     <Compile Include="Unity\ScriptDSM.cs" />
