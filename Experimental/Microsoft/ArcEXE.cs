@@ -195,7 +195,7 @@ namespace GameRes.Formats.Microsoft
                 using (var text = new StreamWriter (output, new UTF8Encoding (false), 512, true))
                 {
                     string block_name = input.ReadCString (Encoding.Unicode);
-                    text.WriteLine ("BLOCK \"{0}\"\n{{", block_name);
+                    text.WriteLine ("BLOCK \"{0}\"\r\n{{", block_name);
                     long next_pos = (input.Position + 3) & -4L;
                     while (next_pos < end_pos)
                     {
