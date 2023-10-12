@@ -56,6 +56,8 @@ namespace GameRes.Formats
                 if ('L' != c2)
                     return null;
                 break;
+            default:
+                return null;
             }
             using (var bmp = OpenAsBitmap (stream))
                 return Bmp.ReadMetaData (bmp);
