@@ -89,7 +89,7 @@ namespace GameRes.Formats.KiriKiri
         public Xp3Opener ()
         {
             Signatures = new uint[] { 0x0d335058, 0x00905A4D, 0 };
-            Extensions = new[] { "XP3", "EXE" };
+            Extensions = new[] { "xp3", "exe" };
             ContainedFormats = new[] { "TLG", "BMP", "PNG", "JPEG", "OGG", "WAV", "TXT" };
         }
         
