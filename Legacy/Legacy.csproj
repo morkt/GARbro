@@ -91,6 +91,8 @@
     <Compile Include="Artel\ImageMRL.cs" />
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
+    <Compile Include="AyPio\ArcDLB.cs" />
+    <Compile Include="AyPio\ImagePDT.cs" />
     <Compile Include="BlackButterfly\ArcDAT.cs" />
     <Compile Include="Blucky\Aliases.cs" />
     <Compile Include="Bom\ImageGRP.cs" />
@@ -234,6 +236,7 @@
     <Compile Include="System21\ImageTEX.cs" />
     <Compile Include="Tako\ArcMPK.cs" />
     <Compile Include="Tetratech\ArcBND.cs" />
+    <Compile Include="Tiare\ImageGRA.cs" />
     <Compile Include="Tigerman\ArcCHR.cs" />
     <Compile Include="Tigerman\ArcPAC.cs" />
     <Compile Include="Tigerman\ImageCHR.cs" />
