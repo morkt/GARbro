@@ -79,7 +79,7 @@ namespace GameRes.Formats.AyPio
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var reader = new PdtReader (file, (PdtMetaData)info);
+            var reader = new Pdt4Reader (file, (PdtMetaData)info);
             return reader.Unpack();
         }
 
@@ -89,12 +89,12 @@ namespace GameRes.Formats.AyPio
         }
     }
 
-    internal class PdtReader
+    internal class Pdt4Reader
     {
         IBinaryStream   m_input;
         PdtMetaData     m_info;
 
-        public PdtReader (IBinaryStream input, PdtMetaData info)
+        public Pdt4Reader (IBinaryStream input, PdtMetaData info)
         {
             m_input = input;
             m_info = info;
