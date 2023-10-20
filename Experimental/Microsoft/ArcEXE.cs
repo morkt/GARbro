@@ -175,17 +175,23 @@ namespace GameRes.Formats.Microsoft
                 input.Position = pos;
                 if (input.ReadUInt32() != 0xFEEF04BDu)
                     break;
-                input.Position = pos + value_length;
-                int str_info_length = input.ReadUInt16();
-                value_length = input.ReadUInt16();
-                type = input.ReadUInt16();
-                if (value_length != 0)
-                    break;
-                if (input.ReadCString (Encoding.Unicode) != "StringFileInfo")
+                int info_length = value_length;
+                bool found_string_info = false;
+                do
+                {
+                    pos += info_length;
+                    input.Position = pos;
+                    info_length  = input.ReadUInt16();
+                    value_length = input.ReadUInt16();
+                    type         = input.ReadUInt16();
+                    found_string_info = input.ReadCString (Encoding.Unicode) == "StringFileInfo";
+                }
+                while (!found_string_info && input.PeekByte() != -1);
+                if (!found_string_info)
                     break;
                 pos = (input.Position + 3) & -4L;
                 input.Position = pos;
-                int info_length = input.ReadUInt16();
+                info_length = input.ReadUInt16();
                 long end_pos = pos + info_length;
                 value_length = input.ReadUInt16();
                 type = input.ReadUInt16();
