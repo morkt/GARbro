@@ -66,6 +66,8 @@ namespace GameRes.Formats.LiveMaker
                     && (0x5A4D == (signature & 0xFFFF))) // 'MZ'
                 {
                     base_offset = SkipExeData (index_file);
+                    if (base_offset >= file.MaxOffset)
+                        return null;
                     signature = index_file.View.ReadUInt32 (base_offset);
                 }
                 else if (!file.Name.HasExtension (".dat"))
