@@ -47,6 +47,7 @@ namespace GameRes
     }
 
     [Export(typeof(ImageFormat))]
+    [ExportMetadata("Priority", 10)]
     public sealed class BmpFormat : ImageFormat
     {
         public override string         Tag { get { return "BMP"; } }
