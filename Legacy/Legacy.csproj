@@ -105,6 +105,7 @@
     <Compile Include="Desire\ImageDPC.cs" />
     <Compile Include="Discovery\ImageAN1.cs" />
     <Compile Include="Discovery\ImagePR1.cs" />
+    <Compile Include="DMotion\ArcDM.cs" />
     <Compile Include="Grocer\ImagePIC.cs" />
     <Compile Include="Gsx\ArcK5.cs" />
     <Compile Include="Gsx\ImageK4.cs" />
@@ -115,6 +116,8 @@
     <Compile Include="Herb\ArcPAK.cs" />
     <Compile Include="Herb\ImageGRP.cs" />
     <Compile Include="HyperWorks\ImageG.cs" />
+    <Compile Include="Izumi\ImageMAI2.cs" />
+    <Compile Include="Izumi\ImageMAI3.cs" />
     <Compile Include="James\ImageJMG.cs" />
     <Compile Include="BRoom\ArcCPC.cs" />
     <Compile Include="BRoom\ArcPK.cs" />
@@ -157,6 +160,7 @@
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="Mermaid\AudioPWV.cs" />
     <Compile Include="Mermaid\ImageGP1.cs" />
+    <Compile Include="Miami\ImageMIA.cs" />
     <Compile Include="Mina\ArcPAK.cs" />
     <Compile Include="Mink\ImageFC.cs" />
     <Compile Include="Mink\ImageFD.cs" />

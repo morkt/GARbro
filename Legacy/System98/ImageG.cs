@@ -76,12 +76,16 @@ namespace GameRes.Formats.System98
         }
     }
 
+    /// <summary>
+    /// This compression format is used in several PC-98 game engines.
+    /// </summary>
     internal class GraBaseReader
     {
         protected IBinaryStream m_input;
         protected ImageMetaData m_info;
         protected int           m_output_stride;
         protected byte[]        m_pixels;
+        protected int           m_dst;
 
         public byte[] Pixels => m_pixels;
         public int    Stride => m_output_stride;
@@ -94,7 +98,7 @@ namespace GameRes.Formats.System98
             m_pixels = new byte[m_output_stride * m_info.iHeight];
         }
 
-        ushort[] m_buffer;
+        protected ushort[] m_buffer;
 
         public void UnpackBits ()
         {
@@ -216,8 +220,6 @@ namespace GameRes.Formats.System98
             }
         }
 
-        int m_dst;
-
         bool FlushBuffer ()
         {
             MovePixels (m_buffer, m_info.iWidth * 4, 0, m_info.iWidth);
@@ -231,14 +233,14 @@ namespace GameRes.Formats.System98
             return m_dst == m_pixels.Length;
         }
 
-        ushort ReadPair (int pos)
+        protected ushort ReadPair (int pos)
         {
             byte al = ReadPixel (pos);
             byte ah = ReadPixel (al);
             return (ushort)(al | ah << 8);
         }
 
-        byte ReadPixel (int pos)
+        protected byte ReadPixel (int pos)
         {
             byte px = 0;
             if (GetNextBit() == 0)
@@ -277,7 +279,7 @@ namespace GameRes.Formats.System98
 
         byte[] m_frame;
 
-        void InitFrame ()
+        protected void InitFrame ()
         {
             m_frame = new byte[0x100];
             int p = 0;
@@ -293,7 +295,7 @@ namespace GameRes.Formats.System98
             }
         }
 
-        void MovePixels (ushort[] pixels, int src, int dst, int count)
+        protected void MovePixels (ushort[] pixels, int src, int dst, int count)
         {
             count <<= 1;
             if (dst > src)
@@ -315,12 +317,12 @@ namespace GameRes.Formats.System98
         int m_bits;
         int m_bit_count;
 
-        void InitBitReader ()
+        protected void InitBitReader ()
         {
             m_bit_count = 1;
         }
 
-        byte GetNextBit ()
+        protected byte GetNextBit ()
         {
             if (--m_bit_count <= 0)
             {
