@@ -45,7 +45,7 @@ namespace GameRes.Formats.Pias
 
     internal class IndexReader
     {
-        internal const bool NamesAsHexOffset = true;
+        internal const bool UseOffsetAsName = true;
 
         protected ArcView       m_arc;
         protected ResourceType  m_res;
@@ -118,7 +118,7 @@ namespace GameRes.Formats.Pias
                     if (!known_offsets.Contains (offset))
                     {
                         var entry = new Entry {
-                            Name = NamesAsHexOffset ? offset.ToString ("X8") : m_dir.Count.ToString("D4"),
+                            Name = GetName (offset, m_dir.Count),
                             Type = entry_type,
                             Offset = offset,
                             Size = entry_size,
@@ -131,6 +131,11 @@ namespace GameRes.Formats.Pias
                 offset += entry_size;
             }
             return true;
+        }
+
+        internal string GetName (long offset, int num)
+        {
+            return UseOffsetAsName ? offset.ToString ("D8") : num.ToString("D4");
         }
     }
 

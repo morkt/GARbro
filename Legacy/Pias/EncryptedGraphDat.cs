@@ -96,7 +96,7 @@ namespace GameRes.Formats.Pias
                 key.Seed (seed);
                 Decrypt (buffer, 0, 4, key);
                 entry.Size = (buffer.ToUInt32 (0) & 0xFFFFFu) + 8u;
-                entry.Name = NamesAsHexOffset ? entry.Offset.ToString ("X8") : i.ToString("D4");
+                entry.Name = GetName (entry.Offset, i);
                 entry.Type = "image";
             }
             var known_offsets = new HashSet<long> (m_dir.Select (e => e.Offset));
@@ -111,7 +111,7 @@ namespace GameRes.Formats.Pias
                 if (!known_offsets.Contains (offset))
                 {
                     var entry = new Entry {
-                        Name = (NamesAsHexOffset ? offset.ToString ("X8") : m_dir.Count.ToString("D4")) + "_",
+                        Name = GetName (offset, m_dir.Count) + "_",
                         Type = "image",
                         Offset = offset,
                         Size = entry_size,
