@@ -45,7 +45,7 @@ namespace GameRes.Formats
         {
             int c1 = stream.ReadByte();
             int c2 = stream.ReadByte();
-            // MB/MC/MK/CL
+            // MB/MC/MK/CL/XX
             switch (c1)
             {
             case 'M':
@@ -54,6 +54,10 @@ namespace GameRes.Formats
                 break;
             case 'C':
                 if ('L' != c2)
+                    return null;
+                break;
+            case 'X':
+                if ('X' != c2)
                     return null;
                 break;
             default:
