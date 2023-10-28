@@ -190,6 +190,9 @@ namespace GameRes.Formats.Apple
                         break;
                     }
 
+                case 0x001E: // DefHilite
+                    break;
+
                 case 0x0090:
                 case 0x0091:
                 case 0x0098:
@@ -291,8 +294,10 @@ namespace GameRes.Formats.Apple
         byte[] RepackPixels (Pixmap pixmap)
         {
             int bpp = m_info.BPP;
-            if (bpp <= 16)
+            if (bpp < 16)
                 return m_buffer;
+            else if (16 == bpp)
+                return Repack16bpp();
             int bytes_per_pixel = bpp / 8;
             int stride = m_info.iWidth * bytes_per_pixel;
             var pixels = new byte[stride * m_info.iHeight];
@@ -321,6 +326,17 @@ namespace GameRes.Formats.Apple
                 src += (pixmap.CompCount - 1) * m_info.iWidth;
             }
             return pixels;
+        }
+
+        byte[] Repack16bpp () // swap 16bit pixels to little-endian order
+        {
+            for (int p = 1; p < m_buffer.Length; p += 2)
+            {
+                byte b = m_buffer[p-1];
+                m_buffer[p-1] = m_buffer[p];
+                m_buffer[p] = b;
+            }
+            return m_buffer;
         }
 
         void SetFormat (Pixmap pixmap)

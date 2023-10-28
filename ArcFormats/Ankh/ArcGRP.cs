@@ -118,6 +118,12 @@ namespace GameRes.Formats.Ankh
                     entry.UnpackedSize = header.ToUInt32 (0);
                     entry.IsPacked = true;
                 }
+                else if (header.AsciiEqual (0, "zfd "))
+                {
+                    entry.ChangeType (ImageFormat.Tga);
+                    entry.UnpackedSize = header.ToUInt32 (4);
+                    entry.IsPacked = true;
+                }
                 else if (header.AsciiEqual (4, "OggS"))
                 {
                     entry.ChangeType (OggAudio.Instance);
@@ -177,6 +183,8 @@ namespace GameRes.Formats.Ankh
                         return OpenTpw (arc, pent);
                     if (arc.File.View.AsciiEqual (entry.Offset+4, "HDJ\0"))
                         return OpenImage (arc, pent);
+                    if (arc.File.View.AsciiEqual (entry.Offset, "zfd "))
+                        return OpenZfd (arc, pent);
                     if (entry.Size > 12)
                     {
                         byte type = arc.File.View.ReadByte (entry.Offset+4);
@@ -241,6 +249,12 @@ namespace GameRes.Formats.Ankh
                 UnpackTpw (input, output);
                 return new BinMemoryStream (output, entry.Name);
             }
+        }
+
+        Stream OpenZfd (ArcFile arc, PackedEntry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset+8, entry.Size-8);
+            return new ZLibStream (input, CompressionMode.Decompress);
         }
 
         internal static void UnpackTpw (IBinaryStream input, byte[] output)

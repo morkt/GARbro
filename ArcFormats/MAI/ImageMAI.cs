@@ -50,7 +50,7 @@ namespace GameRes.Formats.MAI
 
         public CmFormat ()
         {
-            Extensions = new string[] { "cm" };
+            Extensions = new string[] { "cmp" };
         }
 
         public override void Write (Stream file, ImageData image)
@@ -60,24 +60,22 @@ namespace GameRes.Formats.MAI
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
-            if ('C' != stream.ReadByte() || 'M' != stream.ReadByte())
+            var header = stream.ReadHeader (0x20);
+            if ('C' != header[0] || 'M' != header[1])
                 return null;
-            var header = stream.ReadBytes (0x1e);
-            if (header.Length != 0x1e)
+            if (1 != header[0x0E])
                 return null;
-            if (1 != header[0x0c])
-                return null;
-            uint size = LittleEndian.ToUInt32 (header, 0);
+            uint size = LittleEndian.ToUInt32 (header, 2);
             if (size != stream.Length)
                 return null;
             var info = new CmMetaData();
-            info.Width = LittleEndian.ToUInt16 (header, 4);
-            info.Height = LittleEndian.ToUInt16 (header, 6);
-            info.Colors = LittleEndian.ToUInt16 (header, 8);
-            info.BPP = header[0x0a];
-            info.IsCompressed = 0 != header[0x0b];
-            info.DataOffset = LittleEndian.ToUInt32 (header, 0x0e);
-            info.DataLength = LittleEndian.ToUInt32 (header, 0x12);
+            info.Width = LittleEndian.ToUInt16 (header, 6);
+            info.Height = LittleEndian.ToUInt16 (header, 8);
+            info.Colors = LittleEndian.ToUInt16 (header, 0x0A);
+            info.BPP = header[0x0C];
+            info.IsCompressed = 0 != header[0x0D];
+            info.DataOffset = LittleEndian.ToUInt32 (header, 0x10);
+            info.DataLength = LittleEndian.ToUInt32 (header, 0x14);
             if (info.DataLength > size)
                 return null;
             return info;
@@ -158,7 +156,7 @@ namespace GameRes.Formats.MAI
 
         public AmFormat ()
         {
-            Extensions = new string[] { "am", "ami" };
+            Extensions = new string[] { "amp", "ami" };
         }
 
         public override void Write (Stream file, ImageData image)
@@ -235,6 +233,8 @@ namespace GameRes.Formats.MAI
                 m_pixels = new byte[m_width*m_height*4];
             }
 
+            static readonly Color Default8bppTransparencyColor = Color.FromRgb (0, 0xFE, 0);
+
             public void Unpack ()
             {
                 if (m_info.Colors > 0)
@@ -262,13 +262,23 @@ namespace GameRes.Formats.MAI
                         m_pixels[dst+3] = alpha;
                     };
                 else
+                {
+                    const int alphaScale = 0x11;
+                    var alphaColor = Color.FromRgb (0, 0xFE, 0);
                     copy_pixel = (src, dst, alpha) => {
                         var color = Palette.Colors[m_output[src]];
+                        if (Default8bppTransparencyColor == color)
+                            alpha = 0;
+                        else if (0 == alpha)
+                            alpha = 0xFF;
+                        else
+                            alpha *= alphaScale;
                         m_pixels[dst]   = color.B;
                         m_pixels[dst+1] = color.G;
                         m_pixels[dst+2] = color.R;
                         m_pixels[dst+3] = alpha;
                     };
+                }
                 int src_stride = m_width * m_pixel_size;
                 for (int y = 0; y < m_height; ++y)
                 {

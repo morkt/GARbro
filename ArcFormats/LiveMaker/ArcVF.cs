@@ -45,7 +45,7 @@ namespace GameRes.Formats.LiveMaker
         public VffOpener ()
         {
             Extensions = new string[] { "dat", "exe" };
-            Signatures = new uint[] { 0x666676, 0 };
+            Signatures = new uint[] { 0x666676, 0x00905A4D, 0 };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -66,6 +66,8 @@ namespace GameRes.Formats.LiveMaker
                     && (0x5A4D == (signature & 0xFFFF))) // 'MZ'
                 {
                     base_offset = SkipExeData (index_file);
+                    if (base_offset >= file.MaxOffset)
+                        return null;
                     signature = index_file.View.ReadUInt32 (base_offset);
                 }
                 else if (!file.Name.HasExtension (".dat"))

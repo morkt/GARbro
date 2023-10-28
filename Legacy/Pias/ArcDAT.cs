@@ -2,7 +2,7 @@
 //! \date       2022 May 24
 //! \brief      Pias resource archive.
 //
-// Copyright (C) 2022 by morkt
+// Copyright (C) 2022-2023 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -36,77 +36,141 @@ using System.Windows.Media;
 
 namespace GameRes.Formats.Pias
 {
+    enum ResourceType
+    {
+        Undefined = -1,
+        Graphics = 1,
+        Sound = 2,
+    }
+
+    internal class IndexReader
+    {
+        internal const bool UseOffsetAsName = true;
+
+        protected ArcView       m_arc;
+        protected ResourceType  m_res;
+        protected List<Entry>   m_dir;
+
+        public bool IsEncrypted { get; protected set; }
+
+        public IndexReader (ArcView arc, ResourceType res)
+        {
+            m_arc = arc;
+            m_res = res;
+            m_dir = null;
+        }
+
+        public List<Entry> GetIndex ()
+        {
+            if (m_res > 0)
+            {
+                var text_name = VFS.ChangeFileName (m_arc.Name, "text.dat");
+                if (!VFS.FileExists (text_name))
+                    return null;
+                IBinaryStream input = VFS.OpenBinaryStream (text_name);
+                try
+                {
+                    if (DatOpener.EncryptedSignatures.Contains (input.Signature))
+                        return null;
+                    var reader = new TextReader (input);
+                    m_dir = reader.GetResourceList ((int)m_res);
+                }
+                finally
+                {
+                    input.Dispose();
+                }
+            }
+            if (null == m_dir)
+                m_dir = new List<Entry>();
+            if (!FillEntries())
+                return null;
+            return m_dir;
+        }
+
+        protected bool FillEntries ()
+        {
+            uint header_size = 4;
+            string entry_type = "audio";
+            if (ResourceType.Graphics == m_res)
+            {
+                header_size = 8;
+                entry_type = "image";
+            }
+            for (int i = m_dir.Count - 1; i >= 0; --i)
+            {
+                var entry = m_dir[i];
+                entry.Size = m_arc.View.ReadUInt32 (entry.Offset) + header_size;
+                entry.Name = i.ToString("D4");
+                entry.Type = entry_type;
+            }
+            var known_offsets = new HashSet<long> (m_dir.Select (e => e.Offset));
+            long offset = 0;
+            while (offset < m_arc.MaxOffset)
+            {
+                uint entry_size = m_arc.View.ReadUInt32(offset);
+                if (uint.MaxValue == entry_size)
+                {
+                    entry_size = 4;
+                }
+                else
+                {
+                    entry_size += header_size;
+                    if (!known_offsets.Contains (offset))
+                    {
+                        var entry = new Entry {
+                            Name = GetName (offset, m_dir.Count),
+                            Type = entry_type,
+                            Offset = offset,
+                            Size = entry_size,
+                        };
+                        if (!entry.CheckPlacement (m_arc.MaxOffset))
+                            return false;
+                        m_dir.Add (entry);
+                    }
+                }
+                offset += entry_size;
+            }
+            return true;
+        }
+
+        internal string GetName (long offset, int num)
+        {
+            return UseOffsetAsName ? offset.ToString ("D8") : num.ToString("D4");
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class DatOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "DAT/PIAS"; } }
-        public override string Description { get { return "Pias resource archive"; } }
-        public override uint     Signature { get { return 0; } }
-        public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override string         Tag => "DAT/PIAS";
+        public override string Description => "Pias resource archive";
+        public override uint     Signature => 0;
+        public override bool  IsHierarchic => false;
+        public override bool      CanWrite => false;
+
+        public DatOpener ()
+        {
+            Signatures = new[] { 0x0002C026u, 0u };
+        }
+
+        internal static readonly HashSet<uint> EncryptedSignatures = new HashSet<uint> { 0x03184767u };
 
         public override ArcFile TryOpen (ArcView file)
         {
             var arc_name = Path.GetFileName (file.Name).ToLowerInvariant();
 
-            string entry_type = null;
-            if ("voice.dat" == arc_name || "music.dat" == arc_name || "sound.dat" == arc_name)
-                entry_type = "audio";
+            ResourceType resource_type = ResourceType.Undefined;
+            if ("sound.dat" == arc_name)
+                resource_type = ResourceType.Sound;
             else if ("graph.dat" == arc_name)
-                entry_type = "image";
-            else
+                resource_type = ResourceType.Graphics;
+            else if ("voice.dat" != arc_name && "music.dat" != arc_name)
                 return null;
 
-            int resource_type = -1;
-            if ("graph.dat" == arc_name)
-                resource_type = 1;
-            else if ("sound.dat" == arc_name)
-                resource_type = 2;
-
-            uint header_size = 1 == resource_type ? 8u : 4u;
-            List<Entry> dir = null;
-            if (resource_type > 0)
-            {
-                var text_name = VFS.ChangeFileName (file.Name, "text.dat");
-                if (!VFS.FileExists (text_name))
-                    return null;
-                using (var text_dat = VFS.OpenBinaryStream (text_name))
-                {
-                    var reader = new TextReader (text_dat);
-                    dir = reader.GetResourceList (resource_type);
-                    if (dir != null)
-                    {
-                        for (int i = dir.Count - 1; i >= 0; --i)
-                        {
-                            var entry = dir[i];
-                            entry.Size = file.View.ReadUInt32 (entry.Offset) + header_size;
-                            entry.Name = i.ToString("D4");
-                            entry.Type = entry_type;
-                        }
-                    }
-                }
-            }
+            var index = new IndexReader (file, resource_type);
+            var dir = index.GetIndex();
             if (null == dir)
-                dir = new List<Entry>();
-            var known_offsets = new HashSet<long> (dir.Select (e => e.Offset));
-            long offset = 0;
-            while (offset < file.MaxOffset)
-            {
-                uint entry_size = file.View.ReadUInt32(offset) + header_size;
-                if (!known_offsets.Contains (offset))
-                {
-                    var entry = new Entry {
-                        Name = dir.Count.ToString("D4"),
-                        Type = entry_type,
-                        Offset = offset,
-                        Size = entry_size,
-                    };
-                    if (!entry.CheckPlacement (file.MaxOffset))
-                        return null;
-                    dir.Add (entry);
-                }
-                offset += entry_size;
-            }
+                return null;
             return new ArcFile (file, this, dir);
         }
 
@@ -120,7 +184,6 @@ namespace GameRes.Formats.Pias
         {
             if (entry.Type != "audio")
                 return base.OpenEntry (arc, entry);
-            uint size = arc.File.View.ReadUInt32 (entry.Offset);
             var format = new WaveFormat
             {
                 FormatTag = 1,
@@ -138,6 +201,12 @@ namespace GameRes.Formats.Pias
                 format.BlockAlign = 1;
             }
             format.SetBPS();
+            return OpenAudioEntry (arc, entry, format);
+        }
+
+        public Stream OpenAudioEntry (ArcFile arc, Entry entry, WaveFormat format)
+        {
+            uint size = arc.File.View.ReadUInt32 (entry.Offset);
             byte[] header;
             using (var buffer = new MemoryStream())
             {

@@ -60,6 +60,7 @@ namespace GameRes.Formats.Lilim
             if (!name_buf.SequenceEqual (IndexLink) && !name_buf.SequenceEqual (IndexEnd))
                 return null;
 
+            string last_name = null;
             long current_offset = 0;
             var dir = new List<Entry> (0x3E);
             while (current_offset < file.MaxOffset)
@@ -79,6 +80,9 @@ namespace GameRes.Formats.Lilim
                     if (-1 == name_length)
                         name_length = name_buf.Length;
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
+                    if (last_name == name || string.IsNullOrWhiteSpace (name))
+                        return null;
+                    last_name = name;
                     var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                     entry.Offset = file.View.ReadUInt32 (current_offset+0x10);
                     entry.Size   = file.View.ReadUInt32 (current_offset+0x14);

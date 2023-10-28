@@ -75,6 +75,9 @@ namespace GameRes.Formats.Macromedia
         DirectorConfig  m_config = new DirectorConfig();
         List<Cast>      m_casts = new List<Cast>();
         Dictionary<int, byte[]> m_ilsMap = new Dictionary<int, byte[]>();
+        string          m_codec;
+
+        public string Codec => m_codec;
 
         public bool IsAfterBurned { get; private set; }
 
@@ -96,14 +99,14 @@ namespace GameRes.Formats.Macromedia
 
         public bool Deserialize (SerializationContext context, Reader reader)
         {
-            reader.Position = 8;
-            string codec = reader.ReadFourCC();
-            if (codec == "MV93" || codec == "MC95")
+            reader.Skip (8);
+            m_codec = reader.ReadFourCC();
+            if (m_codec == "MV93" || m_codec == "MC95")
             {
                 if (!ReadMMap (context, reader))
                     return false;
             }
-            else if (codec == "FGDC" || codec == "FGDM")
+            else if (m_codec == "FGDC" || m_codec == "FGDM")
             {
                 IsAfterBurned = true;
                 if (!ReadAfterBurner (context, reader))
@@ -111,7 +114,7 @@ namespace GameRes.Formats.Macromedia
             }
             else
             {
-                Trace.WriteLine (string.Format ("Unknown codec '{0}'", codec), "DXR");
+                Trace.WriteLine (string.Format ("Unknown m_codec '{0}'", m_codec), "DXR");
                 return false;
             }
             return ReadKeyTable (context, reader)
@@ -119,7 +122,7 @@ namespace GameRes.Formats.Macromedia
                 && ReadCasts (context, reader);
         }
 
-        bool ReadMMap (SerializationContext context, Reader reader)
+        internal bool ReadMMap (SerializationContext context, Reader reader)
         {
             if (reader.ReadFourCC() != "imap")
                 return false;

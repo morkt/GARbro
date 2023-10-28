@@ -38,46 +38,58 @@ namespace GameRes.Formats.Macromedia
     [Export(typeof(ArchiveFormat))]
     public class DxrOpener : ArchiveFormat
     {
-        public override string         Tag { get => "DXR"; }
-        public override string Description { get => "Macromedia Director resource archive"; }
-        public override uint     Signature { get => 0x52494658; } // 'XFIR'
-        public override bool  IsHierarchic { get => false; }
-        public override bool      CanWrite { get => false; }
+        public override string         Tag => "DXR";
+        public override string Description => "Macromedia Director resource archive";
+        public override uint     Signature => SignatureXFIR; // 'XFIR'
+        public override bool  IsHierarchic => false;
+        public override bool      CanWrite => false;
+
+        public const uint SignatureXFIR = 0x52494658u;
+        public const uint SignatureRIFX = 0x58464952u;
 
         public DxrOpener ()
         {
-            Extensions = new[] { "dxr", "cxt", "cct", "dcr" };
-            Signatures = new[] { 0x52494658u, 0x58464952u };
+            Extensions = new[] { "dxr", "cxt", "cct", "dcr", "dir", "exe" };
+            Signatures = new[] { SignatureXFIR, SignatureRIFX, 0x00905A4Du, 0u };
         }
 
         internal static readonly HashSet<string> RawChunks = new HashSet<string> {
-            "RTE0", "RTE1", "FXmp", "VWFI", "VWSC", "Lscr", "STXT", "XMED", //"snd "
+            "RTE0", "RTE1", "FXmp", "VWFI", "VWSC", "Lscr", "STXT", "XMED", "File"
         };
 
         internal bool ConvertText = true;
 
         public override ArcFile TryOpen (ArcView file)
         {
+            long base_offset = 0;
+            if (file.View.AsciiEqual (0, "MZ"))
+                base_offset = LookForXfir (file);
+            uint signature = file.View.ReadUInt32 (base_offset);
+            if (signature != SignatureXFIR && signature != SignatureRIFX)
+                return null;
             using (var input = file.CreateStream())
             {
-                ByteOrder ord = input.Signature == 0x52494658u ? ByteOrder.LittleEndian : ByteOrder.BigEndian;
+                ByteOrder ord = signature == SignatureXFIR ? ByteOrder.LittleEndian : ByteOrder.BigEndian;
                 var reader = new Reader (input, ord);
-                reader.Position = 4;
-                uint length = reader.ReadU32();
+                reader.Position = base_offset;
                 var context = new SerializationContext();
                 var dir_file = new DirectorFile();
                 if (!dir_file.Deserialize (context, reader))
                     return null;
 
                 var dir = new List<Entry> ();
-                ImportMedia (dir_file, dir);
+                if (dir_file.Codec != "APPL")
+                    ImportMedia (dir_file, dir);
                 foreach (DirectorEntry entry in dir_file.Directory)
                 {
                     if (entry.Size != 0 && entry.Offset != -1 && RawChunks.Contains (entry.FourCC))
                     {
                         entry.Name = string.Format ("{0:D6}.{1}", entry.Id, entry.FourCC.Trim());
-                        if ("snd " == entry.FourCC)
-                            entry.Type = "audio";
+                        if ("File" == entry.FourCC)
+                        {
+                            entry.Offset -= 8;
+                            entry.Size   += 8;
+                        }
                         dir.Add (entry);
                     }
                 }
@@ -155,7 +167,7 @@ namespace GameRes.Formats.Macromedia
                         entry = ImportBitmap (piece, dir_file, cast);
                     else if (piece.Type == DataType.Sound)
                         entry = ImportSound (piece, dir_file);
-                    if (entry != null)
+                    if (entry != null && entry.Size > 0)
                         dir.Add (entry);
                 }
             }
@@ -381,6 +393,57 @@ namespace GameRes.Formats.Macromedia
                 zstream.Read (data, 0, data.Length);
             return new BinMemoryStream (data, entry.Name);
         }
+
+        static readonly byte[] s_xfir = { (byte)'X', (byte)'F', (byte)'I', (byte)'R' };
+
+        long LookForXfir (ArcView file)
+        {
+            var exe = new ExeFile (file);
+            long pos;
+            if (exe.IsWin16)
+            {
+                pos = exe.FindString (exe.Overlay, s_xfir);
+                if (pos < 0)
+                    return 0;
+            }
+            else
+            {
+                pos = exe.Overlay.Offset;
+                if (pos >= file.MaxOffset)
+                    return 0;
+                if (file.View.AsciiEqual (pos, "10JP") || file.View.AsciiEqual (pos, "59JP"))
+                {
+                    pos = file.View.ReadUInt32 (pos+4);
+                }
+            }
+            if (pos >= file.MaxOffset || !file.View.AsciiEqual (pos, "XFIR"))
+                return 0;
+            // TODO threat 'LPPA' archives the normal way, like archives that contain entries.
+            // the problem is, DXR archives contained within 'LPPA' have their offsets relative to executable file,
+            // so have to figure out way to handle it.
+            if (!file.View.AsciiEqual (pos+8, "LPPA"))
+                return pos;
+            var appl = new DirectorFile();
+            var context = new SerializationContext();
+            using (var input = file.CreateStream())
+            {
+                var reader = new Reader (input, ByteOrder.LittleEndian);
+                input.Position = pos + 12;
+                if (!appl.ReadMMap (context, reader))
+                    return 0;
+                foreach (var entry in appl.Directory)
+                {
+                    // only the first XFIR entry is matched here, but archive may contain multiple sub-archives.
+                    if (entry.FourCC == "File")
+                    {
+                        if (file.View.AsciiEqual (entry.Offset-8, "XFIR")
+                            && !file.View.AsciiEqual (entry.Offset, "artX"))
+                            return entry.Offset-8;
+                    }
+                }
+                return 0;
+            }
+        }
     }
 
     internal class BitmapEntry : PackedEntry
@@ -407,10 +470,16 @@ namespace GameRes.Formats.Macromedia
                 Left   = reader.ReadI16();
                 Bottom = reader.ReadI16();
                 Right  = reader.ReadI16();
-                reader.Skip (0x0C);
-                BitDepth = reader.ReadU16() & 0xFF; // ???
-                reader.Skip (2);
-                Palette = reader.ReadI16();
+                if (data.Length > 0x16)
+                {
+                    reader.Skip (0x0C);
+                    BitDepth = reader.ReadU16() & 0xFF; // ???
+                    if (data.Length >= 0x1C)
+                    {
+                        reader.Skip (2);
+                        Palette = reader.ReadI16();
+                    }
+                }
             }
         }
     }

@@ -29,9 +29,7 @@ using System.IO;
 
 namespace GameRes.Formats.PlanTech
 {
-#if DEBUG
     [Export(typeof(ArchiveFormat))]
-#endif
     public class PacOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PAC/PLANTECH"; } }

@@ -1,8 +1,8 @@
-//! \file       ImageBIZ.cs
-//! \date       2018 Feb 11
-//! \brief      Sorciere compressed image.
+//! \file       ImageHTF.cs
+//! \date       2023 Oct 07
+//! \brief      Huffman-compressed bitmap.
 //
-// Copyright (C) 2018 by morkt
+// Copyright (C) 2023 by morkt
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,48 +23,47 @@
 // IN THE SOFTWARE.
 //
 
+using GameRes.Compression;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Windows.Media;
-using GameRes.Compression;
+using System.Windows.Media.Imaging;
 
-// [000225][Sorciere] Karei
-
-namespace GameRes.Formats.Sorciere
+namespace GameRes.Formats.Jam
 {
     [Export(typeof(ImageFormat))]
-    public class BizFormat : ImageFormat
+    public class HtfFormat : ImageFormat
     {
-        public override string         Tag { get { return "BIZ"; } }
-        public override string Description { get { return "Sorciere compressed image"; } }
-        public override uint     Signature { get { return 0x325A4942; } } // 'BIZ2'
+        public override string         Tag => "HTF";
+        public override string Description => "Huffman-compressed bitmap";
+        public override uint     Signature => 0;
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
-            var header = file.ReadHeader (8);
-            return new ImageMetaData {
-                Width  = header.ToUInt16 (4),
-                Height = header.ToUInt16 (6),
-                BPP = 24,
-            };
+            if (!file.Name.HasExtension (".HTF"))
+                return null;
+            int unpacked_size = file.ReadInt32();
+            if (unpacked_size <= 0 || unpacked_size > 0x1000000)
+                return null;
+            using (var huff = new HuffmanStream (file.AsStream, true))
+            using (var input = new BinaryStream (huff, file.Name))
+            {
+                return Bmp.ReadMetaData (input);
+            }
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            file.Position = 8;
-            using (var input = new LzssStream (file.AsStream, LzssMode.Decompress, true))
+            file.Position = 4;
+            using (var input = new HuffmanStream (file.AsStream, true))
             {
-                int stride = (int)info.Width * 3;
-                var pixels = new byte[stride * (int)info.Height];
-                if (pixels.Length != input.Read (pixels, 0, pixels.Length))
-                    throw new InvalidFormatException();
-                return ImageData.CreateFlipped (info, PixelFormats.Bgr24, null, pixels, stride);
+                var decoder = new BmpBitmapDecoder (input, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                return new ImageData (decoder.Frames[0], info);
             }
         }
 
         public override void Write (Stream file, ImageData image)
         {
-            throw new System.NotImplementedException ("BizFormat.Write not implemented");
+            throw new System.NotImplementedException ("HtfFormat.Write not implemented");
         }
     }
 }

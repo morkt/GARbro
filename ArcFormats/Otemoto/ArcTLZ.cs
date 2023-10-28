@@ -39,6 +39,11 @@ namespace GameRes.Formats.Otemoto
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public TlzOpener ()
+        {
+            ContainedFormats = new[] { "BMP", "SCR" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0xC);
@@ -61,7 +66,7 @@ namespace GameRes.Formats.Otemoto
                 if (0 == name_length || name_length > 0x100)
                     return null;
                 entry.Name = file.View.ReadString (index_offset+0x10, name_length);
-                entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name);
+                entry.Type = FormatCatalog.Instance.GetTypeFromName (entry.Name, ContainedFormats);
                 entry.IsPacked = entry.UnpackedSize != entry.Size;
                 dir.Add (entry);
                 index_offset += 0x10 + name_length;
@@ -78,4 +83,9 @@ namespace GameRes.Formats.Otemoto
             return new LzssStream (input);
         }
     }
+
+    [Export(typeof(ResourceAlias))]
+    [ExportMetadata("Extension", "SNR")]
+    [ExportMetadata("Target", "SCR")]
+    internal class SnrFormat : ResourceAlias { }
 }

@@ -52,30 +52,37 @@ namespace GameRes.Formats.Zyx
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             int count = file.ReadInt16();
-            if (count <= 0)
+            if (count < 0 || count > 0x100)
                 return null;
-            var tiles = new Tile[count];
-            for (int i = 0; i < count; ++i)
+            Tile[] tiles = null;
+            if (count > 0)
             {
-                var tile = new Tile();
-                tile.Left = file.ReadInt16();
-                tile.Top  = file.ReadInt16();
-                if (tile.Left < 0 || tile.Top < 0)
-                    return null;
-                tile.Right  = file.ReadInt16();
-                tile.Bottom = file.ReadInt16();
-                if (tile.Right <= tile.Left || tile.Bottom <= tile.Top)
-                    return null;
-                tiles[i] = tile;
+                tiles = new Tile[count];
+                for (int i = 0; i < count; ++i)
+                {
+                    var tile = new Tile();
+                    tile.Left = file.ReadInt16();
+                    tile.Top  = file.ReadInt16();
+                    if (tile.Left < 0 || tile.Top < 0)
+                        return null;
+                    tile.Right  = file.ReadInt16();
+                    tile.Bottom = file.ReadInt16();
+                    if (tile.Right <= tile.Left || tile.Bottom <= tile.Top)
+                        return null;
+                    tiles[i] = tile;
+                }
             }
             int width = file.ReadInt16();
             int height = file.ReadInt16();
             if (width <= 0 || height <= 0)
                 return null;
-            foreach (var tile in tiles)
+            if (tiles != null)
             {
-                if (tile.Right > width || tile.Bottom > height)
-                    return null;
+                foreach (var tile in tiles)
+                {
+                    if (tile.Right > width || tile.Bottom > height)
+                        return null;
+                }
             }
             return new SplMetaData
             {

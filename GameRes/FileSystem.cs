@@ -833,10 +833,7 @@ namespace GameRes
                 return false;
             // now, compare length of filename portion of the path
             int filename_index = path.LastIndexOfAny (PathSeparatorChars);
-            if (-1 == filename_index)
-                filename_index = 0;
-            else
-                filename_index++;
+            filename_index++;
             int filename_portion_length = path.Length - filename_index;
             return filename.Length == filename_portion_length;
         }

@@ -40,6 +40,7 @@ namespace GameRes.Formats
         Section                     m_overlay;
         uint                        m_image_base = 0;
         List<ImageSection>          m_section_list;
+        bool?                       m_is_NE;
 
         public ExeFile (ArcView file)
         {
@@ -56,9 +57,18 @@ namespace GameRes.Formats
         /// </summary>
         public Section Whole { get; private set; }
 
+        public bool IsWin16 => m_is_NE ?? (m_is_NE = IsNe()).Value;
+
+        private bool IsNe ()
+        {
+            uint ne_offset = View.ReadUInt32 (0x3C);
+            return ne_offset < m_file.MaxOffset-2 && View.AsciiEqual (ne_offset, "NE");
+        }
+
         /// <summary>
         /// Dictionary of executable file sections.
         /// </summary>
+        ///
         public IReadOnlyDictionary<string, Section> Sections
         {
             get
@@ -255,6 +265,11 @@ namespace GameRes.Formats
 
         private void InitSectionTable ()
         {
+            if (IsWin16)
+            {
+                InitNe();
+                return;
+            }
             long pe_offset = GetHeaderOffset();
             int opt_header = View.ReadUInt16 (pe_offset+0x14); // SizeOfOptionalHeader
             long section_table = pe_offset+opt_header+0x18;
@@ -292,6 +307,26 @@ namespace GameRes.Formats
             m_overlay.Size = (uint)(m_file.MaxOffset - offset);
             m_section_table = table;
             m_section_list = list;
+        }
+
+        void InitNe ()
+        {
+            uint ne_offset = m_file.View.ReadUInt32 (0x3C);
+            int segment_count = m_file.View.ReadUInt16 (ne_offset + 0x1C);
+            uint seg_table = m_file.View.ReadUInt16 (ne_offset + 0x22) + ne_offset;
+            int shift = m_file.View.ReadUInt16 (ne_offset + 0x32);
+            uint last_seg_end = 0;
+            for (int i = 0; i < segment_count; ++i)
+            {
+                uint offset = (uint)m_file.View.ReadUInt16 (seg_table) << shift;
+                uint size   = m_file.View.ReadUInt16 (seg_table+2);
+                if (offset + size > last_seg_end)
+                    last_seg_end = offset + size;
+            }
+            m_overlay.Offset = last_seg_end;
+            m_overlay.Size = (uint)(m_file.MaxOffset - last_seg_end);
+            m_section_table = new Dictionary<string, Section>();    // these are empty for 16-bit executables
+            m_section_list = new List<ImageSection>();              //
         }
 
         /// <summary>

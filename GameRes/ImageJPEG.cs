@@ -34,6 +34,7 @@ using GameRes.Utility;
 namespace GameRes
 {
     [Export(typeof(ImageFormat))]
+    [ExportMetadata("Priority", 10)]
     public class JpegFormat : ImageFormat
     {
         public override string         Tag { get { return "JPEG"; } }

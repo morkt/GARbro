@@ -28,6 +28,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using GameRes.Compression;
 
+// [031219][Project-μ] Gin no Hebi Kuro no Tsuki
 // [040528][Lakshmi] Mabuta Tojireba Soko ni...
 
 namespace GameRes.Formats.ProjectMu

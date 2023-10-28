@@ -71,7 +71,7 @@ namespace GameRes.Formats.Macromedia
                    : info.BPP ==  8 ? PixelFormats.Indexed8
                    : info.BPP == 16 ? PixelFormats.Bgr555
                    :  info.DepthType == 0x87 // i have no clue what this is
-                   || info.DepthType == 0x8A ? PixelFormats.Bgra32   // depth type 0x87/0x8A
+                   || info.DepthType == 0x8A ? PixelFormats.Bgra32  // depth type 0x87/0x8A
                                              : PixelFormats.Bgra32; // depth type 0x82/84/85/86/8C
             m_palette = palette;
         }
@@ -151,32 +151,7 @@ namespace GameRes.Formats.Macromedia
         {
             for (int line = 0; line < m_output.Length; line += m_stride)
             {
-                int x = 0;
-                while (x < m_stride)
-                {
-                    int b = m_input.ReadByte();
-                    if (-1 == b)
-                        throw new InvalidFormatException ("Unexpected end of file");
-                    int count = b;
-                    if (b > 0x7f)
-                        count = (byte)-(sbyte)b;
-                    ++count;
-                    if (x + count > m_stride)
-                        throw new InvalidFormatException();
-                    if (b > 0x7f)
-                    {
-                        b = m_input.ReadByte();
-                        if (-1 == b)
-                            throw new InvalidFormatException ("Unexpected end of file");
-                        for (int i = 0; i < count; ++i)
-                            m_output[line + x++] = (byte)b;
-                    }
-                    else
-                    {
-                        m_input.Read (m_output, line + x, count);
-                        x += count;
-                    }
-                }
+                UnpackScanLine (m_output, line);
             }
             return m_output;
         }
@@ -186,38 +161,42 @@ namespace GameRes.Formats.Macromedia
             var scan_line = new byte[m_stride];
             for (int line = 0; line < m_output.Length; line += m_stride)
             {
-                int x = 0;
-                while (x < m_stride)
-                {
-                    int b = m_input.ReadByte();
-                    if (-1 == b)
-                        break; // one in 5000 images somehow stumbles here
-//                        throw new InvalidFormatException ("Unexpected end of file");
-                    int count = b;
-                    if (b > 0x7f)
-                        count = (byte)-(sbyte)b;
-                    ++count;
-                    if (x + count > m_stride)
-                        throw new InvalidFormatException();
-                    if (b > 0x7f)
-                    {
-                        b = m_input.ReadByte();
-                        if (-1 == b)
-                            throw new InvalidFormatException ("Unexpected end of file");
-                        for (int i = 0; i < count; ++i)
-                            scan_line[x++] = (byte)b;
-                    }
-                    else
-                    {
-                        m_input.Read (scan_line, x, count);
-                        x += count;
-                    }
-                }
+                UnpackScanLine (scan_line, 0);
                 int dst = line;
                 for (int i = 0; i < m_width; ++i)
                 {
                     for (int src = m_width * (channels - 1); src >= 0; src -= m_width)
                         m_output[dst++] = scan_line[i + src];
+                }
+            }
+        }
+
+        void UnpackScanLine (byte[] scan_line, int pos)
+        {
+            int x = 0;
+            while (x < m_stride)
+            {
+                int b = m_input.ReadByte();
+                if (-1 == b)
+                    break; // one in 5000 images somehow stumbles here
+                int count = b;
+                if (b > 0x7f)
+                    count = (byte)-(sbyte)b;
+                ++count;
+                if (x + count > m_stride)
+                    throw new InvalidFormatException();
+                if (b > 0x7f)
+                {
+                    b = m_input.ReadByte();
+                    if (-1 == b)
+                        throw new InvalidFormatException ("Unexpected end of file");
+                    for (int i = 0; i < count; ++i)
+                        scan_line[pos + x++] = (byte)b;
+                }
+                else
+                {
+                    m_input.Read (scan_line, pos+x, count);
+                    x += count;
                 }
             }
         }
