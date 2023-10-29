@@ -32,6 +32,7 @@ using System.ComponentModel.Composition;
 using GameRes.Compression;
 using GameRes.Formats.Strings;
 using GameRes.Utility;
+using Zstandard.Net;
 
 namespace GameRes.Formats.NeXAS
 {
@@ -42,6 +43,9 @@ namespace GameRes.Formats.NeXAS
         Huffman,
         Deflate,
         DeflateOrNone,
+        tmp1,
+        tmp2,
+        Zstd
     }
 
     public class PacArchive : ArcFile
@@ -169,13 +173,16 @@ namespace GameRes.Formats.NeXAS
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
             var pac = arc as PacArchive;
             var pent = entry as PackedEntry;
             if (null == pac || null == pent || !pent.IsPacked)
                 return input;
-            switch (pac.PackType)
+            var it = pac.PackType;
+            switch (it)
             {
+            case Compression.None:
+                return input;
             case Compression.Lzss:
                 return new LzssStream (input);
 
@@ -187,6 +194,16 @@ namespace GameRes.Formats.NeXAS
                     var unpacked = HuffmanDecode (packed, (int)pent.UnpackedSize);
                     return new BinMemoryStream (unpacked, 0, (int)pent.UnpackedSize, entry.Name);
                 }
+            case Compression.Zstd:
+                {
+                    if (entry.Name.Contains(".png") || 
+                        entry.Name.Contains(".fnt") || 
+                        entry.Name.Contains(".ogg") ||
+                        entry.Name.Contains(".wav"))
+                        return input;
+                    return new ZstandardStream(input, System.IO.Compression.CompressionMode.Decompress);
+                }
+
             case Compression.Deflate:
             default:
                 return new ZLibStream (input, CompressionMode.Decompress);
