@@ -75,6 +75,7 @@
     <Compile Include="FileSystem.cs" />
     <Compile Include="FormatCatalog.cs" />
     <Compile Include="GameRes.cs" />
+    <Compile Include="GameTitle.cs" />
     <Compile Include="Image.cs" />
     <Compile Include="ImageBMP.cs" />
     <Compile Include="ImageDecoder.cs" />
