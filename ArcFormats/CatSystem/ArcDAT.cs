@@ -36,28 +36,32 @@ namespace GameRes.Formats.CatSystem
     {
         public override string         Tag { get { return "DAT/CSPACK"; } }
         public override string Description { get { return "Cat System resource archive"; } }
-        public override uint     Signature { get { return 0x61507343; } } // 'CsPack2'
+        public override uint     Signature { get { return 0x61507343; } } // 'CsPack1', 'CsPack2'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "CsPack2"))
+            if (!file.View.AsciiEqual (0, "CsPack"))
+                return null;
+            int version = file.View.ReadByte (6) - '0';
+            if (version < 1 || version > 2)
                 return null;
             uint data_offset = file.View.ReadUInt32 (8);
-            const int entry_size = 24;
+            int entry_size = 12 * version; // 8-byte or 20-byte name, 4-byte offset
             int count = (int)(data_offset - 12) / entry_size;
-            if (!IsSaneCount (count))
+            if (!IsSaneCount (count) && count != 0) // CsPack archives can contain 0 entries
                 return null;
 
             var dir = new List<Entry> (count);
             uint next_offset = data_offset;
-            var name_decoder = new CsNameDecryptor (0x1E);
+            var name_decoder = new CsNameDecryptor (version == 1 ? 0xC : 0x1E,
+                                                    version == 1 ? 0x8 : 0x10);
             var entry_buffer = new byte[entry_size];
             int index_pos = 12;
             for (int i = 0; i < count; ++i)
             {
-                file.View.Read (index_pos, entry_buffer, 0, entry_size);
+                file.View.Read (index_pos, entry_buffer, 0, (uint)entry_size);
                 var name = name_decoder.Decrypt (entry_buffer);
                 var entry = Create<Entry> (name);
                 entry.Offset = next_offset;
@@ -77,12 +81,14 @@ namespace GameRes.Formats.CatSystem
     internal class CsNameDecryptor
     {
         int             m_name_length;
+        int             m_extension_pos;
         byte[]          m_buffer;
         StringBuilder   m_name;
 
-        public CsNameDecryptor (int name_length)
+        public CsNameDecryptor (int name_length, int extension_pos)
         {
             m_name_length = name_length;
+            m_extension_pos = extension_pos;
             m_buffer = new byte[m_name_length];
             m_name = new StringBuilder (m_name_length);
         }
@@ -104,10 +110,10 @@ namespace GameRes.Formats.CatSystem
             }
             m_name.Clear();
             AppendChars (0, m_name_length - 4);
-            if (m_buffer[0x10] != 0)
+            if (m_buffer[m_extension_pos] != 0)
             {
                 m_name.Append ('.');
-                AppendChars (0x10, 3);
+                AppendChars (m_extension_pos, 3);
             }
             return m_name.ToString();
         }
