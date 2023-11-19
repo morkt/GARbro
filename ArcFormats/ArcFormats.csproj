@@ -123,6 +123,7 @@
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
     <Compile Include="AIRNovel\ArcAIR.cs" />
+    <Compile Include="Artemis\ImageNekoPNG.cs" />
     <Compile Include="CsWare\AudioWAV.cs" />
     <Compile Include="CsWare\ImageGDT.cs" />
     <Compile Include="FC01\ArcBDT.cs" />
