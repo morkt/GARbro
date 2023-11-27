@@ -1,0 +1,465 @@
+﻿<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="MenuFile" xml:space="preserve">
+    <value>_Datei</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>_Beenden</value>
+  </data>
+  <data name="MenuCheckUpdates" xml:space="preserve">
+    <value>Auf _Updates prüfen...</value>
+  </data>
+  <data name="MenuHelp" xml:space="preserve">
+    <value>_Hilfe</value>
+  </data>
+  <data name="MenuFitWindow" xml:space="preserve">
+    <value>_Vorschaufenster an Bild anpassen</value>
+  </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>_Öffnen</value>
+  </data>
+  <data name="MenuPreferences" xml:space="preserve">
+    <value>_Einstellungen</value>
+  </data>
+  <data name="MenuRecent" xml:space="preserve">
+    <value>_Letzte Dateien</value>
+  </data>
+  <data name="MenuToggleMenuBar" xml:space="preserve">
+    <value>Haupt_menüleiste ein-/ausblenden</value>
+  </data>
+  <data name="MenuToggleStatusBar" xml:space="preserve">
+    <value>_Statusleiste ein-/ausblenden</value>
+  </data>
+  <data name="MenuToggleToolBar" xml:space="preserve">
+    <value>S_ymbolleiste ein-/ausblenden</value>
+  </data>
+  <data name="MenuView" xml:space="preserve">
+    <value>_Ansicht</value>
+  </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>_Über Game Resource Browser</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="HeaderSize" xml:space="preserve">
+    <value>Größe</value>
+  </data>
+  <data name="HeaderType" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="ButtonAbort" xml:space="preserve">
+    <value>_Abbrechen</value>
+  </data>
+  <data name="ButtonApply" xml:space="preserve">
+    <value>A_nwenden</value>
+  </data>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>_Abbrechen</value>
+  </data>
+  <data name="ButtonContinue" xml:space="preserve">
+    <value>_Fortfahren</value>
+  </data>
+  <data name="ButtonConvert" xml:space="preserve">
+    <value>_Konvertieren</value>
+  </data>
+  <data name="ButtonDownload" xml:space="preserve">
+    <value>_Herunterladen</value>
+  </data>
+  <data name="ButtonExtract" xml:space="preserve">
+    <value>E_xtrahieren</value>
+  </data>
+  <data name="ButtonOK" xml:space="preserve">
+    <value>_OK</value>
+  </data>
+  <data name="ButtonOverwrite" xml:space="preserve">
+    <value>_Überschreiben</value>
+  </data>
+  <data name="ButtonRename" xml:space="preserve">
+    <value>_Umbenennen</value>
+  </data>
+  <data name="ButtonSkip" xml:space="preserve">
+    <value>Über_springen</value>
+  </data>
+  <data name="CtxMenuClose" xml:space="preserve">
+    <value>_Schließen</value>
+  </data>
+  <data name="CtxMenuConvert" xml:space="preserve">
+    <value>Multimedia konvertieren ...</value>
+  </data>
+  <data name="CtxMenuCopy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="CtxMenuCreate" xml:space="preserve">
+    <value>Archiv erstellen ...</value>
+  </data>
+  <data name="CtxMenuCut" xml:space="preserve">
+    <value>Aus_schneiden</value>
+  </data>
+  <data name="CtxMenuDelete" xml:space="preserve">
+    <value>_Löschen</value>
+  </data>
+  <data name="CtxMenuExplorer" xml:space="preserve">
+    <value>Im _Explorer suchen</value>
+  </data>
+  <data name="CtxMenuExtract" xml:space="preserve">
+    <value>Extrahieren</value>
+  </data>
+  <data name="CtxMenuFileType" xml:space="preserve">
+    <value>Dateityp zuweisen</value>
+  </data>
+  <data name="CtxMenuOpen" xml:space="preserve">
+    <value>_Öffnen</value>
+  </data>
+  <data name="CtxMenuPaste" xml:space="preserve">
+    <value>Ein_fügen</value>
+  </data>
+  <data name="CtxMenuRefresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="CtxMenuRename" xml:space="preserve">
+    <value>_Umbenennen</value>
+  </data>
+  <data name="CtxMenuSelectByMask" xml:space="preserve">
+    <value>Dateien nach Maske auswählen ...</value>
+  </data>
+  <data name="CtxMenuSortBy" xml:space="preserve">
+    <value>Soriteren nach</value>
+  </data>
+  <data name="CtxMenuSortByName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="CtxMenuSortBySize" xml:space="preserve">
+    <value>Größe</value>
+  </data>
+  <data name="CtxMenuSortByType" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="CtxMenuUnsorted" xml:space="preserve">
+    <value>Unsortiert</value>
+  </data>
+  <data name="LabelApplyToAll" xml:space="preserve">
+    <value>Auf alle doppelten Dateien _anwenden</value>
+  </data>
+  <data name="LabelArchiveFormat" xml:space="preserve">
+    <value>Archivformat</value>
+  </data>
+  <data name="LabelArchiveName" xml:space="preserve">
+    <value>Archivname</value>
+  </data>
+  <data name="LabelArchiveOptions" xml:space="preserve">
+    <value>Archivoptionen</value>
+  </data>
+  <data name="LabelDestinationDir" xml:space="preserve">
+    <value>Zielverzeichnis</value>
+  </data>
+  <data name="LabelDestinationFormat" xml:space="preserve">
+    <value>Zielformat für Bilder wählen</value>
+  </data>
+  <data name="LabelDevSite" xml:space="preserve">
+    <value>Entwicklungswebsite</value>
+  </data>
+  <data name="LabelDuplicateFileQuestion" xml:space="preserve">
+    <value>Was soll getan werden?</value>
+  </data>
+  <data name="LabelEncoding" xml:space="preserve">
+    <value>Kodierung</value>
+  </data>
+  <data name="LabelEnterMask" xml:space="preserve">
+    <value>Platzhaltermaske eingeben</value>
+  </data>
+  <data name="LabelExtractAllTo" xml:space="preserve">
+    <value>Extrahiere Dateien von {0} nach</value>
+  </data>
+  <data name="LabelExtractFileTo" xml:space="preserve">
+    <value>Extrahiere {0} nach</value>
+  </data>
+  <data name="LabelIgnoreErrors" xml:space="preserve">
+    <value>Weitere Fehler ignorieren</value>
+  </data>
+  <data name="LabelReleaseNotes" xml:space="preserve">
+    <value>Versionshinweise</value>
+  </data>
+  <data name="LabelSkipFailures" xml:space="preserve">
+    <value>Nicht konvertierbare Dateien überspringen.</value>
+  </data>
+  <data name="MsgChooseFiles" xml:space="preserve">
+    <value>Zu extrahierenden Dateien auswählen</value>
+  </data>
+  <data name="MsgConfirmDeleteFiles" xml:space="preserve">
+    <value>Diese Dateien wirklich löschen?</value>
+  </data>
+  <data name="MsgConvertingFile" xml:space="preserve">
+    <value>Konvertiere Datei {0}</value>
+  </data>
+  <data name="MsgCreatingArchive" xml:space="preserve">
+    <value>Erstelle Archiv {0}</value>
+  </data>
+  <data name="MsgDeletedItem" xml:space="preserve">
+    <value>{0} gelöscht.</value>
+  </data>
+  <data name="MsgDeletedItems1" xml:space="preserve">
+    <value>{0} Datei gelöscht.</value>
+  </data>
+  <data name="MsgDeletedItems2" xml:space="preserve">
+    <value>{0} Dateien gelöscht.</value>
+  </data>
+  <data name="MsgDirectoryNotFound" xml:space="preserve">
+    <value>Verzeichnis nicht gefunden</value>
+  </data>
+  <data name="MsgDownloadFailed" xml:space="preserve">
+    <value>Download der Aktualisierung fehlgeschlagen.</value>
+  </data>
+  <data name="MsgEmptyArchive" xml:space="preserve">
+    <value>Das Archiv ist leer.</value>
+  </data>
+  <data name="MsgErrorExtracting" xml:space="preserve">
+    <value>Fehler beim Extrahieren der Datei.</value>
+  </data>
+  <data name="MsgErrorOpening" xml:space="preserve">
+    <value>Fehler beim Öffnen der Datei.</value>
+  </data>
+  <data name="MsgExtractComplete" xml:space="preserve">
+    <value>{0} in {1} extrahiert.</value>
+  </data>
+  <data name="MsgExtractedFiles1" xml:space="preserve">
+    <value>{0} Datei extrahiert.</value>
+  </data>
+  <data name="MsgExtractedFiles2" xml:space="preserve">
+    <value>{0} Dateien extrahiert.</value>
+  </data>
+  <data name="MsgExtractingArchive" xml:space="preserve">
+    <value>Extrahiere Dateien aus {0}</value>
+  </data>
+  <data name="MsgExtractingFile" xml:space="preserve">
+    <value>Extrahiere Datei aus {0}</value>
+  </data>
+  <data name="MsgExtractingTo" xml:space="preserve">
+    <value>Extrahiere Dateien aus {0} nach {1}</value>
+  </data>
+  <data name="MsgFiles1" xml:space="preserve">
+    <value>{0} Datei</value>
+  </data>
+  <data name="MsgFiles2" xml:space="preserve">
+    <value>{0} Dateien</value>
+  </data>
+  <data name="MsgImageSize" xml:space="preserve">
+    <value>Bild {0} x {1} x {2}bpp</value>
+  </data>
+  <data name="MsgNoFiles" xml:space="preserve">
+    <value>Keine zu extrahierenden Dateien.</value>
+  </data>
+  <data name="MsgNoMatching" xml:space="preserve">
+    <value>Keine Einträge stimmen mit "{0}" überein.</value>
+  </data>
+  <data name="MsgNoMediaFiles" xml:space="preserve">
+    <value>Keine Mediendateien ausgewählt.</value>
+  </data>
+  <data name="MsgNoUpdates" xml:space="preserve">
+    <value>Derzeit sind keine Aktualisierungen verfügbar.</value>
+  </data>
+  <data name="MsgOverwrite" xml:space="preserve">
+    <value>Datei {0}
+ist bereits vorhanden.
+
+Überschreiben?</value>
+  </data>
+  <data name="MsgPlaying" xml:space="preserve">
+    <value>Spiele {0} / {3} / {2}bps / {1}Hz</value>
+  </data>
+  <data name="MsgReady" xml:space="preserve">
+    <value>Bereit</value>
+  </data>
+  <data name="MsgSelectedFiles1" xml:space="preserve">
+    <value>{0} Datei zur Auswahl hinzugefügt.</value>
+  </data>
+  <data name="MsgSelectedFiles2" xml:space="preserve">
+    <value>{0} Dateien zur Auswahl hinzugefügt.</value>
+  </data>
+  <data name="MsgUnableInterpretAudio" xml:space="preserve">
+    <value>Audioformat kann nicht interpretiert werden.</value>
+  </data>
+  <data name="MsgUnableInterpretImage" xml:space="preserve">
+    <value>Bildformat kann nicht interpretiert werden.</value>
+  </data>
+  <data name="MsgUpdateAvailable" xml:space="preserve">
+    <value>Eine Aktualisierung der Format-Datenbank ist verfügbar.</value>
+  </data>
+  <data name="MsgUpdateComplete" xml:space="preserve">
+    <value>Format-Datenbank aktualisiert.</value>
+  </data>
+  <data name="MsgUpdateFailed" xml:space="preserve">
+    <value>Aktualisierungsprüfung fehlgeschlagen.</value>
+  </data>
+  <data name="MsgUpToDate" xml:space="preserve">
+    <value>Die GARbro-Version ist aktuell.</value>
+  </data>
+  <data name="MsgVersion" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="TextAboutArchives" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="TextAboutAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="TextAboutBuiltin" xml:space="preserve">
+    <value>[Built-In]</value>
+  </data>
+  <data name="TextAboutImages" xml:space="preserve">
+    <value>Bilder</value>
+  </data>
+  <data name="TextAboutLicense" xml:space="preserve">
+    <value>Lizenz</value>
+  </data>
+  <data name="TextAboutTitle" xml:space="preserve">
+    <value>Über Game Resource Browser</value>
+  </data>
+  <data name="TextAllFiles" xml:space="preserve">
+    <value>Alle Dateien</value>
+  </data>
+  <data name="TextAsIs" xml:space="preserve">
+    <value>unverändert</value>
+  </data>
+  <data name="TextAudioConversion" xml:space="preserve">
+    <value>Audio wird entweder in WAV, MP3 oder OGG konvertiert.</value>
+  </data>
+  <data name="TextChooseArchive" xml:space="preserve">
+    <value>Archiv-Speicherort auswählen</value>
+  </data>
+  <data name="TextChooseDestDir" xml:space="preserve">
+    <value>Zielverzeichnis wählen</value>
+  </data>
+  <data name="TextConfirmOverwrite" xml:space="preserve">
+    <value>Überschreiben bestätigen</value>
+  </data>
+  <data name="TextConvertAudio" xml:space="preserve">
+    <value>Audio in ein gängiges Format konvertieren</value>
+  </data>
+  <data name="TextConvertMedia" xml:space="preserve">
+    <value>Medienkonvertierung</value>
+  </data>
+  <data name="TextCreateArchive" xml:space="preserve">
+    <value>Archiv erstellen</value>
+  </data>
+  <data name="TextCreateArchiveError" xml:space="preserve">
+    <value>Fehler beim Erstellen des Archivs.</value>
+  </data>
+  <data name="TextDeleteFiles" xml:space="preserve">
+    <value>Dateien löschen</value>
+  </data>
+  <data name="TextEncoding" xml:space="preserve">
+    <value>Textkodierung</value>
+  </data>
+  <data name="TextErrorConverting" xml:space="preserve">
+    <value>Beim Konvertieren der Datei ist ein Fehler aufgetreten.
+{0}
+{1}</value>
+  </data>
+  <data name="TextErrorExtracting" xml:space="preserve">
+    <value>Beim Extrahieren der Datei ist ein Fehler aufgetreten
+{0}
+{1}</value>
+  </data>
+  <data name="TextExtractAudio" xml:space="preserve">
+    <value>Audio extrahieren</value>
+  </data>
+  <data name="TextExtractImages" xml:space="preserve">
+    <value>Bilder extrahieren</value>
+  </data>
+  <data name="TextExtractionError" xml:space="preserve">
+    <value>Datei-Extrahierungsfehler</value>
+  </data>
+  <data name="TextExtractText" xml:space="preserve">
+    <value>Text extrahieren</value>
+  </data>
+  <data name="TextExtractTitle" xml:space="preserve">
+    <value>Aus Archiv extrahieren</value>
+  </data>
+  <data name="TextFileAlreadyExists" xml:space="preserve">
+    <value>Die Datei {0} ist bereits im Zielordner vorhanden.</value>
+  </data>
+  <data name="TextFormats" xml:space="preserve">
+    <value>Formate</value>
+  </data>
+  <data name="TextMediaConvertError" xml:space="preserve">
+    <value>Multimedia-Konvertierungsfehler</value>
+  </data>
+  <data name="TextNewVersion" xml:space="preserve">
+    <value>Neue Version verfügbar:</value>
+  </data>
+  <data name="TextOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="TextParametersTitle" xml:space="preserve">
+    <value>Archiv-Parameter</value>
+  </data>
+  <data name="TextPreferences" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="TextSaveAs" xml:space="preserve">
+    <value>Speichern unter</value>
+  </data>
+  <data name="TextSaveImagesAs" xml:space="preserve">
+    <value>Bild speichern unter</value>
+  </data>
+  <data name="TextSelectFiles" xml:space="preserve">
+    <value>Dateien auswählen</value>
+  </data>
+  <data name="TextTitle" xml:space="preserve">
+    <value>Spiel-Ressourcen Browser</value>
+  </data>
+  <data name="TextUpdateTitle" xml:space="preserve">
+    <value>Anwendungsaktualisierung</value>
+  </data>
+  <data name="TextViewer" xml:space="preserve">
+    <value>Bildbetrachter</value>
+  </data>
+  <data name="TextVisitPage" xml:space="preserve">
+    <value>Download-Seite öffnen</value>
+  </data>
+  <data name="TooltipAudioFormats" xml:space="preserve">
+    <value>Entweder WAV, MP3 oder OGG</value>
+  </data>
+  <data name="TooltipBack" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="TooltipForward" xml:space="preserve">
+    <value>Vorwärts</value>
+  </data>
+  <data name="Type_directory" xml:space="preserve">
+    <value>&lt;DIR&gt;</value>
+  </data>
+  <data name="winDownScaleImage" xml:space="preserve">
+    <value>Große Bilder so skalieren, dass sie in das Fenster passen</value>
+  </data>
+  <data name="Type_NONE" xml:space="preserve">
+    <value>keiner</value>
+  </data>
+  <data name="Type_script" xml:space="preserve">
+    <value>Skript</value>
+  </data>
+  <data name="Type_image" xml:space="preserve">
+    <value>Bild</value>
+  </data>
+  <data name="Type_audio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Type_archive" xml:space="preserve">
+    <value>Archiv</value>
+  </data>
+  <data name="MenuTroubleshooting" xml:space="preserve">
+    <value>_Fehlerbehebung...</value>
+  </data>
+</root>

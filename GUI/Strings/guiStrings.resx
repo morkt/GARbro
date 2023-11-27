@@ -439,7 +439,7 @@ Overwrite?</value>
     <value>Select files</value>
   </data>
   <data name="TextErrorExtracting" xml:space="preserve">
-    <value>Error occured while extracting file
+    <value>Error occurred while extracting file
 {0}
 {1}</value>
   </data>
@@ -490,7 +490,7 @@ Overwrite?</value>
     <value>What should be done?</value>
   </data>
   <data name="TextErrorConverting" xml:space="preserve">
-    <value>Error occured while converting file
+    <value>Error occurred while converting file
 {0}
 {1}</value>
   </data>
@@ -550,5 +550,11 @@ Overwrite?</value>
   </data>
   <data name="winDownScaleImage" xml:space="preserve">
     <value>Scale large images to fit window</value>
+  </data>
+  <data name="MenuTroubleshooting" xml:space="preserve">
+    <value>Troubleshooting...</value>
+  </data>
+  <data name="MsgDeletedItems3" xml:space="preserve">
+    <value />
   </data>
 </root>
