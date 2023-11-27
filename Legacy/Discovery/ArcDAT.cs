@@ -33,6 +33,7 @@ using GameRes.Compression;
 
 // [000225][Discovery] Tsukiyo no Hitomi wa Kurenai ni
 // [001102][Discovery] Twins Rhapsody
+// [020414][Studio Air] Tamayura
 
 namespace GameRes.Formats.Discovery
 {
@@ -43,6 +44,7 @@ namespace GameRes.Formats.Discovery
         public int      BPP;
         public int      Colors;
         public int      Extra;
+        public bool     IsMask;
     }
 
     internal class EDataEntry : PackedEntry
@@ -102,12 +104,14 @@ namespace GameRes.Formats.Discovery
                 var entry = FormatCatalog.Instance.Create<BDataEntry> (name);
                 entry.Size         = index.ToUInt32 (index_offset+4);
                 entry.UnpackedSize = index.ToUInt32 (index_offset+8);
+                entry.IsPacked     = entry.Size != entry.UnpackedSize;
                 entry.Offset       = index.ToUInt32 (index_offset+0xC);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 entry.Width  = index.ToUInt32 (index_offset+0x10);
                 entry.Height = index.ToUInt32 (index_offset+0x14);
                 entry.BPP    = index[index_offset+1];
+                entry.IsMask = index[index_offset+2] == 1;
                 entry.Extra  = index.ToUInt16 (index_offset+0x28);
                 entry.Colors = index.ToUInt16 (index_offset+0x2A);
                 dir.Add (entry);
@@ -263,6 +267,8 @@ namespace GameRes.Formats.Discovery
         ImageData       m_image;
         int             m_colors;
         int             m_extra;
+        bool            m_is_packed;
+        bool            m_is_mask;
 
         public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
         public ImageFormat SourceFormat { get { return null; } }
@@ -276,12 +282,17 @@ namespace GameRes.Formats.Discovery
         public BDataDecoder (ArcFile arc, BDataEntry entry)
         {
             Info = new ImageMetaData { Width = entry.Width, Height = entry.Height, BPP = entry.BPP };
+            m_is_packed = entry.IsPacked;
+            m_is_mask = entry.IsMask;
             uint total_size = entry.Size;
             total_size += (uint)entry.Colors * 4;
             if (entry.Extra > 0)
                 total_size += 10 * (uint)entry.Extra + 2;
-            Stride = ((int)entry.Width * entry.BPP / 8 + 3) & ~3;
-            if (8 == entry.BPP)
+            int bpp = m_is_mask ? 8 : entry.BPP;
+            Stride = ((int)entry.Width * bpp / 8 + 3) & ~3;
+            if (m_is_mask)
+                Format = PixelFormats.Gray8;
+            else if (8 == entry.BPP)
                 Format = PixelFormats.Indexed8;
             else
                 Format = PixelFormats.Bgr24;
@@ -298,9 +309,15 @@ namespace GameRes.Formats.Discovery
                 Palette = ImageFormat.ReadPalette (m_input.AsStream, m_colors);
             if (m_extra > 0)
                 m_input.Seek (10 * m_extra + 2, SeekOrigin.Current);
-            using (var lzss = new LzssStream (m_input.AsStream, LzssMode.Decompress, true))
-                lzss.Read (m_output, 0, m_output.Length);
-            return ImageData.CreateFlipped (Info, Format, Palette, m_output, Stride);
+            if (m_is_packed)
+            {
+                using (var lzss = new LzssStream (m_input.AsStream, LzssMode.Decompress, true))
+                    lzss.Read (m_output, 0, m_output.Length);
+            }
+            else
+                m_input.Read (m_output, 0, m_output.Length);
+            return m_is_mask ? ImageData.Create (Info, Format, Palette, m_output, Stride)
+                             : ImageData.CreateFlipped (Info, Format, Palette, m_output, Stride);
         }
 
         bool m_disposed = false;

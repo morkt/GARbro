@@ -41,6 +41,11 @@ namespace GameRes.Formats.Lilim
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public AosOpener ()
+        {
+            ContainedFormats = new[] { "BMP", "ABM", "IMG/BMP", "DAT/GENERIC", "OGG" };
+        }
+
         static readonly byte[] IndexLink = Enumerable.Repeat<byte> (0xff, 0x10).ToArray();
         static readonly byte[] IndexEnd  = Enumerable.Repeat<byte> (0, 0x10).ToArray();
 
@@ -55,6 +60,7 @@ namespace GameRes.Formats.Lilim
             if (!name_buf.SequenceEqual (IndexLink) && !name_buf.SequenceEqual (IndexEnd))
                 return null;
 
+            string last_name = null;
             long current_offset = 0;
             var dir = new List<Entry> (0x3E);
             while (current_offset < file.MaxOffset)
@@ -74,6 +80,9 @@ namespace GameRes.Formats.Lilim
                     if (-1 == name_length)
                         name_length = name_buf.Length;
                     var name = Encodings.cp932.GetString (name_buf, 0, name_length);
+                    if (last_name == name || string.IsNullOrWhiteSpace (name))
+                        return null;
+                    last_name = name;
                     var entry = FormatCatalog.Instance.Create<PackedEntry> (name);
                     entry.Offset = file.View.ReadUInt32 (current_offset+0x10);
                     entry.Size   = file.View.ReadUInt32 (current_offset+0x14);

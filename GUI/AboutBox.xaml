@@ -46,6 +46,11 @@ IN THE SOFTWARE.
                 <scm:SortDescription PropertyName="Tag" Direction="Ascending"/>
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
+        <CollectionViewSource x:Key="AudioFormatsSource" Source="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=AudioFormats, Mode=OneWay}">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="Tag" Direction="Ascending"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
         <Style x:Key="HiddenHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
             <Setter Property="Visibility" Value="Collapsed" />
         </Style>
@@ -126,7 +131,7 @@ IN THE SOFTWARE.
                 <TabItem Header="{x:Static s:guiStrings.TextAboutAudio}">
                     <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Stretch" Margin="0" SnapsToDevicePixels="True">
                         <ScrollViewer VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
-                            <ItemsControl Name="AudioFormats" ItemsSource="{Binding Source={x:Static gr:FormatCatalog.Instance}, Path=AudioFormats, Mode=OneWay}">
+                            <ItemsControl Name="AudioFormats" ItemsSource="{Binding Source={StaticResource AudioFormatsSource}}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">

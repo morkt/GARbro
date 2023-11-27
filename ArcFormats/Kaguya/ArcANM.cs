@@ -23,7 +23,6 @@
 // IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -42,60 +41,110 @@ namespace GameRes.Formats.Kaguya
         }
     }
 
-    [Export(typeof(ArchiveFormat))]
-    public class AnmOpener : ArchiveFormat
+    internal class AnmEntry : Entry
     {
-        public override string         Tag { get { return "ANM/KAGUYA"; } }
+        public long ImageDataOffset;
+        public uint ImageDataSize;
+    }
+
+    internal interface IAnmReader
+    {
+        List<Entry> GetFramesList (IBinaryStream input);
+    }
+
+    public abstract class AnmOpenerBase : ArchiveFormat, IAnmReader
+    {
         public override string Description { get { return "KaGuYa script engine animation resource"; } }
-        public override uint     Signature { get { return 0x30304E41; } } // 'AN00'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
-        public AnmOpener ()
+        public AnmOpenerBase ()
         {
             Extensions = new string[] { "anm" };
         }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int frame_count = file.View.ReadInt16 (0x14);
-            uint current_offset = 0x18 + (uint)frame_count * 4;
-            int count = file.View.ReadInt16 (current_offset);
-            if (!IsSaneCount (count))
-                return null;
-            var base_info = new ImageMetaData
+            using (var input = file.CreateStream())
             {
-                OffsetX     = file.View.ReadInt32 (4),
-                OffsetY     = file.View.ReadInt32 (8),
-                Width       = file.View.ReadUInt32 (0x0C),
-                Height      = file.View.ReadUInt32 (0x10),
-                BPP         = 32,
-            };
-            current_offset += 2;
-            string base_name = Path.GetFileNameWithoutExtension (file.Name);
-            var dir = new List<Entry> (count);
-            for (int i = 0; i < count; ++i)
-            {
-                uint width  = file.View.ReadUInt32 (current_offset+8);
-                uint height = file.View.ReadUInt32 (current_offset+12);
-                var entry = new Entry
+                var dir = GetFramesList (input);
+                if (null == dir)
+                    return null;
+                var base_info = GetBaseInfo (input);
+                string base_name = Path.GetFileNameWithoutExtension (file.Name);
+                int i = 0;
+                foreach (var entry in dir)
                 {
-                    Name = string.Format ("{0}#{1:D2}", base_name, i),
-                    Type = "image",
-                    Offset = current_offset,
-                    Size = 0x10 + 4*width*height,
-                };
-                dir.Add (entry);
-                current_offset += entry.Size;
+                    entry.Name = string.Format ("{0}#{1:D2}", base_name, i++);
+                    entry.Type = "image";
+                }
+                return new AnmArchive (file, this, dir, base_info);
             }
-            return new AnmArchive (file, this, dir, base_info);
         }
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var base_info = ((AnmArchive)arc).ImageInfo;
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new An00Decoder (input, base_info);
+            return CreateDecoder (input, base_info);
+        }
+
+        internal virtual ImageMetaData GetBaseInfo (IBinaryStream input)
+        {
+            input.Position = 4;
+            return new ImageMetaData
+            {
+                OffsetX     = input.ReadInt32(),
+                OffsetY     = input.ReadInt32(),
+                Width       = input.ReadUInt32(),
+                Height      = input.ReadUInt32(),
+                BPP         = 32,
+            };
+        }
+
+        public abstract List<Entry> GetFramesList (IBinaryStream input);
+
+        public abstract IImageDecoder CreateDecoder (IBinaryStream input, ImageMetaData info);
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class AnmOpener : AnmOpenerBase
+    {
+        public override string         Tag { get { return "ANM/KAGUYA"; } }
+        public override uint     Signature { get { return 0x30304E41; } } // 'AN00'
+
+        public override List<Entry> GetFramesList (IBinaryStream file)
+        {
+            file.Position = 0x14;
+            int frame_count = file.ReadInt16();
+            file.Position = 0x18 + frame_count * 4;
+            int count = file.ReadInt16();
+            if (!IsSaneCount (count))
+                return null;
+            var current_offset = file.Position;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                file.Position = current_offset + 8;
+                uint width  = file.ReadUInt32();
+                uint height = file.ReadUInt32();
+                uint image_size = 4*width*height;
+                var entry = new AnmEntry
+                {
+                    Offset = current_offset,
+                    Size = 0x10 + image_size,
+                    ImageDataOffset = current_offset + 0x10,
+                    ImageDataSize = image_size,
+                };
+                dir.Add (entry);
+                current_offset += entry.Size;
+            }
+            return dir;
+        }
+
+        public override IImageDecoder CreateDecoder (IBinaryStream input, ImageMetaData info)
+        {
+            return new An00Decoder (input, info);
         }
     }
 
@@ -123,75 +172,146 @@ namespace GameRes.Formats.Kaguya
     }
 
     [Export(typeof(ArchiveFormat))]
-    public class An20Opener : ArchiveFormat
+    public class An10Opener : AnmOpenerBase, IAnmReader
     {
-        public override string         Tag { get { return "AN20/KAGUYA"; } }
-        public override string Description { get { return "KaGuYa script engine animation resource"; } }
-        public override uint     Signature { get { return 0x30324E41; } } // 'AN20'
-        public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override string         Tag { get { return "AN10/KAGUYA"; } }
+        public override uint     Signature { get { return 0x30314E41; } } // 'AN10'
 
-        public An20Opener ()
+        public override List<Entry> GetFramesList (IBinaryStream file)
         {
-            Extensions = new string[] { "anm" };
-        }
-
-        public override ArcFile TryOpen (ArcView file)
-        {
-            int table_count = file.View.ReadInt16 (4);
-            uint current_offset = 8;
-            for (int i = 0; i < table_count; ++i)
-            {
-                switch (file.View.ReadByte (current_offset++))
-                {
-                case 0: break;
-                case 1: current_offset += 8; break;
-                case 2:
-                case 3:
-                case 4:
-                case 5: current_offset += 4; break;
-                default: return null;
-                }
-            }
-            current_offset += 2 + file.View.ReadUInt16 (current_offset) * 8u;
-            int count = file.View.ReadInt16 (current_offset);
+            file.Position = 0x14;
+            int frame_count = file.ReadInt16();
+            file.Position = 0x18 + frame_count * 4;
+            int count = file.ReadInt16();
             if (!IsSaneCount (count))
                 return null;
-            current_offset += 2;
-            var base_info = new ImageMetaData
-            {
-                OffsetX     = file.View.ReadInt32 (current_offset),
-                OffsetY     = file.View.ReadInt32 (current_offset+4),
-                Width       = file.View.ReadUInt32 (current_offset+8),
-                Height      = file.View.ReadUInt32 (current_offset+12),
-                BPP         = 32,
-            };
-            current_offset += 0x10;
-            string base_name = Path.GetFileNameWithoutExtension (file.Name);
+            var current_offset = file.Position;
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                uint width  = file.View.ReadUInt32 (current_offset+8);
-                uint height = file.View.ReadUInt32 (current_offset+0x0C);
-                uint depth  = file.View.ReadUInt32 (current_offset+0x10);
-                var entry = new Entry
+                file.Position = current_offset + 8;
+                uint width  = file.ReadUInt32();
+                uint height = file.ReadUInt32();
+                uint channels = file.ReadUInt32();
+                uint image_size = channels*width*height;
+                var entry = new AnmEntry
                 {
-                    Name = string.Format ("{0}#{1:D2}", base_name, i),
-                    Type = "image",
                     Offset = current_offset,
-                    Size = 0x14 + depth*width*height,
+                    Size = 0x14 + image_size,
+                    ImageDataOffset = current_offset + 0x14,
+                    ImageDataSize = image_size,
                 };
                 dir.Add (entry);
                 current_offset += entry.Size;
             }
-            return new AnmArchive (file, this, dir, base_info);
+            return dir;
         }
 
-        public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
+        public override IImageDecoder CreateDecoder (IBinaryStream input, ImageMetaData info)
         {
-            var base_info = ((AnmArchive)arc).ImageInfo;
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
-            return new An20Decoder (input, base_info);
+            return new An10Decoder (input, info);
+        }
+    }
+
+    internal class An10Decoder : BinaryImageDecoder
+    {
+        public An10Decoder (IBinaryStream input, ImageMetaData base_info) : base (input)
+        {
+            Info = new ImageMetaData
+            {
+                OffsetX = base_info.OffsetX + m_input.ReadInt32(),
+                OffsetY = base_info.OffsetY + m_input.ReadInt32(),
+                Width   = m_input.ReadUInt32(),
+                Height  = m_input.ReadUInt32(),
+                BPP     = m_input.ReadInt32() * 8,
+            };
+        }
+
+        protected override ImageData GetImageData ()
+        {
+            m_input.Position = 0x14;
+            int stride = Info.BPP / 8 * Info.iWidth;
+            var pixels = m_input.ReadBytes (stride*Info.iHeight);
+            PixelFormat format = 24 == Info.BPP ? PixelFormats.Bgr24 : PixelFormats.Bgra32;
+            return ImageData.CreateFlipped (Info, format, null, pixels, stride);
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class An20Opener : AnmOpenerBase
+    {
+        public override string         Tag { get { return "AN20/KAGUYA"; } }
+        public override uint     Signature { get { return 0x30324E41; } } // 'AN20'
+
+        public override List<Entry> GetFramesList (IBinaryStream file)
+        {
+            if (!SkipFrameTable (file))
+                return null;
+            int count = file.ReadInt16();
+            if (!IsSaneCount (count))
+                return null;
+            long current_offset = file.Position + 0x10;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                file.Position = current_offset + 8;
+                uint width  = file.ReadUInt32();
+                uint height = file.ReadUInt32();
+                uint depth  = file.ReadUInt32();
+                uint image_size = depth*width*height;
+                var entry = new AnmEntry
+                {
+                    Offset = current_offset,
+                    Size = 0x14 + image_size,
+                    ImageDataOffset = current_offset + 0x14,
+                    ImageDataSize = image_size,
+                };
+                dir.Add (entry);
+                current_offset += entry.Size;
+            }
+            return dir;
+        }
+
+        internal override ImageMetaData GetBaseInfo (IBinaryStream input)
+        {
+            SkipFrameTable (input);
+            input.ReadInt16();
+            return new ImageMetaData
+            {
+                OffsetX     = input.ReadInt32(),
+                OffsetY     = input.ReadInt32(),
+                Width       = input.ReadUInt32(),
+                Height      = input.ReadUInt32(),
+                BPP         = 32,
+            };
+        }
+
+        bool SkipFrameTable (IBinaryStream file)
+        {
+            file.Position = 4;
+            int table_count = file.ReadInt16();
+            file.Position = 8;
+            for (int i = 0; i < table_count; ++i)
+            {
+                switch (file.ReadByte())
+                {
+                case 0: break;
+                case 1: file.Seek (8, SeekOrigin.Current); break;
+                case 2:
+                case 3:
+                case 4:
+                case 5: file.Seek (4, SeekOrigin.Current); break;
+                default: return false;
+                }
+            }
+            int count = file.ReadUInt16();
+            file.Seek (count * 8, SeekOrigin.Current);
+            return true;
+        }
+
+        public override IImageDecoder CreateDecoder (IBinaryStream input, ImageMetaData info)
+        {
+            return new An20Decoder (input, info);
         }
     }
 

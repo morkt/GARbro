@@ -49,25 +49,35 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=1.1.0.145, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpZipLib.1.1.0\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=1.3.3.11, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpZipLib.1.3.3\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="NAudio">
       <HintPath>..\packages\NAudio.1.7.3\lib\net35\NAudio.dll</HintPath>
     </Reference>
-    <Reference Include="NVorbis, Version=0.8.6.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NVorbis.0.8.6\lib\net35\NVorbis.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NVorbis, Version=0.10.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NVorbis.0.10.4\lib\net45\NVorbis.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\netstandard1.1\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\netstandard1.1\System.Memory.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.5.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.6.0\lib\netstandard1.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -88,13 +98,31 @@
     <Compile Include="Abogado\ImageKG.cs" />
     <Compile Include="Actgs\ArcCG.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
+    <Compile Include="Adobe\ArcAIR.cs" />
     <Compile Include="Ads\ArcPAC.cs" />
     <Compile Include="AdvDx\ArcPKD.cs" />
     <Compile Include="AdvScripter\ArcPAK.cs" />
     <Compile Include="AdvSys\ArcAdvSys3.cs" />
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
+    <Compile Include="AIRNovel\ArcAIR.cs" />
+    <Compile Include="CsWare\AudioWAV.cs" />
+    <Compile Include="CsWare\ImageGDT.cs" />
+    <Compile Include="FC01\ArcBDT.cs" />
+    <Compile Include="FC01\BdtTables.cs" />
+    <Compile Include="GScripter\ArcDATA.cs" />
+    <Compile Include="Ism\ImagePNG.cs" />
+    <Compile Include="Kogado\ArcARC.cs" />
+    <Compile Include="Ice\ImageIBM.cs" />
+    <Compile Include="Ice\ScriptISD.cs" />
     <Compile Include="BlueGale\ImageBBM.cs" />
+    <Compile Include="ClickTeam\ArcMF.cs" />
+    <Compile Include="DxLib\ArcDX8.cs" />
+    <Compile Include="Hypatia\ArcLPK.cs" />
+    <Compile Include="Hypatia\ImageLSG.cs" />
+    <Compile Include="Illusion\ArcPP.cs" />
+    <Compile Include="Interheart\ImageBMP.cs" />
+    <Compile Include="Interheart\ImageHMP.cs" />
     <Compile Include="JamCreation\ArcDAT.cs" />
     <Compile Include="JamCreation\ImageDPO.cs" />
     <Compile Include="AliceSoft\ArcAAR.cs" />
@@ -118,7 +146,24 @@
     <Compile Include="Apricot\ArcDAT.cs" />
     <Compile Include="ArcARCX.cs" />
     <Compile Include="Artemis\ArcMJA.cs" />
-    <None Include="AudioAIFF.cs" />
+    <Compile Include="Macintosh\ImagePICT.cs" />
+    <Compile Include="Macromedia\ArcDXR.cs" />
+    <Compile Include="Macromedia\AudioSND.cs" />
+    <Compile Include="Macromedia\DirectorFile.cs" />
+    <Compile Include="Macromedia\Palettes.cs" />
+    <Compile Include="Mugi\ArcBIN.cs" />
+    <Compile Include="NScripter\Script.cs" />
+    <Compile Include="Psp\ArcQPK.cs" />
+    <Compile Include="ScrPlayer\ImageIMG.cs" />
+    <Compile Include="SingleFileArchive.cs" />
+    <Compile Include="Software House Parsley\ArcCG3.cs" />
+    <Compile Include="Software House Parsley\ArcScn.cs" />
+    <Compile Include="TechGian\ArcBIN.cs" />
+    <Compile Include="Unity\ScriptDSM.cs" />
+    <Compile Include="Xuse\ArcNT.cs" />
+    <Compile Include="Xuse\ArcWVB.cs" />
+    <Compile Include="Zyx\ImageXMG.cs" />
+    <Compile Include="AudioAIFF.cs" />
     <Compile Include="Basil\ArcMIF.cs" />
     <Compile Include="Basil\AudioWHC.cs" />
     <Compile Include="Basil\ImageBCF.cs" />
@@ -199,6 +244,7 @@
     <Compile Include="Interheart\ArcFPK2.cs" />
     <Compile Include="Interheart\ImageCandy.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
+    <Compile Include="Kaguya\ArcPLT.cs" />
     <Compile Include="Key\ArcPAK.cs" />
     <Compile Include="Key\AudioOGGPAK.cs" />
     <Compile Include="Key\ImageCZ.cs" />
@@ -238,6 +284,9 @@
     <Compile Include="Mnp\ArcMMA.cs" />
     <Compile Include="MultiFileArchive.cs" />
     <Compile Include="Musica\ArcANI.cs" />
+    <Compile Include="MyAdv\ArcPAC.cs" />
+    <Compile Include="Nekopack\ArcNEKO2.cs" />
+    <Compile Include="Nekopack\ArcNEKO3.cs" />
     <Compile Include="NitroPlus\ArcLAY.cs" />
     <Compile Include="NitroPlus\ArcMPK.cs" />
     <Compile Include="NitroPlus\ArcNPP.cs" />
@@ -296,6 +345,7 @@
     <Compile Include="Qlie\DelphiDeserializer.cs" />
     <Compile Include="Qlie\Encryption.cs" />
     <Compile Include="Qlie\ImageABMP.cs" />
+    <Compile Include="Qlie\ImageARGB.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
     <Compile Include="RealLive\ArcSEEN.cs" />
     <Compile Include="RealLive\ImageG00Jpeg.cs" />
@@ -308,6 +358,7 @@
     <Compile Include="ScenePlayer\ArcPMX.cs" />
     <Compile Include="Scoop\ArcGX.cs" />
     <Compile Include="Scoop\ImageSCP.cs" />
+    <Compile Include="Seraphim\ArcArchAngel.cs" />
     <Compile Include="Seraphim\ArcCP3.cs" />
     <Compile Include="Seraphim\ArcMC.cs" />
     <Compile Include="Seraphim\ArcSCN.cs" />
@@ -320,6 +371,8 @@
     <Compile Include="Software House Parsley\ArcPAC.cs" />
     <Compile Include="Software House Parsley\ArcUCG.cs" />
     <Compile Include="Software House Parsley\ImagePCG.cs" />
+    <Compile Include="Sohfu\ArcSKA.cs" />
+    <Compile Include="Sohfu\ImageDTL.cs" />
     <Compile Include="Speed\ArcARC.cs" />
     <Compile Include="Stack\ArcGPK.cs" />
     <Compile Include="Strikes\ArcPCK.cs" />
@@ -569,7 +622,7 @@
     </Compile>
     <Compile Include="Glib2\ArcG2.cs" />
     <Compile Include="Glib2\ImagePGX.cs" />
-    <Compile Include="ImagePSD.cs" />
+    <Compile Include="Adobe\ImagePSD.cs" />
     <Compile Include="Kaguya\ArcANM.cs" />
     <Compile Include="Kaguya\ArcLINK.cs" />
     <Compile Include="Kaguya\ImageAO.cs" />
@@ -624,6 +677,7 @@
     <Compile Include="TanukiSoft\ArcTAC.cs" />
     <Compile Include="TanukiSoft\ImageAF.cs" />
     <Compile Include="Taskforce\ArcDAT.cs" />
+    <Compile Include="TechnoBrain\ArcIPQ.cs" />
     <Compile Include="TechnoBrain\AudioWAPE.cs" />
     <Compile Include="TechnoBrain\ImageIPF.cs" />
     <Compile Include="TechnoBrain\ImageIPH.cs" />
@@ -681,7 +735,6 @@
     <Compile Include="AZSys\ArcAZSys.cs" />
     <Compile Include="Ethornell\ArcBGI.cs" />
     <Compile Include="Ffa\ArcBlackPackage.cs" />
-    <Compile Include="Macromedia\ArcCCT.cs" />
     <Compile Include="Cherry\ArcCherry.cs" />
     <Compile Include="Circus\ArcCircus.cs" />
     <Compile Include="ArcCommon.cs" />
@@ -712,7 +765,7 @@
     <Compile Include="ArcIKS.cs" />
     <Compile Include="ArcPACKDAT.cs" />
     <Compile Include="CatSystem\ArcINT.cs" />
-    <Compile Include="ArcISA.cs" />
+    <Compile Include="Ism\ArcISA.cs" />
     <Compile Include="Kaas\ArcKAAS.cs" />
     <Compile Include="Kaguya\ArcKaguya.cs" />
     <Compile Include="Selene\ArcKCAP.cs" />
@@ -728,7 +781,7 @@
     <Compile Include="MangaGamer\ArcMGPK.cs" />
     <Compile Include="MnoViolet\ArcMnoViolet.cs" />
     <Compile Include="FC01\ArcMRG.cs" />
-    <Compile Include="ArcNEKO.cs" />
+    <Compile Include="Nekopack\ArcNEKO.cs" />
     <Compile Include="Nexas\ArcPAC.cs" />
     <Compile Include="NitroPlus\ArcNitro.cs" />
     <Compile Include="Entis\ArcNOA.cs" />
@@ -764,12 +817,14 @@
     <Compile Include="BlackCyc\ArcVPK.cs" />
     <Compile Include="Unity\ArcASSET.cs" />
     <Compile Include="Unity\ArcBIN.cs" />
+    <Compile Include="Unity\ArcDSM.cs" />
     <Compile Include="Unity\ArcSpVM.cs" />
     <Compile Include="Unity\ArcUnityFS.cs" />
     <Compile Include="Unity\Asset.cs" />
     <Compile Include="Unity\AssetReader.cs" />
     <Compile Include="Unity\AudioClip.cs" />
     <Compile Include="Unity\AudioFSB5.cs" />
+    <Compile Include="Unity\Bc7Decoder.cs" />
     <Compile Include="Unity\BundleStream.cs" />
     <Compile Include="Unity\Gx4Lib\ArcDAT.cs" />
     <Compile Include="Unity\OggStream.cs" />
@@ -791,6 +846,10 @@
     <None Include="packages.config" />
     <EmbeddedResource Include="Strings\arcStrings.ja-JP.resx" />
     <EmbeddedResource Include="Unity\strings.dat" />
+    <EmbeddedResource Include="ScrPlayer\ImgControlTable1" />
+    <EmbeddedResource Include="ScrPlayer\ImgControlTable2" />
+    <EmbeddedResource Include="ScrPlayer\ImgDeltaTable2" />
+    <EmbeddedResource Include="ScrPlayer\ImgControlTable32" />
     <None Include="WebP\Alpha.cs" />
     <None Include="WebP\Decoder.cs">
       <SubType>Code</SubType>
@@ -806,6 +865,7 @@
     <Compile Include="Will\ArcPNA.cs" />
     <Compile Include="Will\ArcPulltop.cs" />
     <Compile Include="Will\ArcWIP.cs" />
+    <Compile Include="Winters\ArcCFP.cs" />
     <Compile Include="Winters\ArcDAT.cs" />
     <Compile Include="Winters\ArcIFP.cs" />
     <Compile Include="Winters\ArcIFX.cs" />
@@ -814,6 +874,7 @@
     <Compile Include="Xuse\ArcWAG.cs" />
     <Compile Include="Xuse\ArcXARC.cs" />
     <Compile Include="Xuse\ArcXuse.cs" />
+    <Compile Include="Xuse\ImageP.cs" />
     <Compile Include="YaneSDK\ArcDAT.cs" />
     <Compile Include="YaneSDK\ArcHibiki.cs" />
     <Compile Include="Yatagarasu\ArcPKG.cs" />
@@ -926,7 +987,7 @@
     <Compile Include="CatSystem\ImageHG3.cs" />
     <Compile Include="Triangle\ImageIAF.cs" />
     <Compile Include="Silky\ImageIGF.cs" />
-    <Compile Include="ImageISG.cs" />
+    <Compile Include="Ism\ImageISG.cs" />
     <Compile Include="Kaas\ImageKAAS.cs" />
     <Compile Include="MAI\ImageMAI.cs" />
     <Compile Include="FC01\ImageMCG.cs" />
@@ -999,11 +1060,11 @@
     </Compile>
     <EmbeddedResource Include="Softpal\WaveTable1" />
     <EmbeddedResource Include="Softpal\WaveTable2" />
-    <EmbeddedResource Include="ScrPlayer\ColorBitsTable1" />
-    <EmbeddedResource Include="ScrPlayer\ColorBitsTable2" />
-    <EmbeddedResource Include="ScrPlayer\ControlTable1" />
-    <EmbeddedResource Include="ScrPlayer\ControlTable2" />
-    <EmbeddedResource Include="ScrPlayer\ControlTable32" />
+    <EmbeddedResource Include="ScrPlayer\IColorBitsTable1" />
+    <EmbeddedResource Include="ScrPlayer\IColorBitsTable2" />
+    <EmbeddedResource Include="ScrPlayer\IControlTable1" />
+    <EmbeddedResource Include="ScrPlayer\IControlTable2" />
+    <EmbeddedResource Include="ScrPlayer\IControlTable32" />
     <None Include="Resources\Formats.dat" />
   </ItemGroup>
   <ItemGroup>

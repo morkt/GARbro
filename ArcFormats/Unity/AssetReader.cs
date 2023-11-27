@@ -65,6 +65,7 @@ namespace GameRes.Formats.Unity
         public Func<int>    ReadInt32;
         public Func<long>   ReadInt64;
         public Func<long>   ReadId;
+        public Func<long>   ReadOffset;
 
         public void SetupReaders (Asset asset)
         {
@@ -109,6 +110,10 @@ namespace GameRes.Formats.Unity
                 ReadId = ReadInt64;
             else
                 ReadId = () => ReadInt32();
+            if (m_format >= 22)
+                ReadOffset = ReadInt64;
+            else
+                ReadOffset = () => ReadUInt32();
         }
 
         /// <summary>
@@ -120,6 +125,11 @@ namespace GameRes.Formats.Unity
                 ReadId = ReadInt64;
             else
                 ReadId = () => ReadInt32();
+        }
+
+        public void Skip (int count)
+        {
+            m_input.Seek (count, SeekOrigin.Current);
         }
 
         /// <summary>

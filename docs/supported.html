@@ -8,8 +8,8 @@ body { font-family: Calibri, sans-serif }
 table { border-spacing: 0; border-collapse: collapse; }
 th,td { vertical-align: text-top; border: solid black 1px; }
 tr.odd td { background-color: #eee }
-tr { height: 100% }
-tr.last { height: auto }
+tr { height: auto }
+tr.last { height: 100% }
 .footnote { font-size: 75%; vertical-align: super; top: 0.5em }
 .footnote::before { content: "[" }
 .footnote::after { content: "]" }
@@ -584,6 +584,7 @@ Douryou no Oku-san ~Netori Tsuma, Netorare Tsuma~ <span class="footnote">ShiinaR
 Draculius <span class="footnote">ShiinaRio v2.38</span><br/>
 Engage Links <span class="footnote">ShiinaRio v2.45</span><br/>
 Enkaku Sousa <span class="footnote">2.36 or 2.37</span><br/>
+Gakuen Pets ~Houkago no Shiikusha~ <span class="footnote">2.40</span><br/>
 Gakushoku no Oba-san The Motion <span class="footnote">ShiinaRio v2.48</span><br/>
 Gensou no Idea ~Oratorio Phantasm Historia~<span class="footnote">ShiinaRio v2.49</span><br/>
 Gibo to Oba ~Soshite Yuujin no Haha~ <span class="footnote">ShiinaRio v2.36</span><br/>
@@ -1303,9 +1304,10 @@ Eien no Aselia -The Spirit of Eternity Sword-
 Ayakashi<br/>
 Ayakashi H<br/>
 </td></tr>
-<tr class="odd"><td>*.arc</td><td><tt>LIN2</tt><br/><tt>LINK3</tt><br/><tt>LINK5</tt><br/><tt>LINK6</tt><br/><tt>UF01</tt></td><td></td><td rowspan="4">KaGuYa</td><td rowspan="4">
+<tr class="odd"><td>*.arc</td><td><tt>LIN2</tt><br/><tt>LINK3</tt><br/><tt>LINK5</tt><br/><tt>LINK6</tt><br/><tt>UF01</tt></td><td></td><td rowspan="5">KaGuYa</td><td rowspan="5">
 Dokidoki Onee-san<br/>
 Harami Tama<br/>
+Kirari☆Nangoku Komugiiro<br/>
 Mahokoi ~Ecchi na Mahou de Koi x Koi Shichau~<br/>
 Mainichi ga M!<br/>
 Meidokissa<br/>
@@ -1317,7 +1319,8 @@ Toshishita Gentei Nuki x2 Share-house<br/>
 </td></tr>
 <tr class="odd"><td>*.alp</td><td><tt>AP-0</tt><br/><tt>AP-2</tt></td><td></td></tr>
 <tr class="odd"><td>*.ap3</td><td><tt>\x04APS3</tt></td><td></td></tr>
-<tr class="odd last"><td>*.anm</td><td><tt>AN00</tt><br/><tt>AN21</tt></td><td></td></tr>
+<tr class="odd"><td>*.anm</td><td><tt>AN00</tt><br/><tt>AN10</tt><br/><tt>AN20</tt><br/><tt>AN21</tt></td><td></td></tr>
+<tr class="odd last"><td>*.plt</td><td><tt>PL00</tt></td><td></td></tr>
 <tr><td>*.pcs</td><td><tt>PCCS</tt></td><td></td><td rowspan="2">C's ware</td><td rowspan="2">
 Gakuen Ojou-sama Kitan<br/>
 Kuro to Kuro to Kuro no Saidan ~Kodoku~<br/>
@@ -1484,6 +1487,7 @@ Eijin-sou<br/>
 Etsuraku no Tane<br/>
 Fit Shichao! ~Toshiue Josei to Asedaku Lesson Hatsutaiken~<br/>
 Fuka no Jugoku<br/>
+Gacha-kami-sama no Iu Toori!<br/>
 Gakkou Yarashii Kaidan<br/>
 Gibo no Shizuku ~Shimetta Hada kara Kaori Tatsu Amai Iroka~<br/>
 Gibo no Toiki ~Haitoku Kokoro ni tadayou Haha no Iroka~<br/>
@@ -1503,6 +1507,7 @@ Hidamari no Kage de<br/>
 Hime Kami 1/2<br/>
 Hitohada Nugimasu! Shinmai Henshuu Marika no Junan<br/>
 Hitozuma Kasumi-san 2<br/>
+Hoiku Shichao!<br/>
 Iji Care ~Noel-kun no Gohoushi Nikki~<br/>
 Ikareta Kyoushitsu<br/>
 Inhou no Seijo ~The Nuns of Sexualministrant~<br/>
@@ -1521,6 +1526,7 @@ Koitsuma Biyori ~Yukino-san wa Hitozuma Kanrinin~<br/>
 Kowaku no Toki<br/>
 Kuraibito<br/>
 Mahou Shoujo Nayuta<br/>
+Maniac Circle Hakusho.rar<br/>
 Mouryou no Nie<br/>
 Mugen no Sakura ~Hitsuya-hime Injoku Youshokutan~<br/>
 Natsu Doki! Harem<br/>
@@ -1543,6 +1549,7 @@ Shukubo no Uzuki ~Hitozuma Miboujin no Nareta Karada to Amai Toiki~<br/>
 Shukubo no Uzuki 2 ~Nareta Hitozuma kara Tadayou "Onna" no Iroka~<br/>
 Shukujo no Tsuyagoto<br/>
 Volley Coaching!<br/>
+Youka no Sono<br/>
 Yumekoi Tensei<br/>
 Zettai Maji Love! Amaicha Happening!<br/>
 Zettai Majiiki!? Ichazura Happening!<br/>
@@ -1582,13 +1589,14 @@ Shokusou Tenshi Serika 2<br/>
 Elevator Panic ~Misshitsu no Inkou~<br/>
 Yuuguu Settai #<br/>
 </td></tr>
-<tr><td>*.dat</td><td><tt>MIK01</tt><br/><tt>MK2.0</tt><br/><tt>BL2.0</tt><br/><tt>SL1.0</tt></td><td></td><td rowspan="2">MAIKA</td><td rowspan="2">
+<tr><td>*.dat</td><td><tt>MIK01</tt><br/><tt>MK2.0</tt><br/><tt>BL2.0</tt><br/><tt>SL1.0</tt><br/><tt>MP2.0</tt></td><td></td><td rowspan="2">MAIKA</td><td rowspan="2">
 Choukou Sentai Justice Blade 2<br/>
 Inka Gakuen Taisen<br/>
 Ippai, Oshiete! ~Imouto Communication♪~<br/>
 Princess Moon ~Seihouseki Kishidan no Juunan~<br/>
 Ryoujoku Hishoshitsu<br/>
 Ryoujoku Onna Kyoushi ~Reijin Tenraku Hen~<br/>
+Suisui -Sweetheart Swimmer-<br/>
 Uchuu Keiji Soldivan<br/>
 </td></tr>
 <tr class="last"><td>*.wav</td><td><tt>WV5A</tt></td><td></td></tr>
@@ -1775,6 +1783,7 @@ Mite Kudasaimasu?<br/>
 <tr class="last"><td>*.vmd</td><td>-</td><td></td></tr>
 <tr class ="odd"><td>*.dpm<br/>*.bin</td><td><tt>DPMX</tt></td><td></td><td>Hot Soup Processor</td><td>
 femme fatale<br/>
+Mawasarehime -Hakudaku no Kioku-<br/>
 </td></tr>
 <tr><td>*.cdt<br/>*.pdt<br/>*.vdt<br/>*.ovd</td><td><tt>RK1</tt></td><td></td><td rowspan="2">NEJII</td><td rowspan="2">
 Kidou Houshinki<br/>
@@ -2044,6 +2053,16 @@ Kazoku Keikaku Re:Tsumugu Ito<br/>
 <tr class="odd"><td>*.dat</td><td><tt>CsPack2</tt></td><td></td><td>CatSystem</td><td>
 Yuibashi<br/>
 </td></tr>
+<tr><td>*.pck</td><td>-</td><td></td><td rowspan="2">Strikes</td><td rowspan="2">
+Niizuma Kyoushi Kagurazaka Naomi<br/>
+Shachou Hisho Nozaki Reika<br/>
+</td></tr>
+<tr class="last"><td>*.lag</td><td><tt>\x01\x10LA</tt></td><td></td></tr>
+<tr class="odd"><td>*.pac</td><td>-</td><td></td><td rowspan="2">ads</td><td rowspan="2">
+Injoku Hitozuma Onna Kyoushi<br/>
+Inran Hitozuma Apart<br/>
+</td></tr>
+<tr class="odd last"><td>*.060</td><td><tt>POG</tt></td><td></td></tr>
 </table>
 <p><a name="note-1" class="footnote">1</a> Non-encrypted only</p>
 </body>

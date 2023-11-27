@@ -44,6 +44,11 @@ namespace GameRes.Formats.RPGMaker
         public override string Description { get { return "RPG Maker engine image format"; } }
         public override uint     Signature { get { return 0x4D475052; } } // 'RPGMV'
 
+        public RpgmvpFormat ()
+        {
+            Extensions = new string[] { "rpgmvp", "png_" };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x14);
@@ -149,6 +154,8 @@ namespace GameRes.Formats.RPGMaker
             var dir_name = Path.GetDirectoryName (filename);
             yield return Path.Combine (dir_name, @"..\..\data\System.json");
             yield return Path.Combine (dir_name, @"..\..\..\www\data\System.json");
+            yield return Path.Combine (dir_name, @"..\..\..\data\System.json");
+            yield return Path.Combine (dir_name, @"..\..\..\..\data\System.json");
             yield return Path.Combine (dir_name, @"..\data\System.json");
             yield return Path.Combine (dir_name, @"data\System.json");
         }

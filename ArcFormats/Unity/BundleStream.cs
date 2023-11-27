@@ -118,7 +118,7 @@ namespace GameRes.Formats.Unity
                 m_packed = new byte[segment.PackedSize];
             int packed_size = m_input.Read (m_packed, 0, (int)segment.PackedSize);
             var output = PrepareBuffer (segment.UnpackedSize);
-            if (3 == method)
+            if (3 == method || 2 == method)
                 m_buffer_len = Lz4Compressor.DecompressBlock (m_packed, packed_size, output, (int)segment.UnpackedSize);
             else
                 throw new NotImplementedException ("Not supported Unity asset bundle compression.");

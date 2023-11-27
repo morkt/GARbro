@@ -122,7 +122,7 @@ namespace GameRes
         protected ImageData       m_image;
 
         public Stream            Source { get { m_input.Position = 0; return m_input.AsStream; } }
-        public ImageFormat SourceFormat { get { return null; } }
+        public ImageFormat SourceFormat { get; protected set; }
         public ImageMetaData       Info { get; protected set; }
         public ImageData          Image { get { return m_image ?? (m_image = GetImageData()); } }
 

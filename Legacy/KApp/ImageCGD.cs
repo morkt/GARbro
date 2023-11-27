@@ -29,11 +29,12 @@ using System.IO;
 using System.Windows.Media;
 
 // [030228][spiel] The Black Box
+// [001006][spiel] Koimusubi
 
 namespace GameRes.Formats.KApp
 {
     [Export(typeof(ImageFormat))]
-    public class CgdFormat : ImageFormat
+    public class CgdKToolFormat : ImageFormat
     {
         public override string         Tag { get { return "CGD/KTOOL"; } }
         public override string Description { get { return "KApp compressed image format"; } }
@@ -42,10 +43,50 @@ namespace GameRes.Formats.KApp
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             var header = file.ReadHeader (0x18);
-            if (!header.AsciiEqual ("ktool210") || header.ToInt32 (8) != 1)
+            if (header.ToInt32 (8) != 1)
+                return null;
+            if (!header.AsciiEqual ("ktool210"))
                 return null;
             uint offset = header.ToUInt32 (0x10) & 0x7FFFFFFF;
             return CgdMetaData.FromStream (file, offset);
+        }
+
+        public override ImageData Read (IBinaryStream file, ImageMetaData info)
+        {
+            var reader = new CgdDecoder (file, (CgdMetaData)info);
+            return reader.Image;
+        }
+
+        public override void Write (Stream file, ImageData image)
+        {
+            throw new System.NotImplementedException ("CgdFormat.Write not implemented");
+        }
+    }
+
+    [Export(typeof(ImageFormat))]
+    public class CgdSpielFormat : ImageFormat
+    {
+        public override string         Tag { get { return "CGD/SPIEL"; } }
+        public override string Description { get { return "Spiel compressed image format"; } }
+        public override uint     Signature { get { return 0x65697073; } } // 'spiel100'
+
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
+        {
+            var header = file.ReadHeader (0x20);
+            if (header.ToInt32 (8) != 1)
+                return null;
+            if (!header.AsciiEqual ("spiel100"))
+                return null;
+            var info = new CgdMetaData {
+                Width  = header.ToUInt16 (0x18),
+                Height = header.ToUInt16 (0x1A),
+                BPP    = header[0x1E],
+                DataOffset = header.ToUInt32 (0x10),
+                Compression = header[0x1F],
+                RgbOrder = false,
+            };
+            info.UnpackedSize = info.iWidth * info.iHeight * info.BPP / 8;
+            return info;
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -65,6 +106,7 @@ namespace GameRes.Formats.KApp
         public uint DataOffset;
         public int  UnpackedSize;
         public byte Compression;
+        public bool RgbOrder;
 
         internal static CgdMetaData FromStream (IBinaryStream file, uint offset)
         {
@@ -86,6 +128,7 @@ namespace GameRes.Formats.KApp
                 DataOffset = offset + 0x10 + header_size,
                 UnpackedSize = unpacked_size,
                 Compression = compression,
+                RgbOrder = bpp == 24,
             };
         }
     }
@@ -254,7 +297,9 @@ namespace GameRes.Formats.KApp
             m_input.Position = meta.DataOffset;
             var pixels = new byte[meta.UnpackedSize];
             KTool.Unpack (m_input, pixels, meta.Compression);
-            PixelFormat format = 24 == meta.BPP ? PixelFormats.Rgb24 : PixelFormats.Bgra32;
+            PixelFormat format = 32 == meta.BPP ? PixelFormats.Bgra32
+                                : meta.RgbOrder ? PixelFormats.Rgb24
+                                                : PixelFormats.Bgr24;
             return ImageData.Create (meta, format, null, pixels);
         }
     }

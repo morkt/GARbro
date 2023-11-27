@@ -55,7 +55,7 @@ namespace GameRes.Formats.TinkerBell
                     var entry = FormatCatalog.Instance.Create<Entry> (name);
                     entry.Offset = file.View.ReadUInt32 (index_offset+0x18);
                     entry.Size   = file.View.ReadUInt32 (index_offset+0x10);
-                    if (!entry.CheckPlacement (file.MaxOffset))
+                    if (entry.Offset <= index_offset || !entry.CheckPlacement (file.MaxOffset))
                         return null;
                     dir.Add (entry);
                 }

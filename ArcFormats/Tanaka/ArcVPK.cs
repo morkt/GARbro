@@ -43,6 +43,7 @@ namespace GameRes.Formats.Will
         {
             Extensions = new string[] { "vpk" };
             Signatures = new uint[] { 0x314B5056, 0x304B5056 };
+            ContainedFormats = new[] { "WAV" };
         }
 
         public override ArcFile TryOpen (ArcView file)

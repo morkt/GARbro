@@ -23,9 +23,9 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Windows.Media.Imaging;
 using GameRes.Compression;
 
 namespace GameRes.Formats.FrontWing
@@ -94,7 +94,7 @@ namespace GameRes.Formats.FrontWing
         {
             var fge_name = Path.ChangeExtension (file.Name, ".fge");
             if (!VFS.FileExists (fge_name))
-                return null;
+                throw new OperationCanceledException("Required metadata file '"+Path.GetFileName(fge_name)+"' not found.");
             using (var fg = OpenFg (file))
             {
                 return Fwgi.Value.ReadMetaData (fg);

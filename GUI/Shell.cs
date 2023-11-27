@@ -119,42 +119,86 @@ namespace GARbro.Shell
         /// <summary>
         /// SHFILEOPSTRUCT for SHFileOperation from COM
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 1)]
-        private struct SHFILEOPSTRUCT
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
+        private struct SHFILEOPSTRUCT32
         {
-
             public IntPtr hwnd;
             [MarshalAs(UnmanagedType.U4)]
             public FileOperationType wFunc;
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string pFrom;
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string pTo;
             public FileOperationFlags fFlags;
             [MarshalAs(UnmanagedType.Bool)]
             public bool fAnyOperationsAborted;
             public IntPtr hNameMappings;
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string lpszProgressTitle;
         }
 
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
-        private static extern int SHFileOperation (ref SHFILEOPSTRUCT FileOp);
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct SHFILEOPSTRUCT64
+        {
+            public IntPtr hwnd;
+            [MarshalAs(UnmanagedType.U4)]
+            public FileOperationType wFunc;
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string pFrom;
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string pTo;
+            public FileOperationFlags fFlags;
+            public bool fAnyOperationsAborted;
+            public IntPtr hNameMappings;
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string lpszProgressTitle;
+        }
+
+        [DllImport("shell32.dll", EntryPoint = "SHFileOperationW", CharSet = CharSet.Unicode)]
+        private static extern int SHFileOperation32 (ref SHFILEOPSTRUCT32 FileOp);
+
+        [DllImport("shell32.dll", EntryPoint = "SHFileOperationW", CharSet = CharSet.Unicode)]
+        private static extern int SHFileOperation64 (ref SHFILEOPSTRUCT64 lpFileOp);
+
+        private static int SHFileOperation (FileOperationType func, string path, FileOperationFlags flags, IntPtr parent)
+        {
+            if (Marshal.SizeOf(typeof(IntPtr)) == 4)
+            {
+                var fs = new SHFILEOPSTRUCT32
+                {
+                    hwnd = parent,
+                    wFunc = func,
+                    pFrom = path,
+                    fFlags = flags
+                };
+                return SHFileOperation32 (ref fs);
+            }
+            else
+            {
+                var fs = new SHFILEOPSTRUCT64
+                {
+                    hwnd = parent,
+                    wFunc = func,
+                    pFrom = path,
+                    fFlags = flags
+                };
+                return SHFileOperation64 (ref fs);
+            }
+        }
+
 
         /// <summary>
         /// Send file to recycle bin
         /// </summary>
         /// <param name="path">Location of directory or file to recycle</param>
         /// <param name="flags">FileOperationFlags to add in addition to FOF_ALLOWUNDO</param>
-        public static bool Delete (string path, FileOperationFlags flags)
+        public static bool Delete (string path, FileOperationFlags flags, IntPtr parent = default(IntPtr))
         {
-            var fs = new SHFILEOPSTRUCT
-            {
-                wFunc = FileOperationType.FO_DELETE,
-                pFrom = path + '\0' + '\0',
-                fFlags = FileOperationFlags.FOF_ALLOWUNDO | flags
-            };
-            return 0 == SHFileOperation (ref fs);
+            return 0 == SHFileOperation (FileOperationType.FO_DELETE, path+'\0'+'\0',
+                                         FileOperationFlags.FOF_ALLOWUNDO | flags, parent);
         }
 
-        public static bool Delete (IEnumerable<string> file_list, FileOperationFlags flags)
+        public static bool Delete (IEnumerable<string> file_list, FileOperationFlags flags, IntPtr parent = default(IntPtr))
         {
             var files = new StringBuilder();
             foreach (var file in file_list)
@@ -165,36 +209,31 @@ namespace GARbro.Shell
             if (0 == files.Length)
                 return false;
             files.Append ('\0');
-            var fs = new SHFILEOPSTRUCT
-            {
-                wFunc = FileOperationType.FO_DELETE,
-                pFrom = files.ToString(),
-                fFlags = FileOperationFlags.FOF_ALLOWUNDO | flags
-            };
-            return 0 == SHFileOperation (ref fs);
+            return 0 == SHFileOperation (FileOperationType.FO_DELETE, files.ToString(),
+                                         FileOperationFlags.FOF_ALLOWUNDO | flags, parent);
         }
 
-        public static bool Delete (IEnumerable<string> file_list)
+        public static bool Delete (IEnumerable<string> file_list, IntPtr parent = default(IntPtr))
         {
-            return Delete (file_list, FileOperationFlags.FOF_WANTNUKEWARNING);
+            return Delete (file_list, FileOperationFlags.FOF_WANTNUKEWARNING, parent);
         }
 
         /// <summary>
         /// Send file to recycle bin.  Display dialog, display warning if files are too big to fit (FOF_WANTNUKEWARNING)
         /// </summary>
         /// <param name="path">Location of directory or file to recycle</param>
-        public static bool Delete (string path)
+        public static bool Delete (string path, IntPtr parent = default(IntPtr))
         {
-            return Delete (path, FileOperationFlags.FOF_NOCONFIRMATION | FileOperationFlags.FOF_WANTNUKEWARNING);
+            return Delete (path, FileOperationFlags.FOF_NOCONFIRMATION | FileOperationFlags.FOF_WANTNUKEWARNING, parent);
         }
 
         /// <summary>
         /// Send file silently to recycle bin.  Surpress dialog, surpress errors, delete if too large.
         /// </summary>
         /// <param name="path">Location of directory or file to recycle</param>
-        public static bool MoveToRecycleBin (string path)
+        public static bool MoveToRecycleBin (string path, IntPtr parent = default(IntPtr))
         {
-            return Delete (path, FileOperationFlags.FOF_NOCONFIRMATION | FileOperationFlags.FOF_NOERRORUI | FileOperationFlags.FOF_SILENT);
+            return Delete (path, FileOperationFlags.FOF_NOCONFIRMATION | FileOperationFlags.FOF_NOERRORUI | FileOperationFlags.FOF_SILENT, parent);
 
         }
 

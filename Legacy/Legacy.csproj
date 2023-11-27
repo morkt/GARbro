@@ -44,9 +44,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=1.0.0.999, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\SharpZipLib.1.1.0\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=1.3.3.11, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpZipLib.1.3.3\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
@@ -79,6 +78,9 @@
     <Compile Include="AlphaSystem\ArcPAK.cs" />
     <Compile Include="AlphaSystem\ImageSFG.cs" />
     <Compile Include="Alterna\ArcBIN.cs" />
+    <Compile Include="Adviz\ImageBIZ.cs" />
+    <Compile Include="Adviz\ImageGIZ.cs" />
+    <Compile Include="Adviz\ImageGIZ2.cs" />
     <Compile Include="Aos\ArcDAT.cs" />
     <Compile Include="Aquarium\ArcAAP.cs" />
     <Compile Include="Aquarium\ArcCPA.cs" />
@@ -89,6 +91,34 @@
     <Compile Include="Artel\ImageMRL.cs" />
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
+    <Compile Include="AyPio\ArcDLB.cs" />
+    <Compile Include="AyPio\PdtBitmap.cs" />
+    <Compile Include="AyPio\AudioVOC.cs" />
+    <Compile Include="AyPio\ImagePDT.cs" />
+    <Compile Include="AyPio\ImagePDT5.cs" />
+    <Compile Include="BlackButterfly\ArcDAT.cs" />
+    <Compile Include="Blucky\Aliases.cs" />
+    <Compile Include="Bom\ImageGRP.cs" />
+    <Compile Include="CottonClub\ImageLMG.cs" />
+    <Compile Include="Desire\ArcDSV.cs" />
+    <Compile Include="Desire\ImageDES.cs" />
+    <Compile Include="Desire\ImageDPC.cs" />
+    <Compile Include="Discovery\ImageAN1.cs" />
+    <Compile Include="Discovery\ImagePR1.cs" />
+    <Compile Include="DMotion\ArcDM.cs" />
+    <Compile Include="Grocer\ImagePIC.cs" />
+    <Compile Include="Gsx\ArcK5.cs" />
+    <Compile Include="Gsx\ImageK4.cs" />
+    <Compile Include="Harvest\ArcDAT.cs" />
+    <Compile Include="Harvest\AudioBGM.cs" />
+    <Compile Include="Harvest\AudioSED.cs" />
+    <Compile Include="Harvest\ImageUNH.cs" />
+    <Compile Include="Herb\ArcPAK.cs" />
+    <Compile Include="Herb\ImageGRP.cs" />
+    <Compile Include="HyperWorks\ImageG.cs" />
+    <Compile Include="Izumi\ImageMAI2.cs" />
+    <Compile Include="Izumi\ImageMAI3.cs" />
+    <Compile Include="James\ImageJMG.cs" />
     <Compile Include="BRoom\ArcCPC.cs" />
     <Compile Include="BRoom\ArcPK.cs" />
     <Compile Include="BRoom\AudioEZS.cs" />
@@ -101,28 +131,55 @@
     <Compile Include="Electriciteit\ArcPKK.cs" />
     <Compile Include="Eye\ImageCSF.cs" />
     <Compile Include="FazeX\ImageFGP.cs" />
+    <Compile Include="Giga\ArcALL.cs" />
     <Compile Include="HillField\ImageIMA.cs" />
     <Compile Include="HillField\ImageIMG.cs" />
+    <Compile Include="hmp\ImageALP.cs" />
+    <Compile Include="hmp\ImageCBF.cs" />
+    <Compile Include="HyperWorks\ArcPAK.cs" />
+    <Compile Include="HyperWorks\ImageI24.cs" />
+    <Compile Include="Jam\ImageHTF.cs" />
     <Compile Include="KApp\ArcASD.cs" />
+    <Compile Include="KApp\ArcCGD.cs" />
     <Compile Include="KApp\ImageCGD.cs" />
     <Compile Include="Kasane\ArcAR2.cs" />
     <Compile Include="KeroQ\ArcDAT.cs" />
     <Compile Include="KeroQ\ImageCBM.cs" />
     <Compile Include="KeroQ\ImageKGD.cs" />
     <Compile Include="KeroQ\ImageKGD1.cs" />
+    <Compile Include="Koei\ArcYK.cs" />
+    <Compile Include="Koei\YkTables.cs" />
     <Compile Include="Kurumi\ImageGRA.cs" />
     <Compile Include="Lazycrew\ArcDAT.cs" />
     <Compile Include="Lazycrew\ImageDAT.cs" />
     <Compile Include="Liddell\ArcFLK.cs" />
     <Compile Include="Liddell\ImageBPA.cs" />
+    <Compile Include="Logg\ArcARF.cs" />
+    <Compile Include="Logg\ImageFRM.cs" />
+    <Compile Include="Mapl\ImageMI2.cs" />
     <Compile Include="Melonpan\ArcTTD.cs" />
     <Compile Include="Mermaid\AudioPWV.cs" />
     <Compile Include="Mermaid\ImageGP1.cs" />
+    <Compile Include="Miami\ImageMIA.cs" />
+    <Compile Include="Mina\ArcPAK.cs" />
     <Compile Include="Mink\ImageFC.cs" />
     <Compile Include="Mink\ImageFD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
+    <Compile Include="Nekotaro\ImageNCG.cs" />
+    <Compile Include="Neon\ArcAR2.cs" />
+    <Compile Include="Pias\EncryptedGraphDat.cs" />
+    <Compile Include="Ponytail\ArcBND.cs" />
+    <Compile Include="Ponytail\ImageTCZ.cs" />
+    <Compile Include="Ponytail\ImageTSZ.cs" />
+    <Compile Include="Nug\ArcDAT.cs" />
     <Compile Include="Nyoken\ArcZLK.cs" />
+    <Compile Include="Omi\ArcDAT.cs" />
+    <Compile Include="Paprika\ArcPKDAT.cs" />
+    <Compile Include="Paprika\ImageNP.cs" />
+    <Compile Include="Pearl\ArcARY.cs" />
+    <Compile Include="Pearl\ImagePL4.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
+    <Compile Include="Pias\ArcDAT.cs" />
     <Compile Include="PineSoft\ArcCMB.cs" />
     <Compile Include="PineSoft\ArcVoice.cs" />
     <Compile Include="PineSoft\AudioCMB.cs" />
@@ -132,8 +189,13 @@
     <Compile Include="PrimeSoft\ImageTHP.cs" />
     <Compile Include="ProjectMyu\ImageGAM.cs" />
     <Compile Include="Ransel\ArcBCD.cs" />
+    <Compile Include="Rare\ArcX.cs" />
+    <Compile Include="RedZone\ArcPAK.cs" />
+    <Compile Include="Adv98\ImageGPC.cs" />
+    <Compile Include="RedZone\ScriptQDO.cs" />
     <Compile Include="Regrips\AudioWRG.cs" />
     <Compile Include="Regrips\ImagePRG.cs" />
+    <Compile Include="Rhss\ArcCRG.cs" />
     <Compile Include="Rina\ImageRAD.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
@@ -177,15 +239,26 @@
     <Compile Include="Rune\ArcYK.cs" />
     <Compile Include="Sarang\ImageABC.cs" />
     <Compile Include="Sogna\ArcSGS.cs" />
+    <Compile Include="Sophia\ArcNOR.cs" />
+    <Compile Include="SplushWave\ArcDAT.cs" />
+    <Compile Include="SplushWave\ImageSWG.cs" />
+    <Compile Include="SquadraD\ArcPLA.cs" />
+    <Compile Include="SquadraD\ArcSDA.cs" />
     <Compile Include="StudioEbisu\ArcEP1.cs" />
+    <Compile Include="StudioFoma\ArcARC.cs" />
     <Compile Include="System21\ImageTEX.cs" />
+    <Compile Include="System98\ArcLIB.cs" />
+    <Compile Include="System98\ImageG.cs" />
     <Compile Include="Tako\ArcMPK.cs" />
     <Compile Include="Tetratech\ArcBND.cs" />
+    <Compile Include="Tiare\ImageGRA.cs" />
     <Compile Include="Tigerman\ArcCHR.cs" />
     <Compile Include="Tigerman\ArcPAC.cs" />
     <Compile Include="Tigerman\ImageCHR.cs" />
+    <Compile Include="Tobe\ImageWBI.cs" />
     <Compile Include="Types\ArcARC.cs" />
     <Compile Include="Types\ImageTPGF.cs" />
+    <Compile Include="Ucom\ImageUG.cs" />
     <Compile Include="Uma\ArcCDT.cs" />
     <Compile Include="Uma\ArcSDT.cs" />
     <Compile Include="UMeSoft\AudioIKE.cs" />
@@ -194,6 +267,8 @@
     <Compile Include="Unknown\ArcAQA.cs" />
     <Compile Include="Unknown\AudioMSF.cs" />
     <Compile Include="Unknown\ImageCTF.cs" />
+    <Compile Include="Uran\ImageDAR.cs" />
+    <Compile Include="Uran\ImageNCL.cs" />
     <Compile Include="Wing\ImageGEM.cs" />
     <Compile Include="Witch\ArcDAT.cs" />
     <Compile Include="Witch\ArcPCD.cs" />
@@ -214,7 +289,7 @@
     <Compile Include="Mink\ArcMINK.cs" />
     <Compile Include="Mutation\ArcDPF.cs" />
     <Compile Include="Pinpai\ArcARC.cs" />
-    <Compile Include="Sorciere\ImageBIZ.cs" />
+    <Compile Include="Adviz\ImageBIZ2.cs" />
     <Compile Include="UMeSoft\ArcBIN.cs" />
     <Compile Include="Uncanny\AudioCWV.cs" />
     <Compile Include="Uncanny\ImageCII.cs" />
@@ -227,8 +302,11 @@
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
     <Compile Include="PlanTech\ArcPAC.cs" />
+    <Compile Include="Zenos\ImagePNX.cs" />
     <Compile Include="Zone\ArcPKD.cs" />
     <Compile Include="Zone\ImageBM_.cs" />
+    <None Include="app.config" />
+    <None Include="packages.config" />
     <None Include="PlanTech\ImagePAC.cs" />
     <Compile Include="Pochette\ImageGDT.cs" />
     <Compile Include="ProjectMyu\ImageKGR.cs" />
@@ -270,10 +348,7 @@
       <Name>GameRes</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Bom\" />
-    <Folder Include="HyperWorks\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)

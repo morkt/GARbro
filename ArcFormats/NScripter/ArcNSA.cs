@@ -107,6 +107,9 @@ namespace GameRes.Formats.NScripter
             catch { /* ignore parse errors */ }
             if (zero_signature || !file.Name.HasExtension (".nsa"))
                 return null;
+            uint signature = file.View.ReadUInt32 (0);
+            if ((signature & 0xFFFFFF) == 0x90FBFF) // looks like mp3 file
+                return new WrapSingleFileArchive (file, Path.GetFileNameWithoutExtension (file.Name)+".mp3");
 
             var password = QueryPassword();
             if (string.IsNullOrEmpty (password))

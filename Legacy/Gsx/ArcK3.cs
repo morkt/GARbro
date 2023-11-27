@@ -26,7 +26,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
-// [000225][Light Plan] My Fairink Yousei Byakuya Monogatari
+// [000225][Light Plan] My Fair Link Yousei Byakuya Monogatari
 
 namespace GameRes.Formats.Gsx
 {

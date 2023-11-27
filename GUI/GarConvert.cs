@@ -228,24 +228,39 @@ namespace GARbro.GUI
                 var src_format = ImageFormat.FindFormat (file);
                 if (null == src_format)
                     return;
-                if (src_format.Item1 == m_image_format && m_image_format.Extensions.Any (ext => ext == source_ext))
-                    return;
-                file.Position = 0;
-                var image = src_format.Item1.Read (file, src_format.Item2);
-                var output = CreateNewFile (target_name);
+                Stream output = null;
                 try
                 {
-                    m_image_format.Write (output, image);
+                    if (src_format.Item1 == m_image_format && m_image_format.Extensions.Any (ext => ext == source_ext))
+                    {
+                        if (AreSamePaths (filename, target_name))
+                            return;
+                        output = CreateNewFile (target_name);
+                        file.Position = 0;
+                        file.AsStream.CopyTo (output);
+                    }
+                    else
+                    {
+                        file.Position = 0;
+                        var image = src_format.Item1.Read (file, src_format.Item2);
+                        output = CreateNewFile (target_name);
+                        m_image_format.Write (output, image);
+                    }
                 }
                 catch // delete destination file on conversion failure
                 {
                     // FIXME if user chooses to overwrite file, and conversion results in error,
                     // then original file will be lost.
                     output.Dispose();
+                    output = null;
                     File.Delete (target_name);
                     throw;
                 }
-                output.Dispose();
+                finally
+                {
+                    if (output != null)
+                        output.Dispose();
+                }
             }
         }
 
@@ -263,6 +278,13 @@ namespace GARbro.GUI
             m_main.Activate();
             m_main.ListViewFocus();
             m_main.RefreshView();
+        }
+
+        static internal bool AreSamePaths (string filename1, string filename2)
+        {
+            filename1 = Path.GetFullPath (filename1);
+            filename2 = Path.GetFullPath (filename2);
+            return string.Equals (filename1, filename2, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

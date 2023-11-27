@@ -232,7 +232,7 @@
     <value>正在从{0}中提取文件至{1}……</value>
   </data>
   <data name="MsgImageSize" xml:space="preserve">
-    <value>图像 {0} x {1} x {2}bpp</value>
+    <value>图像 {0} x {1} x {2}bpp [{3}]</value>
   </data>
   <data name="MsgNoFiles" xml:space="preserve">
     <value>没有可以提取的文件。</value>

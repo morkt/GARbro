@@ -133,7 +133,7 @@ namespace GameRes.Formats.Jikkenshitsu
             return new GUI.WidgetSJDAT (DefaultScheme.KnownSchemes.Keys);
         }
 
-        byte[] QueryKey (string filename)
+        internal byte[] QueryKey (string filename)
         {
             var options = Query<SjOptions> (arcStrings.ArcImageEncrypted);
             return options.Key;

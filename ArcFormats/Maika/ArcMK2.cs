@@ -61,9 +61,9 @@ namespace GameRes.Formats.Maika
 
         public Mk2Opener ()
         {
-            // 'MK2.0' 'BL2.0'. 'SL1.0', 'LS2.0', 'AR2.0'
+            // 'MK2.0' 'BL2.0'. 'SL1.0', 'LS2.0', 'AR2.0', 'MP2.0'
             Signatures = new uint[] {
-                0x2E324B4D, 0x2E324C42, 0x2E314C53, 0x2E32534C, 0x2E325241
+                0x2E324B4D, 0x2E324C42, 0x2E314C53, 0x2E32534C, 0x2E325241, 0x2E32504D
             };
         }
 
@@ -142,7 +142,7 @@ namespace GameRes.Formats.Maika
 
             Stream input;
             // XXX scrambling might be applicable for 'E1' signatures only
-            if (scheme.ScrambledSize > 0)
+            if (0x3145 == signature && scheme.ScrambledSize > 0)
             {
                 var prefix = arc.File.View.ReadBytes (entry.Offset+10, scheme.ScrambledSize);
                 foreach (var pair in scheme.ScrambleMap)

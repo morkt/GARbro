@@ -34,6 +34,7 @@ using System.Windows.Media;
 namespace GameRes
 {
     [Export(typeof(ImageFormat))]
+    [ExportMetadata("Priority", 100)] // makes PNG first format in list
     public class PngFormat : ImageFormat
     {
         public override string         Tag { get { return "PNG"; } }

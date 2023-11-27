@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 
+// [991231][Jam] Kakuyuugou Shoujo Ripple-chan
 // [000331][Jam] Zetsumetsu King
 // [000630][STONE HEADS] Sei Cosplay Gakuen ~Game Bunkou~
 

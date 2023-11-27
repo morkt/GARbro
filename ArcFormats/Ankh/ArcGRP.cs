@@ -118,6 +118,12 @@ namespace GameRes.Formats.Ankh
                     entry.UnpackedSize = header.ToUInt32 (0);
                     entry.IsPacked = true;
                 }
+                else if (header.AsciiEqual (0, "zfd "))
+                {
+                    entry.ChangeType (ImageFormat.Tga);
+                    entry.UnpackedSize = header.ToUInt32 (4);
+                    entry.IsPacked = true;
+                }
                 else if (header.AsciiEqual (4, "OggS"))
                 {
                     entry.ChangeType (OggAudio.Instance);
@@ -177,6 +183,8 @@ namespace GameRes.Formats.Ankh
                         return OpenTpw (arc, pent);
                     if (arc.File.View.AsciiEqual (entry.Offset+4, "HDJ\0"))
                         return OpenImage (arc, pent);
+                    if (arc.File.View.AsciiEqual (entry.Offset, "zfd "))
+                        return OpenZfd (arc, pent);
                     if (entry.Size > 12)
                     {
                         byte type = arc.File.View.ReadByte (entry.Offset+4);
@@ -235,76 +243,91 @@ namespace GameRes.Formats.Ankh
 
         Stream OpenTpw (ArcFile arc, PackedEntry entry)
         {
-            var output = new byte[entry.UnpackedSize];
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
             {
-                input.Position = 8;
-                var offsets = new int[4];
-                offsets[0] = input.ReadUInt16();
-                offsets[1] = offsets[0] * 2;
-                offsets[2] = offsets[0] * 3;
-                offsets[3] = offsets[0] * 4;
-                int dst = 0;
-                while (dst < output.Length)
+                var output = new byte[entry.UnpackedSize];
+                UnpackTpw (input, output);
+                return new BinMemoryStream (output, entry.Name);
+            }
+        }
+
+        Stream OpenZfd (ArcFile arc, PackedEntry entry)
+        {
+            var input = arc.File.CreateStream (entry.Offset+8, entry.Size-8);
+            return new ZLibStream (input, CompressionMode.Decompress);
+        }
+
+        internal static void UnpackTpw (IBinaryStream input, byte[] output)
+        {
+            input.Position = 8;
+            var offsets = new int[4];
+            offsets[0] = input.ReadUInt16();
+            offsets[1] = offsets[0] * 2;
+            offsets[2] = offsets[0] * 3;
+            offsets[3] = offsets[0] * 4;
+            int dst = 0;
+            while (dst < output.Length)
+            {
+                byte ctl = input.ReadUInt8();
+                if (0 == ctl)
+                    break;
+                int remaining = output.Length - dst;
+                int count;
+                if (ctl < 0x40)
                 {
-                    byte ctl = input.ReadUInt8();
-                    if (0 == ctl)
-                        break;
-                    int count;
-                    if (ctl < 0x40)
-                    {
-                        count = Math.Min (ctl, output.Length - dst);
-                        input.Read (output, dst, count);
-                        dst += count;
-                    }
-                    else if (ctl <= 0x6F)
-                    {
-                        if (0x6F == ctl)
-                            count = input.ReadUInt16();
-                        else
-                            count = ctl - 0x3D;
-                        byte v = input.ReadUInt8();
-                        while (count --> 0)
-                            output[dst++] = v;
-                    }
-                    else if (ctl <= 0x9F)
-                    {
-                        if (ctl == 0x9F)
-                            count = input.ReadUInt16();
-                        else 
-                            count = ctl - 0x6E;
-                        byte v1 = input.ReadUInt8();
-                        byte v2 = input.ReadUInt8();
-                        while (count --> 0)
-                        {
-                            output[dst++] = v1;
-                            output[dst++] = v2;
-                        }
-                    }
-                    else if (ctl <= 0xBF)
-                    {
-                        if (ctl == 0xBF)
-                            count = input.ReadUInt16();
-                        else
-                            count = ctl - 0x9E;
-                        input.Read (output, dst, 3);
-                        if (count > 0)
-                        {
-                            count *= 3;
-                            Binary.CopyOverlapped (output, dst, dst+3, count-3);
-                            dst += count;
-                        }
-                    }
+                    count = Math.Min (ctl, remaining);
+                    input.Read (output, dst, count);
+                    dst += count;
+                }
+                else if (ctl <= 0x6F)
+                {
+                    if (0x6F == ctl)
+                        count = input.ReadUInt16();
                     else
+                        count = (byte)(ctl - 0x3D);
+                    count = Math.Min (count, remaining);
+                    byte v = input.ReadUInt8();
+                    while (count --> 0)
+                        output[dst++] = v;
+                }
+                else if (ctl <= 0x9F)
+                {
+                    if (ctl == 0x9F)
+                        count = input.ReadUInt16();
+                    else 
+                        count = (byte)(ctl - 0x6E);
+                    dst += input.Read (output, dst, Math.Min (2, remaining));
+                    --count;
+                    if (count > 0 && remaining > 2)
                     {
-                        count = (ctl & 0x3F) + 3;
-                        int offset = input.ReadUInt8();
-                        offset = (offset & 0x3F) - offsets[offset >> 6];
-                        Binary.CopyOverlapped (output, dst+offset, dst, count);
+                        count = Math.Min (count * 2, remaining - 2);
+                        Binary.CopyOverlapped (output, dst-2, dst, count);
                         dst += count;
                     }
                 }
-                return new BinMemoryStream (output, entry.Name);
+                else if (ctl <= 0xBF)
+                {
+                    if (ctl == 0xBF)
+                        count = input.ReadUInt16();
+                    else
+                        count = (byte)(ctl - 0x9E);
+                    dst += input.Read (output, dst, Math.Min (3, remaining));
+                    --count;
+                    if (count > 0 && remaining > 3)
+                    {
+                        count = Math.Min (count * 3, remaining - 3);
+                        Binary.CopyOverlapped (output, dst-3, dst, count);
+                        dst += count;
+                    }
+                }
+                else
+                {
+                    count = Math.Min ((ctl & 0x3F) + 3, remaining);
+                    int offset = input.ReadUInt8();
+                    offset = (offset & 0x3F) - offsets[offset >> 6];
+                    Binary.CopyOverlapped (output, dst+offset, dst, count);
+                    dst += count;
+                }
             }
         }
     }

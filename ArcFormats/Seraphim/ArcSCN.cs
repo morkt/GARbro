@@ -85,6 +85,14 @@ namespace GameRes.Formats.Seraphim
             {
                 input = arc.File.CreateStream (entry.Offset+4, entry.Size-4);
                 return new ZLibStream (input.AsStream, CompressionMode.Decompress);
+                /*
+                using (var compr = new ZLibStream (input.AsStream, CompressionMode.Decompress))
+                using (var bin = new BinaryStream (compr, entry.Name))
+                {
+                    var data = LzDecompress (bin);
+                    return new BinMemoryStream (data, entry.Name);
+                }
+                */
             }
             input = arc.File.CreateStream (entry.Offset, entry.Size);
             if (signature < 4 || 0 != (signature & 0xFF000000))
@@ -112,7 +120,7 @@ namespace GameRes.Formats.Seraphim
             }
         }
 
-        internal byte[] LzDecompress (IBinaryStream input)
+        internal static byte[] LzDecompress (IBinaryStream input)
         {
             int unpacked_size = input.ReadInt32();
             var data = new byte[unpacked_size];
@@ -139,6 +147,74 @@ namespace GameRes.Formats.Seraphim
                 }
             }
             return data;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Scn95Opener : ArchiveFormat
+    {
+        public override string         Tag { get { return "SCN/ARCH"; } }
+        public override string Description { get { return "Archangel engine scripts archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public Scn95Opener ()
+        {
+            Extensions = new[] { "dat" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!VFS.IsPathEqualsToFileName (file.Name, "SCNPAC.DAT"))
+                return null;
+            uint offset = file.View.ReadUInt32 (0);
+            int count = (int)offset / 4;
+            if (offset >= file.MaxOffset || !IsSaneCount (count))
+                return null;
+
+            int index_offset = 4;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                uint size = file.View.ReadUInt32 (index_offset);
+                if (0 == size)
+                    return null;
+                var entry = new Entry {
+                    Name = i.ToString ("D5"),
+                    Type = "script",
+                    Offset = offset + 4,
+                    Size = size,
+                };
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                offset += size;
+                index_offset += 4;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            IBinaryStream input = arc.File.CreateStream (entry.Offset, entry.Size);
+            if (input.Signature < 4 || 0 != (input.Signature & 0xFF000000))
+            {
+                return input.AsStream;
+            }
+            try
+            {
+                var data = ScnOpener.LzDecompress (input);
+                return new BinMemoryStream (data, entry.Name);
+            }
+            catch
+            {
+                return arc.File.CreateStream (entry.Offset, entry.Size);
+            }
+            finally
+            {
+                input.Dispose();
+            }
         }
     }
 }

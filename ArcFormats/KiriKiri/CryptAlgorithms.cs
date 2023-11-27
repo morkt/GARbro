@@ -1406,4 +1406,43 @@ namespace GameRes.Formats.KiriKiri
             return key;
         }
     }
+
+    [Serializable]
+    public class GensouCrypt : ICrypt
+    {
+        byte[]  Key1;
+        uint[]  Key2;
+
+        public GensouCrypt (byte[] key1, uint[] key2)
+        {
+            Key1 = key1;
+            Key2 = key2;
+            StartupTjsNotEncrypted = true;
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            ushort off16 = (ushort)offset;
+            for (int i = 0; i < count; ++i)
+            {
+                buffer[pos+i] ^= (byte)(Key1[(Key2[off16 >> 3] >> ((off16 & 7) << 2)) & 0xF]
+                                        ^ ((Key2[off16 >> 3] ^ entry.Hash) >> ((off16 & 3) << 3)));
+                off16++;
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
+        }
+
+        public override void Init (ArcFile arc)
+        {
+            foreach (Xp3Entry entry in arc.Dir.Where (e => VFS.IsPathEqualsToFileName (e.Name, "btext.dll")
+                                                        || VFS.IsPathEqualsToFileName (e.Name, "initialize.tjs")))
+            {
+                entry.Cipher = Xp3Opener.NoCryptAlgorithm;
+            }
+        }
+    }
 }

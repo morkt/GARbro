@@ -37,6 +37,11 @@ namespace GameRes.Formats.Will
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
+        public BmxOpener ()
+        {
+            ContainedFormats = new[] { "BC" };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
             uint total_size = file.View.ReadUInt32 (0);
@@ -48,34 +53,29 @@ namespace GameRes.Formats.Will
 
             var dir = new List<Entry> (count);
             uint index_offset = 0x10;
-            uint next_offset = file.View.ReadUInt32 (index_offset+0x1C);
             for (int i = 0; i < count; ++i)
             {
                 var name = file.View.ReadString (index_offset, 0x1C);
                 if (0 == name.Length)
                     break;
-                index_offset += 0x20;
                 var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = next_offset;
-                if (i+1 < count)
-                {
-                    next_offset = file.View.ReadUInt32 (index_offset+0x1C);
-                    if (0 == next_offset)
-                        next_offset = (uint)file.MaxOffset;
-                }
-                else
-                {
-                    next_offset = (uint)file.MaxOffset;
-                }
-                entry.Size = (uint)(next_offset - entry.Offset);
-                if (!entry.CheckPlacement (file.MaxOffset))
-                    return null;
+                entry.Offset = file.View.ReadUInt32 (index_offset+0x1C);
                 if (string.IsNullOrEmpty (entry.Type))
                     entry.Type = "image";
                 dir.Add (entry);
+                index_offset += 0x20;
             }
             if (0 == dir.Count)
                 return null;
+            long last_offset = file.MaxOffset;
+            for (int i = dir.Count - 1; i >= 0; --i)
+            {
+                var entry = dir[i];
+                entry.Size = (uint)(last_offset - entry.Offset);
+                last_offset = entry.Offset;
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+            }
             return new ArcFile (file, this, dir);
         }
     }

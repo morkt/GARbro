@@ -36,12 +36,33 @@ namespace GameRes.Formats
         public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return true; } }
 
+        public MbImageFormat ()
+        {
+            Extensions = new[] { "bmp", "gra", "xxx" };
+        }
+
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             int c1 = stream.ReadByte();
             int c2 = stream.ReadByte();
-            if ('M' != c1 || ('B' != c2 && 'C' != c2))
+            // MB/MC/MK/CL/XX
+            switch (c1)
+            {
+            case 'M':
+                if ('B' != c2 && 'C' != c2 && 'K' != c2)
+                    return null;
+                break;
+            case 'C':
+                if ('L' != c2)
+                    return null;
+                break;
+            case 'X':
+                if ('X' != c2)
+                    return null;
+                break;
+            default:
                 return null;
+            }
             using (var bmp = OpenAsBitmap (stream))
                 return Bmp.ReadMetaData (bmp);
         }

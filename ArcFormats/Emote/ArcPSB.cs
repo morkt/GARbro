@@ -64,7 +64,7 @@ namespace GameRes.Formats.Emote
 
         public PsbOpener ()
         {
-            Extensions = new string[] { "psb", "pimg", "dpak", "psbz" };
+            Extensions = new string[] { "psb", "pimg", "dpak", "psbz", "psp" };
         }
 
         public override ArcFile TryOpen (ArcView file)
@@ -148,7 +148,7 @@ namespace GameRes.Formats.Emote
 
         ImageFormat TlgFormat { get { return s_TlgFormat.Value; } }
 
-        static Lazy<ImageFormat> s_TlgFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("TLG"));
+        static ResourceInstance<ImageFormat> s_TlgFormat = new ResourceInstance<ImageFormat> ("TLG");
     }
 
     /// <summary>

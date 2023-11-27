@@ -28,6 +28,8 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+// [020412][Ciel] Maid Hunter Zero One ~Nora Maid~
+
 namespace GameRes.Formats.Jikkenshitsu
 {
     internal class GrcMetaData : ImageMetaData
@@ -38,6 +40,8 @@ namespace GameRes.Formats.Jikkenshitsu
         public int  DataLength;
         public int  AlphaOffset;
         public int  AlphaLength;
+        public bool IsEncrypted;
+        public byte[] Key;
     }
 
     [Export(typeof(ImageFormat))]
@@ -47,15 +51,24 @@ namespace GameRes.Formats.Jikkenshitsu
         public override string Description { get { return "Studio Jikkenshitsu image format"; } }
         public override uint     Signature { get { return 0x08; } }
 
+        public GrcFormat ()
+        {
+            Signatures = new[] { 0x08u, 0x8008u };
+        }
+
+        static readonly ResourceInstance<SpDatFormat> SpeedFormat = new ResourceInstance<SpDatFormat> ("DAT/SPEED");
+
+        byte[] DefaultKey = null;
+
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
             if (!file.Name.HasExtension (".grc"))
                 return null;
             var header = file.ReadHeader (0x20);
-            int bpp = header.ToInt32 (0);
+            int bpp = header[0];
             if (bpp != 8)
                 return null;
-            return new GrcMetaData {
+            var info = new GrcMetaData {
                 Width  = header.ToUInt16 (4),
                 Height = header.ToUInt16 (6),
                 BPP = bpp,
@@ -65,7 +78,16 @@ namespace GameRes.Formats.Jikkenshitsu
                 DataLength = header.ToInt32 (20),
                 AlphaOffset = header.ToInt32 (24),
                 AlphaLength = header.ToInt32 (28),
+                IsEncrypted = (header[1] & 0x80) != 0,
             };
+            if (info.IsEncrypted)
+            {
+                DefaultKey = DefaultKey ?? SpeedFormat.Value.QueryKey (file.Name);
+                if (null == DefaultKey)
+                    return null;
+                info.Key = DefaultKey;
+            }
+            return info;
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
@@ -96,12 +118,25 @@ namespace GameRes.Formats.Jikkenshitsu
             m_info = info;
             m_stride = m_info.iWidth * m_info.BPP / 8;
             m_output = new byte[m_stride * m_info.iHeight];
+            Format = PixelFormats.Indexed8;
         }
 
         public ImageData Unpack ()
         {
+            if (m_info.IsEncrypted)
+            {
+                int packed_size = (int)(m_input.Length - 0x20);
+                m_input.Position = 0x20;
+                using (var enc = new InputProxyStream (m_input.AsStream, true))
+                using (var dec = new InputCryptoStream (enc, new SjTransform (m_info.Key)))
+                {
+                    var data = new byte[m_input.Length];
+                    dec.Read (data, 0x20, packed_size);
+                    // memory stream is not disposed, not a big deal
+                    m_input = new BinMemoryStream (data, m_input.Name);
+                }
+            }
             m_input.Position = 0x20;
-            Format = PixelFormats.Indexed8;
 
             if (8 == m_info.BPP)
                 Palette = ImageFormat.ReadPalette (m_input.AsStream);

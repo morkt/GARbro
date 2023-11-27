@@ -189,15 +189,15 @@ namespace GameRes
             return FormatCatalog.Instance.ImageFormats.FirstOrDefault (x => x.Tag == tag);
         }
 
-        static readonly Lazy<ImageFormat> s_JpegFormat = new Lazy<ImageFormat> (() => FindByTag ("JPEG"));
-        static readonly Lazy<ImageFormat> s_PngFormat  = new Lazy<ImageFormat> (() => FindByTag ("PNG"));
-        static readonly Lazy<ImageFormat> s_BmpFormat  = new Lazy<ImageFormat> (() => FindByTag ("BMP"));
-        static readonly Lazy<ImageFormat> s_TgaFormat  = new Lazy<ImageFormat> (() => FindByTag ("TGA"));
+        static readonly ResourceInstance<ImageFormat> s_JpegFormat = new ResourceInstance<ImageFormat> ("JPEG");
+        static readonly ResourceInstance<ImageFormat> s_PngFormat  = new ResourceInstance<ImageFormat> ("PNG");
+        static readonly ResourceInstance<ImageFormat> s_BmpFormat  = new ResourceInstance<ImageFormat> ("BMP");
+        static readonly ResourceInstance<ImageFormat> s_TgaFormat  = new ResourceInstance<ImageFormat> ("TGA");
 
-        public static ImageFormat Jpeg { get { return s_JpegFormat.Value; } }
-        public static ImageFormat  Png { get { return s_PngFormat.Value; } }
-        public static ImageFormat  Bmp { get { return s_BmpFormat.Value; } }
-        public static ImageFormat  Tga { get { return s_TgaFormat.Value; } }
+        public static ImageFormat Jpeg => s_JpegFormat.Value;
+        public static ImageFormat  Png => s_PngFormat.Value;
+        public static ImageFormat  Bmp => s_BmpFormat.Value;
+        public static ImageFormat  Tga => s_TgaFormat.Value;
 
         /// <summary>
         /// Desereialize color map from <paramref name="input"/> stream, consisting of specified number of

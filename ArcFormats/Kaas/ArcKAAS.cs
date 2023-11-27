@@ -129,6 +129,8 @@ namespace GameRes.Formats.KAAS
             var pent = (PdImageEntry)entry;
             byte[] baseline = null;
             var dir = arc.Dir as List<Entry>;
+            // actual baseline image index is hard-coded in game script
+            // we just look back at the first non-incremental image
             for (int i = pent.Number-1; i >= 0; --i)
             {
                 var base_entry = dir[i];

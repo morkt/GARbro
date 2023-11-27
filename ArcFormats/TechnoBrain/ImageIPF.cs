@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Windows.Media;
@@ -31,13 +32,21 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.TechnoBrain
 {
-    internal class IpfMetaData : ImageMetaData
+    internal class IpfMetaData : ImageMetaData, ICloneable
     {
         public bool HasPalette;
+        public bool HasBitmap;
         public bool IsCompressed;
         public long PalOffset;
         public int  PalSize;
         public long BmpOffset;
+        public long DataOffset;
+        public string FormatString;
+
+        public object Clone ()
+        {
+            return MemberwiseClone();
+        }
     }
 
     [Export(typeof(ImageFormat))]
@@ -47,24 +56,25 @@ namespace GameRes.Formats.TechnoBrain
         public override string Description { get { return "TechnoBrain's 'Inteligent Picture Format'"; } }
         public override uint     Signature { get { return 0; } } // 'RIFF'
 
-        public override ImageMetaData ReadMetaData (IBinaryStream file)
+        internal IpfMetaData ReadIpfHeader (IBinaryStream file)
         {
             // 'RIFF' isn't included into signature to avoid auto-detection of the WAV files as IPF images.
             if (0x46464952 != file.Signature) // 'RIFF'
                 return null;
             var header = file.ReadHeader (0x14);
-            if (!header.AsciiEqual (8, "IPF fmt "))
+            if (!header.AsciiEqual (0xC, "fmt "))
                 return null;
             int fmt_size = header.ToInt32 (0x10);
             if (fmt_size < 0x24)
                 return null;
             header = file.ReadHeader (0x14 + fmt_size);
-            bool has_palette = header.ToInt32 (0x18) != 0;
-            bool has_bitmap = header.ToInt32 (0x28) != 0;
-            if (!has_bitmap)
-                return null;
-            var info = new IpfMetaData { BPP = 8, HasPalette = has_palette };
-            if (has_palette)
+            var info = new IpfMetaData {
+                BPP = 8,
+                HasPalette = header.ToInt32 (0x18) != 0,
+                HasBitmap  = header.ToInt32 (0x28) != 0,
+                FormatString = header.GetCString (8, 8),
+            };
+            if (info.HasPalette)
             {
                 if (0x206C6170 != file.ReadInt32()) // 'pal '
                     return null;
@@ -74,24 +84,43 @@ namespace GameRes.Formats.TechnoBrain
                 info.PalOffset = file.Position;
                 file.Position = info.PalOffset + info.PalSize;
             }
+            info.DataOffset = file.Position;
+            return info;
+        }
+
+        internal bool ReadBmpInfo (IBinaryStream file, IpfMetaData info)
+        {
             if (0x20706D62 != file.ReadInt32()) // 'bmp '
-                return null;
+                return false;
             int bmp_size = file.ReadInt32();
-            if (bmp_size <= 0x20)
-                return null;
+            if (bmp_size < 0x1C)
+                return false;
             info.BmpOffset = file.Position + 0x18;
             info.Width  = file.ReadUInt16();
             info.Height = file.ReadUInt16();
-            file.Seek (0xE, SeekOrigin.Current);
+            file.ReadUInt32();
+            info.OffsetX = file.ReadInt16();
+            info.OffsetY = file.ReadInt16();
+            file.Seek (6, SeekOrigin.Current);
             info.IsCompressed = 0 != (file.ReadByte() & 1);
+            return true;
+        }
+
+        public override ImageMetaData ReadMetaData (IBinaryStream file)
+        {
+            var info = ReadIpfHeader (file);
+            if (null == info || info.FormatString != "IPF fmt " || !info.HasBitmap)
+                return null;
+            file.Position = info.DataOffset;
+            if (!ReadBmpInfo (file, info))
+                return null;
             return info;
         }
 
         public override ImageData Read (IBinaryStream file, ImageMetaData info)
         {
-            var reader = new IpfReader (file, (IpfMetaData)info);
-            var pixels = reader.Unpack();
-            return ImageData.Create (info, reader.Format, reader.Palette, pixels);
+            var reader = new IpfReader (file, (IpfMetaData)info, this);
+            return reader.Image;
         }
 
         public override void Write (Stream file, ImageData image)
@@ -100,22 +129,34 @@ namespace GameRes.Formats.TechnoBrain
         }
     }
 
-    internal sealed class IpfReader
+    internal sealed class IpfReader : IImageDecoder
     {
         IBinaryStream   m_input;
         IpfMetaData     m_info;
         byte[]          m_output;
+        ImageData       m_image;
 
         public BitmapPalette Palette { get; private set; }
         public PixelFormat    Format { get; private set; }
-        public byte[]           Data { get { return m_output; } }
 
-        public IpfReader (IBinaryStream input, IpfMetaData info)
+        public Stream         Source { get { return m_input.AsStream; } }
+        public ImageMetaData    Info { get { return m_info; } }
+        public ImageData       Image { get { return m_image ?? (m_image = GetImageData()); } }
+        public ImageFormat SourceFormat { get; private set; }
+
+        public IpfReader (IBinaryStream input, IpfMetaData info, ImageFormat impl)
         {
             m_input = input;
             m_info = info;
             m_output = new byte[m_info.Width*m_info.Height];
             Format = m_info.HasPalette ? PixelFormats.Indexed8 : PixelFormats.Gray8;
+            SourceFormat = impl;
+        }
+
+        private ImageData GetImageData ()
+        {
+            var pixels = Unpack();
+            return ImageData.Create (m_info, Format, Palette, pixels);
         }
 
         public byte[] Unpack ()
@@ -151,7 +192,7 @@ namespace GameRes.Formats.TechnoBrain
                 for (int j = 0; j < 8; ++j)
                 {
                     int dst = (i << 3) + j;
-                    if (dst >= 0x0A && 0 != (bits & 0x80))
+                    if (dst >= min_index && 0 != (bits & 0x80))
                     {
                         if (dst >= min_index && dst <= max_index)
                         {
@@ -199,5 +240,18 @@ namespace GameRes.Formats.TechnoBrain
                 }
             }
         }
+
+        #region IDisposable members
+        bool m_disposed = false;
+        public void Dispose ()
+        {
+            if (!m_disposed)
+            {
+                m_input.Dispose();
+                m_disposed = true;
+            }
+            GC.SuppressFinalize (this);
+        }
+        #endregion
     }
 }

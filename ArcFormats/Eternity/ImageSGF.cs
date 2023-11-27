@@ -35,6 +35,7 @@ namespace GameRes.Formats.Eternity
         public bool HasAlpha;
         public int  BlockSize;
         public uint DataOffset;
+        public uint AlphaOffset;
     }
 
     [Export(typeof(ImageFormat))]
@@ -64,6 +65,7 @@ namespace GameRes.Formats.Eternity
                 HasAlpha   = header.ToInt32 (8) != 0,
                 BlockSize  = header.ToUInt16 (0xC),
                 DataOffset = header.ToUInt32 (0x14),
+                AlphaOffset = header.ToUInt32 (0x1C),
             };
         }
 
@@ -87,13 +89,14 @@ namespace GameRes.Formats.Eternity
         byte[]          m_output;
 
         public byte[]        Data { get { return m_output; } }
-        public PixelFormat Format { get { return PixelFormats.Bgr24; } }
+        public PixelFormat Format { get; private set; }
 
         public SgfReader (IBinaryStream input, SgfMetaData info)
         {
             m_input = input;
             m_info = info;
             m_output = new byte[3 * info.Width * info.Height];
+            Format = PixelFormats.Bgr24;
         }
 
         public byte[] Unpack ()
@@ -128,7 +131,77 @@ namespace GameRes.Formats.Eternity
                 g = m_output[start_pos+1];
                 r = m_output[start_pos+2];
             }
+            if (m_info.HasAlpha)
+            {
+                var alpha = ReadAlpha();
+                if (alpha != null)
+                {
+                    var pixels = new byte[m_info.iWidth * m_info.iHeight * 4];
+                    dst = 0;
+                    int p = 0;
+                    int a = 0;
+                    while (dst < pixels.Length)
+                    {
+                        pixels[dst++] = m_output[p++];
+                        pixels[dst++] = m_output[p++];
+                        pixels[dst++] = m_output[p++];
+                        pixels[dst++] = alpha[a++];
+                    }
+                    m_output = pixels;
+                    Format = PixelFormats.Bgra32;
+                }
+            }
             return m_output;
+        }
+
+        byte[] ReadAlpha ()
+        {
+            m_input.Position = m_info.AlphaOffset;
+            var signature = m_input.ReadUInt16();
+            if (0x2041 == signature) // 'A '
+                return ReadASection();
+            else if (0x4D42 == signature) // 'BM'
+                return ReadBmpSection();
+            else
+                return null;
+        }
+
+        byte[] ReadASection ()
+        {
+            var alpha = new byte[m_info.iWidth * m_info.iHeight];
+            m_input.Position = m_info.AlphaOffset + 8;
+            int block_size = m_input.ReadUInt16();
+            m_input.Position = m_info.AlphaOffset + 0x10;
+            uint offset = m_input.ReadUInt32();
+            uint next_pos = m_info.AlphaOffset + offset;
+            int height = (int)m_info.Height;
+            int dst = alpha.Length - m_info.iWidth;
+            byte a = 0;
+            for (int y = 0; y < height; ++y)
+            {
+                int start_pos = dst;
+                if (0 == (y % block_size))
+                {
+                    m_input.Position = next_pos;
+                    next_pos += m_input.ReadUInt32();
+                    a = (byte)m_input.ReadUInt32();
+                    mask1 = mask2 = mask3 = mask4 = mask5 = 1;
+                }
+                for (uint x = 0; x < m_info.Width; ++x)
+                {
+                    a = GetNextByte (a);
+                    alpha[dst++] = a;
+                }
+                a = alpha[start_pos];
+                dst = start_pos - m_info.iWidth;
+            }
+            return alpha;
+        }
+
+        byte[] ReadBmpSection ()
+        {
+            // throw new NotImplementedException ("ReadBmpSection not implemented.");
+            return null;
         }
 
         uint mask1;

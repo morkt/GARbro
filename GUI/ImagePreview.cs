@@ -79,9 +79,9 @@ namespace GARbro.GUI
             public string Name { get; set; }
             public Entry Entry { get; set; }
 
-            public bool IsEqual (IEnumerable<string> path, string name)
+            public bool IsEqual (IEnumerable<string> path, Entry entry)
             {
-                return Path != null && path.SequenceEqual (Path) && name.Equals (Name);
+                return Path != null && path.SequenceEqual (Path) && Entry == entry;
             }
         }
 
@@ -139,7 +139,7 @@ namespace GARbro.GUI
         /// </summary>
         private void PreviewEntry (Entry entry)
         {
-            if (m_current_preview.IsEqual (ViewModel.Path, entry.Name))
+            if (m_current_preview.IsEqual (ViewModel.Path, entry))
                 return;
             UpdatePreviewPane (entry);
         }
@@ -240,7 +240,7 @@ namespace GARbro.GUI
             {
                 using (var data = VFS.OpenImage (preview.Entry))
                 {
-                    SetPreviewImage (preview, data.Image.Bitmap);
+                    SetPreviewImage (preview, data.Image.Bitmap, data.SourceFormat);
                 }
             }
             catch (Exception X)
@@ -250,7 +250,7 @@ namespace GARbro.GUI
             }
         }
 
-        void SetPreviewImage (PreviewFile preview, BitmapSource bitmap)
+        void SetPreviewImage (PreviewFile preview, BitmapSource bitmap, ImageFormat format)
         {
             if (bitmap.DpiX != Desktop.DpiX || bitmap.DpiY != Desktop.DpiY)
             {
@@ -271,7 +271,7 @@ namespace GARbro.GUI
                     ImageCanvas.Source = bitmap;
                     ApplyDownScaleSetting();
                     SetStatusText (string.Format (guiStrings.MsgImageSize, bitmap.PixelWidth,
-                                                  bitmap.PixelHeight, bitmap.Format.BitsPerPixel));
+                                                  bitmap.PixelHeight, bitmap.Format.BitsPerPixel, format?.Tag ?? "?"));
                 }
             });
         }

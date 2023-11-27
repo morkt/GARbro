@@ -39,38 +39,62 @@ namespace GameRes.Formats.Liar
         public override string         Tag { get { return "XFL"; } }
         public override string Description { get { return Strings.arcStrings.XFLDescription; } }
         public override uint     Signature { get { return 0x0001424c; } }
-        public override bool  IsHierarchic { get { return false; } }
+        public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return true; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            uint dir_size = file.View.ReadUInt32 (4);
-            int count     = file.View.ReadInt32 (8);
-            if (count <= 0)
+            var dir = ReadDirectory (file, 0, file.MaxOffset, "");
+            if (dir != null)
+                return new ArcFile (file, this, dir);
+            else
                 return null;
-            long max_offset = file.MaxOffset;
-            uint base_offset = dir_size + 12;
-            if (dir_size >= max_offset || base_offset >= max_offset)
+        }
+
+        internal List<Entry> ReadDirectory (ArcView file, long base_offset, long max_offset, string base_dir)
+        {
+            uint dir_size = file.View.ReadUInt32 (base_offset+4);
+            int count     = file.View.ReadInt32 (base_offset+8);
+            if (!IsSaneCount (count))
+                return null;
+            long data_offset = base_offset + dir_size + 12;
+            if (dir_size >= max_offset || data_offset >= max_offset)
                 return null;
 
-            file.View.Reserve (0, base_offset);
-            long cur_offset = 12;
+            file.View.Reserve (base_offset, (uint)(data_offset - base_offset));
+            long cur_offset = base_offset + 12;
 
             var dir = new List<Entry> (count);
             for (int i = 0; i < count; ++i)
             {
-                if (cur_offset+40 > base_offset)
+                if (cur_offset+40 > data_offset)
                     return null;
                 string name = file.View.ReadString (cur_offset, 32);
-                var entry = FormatCatalog.Instance.Create<Entry> (name);
-                entry.Offset = base_offset + file.View.ReadUInt32 (cur_offset+32);
-                entry.Size = file.View.ReadUInt32 (cur_offset+36);
-                if (!entry.CheckPlacement (max_offset))
-                    return null;
-                dir.Add (entry);
+                var entry_offset = data_offset + file.View.ReadUInt32 (cur_offset+32);
+                var entry_size   = file.View.ReadUInt32 (cur_offset+36);
+                List<Entry> subdir = null;
+                name = VFS.CombinePath (base_dir, name);
+                if (name.HasExtension (".xfl") && file.View.ReadUInt32 (entry_offset) == Signature)
+                {
+                    subdir = ReadDirectory (file, entry_offset, entry_offset + entry_size, name);
+                }
+                if (subdir != null && subdir.Count > 0)
+                {
+                    dir.AddRange (subdir);
+                }
+                else
+                {
+
+                    var entry = FormatCatalog.Instance.Create<Entry> (name);
+                    entry.Offset = entry_offset;
+                    entry.Size = entry_size;
+                    if (!entry.CheckPlacement (max_offset))
+                        return null;
+                    dir.Add (entry);
+                }
                 cur_offset += 40;
             }
-            return new ArcFile (file, this, dir);
+            return dir;
         }
 
         public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options,
@@ -157,7 +181,7 @@ namespace GameRes.Formats.Liar
     }
 
     //[Export(typeof(ScriptFormat))]
-    public class GscFormat : ScriptFormat
+    public class GscFormat : GenericScriptFormat
     {
         public override string Tag { get { return "GSC"; } }
         public override string Description { get { return Strings.arcStrings.GSCDescription; } }

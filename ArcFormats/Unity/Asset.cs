@@ -41,7 +41,7 @@ namespace GameRes.Formats.Unity
     internal class Asset
     {
         int                     m_format;
-        uint                    m_data_offset;
+        long                    m_data_offset;
         bool                    m_is_little_endian;
         UnityTypeData           m_tree = new UnityTypeData();
         Dictionary<long, int>   m_adds;
@@ -63,6 +63,13 @@ namespace GameRes.Formats.Unity
             m_data_offset  = input.ReadUInt32();
             if (m_format >= 9)
                 m_is_little_endian = 0 == input.ReadInt32();
+            if (m_format >= 22)
+            {
+                input.ReadInt32();  // header_size
+                input.ReadInt64();  // file_size
+                m_data_offset = input.ReadInt64();
+                input.ReadInt64();
+            }
             input.SetupReaders (this);
             m_tree.Load (input);
 
@@ -86,8 +93,9 @@ namespace GameRes.Formats.Unity
                 for (int i = 0; i < count; ++i)
                 {
                     input.Align();
+                    var file_id = input.ReadInt32();
                     var id = input.ReadId();
-                    m_adds[id] = input.ReadInt32();
+                    m_adds[id] = file_id;
                 }
             }
             if (Format >= 6)
@@ -176,7 +184,8 @@ namespace GameRes.Formats.Unity
         public void Load (AssetReader reader)
         {
             PathId = reader.ReadId();
-            Offset = reader.ReadUInt32() + Asset.DataOffset;
+            Offset = reader.ReadOffset();
+            Offset += Asset.DataOffset;
             Size = reader.ReadUInt32();
             if (Asset.Format < 17)
             {
@@ -345,8 +354,11 @@ namespace GameRes.Formats.Unity
         {
             int count = reader.ReadInt32();
             int buffer_bytes = reader.ReadInt32();
-            var node_data = reader.ReadBytes (24 * count);
+            int node_size = m_format >= 18 ? 32 : 24;
+            var node_data = reader.ReadBytes (node_size * count);
             m_data = reader.ReadBytes (buffer_bytes);
+            if (m_format >= 21)
+                reader.Skip (4);
 
             var parents = new Stack<TypeTree>();
             parents.Push (this);
@@ -376,6 +388,8 @@ namespace GameRes.Formats.Unity
                     current.Size = buf.ReadInt32();
                     current.Index = buf.ReadUInt32();
                     current.Flags = buf.ReadInt32();
+                    if (m_format >= 18)
+                        buf.ReadInt64();
                 }
             }
         }

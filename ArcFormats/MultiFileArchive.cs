@@ -75,9 +75,7 @@ namespace GameRes.Formats
                     }
                     part_offset = part_end_offset;
                 }
-                if (null == input)
-                    return Stream.Null;
-                return input;
+                return input ?? Stream.Null;
             }
             catch
             {
