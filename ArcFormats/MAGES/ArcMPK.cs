@@ -26,7 +26,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
-namespace GameRes.Formats.NitroPlus
+namespace GameRes.Formats.MAGES
 {
     [Export(typeof(ArchiveFormat))]
     public class MpkOpener : ArchiveFormat

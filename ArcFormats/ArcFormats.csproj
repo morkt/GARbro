@@ -310,8 +310,8 @@
     <Compile Include="MyAdv\ArcPAC.cs" />
     <Compile Include="Nekopack\ArcNEKO2.cs" />
     <Compile Include="Nekopack\ArcNEKO3.cs" />
-    <Compile Include="NitroPlus\ArcLAY.cs" />
-    <Compile Include="NitroPlus\ArcMPK.cs" />
+    <Compile Include="MAGES\ArcLAY.cs" />
+    <Compile Include="MAGES\ArcMPK.cs" />
     <Compile Include="NitroPlus\ArcNPP.cs" />
     <Compile Include="Noesis\ArcIGA.cs" />
     <Compile Include="NonColor\ArcMinato.cs" />
