@@ -36,12 +36,10 @@ namespace GameRes.Formats.MAGES
                 }
                 var sjis = System.Text.Encoding.GetEncoding("Shift-JIS");
                 var name = sjis.GetString(namebyte.ToArray());
-                var entry = Create<PackedEntry>(name);
+                var entry = Create<Entry>(name);
                 
                 entry.Offset = file.View.ReadUInt32(16 * i + 16 + 4) * 2048;
-
                 entry.Size = file.View.ReadUInt32(16 * i + 16 + 8);
-                entry.UnpackedSize = file.View.ReadUInt32(16 * i + 16 + 8);
                 if (!entry.CheckPlacement(file.MaxOffset))
                     return null;
                 dir.Add(entry);
