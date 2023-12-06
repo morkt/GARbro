@@ -170,6 +170,7 @@
     <Compile Include="Macromedia\DirectorFile.cs" />
     <Compile Include="Macromedia\Palettes.cs" />
     <Compile Include="MAGES\ArcARC20.cs" />
+    <Compile Include="MAGES\ArcLoveOnce.cs" />
     <Compile Include="Mugi\ArcBIN.cs" />
     <Compile Include="NScripter\Script.cs" />
     <Compile Include="Psp\ArcQPK.cs" />
