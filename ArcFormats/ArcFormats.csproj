@@ -127,6 +127,7 @@
     <Compile Include="CsWare\AudioWAV.cs" />
     <Compile Include="CsWare\ImageGDT.cs" />
     <Compile Include="FC01\ArcBDT.cs" />
+    <Compile Include="FC01\ArcSCXA.cs" />
     <Compile Include="FC01\BdtTables.cs" />
     <Compile Include="GScripter\ArcDATA.cs" />
     <Compile Include="Ism\ImagePNG.cs" />
