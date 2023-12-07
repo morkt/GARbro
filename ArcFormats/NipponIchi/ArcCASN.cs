@@ -16,6 +16,8 @@ namespace GameRes.Formats.NipponIchi
         public override ArcFile TryOpen(ArcView file)
         {
             int count = Binary.BigEndian(file.View.ReadUInt16(6));
+            if (!IsSaneCount(count))
+                return null;
             long index_offset = count * 10 + 30; //actually count*10 + 28, ignored two bytes of 000C or 000B
             var dir = new List<Entry>(count);
             for (int i = 0; i < count; ++i)

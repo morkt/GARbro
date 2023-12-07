@@ -22,12 +22,14 @@ namespace GameRes.Formats.MAGES
             {
                 string filepath = Path.GetDirectoryName(filedata.Name);
                 filepath = Path.Combine(filepath, "list.bin");
+                if (! File.Exists(filepath)) return null;
                 filelist = new ArcView(filepath);
             }
             else if (filedata.Name.EndsWith("list.bin"))
             {
                 string filepath = Path.GetDirectoryName(filedata.Name);
                 filepath = Path.Combine(filepath, "data.bin");
+                if (!File.Exists(filepath)) return null;
                 filelist = new ArcView(filepath);
                 return TryOpen(filelist);
             }
