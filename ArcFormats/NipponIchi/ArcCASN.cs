@@ -22,7 +22,6 @@ namespace GameRes.Formats.NipponIchi
             var dir = new List<Entry>(count);
             for (int i = 0; i < count; ++i)
             {
-
                 uint fstart = Binary.BigEndian(file.View.ReadUInt32(index_offset));
                 uint flength = Binary.BigEndian(file.View.ReadUInt32(index_offset + 4));
                 index_offset += 8;
