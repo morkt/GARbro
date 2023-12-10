@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics.Eventing.Reader;
 using System.IO;
+using System.Text;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -14,7 +16,8 @@ namespace GameRes.Formats.MAGES
         public override string Tag { get { return "MAGES PS3/PSV Image Format"; } }
         public override string Description { get { return "MAGES PS3/PSV Image Format"; } }
         public override uint Signature { get { return 0; } }
-        
+        public override bool CanWrite { get { return true; } }
+
         public BinFormat()
         {
             Extensions = new string[] { "" };
@@ -98,9 +101,43 @@ namespace GameRes.Formats.MAGES
             else
                 throw new NotSupportedException(string.Format("Not BIN texture format."));
         }
-        public override void Write(Stream file, ImageData image)
+        public override void Write(Stream stream, ImageData image)
         {
-            throw new System.NotImplementedException("BINFormat.Write not implemented");
+            //throw new System.NotImplementedException("BINFormat.Write not implemented");
+            using (var file = new BinaryWriter(stream, Encoding.ASCII, true))
+            {
+                if (image.Width > ushort.MaxValue || image.Height > ushort.MaxValue)
+                {
+                    throw new NotSupportedException(string.Format("Image width or height oversize."));
+                }
+                if (image.BPP != 32)
+                {
+                    throw new NotSupportedException(string.Format("Image bitdepth not supported, should be 32."));
+                }
+                file.Write((ushort)image.Width);
+                file.Write((ushort)image.Height);
+                file.Write(image.BPP);
+
+                var bitmap = image.Bitmap;
+                if (bitmap.Format != PixelFormats.Bgra32)
+                {
+                    bitmap = new FormatConvertedBitmap(image.Bitmap, PixelFormats.Bgra32, null, 0);
+                }
+                int stride = (int)image.Width * 4;
+                byte[] row_data = new byte[stride];
+                Int32Rect rect = new Int32Rect(0, 0, (int)image.Width, 1);
+                for (uint row = 0; row < image.Height; ++row)
+                {
+                    bitmap.CopyPixels(rect, row_data, stride, 0);
+                    for (uint col = 0; col < image.Width; ++col)
+                    {
+                        (row_data[(col * 4) + 3], row_data[col * 4]) = (row_data[col * 4], row_data[(col * 4) + 3]);
+                        (row_data[(col * 4) + 2], row_data[(col * 4) + 1]) = (row_data[(col * 4) + 1], row_data[(col * 4) + 2]);
+                    }
+                    file.Write(row_data);
+                    rect.Y++;
+                }
+            }
         }
     }
 }
