@@ -131,6 +131,7 @@
     <Compile Include="FC01\BdtTables.cs" />
     <Compile Include="GScripter\ArcDATA.cs" />
     <Compile Include="Ism\ImagePNG.cs" />
+    <Compile Include="Kid\ArcDATRAW.cs" />
     <Compile Include="Kogado\ArcARC.cs" />
     <Compile Include="Ice\ImageIBM.cs" />
     <Compile Include="Ice\ScriptISD.cs" />
