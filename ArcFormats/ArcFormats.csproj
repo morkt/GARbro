@@ -173,6 +173,7 @@
     <Compile Include="Macromedia\Palettes.cs" />
     <Compile Include="MAGES\ArcARC20.cs" />
     <Compile Include="MAGES\ArcFARC.cs" />
+    <Compile Include="MAGES\ArcGTF.cs" />
     <Compile Include="MAGES\ArcLoveOnce.cs" />
     <Compile Include="MAGES\ImageBIN.cs" />
     <Compile Include="Mugi\ArcBIN.cs" />
