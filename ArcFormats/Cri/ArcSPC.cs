@@ -77,6 +77,7 @@ namespace GameRes.Formats.Cri
                 var entry = Create<PackedEntry>(base_name);
                 entry.Offset = 0;
                 entry.Size = (uint)input.Length;
+                entry.Type = "image";
                 dir.Add(entry);
                 return new SpcArchive(file, this, dir, input);
             }
