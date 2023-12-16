@@ -57,9 +57,9 @@ namespace GameRes.Formats.Cri
             backend.Position = 4;
             var lzss = new LzssStream (backend);
             var input = new SeekableStream (lzss);
+            var base_name = Path.GetFileNameWithoutExtension(file.Name);
             try
             {
-                var base_name = Path.GetFileNameWithoutExtension (file.Name);
                 using (var spc = new XtxIndexBuilder (input, base_name))
                 {
                     spc.ReadIndex (0);
@@ -71,8 +71,14 @@ namespace GameRes.Formats.Cri
             }
             catch
             {
-                input.Dispose();
-                throw;
+                //input.Dispose();
+                //throw;
+                var dir = new List<Entry>();
+                var entry = Create<PackedEntry>(base_name);
+                entry.Offset = 0;
+                entry.Size = (uint)input.Length;
+                dir.Add(entry);
+                return new SpcArchive(file, this, dir, input);
             }
         }
 
