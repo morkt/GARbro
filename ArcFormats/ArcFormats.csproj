@@ -133,6 +133,7 @@
     <Compile Include="Ism\ImagePNG.cs" />
     <Compile Include="Kid\ArcDATRAW.cs" />
     <Compile Include="Kid\ImageLBG.cs" />
+    <Compile Include="Kid\ImageSPC.cs" />
     <Compile Include="Kogado\ArcARC.cs" />
     <Compile Include="Ice\ImageIBM.cs" />
     <Compile Include="Ice\ScriptISD.cs" />
