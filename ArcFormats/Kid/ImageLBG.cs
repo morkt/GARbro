@@ -10,13 +10,14 @@ namespace GameRes.Formats.Kid
     [Export(typeof(ImageFormat))]
     public class LbgFormat : ImageFormat
     {
-        public override string Tag { get { return "LBG/PS2-SPC Image Format"; } }
+        public override string Tag { get { return "LBG/PS2-SPC"; } }
         public override string Description { get { return "KID PS2 SPC Image Format"; } }
-        public override uint Signature { get { return 0; } } //0x10000000, real signature below
+        public override uint Signature { get { return 0; } } //real signature may exist below
 
         public LbgFormat()
         {
             Extensions = new string[] { "", "lbg" };
+            // Actually LBG format can contain more than one image as lip for chara, well, "not implemented".
         }
 
         public override ImageMetaData ReadMetaData(IBinaryStream file)
@@ -27,11 +28,11 @@ namespace GameRes.Formats.Kid
             if (header != 0x2047424C) //LBG\x20
             {
                 overheader = header;
-                if (overheader > 0x100)
+                if (overheader > 0x50) //usually 10 or 30, never seen any larger
                     return null;
                 file.Seek(overheader, SeekOrigin.Begin);
                 header = file.ReadUInt32();
-                if (header != 0x2047424C)
+                if (header != 0x2047424C) //LBG\x20
                     return null;
             }
 
@@ -62,8 +63,14 @@ namespace GameRes.Formats.Kid
             if (lbgheader.OverHeader != 0)
             {
                 file.Position = 4;
-                uint filesize = file.ReadUInt32() - 16;
-                oversize = (filesize - info.Width * info.Height * 4) / info.Height / (blocknum + 1);
+                uint filesize = file.ReadUInt32();
+                if (filesize == 0)
+                    oversize = 8;
+                else
+                {
+                    filesize -= 16;
+                    oversize = (filesize - info.Width * info.Height * 4) / info.Height / (blocknum + 1);
+                }
             }
             file.Position = lbgheader.OverHeader + 0x10;
             //List<byte> pixels = new List<byte>();
