@@ -33,7 +33,7 @@ namespace GameRes.Formats.Cri
     [Export(typeof(ImageFormat))]
     public class SpcFormat : XtxFormat
     {
-        public override string         Tag { get { return "SPC"; } }
+        public override string         Tag { get { return "SPC/Xbox360"; } }
         public override string Description { get { return "CRI MiddleWare compressed texture format"; } }
         public override uint     Signature { get { return 0; } }
 

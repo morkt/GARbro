@@ -32,7 +32,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace GameRes.Formats.NitroPlus
+namespace GameRes.Formats.MAGES
 {
     internal class LayEntry : Entry
     {
