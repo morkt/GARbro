@@ -41,6 +41,7 @@ namespace GameRes.Formats.Interheart
         public override string         Tag { get { return "KG"; } }
         public override string Description { get { return "Interheart image format"; } }
         public override uint     Signature { get { return 0x4B474347; } } // 'GCGK'
+        public override bool      CanWrite { get { return true; } }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
@@ -99,58 +100,52 @@ namespace GameRes.Formats.Interheart
         }
 
         public override void Write (Stream file, ImageData image) {
-          //var watch = System.Diagnostics.Stopwatch.StartNew();
-
-          var bitmap = image.Bitmap;
-          if (bitmap.Format != PixelFormats.Bgra32) {
-            bitmap = new FormatConvertedBitmap(image.Bitmap, PixelFormats.Bgra32, null, 0);
+          int stride = (int)image.Width * 4;
+          byte[] bitmap = new byte[stride * image.Height];
+          {
+            var image_bgra = image.Bitmap.Format != PixelFormats.Bgra32
+              ? new FormatConvertedBitmap(image.Bitmap, PixelFormats.Bgra32, null, 0)
+              : image.Bitmap;
+            image_bgra.CopyPixels(bitmap, stride, 0);
           }
           uint[] offset_table = new uint[image.Height];
           var kg_data = new List<byte>();
-          byte[] row_data = new byte[image.Width * 4];
-          for (int y = 0; y < image.Height; y++)
-          {
+
+          for (int y = 0; y < image.Height; y++) {
             offset_table[y] = (uint)kg_data.Count();
 
-            Int32Rect rect = new Int32Rect(0, y, (int)image.Width, 1);
-            bitmap.CopyPixels(rect, row_data, (int)image.Width * 4, 0);
-
-            row_data
+            bitmap
+              .AsMemory()
+              .Slice(y * stride, stride)
               .Chunk(4)
-              //.TakeWhile(x => x.Count() > 0)
-              .Aggregate(new List<(byte alpha, List<List<byte>> data)> {  }, (acc, v) => {
-                void add_chunk (byte alpha, List<byte> data) => acc.Add((alpha, data: new List<List<byte>> { data }));
+              .Aggregate(new List<(byte alpha, List<byte[]> data)> {  }, (chunks, x) => {
+                var pixel = x.ToArray();
+                void new_chunk () => chunks.Add((alpha: pixel[3], data: new List<byte[]> { pixel }));
 
-                if (!acc.Any()) {
-                  add_chunk(v.Last(), v.ToList());
+                if (!chunks.Any()) {
+                  new_chunk();
                 }
                 else {
-                  var (alpha, data) = acc.Last();
-                  if (v.Last() != data.Last().Last() || data.Count >= 256 ) {
-                    add_chunk(v.Last(), v.ToList());
+                  var (alpha, data) = chunks.Last();
+                  if (pixel[3] != data.Last()[3] || data.Count >= 256) {
+                    new_chunk();
                   }
                   else {
-                    data.Add(v.ToList());
+                    data.Add(pixel);
                   }
                 }
-                return acc;
+                return chunks;
               }
             )
             .ForEach(chunk => {
               kg_data.Add(chunk.alpha);
               kg_data.Add((byte)chunk.data.Count());
               if (chunk.alpha > 0) {
-                var pixels = chunk.data
-                  .SelectMany(pixel => new[] { pixel.ElementAt(2), pixel.ElementAt(1), pixel.ElementAt(0) })
-                  .ToList();
-                kg_data.AddRange(pixels);
+                kg_data.AddRange(chunk.data.SelectMany(p => new[] { p[2], p[1], p[0] }));
               }
             });
           }
 
-          //watch.Stop();
-          //var elapsedMs = watch.ElapsedMilliseconds;
-          //Console.WriteLine(elapsedMs.ToString() + "ms");
 
           var bw = new BinaryWriter(file);
 
@@ -169,12 +164,11 @@ namespace GameRes.Formats.Interheart
         }
       }
 
-      // Polyfill, remove when tagerting .NET >= 6.0
       static class Extensions {
-        public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> arr, int size) {
-          for (var i = 0; i < arr.Count() / size + 1; i++) {
-            if (i * size < arr.Count()) {
-              yield return arr.Skip(i * size).Take(size);
+        public static IEnumerable<Memory<T>> Chunk<T>(this Memory<T> arr, int size) {
+          for (var i = 0; i < arr.Length / size + 1; i++) {
+            if (i * size < arr.Length) {
+              yield return arr.Slice(i * size, size);
             }
           }
         }
