@@ -26,7 +26,11 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Interheart
@@ -94,9 +98,85 @@ namespace GameRes.Formats.Interheart
             return ImageData.Create (info, PixelFormats.Bgra32, null, pixels);
         }
 
-        public override void Write (Stream file, ImageData image)
-        {
-            throw new System.NotImplementedException ("KgFormat.Write not implemented");
+        public override void Write (Stream file, ImageData image) {
+          //var watch = System.Diagnostics.Stopwatch.StartNew();
+
+          var bitmap = image.Bitmap;
+          if (bitmap.Format != PixelFormats.Bgra32) {
+            bitmap = new FormatConvertedBitmap(image.Bitmap, PixelFormats.Bgra32, null, 0);
+          }
+          uint[] offset_table = new uint[image.Height];
+          var kg_data = new List<byte>();
+          byte[] row_data = new byte[image.Width * 4];
+          for (int y = 0; y < image.Height; y++)
+          {
+            offset_table[y] = (uint)kg_data.Count();
+
+            Int32Rect rect = new Int32Rect(0, y, (int)image.Width, 1);
+            bitmap.CopyPixels(rect, row_data, (int)image.Width * 4, 0);
+
+            row_data
+              .Chunk(4)
+              //.TakeWhile(x => x.Count() > 0)
+              .Aggregate(new List<(byte alpha, List<List<byte>> data)> {  }, (acc, v) => {
+                void add_chunk (byte alpha, List<byte> data) => acc.Add((alpha, data: new List<List<byte>> { data }));
+
+                if (!acc.Any()) {
+                  add_chunk(v.Last(), v.ToList());
+                }
+                else {
+                  var (alpha, data) = acc.Last();
+                  if (v.Last() != data.Last().Last() || data.Count >= 256 ) {
+                    add_chunk(v.Last(), v.ToList());
+                  }
+                  else {
+                    data.Add(v.ToList());
+                  }
+                }
+                return acc;
+              }
+            )
+            .ForEach(chunk => {
+              kg_data.Add(chunk.alpha);
+              kg_data.Add((byte)chunk.data.Count());
+              if (chunk.alpha > 0) {
+                var pixels = chunk.data
+                  .SelectMany(pixel => new[] { pixel.ElementAt(2), pixel.ElementAt(1), pixel.ElementAt(0) })
+                  .ToList();
+                kg_data.AddRange(pixels);
+              }
+            });
+          }
+
+          //watch.Stop();
+          //var elapsedMs = watch.ElapsedMilliseconds;
+          //Console.WriteLine(elapsedMs.ToString() + "ms");
+
+          var bw = new BinaryWriter(file);
+
+          bw.Write(new byte[] { 0x47, 0x43, 0x47, 0x4B });
+          bw.Write((UInt16)image.Width);
+          bw.Write((UInt16)image.Height);
+          bw.Write((uint)kg_data.Count);
+
+          {
+            byte[] buf = new byte[offset_table.Length * sizeof(uint)];
+            Buffer.BlockCopy(offset_table, 0, buf, 0, buf.Length);
+            bw.Write(buf);
+          }
+
+          bw.Write(kg_data.ToArray());
+        }
+      }
+
+      // Polyfill, remove when tagerting .NET >= 6.0
+      static class Extensions {
+        public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> arr, int size) {
+          for (var i = 0; i < arr.Count() / size + 1; i++) {
+            if (i * size < arr.Count()) {
+              yield return arr.Skip(i * size).Take(size);
+            }
+          }
         }
     }
 }
