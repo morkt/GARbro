@@ -118,10 +118,15 @@ namespace GameRes.Formats.CellWorks
 
         public bool GetArchiveId (string db_name, out int arc_id)
         {
-            m_conn.ConnectionString = string.Format ("Data Source={0};Read Only=true;", db_name);
             foreach (var password in IgsDatOpener.KnownPasswords)
             {
-                m_conn.SetPassword (password);
+                SQLiteConnectionStringBuilder csb = new SQLiteConnectionStringBuilder()
+                {
+                    DataSource = db_name,
+                    ReadOnly = true,
+                    Password = password
+                };
+                m_conn.ConnectionString = csb.ConnectionString;
                 m_conn.Open();
                 try
                 {

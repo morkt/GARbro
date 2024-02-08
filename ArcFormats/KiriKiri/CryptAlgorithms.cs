@@ -103,6 +103,7 @@ namespace GameRes.Formats.KiriKiri
             var header = new byte[5];
             input.Read (header, 0, 5);
             uint signature = header.ToUInt32 (0);
+            GuessEntryTypeBySignature (entry, signature);
             if (0x184D2204 == signature) // LZ4 magic
             {
                 // assume no scripts are compressed using LZ4, return decompressed stream right away
@@ -196,6 +197,25 @@ namespace GameRes.Formats.KiriKiri
                 input.Dispose();
                 return output;
             }
+        }
+
+        static readonly Dictionary<uint, string> FileTypesMap = new Dictionary<uint, string>
+        {
+            { 0x5367674f, "audio" }, // OGG
+            { 0x46464952, "audio" }, // WAV
+            { 0x474e5089, "image" }, // PNG
+            { 0xe0ffd8ff, "image" }, // JPG
+            { 0x30474c54, "image" }, // TLG
+            { 0x35474c54, "image" }, // TLG
+            { 0x36474c54, "image" }, // TLG
+            { 0x35474cab, "image" }, // TLG
+            { 0x584d4b4a, "image" }, // TLG
+        };
+
+        internal void GuessEntryTypeBySignature (Entry entry, uint signature)
+        {
+            if (FileTypesMap.TryGetValue (signature, out var type))
+                entry.Type = type;
         }
     }
 
@@ -1404,6 +1424,135 @@ namespace GameRes.Formats.KiriKiri
                 hash = (hash & 0xFFFFFFFE) << 23 | hash >> 8;
             }
             return key;
+        }
+    }
+
+    [Serializable]
+    public class NinkiSeiyuuCrypt : ICrypt
+    {
+        ulong m_key1;
+        ulong m_key2;
+        ulong m_key3;
+
+        byte[] m_tbl2;
+        byte[] m_tbl3;
+
+        public NinkiSeiyuuCrypt(ulong key1, ulong key2, ulong key3)
+        {
+            m_key1 = key1;
+            m_key2 = key2;
+            m_key3 = key3;
+
+            m_tbl2 = GetTable2(3080);
+            m_tbl3 = GetTable3(3080, m_key1, m_key2, m_key3);
+        }
+
+        static byte[] GetTable1(uint seed)
+        {
+            var key = new byte[32];
+
+            uint v48 = seed & 0x7FFFFFFF;
+
+            for (var i = 0; i < 31; i++)
+            {
+                key[i] = (byte)v48;
+                v48 = (v48 >> 8) | (uint)((byte)v48 << 23);
+            }
+
+            return key;
+        }
+
+        static byte[] GetTable2(uint seed)
+        {
+            var key = new byte[64];
+
+            uint v51 = seed & 0xFFF;
+            ulong v52 = (ulong)(v51 | (v51 << 13)) | ((ulong)(v51 >> 19) << 32);
+            uint v53 = v51 | ((uint)v52 << 13);
+            uint v54 = (uint)((ulong)(((uint)v52 << 7) & 0x1FFFFFFF) | (v52 >> 19));
+
+            for (int i = 0; i < 61; i++)
+            {
+                var v56 = (byte)v53;
+                key[i] = (byte)v53;
+                v53 = (uint)((((ulong)v54 << 32) | v53) >> 8);
+                v54 = (v54 >> 8) | (uint)(v56 << 21);
+            }
+
+            return key;
+        }
+
+        static byte[] GetTable3(uint seed, ulong key1, ulong key2, ulong key3)
+        {
+            var key = new byte[64];
+
+            uint v88 = seed & 0xFFF;
+            ulong v89 = (ulong)(v88 | (v88 << 13)) | ((ulong)(v88 >> 19) << 32);
+            uint v90 = (uint)((key1 + key2) ^ (ulong)(v88 | ((uint)v89 << 13)));
+            uint v91 = (uint)((ulong)(((key1 + ((key3 & 0xFFFFFFFF00000000) | (key2 & 0xFFFFFFFF))) >> 32) & 0x1FFFFFFF) ^ ((ulong)(((uint)v89 << 7) & 0x1FFFFFFF) | (v89 >> 19)));
+
+            for (int i = 0; i < 61; i++)
+            {
+                var v93 = (byte)v90;
+                key[i] = (byte)v90;
+                v90 = (uint)((((ulong)v91 << 32) | v90) >> 8);
+                v91 = (v91 >> 8) | (uint)(v93 << 21);
+            }
+
+            return key;
+        }
+
+        public override void Decrypt(Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var tbl1 = GetTable1(entry.Hash);
+
+            for (var i = 0; i < count; i++)
+            {
+                buffer[pos + i] ^= tbl1[(offset + i) % 0x1F];
+                buffer[pos + i] += (byte)(m_tbl2[(offset + i) % 0x3D] ^ m_tbl3[(offset + i) % 0x3D]);
+            }
+        }
+    }
+
+    [Serializable]
+    public class SyangrilaSmartCrypt : ICrypt
+    {
+        byte[] GetKey (uint hash)
+        {
+            return new byte[5]
+            {
+                (byte)(hash >> 5),
+                (byte)(hash >> 5),
+                (byte)(hash >> 7),
+                (byte)(hash >> 1),
+                (byte)(hash >> 4),
+            };
+        }
+
+        public override byte Decrypt (Xp3Entry entry, long offset, byte value)
+        {
+            var key = GetKey (entry.Hash);
+            if (offset <= 0x64)
+                return (byte)(value ^ key[4]);
+            else
+                return (byte)(value ^ key[offset & 3]);
+        }
+
+        public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            var key = GetKey (entry.Hash);
+            for (var i = 0; i < count; i++)
+            {
+                if (offset+i <= 0x64)
+                    buffer[pos+i] ^= key[4];
+                else
+                    buffer[pos+i] ^= key[(offset+i) & 3];
+            }
+        }
+
+        public override void Encrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
+            Decrypt (entry, offset, buffer, pos, count);
         }
     }
 

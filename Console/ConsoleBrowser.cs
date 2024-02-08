@@ -67,6 +67,12 @@ namespace GARbro
 */
         }
 
+        ImageFormat FindFormat (string format)
+        {
+            var range = FormatCatalog.Instance.LookupExtension<ImageFormat> (format);
+            return range.FirstOrDefault();
+        }
+
         void Run (string[] args)
         {
             int argn = 0;

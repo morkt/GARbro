@@ -65,3 +65,10 @@ Korean translation by [mireado](https://github.com/mireado), [overworks](https:/
 Simplified Chinese translation by [elasticblitz](https://github.com/elasticblitz), [PeratX](https://github.com/PeratX) and [taroxd](https://github.com/taroxd)
 
 Japanese translation by [haniwa55](https://github.com/haniwa55)
+
+Contributors
+------
+
+<a href="https://github.com/crskycode/GARbro/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=crskycode/GARbro" />
+</a>

@@ -287,6 +287,8 @@ namespace GameRes.Formats.Malie
                     int offset  = LittleEndian.ToInt32 (m_index, current_offset+0x18);
                     uint size   = LittleEndian.ToUInt32 (m_index, current_offset+0x1c);
                     current_offset += 0x20;
+                    if (name.StartsWith ("/"))
+                        name = name.Substring (1);
                     name = Path.Combine (root, name);
                     if (0 == (flags & 0x30000))
                     {
