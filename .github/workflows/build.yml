@@ -1,0 +1,25 @@
+name: .NET Framework Build
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+      # Restore NuGet packages
+      - name: Restore
+        run: nuget restore
+      # Build the solution
+      - name: Build
+        run: msbuild /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.6.2 GARbro.sln
+      # Publish the artifacts
+      - name: Publish Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GARbro-Mod-ci-build
+          path: bin/Release
