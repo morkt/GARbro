@@ -394,7 +394,7 @@
     <value>转换错误。</value>
   </data>
   <data name="LabelEncoding" xml:space="preserve">
-    <value>正在编码</value>
+    <value>编码</value>
   </data>
   <data name="TextConvertAudio" xml:space="preserve">
     <value>将音频转换为常规格式</value>
