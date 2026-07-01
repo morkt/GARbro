@@ -1276,13 +1276,8 @@ exit 0</PreBuildEvent>
     <PostBuildEvent>if not exist "$(TargetDir)\GameData" mkdir "$(TargetDir)\GameData"
 xcopy "$(ProjectDir)\Resources\Formats.dat" "$(TargetDir)\GameData\" /D /Y &gt;NUL</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
+  <!-- legacy MSBuild-integrated NuGet restore (.nuget\NuGet.targets) removed; packages are restored via `nuget restore` -->
+
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
