@@ -35,6 +35,7 @@ using GameRes.Compression;
 using GameRes.Cryptography;
 using GameRes.Formats.Strings;
 using System.Collections;
+using System.Windows;
 
 namespace GameRes.Formats.ExHibit
 {
@@ -46,6 +47,7 @@ namespace GameRes.Formats.ExHibit
         public int  DataSize;
         public int  AlphaSize;
         public int  PaletteSize;
+        public string BaseFileName; //Full path of the base image
     }
 
     [Serializable]
@@ -81,7 +83,7 @@ namespace GameRes.Formats.ExHibit
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             stream.Position = 4;
-            return new GyuMetaData
+            var info = new GyuMetaData
             {
                 Flags   = stream.ReadUInt16(),
                 CompressionMode = stream.ReadUInt16(),
@@ -93,6 +95,20 @@ namespace GameRes.Formats.ExHibit
                 AlphaSize   = stream.ReadInt32(),
                 PaletteSize = stream.ReadInt32(),
             };
+
+            if (info.Flags == 0x80 && stream.Length > 1044) //Diff image
+            {
+                stream.Position = stream.Length - 1008;
+                var meta_ary = stream.ReadCString(14).Split(',');
+                if (meta_ary.Length == 3)
+                {
+                    info.BaseFileName = Path.GetDirectoryName(stream.Name) + "\\" + meta_ary[0].PadLeft(4, '0') + ".gyu";
+                    info.OffsetX = int.Parse(meta_ary[1]);
+                    info.OffsetY = int.Parse(meta_ary[2]);
+                }
+            }
+
+            return info;
         }
 
         IDictionary CurrentMap = null;
@@ -123,7 +139,52 @@ namespace GameRes.Formats.ExHibit
             }
             var reader = new GyuReader (stream.AsStream, meta);
             reader.Unpack();
-            return ImageData.CreateFlipped (meta, reader.Format, reader.Palette, reader.Data, reader.Stride);
+            var image = ImageData.CreateFlipped(meta, reader.Format, reader.Palette, reader.Data, reader.Stride);
+
+            if (meta.Flags == 0x80) //Diff image
+                image = CompositeImage(image, meta);
+
+            return image;
+        }
+
+        private ImageData CompositeImage(ImageData image, GyuMetaData meta)
+        {
+            int byte_depth = 4;
+            int stride;
+            int offset;
+            byte[] pixels;
+
+            if (!string.IsNullOrEmpty(meta.BaseFileName) && VFS.FileExists(meta.BaseFileName))
+            {
+                using (var input = VFS.OpenBinaryStream(meta.BaseFileName))
+                {
+                    var base_meta = (GyuMetaData)ReadMetaData(input);
+                    base_meta.FileName = meta.BaseFileName;
+                    var base_image = Read(input, base_meta);
+                    stride = (int)base_image.Width * byte_depth;
+                    offset = meta.OffsetY * stride + meta.OffsetX * byte_depth;
+                    pixels = new byte[stride * base_image.Height];
+
+                    var formated_base_source = new FormatConvertedBitmap(base_image.Bitmap, PixelFormats.Bgra32, null, 100); //24bit -> 32bit with alpha
+                    formated_base_source.CopyPixels(Int32Rect.Empty, pixels, stride, 0);
+
+                    var formated_source = new FormatConvertedBitmap(image.Bitmap, PixelFormats.Bgra32, null, 100); //24bit -> 32bit with alpha
+                    formated_source.CopyPixels(Int32Rect.Empty, pixels, stride, offset);
+
+                    image = new ImageData(BitmapImage.Create(
+                        (int)base_image.Width,
+                        (int)base_image.Height,
+                        ImageData.DefaultDpiX,
+                        ImageData.DefaultDpiY,
+                        PixelFormats.Bgra32,
+                        null,
+                        pixels,
+                        stride
+                        ));
+                }
+            }
+
+            return image;
         }
 
         public override void Write (Stream file, ImageData image)
