@@ -399,4 +399,8 @@
   <data name="ODNAudioSampleRate" xml:space="preserve">
     <value>默认音频采样率</value>
   </data>
+  <data name="Tim2AlphaFormat" xml:space="preserve">
+    <value>选择Tim2图片透明度格式。
+这无法从文件中正确获取。</value>
+  </data>
 </root>

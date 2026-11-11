@@ -1,6 +1,6 @@
 //! \file       ArcSAF.cs
 //! \date       Mon Jun 01 03:09:22 2015
-//! \brief      SAF archive file format implemenation.
+//! \brief      SAF archive file format implementation.
 //
 // Copyright (C) 2015-2018 by morkt
 //

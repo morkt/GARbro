@@ -54,7 +54,8 @@ namespace GameRes.Formats.Seraphim
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
         {
             var header = stream.ReadHeader (0x10);
-            if ('C' != header[0] || 'F' != header[1] || 0 != header[3])
+            uint sig = header.ToUInt16(0);
+            if (sig != Signature)
                 return null;
             int packed_size = header.ToInt32 (12);
             if (packed_size <= 0 || packed_size > stream.Length-0x10)

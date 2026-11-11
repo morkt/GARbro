@@ -560,7 +560,7 @@ Overwrite?</comment>
     <comment>Assign file type</comment>
   </data>
   <data name="Type_NONE" xml:space="preserve">
-    <value>none</value>
+    <value>NONE</value>
     <comment>none</comment>
   </data>
   <data name="LabelDestinationDir" xml:space="preserve">
@@ -696,5 +696,23 @@ Overwrite?</comment>
   </data>
   <data name="winDownScaleImage" xml:space="preserve">
     <value>Scale large images to fit window</value>
+  </data>
+  <data name="Type_archive" xml:space="preserve">
+    <value>アーカイブ</value>
+  </data>
+  <data name="Type_audio" xml:space="preserve">
+    <value>オーディオ</value>
+  </data>
+  <data name="Type_image" xml:space="preserve">
+    <value>画像</value>
+  </data>
+  <data name="Type_script" xml:space="preserve">
+    <value>スクリプト</value>
+  </data>
+  <data name="TextOK" xml:space="preserve">
+    <value>確認</value>
+  </data>
+  <data name="Type_video" xml:space="preserve">
+    <value>ビデオ</value>
   </data>
 </root>

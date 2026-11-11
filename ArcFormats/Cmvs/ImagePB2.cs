@@ -111,9 +111,9 @@ namespace GameRes.Formats.Purple
             {
             case 1: UnpackV1(); break;
             case 2: UnpackV2(); break;
+            case 3:
             case 4: UnpackJbp (0x20, m_offset1); break;
             case 6: UnpackV6(); break;
-            case 3:
             case 5:
             case 7:
             default: throw new NotSupportedException(string.Format ("PB2 v{0} images not supported", m_info.Type));
@@ -237,13 +237,13 @@ namespace GameRes.Formats.Purple
         {
             int channel_size = (int)m_info.Width * (int)m_info.Height;
             int src = Array.IndexOf<byte> (m_input, 0, 0x24);
-            src = (src + 3) & ~3;
+            src = (src + 4) & ~3;
             byte[][] channels = new byte[4][];
 
             for (int i = 0 ; i < 4; ++i)
             {
                 channels[i] = new byte[channel_size];
-                int	bit_src  = src + 0x20 + m_input.ToInt32 (src + i * 8);
+                int bit_src  = src + 0x20 + m_input.ToInt32 (src + i * 8);
                 int data_src = src + 0x20 + m_input.ToInt32 (src + i * 8 + 4);
                 LzssResetFrame();
                 LzssUnpack (bit_src, data_src, channels[i], channel_size);

@@ -50,7 +50,7 @@ namespace GameRes.Formats.Crowd
 
         public override void Write (SoundInput source, Stream output)
         {
-            throw new System.NotImplementedException ("EogFormat.Write not implemenented");
+            throw new System.NotImplementedException ("EogFormat.Write not implemented");
         }
     }
 }

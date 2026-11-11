@@ -35,9 +35,7 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.ShapeShifter
 {
-#if DEBUG
     [Export(typeof(ArchiveFormat))]
-#endif
     public class BndOpener : ArchiveFormat
     {
         public override string         Tag { get { return "BND"; } }
@@ -89,7 +87,17 @@ namespace GameRes.Formats.ShapeShifter
             var pent = entry as PackedEntry;
             if (null == pent || !pent.IsPacked)
                 return input;
-            return new LzssStream (input);
+            using (var mem = new MemoryStream())
+            using (var lz = new LzssStream (input, LzssMode.Decompress, true))
+            {
+                lz.CopyTo (mem);
+                if (mem.Length == pent.UnpackedSize)
+                    return mem;
+            }
+            input.Position = 0;
+            var compr = new Kurumi.MpkCompression (input, (int)pent.UnpackedSize);
+            var data = compr.Unpack();
+            return new BinMemoryStream (data);
         }
 
         void DetectFileTypes (ArcView file, List<Entry> dir)

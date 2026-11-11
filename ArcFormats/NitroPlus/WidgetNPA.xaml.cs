@@ -17,7 +17,7 @@ namespace GameRes.Formats.GUI
             InitializeComponent();
             var keys = new string[] { arcStrings.ArcNoEncryption };
             Scheme.ItemsSource = keys.Concat (NpaOpener.KnownSchemes.Keys.OrderBy (x => x));
-            if (NpaTitleId.NotEncrypted == NpaOpener.GetTitleId (selected))
+            if (NpaVariant.General == NpaOpener.GetTitleId (selected))
                 Scheme.SelectedIndex = 0;
             else
                 Scheme.SelectedValue = selected;

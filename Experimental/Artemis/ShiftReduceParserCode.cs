@@ -87,7 +87,7 @@ namespace QUT.Gppg {
         protected PushdownPrefixState<TValue> ValueStack { get { return valueStack; } }
 
         /// <summary>
-        /// The stack of location value (YYLTYPE) varlues.
+        /// The stack of location value (YYLTYPE) values.
         /// </summary>
         protected PushdownPrefixState<TSpan> LocationStack { get { return locationStack; } }
 
@@ -495,7 +495,7 @@ namespace QUT.Gppg {
         protected void yyclearin() { NextToken = 0; }
 
         /// <summary>
-        /// Tradional YACC method. Clear the "recovering" flag.
+        /// Traditional YACC method. Clear the "recovering" flag.
         /// </summary>
         [SuppressMessage( "Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "yyerrok" )]
         [SuppressMessage( "Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "yyerrok" )]

@@ -123,6 +123,9 @@
   <data name="ButtonExtract" xml:space="preserve">
     <value>Извлечь</value>
   </data>
+  <data name="ButtonOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="CtxMenuClose" xml:space="preserve">
     <value>_Закрыть</value>
   </data>
@@ -216,6 +219,9 @@
   <data name="MsgExtractComplete" xml:space="preserve">
     <value>{0} извлечён в {1}</value>
   </data>
+  <data name="MsgExtractedFiles1" xml:space="preserve">
+    <value>Извлечён {0} файл</value>
+  </data>
   <data name="MsgExtractingArchive" xml:space="preserve">
     <value>Извлекаются файлы из {0}</value>
   </data>
@@ -270,6 +276,9 @@
   <data name="TextCreateArchiveError" xml:space="preserve">
     <value>Ошибка при создании архива</value>
   </data>
+  <data name="Type_directory" xml:space="preserve">
+    <value>&lt;DIR&gt;</value>
+  </data>
   <data name="TextEncoding" xml:space="preserve">
     <value>Кодировка текста</value>
   </data>
@@ -281,9 +290,6 @@
   </data>
   <data name="TextExtractTitle" xml:space="preserve">
     <value>Извлечь из архива</value>
-  </data>
-  <data name="TextOK" xml:space="preserve">
-    <value>OK</value>
   </data>
   <data name="TextParametersTitle" xml:space="preserve">
     <value>Параметры архива</value>
@@ -315,15 +321,6 @@
   <data name="MsgCreatingArchive" xml:space="preserve">
     <value>Создание архива {0}</value>
   </data>
-  <data name="Type_archive" xml:space="preserve">
-    <value>архив</value>
-  </data>
-  <data name="Type_image" xml:space="preserve">
-    <value>изображение</value>
-  </data>
-  <data name="Type_script" xml:space="preserve">
-    <value>сценарий</value>
-  </data>
   <data name="MenuOpen" xml:space="preserve">
     <value>Открыть...</value>
   </data>
@@ -342,23 +339,14 @@
   <data name="MenuHelp" xml:space="preserve">
     <value>_Справка</value>
   </data>
-  <data name="MsgExtractedFiles1" xml:space="preserve">
-    <value>Извлечён {0} файл</value>
-  </data>
   <data name="MsgExtractedFiles2" xml:space="preserve">
     <value>Извлечено {0} файла</value>
-  </data>
-  <data name="MsgExtractedFiles3" xml:space="preserve">
-    <value>Извлечено {0} файлов</value>
   </data>
   <data name="MsgFiles1" xml:space="preserve">
     <value>{0} файл</value>
   </data>
   <data name="MsgFiles2" xml:space="preserve">
     <value>{0} файла</value>
-  </data>
-  <data name="MsgFiles3" xml:space="preserve">
-    <value>{0} файлов</value>
   </data>
   <data name="MsgConfirmDeleteFiles" xml:space="preserve">
     <value>Вы действительно хотите удалить эти файлы?</value>
@@ -371,9 +359,6 @@
   </data>
   <data name="MsgDeletedItems2" xml:space="preserve">
     <value>Удалено {0} файла</value>
-  </data>
-  <data name="MsgDeletedItems3" xml:space="preserve">
-    <value>Удалено {0} файлов</value>
   </data>
   <data name="MenuFitWindow" xml:space="preserve">
     <value>Подогнать размер окна под изображение</value>
@@ -426,20 +411,17 @@
   <data name="TextAboutLicense" xml:space="preserve">
     <value>Лицензия</value>
   </data>
-  <data name="Type_audio" xml:space="preserve">
-    <value>звук</value>
-  </data>
   <data name="MsgUnableInterpretAudio" xml:space="preserve">
     <value>не удалось интерпретировать формат аудио</value>
-  </data>
-  <data name="LabelSkipFailures" xml:space="preserve">
-    <value>Пропускать файлы, не поддавшиеся конверсии.</value>
   </data>
   <data name="MsgNoMediaFiles" xml:space="preserve">
     <value>Среди выбранных файлов нет мультимедиа.</value>
   </data>
   <data name="TextAudioConversion" xml:space="preserve">
     <value>Аудио-файлы будут преобразованы в WAV, MP3 или OGG.</value>
+  </data>
+  <data name="LabelSkipFailures" xml:space="preserve">
+    <value>Пропускать файлы, не поддавшиеся конверсии.</value>
   </data>
   <data name="MsgNoMatching" xml:space="preserve">
     <value>Нет файлов, подходящих под маску "{0}"</value>
@@ -449,9 +431,6 @@
   </data>
   <data name="MsgSelectedFiles2" xml:space="preserve">
     <value>{0} файла добавлено к выбранным</value>
-  </data>
-  <data name="MsgSelectedFiles3" xml:space="preserve">
-    <value>{0} файлов добавлено к выбранным</value>
   </data>
   <data name="LabelEnterMask" xml:space="preserve">
     <value>Маска для имён файлов</value>
@@ -527,9 +506,6 @@
   <data name="MenuCheckUpdates" xml:space="preserve">
     <value>Проверить обновления...</value>
   </data>
-  <data name="MsgDownloadFailed" xml:space="preserve">
-    <value>Не удалось обновить базу форматов.</value>
-  </data>
   <data name="MsgNoUpdates" xml:space="preserve">
     <value>Обновления недоступны.</value>
   </data>
@@ -554,6 +530,9 @@
   <data name="TextVisitPage" xml:space="preserve">
     <value>Перейти на страницу загрузки</value>
   </data>
+  <data name="MsgDownloadFailed" xml:space="preserve">
+    <value>Не удалось обновить базу форматов.</value>
+  </data>
   <data name="ButtonApply" xml:space="preserve">
     <value>Применить</value>
   </data>
@@ -571,5 +550,35 @@
   </data>
   <data name="winDownScaleImage" xml:space="preserve">
     <value>Масштабировать большие изображения</value>
+  </data>
+  <data name="Type_archive" xml:space="preserve">
+    <value>архив</value>
+  </data>
+  <data name="Type_audio" xml:space="preserve">
+    <value>звук</value>
+  </data>
+  <data name="Type_image" xml:space="preserve">
+    <value>изображение</value>
+  </data>
+  <data name="Type_script" xml:space="preserve">
+    <value>сценарий</value>
+  </data>
+  <data name="TextOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="MsgExtractedFiles3" xml:space="preserve">
+    <value>Извлечено {0} файлов</value>
+  </data>
+  <data name="MsgFiles3" xml:space="preserve">
+    <value>{0} файлов</value>
+  </data>
+  <data name="MsgDeletedItems3" xml:space="preserve">
+    <value>Удалено {0} файлов</value>
+  </data>
+  <data name="MsgSelectedFiles3" xml:space="preserve">
+    <value>{0} файлов добавлено к выбранным</value>
+  </data>
+  <data name="Type_video" xml:space="preserve">
+    <value>Video</value>
   </data>
 </root>

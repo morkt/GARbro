@@ -49,14 +49,21 @@ namespace GameRes.Formats.Rugp
         }
 
         static readonly Dictionary<string, string> SupportedClasses = new Dictionary<string, string> {
-            { "CRip007",    "image" },
-            { "CRip",       "image" },
-            { "CS5i",       "image" },
-            { "CIcon",      "image" },
-            { "CRsa",       "script" },
-            { "CVmFunc",    "script" },
-            { "CWaveAudio", "audio" },
-            { "CrelicHicompAudio", "audio" },
+            { "CRip007",                "image" },
+            { "CRip",                   "image" },
+            { "CS5i",                   "image" },
+            { "CIcon",                  "image" },
+            { "CRioPng",                "image" },
+            { "CRsa",                   "script" },
+            { "CVmFunc",                "script" },
+            { "CSinpleText",            "script" },
+            { "CrUAVMScript",           "script" },
+            { "CrUAVMTextScript",       "script" },
+            { "CrUAVMTextScriptHeader", "script" },
+            { "CWaveAudio",             "audio" },
+            { "CrelicHicompAudio",      "audio" },
+            { "COggStream",             "audio" },
+            { "CWindowsMediaVideo",     "video" },
         };
 
         public override ArcFile TryOpen (ArcView file)
@@ -500,6 +507,11 @@ namespace GameRes.Formats.Rugp
                     {
                         node.Offset = (uint)id1;
                         node.Size   = (uint)id2;
+                        if ((long)node.Offset + node.Size > m_input.Length)
+                        {
+                            node.Offset = DecodeOffset (id1);
+                            node.Size = DecodeSize (id2);
+                        }
                     }
                 }
             }
@@ -967,6 +979,7 @@ namespace GameRes.Formats.Rugp
             { "CStdb", new CObjectFactory<CStdb>() },
             { "CObjectOcean", new CObjectFactory<CObjectOcean>() },
             { "CBoxOcean", new CObjectFactory<CBoxOcean>() },
+            { "CRio", new CObjectFactory<CRio>() },
         };
     }
 
@@ -1242,43 +1255,47 @@ namespace GameRes.Formats.Rugp
 
         void ReadRelic (CRioArchive arc)
         {
-            Version = arc.ReadInt32();
-            if (Version >= 0x24)
+            try
             {
-                field_24 = arc.ReadRioReference ("CDatabaseBase"); // UnivUI
-                field_28 = arc.ReadRioReference ("CDatabaseBase");
-                field_10 = arc.ReadRioReference ("CBoxOcean"); // rvmm
-                field_14 = arc.ReadRioReference ("CObjectOcean"); // UnivUI
-                field_18 = arc.ReadRioReference ("CObjectOcean"); // UnivUI
-                field_0C = arc.ReadRioReference ("CProcessOcean"); // Vm60
-                if (Version >= 0x25)
-                    field_30 = arc.ReadRioReference ("CStdb"); // UnivUI
-                if (Version >= 0x26)
-                    field_2C = arc.ReadRioReference ("CRio"); // UnivUI
-                if (Version >= 0x27)
-                    field_1C = arc.ReadRioReference ("CRio");
-                if (Version >= 0x29)
-                    field_38 = arc.ReadRioReference ("CRio");
-                field_34.Deserialize (arc);
-                if (Version >= 0x28)
-                    field_08 = arc.ReadRioReference ("CRio");
-            }
-            else if (Version >= 0x20)
-            {
-                field_0C = arc.ReadRioReference ("CProcessOcean");
-                field_10 = arc.ReadRioReference ("CBoxOcean");
-                field_14 = arc.ReadRioReference ("CObjectOcean");
-                field_18 = arc.ReadRioReference ("CObjectOcean");
-                field_1C = arc.ReadRioReference ("CSoundManEx");
-                if (Version >= 0x23)
-                    field_24 = arc.ReadRioReference ("CDatabaseBase");
-                if (Version >= 0x22)
+                Version = arc.ReadInt32();
+                if (Version >= 0x24)
+                {
+                    field_24 = arc.ReadRioReference ("CDatabaseBase"); // UnivUI
                     field_28 = arc.ReadRioReference ("CDatabaseBase");
-                if (Version >= 0x21)
+                    field_10 = arc.ReadRioReference ("CBoxOcean"); // rvmm
+                    field_14 = arc.ReadRioReference ("CObjectOcean"); // UnivUI
+                    field_18 = arc.ReadRioReference ("CObjectOcean"); // UnivUI
+                    field_0C = arc.ReadRioReference ("CProcessOcean"); // Vm60
+                    if (Version >= 0x25)
+                        field_30 = arc.ReadRioReference ("CStdb"); // UnivUI
+                    if (Version >= 0x26)
+                        field_2C = arc.ReadRioReference ("CRio"); // UnivUI
+                    if (Version >= 0x27)
+                        field_1C = arc.ReadRioReference ("CRio");
+                    if (Version >= 0x29)
+                        field_38 = arc.ReadRioReference ("CRio");
                     field_34.Deserialize (arc);
+                    if (Version >= 0x28)
+                        field_08 = arc.ReadRioReference ("CRio");
+                }
+                else if (Version >= 0x20)
+                {
+                    field_0C = arc.ReadRioReference ("CProcessOcean");
+                    field_10 = arc.ReadRioReference ("CBoxOcean");
+                    field_14 = arc.ReadRioReference ("CObjectOcean");
+                    field_18 = arc.ReadRioReference ("CObjectOcean");
+                    field_1C = arc.ReadRioReference ("CSoundManEx");
+                    if (Version >= 0x23)
+                        field_24 = arc.ReadRioReference ("CDatabaseBase");
+                    if (Version >= 0x22)
+                        field_28 = arc.ReadRioReference ("CDatabaseBase");
+                    if (Version >= 0x21)
+                        field_34.Deserialize (arc);
+                }
+                else
+                    throw new NotSupportedException (string.Format ("rUGP schema {0} not supported", Version));
             }
-            else
-                throw new NotSupportedException (string.Format ("rUGP schema {0} not supported", Version));
+            catch { /* ignore errors */ }
         }
     }
 
@@ -1433,6 +1450,13 @@ namespace GameRes.Formats.Rugp
     }
 
     internal class CObjectOcean : CObject
+    {
+        public override void Deserialize (CRioArchive arc)
+        {
+        }
+    }
+
+    internal class CRio : CObject
     {
         public override void Deserialize (CRioArchive arc)
         {

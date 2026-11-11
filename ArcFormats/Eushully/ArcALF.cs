@@ -27,8 +27,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using GameRes.Utility;
 using GameRes.Compression;
+using System.Text;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace GameRes.Formats.Eushully
 {
@@ -63,14 +65,63 @@ namespace GameRes.Formats.Eushully
             return null;
         }
 
+        static internal string GetAAIName(string alf_name)
+        {
+            const string pattern = @"^(APPEND(?:[0-9]+)?)(?:_[0-9]+)?\.ALF$";
+            var match = Regex.Match(alf_name, pattern);
+            if (match.Success)
+                return match.Groups[1].Value;
+            return alf_name;
+        }
+
         internal IEnumerable<string> GetIndexNames (string alf_name)
         {
+            yield return "sys5ini.bin";
             yield return "sys4ini.bin";
             yield return "sys3ini.bin";
-            yield return Path.ChangeExtension (alf_name, "AAI");
+            yield return Path.ChangeExtension (GetAAIName(alf_name), "AAI");
         }
 
         Tuple<string, Dictionary<string, List<Entry>>> LastAccessedIndex;
+
+
+        internal class AGEArchiveInfo
+        {
+            public readonly byte[] signature;
+            public readonly int offset;
+            public readonly bool isNameUnicode;
+            public readonly bool isLZSSCompressed;
+
+            public AGEArchiveInfo(byte[] Signature, int Offset, bool IsNameUnicode, bool IsLZSSCompressed)
+            {
+                signature = Signature;
+                offset = Offset;
+                isNameUnicode = IsNameUnicode;
+                isLZSSCompressed = IsLZSSCompressed;
+            }
+        }
+
+        static AGEArchiveInfo[] infos =
+        {
+            new AGEArchiveInfo(Encoding.ASCII.GetBytes("S3IN"), 0x12C, false, false),
+            new AGEArchiveInfo(Encoding.ASCII.GetBytes("S3IC"), 0x134, false, true),
+            new AGEArchiveInfo(Encoding.ASCII.GetBytes("S3AC"), 0x114, false, true),
+            new AGEArchiveInfo(Encoding.ASCII.GetBytes("S4IC"), 0x134, false, true),
+            new AGEArchiveInfo(Encoding.ASCII.GetBytes("S4AC"), 0x114, false, true),
+            new AGEArchiveInfo(Encoding.Unicode.GetBytes("S5IC"), 0x224, true, true),
+            new AGEArchiveInfo(Encoding.Unicode.GetBytes("S5AC"), 0x21C, true, true)
+        };
+
+        static internal AGEArchiveInfo GetAGEArcInfo(ArcView view)
+        {
+            byte[] sig = view.View.ReadBytes(0, 8);
+            var siglow = sig.Take(4);
+            var res = infos.Where(i => Enumerable.SequenceEqual(i.signature, siglow));
+            if (res.Any()) return res.First();
+            res = infos.Where(i => Enumerable.SequenceEqual(i.signature, sig));
+            if (res.Any()) return res.First();
+            return null;
+        }
 
         List<Entry> ReadIndex (string ini_file, string arc_name)
         {
@@ -81,24 +132,21 @@ namespace GameRes.Formats.Eushully
                 using (var ini = VFS.OpenView (ini_file))
                 {
                     IBinaryStream index;
-                    bool is_append = ini.View.AsciiEqual (0, "S4AC");
-                    if (is_append || ini.View.AsciiEqual (0, "S4IC") || ini.View.AsciiEqual (0, "S3IC"))
+
+                    AGEArchiveInfo info = GetAGEArcInfo (ini);
+                    if (info == null) return null;
+
+                    if (info.isLZSSCompressed)
                     {
-                        uint offset = is_append ? 0x114u : 0x134u;
-                        uint packed_size = ini.View.ReadUInt32 (offset);
-                        var packed = ini.CreateStream (offset+4, packed_size);
-                        var unpacked = new LzssStream (packed);
-                        index = new BinaryStream (unpacked, ini_file);
-                    }
-                    else if (ini.View.AsciiEqual (0, "S3IN"))
-                    {
-                        index = ini.CreateStream (0x12C);
+                        index = new BinaryStream(new LzssStream(ini.CreateStream(info.offset + 4, (uint)ini.View.ReadInt32(info.offset))), ini_file);
                     }
                     else
-                        return null;
+                    {
+                        index = ini.CreateStream(info.offset);
+                    }
                     using (index)
                     {
-                        var file_table = ReadSysIni (index);
+                        var file_table = ReadSysIni (index, info);
                         if (null == file_table)
                             return null;
                         LastAccessedIndex = Tuple.Create (ini_file, file_table);
@@ -110,7 +158,7 @@ namespace GameRes.Formats.Eushully
             return dir;
         }
 
-        internal Dictionary<string, List<Entry>> ReadSysIni (IBinaryStream index)
+        internal Dictionary<string, List<Entry>> ReadSysIni (IBinaryStream index, AGEArchiveInfo info)
         {
             int arc_count = index.ReadInt32();
             if (!IsSaneCount (arc_count))
@@ -119,7 +167,8 @@ namespace GameRes.Formats.Eushully
             var arc_list = new List<Entry>[arc_count];
             for (int i = 0; i < arc_count; ++i)
             {
-                var name = index.ReadCString (0x100);
+                string name = info.isNameUnicode ? index.ReadCString(0x200, Encoding.Unicode) : index.ReadCString(0x100);
+
                 var file_list = new List<Entry>();
                 file_table.Add (name, file_list);
                 arc_list[i] = file_list;
@@ -127,9 +176,10 @@ namespace GameRes.Formats.Eushully
             int file_count = index.ReadInt32();
             if (!IsSaneCount (file_count))
                 return null;
+
             for (int i = 0; i < file_count; ++i)
             {
-                var name = index.ReadCString (0x40);
+                string name = info.isNameUnicode ? index.ReadCString(0x80, Encoding.Unicode) : index.ReadCString(0x40);
                 int arc_id = index.ReadInt32();
                 if (arc_id < 0 || arc_id >= arc_list.Length)
                     return null;

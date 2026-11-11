@@ -70,7 +70,7 @@ namespace GameRes.Formats.Misc
                 return Bmp.Read (input, info);
         }
 
-        IBinaryStream OpenLzss (IBinaryStream file, int unpacked_size, bool is_compressed)
+        protected virtual IBinaryStream OpenLzss (IBinaryStream file, int unpacked_size, bool is_compressed)
         {
             if (is_compressed)
             {
@@ -91,7 +91,7 @@ namespace GameRes.Formats.Misc
             throw new System.NotImplementedException ("LzsFormat.Write not implemented");
         }
 
-        void Decompress (IBinaryStream input, byte[] output)
+        protected void Decompress (IBinaryStream input, byte[] output)
         {
             int bit_mask = 0;
             int dst = 0;

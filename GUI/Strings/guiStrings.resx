@@ -447,7 +447,7 @@ Overwrite?</value>
     <value>Assign file type</value>
   </data>
   <data name="Type_NONE" xml:space="preserve">
-    <value>none</value>
+    <value>NONE</value>
   </data>
   <data name="LabelDestinationDir" xml:space="preserve">
     <value>Destination directory</value>
@@ -550,5 +550,23 @@ Overwrite?</value>
   </data>
   <data name="winDownScaleImage" xml:space="preserve">
     <value>Scale large images to fit window</value>
+  </data>
+  <data name="Type_archive" xml:space="preserve">
+    <value>Archive</value>
+  </data>
+  <data name="Type_audio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Type_image" xml:space="preserve">
+    <value>Image</value>
+  </data>
+  <data name="Type_script" xml:space="preserve">
+    <value>Script</value>
+  </data>
+  <data name="TextOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Type_video" xml:space="preserve">
+    <value>Video</value>
   </data>
 </root>

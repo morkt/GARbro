@@ -51,7 +51,7 @@ namespace GameRes.Formats.Selen
 
         public override void Write (SoundInput source, Stream output)
         {
-            throw new System.NotImplementedException ("EdimFormat.Write not implemenented");
+            throw new System.NotImplementedException ("EdimFormat.Write not implemented");
         }
     }
 }

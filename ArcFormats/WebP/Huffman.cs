@@ -1,6 +1,6 @@
 //! \file       Huffman.cs
 //! \date       Wed May 18 22:19:23 2016
-//! \brief      Google WEBP Huffman compression implementaion.
+//! \brief      Google WEBP Huffman compression implementation.
 /*
 Copyright (c) 2010, Google Inc. All rights reserved.
 

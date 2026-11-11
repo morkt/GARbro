@@ -39,7 +39,7 @@ namespace GameRes.Formats.Sviu
 
         public override SoundInput TryOpen (IBinaryStream file)
         {
-            if (file.Signature != 0)
+            if (file.Signature != 0 && file.Signature != 0x47474F4B) // 'KOGG'
                 return null;
             var header = file.ReadHeader (8);
             int header_size = header.ToInt32 (4);

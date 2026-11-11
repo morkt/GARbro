@@ -142,7 +142,7 @@ namespace GameRes.Formats.Vorbis
         int     SerialNo;
         int     PageNo;
         long    PacketNo;       // sequence number for decode; the framing knows where there's a hole in the data,
-                                // but we need coupling so that the codec (which is in a seperate abstraction
+                                // but we need coupling so that the codec (which is in a separate abstraction
                                 // layer) also knows about the gap
         long    GranulePos;
 

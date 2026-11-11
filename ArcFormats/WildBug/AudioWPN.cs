@@ -72,7 +72,7 @@ namespace GameRes.Formats.WildBug
 
         public override void Write (SoundInput source, Stream output)
         {
-            throw new System.NotImplementedException ("WpnFormat.Write not implemenented");
+            throw new System.NotImplementedException ("WpnFormat.Write not implemented");
         }
     }
 }

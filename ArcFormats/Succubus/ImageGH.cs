@@ -40,6 +40,8 @@ namespace GameRes.Formats.Succubus
         public uint PaletteOffset;
         public uint DataOffset;
         public int  ChunkCount;
+        public int  OpaqueCount;
+        public int  IndexBits;
     }
 
     [Export(typeof(ImageFormat))]
@@ -75,6 +77,19 @@ namespace GameRes.Formats.Succubus
             {
                 info.PaletteOffset = header.ToUInt32 (0x18);
                 info.DataOffset = header.ToUInt32 (0x24);
+                info.OpaqueCount = header.ToInt32 (0x20);
+                // the palette size is derived from the offsets; declared counts can be
+                // rounded up (253 -> 254), so they are only used as fallbacks
+                long palette_size = (long)info.DataOffset - info.PaletteOffset;
+                int colors = palette_size > 0 ? (int)(palette_size / 3) : 0;
+                if (colors < 1 || colors > 0x1000)
+                {
+                    uint declared = header.ToUInt32 (0x1C);
+                    colors = declared >= 1 && declared <= 0x1000 ? (int)declared : (int)info.Colors;
+                }
+                info.Colors = colors;
+                int max_colors = header.ToUInt16 (0x10);
+                info.IndexBits = GhpReader.GetColorDepth (max_colors > 0 ? max_colors : colors);
             }
             return info;
         }
@@ -179,19 +194,101 @@ namespace GameRes.Formats.Succubus
             }
         }
 
+        // GHP3 counts position-advance events; intervening steps can write more pixels.
+        // Gaps are filled with the nearest preceding value.
         void Unpack3 ()
         {
-            int image_size = (m_stride * (int)m_info.Height + 0x1F) & ~0x1F;
-            int table_size = image_size >> 3;
-            var rows_table = new int[m_info.Height];
-            for (uint i = 0; i < m_info.Height; ++i)
+            int width = (int)m_info.Width;
+            int height = (int)m_info.Height;
+            int bits = m_info.IndexBits;
+            var repeat_table = new uint[(width * height + 31) / 32];
+            int rep = 0;
+            int step = 5;
+            int x = 0, y = 0;
+            int next_x = 0, next_y = 0;
+            int count = 0;
+            long guard = 32L * ((long)width * height + Math.Abs ((long)m_info.OpaqueCount)) + 0x1000;
+            int pix = bits > 0 ? ReadBits (bits) : 0;
+            while (count < m_info.OpaqueCount)
             {
-                int line_pos = (int)i * m_stride;
-                uint y = m_info.Height - i;
-                rows_table[y - 1] = line_pos;
+                if (--guard < 0) // corrupt stream
+                    throw new InvalidFormatException ();
+                if (rep <= 0)
+                {
+                    int ctl = ReadBits (2);
+                    if (ctl > 2)
+                        rep = ReadCount3 () - 2;
+                    else
+                        step = ReadBits (1) + 2 * ctl;
+                }
+                else
+                {
+                    --rep;
+                }
+                if (x >= 0 && x < width && y >= 0 && y < height)
+                {
+                    m_output[m_stride * y + x] = (byte)pix;
+                    int rpos = width * y + x;
+                    repeat_table[rpos >> 5] |= 1u << (rpos & 0x1F);
+                }
+                if (step >= 5)
+                {
+                    if (++count == m_info.OpaqueCount)
+                        break;
+                    int pos = ReadPos3 () + next_x;
+                    next_y += Math.DivRem (pos, width, out next_x);
+                    pix = bits > 0 ? ReadBits (bits) : 0;
+                    y = next_y;
+                    x = next_x;
+                }
+                else
+                {
+                    ++y;
+                    x += step - 2;
+                }
             }
-            throw new NotImplementedException();
+            pix = 0;
+            int src = 0;
+            uint bitmap = 0;
+            for (y = 0; y < height; ++y)
+            for (x = 0; x < width; ++x)
+            {
+                if ((src & 0x1F) == 0)
+                    bitmap = repeat_table[src >> 5];
+                if ((bitmap & 1) != 0)
+                    pix = m_output[m_stride * y + x];
+                else
+                    m_output[m_stride * y + x] = (byte)pix;
+                bitmap >>= 1;
+                ++src;
+            }
         }
+
+        // repeat length prefix code, returns the run length + 2
+        int ReadCount3 ()
+        {
+            int index = ReadBitCount ();
+            if (0 == index)
+                return 3;
+            if (index >= Count3Bits.Length)
+                throw new InvalidFormatException ();
+            return Count3Base[index] + ReadBits (Count3Bits[index]) + 4;
+        }
+
+        // position prefix code, returns the distance + 1
+        int ReadPos3 ()
+        {
+            int index = ReadBitCount ();
+            if (index >= Pos3Bits.Length)
+                throw new InvalidFormatException ();
+            return Pos3Base[index] + ReadBits (Pos3Bits[index]) + 1;
+        }
+
+        // The prefix table ends before the separate pixel mask table at 0x1002E188.
+        static readonly int[] Count3Bits = { 0, 2, 4, 6, 8, 12, 16, 18 };
+        static readonly int[] Count3Base = { 0, 0, 4, 20, 84, 340, 4436, 69972 };
+        static readonly int[]   Pos3Bits = { 2, 4, 6, 8, 12, 16, 18 };
+        static readonly int[]   Pos3Base = { 0, 4, 20, 84, 340, 4436, 69972 };
 
         internal static int GetColorDepth (int colors)
         {

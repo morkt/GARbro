@@ -24,33 +24,45 @@
 //
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace GameRes.Utility
 {
     public static class Binary
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint BigEndian (uint u)
         {
             return u << 24 | (u & 0xff00) << 8 | (u & 0xff0000) >> 8 | u >> 24;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BigEndian (int i)
         {
             return (int)BigEndian ((uint)i);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort BigEndian (ushort u)
         {
             return (ushort)(u << 8 | u >> 8);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static short BigEndian (short i)
         {
             return (short)BigEndian ((ushort)i);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong BigEndian (ulong u)
         {
             return (ulong)BigEndian((uint)(u & 0xffffffff)) << 32
                  | (ulong)BigEndian((uint)(u >> 32));
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long BigEndian (long i)
         {
             return (long)BigEndian ((ulong)i);
@@ -113,41 +125,52 @@ namespace GameRes.Utility
             return GetCString (data, index, length_limit, Encodings.cp932);
         }
 
+        public static string GetCString (byte[] data, int index, Encoding enc)
+        {
+            return GetCString (data, index, data.Length - index, enc);
+        }
+
         public static string GetCString (byte[] data, int index)
         {
             return GetCString (data, index, data.Length - index, Encodings.cp932);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint RotR (uint v, int count)
         {
             count &= 0x1F;
             return v >> count | v << (32-count);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint RotL (uint v, int count)
         {
             count &= 0x1F;
             return v << count | v >> (32-count);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong RotR (ulong v, int count)
         {
             count &= 0x3F;
             return v >> count | v << (64-count);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong RotL (ulong v, int count)
         {
             count &= 0x3F;
             return v << count | v >> (64-count);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte RotByteR (byte v, int count)
         {
             count &= 7;
             return (byte)(v >> count | v << (8-count));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte RotByteL (byte v, int count)
         {
             count &= 7;
@@ -157,32 +180,62 @@ namespace GameRes.Utility
 
     public static class BigEndian
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort ToUInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (ushort)(value[index] << 8 | value[index+1]);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static short ToInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (short)(value[index] << 8 | value[index+1]);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ToUInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (uint)(value[index] << 24 | value[index+1] << 16 | value[index+2] << 8 | value[index+3]);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ToInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (int)ToUInt32 (value, index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ToUInt16 (byte[] value, int index)
+        {
+            return (ushort)(value[index] << 8 | value[index+1]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static short ToInt16 (byte[] value, int index)
+        {
+            return (short)(value[index] << 8 | value[index+1]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ToUInt32 (byte[] value, int index)
+        {
+            return (uint)(value[index] << 24 | value[index+1] << 16 | value[index+2] << 8 | value[index+3]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ToInt32 (byte[] value, int index)
+        {
+            return (int)ToUInt32 (value, index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (ushort value, byte[] buf, int index)
         {
             buf[index]   = (byte)(value >> 8);
             buf[index+1] = (byte)(value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (uint value, byte[] buf, int index)
         {
             buf[index]   = (byte)(value >> 24);
@@ -191,22 +244,26 @@ namespace GameRes.Utility
             buf[index+3] = (byte)(value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (ulong value, byte[] buf, int index)
         {
             Pack ((uint)(value >> 32), buf, index);
             Pack ((uint)value, buf, index+4);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (short value, byte[] buf, int index)
         {
             Pack ((ushort)value, buf, index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (int value, byte[] buf, int index)
         {
             Pack ((uint)value, buf, index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (long value, byte[] buf, int index)
         {
             Pack ((ulong)value, buf, index);
@@ -215,42 +272,86 @@ namespace GameRes.Utility
 
     public static class LittleEndian
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort ToUInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (ushort)(value[index] | value[index+1] << 8);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static short ToInt16<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (short)(value[index] | value[index+1] << 8);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ToUInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (uint)(value[index] | value[index+1] << 8 | value[index+2] << 16 | value[index+3] << 24);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ToInt32<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (int)ToUInt32 (value, index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ToUInt64<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (ulong)ToUInt32 (value, index) | ((ulong)ToUInt32 (value, index+4) << 32);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long ToInt64<TArray> (TArray value, int index) where TArray : IList<byte>
         {
             return (long)ToUInt64 (value, index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ToUInt16 (byte[] value, int index)
+        {
+            return (ushort)(value[index] | value[index+1] << 8);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static short ToInt16 (byte[] value, int index)
+        {
+            return (short)(value[index] | value[index+1] << 8);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ToUInt32 (byte[] value, int index)
+        {
+            return (uint)(value[index] | value[index+1] << 8 | value[index+2] << 16 | value[index+3] << 24);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ToInt32 (byte[] value, int index)
+        {
+            return (int)ToUInt32 (value, index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToUInt64 (byte[] value, int index)
+        {
+            return (ulong)ToUInt32 (value, index) | ((ulong)ToUInt32 (value, index+4) << 32);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ToInt64 (byte[] value, int index)
+        {
+            return (long)ToUInt64 (value, index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (ushort value, byte[] buf, int index)
         {
             buf[index]   = (byte)(value);
             buf[index+1] = (byte)(value >> 8);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (uint value, byte[] buf, int index)
         {
             buf[index]   = (byte)(value);
@@ -259,22 +360,26 @@ namespace GameRes.Utility
             buf[index+3] = (byte)(value >> 24);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (ulong value, byte[] buf, int index)
         {
             Pack ((uint)value, buf, index);
             Pack ((uint)(value >> 32), buf, index+4);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (short value, byte[] buf, int index)
         {
             Pack ((ushort)value, buf, index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (int value, byte[] buf, int index)
         {
             Pack ((uint)value, buf, index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Pack (long value, byte[] buf, int index)
         {
             Pack ((ulong)value, buf, index);

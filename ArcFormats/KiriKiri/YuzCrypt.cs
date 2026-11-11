@@ -119,6 +119,9 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class RiddleCxCrypt : NanaCxCrypt
     {
+        public uint m_key1 = 0xAAAAAAAA;
+        public uint m_key2 = 0x55555555;
+
         public RiddleCxCrypt (CxScheme scheme, uint seed) : base (scheme, seed)
         {
         }
@@ -166,12 +169,12 @@ namespace GameRes.Formats.KiriKiri
             }
         }
 
-        internal ulong GetKeyFromHash (uint hash)
+        internal virtual ulong GetKeyFromHash (uint hash)
         {
-            uint lo = hash ^ 0x55555555;
+            uint lo = hash ^ m_key2;
             uint hi = (hash << 13) ^ hash;
             hi ^= hi >> 17;
-            hi ^= (hi << 5) ^ 0xAAAAAAAA;
+            hi ^= (hi << 5) ^ m_key1;
             return (ulong)hi << 32 | lo;
         }
 

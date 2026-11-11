@@ -439,8 +439,7 @@
     <value>选择文件</value>
   </data>
   <data name="TextErrorExtracting" xml:space="preserve">
-    <value>提取{0}时
-	发生错误。
+    <value>提取{0}时发生错误。
 {1}</value>
   </data>
   <data name="CtxMenuFileType" xml:space="preserve">
@@ -455,6 +454,9 @@
   <data name="MsgPlaying" xml:space="preserve">
     <value>正在播放 {0} / {3} / {2}bps / {1}Hz</value>
     <comment>{0}=filename, {1}=sampling rate, {2}=bitrate, {3}=total time </comment>
+  </data>
+  <data name="LabelDevSite" xml:space="preserve">
+    <value>项目主页</value>
   </data>
   <data name="CtxMenuSelectByMask" xml:space="preserve">
     <value>用代号选择文件……</value>
@@ -503,9 +505,6 @@
   <data name="MenuCheckUpdates" xml:space="preserve">
     <value>检查更新……</value>
   </data>
-  <data name="MsgDownloadFailed" xml:space="preserve">
-    <value>更新下载失败。</value>
-  </data>
   <data name="MsgNoUpdates" xml:space="preserve">
     <value>无可用更新。</value>
   </data>
@@ -530,6 +529,9 @@
   <data name="TextVisitPage" xml:space="preserve">
     <value>访问下载页面</value>
   </data>
+  <data name="MsgDownloadFailed" xml:space="preserve">
+    <value>更新下载失败。</value>
+  </data>
   <data name="ButtonApply" xml:space="preserve">
     <value>应用</value>
   </data>
@@ -541,6 +543,12 @@
   </data>
   <data name="TextPreferences" xml:space="preserve">
     <value>偏好设置</value>
+  </data>
+  <data name="TextViewer" xml:space="preserve">
+    <value>图像查看器</value>
+  </data>
+  <data name="winDownScaleImage" xml:space="preserve">
+    <value>缩放大图以适应窗口</value>
   </data>
   <data name="Type_archive" xml:space="preserve">
     <value>档案</value>
@@ -554,10 +562,10 @@
   <data name="Type_script" xml:space="preserve">
     <value>脚本</value>
   </data>
-  <data name="TextViewer" xml:space="preserve">
-    <value>图像查看器</value>
+  <data name="TextOK" xml:space="preserve">
+    <value>确认</value>
   </data>
-  <data name="winDownScaleImage" xml:space="preserve">
-    <value>缩放大图以适应窗口</value>
+  <data name="Type_video" xml:space="preserve">
+    <value>视频</value>
   </data>
 </root>

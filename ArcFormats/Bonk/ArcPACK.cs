@@ -37,7 +37,7 @@ namespace GameRes.Formats.Bonk
     public class PackOpener : ArchiveFormat
     {
         public override string         Tag { get { return "PACK/BONK"; } }
-        public override string Description { get { return "Bonk! Game Stduio resource archive"; } }
+        public override string Description { get { return "Bonk! Game Studio resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return false; } }
@@ -76,7 +76,7 @@ namespace GameRes.Formats.Bonk
 
         IEnumerable<IndexRecord> LookupIndex (ArcView file)
         {
-            var arc_name = Path.GetFileName (file.Name);
+            var arc_name = Path.GetFileName (file.Name).ToLower();
             if (!arc_name.StartsWith ("data_") || !arc_name.EndsWith (".pack"))
                 return null;
             ArchiveRecord arc_record;

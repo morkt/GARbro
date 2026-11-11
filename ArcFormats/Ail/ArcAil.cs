@@ -157,7 +157,7 @@ namespace GameRes.Formats.Ail
         }
 
         /// <summary>
-        /// Custom LZSS decompression with frame pre-initialization and reveresed control bits meaning.
+        /// Custom LZSS decompression with frame pre-initialization and reversed control bits meaning.
         /// </summary>
         static void LzssUnpack (Stream input, byte[] output)
         {

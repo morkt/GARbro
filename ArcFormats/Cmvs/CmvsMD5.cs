@@ -158,18 +158,18 @@ namespace GameRes.Formats.Cmvs
     {
         protected override void InitState ()
         {
-            m_state[0] = 0x67452301;
-            m_state[1] = 0xEFCDAB89;
-            m_state[2] = 0x98BADCFE;
-            m_state[3] = 0x10325476;
+            m_state[0] = 0x64FE9A8C;
+            m_state[1] = 0xC2F93EA8;
+            m_state[2] = 0xEF81BA5D;
+            m_state[3] = 0x92C8A72F;
         }
 
         protected override void SetResult (uint[] data)
         {
-            data[0] = m_state[0];
-            data[1] = m_state[1];
-            data[2] = m_state[2];
-            data[3] = m_state[3];
+            data[0] = m_state[1] ^ 0x49876325;
+            data[1] = m_state[2] + 0x54F46D7C;
+            data[2] = m_state[3] ^ 0xAC7958B7;
+            data[3] = m_state[0] + 0x1C0638BD;
         }
     }
 

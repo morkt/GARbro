@@ -49,6 +49,12 @@ namespace GameRes.Formats.YuRis
         public uint     CheckSum;
     }
 
+    public enum YpfCompression 
+    {
+        Zlib = 0,
+        Snappy = 1,
+    }
+
     [Serializable]
     public class YpfScheme
     {
@@ -57,6 +63,7 @@ namespace GameRes.Formats.YuRis
         public bool     GuessKey;
         public uint     ExtraHeaderSize;
         public uint     ScriptKey;
+        public YpfCompression CompressType;
 
         public YpfScheme () { }
 
@@ -67,6 +74,7 @@ namespace GameRes.Formats.YuRis
             GuessKey = false;
             ExtraHeaderSize = 0;
             ScriptKey = script_key;
+            CompressType = YpfCompression.Zlib;
         }
 
         public YpfScheme (byte[] swap_table)
@@ -74,17 +82,26 @@ namespace GameRes.Formats.YuRis
             SwapTable = swap_table;
             GuessKey = true;
             ExtraHeaderSize = 0;
+            CompressType = YpfCompression.Zlib;
         }
     }
 
     public class YpfArchive : ArcFile
     {
         public uint     ScriptKey;
+        public YpfCompression CompressType;
 
         public YpfArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, uint script_key)
             : base (arc, impl, dir)
         {
             ScriptKey = script_key;
+        }
+
+        public YpfArchive(ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, uint script_key, YpfCompression compress_type) 
+            : base(arc, impl, dir)
+        {
+            ScriptKey = script_key;
+            CompressType = compress_type;
         }
     }
 
@@ -143,7 +160,7 @@ namespace GameRes.Formats.YuRis
                 return null;
 
             if (scheme.ScriptKey != 0)
-                return new YpfArchive (file, this, dir, scheme.ScriptKey);
+                return new YpfArchive (file, this, dir, scheme.ScriptKey, scheme.CompressType);
             else
                 return new ArcFile (file, this, dir);
         }
@@ -153,8 +170,33 @@ namespace GameRes.Formats.YuRis
             var packed_entry = entry as PackedEntry;
             var ypf = arc as YpfArchive;
             Stream input = base.OpenEntry (arc, entry);
-            if (null != packed_entry && packed_entry.IsPacked)
-                input = new ZLibStream (input, CompressionMode.Decompress);
+            if (null != packed_entry && packed_entry.IsPacked) 
+            {
+                if(ypf == null) 
+                {
+                    input = new ZLibStream(input, CompressionMode.Decompress);
+                }
+                else
+                {
+                    switch (ypf.CompressType) 
+                    {
+                        case YpfCompression.Snappy: 
+                        {
+                            var compress_data = new byte[entry.Size];
+                            input.Read(compress_data, 0, compress_data.Length);
+                            var decompress_data = Snappier.Snappy.DecompressToArray (compress_data);
+                            input = new BinMemoryStream(decompress_data, entry.Name);
+                            break;
+                        }
+                        case YpfCompression.Zlib:
+                        default: 
+                        {
+                            input = new ZLibStream(input, CompressionMode.Decompress);
+                            break;
+                        }
+                    }
+                }
+            }
             uint unpacked_size = null == packed_entry ? entry.Size : packed_entry.UnpackedSize;
             if (null == ypf || 0 == ypf.ScriptKey || unpacked_size <= 0x20
                 || !entry.Name.HasExtension (".ybn"))
@@ -440,7 +482,7 @@ namespace GameRes.Formats.YuRis
                 m_version = version;
             }
             // int32-name_checksum, byte-name_count, *-name, byte-file_type
-	        // byte-pack_flag, int32-size, int32-packed_size, int32-offset, int32-file_checksum
+            // byte-pack_flag, int32-size, int32-packed_size, int32-offset, int32-file_checksum
 
             public List<Entry> ScanDir (YpfScheme scheme, long base_offset = 0)
             {
@@ -465,14 +507,23 @@ namespace GameRes.Formats.YuRis
                         return null;
                     byte[] raw_name = m_file.View.ReadBytes (dir_offset, name_size);
                     dir_offset += name_size;
-                    if (guess_key)
+                    for (int ext_size = 4; ext_size <= 5; ++ext_size)
                     {
-                        if (name_size < 4)
-                            return null;
-                        // assume filename contains '.' and 3-characters extension.
-                        key = (byte)(raw_name[name_size-4] ^ '.');
-                        guess_key = false;
+                        if (!guess_key || name_size < ext_size)
+                            break;
+                        key = (byte)(raw_name[name_size - ext_size] ^ '.');
+                        int c = 1;
+                        for (; c < ext_size; ++c)
+                        {
+                            char t = (char)(raw_name[name_size - c] ^ key);
+                            if (!char.IsLetter (t))
+                                break;
+                        }
+                        if (c == ext_size)
+                            guess_key = false;
                     }
+                    if (guess_key)
+                        return null;
                     for (uint i = 0; i < name_size; ++i)
                     {
                         raw_name[i] ^= key;

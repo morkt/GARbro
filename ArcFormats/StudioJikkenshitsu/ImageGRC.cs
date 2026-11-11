@@ -1,6 +1,6 @@
 //! \file       ImageGRC.cs
 //! \date       2019 Mar 09
-//! \brief      Sudio
+//! \brief      Studio Jikkenshitsu image format.
 //
 // Copyright (C) 2019 by morkt
 //

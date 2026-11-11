@@ -1,6 +1,6 @@
 //! \file       ImageBGRA.cs
 //! \date       Tue Aug 18 15:56:18 2015
-//! \brief      G2 enging image format.
+//! \brief      G2 engine image format.
 //
 // Copyright (C) 2015 by morkt
 //

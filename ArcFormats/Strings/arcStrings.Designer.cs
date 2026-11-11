@@ -19,7 +19,7 @@ namespace GameRes.Formats.Strings {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class arcStrings {
@@ -543,7 +543,7 @@ namespace GameRes.Formats.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Number of files exceedes archive limit..
+        ///   Looks up a localized string similar to Number of files exceeds archive limit..
         /// </summary>
         public static string MsgTooManyFiles {
             get {
@@ -749,6 +749,16 @@ namespace GameRes.Formats.Strings {
         public static string SGLabelEncoding {
             get {
                 return ResourceManager.GetString("SGLabelEncoding", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose Tim2 image alpha format.
+        ///It can&apos;t be read correctly from the file..
+        /// </summary>
+        public static string Tim2AlphaFormat {
+            get {
+                return ResourceManager.GetString("Tim2AlphaFormat", resourceCulture);
             }
         }
         

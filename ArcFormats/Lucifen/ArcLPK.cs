@@ -122,6 +122,7 @@ namespace GameRes.Formats.Lucifen
         public bool IsEncrypted;
         public bool PackedEntries;
         public bool WholeCrypt;
+        public bool IsPatchFile;
         public uint Key;
         public byte[] Prefix;
     }
@@ -206,7 +207,7 @@ namespace GameRes.Formats.Lucifen
             {
                 input.Read (data, 0, data.Length);
             }
-            if (larc.Info.WholeCrypt)
+            if (larc.Info.WholeCrypt && !(larc.Info.IsPatchFile && lent.Name.HasExtension ("elg")))
             {
                 larc.Scheme.DecryptContent (data);
             }
@@ -257,15 +258,13 @@ namespace GameRes.Formats.Lucifen
                 IsEncrypted   = 0 != (flags & 4),
                 PackedEntries = 0 != (flags & 8),
                 WholeCrypt    = 0 != (flags & 0x10),
+                IsPatchFile   = 0 != (flags & 0x20),
                 Key           = key1
             };
             var reader = new IndexReader (lpk_info);
             var dir = reader.Read (index);
             if (null == dir)
                 return null;
-            // this condition is fishy, probably patch files have additional bitflag set
-            if (lpk_info.WholeCrypt && Binary.AsciiEqual (basename, "PATCH"))
-                lpk_info.WholeCrypt = false;
             return new LuciArchive (file, this, dir, scheme, reader.Info);
         }
 

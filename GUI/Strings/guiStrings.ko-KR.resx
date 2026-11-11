@@ -388,7 +388,7 @@
     <value>미디어 변환</value>
   </data>
   <data name="MsgConvertingFile" xml:space="preserve">
-    <value>파일 변환</value>
+    <value>파일 변환 {0}</value>
   </data>
   <data name="TextMediaConvertError" xml:space="preserve">
     <value>멀티미디어 변환 오류</value>
@@ -545,6 +545,12 @@
   <data name="TextPreferences" xml:space="preserve">
     <value>환경설정</value>
   </data>
+  <data name="TextViewer" xml:space="preserve">
+    <value>이미지 뷰어</value>
+  </data>
+  <data name="winDownScaleImage" xml:space="preserve">
+    <value>큰 이미지 파일을 창 크기에 맞춤</value>
+  </data>
   <data name="Type_archive" xml:space="preserve">
     <value>아카이브</value>
   </data>
@@ -557,10 +563,10 @@
   <data name="Type_script" xml:space="preserve">
     <value>스크립트</value>
   </data>
-  <data name="TextViewer" xml:space="preserve">
-    <value>이미지 뷰어</value>
+  <data name="TextOK" xml:space="preserve">
+    <value>OK</value>
   </data>
-  <data name="winDownScaleImage" xml:space="preserve">
-    <value>큰 이미지 파일을 창 크기에 맞춤</value>
+  <data name="Type_video" xml:space="preserve">
+    <value>Video</value>
   </data>
 </root>

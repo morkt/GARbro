@@ -40,6 +40,7 @@ namespace GameRes.Formats.Bishop
         public int  DataOffset;
         public int  DataSize;
         public int  PaletteOffset;
+        public bool HasPalette;
     }
 
     [Export(typeof(ImageFormat))]
@@ -73,6 +74,7 @@ namespace GameRes.Formats.Bishop
                 DataOffset  = header.ToInt32 (base_offset+0x32)+base_offset,
                 DataSize    = header.ToInt32 (base_offset+0x36),
                 PaletteOffset = header.ToInt32 (base_offset+0x3A)+base_offset,
+                HasPalette  = header.ToInt32 (base_offset+0x3A) != 0
             };
         }
 
@@ -122,9 +124,9 @@ namespace GameRes.Formats.Bishop
                 Stride = (int)m_info.Width * 4;
                 break;
             case 2:
-                Format = PixelFormats.Indexed8;
+                Format = m_info.HasPalette ? PixelFormats.Indexed8 : PixelFormats.Gray8;
                 Stride = (int)m_info.Width;
-                Palette = ReadPalette();
+                Palette = m_info.HasPalette ? ReadPalette() : null;
                 break;
             }
         }

@@ -126,6 +126,32 @@ namespace GameRes.Formats.Musica
         }
     }
 
+    internal class MovTwoPazArchive : PazArchiveBase
+    {
+        public readonly byte[,]  MovKey;
+
+        public MovTwoPazArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, int version, byte key, byte[] mov_key, IReadOnlyList<ArcView> parts = null)
+            : base (arc, impl, dir, version, key, parts)
+        {
+            MovKey = new byte[0x100, 0x100];
+            for (int i = 0; i < 0x100; i++)
+                for (int j = 0; j < 0x100; j++)
+                    MovKey[i, mov_key[i * 0x100 + j]] = (byte)j;
+        }
+
+        internal override Stream DecryptEntry (Stream input, PazEntry entry)
+        {
+            using (input)
+            {
+                var data = new byte[entry.AlignedSize];
+                input.Read (data, 0, data.Length);
+                for (int i = 0; i < data.Length; ++i)
+                    data[i] = MovKey[(i >> 16) & 0xFF, data[i]];
+                return new BinMemoryStream (data, entry.Name);
+            }
+        }
+    }
+
     [Export(typeof(ArchiveFormat))]
     public class PazOpener : ArchiveFormat
     {
@@ -140,7 +166,7 @@ namespace GameRes.Formats.Musica
             Extensions = new string[] { "paz", "dat" };
             Signatures = new uint[] {
                 0x858F8493, 0x8F889395, 0x6E656465, 0x848F8486, 0x61657453, 0x6873616D, 0x92808483,
-                0x6E697274, 0
+                0x6E697274, 0x5F465342, 0x735F6665, 0x665F6665, 0x69726F79, 0x696A6168, 0
             };
             ContainedFormats = new string[] { "PNG", "ANI/PAZ", "SQZ", "OGG", "WAV", "TXT" };
         }
@@ -195,7 +221,7 @@ namespace GameRes.Formats.Musica
                     if (!IsSaneCount (count))
                         return null;
                     if (is_video)
-                        video_key = index.ReadBytes (0x100);
+                        video_key = index.ReadBytes (scheme.MovKeyIs2D ? 0x10000 : 0x100);
 
                     dir = new List<Entry> (count);
                     for (int i = 0; i < count; ++i)
@@ -255,6 +281,8 @@ namespace GameRes.Formats.Musica
             }
             if (is_video)
             {
+                if (scheme.MovKeyIs2D)
+                    return new MovTwoPazArchive (file, this, dir, scheme.Version, xor_key, video_key, parts);
                 if (scheme.Version < 1)
                 {
                     var table = new byte[0x100];
@@ -364,6 +392,7 @@ namespace GameRes.Formats.Musica
         public int                          Version;
         public IDictionary<string, PazKey>  ArcKeys;
         public IDictionary<string, string>  TypeKeys;
+        public bool                         MovKeyIs2D;
 
         public string GetTypePassword (string name, bool is_audio)
         {

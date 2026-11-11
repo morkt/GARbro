@@ -241,7 +241,7 @@ Choose appropriate encryption scheme.</comment>
   </data>
   <data name="MsgTooManyFiles" xml:space="preserve">
     <value>ファイル数がアーカイブの上限を超えています。</value>
-    <comment>Number of files exceedes archive limit.</comment>
+    <comment>Number of files exceeds archive limit.</comment>
   </data>
   <data name="MsgUpdatingIndex" xml:space="preserve">
     <value>インデックスの更新中...</value>
@@ -500,5 +500,9 @@ Choose encryption scheme or enter a passphrase.</comment>
   </data>
   <data name="ODNAudioSampleRate" xml:space="preserve">
     <value>Default audio sampling rate</value>
+  </data>
+  <data name="Tim2AlphaFormat" xml:space="preserve">
+    <value>Tim2画像のAlpha形式を選択してください。
+ファイルから正しく読み取ることができません。</value>
   </data>
 </root>

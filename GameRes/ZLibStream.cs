@@ -100,7 +100,7 @@ namespace GameRes.Compression
             int b1 = stream.ReadByte();
             int b2 = stream.ReadByte();
             if ((0x78 != b1 && 0x58 != b1) || 0 != (b1 << 8 | b2) % 31)
-                throw new InvalidDataException ("Data not recoginzed as zlib-compressed stream");
+                throw new InvalidDataException ("Data not recognized as zlib-compressed stream");
             m_stream = new DeflateStream (stream, System.IO.Compression.CompressionMode.Decompress, true);
             m_writing = false;
         }

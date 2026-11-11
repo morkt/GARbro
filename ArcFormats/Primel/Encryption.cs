@@ -30,7 +30,7 @@ using GameRes.Utility;
 
 namespace GameRes.Formats.Primel
 {
-    internal abstract class PrimelEncyptionBase : ICryptoTransform
+    internal abstract class PrimelEncryptionBase : ICryptoTransform
     {
         internal const int BlockSize = 16;
 
@@ -161,12 +161,12 @@ namespace GameRes.Formats.Primel
         #endregion
     }
 
-    internal class Primel1Encyption : PrimelEncyptionBase
+    internal class Primel1Encryption : PrimelEncryptionBase
     {
         uint[] m_key = new uint[4];
         byte[] m_iv;
 
-        public Primel1Encyption (byte[] key, byte[] iv)
+        public Primel1Encryption (byte[] key, byte[] iv)
         {
             m_iv = iv.Clone() as byte[];
             Buffer.BlockCopy (key, 0, m_key, 0, 0x10);
@@ -210,13 +210,13 @@ namespace GameRes.Formats.Primel
         }
     }
 
-    internal class Primel2Encyption : PrimelEncyptionBase
+    internal class Primel2Encryption : PrimelEncryptionBase
     {
         int[]   m_shifts = new int[8];
         uint[]  m_key = new uint[4];
         byte[]  m_iv;
 
-        public Primel2Encyption (byte[] key, byte[] iv)
+        public Primel2Encryption (byte[] key, byte[] iv)
         {
             m_iv = iv.Clone() as byte[];
             Buffer.BlockCopy (key, 0, m_key, 0, 0x10);
@@ -275,14 +275,14 @@ namespace GameRes.Formats.Primel
         }
     }
 
-    internal class Primel3Encyption : PrimelEncyptionBase
+    internal class Primel3Encryption : PrimelEncryptionBase
     {
         int[]   m_shifts = new int[8];
         int[]   m_offsets = new int[4];
         uint[]  m_key = new uint[8];
         byte[]  m_iv;
 
-        public Primel3Encyption (byte[] key, byte[] iv)
+        public Primel3Encryption (byte[] key, byte[] iv)
         {
             m_iv = iv.Clone() as byte[];
             Buffer.BlockCopy (key, 0, m_key, 0, 0x10);

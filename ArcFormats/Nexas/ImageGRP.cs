@@ -104,7 +104,7 @@ namespace GameRes.Formats.NeXAS
             switch (info.BPP)
             {
             case 8:  Format = PixelFormats.Indexed8; break;
-            case 16: Format = PixelFormats.Bgr555; break;
+            case 16: Format = info.Version == 2 ? PixelFormats.Bgr565 : PixelFormats.Bgr555; break;
             case 24: Format = PixelFormats.Bgr24; break;
             case 32: Format = PixelFormats.Bgr32; break;
             default: throw new NotSupportedException ("Not supported GRP image color depth");

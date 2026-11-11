@@ -33,7 +33,7 @@ namespace GameRes.Formats.Misc
     {
         public override string         Tag { get { return "PNX"; } }
         public override string Description { get { return "Encrypted PNG image"; } }
-        public override uint     Signature { get { return 0x2F2638E1; } }
+        public override uint     Signature { get { return 0; } }
         public override bool      CanWrite { get { return false; } }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)

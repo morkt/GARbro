@@ -56,6 +56,7 @@ namespace GameRes.Formats.KiriKiri
         public ICrypt             Cipher { get; set; }
         public List<Xp3Segment> Segments { get { return m_segments; } }
         public uint                 Hash { get; set; }
+        public object              Extra { get; set; }
     }
 
     public class Xp3Options : ResourceOptions
@@ -146,6 +147,7 @@ namespace GameRes.Formats.KiriKiri
             using (var header = new BinaryReader (header_stream, Encoding.Unicode))
             using (var filename_map = new FilenameMap())
             {
+                Dictionary<string, HxEntry> hx_entry_info = null;
                 while (-1 != header.PeekChar())
                 {
                     uint entry_signature = header.ReadUInt32();
@@ -209,7 +211,6 @@ namespace GameRes.Formats.KiriKiri
                                     goto NextEntry;
                                 }
                                 entry.Name = name;
-                                entry.Type = FormatCatalog.Instance.GetTypeFromName (name, ContainedFormats);
                                 entry.IsEncrypted = !(entry.Cipher is NoCrypt)
                                     && !(entry.Cipher.StartupTjsNotEncrypted && "startup.tjs" == name);
                                 break;
@@ -254,6 +255,34 @@ namespace GameRes.Formats.KiriKiri
                             {
                                 DeobfuscateEntry (entry);
                             }
+                            if (null != hx_entry_info)
+                            {
+                                if (hx_entry_info.TryGetValue (entry.Name, out HxEntry info))
+                                {
+                                    entry.Extra = info;
+
+                                    var sb = new StringBuilder ();
+                                    if (!string.IsNullOrEmpty (info.Path))
+                                    {
+                                        sb.Append (info.Path);
+                                        if (!info.Path.EndsWith ("/") && !info.Path.EndsWith ("\\"))
+                                            sb.Append ('/');
+                                    }
+                                    if (!string.IsNullOrEmpty (info.Name))
+                                    {
+                                        sb.Append (info.Name);
+                                        if (sb.Length > 0)
+                                            entry.Name = sb.ToString ();
+                                    }
+                                    else
+                                    {
+                                        sb.Append (entry.Name);
+                                        if (sb.Length > 0)
+                                            entry.Name = sb.ToString ();
+                                    }
+                                }
+                            }
+                            entry.Type = FormatCatalog.Instance.GetTypeFromName(entry.Name, ContainedFormats);
                             dir.Add (entry);
                         }
                     }
@@ -270,6 +299,22 @@ namespace GameRes.Formats.KiriKiri
                                 var crypt = crypt_algorithm.Value as SenrenCxCrypt;
                                 crypt.ReadYuzNames (yuz, filename_map);
                             }
+                        }
+                    }
+                    else if (0x34767848 == entry_signature) // "Hxv4"
+                    {
+                        if (crypt_algorithm.Value is HxCrypt)
+                        {
+                            try
+                            {
+                                var offset = header.ReadInt64 () + base_offset;
+                                var size = header.ReadUInt32 ();
+                                var flags = header.ReadUInt16 ();
+                                var hx = file.View.ReadBytes (offset, size);
+                                var crypt = crypt_algorithm.Value as HxCrypt;
+                                hx_entry_info = crypt.ReadIndex (Path.GetFileName (file.Name), hx);
+                            }
+                            catch (Exception) { /* ignore parse error */ }
                         }
                     }
                     else if (entry_size > 7)
@@ -434,7 +479,7 @@ NextEntry:
             using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
             {
                 writer.Write (s_xp3_header);
-                if (2 == xp3_options.Version)
+                if (2 == xp3_options.Version || 3 == xp3_options.Version)
                 {
                     writer.Write ((long)0x17);
                     writer.Write ((int)1);
@@ -471,7 +516,7 @@ NextEntry:
                                        && !(scheme.StartupTjsNotEncrypted && VFS.IsPathEqualsToFileName (name, "startup.tjs"))
                     };
                     bool compress = compress_contents && ShouldCompressFile (entry);
-                    using (var file = File.Open (name, FileMode.Open, FileAccess.Read))
+                    using (var file = File.Open (name, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
                         if (!xp3entry.IsEncrypted || 0 == file.Length)
                             RawFileCopy (file, xp3entry, output, compress);
@@ -493,20 +538,46 @@ NextEntry:
                         callback (callback_count++, null, arcStrings.MsgWritingIndex);
 
                     long dir_pos = 0;
+                    if (3 == xp3_options.Version)
+                    {
+                        foreach (var entry in dir)
+                        {
+                            header.Write ((uint)0x6e666e68); // "hnfn"
+                            header.Write ((long)(4+2+entry.Name.Length*2));
+                            header.Write ((uint)entry.Hash);
+                            header.Write ((short)entry.Name.Length);
+                            foreach (char c in entry.Name)
+                                header.Write (c);
+                        }
+                        dir_pos = header.BaseStream.Position;
+                    }
                     foreach (var entry in dir)
                     {
+                        var entry_name = entry.Name;
+                        if (3 == xp3_options.Version)
+                        {
+                            using (var md5 = MD5.Create())
+                            {
+                                var text_bytes = Encoding.Unicode.GetBytes(entry.Name.ToLowerInvariant());
+                                var hash = md5.ComputeHash(text_bytes);
+                                var sb = new StringBuilder(32);
+                                for (int i = 0; i < hash.Length; ++i)
+                                    sb.AppendFormat("{0:x2}", hash[i]);
+                                entry_name = sb.ToString();
+                            }
+                        }
                         header.BaseStream.Position = dir_pos;
                         header.Write ((uint)0x656c6946); // "File"
                         long header_size_pos = header.BaseStream.Position;
                         header.Write ((long)0);
                         header.Write ((uint)0x6f666e69); // "info"
-                        header.Write ((long)(4+8+8+2 + entry.Name.Length*2));
+                        header.Write ((long)(4+8+8+2 + entry_name.Length*2));
                         header.Write ((uint)(use_encryption ? 0x80000000 : 0));
                         header.Write ((long)entry.UnpackedSize);
                         header.Write ((long)entry.Size);
 
-                        header.Write ((short)entry.Name.Length);
-                        foreach (char c in entry.Name)
+                        header.Write ((short)entry_name.Length);
+                        foreach (char c in entry_name)
                             header.Write (c);
 
                         header.Write ((uint)0x6d676573); // "segm"

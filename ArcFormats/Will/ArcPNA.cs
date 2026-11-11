@@ -86,7 +86,7 @@ namespace GameRes.Formats.Will
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)
         {
             var pent = (PnaEntry)entry;
-            var input = arc.File.CreateStream (entry.Offset, entry.Size);
+            var input = arc.File.CreateStream (entry.Offset, entry.Size, entry.Name);
             return new PnaDecoder (input, pent.Info);
         }
     }

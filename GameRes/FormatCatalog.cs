@@ -33,6 +33,9 @@ using GameRes.Collections;
 using System.Runtime.Serialization.Formatters.Binary;
 using GameRes.Compression;
 using System.Threading;
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace GameRes
 {
@@ -350,7 +353,7 @@ namespace GameRes
             }
         }
 
-        public void SerializeScheme (Stream output)
+        public void SerializeScheme (Stream output, HashSet<string> excluded = null)
         {
             var db = new SchemeDataBase {
                 Version = CurrentSchemeVersion,
@@ -359,9 +362,11 @@ namespace GameRes
             };
             foreach (var format in Formats)
             {
+                if (null != excluded && excluded.Contains (format.Tag))
+                    continue;
                 var scheme = format.Scheme;
                 if (null != scheme)
-                    db.SchemeMap[format.Tag] = scheme;
+                    db.SchemeMap.Add (format.Tag, scheme);
             }
             SerializeScheme (output, db);
         }
@@ -387,6 +392,76 @@ namespace GameRes
                     throw new FormatException ("Invalid serialization file");
                 return reader.ReadInt32();
             }
+        }
+
+        class IncludeFieldsContractResolver : DefaultContractResolver
+        {
+            protected override JsonContract CreateContract (Type objectType)
+            {
+                var contract = base.CreateContract (objectType);
+
+                if (contract is JsonObjectContract objectContract)
+                {
+                    objectContract.MemberSerialization = MemberSerialization.Fields;
+                }
+
+                return contract;
+            }
+        }
+
+        class ByteArrayToHexStringConverter : JsonConverter<byte[]>
+        {
+            public override byte[] ReadJson (JsonReader reader, Type objectType, byte[] existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException ();
+            }
+
+            public override void WriteJson (JsonWriter writer, byte[] value, JsonSerializer serializer)
+            {
+                if (value == null)
+                {
+                    writer.WriteNull ();
+                    return;
+                }
+                var s = ByteArrayToString (value);
+                writer.WriteValue (s);
+            }
+
+            private static string ByteArrayToString (byte[] input)
+            {
+                var sb = new StringBuilder (input.Length * 2);
+                foreach (var b in input)
+                    sb.AppendFormat ("{0:X2}", b);
+                return sb.ToString ();
+            }
+        }
+
+        public void SerializeSchemeJson (Stream output, HashSet<string> excluded = null)
+        {
+            var db = new SchemeDataBase
+            {
+                Version = CurrentSchemeVersion,
+                SchemeMap = new Dictionary<string, ResourceScheme> (),
+                GameMap = m_game_map,
+            };
+            foreach (var format in Formats)
+            {
+                if (null != excluded && excluded.Contains (format.Tag))
+                    continue;
+                var scheme = format.Scheme;
+                if (null != scheme)
+                    db.SchemeMap[format.Tag] = scheme;
+            }
+            var settings = new JsonSerializerSettings
+            {
+                ContractResolver = new IncludeFieldsContractResolver (),
+                Converters = { new ByteArrayToHexStringConverter () },
+                Formatting = Formatting.Indented,
+            };
+            var json = JsonConvert.SerializeObject (db, settings);
+            var sw = new StreamWriter (output, Encoding.UTF8);
+            sw.Write (json);
+            sw.Flush ();
         }
 
         /// <summary>

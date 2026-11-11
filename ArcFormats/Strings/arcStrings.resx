@@ -209,7 +209,7 @@ Choose appropriate encryption scheme.</value>
     <value>File name without extension.</value>
   </data>
   <data name="MsgTooManyFiles" xml:space="preserve">
-    <value>Number of files exceedes archive limit.</value>
+    <value>Number of files exceeds archive limit.</value>
   </data>
   <data name="MsgUpdatingIndex" xml:space="preserve">
     <value>Updating index...</value>
@@ -400,5 +400,9 @@ Choose encryption scheme or enter a passphrase.</value>
   </data>
   <data name="ODNAudioSampleRate" xml:space="preserve">
     <value>Default audio sampling rate</value>
+  </data>
+  <data name="Tim2AlphaFormat" xml:space="preserve">
+    <value>Choose Tim2 image alpha format.
+It can't be read correctly from the file.</value>
   </data>
 </root>

@@ -48,8 +48,8 @@ namespace GameRes.Formats.Key
 
         public CzFormat ()
         {
-            Extensions = new[] { "cz", "cz0", "cz1", "cz3" };
-            Signatures = new uint[] { 0x305A43, 0x315A43, 0x335A43 }; // 'CZ0', 'CZ1', 'CZ3'
+            Extensions = new[] { "cz", "cz0", "cz1", "cz3", "cz4" };
+            Signatures = new uint[] { 0x305A43, 0x315A43, 0x335A43, 0x345A43 }; // 'CZ0', 'CZ1', 'CZ3', 'CZ4'
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
@@ -108,12 +108,13 @@ namespace GameRes.Formats.Key
                 Palette = ImageFormat.ReadPalette (m_input.AsStream, 0x100, PaletteFormat.RgbA);
             switch (m_info.Version)
             {
+            case 4: UnpackCz4(); break;
             case 3: UnpackCz3(); break;
             case 2: UnpackCz2(); break;
             case 1: UnpackCz1(); break;
             case 0: UnpackCz0(); break;
             }
-            if (32 == m_info.BPP)
+            if (32 == m_info.BPP && m_info.Version < 4)
                 ConvertToBgrA();
             return ImageData.Create (m_info, Format, Palette, m_output);
         }
@@ -193,6 +194,49 @@ namespace GameRes.Formats.Key
                         m_output[dst + x] += m_output[dst + x - stride];
                     }
                 }
+            }
+        }
+
+        void UnpackCz4()
+        {
+            UnpackCz1();
+            byte[] buffer = (byte[])m_output.Clone();
+            int third = (m_info.iHeight + 2) / 3;
+            int rgb_stride = m_info.iWidth * 3;
+            for (int y = 0; y < m_info.iHeight; ++y)
+            {
+                int dst = y * rgb_stride;
+                if (y % third != 0)
+                {
+                    for (int x = 0; x < rgb_stride; ++x)
+                    {
+                        buffer[dst + x] += buffer[dst + x - rgb_stride];
+                    }
+                }
+            }
+            int alpha_stride = m_info.iWidth;
+            int pixel_count = m_info.iHeight * m_info.iWidth;
+            int alpha_start = pixel_count * 3;
+            for (int y = 0; y < m_info.iHeight; ++y)
+            {
+                int dst = alpha_start + y * alpha_stride;
+                if (y % third != 0)
+                {
+                    for (int x = 0; x < alpha_stride; ++x)
+                    {
+                        buffer[dst + x] += buffer[dst + x - alpha_stride];
+                    }
+                }
+            }
+            for (int i = 0; i < pixel_count; ++i)
+            {
+                int pRgb = i * 3;
+                int pDst = i * 4;
+
+                m_output[pDst] = buffer[pRgb + 2];
+                m_output[pDst + 1] = buffer[pRgb + 1];
+                m_output[pDst + 2] = buffer[pRgb];
+                m_output[pDst + 3] = buffer[alpha_start + i];
             }
         }
 

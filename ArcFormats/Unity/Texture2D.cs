@@ -1,6 +1,6 @@
 //! \file       Texture2D.cs
 //! \date       Fri Apr 14 08:20:08 2017
-//! \brief      Unity engine texture deserialzer.
+//! \brief      Unity engine texture deserializer.
 //
 // Copyright (C) 2017 by morkt
 //

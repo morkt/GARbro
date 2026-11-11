@@ -44,6 +44,8 @@ namespace GameRes.Formats.Littlewitch
     internal class RepiEntry : PackedEntry
     {
         public bool HasEncryptionKey;
+        public int Mode;
+        public uint[] LegacyKey;
 
         public byte[] CreateKey ()
         {
@@ -81,7 +83,9 @@ namespace GameRes.Formats.Littlewitch
             if (!file.View.AsciiEqual (4, "Pack"))
                 return null;
             int version = file.View.ReadInt32 (8);
-            if (version != 5)
+            if (version == 2 || version == 3)
+                return OpenV2 (file);
+            else if (version != 5)
                 return null;
             uint name_length = file.View.ReadUInt32 (0xC);
             if (name_length < 4)
@@ -106,9 +110,46 @@ namespace GameRes.Formats.Littlewitch
                 entry.UnpackedSize  = index.ToUInt32 (pos+0x18);
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
+                entry.Mode = -1;
                 entry.IsPacked = entry.Size != entry.UnpackedSize;
                 dir.Add (entry);
                 pos += 0x20;
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        ArcFile OpenV2 (ArcView file)
+        {
+            uint name_length = file.View.ReadUInt32 (0xC);
+            if (name_length < 4)
+                return null;
+            uint name_key = file.View.ReadUInt32 (0x10);
+            var key = FindKey (file.Name, name_key);
+            if (null == key)
+                return null;
+            int count = file.View.ReadInt32 (0x10 + name_length);
+            if (!IsSaneCount (count))
+                return null;
+            var index = file.View.ReadBytes (0x14 + name_length, (uint)count * 0x50);
+            int pos = 0;
+            var dir = new List<Entry> (count);
+            var name_builder = new StringBuilder();
+            for (int i = 0; i < count; ++i)
+            {
+                DecryptData (index, pos, 0x50, key[2], key[1]);
+                var name = Binary.GetCString (index, pos, 0x40);
+                var entry = FormatCatalog.Instance.Create<RepiEntry> (name);
+                entry.Offset        = index.ToUInt32 (pos+0x40);
+                entry.UnpackedSize  = index.ToUInt32 (pos+0x44);
+                entry.Size          = index.ToUInt32 (pos+0x48);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                entry.Mode = index.ToInt32 (pos+0x4C);
+                entry.IsPacked = entry.Size != entry.UnpackedSize;
+                entry.HasEncryptionKey = true;
+                entry.LegacyKey = key;
+                dir.Add (entry);
+                pos += 0x50;
             }
             return new ArcFile (file, this, dir);
         }
@@ -119,9 +160,20 @@ namespace GameRes.Formats.Littlewitch
             if (null == rent || !rent.HasEncryptionKey)
                 return arc.File.CreateStream (entry.Offset, entry.Size);
             var key = rent.CreateKey();
-            uint enc_length = Math.Min ((uint)key.Length, entry.Size);
+            uint enc_length = rent.Mode == -1 ? Math.Min ((uint)key.Length, rent.Size) : rent.Size;
             byte[] encrypted = arc.File.View.ReadBytes (entry.Offset, enc_length);
-            DecryptEntry (encrypted, key);
+            switch (rent.Mode)
+            {
+                case -1:
+                    DecryptEntry (encrypted, key);
+                    break;
+                case 1:
+                    DecryptData (encrypted, 0, (int)enc_length, rent.LegacyKey[2], rent.LegacyKey[1]);
+                    break;
+                case 2:
+                    DecryptData2 (encrypted, 0, (int)enc_length, (byte)rent.LegacyKey[2]);
+                    break;
+            }
             Stream input;
             if (enc_length == entry.Size)
             {
@@ -159,6 +211,28 @@ namespace GameRes.Formats.Littlewitch
                     *data32 ^= key;
                     key += Binary.RotL (*data32, 16) ^ seed;
                     data32++;
+                }
+            }
+        }
+
+        static unsafe void DecryptData2 (byte[] data, int pos, int length, byte key)
+        {
+            if (pos < 0 || pos + length > data.Length)
+                throw new ArgumentOutOfRangeException ("pos", "Invalid byte array index.");
+            uint seed = (uint)(key | key << 8 | key << 16 | key << 24);
+            fixed (byte* data8 = &data[pos])
+            {
+                uint* data32 = (uint*)data8;
+                for (int count = length / 4; count > 0; --count)
+                {
+                    *data32 = seed ^ (*data32 << 6) ^ (((*data32 >> 2) ^ (*data32 << 6)) & 0x3F3F3F3F);
+                    data32++;
+                }
+                byte* data_end = (byte*)data32;
+                for (int count = length % 4; count > 0; --count)
+                {
+                    *data_end = (byte)(key ^ Binary.RotByteR (*data_end, 2));
+                    data_end++;
                 }
             }
         }

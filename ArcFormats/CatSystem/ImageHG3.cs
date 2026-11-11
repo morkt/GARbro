@@ -40,6 +40,7 @@ namespace GameRes.Formats.CatSystem
         public uint CanvasWidth;
         public uint CanvasHeight;
         public uint HeaderSize;
+        public bool OnAndroid;
     }
 
     [Export(typeof(ImageFormat))]
@@ -66,6 +67,7 @@ namespace GameRes.Formats.CatSystem
                 BPP = header.ToInt32 (0x2C),
                 CanvasWidth = header.ToUInt32 (0x44),
                 CanvasHeight = header.ToUInt32 (0x48),
+                OnAndroid = VFS.IsVirtual && VFS.CurrentArchive.Tag == "DAT/IRIS",
             };
         }
 
@@ -311,7 +313,7 @@ namespace GameRes.Formats.CatSystem
             else
                 alpha = Enumerable.Repeat<byte> (0xFF, total).ToArray();
 
-            bool swap_rgb = toc.ContainsKey ("imgmode"); // XXX ???
+            bool swap_rgb = toc.ContainsKey ("imgmode") && m_info.OnAndroid; // XXX ???
 
             var output = new byte[total * 4];
             int src = 0;

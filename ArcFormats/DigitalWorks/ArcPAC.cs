@@ -35,20 +35,20 @@ namespace GameRes.Formats.DigitalWorks
     {
         public override string         Tag { get { return "PAC/HED"; } }
         public override string Description { get { return "Digital Works resource archive"; } }
-        public override uint     Signature { get { return 0x43415050; } } // 'PPAC-PAC'
+        public override uint     Signature { get { return 0; } } // 'PPAC-PAC'
         public override bool  IsHierarchic { get { return false; } }
         public override bool      CanWrite { get { return false; } }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (4, "-PAC"))
+            if (!file.View.AsciiEqual (0, "PPAC-PAC") && !file.View.AsciiEqual(0, "FANA_V1.0.0.0"))
                 return null;
             var hed_name = Path.ChangeExtension (file.Name, "hed");
             if (!VFS.FileExists (hed_name))
                 return null;
             using (var hed = VFS.OpenView (hed_name))
             {
-                if (!hed.View.AsciiEqual (0, "PPAC-HED"))
+                if (!hed.View.AsciiEqual (0, "PPAC-HED") && !hed.View.AsciiEqual(0, "FANA_V1.0.0.0"))
                     return null;
                 uint index_offset = 0x10;
                 const uint data_offset = 0x10;

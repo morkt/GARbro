@@ -70,6 +70,8 @@ namespace GameRes.Formats
                 return AudioFormat.Wav;
             if (0x4D42 == (signature & 0xFFFF)) // 'BM'
                 return ImageFormat.Bmp;
+            if (ImageFormat.Png.Signature == signature)
+                return ImageFormat.Png;
             var res = FormatCatalog.Instance.LookupSignature (signature);
             if (!res.Any())
                 return null;

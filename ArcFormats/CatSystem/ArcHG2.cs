@@ -41,7 +41,8 @@ namespace GameRes.Formats.CatSystem
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (0x25 != file.View.ReadInt32 (8))
+            int version = file.View.ReadInt32 (8);
+            if (0x20 != version && 0x25 != version)
                 return null;
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
             var dir = new List<Entry>();
@@ -50,9 +51,10 @@ namespace GameRes.Formats.CatSystem
             while (offset < file.MaxOffset)
             {
                 uint section_size = file.View.ReadUInt32 (offset+0x40);
+                int image_id = file.View.ReadInt32 (offset+0x28);
                 var entry = new Entry
                 {
-                    Name = string.Format ("{0}#{1:D4}", base_name, i),
+                    Name = string.Format ("{0}#{1:D4}", base_name, image_id),
                     Type = "image",
                     Offset = offset,
                 };
@@ -76,7 +78,8 @@ namespace GameRes.Formats.CatSystem
             var offset = entry.Offset;
             var info = new Hg2MetaData
             {
-                HeaderSize  = 0x4C,
+                Version     = arc.File.View.ReadInt32 (8),
+                HeaderSize  = arc.File.View.ReadUInt32 (offset+0x24) + 0x24,
                 Width       = arc.File.View.ReadUInt32 (offset),
                 Height      = arc.File.View.ReadUInt32 (offset+4),
                 BPP         = arc.File.View.ReadInt32 (offset+8),

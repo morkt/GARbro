@@ -23,6 +23,7 @@
 // IN THE SOFTWARE.
 //
 
+using GameRes.Formats.Strings;
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -36,6 +37,7 @@ namespace GameRes.Formats.DigitalWorks
         public int  PaletteSize;
         public int  HeaderSize;
         public int  Colors;
+        public byte Alpha;
     }
 
     [Export(typeof(ImageFormat))]
@@ -48,7 +50,15 @@ namespace GameRes.Formats.DigitalWorks
         public Tim2Format ()
         {
             Extensions = new string[] { "tm2", "ext" };
+            Settings = new[] { AlphaFormat };
         }
+
+        FixedSetSetting AlphaFormat = new FixedSetSetting(Properties.Settings.Default)
+        {
+            Name = "TIM2AlphaFormat",
+            Text = arcStrings.Tim2AlphaFormat,
+            ValuesSet = new[] { "No Alpha", "RGBX", "RGBA" },
+        };
 
         public override ImageMetaData ReadMetaData (IBinaryStream file)
         {
@@ -59,8 +69,17 @@ namespace GameRes.Formats.DigitalWorks
             case 1: bpp = 16; break;
             case 2: bpp = 24; break;
             case 3: bpp = 32; break;
+            case 4: bpp = 4; break; //16color
             case 5: bpp = 8; break;
             default: return null;
+            }
+            byte alpha;
+            switch (AlphaFormat.Get<String>())
+            {
+                case "No Alpha": alpha = 0; break;
+                case "RGBX": alpha = 7; break;
+                case "RGBA":
+                default: alpha = 8; break;
             }
             return new Tim2MetaData {
                 Width  = header.ToUInt16 (0x24),
@@ -69,6 +88,7 @@ namespace GameRes.Formats.DigitalWorks
                 PaletteSize = header.ToInt32 (0x14),
                 HeaderSize = header.ToUInt16 (0x1C),
                 Colors  = header.ToUInt16 (0x1E),
+                Alpha = alpha, //header.ToUInt16(0x30) == 0?// not so sure, there will be omissions
             };
         }
 
@@ -99,38 +119,97 @@ namespace GameRes.Formats.DigitalWorks
             m_info = info;
             switch (info.BPP)
             {
-            case 8:  Format = PixelFormats.Indexed8; break;
-            case 16: Format = PixelFormats.Bgr555; break;
-            case 24: Format = PixelFormats.Bgr24;  break;
-            case 32: Format = PixelFormats.Bgra32; break;
+                case 4:  Format = PixelFormats.Indexed4; break;
+                case 8:  Format = PixelFormats.Indexed8; break;
+                case 16: Format = PixelFormats.Bgr555; break;
+                case 24: Format = PixelFormats.Bgr24;  break;
+                case 32: Format = PixelFormats.Bgra32; break;
             }
         }
 
         public byte[] Unpack ()
         {
             m_input.Position = 0x10 + m_info.HeaderSize;
-            int pixel_size = m_info.BPP / 8;
-            int image_size = (int)m_info.Width * (int)m_info.Height * pixel_size;
+            double pixel_size = (double)m_info.BPP / 8;
+            int image_size = (int)((int)m_info.Width * (int)m_info.Height * pixel_size);
             var output = m_input.ReadBytes (image_size);
-            if (pixel_size <= 8 && m_info.Colors > 0)
-                Palette = ReadPalette (m_info.Colors);
+            if (pixel_size <= 1 && m_info.Colors > 0) // Indexed images
+                Palette = ReadPalette (m_info.Colors, m_info.Alpha);
 
-            if (pixel_size >= 3)
+            // Handle 24bpp and 32bpp (Direct Color)
+            if (pixel_size == 3 || (pixel_size == 4 && m_info.Alpha == 8))
             {
-                for (int i = 0; i < image_size; i += pixel_size)
+                for (int i = 0; i < image_size; i += (int)pixel_size)
                 {
+                    // Swap R and B channels
                     byte r = output[i];
                     output[i] = output[i+2];
                     output[i+2] = r;
+
+                    // Fix Alpha for 32bpp (Double Alpha Scaling)
+                    if (pixel_size == 4)
+                    {
+                        byte a = output[i + 3];
+                        if (a > 0)
+                        {
+                            output[i + 3] = (byte)Math.Min(255, a * 2);
+                        }
+                    }
+                }
+            }
+            // Handle specific RGBX (Alpha 7) case
+            else if (pixel_size == 4 && m_info.Alpha == 7)
+            {
+                for (int i = 0; i < image_size; i += 4)
+                {
+                    byte r = output[i];
+                    output[i] = output[i + 2];
+                    output[i + 2] = r;
+                    if (output[i + 3] >= byte.MaxValue / 2)
+                        output[i + 3] = byte.MaxValue;
+                    else
+                        output[i + 3] = (byte)(output[i + 3] << 1);
+                }
+            }
+            // Handle No Alpha case
+            else if (pixel_size == 4 && m_info.Alpha == 0)
+            {
+                for (int i = 0; i < image_size; i += 4)
+                {
+                    byte r = output[i];
+                    output[i] = output[i + 2];
+                    output[i + 2] = r;
+                    output[i + 3] = byte.MaxValue;
                 }
             }
             return output;
         }
 
-        BitmapPalette ReadPalette (int color_num)
+        BitmapPalette ReadPalette (int color_num, byte X_A = 8)
         {
-            var source = ImageFormat.ReadColorMap (m_input.AsStream, color_num, PaletteFormat.RgbA);
+            var source = ImageFormat.ReadColorMap (m_input.AsStream,
+                color_num, X_A == 7 ? PaletteFormat.RgbA7 : X_A == 0 ? PaletteFormat.RgbX : PaletteFormat.RgbA);
+
+            // Scaled Alpha for Indexed Palettes (KID/PS2 Fix)
+            if (X_A != 0)
+            {
+                for (int i = 0; i < source.Length; i++)
+                {
+                    byte a = source[i].A;
+                    if (a > 0)
+                    {
+                        byte newAlpha = (byte)Math.Min(255, a * 2);
+                        source[i] = Color.FromArgb(newAlpha, source[i].R, source[i].G, source[i].B);
+                    }
+                }
+            }
+
             var color_map = new Color[color_num];
+
+            if (color_num == 16){
+                Array.Copy(source, 0, color_map, 0, 16);
+                return new BitmapPalette(color_map);
+            }
 
             int parts = color_num / 32;
             const int blocks = 2;

@@ -1,6 +1,6 @@
 //! \file       ImageIPT.cs
 //! \date       2019 Jan 27
-//! \brief      IPT composite image desciption.
+//! \brief      IPT composite image description.
 //
 // Copyright (C) 2019 by morkt
 //

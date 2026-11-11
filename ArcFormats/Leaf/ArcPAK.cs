@@ -23,10 +23,14 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
+using System.Text;
 using GameRes.Compression;
+using GameRes.Utility;
 using GameRes.Utility.Serialization;
 
 namespace GameRes.Formats.Leaf
@@ -38,7 +42,7 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf resource archive"; } }
         public override uint     Signature { get { return 0x5041434B; } } // 'KCAP'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override bool      CanWrite { get { return true; } }
 
         public KcapOpener ()
         {
@@ -159,6 +163,87 @@ namespace GameRes.Formats.Leaf
             catch { /* ignore errors */ }
             input.Position = 0;
             return ImageFormatDecoder.Create (input);
+        }
+
+        // --- REPACK IMPLEMENTATION ---
+
+        public override void Create (Stream output, IEnumerable<Entry> entries, ResourceOptions options, EntryCallback callback)
+        {
+            int count = entries.Count();
+            using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                // 1. Write Header (KCAP v2)
+                writer.Write (0x5041434B); // "KCAP"
+                writer.Write (0xFFFFFFFF);
+                writer.Write (0x0000FFFF);
+                writer.Write (count);
+
+                long tableOffset = 16;
+                long dataOffset = tableOffset + (count * 44);
+
+                writer.BaseStream.Position = dataOffset;
+
+                var entryInfos = new List<EntryInfo>();
+                int i = 0;
+
+                foreach (var entry in entries)
+                {
+                    if (callback != null) 
+                        callback (i + 1, entry, null);
+
+                    long currentOffset = writer.BaseStream.Position;
+                    
+                    using (var input = File.OpenRead(entry.Name))
+                    {
+                        byte[] rawData = new byte[input.Length];
+                        input.Read (rawData, 0, (int)input.Length);
+
+                        // Compress
+                        byte[] compressedData = LeafLzss.Compress (rawData, 0x20);
+
+                        // Write Data (Prefix + LZSS)
+                        writer.Write ((uint)compressedData.Length);
+                        writer.Write ((uint)rawData.Length);
+                        writer.Write (compressedData);
+
+                        uint totalSize = (uint)(compressedData.Length + 8);
+
+                        entryInfos.Add (new EntryInfo
+                        {
+                            Name = Path.GetFileName (entry.Name),
+                            UnpackedSize = (uint)rawData.Length,
+                            Offset = (uint)currentOffset,
+                            PackedSize = totalSize
+                        });
+                    }
+                    i++;
+                }
+
+                // Write File Table
+                writer.BaseStream.Position = tableOffset;
+                foreach (var info in entryInfos)
+                {
+                    writer.Write (1); // Type
+                    
+                    byte[] nameBytes = Encodings.cp932.GetBytes (info.Name);
+                    if (nameBytes.Length > 23) Array.Resize (ref nameBytes, 23);
+                    writer.Write (nameBytes);
+                    for (int k = nameBytes.Length; k < 24; k++) writer.Write ((byte)0);
+
+                    writer.Write (0xFFFFFFFF); // CRC
+                    writer.Write (info.UnpackedSize);
+                    writer.Write (info.Offset);
+                    writer.Write (info.PackedSize);
+                }
+            }
+        }
+
+        struct EntryInfo
+        {
+            public string Name;
+            public uint UnpackedSize;
+            public uint Offset;
+            public uint PackedSize;
         }
     }
 

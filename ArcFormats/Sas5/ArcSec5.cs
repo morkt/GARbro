@@ -76,7 +76,7 @@ namespace GameRes.Formats.Sas5
             return new BinMemoryStream (code, entry.Name);
         }
 
-        static void DecryptCodeSection (byte[] code)
+        protected static void DecryptCodeSection (byte[] code)
         {
             byte key = 0;
             for (int i = 0; i < code.Length; ++i)
@@ -112,29 +112,32 @@ namespace GameRes.Formats.Sas5
             }
             if (0 == match.Length)
                 return null;
-            using (var sec5 = new ArcView (match[0]))
+            foreach (var m in match)
             {
-                if (!sec5.View.AsciiEqual (0, "SEC5"))
-                    return null;
-                uint offset = 8;
-                while (offset < sec5.MaxOffset)
+                using (var sec5 = new ArcView (m))
                 {
-                    string id = sec5.View.ReadString (offset, 4, Encoding.ASCII);
-                    if ("ENDS" == id)
-                        break;
-                    uint section_size = sec5.View.ReadUInt32 (offset+4);
-                    offset += 8;
-                    if ("RESR" == id)
+                    if (!sec5.View.AsciiEqual (0, "SEC5"))
+                        continue;
+                    uint offset = 8;
+                    while (offset < sec5.MaxOffset)
                     {
-                        using (var resr = sec5.CreateStream (offset, section_size))
-                            return ReadResrSection (resr);
+                        string id = sec5.View.ReadString (offset, 4, Encoding.ASCII);
+                        if ("ENDS" == id)
+                            break;
+                        uint section_size = sec5.View.ReadUInt32 (offset+4);
+                        offset += 8;
+                        if ("RESR" == id)
+                        {
+                            using (var resr = sec5.CreateStream (offset, section_size))
+                                return ReadResrSection (resr);
+                        }
+                        if ("RES2" == id)
+                        {
+                            using (var res2 = sec5.CreateStream (offset, section_size))
+                                return ReadRes2Section (res2);
+                        }
+                        offset += section_size;
                     }
-                    if ("RES2" == id)
-                    {
-                        using (var res2 = sec5.CreateStream (offset, section_size))
-                            return ReadRes2Section (res2);
-                    }
-                    offset += section_size;
                 }
             }
             return null;
@@ -180,6 +183,203 @@ namespace GameRes.Formats.Sas5
             using (var resr = new Res2Reader (input))
                 return resr.Read();
         }
+
+        static internal Entry GetEntryBySectionName (ArcView file, string section_name)
+        {
+            if (file == null)
+                return null;
+            uint offset = 8;
+            while (offset < file.MaxOffset)
+            {
+                string name = file.View.ReadString (offset, 4, Encoding.ASCII);
+                if ("ENDS" == name)
+                    break;
+                uint section_size = file.View.ReadUInt32 (offset+4);
+                offset += 8;
+                if (section_name == name)
+                {
+                    var entry = new Entry {
+                        Name = name,
+                        Offset = offset,
+                        Size = section_size,
+                    };
+                    return entry;
+                }
+                offset += section_size;
+            }
+            return null;
+        }
+    }
+
+    internal class Sep5Archive : ArcFile
+    {
+        private ArcView m_sec5;
+
+        public ArcView Sec5File { get { return m_sec5; } }
+
+        public Sep5Archive (ArcView arc, ArcView sec5, ArchiveFormat impl, ICollection<Entry> dir)
+            : base (arc, impl, dir)
+        {
+            m_sec5 = sec5;
+        }
+    }
+
+    internal class Sep5Entry : PackedEntry
+    {
+        public byte PType;
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class Sep5Opener : Sec5Opener
+    {
+        public override string         Tag { get { return "SEP5"; } }
+        public override string Description { get { return "SAS5 engine patched resource index file"; } }
+        public override uint     Signature { get { return 0x35504553; } } // 'SEP5'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            uint offset = 8;
+            var dir = new List<Entry>();
+            ArcView sec5 = null;
+
+            while (offset < file.MaxOffset)
+            {
+                string name = file.View.ReadString (offset, 4, Encoding.ASCII);
+                if ("ENDS" == name)
+                    break;
+                uint section_size = file.View.ReadUInt32 (offset + 4);
+                offset += 8;
+                if ("OLDF" == name)
+                    sec5 = new ArcView (file.View.ReadString (offset + 0x18, section_size - 0x18, Encoding.ASCII));
+                else
+                {
+                    byte patch_type = file.View.ReadByte (offset);
+                    uint size;
+                    switch (patch_type)
+                    {
+                        case 0:
+                            if (section_size != 1) return null;
+                            var ent = GetEntryBySectionName (sec5, name);
+                            if (ent == null) return null;
+                            size = ent.Size;
+                            break;
+                        case 1:
+                            size = section_size - 1;
+                            break;
+                        case 2:
+                            if ("CODE" == name)
+                            {
+                                var tmp = new byte[0x1D];
+                                file.View.Read (offset + 1, tmp, 0, 0x1D);
+                                DecryptCodeSection (tmp);
+                                size = BitConverter.ToUInt32 (tmp, 0x19);
+                            }
+                            else
+                                size = file.View.ReadUInt32 (offset + 0x1A);
+                            break;
+                        default:
+                            return null;
+                    }
+                    var entry = new Sep5Entry {
+                        Name = name,
+                        Offset = offset + 1,
+                        Size = section_size - 1,
+                        UnpackedSize = size,
+                        PType = patch_type,
+                    };
+                    dir.Add (entry);
+                }
+                offset += section_size;
+            }
+
+            if (dir.Count > 0 && sec5 != null)
+                return new Sep5Archive (file, sec5, this, dir);
+            return null;
+        }
+
+        public override Stream OpenEntry (ArcFile arc, Entry entry)
+        {
+            var sent = entry as Sep5Entry;
+            var sep5 = arc as Sep5Archive;
+            var ent = GetEntryBySectionName (sep5.Sec5File, sent.Name);
+
+            var patch = new byte[sent.Size];
+            sep5.File.View.Read (sent.Offset, patch, 0, sent.Size);
+
+            var src = new byte[ent.Size];
+            sep5.Sec5File.View.Read (ent.Offset, src, 0, ent.Size);
+
+            if (sent.Name == "CODE")
+            {
+                DecryptCodeSection (src);
+                DecryptCodeSection (patch);
+            }
+
+            if (sent.PType == 0)
+                return new BinMemoryStream (src, sent.Name);
+            if (sent.PType == 1)
+                return new BinMemoryStream (patch, sent.Name);
+
+            var data = new byte[sent.UnpackedSize]; 
+            using (var mem = new MemoryStream (patch))
+            using (var reader = new BinaryReader (mem))
+            {
+                byte compressed_flag = reader.ReadByte();
+                var psizes = new uint[3];
+                var usizes = new uint[3];
+                var buffers = new byte[3][];
+                for (int i = 0; i < 3; ++i)
+                    psizes[i] = reader.ReadUInt32();
+                for (int i = 0; i < 3; ++i)
+                    usizes[i] = reader.ReadUInt32();
+                reader.ReadUInt32();
+                for (int i = 0; i < 3; ++i)
+                {
+                    var packed = new byte[psizes[i]];
+                    var unpacked = new byte[usizes[i]];
+                    reader.Read (packed, 0, packed.Length);
+                    if ((compressed_flag & (1 << i)) != 0)
+                    {
+                        using (var stream = new BinMemoryStream (packed))
+                        using (var decompressor = new IarDecompressor (stream))
+                            decompressor.Unpack (unpacked);
+                        buffers[i] = unpacked;
+                    }
+                    else
+                        buffers[i] = packed;
+                }
+                ApplyPatch (src, data, buffers[0], buffers[1], buffers[2]);
+            }
+            return new BinMemoryStream (data, sent.Name);
+        }
+
+        protected static void ApplyPatch (byte[] original, byte[] output, byte[] control, byte[] basic, byte[] append)
+        {
+            int original_index = 0, output_index = 0, basic_index = 0, append_index = 0;
+            using (var mem = new MemoryStream (control))
+            using (var reader = new BinaryReader (mem))
+            {
+                int base_size, tail_size, offset;
+                for (int i = 0; i < control.Length / 12; ++i)
+                {
+                    base_size = reader.ReadInt32();
+                    tail_size = reader.ReadInt32();
+                    offset = reader.ReadInt32();
+
+                    Buffer.BlockCopy (basic, basic_index, output, output_index, base_size);
+                    for (int j = 0; j < base_size; j++)
+                        output[output_index + j] += original[original_index + j];
+                    Buffer.BlockCopy (append, append_index, output, output_index + base_size, tail_size);
+
+                    basic_index += base_size;
+                    append_index += tail_size;
+                    original_index += base_size + offset;
+                    output_index += base_size + tail_size;
+                }
+            }
+        }
     }
 
     internal sealed class Res2Reader : IDisposable
@@ -216,10 +416,12 @@ namespace GameRes.Formats.Sas5
                         arc_name = ReadString();
                     else if ("arc-index" == param_name)
                         arc_index = ReadInteger();
+                    else if ("arc-path" == param_name)
+                        name = ReadString();
                     else
                         SkipObject();
                 }
-                if (!string.IsNullOrEmpty (arc_name) && arc_index != null)
+                if (!string.IsNullOrEmpty (arc_name))
                 {
                     arc_name = Path.GetFileName (arc_name);
                     if (!map.ContainsKey (arc_name))
@@ -229,6 +431,8 @@ namespace GameRes.Formats.Sas5
                         Name = name,
                         Type = type,
                     };
+                    if (arc_index == null)
+                        arc_index = map[arc_name].Count;
                     map[arc_name][arc_index.Value] = entry;
                 }
             }

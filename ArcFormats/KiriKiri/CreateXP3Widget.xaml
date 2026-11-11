@@ -4,6 +4,9 @@
       xmlns:s="clr-namespace:GameRes.Formats.Strings"
       xmlns:p="clr-namespace:GameRes.Formats.Properties"
       xmlns:local="clr-namespace:GameRes.Formats.GUI">
+    <Grid.Resources>
+        <local:Xp3VersionConverter x:Key="Xp3VersionConverter"></local:Xp3VersionConverter>
+    </Grid.Resources>
     <Grid.RowDefinitions>
         <RowDefinition/>
         <RowDefinition/>
@@ -14,9 +17,10 @@
         <StackPanel Orientation="Vertical" Margin="0,0,10,5">
             <Label Content="{x:Static s:arcStrings.XP3LabelVersion}" Target="{Binding ElementName=Version}" Padding="4,0,0,5"/>
             <ComboBox Name="Version" Width="80" HorizontalAlignment="Left" SelectedValuePath="Content"
-                      SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=XP3Version, Mode=TwoWay}">
+                      SelectedValue="{Binding Source={x:Static p:Settings.Default}, Path=XP3Version, Mode=TwoWay, Converter={StaticResource Xp3VersionConverter}}">
                 <ComboBoxItem Content="1"/>
                 <ComboBoxItem Content="2"/>
+                <ComboBoxItem Content="Z"/>
             </ComboBox>
         </StackPanel>
         <StackPanel Orientation="Vertical" Margin="0,0,0,5">

@@ -86,7 +86,7 @@ namespace GameRes
         string ReadCString (int length);
 
         /// <summary>
-        /// Read zero-terminated string from stream in specefied encoding.
+        /// Read zero-terminated string from stream in specified encoding.
         /// Stream is positioned after a zero byte that terminates a string, or at end of stream, whichever
         /// comes first.
         /// </summary>
@@ -168,6 +168,27 @@ namespace GameRes
             else
                 bin.Name = filename;
             return bin;
+        }
+
+        internal int FindEoS (int start, int length, Encoding enc)
+        {
+            int eos_pos = -1;
+            if (enc.IsUtf16())
+            {
+                for (int i = start+1; i < start+length; i += 2)
+                {
+                    if (m_buffer[i-1] == 0 && m_buffer[i] == 0)
+                    {
+                        eos_pos = i - 1;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                eos_pos = Array.IndexOf<byte> (m_buffer, 0, start, length);
+            }
+            return eos_pos;
         }
 
         uint ReadSignature ()
@@ -307,11 +328,10 @@ namespace GameRes
         public string ReadCString (int length, Encoding enc)
         {
             length = FillBuffer (length);
-            int i;
-            for (i = 0; i < length; ++i)
-                if (0 == m_buffer[m_buffer_pos+i])
-                    break;
-            string s = enc.GetString (m_buffer, m_buffer_pos, i);
+            int eos_pos = FindEoS (m_buffer_pos, length, enc);
+            if (-1 == eos_pos)
+                eos_pos = m_buffer_pos+length;
+            string s = enc.GetString (m_buffer, m_buffer_pos, eos_pos-m_buffer_pos);
             m_buffer_pos += length;
             return s;
         }

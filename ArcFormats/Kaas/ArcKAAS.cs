@@ -82,7 +82,7 @@ namespace GameRes.Formats.KAAS
                         && dir.Count > 0)
                         return new ArcFile (file, this, dir);
                 }
-                catch { /* ignore errors caused by wrong decrpytor */ }
+                catch { /* ignore errors caused by wrong decryptor */ }
                 dir.Clear();
             }
             return null;
@@ -160,7 +160,7 @@ namespace GameRes.Formats.KAAS
                     return new PdOverlayImage (input, overlay_info, baseline);
                 }
             }
-            return base.OpenImage (arc, entry); // essentialy InvalidFormatException
+            return base.OpenImage (arc, entry); // essentially InvalidFormatException
         }
 
         static readonly Lazy<ImageFormat> s_picFormat = new Lazy<ImageFormat> (() => ImageFormat.FindByTag ("PIC/KAAS"));

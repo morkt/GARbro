@@ -655,7 +655,7 @@ namespace GameRes.Formats.Kogado
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.  It may be that this
     program violates local patents in your country, however it is
-    belived (NO WARRANTY!) to be patent-free here in Austria.
+    believed (NO WARRANTY!) to be patent-free here in Austria.
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
@@ -682,7 +682,7 @@ namespace GameRes.Formats.Kogado
         public int m_incr;          /* increment per update */
         public int m_searchshift;   /* shift for lt_freq before using as index */
         public ushort[] m_cf;       /* array of cumulative frequencies */
-        public ushort[] m_newf;     /* array for collecting ststistics */
+        public ushort[] m_newf;     /* array for collecting statistics */
         public ushort[] m_search;   /* structure for searching on decompression */
 
         public const int TBLSHIFT = 7;

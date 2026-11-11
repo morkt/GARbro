@@ -90,9 +90,9 @@ namespace GameRes
             Name = name ?? "";
         }
 
-        public ArcViewStream (ArcView file, long offset, uint size, string name = null)
+        public ArcViewStream (ArcView file, long offset, long size, string name = null)
         {
-            m_view = new ArcView.Frame (file, offset, Math.Min (size, MaxFrameSize));
+            m_view = new ArcView.Frame (file, offset, (uint)Math.Min (size, MaxFrameSize));
             m_start = offset;
             m_size = size;
             m_position = 0;

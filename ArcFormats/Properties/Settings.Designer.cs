@@ -12,7 +12,7 @@ namespace GameRes.Formats.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.8.1.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.14.0.0")]
     public sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -811,6 +811,78 @@ namespace GameRes.Formats.Properties {
             }
             set {
                 this["AFAEncodingCP"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DXAPassword {
+            get {
+                return ((string)(this["DXAPassword"]));
+            }
+            set {
+                this["DXAPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("932")]
+        public int NexasEncodingCP {
+            get {
+                return ((int)(this["NexasEncodingCP"]));
+            }
+            set {
+                this["NexasEncodingCP"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("RGBA")]
+        public string TIM2AlphaFormat {
+            get {
+                return ((string)(this["TIM2AlphaFormat"]));
+            }
+            set {
+                this["TIM2AlphaFormat"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BELLDATATitle {
+            get {
+                return ((string)(this["BELLDATATitle"]));
+            }
+            set {
+                this["BELLDATATitle"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SCENETitle {
+            get {
+                return ((string)(this["SCENETitle"]));
+            }
+            set {
+                this["SCENETitle"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string PPTitle {
+            get {
+                return ((string)(this["PPTitle"]));
+            }
+            set {
+                this["PPTitle"] = value;
             }
         }
     }

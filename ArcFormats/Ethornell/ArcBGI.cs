@@ -124,6 +124,11 @@ namespace GameRes.Formats.BGI
         {
             if (!file.View.AsciiEqual (4, "KO ARC20"))
                 return null;
+            return Open (file);
+        }
+
+        protected ArcFile Open (ArcView file)
+        {
             int count = file.View.ReadInt32 (12);
             if (!IsSaneCount (count))
                 return null;
@@ -152,7 +157,9 @@ namespace GameRes.Formats.BGI
                     entry.Type = res.Type;
                 else if (file.View.AsciiEqual (entry.Offset, "BSE 1."))
                     entry.Type = "image";
-                else if (file.View.AsciiEqual (entry.Offset+4, "bw  "))
+                else if (file.View.AsciiEqual (entry.Offset, "CompressedBG"))
+                    entry.Type = "image";
+                else if (file.View.AsciiEqual (entry.Offset+5, "w  "))
                     entry.Type = "audio";
             }
             return new ArcFile (file, this, dir);
@@ -389,7 +396,7 @@ namespace GameRes.Formats.BGI
 
         public int NextKey ()
         {
-	        uint v = (uint)((m_key * 127 >> 7) + m_key * 83 + 53) ^ 0xB97A7E5C;
+            uint v = (uint)((m_key * 127 >> 7) + m_key * 83 + 53) ^ 0xB97A7E5C;
             m_key = (int)Binary.RotR (v, 16);
             return m_key;
         }

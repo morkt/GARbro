@@ -36,7 +36,7 @@ namespace GameRes.Formats.Melonpan
     [Export(typeof(ArchiveFormat))]
     public class TtdOpener : ArchiveFormat
     {
-        public override string         Tag { get { return "TTD"; } }
+        public override string         Tag { get { return "TTD/WCW"; } }
         public override string Description { get { return "Melonpan resource archive"; } }
         public override uint     Signature { get { return 0x574357; } } // 'WCW'
         public override bool  IsHierarchic { get { return false; } }

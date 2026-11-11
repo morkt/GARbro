@@ -180,13 +180,13 @@ namespace GameRes.Formats.Primel
             switch (flags & 0xF0000)
             {
             case 0x10000:
-                decryptor = new Primel1Encyption (key1, iv);
+                decryptor = new Primel1Encryption (key1, iv);
                 break;
             case 0x20000:
-                decryptor = new Primel2Encyption (key1, iv);
+                decryptor = new Primel2Encryption (key1, iv);
                 break;
             case 0x30000:
-                decryptor = new Primel3Encyption (key1, iv);
+                decryptor = new Primel3Encryption (key1, iv);
                 break;
             case 0x80000: // RC6
                 decryptor = new GameRes.Cryptography.RC6 (key1, iv);

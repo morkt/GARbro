@@ -48,11 +48,11 @@ namespace GARbro.GUI
 
         public bool IsTextBoxFocused
         {
-            get { return (bool)GetValue (HasFocusProperty); }
-            private set { SetValue (HasFocusProperty, value); }
+            get { return (bool)GetValue (IsTextBoxFocusedProperty); }
+            private set { SetValue (IsTextBoxFocusedProperty, value); }
         }
 
-        public static readonly DependencyProperty HasFocusProperty = 
+        public static readonly DependencyProperty IsTextBoxFocusedProperty = 
             DependencyProperty.RegisterAttached ("IsTextBoxFocused", typeof(bool), typeof(ExtAutoCompleteBox), new UIPropertyMetadata());
 
         protected override void OnKeyDown (KeyEventArgs e)

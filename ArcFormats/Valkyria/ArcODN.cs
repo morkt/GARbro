@@ -251,7 +251,7 @@ namespace GameRes.Formats.Valkyria
             {
                 ReadV1();
             }
-            else if (IsAscii (m_entry_buf, 0x10))
+            else if (m_entry_buf.IsAsciiVisible (0, 0x10))
             {
                 var name = m_enc.GetString (m_entry_buf, 0, 4);
                 if (m_entry_buf.AsciiEqual (0x10, name))
@@ -340,14 +340,6 @@ namespace GameRes.Formats.Valkyria
             }
             foreach (var entry in m_dir)
                 entry.Offset += index_offset;
-        }
-
-        static bool IsAscii (byte[] data, int length)
-        {
-            for (int i = 0; i < length; ++i)
-                if (data[i] < 0x20 || data[i] > 0x7E)
-                    return false;
-            return true;
         }
 
         void FixupDir ()

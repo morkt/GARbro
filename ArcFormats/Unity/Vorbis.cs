@@ -76,7 +76,7 @@ namespace GameRes.Formats.Vorbis
 
         public CodecSetupInfo CodecSetup = new CodecSetupInfo();
 
-        const int TransormB = 1;
+        const int TransformB = 1;
         const int WindowB = 1;
         const int TimeB = 1;
         const int FloorB = 2;

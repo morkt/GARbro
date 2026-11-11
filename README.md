@@ -3,11 +3,11 @@ GARbro
 
 Visual Novels resource browser.
 
-Requires .NET Framework v4.6 or newer (https://www.microsoft.com/net)
+Requires .NET Framework v4.7.2 or newer (https://dotnet.microsoft.com/en-us/download/dotnet-framework/net472)
 
 [Supported formats](https://morkt.github.io/GARbro/supported.html)
 
-[Download latest release](https://github.com/morkt/GARbro/releases)
+[Download latest release](https://github.com/crskycode/GARbro/releases)
 
 Operation
 ---------
@@ -65,3 +65,10 @@ Korean translation by [mireado](https://github.com/mireado), [overworks](https:/
 Simplified Chinese translation by [elasticblitz](https://github.com/elasticblitz), [PeratX](https://github.com/PeratX) and [taroxd](https://github.com/taroxd)
 
 Japanese translation by [haniwa55](https://github.com/haniwa55)
+
+Contributors
+------
+
+<a href="https://github.com/crskycode/GARbro/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=crskycode/GARbro" />
+</a>

@@ -23,9 +23,12 @@
 // IN THE SOFTWARE.
 //
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
+using System.Text;
 using GameRes.Compression;
 
 namespace GameRes.Formats.Leaf
@@ -86,7 +89,7 @@ namespace GameRes.Formats.Leaf
         public override string Description { get { return "Leaf resource archive"; } }
         public override uint     Signature { get { return 0x43414C; } } // 'LAC'
         public override bool  IsHierarchic { get { return false; } }
-        public override bool      CanWrite { get { return false; } }
+        public override bool      CanWrite { get { return true; } }
 
         public PakOpener ()
         {
@@ -147,6 +150,103 @@ namespace GameRes.Formats.Leaf
             }
             Stream input = arc.File.CreateStream (entry.Offset, entry.Size);
             return new LzssStream (input);
+        }
+
+        // --- REPACK IMPLEMENTATION ---
+        // Note: This implementation was made for the Leaf game "Kimi ga Yobu, Megiddo no Oka de".
+        // Other games may or may not be supported.
+
+        public override void Create (Stream output, IEnumerable<Entry> entries, ResourceOptions options, EntryCallback callback)
+        {
+            // Order entries using the same order as the original PAK/LAC archive.
+            entries = entries.OrderBy (x => x.Name.ToLowerAscii(), StringComparer.Ordinal).ToList();
+
+            int count = entries.Count();
+            using (var writer = new BinaryWriter (output, Encoding.ASCII, true))
+            {
+                // Write Header (LAC)
+                writer.Write (Signature);
+                writer.Write (count);
+
+                long tableOffset = 8;
+                long dataOffset = tableOffset + (count * 0x28);
+
+                writer.BaseStream.Position = dataOffset;
+
+                var entryInfos = new List<EntryInfo>();
+                int i = 0;
+
+                foreach (var entry in entries)
+                {
+                    if (callback != null)
+                        callback (i + 1, entry, null);
+
+                    long currentOffset = writer.BaseStream.Position;
+
+                    using (var input = File.OpenRead(entry.Name))
+                    {
+                        byte[] rawData = new byte[input.Length];
+                        input.Read (rawData, 0, (int)input.Length);
+
+                        // Compress
+                        byte[] compressedData = LeafLzss.Compress (rawData, 0);
+
+                        uint totalSize;
+                        bool isPacked;
+
+                        // Write Data
+                        if (rawData.Length > 32 // Skip small uncompressed data that should not be compressed.
+                            && compressedData.Length < rawData.Length)
+                        {
+                            isPacked = true;
+                            totalSize = (uint)(compressedData.Length + 4);
+                            writer.Write ((uint)rawData.Length);
+                            writer.Write (compressedData);
+                        }
+                        else
+                        {
+                            isPacked = false;
+                            totalSize = (uint)rawData.Length;
+                            writer.Write (rawData);
+                        }
+
+                        entryInfos.Add (new EntryInfo
+                        {
+                            Name = Path.GetFileName (entry.Name),
+                            Offset = (uint)currentOffset,
+                            Size = totalSize,
+                            IsPacked = isPacked
+                        });
+                    }
+                    i++;
+                }
+
+                // Write File Table
+                writer.BaseStream.Position = tableOffset;
+                foreach (var info in entryInfos)
+                {
+                    byte[] nameBuf = new byte[0x20];
+
+                    byte[] nameBytes = Encodings.cp932.GetBytes (info.Name);
+                    int len = Math.Min (nameBytes.Length, 0x1F);
+                    for (int j = 0; j < len; ++j)
+                        nameBuf[j] = (byte)(nameBytes[j] ^ 0xFF);
+                    if (info.IsPacked)
+                        nameBuf[0x1F] = 1;
+
+                    writer.Write (nameBuf);
+                    writer.Write (info.Size);
+                    writer.Write (info.Offset);
+                }
+            }
+        }
+
+        struct EntryInfo
+        {
+            public string Name;
+            public uint Offset;
+            public uint Size;
+            public bool IsPacked;
         }
     }
 }

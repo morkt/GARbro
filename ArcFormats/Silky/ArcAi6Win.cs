@@ -27,7 +27,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using GameRes.Compression;
+using GameRes.Formats.Strings;
 using GameRes.Utility;
 
 namespace GameRes.Formats.Silky
@@ -39,7 +41,7 @@ namespace GameRes.Formats.Silky
         public override string Description { get { return "AI6WIN engine resource archive"; } }
         public override uint     Signature { get { return 0; } }
         public override bool  IsHierarchic { get { return true; } }
-        public override bool      CanWrite { get { return false; } }
+        public override bool      CanWrite { get { return true; } }
 
         public Ai6Opener ()
         {
@@ -95,6 +97,109 @@ namespace GameRes.Formats.Silky
                 return base.OpenEntry (arc, entry);
             var input = arc.File.CreateStream (entry.Offset, entry.Size);
             return new LzssStream (input);
+        }
+
+        public override void Create (Stream output, IEnumerable<Entry> list, ResourceOptions options, EntryCallback callback)
+        {
+            int count = list.Count ();
+            if (0 == count)
+                throw new InvalidOperationException ("Archive is empty");
+
+            uint index_size = (uint)(count * (0x104 + 12));
+            uint data_offset = 4 + index_size;
+
+            if (null != callback)
+                callback (count + 1, null, null);
+
+            var entries = new List<IndexEntry> (count);
+            uint current_offset = data_offset;
+            int callback_count = 0;
+
+            foreach (var entry in list)
+            {
+                if (null != callback)
+                    callback (callback_count++, entry, arcStrings.MsgAddingFile);
+
+                string name = entry.Name;
+                if (name.Contains ("\\"))
+                    name = name.Replace ("\\", "/");
+
+                try
+                {
+                    long file_size = 0;
+                    using (var input = File.OpenRead (entry.Name))
+                    {
+                        file_size = input.Length;
+                    }
+
+                    if (file_size > uint.MaxValue)
+                        throw new FileLoadException ("File is too large for this format.");
+
+                    var index_entry = new IndexEntry
+                    {
+                        SourcePath = entry.Name,
+                        ArchiveName = name,
+                        Size = (uint)file_size,
+                        UnpackedSize = (uint)file_size,
+                        Offset = current_offset
+                    };
+
+                    entries.Add (index_entry);
+                    current_offset += (uint)file_size;
+                }
+                catch (Exception X)
+                {
+                    // 修复点：此处改用硬编码字符串或尝试 MsgFileError
+                    throw new InvalidFileName (entry.Name, "Error opening file", X);
+                }
+            }
+
+            if (null != callback)
+                callback (callback_count++, null, arcStrings.MsgWritingIndex);
+
+            using (var writer = new BinaryWriter (output))
+            {
+                writer.Write ((uint)count);
+
+                foreach (var entry in entries)
+                {
+                    var name_bytes = Encodings.cp932.GetBytes (entry.ArchiveName);
+                    var name_buf = new byte[0x104];
+
+                    int copyLength = Math.Min (name_bytes.Length, name_buf.Length);
+                    Array.Copy (name_bytes, name_buf, copyLength);
+
+                    byte key = (byte)(name_bytes.Length + 1);
+
+                    for (int i = 0; i < copyLength; ++i)
+                    {
+                        name_buf[i] = (byte)((name_buf[i] + key) & 0xFF);
+                        key--;
+                    }
+
+                    writer.Write (name_buf);
+                    writer.Write (Binary.BigEndian (entry.Size));
+                    writer.Write (Binary.BigEndian (entry.UnpackedSize));
+                    writer.Write (Binary.BigEndian (entry.Offset));
+                }
+
+                foreach (var entry in entries)
+                {
+                    using (var input = File.OpenRead (entry.SourcePath))
+                    {
+                        input.CopyTo (output);
+                    }
+                }
+            }
+        }
+
+        private class IndexEntry
+        {
+            public string SourcePath { get; set; }
+            public string ArchiveName { get; set; }
+            public uint Size { get; set; }
+            public uint UnpackedSize { get; set; }
+            public uint Offset { get; set; }
         }
     }
 }

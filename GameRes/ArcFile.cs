@@ -96,7 +96,7 @@ namespace GameRes
                     }
                     catch (Exception X)
                     {
-                        // ignore failed open attmepts
+                        // ignore failed open attempts
                         Trace.WriteLine (string.Format ("[{0}] {1}: {2}", impl.Tag, entry.Name, X.Message));
                         FormatCatalog.Instance.LastError = X;
                     }

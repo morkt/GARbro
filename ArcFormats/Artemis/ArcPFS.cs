@@ -42,7 +42,7 @@ namespace GameRes.Formats.Artemis
 
         public PfsOpener ()
         {
-            Extensions = new string[] { "pfs", "000", "001", "002", "003", "004", "005", "010" };
+            Extensions = new string[] { "pfs", "ipd", "000", "001", "002", "003", "004", "005", "010" };
             ContainedFormats = new string[] { "PNG", "JPEG", "IPT", "OGG", "TXT", "SCR" };
             Settings = new[] { PfsEncoding };
         }
@@ -67,6 +67,7 @@ namespace GameRes.Formats.Artemis
                     return OpenPf (file, version, GetAltEncoding());
                 }
             case 2:     return OpenPf2 (file);
+            case 0:     return OpenPf0 (file); // SALA ONE .ipd format
             default:    return null;
             }
         }
@@ -124,6 +125,27 @@ namespace GameRes.Formats.Artemis
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 index_offset += 8;
+                dir.Add (entry);
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        ArcFile OpenPf0 (ArcView file)
+        { 
+            int count = file.View.ReadInt32 (3);
+            if (!IsSaneCount (count))
+                return null;
+            int offset = 7;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                var name = file.View.ReadString (offset, 0x104, Encoding.ASCII);
+                var entry = Create<Entry> (name);
+                entry.Offset = file.View.ReadUInt32 (offset + 0x104);
+                entry.Size   = file.View.ReadUInt32 (offset + 0x108);
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                offset += 0x10C;
                 dir.Add (entry);
             }
             return new ArcFile (file, this, dir);

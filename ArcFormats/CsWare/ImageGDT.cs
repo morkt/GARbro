@@ -43,7 +43,7 @@ namespace GameRes.Formats.CsWare
     [Export(typeof(ImageFormat))]
     public class GdtFormat : ImageFormat
     {
-        public override string         Tag => "GDT";
+        public override string         Tag => "GDT/AGS";
         public override string Description => "AGS engine image format";
         public override uint     Signature => 0x314144; // 'DA1'
 

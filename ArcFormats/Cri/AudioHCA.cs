@@ -655,11 +655,11 @@ namespace GameRes.Formats.Cri
 
         internal class Channel
         {
-		    float[]  Block = new float[0x80];
-		    float[]  Base = new float[0x80];
-		    sbyte[]  Value = new sbyte[0x80];
-		    sbyte[]  Scale = new sbyte[0x80];
-		    sbyte[]  Value2 = new sbyte[8];
+            float[]  Block = new float[0x80];
+            float[]  Base = new float[0x80];
+            sbyte[]  Value = new sbyte[0x80];
+            sbyte[]  Scale = new sbyte[0x80];
+            sbyte[]  Value2 = new sbyte[8];
             int      Type;
             int      ScaleVersion = 1;
             int      ValuePtr; // pointer within Value

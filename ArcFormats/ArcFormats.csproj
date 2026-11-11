@@ -9,11 +9,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GameRes.Formats</RootNamespace>
     <AssemblyName>ArcFormats</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -49,35 +51,95 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=1.3.3.11, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpZipLib.1.3.3\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
+    <Reference Include="BCnEncoder, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\BCnEncoder.Net.2.3.0\lib\netstandard2.0\BCnEncoder.dll</HintPath>
     </Reference>
-    <Reference Include="NAudio">
-      <HintPath>..\packages\NAudio.1.7.3\lib\net35\NAudio.dll</HintPath>
+    <Reference Include="CommunityToolkit.HighPerformance, Version=8.4.0.0, Culture=neutral, PublicKeyToken=4aff67a105548ee2, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommunityToolkit.HighPerformance.8.4.0\lib\netstandard2.0\CommunityToolkit.HighPerformance.dll</HintPath>
     </Reference>
-    <Reference Include="NVorbis, Version=0.10.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NVorbis.0.10.4\lib\net45\NVorbis.dll</HintPath>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=1.4.2.13, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpZipLib.1.4.2\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Compression.LZ4, Version=1.3.8.0, Culture=neutral, PublicKeyToken=2186fa9121ef231d, processorArchitecture=MSIL">
+      <HintPath>..\packages\K4os.Compression.LZ4.1.3.8\lib\net462\K4os.Compression.LZ4.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.HashCode, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.HashCode.6.0.0\lib\net462\Microsoft.Bcl.HashCode.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.Numerics, Version=10.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.Numerics.10.0.5\lib\net462\Microsoft.Bcl.Numerics.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Win32.Registry, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Win32.Registry.5.0.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.2.2.1\lib\net472\NAudio.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio.Asio, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.Asio.2.2.1\lib\netstandard2.0\NAudio.Asio.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio.Core, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.Core.2.2.1\lib\netstandard2.0\NAudio.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio.Midi, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.Midi.2.2.1\lib\netstandard2.0\NAudio.Midi.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio.Wasapi, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.Wasapi.2.2.1\lib\netstandard2.0\NAudio.Wasapi.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio.WinForms, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.WinForms.2.2.1\lib\net472\NAudio.WinForms.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio.WinMM, Version=2.2.1.0, Culture=neutral, PublicKeyToken=e279aa5131008a41, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.WinMM.2.2.1\lib\netstandard2.0\NAudio.WinMM.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NVorbis, Version=0.10.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NVorbis.0.10.5\lib\net45\NVorbis.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="SixLabors.ImageSharp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=d998eea7b14cab13, processorArchitecture=MSIL">
+      <HintPath>..\packages\SixLabors.ImageSharp.2.1.13\lib\net472\SixLabors.ImageSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Snappier, Version=1.3.0.0, Culture=neutral, PublicKeyToken=a1b25124e6e13a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Snappier.1.3.0\lib\net472\Snappier.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Buffers.4.5.1\lib\netstandard1.1\System.Buffers.dll</HintPath>
+    <Reference Include="System.Buffers, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
-    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Memory.4.5.4\lib\netstandard1.1\System.Memory.dll</HintPath>
+    <Reference Include="System.Memory, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.6.3\lib\net462\System.Memory.dll</HintPath>
     </Reference>
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.5.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.6.0\lib\netstandard1.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.6.1\lib\net462\System.Numerics.Vectors.dll</HintPath>
     </Reference>
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security.AccessControl, Version=6.0.0.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.AccessControl.6.0.1\lib\net461\System.Security.AccessControl.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Principal.Windows, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Principal.Windows.5.0.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encoding.CodePages, Version=10.0.0.5, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encoding.CodePages.10.0.5\lib\net462\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.6.3\lib\net462\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -85,6 +147,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
+    <Reference Include="ZstdSharp, Version=0.8.7.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZstdSharp.Port.0.8.7\lib\net462\ZstdSharp.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abel\ArcARC.cs" />
@@ -98,31 +163,92 @@
     <Compile Include="Abogado\ImageKG.cs" />
     <Compile Include="Actgs\ArcCG.cs" />
     <Compile Include="Actgs\ArcDAT.cs" />
+    <Compile Include="Actgs\ImagePB6.cs" />
     <Compile Include="Adobe\ArcAIR.cs" />
     <Compile Include="Ads\ArcPAC.cs" />
     <Compile Include="AdvDx\ArcPKD.cs" />
+    <Compile Include="AdvRun\ArcARD.cs" />
+    <Compile Include="AdvRun\ImagePIZ.cs" />
     <Compile Include="AdvScripter\ArcPAK.cs" />
     <Compile Include="AdvSys\ArcAdvSys3.cs" />
     <Compile Include="AdvSys\ImageGWD.cs" />
     <Compile Include="Ail\ArcLNK2.cs" />
     <Compile Include="AIRNovel\ArcAIR.cs" />
+    <Compile Include="aNCHOR\ArcFPD.cs" />
+    <Compile Include="aNCHOR\AudioFCD.cs" />
+    <Compile Include="aNCHOR\Blowfish.cs" />
+    <Compile Include="Artdink\ArcDAT.cs" />
+    <Compile Include="Artdink\ImageAGI.cs" />
+    <Compile Include="Artdink\ImageFAC.cs" />
+    <Compile Include="Artdink\ImageTAG.cs" />
+    <Compile Include="Artdink\ImageTEX.cs" />
+    <Compile Include="Artdink\ImageTXF.cs" />
+    <Compile Include="Artdink\Ps2ImageUtil.cs" />
+    <Compile Include="CatSystem\ArcBinV1.cs" />
+    <Compile Include="CatSystem\ArcPidaV1.cs" />
+    <Compile Include="Entergram\ArcPacV1.cs" />
+    <Compile Include="Entergram\QuickLZ.cs" />
+    <Compile Include="FrontierWorks\ArcPCARC.cs" />
+    <Compile Include="Artemis\ImageNekoPNG.cs" />
+    <Compile Include="Artemis\ImageIPG.cs" />
+    <Compile Include="ComicPlayer\ArcCP3.cs" />
+    <Compile Include="ComicPlayer\ArcCPF.cs" />
     <Compile Include="CsWare\AudioWAV.cs" />
     <Compile Include="CsWare\ImageGDT.cs" />
+    <Compile Include="Cyberworks\ArcDATA.cs" />
+    <Compile Include="Cyberworks\ImageDATA.cs" />
+    <Compile Include="Cyberworks\WidgetBELLDATA.xaml.cs">
+      <DependentUpon>WidgetBELLDATA.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DigitalWorks\ArcPACsingle.cs" />
+    <Compile Include="DigitalWorks\ArcPACPS2.cs" />
+    <Compile Include="DigitalWorks\ImageTM2arc.cs" />
+    <Compile Include="DxLib\HuffmanDecoder.cs" />
+    <Compile Include="DxLib\WidgetDXA.xaml.cs">
+      <DependentUpon>WidgetDXA.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Edoire\ArcARC.cs" />
     <Compile Include="FC01\ArcBDT.cs" />
+    <Compile Include="FC01\ArcSCXA.cs" />
     <Compile Include="FC01\BdtTables.cs" />
+    <Compile Include="Fog\ArcDAT.cs" />
+    <Compile Include="FrontierWorks\ImageEXT.cs" />
     <Compile Include="GScripter\ArcDATA.cs" />
+    <Compile Include="Guyzware\ArcDat.cs" />
+    <Compile Include="ImageKTX.cs" />
     <Compile Include="Ism\ImagePNG.cs" />
+    <Compile Include="Kid\ArcDATRAW.cs" />
+    <Compile Include="Kid\ArcKLZ.cs" />
+    <Compile Include="Kid\ArcP2T.cs" />
+    <Compile Include="Kid\ImageBIP.cs" />
+    <Compile Include="Kid\ImageBIParc.cs" />
+    <Compile Include="Kid\ImageKLZ.cs" />
+    <Compile Include="Kid\ImageLBG.cs" />
+    <Compile Include="Kid\ImageSPC.cs" />
+    <Compile Include="KiriKiri\ArcTLG.cs" />
+    <Compile Include="Kitsunemimi\ArcPAK.cs" />
     <Compile Include="Kogado\ArcARC.cs" />
     <Compile Include="Ice\ImageIBM.cs" />
     <Compile Include="Ice\ScriptISD.cs" />
     <Compile Include="BlueGale\ImageBBM.cs" />
     <Compile Include="ClickTeam\ArcMF.cs" />
     <Compile Include="DxLib\ArcDX8.cs" />
+    <Compile Include="Headlock\ArcDAT.cs" />
+    <Compile Include="Hecate\ArcDAT.cs" />
+    <Compile Include="HuneX\ArcHFA.cs" />
+    <Compile Include="HuneX\ArcMZP.cs" />
+    <Compile Include="HuneX\Decoder.cs" />
+    <Compile Include="HuneX\ImageCBG.cs" />
     <Compile Include="Hypatia\ArcLPK.cs" />
     <Compile Include="Hypatia\ImageLSG.cs" />
     <Compile Include="Illusion\ArcPP.cs" />
+    <Compile Include="Illusion\ImageEMA.cs" />
+    <Compile Include="Illusion\WidgetPP.xaml.cs">
+      <DependentUpon>WidgetPP.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Interheart\ImageBMP.cs" />
     <Compile Include="Interheart\ImageHMP.cs" />
+    <Compile Include="CatSystem\ArcZT.cs" />
     <Compile Include="JamCreation\ArcDAT.cs" />
     <Compile Include="JamCreation\ImageDPO.cs" />
     <Compile Include="AliceSoft\ArcAAR.cs" />
@@ -145,23 +271,51 @@
     <Compile Include="Aoi\ImageAGF.cs" />
     <Compile Include="Apricot\ArcDAT.cs" />
     <Compile Include="ArcARCX.cs" />
+    <Compile Include="ArcASAR.cs" />
     <Compile Include="Artemis\ArcMJA.cs" />
+    <Compile Include="GenericVideo.cs" />
+    <Compile Include="Leaf\LeafCompression.cs" />
+    <Compile Include="LightVN\ArcMCDAT.cs" />
+    <Compile Include="LightVN\ArcVNDAT.cs" />
     <Compile Include="Macintosh\ImagePICT.cs" />
     <Compile Include="Macromedia\ArcDXR.cs" />
     <Compile Include="Macromedia\AudioSND.cs" />
     <Compile Include="Macromedia\DirectorFile.cs" />
     <Compile Include="Macromedia\Palettes.cs" />
+    <Compile Include="MAGES\ArcARC20.cs" />
+    <Compile Include="MAGES\ArcFARC.cs" />
+    <Compile Include="MAGES\ArcGPDA.cs" />
+    <Compile Include="MAGES\ArcGTF.cs" />
+    <Compile Include="MAGES\ArcLoveOnce.cs" />
+    <Compile Include="MAGES\ImageBIN.cs" />
     <Compile Include="Mugi\ArcBIN.cs" />
+    <Compile Include="Musica\ArcPAK.cs" />
+    <Compile Include="NekoNovel\ArcNKPACK.cs" />
+    <Compile Include="NekoNyan\ArcDAT.cs" />
+    <Compile Include="NEKOWORKs\ArcPACK.cs" />
+    <Compile Include="NipponIchi\ArcCASN.cs" />
+    <Compile Include="NipponIchi\ArcPSFS.cs" />
+    <Compile Include="NipponIchi\ImageNMT.cs" />
     <Compile Include="NScripter\Script.cs" />
+    <Compile Include="Ps1\ImageTIM.cs" />
+    <Compile Include="Psp\ArcGim.cs" />
     <Compile Include="Psp\ArcQPK.cs" />
+    <Compile Include="QoiCodec.cs" />
     <Compile Include="ScrPlayer\ImageIMG.cs" />
+    <Compile Include="Silky\ImageMMO.cs" />
     <Compile Include="SingleFileArchive.cs" />
-    <Compile Include="Software House Parsley\ArcCG3.cs" />
-    <Compile Include="Software House Parsley\ArcScn.cs" />
+    <Compile Include="SoftwareHouseParsley\ArcCG3.cs" />
+    <Compile Include="SoftwareHouseParsley\ArcScn.cs" />
     <Compile Include="TechGian\ArcBIN.cs" />
     <Compile Include="Unity\ScriptDSM.cs" />
+    <Compile Include="VnMaker\ArcZIP.cs" />
+    <Compile Include="VnMaker\AudioMP3.cs" />
+    <Compile Include="VnMaker\AudioOGG.cs" />
+    <Compile Include="VnMaker\ImagePNG.cs" />
+    <Compile Include="WebPCodec.cs" />
     <Compile Include="Xuse\ArcNT.cs" />
     <Compile Include="Xuse\ArcWVB.cs" />
+    <Compile Include="YuRis\ImageYDG.cs" />
     <Compile Include="Zyx\ImageXMG.cs" />
     <Compile Include="AudioAIFF.cs" />
     <Compile Include="Basil\ArcMIF.cs" />
@@ -200,6 +354,7 @@
     <Compile Include="Cyberworks\ArcP8.cs" />
     <Compile Include="Cyberworks\ImageTB1.cs" />
     <Compile Include="DaiSystem\ArcPAC.cs" />
+    <Compile Include="DeepBlue\ArcAC.cs" />
     <Compile Include="DigitalWorks\ArcBIN.cs" />
     <Compile Include="DigitalWorks\ArcPAC.cs" />
     <Compile Include="DigitalWorks\ImageTM2.cs" />
@@ -211,6 +366,7 @@
     <Compile Include="elf\ImageRMT.cs" />
     <Compile Include="EmbeddedResource.cs" />
     <Compile Include="Emote\ImageDREF.cs" />
+    <Compile Include="Enigma\ArcEVB.cs" />
     <Compile Include="Eternity\ArcGLNK.cs" />
     <Compile Include="Eternity\ImageSGF.cs" />
     <Compile Include="Ethornell\ImageCBG.cs" />
@@ -221,8 +377,10 @@
     <Compile Include="FC01\ImageTIL.cs" />
     <Compile Include="FC01\ImageWM2.cs" />
     <Compile Include="FC01\ImageWMK.cs" />
+    <Compile Include="FrontWing\ArcDAT.cs" />
     <Compile Include="FrontWing\ArcFG.cs" />
     <Compile Include="FrontWing\ArcFLT.cs" />
+    <Compile Include="FrontWing\ArcTLP.cs" />
     <Compile Include="FrontWing\ArcVAV.cs" />
     <Compile Include="FrontWing\ImageFG.cs" />
     <Compile Include="GLib\ArcG.cs" />
@@ -244,6 +402,9 @@
     <Compile Include="Interheart\ArcFPK2.cs" />
     <Compile Include="Interheart\ImageCandy.cs" />
     <Compile Include="Ivory\ArcSG.cs" />
+    <Compile Include="Kaguya\ArcAF.cs" />
+    <Compile Include="Kaguya\ArcPL00.cs" />
+    <Compile Include="Kaguya\ArcPL10.cs" />
     <Compile Include="Kaguya\ArcPLT.cs" />
     <Compile Include="Key\ArcPAK.cs" />
     <Compile Include="Key\AudioOGGPAK.cs" />
@@ -251,6 +412,8 @@
     <Compile Include="Kid\ArcDAT.cs" />
     <Compile Include="Kid\AudioWAF.cs" />
     <Compile Include="Kid\ImagePRT.cs" />
+    <Compile Include="KiriKiri\HxCrypt.cs" />
+    <Compile Include="KiriKiri\HxCryptLite.cs" />
     <Compile Include="KiriKiri\MoreCrypt.cs" />
     <Compile Include="KiriKiri\YuzCrypt.cs" />
     <Compile Include="Lambda\ArcLAX.cs" />
@@ -258,9 +421,11 @@
     <Compile Include="Leaf\ArcAR2.cs" />
     <Compile Include="Leaf\ArcLEAF.cs" />
     <Compile Include="Leaf\ArcPAK.cs" />
+    <Compile Include="Leaf\ArcSDAT.cs" />
     <Compile Include="Leaf\AudioP16.cs" />
     <Compile Include="Leaf\ImageBJR.cs" />
     <Compile Include="Leaf\ImageLFG.cs" />
+    <Compile Include="Leaf\ImageLFB.cs" />
     <Compile Include="Leaf\WidgetLEAF.xaml.cs">
       <DependentUpon>WidgetLEAF.xaml</DependentUpon>
     </Compile>
@@ -285,10 +450,11 @@
     <Compile Include="MultiFileArchive.cs" />
     <Compile Include="Musica\ArcANI.cs" />
     <Compile Include="MyAdv\ArcPAC.cs" />
+    <Compile Include="Nekopack\ArcDAT.cs" />
     <Compile Include="Nekopack\ArcNEKO2.cs" />
     <Compile Include="Nekopack\ArcNEKO3.cs" />
-    <Compile Include="NitroPlus\ArcLAY.cs" />
-    <Compile Include="NitroPlus\ArcMPK.cs" />
+    <Compile Include="MAGES\ArcLAY.cs" />
+    <Compile Include="MAGES\ArcMPK.cs" />
     <Compile Include="NitroPlus\ArcNPP.cs" />
     <Compile Include="Noesis\ArcIGA.cs" />
     <Compile Include="NonColor\ArcMinato.cs" />
@@ -347,15 +513,20 @@
     <Compile Include="Qlie\ImageABMP.cs" />
     <Compile Include="Qlie\ImageARGB.cs" />
     <Compile Include="RealLive\ArcKOE.cs" />
+    <Compile Include="RealLive\ArcPCK.cs" />
+    <Compile Include="RealLive\ArcSCENE.cs" />
     <Compile Include="RealLive\ArcSEEN.cs" />
     <Compile Include="RealLive\ImageG00Jpeg.cs" />
+    <Compile Include="RealLive\WidgetSCENE.xaml.cs">
+      <DependentUpon>WidgetSCENE.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ResourceSettings.cs" />
     <Compile Include="Rits\ImageHBM.cs" />
-    <Compile Include="RPM\ArcZENOS.cs" />
     <Compile Include="rUGP\AudioRHA.cs" />
     <Compile Include="Lilim\ArcFGA.cs" />
     <Compile Include="ScenePlayer\ArcPMA.cs" />
     <Compile Include="ScenePlayer\ArcPMX.cs" />
+    <Compile Include="Scoop\ArcAPG.cs" />
     <Compile Include="Scoop\ArcGX.cs" />
     <Compile Include="Scoop\ImageSCP.cs" />
     <Compile Include="Seraphim\ArcArchAngel.cs" />
@@ -366,16 +537,18 @@
     <Compile Include="Seraphim\ImageCP3.cs" />
     <Compile Include="ShiinaRio\ArcWARC1.0.cs" />
     <Compile Include="ShiinaRio\ImageCHD.cs" />
+    <Compile Include="SideB\ArcDAT.cs" />
     <Compile Include="Slg\ImageTIM.cs" />
-    <Compile Include="Software House Parsley\ArcCG2.cs" />
-    <Compile Include="Software House Parsley\ArcPAC.cs" />
-    <Compile Include="Software House Parsley\ArcUCG.cs" />
-    <Compile Include="Software House Parsley\ImagePCG.cs" />
+    <Compile Include="SoftwareHouseParsley\ArcCG2.cs" />
+    <Compile Include="SoftwareHouseParsley\ArcPAC.cs" />
+    <Compile Include="SoftwareHouseParsley\ArcUCG.cs" />
+    <Compile Include="SoftwareHouseParsley\ImagePCG.cs" />
     <Compile Include="Sohfu\ArcSKA.cs" />
     <Compile Include="Sohfu\ImageDTL.cs" />
     <Compile Include="Speed\ArcARC.cs" />
     <Compile Include="Stack\ArcGPK.cs" />
     <Compile Include="Strikes\ArcPCK.cs" />
+    <Compile Include="Suika\ArcSuika.cs" />
     <Compile Include="Ads\ArcPOG.cs" />
     <Compile Include="Strikes\ImageLAG.cs" />
     <Compile Include="StudioJikkenshitsu\ArcUMPK.cs" />
@@ -386,10 +559,9 @@
     <Compile Include="StudioJikkenshitsu\WidgetSJDAT.xaml.cs">
       <DependentUpon>WidgetSJDAT.xaml</DependentUpon>
     </Compile>
-    <Compile Include="StudioSakura\ArcDAT.cs" />
     <Compile Include="Silky\ImageGRD.cs" />
     <Compile Include="Slg\ArcSPD.cs" />
-    <Compile Include="Software House Parsley\ArcCG.cs" />
+    <Compile Include="SoftwareHouseParsley\ArcCG.cs" />
     <Compile Include="Artemis\ArcPFS.cs" />
     <Compile Include="AudioWMA.cs" />
     <Compile Include="BlackRainbow\ArcDAT.cs" />
@@ -530,6 +702,7 @@
     <Compile Include="MD5.cs" />
     <Compile Include="Moonhir\ArcFPK.cs" />
     <Compile Include="Morning\ArcTTD.cs" />
+    <Compile Include="Musica\ArcMIP.cs" />
     <Compile Include="Musica\ArcPAZ.cs" />
     <Compile Include="Musica\ArcSQZ.cs" />
     <Compile Include="Musica\WidgetPAZ.xaml.cs">
@@ -598,6 +771,7 @@
     <Compile Include="BlueGale\ImageZBM.cs" />
     <Compile Include="Circus\ArcPCK.cs" />
     <Compile Include="Cmvs\ArcCPZ.cs" />
+    <Compile Include="Cmvs\ArcCPZ3.cs" />
     <Compile Include="Pandora\ArcPBX.cs" />
     <Compile Include="Banana\ArcPK.cs" />
     <Compile Include="Banana\ImageMAG.cs" />
@@ -607,6 +781,7 @@
     <Compile Include="Cmvs\ImagePB3.cs" />
     <Compile Include="CsWare\ArcPCS.cs" />
     <Compile Include="DenSDK\ArcDAF.cs" />
+    <Compile Include="Dvn\ArcDVN.cs" />
     <Compile Include="elf\ArcVSD.cs" />
     <Compile Include="Entis\ErisaNemesis.cs" />
     <Compile Include="Escude\ArcBIN.cs" />
@@ -643,10 +818,14 @@
     <Compile Include="Succubus\ArcARC.cs" />
     <Compile Include="Succubus\ImageGH.cs" />
     <Compile Include="SuperNekoX\ArcGPC.cs" />
+    <Compile Include="Sviu\ArcKLZ.cs" />
     <Compile Include="Sviu\ArcPKZ.cs" />
     <Compile Include="Sviu\AudioKOG.cs" />
+    <Compile Include="Sviu\AudioKPV.cs" />
     <Compile Include="Sviu\ImageGBP.cs" />
     <Compile Include="Sviu\ImageJBP.cs" />
+    <Compile Include="Sviu\ImageKBP.cs" />
+    <Compile Include="Sviu\VideoMOV.cs" />
     <Compile Include="SysD\ArcDPK.cs" />
     <Compile Include="SysD\AudioDWV.cs" />
     <Compile Include="SysD\ImageDBM.cs" />
@@ -708,6 +887,7 @@
     <Compile Include="Qlie\WidgetQLIE.xaml.cs">
       <DependentUpon>WidgetQLIE.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Sas5\ArcGAR.cs" />
     <Compile Include="Sas5\ArcIAR.cs" />
     <Compile Include="Sas5\ArcSec5.cs" />
     <Compile Include="Sas5\ArcWAR.cs" />
@@ -843,13 +1023,14 @@
     <Compile Include="VnEngine\ArcAXR.cs" />
     <Compile Include="VnEngine\ImageZAW.cs" />
     <EmbeddedResource Include="Abogado\keytable.dat" />
-    <None Include="packages.config" />
     <EmbeddedResource Include="Strings\arcStrings.ja-JP.resx" />
+    <EmbeddedResource Include="Strings\arcStrings.zh-Hant.resx" />
     <EmbeddedResource Include="Unity\strings.dat" />
     <EmbeddedResource Include="ScrPlayer\ImgControlTable1" />
     <EmbeddedResource Include="ScrPlayer\ImgControlTable2" />
     <EmbeddedResource Include="ScrPlayer\ImgDeltaTable2" />
     <EmbeddedResource Include="ScrPlayer\ImgControlTable32" />
+    <None Include="packages.config" />
     <None Include="WebP\Alpha.cs" />
     <None Include="WebP\Decoder.cs">
       <SubType>Code</SubType>
@@ -912,6 +1093,8 @@
     <Compile Include="Liar\ArcXFL.cs" />
     <Compile Include="KiriKiri\ArcXP3.cs" />
     <Compile Include="YuRis\ArcYPF.cs" />
+    <Compile Include="YuukiNovel\ArcYuuki.cs" />
+    <Compile Include="MOONSTONE\ArcPAK.cs" />
     <Compile Include="Macromedia\AudioEDIM.cs" />
     <Compile Include="Crowd\AudioEOG.cs" />
     <Compile Include="Entis\AudioMIO.cs" />
@@ -1011,6 +1194,7 @@
     <Compile Include="KiriKiri\KiriKiriCx.cs" />
     <Compile Include="KogadoCocotte.cs" />
     <Compile Include="AudioOGG.cs" />
+    <Compile Include="aPLibStream.cs" />
     <Compile Include="LzssStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -1101,7 +1285,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Cyberworks\WidgetBELLDATA.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Cyberworks\WidgetBELL.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DxLib\WidgetDXA.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -1118,6 +1310,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FC01\WidgetMCG.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Illusion\WidgetPP.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -1170,6 +1366,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Qlie\WidgetQLIE.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="RealLive\WidgetSCENE.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -1274,20 +1474,13 @@ exit 0</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>if not exist "$(TargetDir)\GameData" mkdir "$(TargetDir)\GameData"
-xcopy "$(ProjectDir)\Resources\Formats.dat" "$(TargetDir)\GameData\" /D /Y &gt;NUL</PostBuildEvent>
+xcopy "$(ProjectDir)\Resources\*" "$(TargetDir)\GameData\" /D /Y &gt;NUL</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+    <Error Condition="!Exists('..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets'))" />
   </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <Import Project="..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets" Condition="Exists('..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets')" />
 </Project>

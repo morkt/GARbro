@@ -273,7 +273,7 @@ namespace GameRes.Formats.Unity
                     obj = info;
                 }
                 else
-                    throw new NotImplementedException ("Unknown class encountered in asset deserialzation.");
+                    throw new NotImplementedException ("Unknown class encountered in asset deserialization.");
             }
             else if ("int" == node.Type)
                 obj = input.ReadInt32();

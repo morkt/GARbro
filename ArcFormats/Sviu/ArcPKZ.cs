@@ -100,12 +100,12 @@ namespace GameRes.Formats.Sviu
             var parc = (PkzArchive)arc;
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
             DecryptData (data, parc.Key);
-            if (data.AsciiEqual (0, "SVS18"))
+            if (data.AsciiEqual (0, "SVS1"))
                 data = UnpackScript (data);
             return new BinMemoryStream (data, entry.Name);
         }
 
-        byte[] UnpackScript (byte[] data)
+        public static byte[] UnpackScript (byte[] data)
         {
             if (data.ToInt32 (0x10) == 0)
                 return data;
@@ -120,7 +120,7 @@ namespace GameRes.Formats.Sviu
             return output;
         }
 
-        void LzUnpack (IBinaryStream input, byte[] output, int dst)
+        public static void LzUnpack (IBinaryStream input, byte[] output, int dst)
         {
             var frame = new byte[0x800];
             int frame_pos = 0x7E8;

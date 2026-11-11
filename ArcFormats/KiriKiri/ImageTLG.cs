@@ -8,21 +8,26 @@
 // C# port by morkt
 //
 
-using System;
-using System.IO;
-using System.ComponentModel.Composition;
-using System.Windows.Media;
+using GameRes.Formats.QoiCodec;
 using GameRes.Utility;
+using K4os.Compression.LZ4;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace GameRes.Formats.KiriKiri
 {
     internal class TlgMetaData : ImageMetaData
     {
         public int Version;
-        public int DataOffset;
+        public long DataOffset;
+        public int LayerIndex;
     }
 
     [Export(typeof(ImageFormat))]
@@ -35,7 +40,7 @@ namespace GameRes.Formats.KiriKiri
         public TlgFormat ()
         {
             Extensions = new string[] { "tlg", "tlg5", "tlg6" };
-            Signatures = new uint[] { 0x30474C54, 0x35474C54, 0x36474C54, 0x35474CAB, 0x584D4B4A };
+            Signatures = new uint[] { 0x30474C54, 0x35474C54, 0x36474C54, 0x35474CAB, 0x584D4B4A, 0x6D474C54, 0x71474C54, 0x72474C54 };
         }
 
         public override ImageMetaData ReadMetaData (IBinaryStream stream)
@@ -45,7 +50,7 @@ namespace GameRes.Formats.KiriKiri
             if (!header.AsciiEqual ("TLG0.0\x00sds\x1a"))
                 offset = 0;
             int version;
-            if (!header.AsciiEqual (offset+6, "\x00raw\x1a"))
+            if (!header.AsciiEqual (offset+6, "\x00raw\x1a") && !header.AsciiEqual (offset+6, "\x00idx\x1a"))
                 return null;
             if (0xAB == header[offset])
                 header[offset] = (byte)'T';
@@ -53,6 +58,12 @@ namespace GameRes.Formats.KiriKiri
                 version = 6;
             else if (header.AsciiEqual (offset, "TLG5.0"))
                 version = 5;
+            else if (header.AsciiEqual (offset, "TLGmux"))
+                version = 0;
+            else if (header.AsciiEqual (offset, "TLGqoi"))
+                version = 1;
+            else if (header.AsciiEqual (offset, "TLGref"))
+                version = 2;
             else if (header.AsciiEqual (offset, "XXXYYY"))
             {
                 version = 5;
@@ -102,6 +113,9 @@ namespace GameRes.Formats.KiriKiri
         {
             var meta = (TlgMetaData)info;
 
+            if (2 == meta.Version)
+                return ReadREF (file, meta);
+
             var image = ReadTlg (file, meta);
 
             int tail_size = (int)Math.Min (file.Length - file.Position, 512);
@@ -137,6 +151,10 @@ namespace GameRes.Formats.KiriKiri
             src.Position = info.DataOffset;
             if (6 == info.Version)
                 return ReadV6 (src, info);
+            else if (0 == info.Version)
+                return ReadMUX (src, info);
+            else if (1 == info.Version)
+                return ReadQOI (src, info);
             else
                 return ReadV5 (src, info);
         }
@@ -320,7 +338,7 @@ namespace GameRes.Formats.KiriKiri
                     // two most significant bits of bitlength are
                     // entropy coding method;
                     // 00 means Golomb method,
-                    // 01 means Gamma method (not yet suppoted),
+                    // 01 means Gamma method (not yet supported),
                     // 10 means modified LZSS method (not yet supported),
                     // 11 means raw (uncompressed) data (not yet supported).
 
@@ -820,7 +838,7 @@ namespace GameRes.Formats.KiriKiri
             static void TVPTLG6InitLeadingZeroTable ()
             {
                 /* table which indicates first set bit position + 1. */
-                /* this may be replaced by BSF (IA32 instrcution). */
+                /* this may be replaced by BSF (IA32 instruction). */
 
                 for (int i = 0; i < TVP_TLG6_LeadingZeroTable_SIZE; i++)
                 {
@@ -845,7 +863,7 @@ namespace GameRes.Formats.KiriKiri
                             TVPTLG6GolombBitLengthTable[a++,n] = (sbyte)i;
                     }
                     if(a != TVP_TLG6_GOLOMB_N_COUNT*2*128)
-                        throw new Exception ("Invalid data initialization");   /* THIS MUST NOT BE EXECUETED! */
+                        throw new Exception ("Invalid data initialization");   /* THIS MUST NOT BE EXECUTED! */
                             /* (this is for compressed table data check) */
                 }
             }
@@ -858,7 +876,7 @@ namespace GameRes.Formats.KiriKiri
                 values are coded using golomb code.
 
                 "ForFirst" function do dword access to pixelbuf,
-                clearing with zero except for blue (least siginificant byte).
+                clearing with zero except for blue (least significant byte).
             */
             int bit_pool_index = 0;
 
@@ -903,7 +921,7 @@ namespace GameRes.Formats.KiriKiri
                 {
                     /* zero values */
 
-                    /* fill distination with zero */
+                    /* fill destination with zero */
                     do { pixelbuf[pixel++] = 0; } while (0 != --count);
 
                     zero = !zero;
@@ -912,7 +930,7 @@ namespace GameRes.Formats.KiriKiri
                 {
                     /* non-zero values */
 
-                    /* fill distination with glomb code */
+                    /* fill destination with golomb code */
 
                     do
                     {
@@ -1019,7 +1037,7 @@ namespace GameRes.Formats.KiriKiri
                 {
                     /* zero values */
 
-                    /* fill distination with zero */
+                    /* fill destination with zero */
                     do { pixelbuf[pixel++] &= mask; } while (0 != --count);
 
                     zero = !zero;
@@ -1028,7 +1046,7 @@ namespace GameRes.Formats.KiriKiri
                 {
                     /* non-zero values */
 
-                    /* fill distination with glomb code */
+                    /* fill destination with golomb code */
 
                     do
                     {
@@ -1083,6 +1101,400 @@ namespace GameRes.Formats.KiriKiri
                     } while (0 != --count);
                     zero = !zero;
                 }
+            }
+        }
+
+        byte[] DecodeQOI (IBinaryStream src, uint width, uint height)
+        {
+            var count = 4*width*height;
+            var output = new byte [count];
+            var qoi = new QoiDecodeStream (src);
+            uint pixel = 0;
+            var run = 0;
+            var dst = 0;
+            while (dst < count)
+            {
+                if (run > 1)
+                    --run;
+                else
+                {
+                    run = qoi.Read (out pixel);
+                }
+                output[dst  ] = (byte)pixel;
+                output[dst+1] = (byte)(pixel >> 8);
+                output[dst+2] = (byte)(pixel >> 16);
+                output[dst+3] = (byte)(pixel >> 24);
+                dst += 4;
+            }
+            return output;
+        }
+
+        class Lz4DecodeStream
+        {
+            readonly IBinaryStream m_input;
+            readonly byte[][]      m_buffer;
+            readonly int[]         m_size;
+            int                    m_index;
+            int                    m_pos;
+
+            const int BUFFER_SIZE = 0x8000;
+
+            public Lz4DecodeStream (IBinaryStream input)
+            {
+                m_input = input;
+                m_buffer = new byte[2][];
+                m_size = new int[2];
+                for (var i = 0; i < m_buffer.Length; i++)
+                    m_buffer[i] = new byte[BUFFER_SIZE];
+            }
+
+            bool FillBuffer ()
+            {
+                if (m_input.Position == m_input.Length)
+                    return false;
+                var v1 = m_input.ReadInt32 ();
+                var v2 = (int)((uint)v1 >> 16);
+                var input = m_input.ReadBytes (v2);
+                if (v2 != input.Length)
+                    throw new EndOfStreamException ();
+                var size = v1 & 0x7FFF;
+                if (0 == size)
+                    size = 0x8000;
+                var dst = m_index ^ 1;
+                var dic = m_index;
+                int num;
+                if (0 != (v1 & 0x8000))
+                {
+                    if (0 == m_size[dic])
+                        throw new InvalidFormatException ();
+                    num = LZ4Codec.Decode (input, m_buffer[dst], m_buffer[dic].AsSpan (0, m_size[dic]));
+                }
+                else
+                    num = LZ4Codec.Decode (input, m_buffer[dst]);
+                if (-1 == num || size != num)
+                    throw new InvalidFormatException ();
+                m_size[dst] = num;
+                m_index ^= 1;
+                m_pos = 0;
+                return true;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public int ReadByte ()
+            {
+                if (m_pos == m_size[m_index])
+                {
+                    if (!FillBuffer ())
+                        return -1;
+                }
+                var idx = m_index;
+                if (m_pos == m_size[idx])
+                    return -1;
+                return m_buffer[idx][m_pos++];
+            }
+        }
+
+        class RunDecodeStream
+        {
+            readonly Lz4DecodeStream m_input;
+
+            public RunDecodeStream (IBinaryStream input)
+            {
+                m_input = new Lz4DecodeStream (input);
+            }
+
+            public int Read ()
+            {
+                var value = 0;
+                var shift = 0;
+                while (shift < 32)
+                {
+                    var b = m_input.ReadByte ();
+                    if (-1 == b)
+                        throw new EndOfStreamException ();
+                    value |= (int)(b & 0x7F) << shift;
+                    if (0 == (b & 0x80))
+                        break;
+                    shift += 7;
+                }
+                return value;
+            }
+        }
+
+        class QoiBlockDecoder
+        {
+            readonly QoiDecodeStream m_qoi;
+            readonly RunDecodeStream m_run;
+            readonly int    m_pixel_count;
+            readonly int    m_layer_index;
+            readonly int    m_layer_count;
+            readonly byte[] m_output;
+            readonly int    m_dst;
+
+            public QoiBlockDecoder (byte[] qoi, byte[] run, int pixel_count, int layer_index, int layer_count, byte[] output, int dst)
+            {
+                m_qoi = new QoiDecodeStream (new BinMemoryStream (qoi));
+                m_run = new RunDecodeStream (new BinMemoryStream (run));
+                m_pixel_count = pixel_count;
+                m_layer_index = layer_index;
+                m_layer_count = layer_count;
+                m_output = output;
+                m_dst = dst;
+            }
+
+            public void Decode ()
+            {
+                m_qoi.Read (out var p0);
+                m_qoi.Read (out var p1);
+                if (0 != p0 || 0xFF000000 != p1)
+                    throw new InvalidFormatException ();
+                var r0 = m_run.Read ();
+                if (0 != r0)
+                    throw new InvalidFormatException ();
+                var dst = m_dst;
+                var count = m_pixel_count;
+                var skip = m_layer_index;
+                while (count --> 0)
+                {
+                    var r1 = m_qoi.Read (out var pixel);
+                    var r2 = m_run.Read ();
+                    var run = r1 + r2;
+                    while (run --> 0)
+                    {
+                        if (skip > 0)
+                            --skip;
+                        else
+                        {
+                            skip = m_layer_count-1;
+                            m_output[dst  ] = (byte)pixel;
+                            m_output[dst+1] = (byte)(pixel >> 8);
+                            m_output[dst+2] = (byte)(pixel >> 16);
+                            m_output[dst+3] = (byte)(pixel >> 24);
+                            dst += 4;
+                        }
+                    }
+                }
+            }
+        }
+
+        long[] DecodeArray (ReadOnlySpan<byte> input)
+        {
+            var output = new List<long> (input.Length);
+            var i = 0;
+            while (i < input.Length)
+            {
+                long value = 0;
+                var shift = 0;
+                while (shift < 64)
+                {
+                    var b = input[i++];
+                    value |= (long)(b & 0x7F) << shift;
+                    if (0 == (b & 0x80))
+                        break;
+                    shift += 7;
+                    if (i >= input.Length)
+                        throw new EndOfStreamException ();
+                }
+                output.Add (value);
+            }
+            return output.ToArray ();
+        }
+
+        long[] ReadArray (IBinaryStream src, long offset, int signature)
+        {
+            src.Position = offset;
+            if (signature != src.ReadInt32 ())
+                throw new InvalidFormatException ();
+            var length = src.ReadInt32 ();
+            var input = src.ReadBytes (length);
+            if (input.Length != length)
+                throw new EndOfStreamException ();
+            return DecodeArray (input);
+        }
+
+        byte[] DecodeMultiLayerQOI (IBinaryStream src, uint width, uint height, byte[] qhdr, int layer)
+        {
+            var data_offset  = src.Position;
+
+            var layer_count  = qhdr.ToInt32 (4);
+            var block_height = qhdr.ToInt32 (8);
+            var block_count  = qhdr.ToInt32 (12);
+            var dtbl_offset  = qhdr.ToInt64 (24);
+            var rtbl_offset  = qhdr.ToInt64 (32);
+
+            if (layer_count < 1)
+                throw new InvalidFormatException ();
+
+            if (0 == block_count)
+                throw new NotImplementedException ();
+
+            if (layer >= layer_count)
+                throw new ArgumentOutOfRangeException ();
+
+            long[] dtbl = ReadArray (src, data_offset+dtbl_offset, 0x4C425444);
+            if (0 == dtbl.Length || dtbl.Length != 1+2*block_count || dtbl[0] != dtbl.Length-1)
+                throw new InvalidFormatException ();
+
+            long[] rtbl = ReadArray (src, data_offset+rtbl_offset, 0x4C425452);
+            if (0 == rtbl.Length || rtbl.Length != 1+block_count || rtbl[0] != rtbl.Length-1)
+                throw new InvalidFormatException ();
+
+            var tasks = new List<Task> (block_count);
+            var output = new byte[4*width*height];
+
+            var qoi_offset = data_offset;
+            var run_offset = src.Position;
+
+            for (var i = 0; i < block_count; i++)
+            {
+                var num_pixels = (int) dtbl[1+2*i+1];
+                var qoi_size   = (int) dtbl[1+2*i  ];
+                var run_size   = (int) rtbl[1+i];
+
+                src.Position = qoi_offset;
+                var qoi = src.ReadBytes (qoi_size);
+                if (qoi_size != qoi.Length)
+                    throw new EndOfStreamException ();
+
+                src.Position = run_offset;
+                var run = src.ReadBytes (run_size);
+                if (run_size != run.Length)
+                    throw new EndOfStreamException ();
+
+                qoi_offset += qoi_size;
+                run_offset += run_size;
+
+                var dst = block_height*i * 4*(int)width;
+
+                var decoder = new QoiBlockDecoder (qoi, run, num_pixels, layer, layer_count, output, dst);
+
+                var task = Task.Run (() => decoder.Decode ());
+                tasks.Add (task);
+            }
+            Task.WhenAll (tasks).Wait ();
+            return output;
+        }
+
+        byte[] ReadQOI (IBinaryStream src, TlgMetaData info)
+        {
+            var qhdr = Array.Empty<byte> ();
+            while (true)
+            {
+                var entry_signature = src.ReadInt32 ();
+                var entry_size = src.ReadInt32 ();
+                if (0x52444851 == entry_signature) // 'QHDR'
+                {
+                    if (0x30 != entry_size)
+                        throw new InvalidFormatException ();
+                    qhdr = src.ReadBytes (entry_size);
+                    if (qhdr.Length != entry_size)
+                        throw new EndOfStreamException ();
+                }
+                else if (0 == entry_signature && 0 == entry_size)
+                    break;
+                else
+                    throw new InvalidFormatException ();
+            }
+            if (0 != qhdr.Length)
+                return DecodeMultiLayerQOI (src, info.Width, info.Height, qhdr, info.LayerIndex);
+            return DecodeQOI (src, info.Width, info.Height);
+        }
+
+        byte[] ReadMUX (IBinaryStream src, TlgMetaData info)
+        {
+            src.Position = info.DataOffset;
+            var slices = new List<TlgMetaData> ();
+            while (true)
+            {
+                var entry_signature = src.ReadInt32 ();
+                var entry_size = src.ReadInt32 ();
+                if (0x58554D43 == entry_signature) // 'CMUX'
+                {
+                    var entry = src.ReadBytes (entry_size);
+                    var count = entry.ToInt32 (0);
+                    if (0 == count)
+                        throw new InvalidFormatException ();
+                    var offset = 4;
+                    for (var i = 0; i < count; i++)
+                    {
+                        slices.Add (new TlgMetaData
+                        {
+                            OffsetX = entry.ToInt32 (offset),
+                            OffsetY = entry.ToInt32 (offset+4),
+                            Width   = entry.ToUInt32 (offset+8),
+                            Height  = entry.ToUInt32 (offset+12),
+                            DataOffset = entry.ToInt64 (offset+16)
+                        });
+                        offset += 24;
+                    }
+                }
+                else if (0 == entry_signature && 0 == entry_size)
+                    break;
+                else
+                    throw new InvalidFormatException ();
+            }
+            var data_offset = src.Position;
+            var image = new byte [4*info.Width*info.Height];
+            foreach (var slice_info in slices)
+            {
+                src.Position = data_offset + slice_info.DataOffset;
+                byte[] slice;
+                var header = src.ReadBytes (11);
+                if (header.AsciiEqual (0, "TLGqoi") && header.AsciiEqual (7, "raw"))
+                {
+                    var channels = src.ReadByte ();
+                    var width = src.ReadUInt32 ();
+                    var height = src.ReadUInt32 ();
+                    if (3 != channels && 4 != channels)
+                        throw new InvalidFormatException ();
+                    if (width != slice_info.Width || height != slice_info.Height)
+                        throw new InvalidFormatException ();
+                    slice = ReadQOI (src, slice_info);
+                }
+                else
+                    throw new NotImplementedException ();
+                BlendImage (image, info, slice, slice_info, 0);
+            }
+            return image;
+        }
+
+        ImageData ReadREF (IBinaryStream src, TlgMetaData info)
+        {
+            src.Position = info.DataOffset;
+            var qref = Array.Empty<byte> ();
+            while (true)
+            {
+                var entry_signature = src.ReadInt32 ();
+                var entry_size = src.ReadInt32 ();
+                if (0x46455251 == entry_signature) // 'QREF'
+                {
+                    if (entry_size < 16)
+                        throw new InvalidFormatException ();
+                    qref = src.ReadBytes (entry_size);
+                    if (qref.Length != entry_size)
+                        throw new EndOfStreamException ();
+                }
+                else if (0 == entry_signature && 0 == entry_size)
+                    break;
+                else
+                    throw new InvalidFormatException ();
+            }
+            if (0 == qref.Length)
+                throw new InvalidFormatException ();
+            var layer_index = qref.ToInt32 (4);
+            var name_length = qref.ToInt32 (12);
+            if (name_length < 2)
+                throw new InvalidFormatException ();
+            var name = Encoding.Unicode.GetString (qref, 16, name_length);
+            if (string.IsNullOrEmpty (name))
+                throw new InvalidFormatException ();
+            using (var ref_tlg = VFS.OpenBinaryStream (name))
+            {
+                var ref_meta = ReadMetaData (ref_tlg) as TlgMetaData;
+                if (1 != ref_meta.Version)
+                    throw new InvalidFormatException ();
+                ref_meta.LayerIndex = layer_index;
+                return Read (ref_tlg, ref_meta);
             }
         }
     }

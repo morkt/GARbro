@@ -1,6 +1,6 @@
 //! \file       ArcNS2.cs
 //! \date       Sat Jul 30 13:00:13 2016
-//! \brief      NS2 resorce archives.
+//! \brief      NS2 resource archives.
 //
 // Copyright (C) 2016 by morkt
 //

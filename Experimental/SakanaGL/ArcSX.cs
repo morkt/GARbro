@@ -123,10 +123,10 @@ namespace GameRes.Formats.Sakana
         internal static byte[] UnpackZstd (byte[] data)
         {
             int unpacked_size = BigEndian.ToInt32 (data, 0);
-            using (var dec = new ZstdNet.Decompressor())
+            using (var dec = new ZstdSharp.Decompressor())
             {
-                var packed = new ArraySegment<byte> (data, 4, data.Length - 4);
-                return dec.Unwrap (packed, unpacked_size);
+                var packed = new Span<byte> (data, 4, data.Length - 4);
+                return dec.Unwrap (packed, unpacked_size).ToArray();
             }
         }
 

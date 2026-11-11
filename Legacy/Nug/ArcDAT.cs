@@ -49,12 +49,12 @@ namespace GameRes.Formats.Nug
             uint index_size = (uint)count * 0x40u;
             if (index_size > file.View.Reserve (index_offset, index_size))
                 return null;
-            var dir = new List<Entry> (count);
+            var dir = new List<Entry> ();
             for (int i = 0; i < count; ++i)
             {
                 uint entry_size = file.View.ReadUInt32 (index_offset);
                 if (entry_size < 0x40)
-                    return null;
+                    break;
                 var name = file.View.ReadString (index_offset+0x10, 0x30);
                 var entry = Create<PackedEntry> (name);
                 entry.Offset = file.View.ReadUInt32 (index_offset+4);

@@ -171,7 +171,7 @@ namespace GameRes
 
         public virtual void Write (SoundInput source, Stream output)
         {
-            throw new System.NotImplementedException ("AudioFormat.Write not implemenented");
+            throw new System.NotImplementedException ("AudioFormat.Write not implemented");
         }
 
         public static SoundInput Read (IBinaryStream file)

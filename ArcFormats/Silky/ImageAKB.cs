@@ -40,6 +40,7 @@ namespace GameRes.Formats.Silky
         public uint     Flags;
         public string   BaseFileName;
         public uint     DataOffset;
+        public bool     TopDownOrder;
     }
 
     [Export(typeof(ImageFormat))]
@@ -150,13 +151,34 @@ namespace GameRes.Formats.Silky
             var pixels = new byte[m_info.InnerHeight * inner_stride];
             using (var lz = new LzssStream (m_input, LzssMode.Decompress, true))
             {
-                for (int pos = pixels.Length - inner_stride; pos >= 0; pos -= inner_stride)
+                if (m_info.TopDownOrder)
                 {
-                    if (inner_stride != lz.Read (pixels, pos, inner_stride))
+                    if (lz.Read(pixels, 0, pixels.Length) != pixels.Length)
+                    {
                         throw new InvalidFormatException();
+                    }
                 }
+                else
+                {
+                    for (int pos = pixels.Length - inner_stride; pos >= 0; pos -= inner_stride)
+                    {
+                        if (inner_stride != lz.Read (pixels, pos, inner_stride))
+                            throw new InvalidFormatException();
+                    }
+                }
+
             }
             RestoreDelta (pixels, inner_stride);
+            if (m_info.TopDownOrder)
+            {
+                var tmp_stride = new byte[inner_stride];
+                for (int i = 0, j = m_info.InnerHeight - 1; i < j; ++i, --j)
+                {
+                    Buffer.BlockCopy(pixels, j * inner_stride, tmp_stride, 0, inner_stride);
+                    Buffer.BlockCopy(pixels, i * inner_stride, pixels, j * inner_stride, inner_stride);
+                    Buffer.BlockCopy(tmp_stride, 0, pixels, i * inner_stride, inner_stride);
+                }
+            }
             if (null == background && m_info.InnerWidth == m_info.Width && m_info.InnerHeight == m_info.Height)
                 return pixels;
 

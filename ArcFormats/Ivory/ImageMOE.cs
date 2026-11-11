@@ -103,6 +103,9 @@ namespace GameRes.Formats.Ivory
         bool IsValidInput (Stream input, uint width, uint height, int pixel_size)
         {
             int total = (int)width * (int)height;
+            // Other formats will be incorrectly recognized as this format, try to correct it.
+            if (total * pixel_size < input.Length / 10)
+                return false;
             int dst = 0;
             while (dst < total)
             {

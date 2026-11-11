@@ -33,7 +33,7 @@ namespace GameRes
 {
     public static class Encodings
     {
-        public static readonly Encoding cp932 = Encoding.GetEncoding (932);
+        public static readonly Encoding cp932 = Encoding.GetEncoding(932);
 
         public static Encoding WithFatalFallback (this Encoding enc)
         {
@@ -214,9 +214,11 @@ namespace GameRes
         public ArcViewStream CreateStream (long offset)
         {
             var size = this.MaxOffset - offset;
-            if (size > uint.MaxValue)
-                throw new ArgumentOutOfRangeException ("Too large memory mapped stream");
-            return new ArcViewStream (this, offset, (uint)size);
+            if (size < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset), "Greater than archive size");
+            }
+            return new ArcViewStream (this, offset, size);
         }
 
         public ArcViewStream CreateStream (long offset, uint size, string name = null)

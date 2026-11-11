@@ -418,7 +418,7 @@ namespace GameRes.Formats.Macromedia
             }
             if (pos >= file.MaxOffset || !file.View.AsciiEqual (pos, "XFIR"))
                 return 0;
-            // TODO threat 'LPPA' archives the normal way, like archives that contain entries.
+            // TODO treat 'LPPA' archives the normal way, like archives that contain entries.
             // the problem is, DXR archives contained within 'LPPA' have their offsets relative to executable file,
             // so have to figure out way to handle it.
             if (!file.View.AsciiEqual (pos+8, "LPPA"))

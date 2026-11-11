@@ -150,7 +150,7 @@ namespace GameRes.Formats.Malie
             var header = new byte[0x10];
             foreach (var scheme in KnownSchemes.Values)
             {
-                var decryptor = scheme.CreateDecryptor();
+                var decryptor = file.View.AsciiEqual (0, "LIB") ? new NoOpDecryptor() : scheme.CreateDecryptor();
                 ReadEncrypted (file.View, decryptor, 0, header, 0, 0x10);
                 ILibIndexReader reader;
                 if (Binary.AsciiEqual (header, 0, "LIBP"))
@@ -287,6 +287,8 @@ namespace GameRes.Formats.Malie
                     int offset  = LittleEndian.ToInt32 (m_index, current_offset+0x18);
                     uint size   = LittleEndian.ToUInt32 (m_index, current_offset+0x1c);
                     current_offset += 0x20;
+                    if (name.StartsWith ("/"))
+                        name = name.Substring (1);
                     name = Path.Combine (root, name);
                     if (0 == (flags & 0x30000))
                     {

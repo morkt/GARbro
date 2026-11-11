@@ -39,13 +39,13 @@ namespace GameRes.Formats.BGI
         public BgiAudio ()
         {
             Signatures = new uint[] { 0x40, 0 };
-            Extensions = new string[] { "bw", "", "_bw" };
+            Extensions = new string[] { "bw", "", "_bw", "hw" };
         }
         
         public override SoundInput TryOpen (IBinaryStream file)
         {
             var header = file.ReadHeader (8);
-            if (!header.AsciiEqual (4, "bw  "))
+            if (!header.AsciiEqual (4, "bw  ") && !header.AsciiEqual (4, "hw  "))
                 return null;
             uint offset = header.ToUInt32 (0);
             if (offset >= file.Length)

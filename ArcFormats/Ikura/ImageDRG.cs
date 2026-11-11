@@ -101,7 +101,7 @@ namespace GameRes.Formats.Ikura
             var meta = (DgdMetaData)info;
             var input = file.AsStream;
             if (meta.IsEncrypted)
-                input = OpenEcnryptedStream (input, DefaultKey);
+                input = OpenEncryptedStream (input, DefaultKey);
 
             int stride = ((int)info.Width * info.BPP / 8 + 3) & ~3;
             var pixel_data = DecodeStream (input, stride*(int)info.Height);
@@ -110,7 +110,7 @@ namespace GameRes.Formats.Ikura
             return ImageData.Create (info, format, null, pixel_data, stride);
         }
 
-        Stream OpenEcnryptedStream (Stream input, byte[] key)
+        Stream OpenEncryptedStream (Stream input, byte[] key)
         {
             if (key.Length != 8)
                 input = new StreamRegion (input, 8, true);

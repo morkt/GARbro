@@ -72,11 +72,55 @@ namespace GameRes.Formats.Youkai
 
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
-            if (!arc.File.View.AsciiEqual (entry.Offset, "ACMPRS03"))
+            if (!arc.File.View.AsciiEqual (entry.Offset, "ACMPRS03") &&
+                !arc.File.View.AsciiEqual (entry.Offset, "PRS06X"))
                 return base.OpenEntry (arc, entry);
-            uint packed_size = arc.File.View.ReadUInt32 (entry.Offset+0x14);
-            var input = arc.File.CreateStream (entry.Offset+0x24, packed_size);
-            return new LzssStream (input);
+            entry.Size = arc.File.View.ReadUInt32 (entry.Offset+0x14);
+            var input = arc.File.CreateStream (entry.Offset+0x24, entry.Size);
+            if ((arc.File.View.ReadUInt32 (entry.Offset+0x18) & 1) == 0)
+                return new LzssStream (input);
+            return input;
+        }
+    }
+
+    [Export(typeof(ArchiveFormat))]
+    public class DatOpener : GrpDatOpener
+    {
+        public override string         Tag { get { return "DAT/SAKURA"; } }
+        public override string Description { get { return "Studio Sakura resource archive"; } }
+        public override uint     Signature { get { return 0; } }
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            int count = file.View.ReadInt32 (0);
+            if (!IsSaneCount (count))
+                return null;
+
+            uint index_offset = 0x20;
+            long data_offset  = index_offset + count * 0x110;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                var name = file.View.ReadString (index_offset, 0x100);
+                if (string.IsNullOrWhiteSpace (name))
+                    return null;
+                var entry = new PackedEntry();
+                entry.IsPacked = name.HasExtension (".pr3");
+                if (entry.IsPacked)
+                    name = name.Substring (0, name.Length-4);
+                entry.Name   = name;
+                entry.Type   = FormatCatalog.Instance.GetTypeFromName (name);
+                entry.Size   = file.View.ReadUInt32 (index_offset+0x100);
+                entry.Offset = file.View.ReadUInt32 (index_offset+0x104);
+                entry.UnpackedSize = entry.Size;
+                if (entry.Offset < data_offset || entry.Offset > file.MaxOffset)
+                    return null;
+                dir.Add (entry);
+                index_offset += 0x110;
+            }
+            return new ArcFile (file, this, dir);
         }
     }
 

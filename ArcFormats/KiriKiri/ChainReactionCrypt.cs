@@ -1,6 +1,6 @@
 //! \file       ChainReactionCrypt.cs
 //! \date       Mon Mar 07 15:59:47 2016
-//! \brief      KiriKiri XP3 ecryption filter used in some games.
+//! \brief      KiriKiri XP3 encryption filter used in some games.
 //
 // Copyright (C) 2016-2018 by morkt
 //

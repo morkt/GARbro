@@ -65,6 +65,16 @@ namespace GameRes.Formats.BGI
                 return null;
             if (0 != stream.ReadInt64())
                 return null;
+
+            if (flag == 0)
+            {
+                int stride = (int)width * ((bpp + 7) / 8);
+                var pixels = new byte[stride * (int)height];
+                int read = stream.Read(pixels, 0, pixels.Length);
+                if (read != pixels.Length)
+                    return null;
+            }
+
             return new BgiMetaData
             {
                 Width = (uint)width,

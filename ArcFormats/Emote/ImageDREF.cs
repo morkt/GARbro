@@ -73,10 +73,9 @@ namespace GameRes.Formats.Emote
                     var match = PathRe.Match (line);
                     if (!match.Success)
                         return null;
-                    var pak_name = match.Groups[1].Value;
+                    var pak_name = VFS.CombinePath (dir, match.Groups[1].Value);
                     if (!VFS.FileExists (pak_name))
                         return null;
-                    pak_name = VFS.CombinePath (dir, pak_name);
                     layers.Add (Tuple.Create (pak_name, match.Groups[2].Value));
                 }
                 if (0 == layers.Count)

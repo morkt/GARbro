@@ -454,6 +454,65 @@ namespace GameRes.Formats
             }
             #endregion
         }
+
+        public sealed class VersionAccessor
+        {
+            byte[]            m_buffer;
+            VS_FIXEDFILEINFO  m_ffi;
+
+            public ushort[]     FileVersions;
+            public ushort[]  ProductVersions;
+
+            public VersionAccessor (string filename)
+            {
+                uint len = NativeMethods.GetFileVersionInfoSize (filename, IntPtr.Zero);
+                if (len == 0)
+                    throw new InvalidFormatException ("File may not have version resource");
+
+                m_buffer = new byte[len];
+                if (!NativeMethods.GetFileVersionInfo (filename, 0, len, m_buffer))
+                    throw new Win32Exception (Marshal.GetLastWin32Error());
+
+                IntPtr fixedbuffer = IntPtr.Zero;
+                uint fixedlen = 0;
+                if (!NativeMethods.VerQueryValue (m_buffer, "\\", ref fixedbuffer, ref fixedlen))
+                    throw new Win32Exception (Marshal.GetLastWin32Error());
+
+                m_ffi = Marshal.PtrToStructure<VS_FIXEDFILEINFO> (fixedbuffer);
+                FileVersions = new ushort[4]
+                {
+                    (ushort)(m_ffi.FileVersionMS >> 16),
+                    (ushort)(m_ffi.FileVersionMS & 0xFFFF),
+                    (ushort)(m_ffi.FileVersionLS >> 16),
+                    (ushort)(m_ffi.FileVersionLS & 0xFFFF),
+                };
+                ProductVersions = new ushort[4]
+                {
+                    (ushort)(m_ffi.ProductVersionMS >> 16),
+                    (ushort)(m_ffi.ProductVersionMS & 0xFFFF),
+                    (ushort)(m_ffi.ProductVersionLS >> 16),
+                    (ushort)(m_ffi.ProductVersionLS & 0xFFFF),
+                };
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            private struct VS_FIXEDFILEINFO
+            {
+                public uint Signature;
+                public uint StructVersion;
+                public uint FileVersionMS;
+                public uint FileVersionLS;
+                public uint ProductVersionMS;
+                public uint ProductVersionLS;
+                public uint FileFlagsMask;
+                public uint FileFlags;
+                public uint FileOS;
+                public uint FileType;
+                public uint FileSubtype;
+                public uint FileDateMS;
+                public uint FileDateLS;
+            }
+        }
     }
 
     static internal class NativeMethods
@@ -493,5 +552,12 @@ namespace GameRes.Formats
         static internal extern bool EnumResourceLanguages (IntPtr hModule, IntPtr lpszType, string lpName, EnumResLangProc lpEnumFunc, IntPtr lParam);
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         static internal extern bool EnumResourceLanguages (IntPtr hModule, string lpszType, string lpName, EnumResLangProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("version.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern uint GetFileVersionInfoSize (string lptstrFilename, IntPtr lpdwHandle);
+        [DllImport("version.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern bool GetFileVersionInfo (string lptstrFilename, uint dwHandle, uint dwLen, byte[] lpData);
+        [DllImport("version.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        static internal extern bool VerQueryValue (byte[] pBlock, string lpSubBlock, ref IntPtr lplpBuffer, ref uint puLen);
     }
 }

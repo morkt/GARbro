@@ -34,6 +34,7 @@ namespace GameRes.Formats.Kaguya
     internal class LinkEntry : PackedEntry
     {
         public bool IsEncrypted;
+        public int  PackType;
     }
 
     internal class LinkArchive : ArcFile
@@ -111,10 +112,24 @@ namespace GameRes.Formats.Kaguya
                 return larc.Encryption.DecryptEntry (larc, lent);
             }
             using (var input = arc.File.CreateStream (entry.Offset, entry.Size))
-            using (var bmr = new BmrDecoder (input))
             {
-                bmr.Unpack();
-                return new BinMemoryStream (bmr.Data, entry.Name);
+                if (lent.PackType == 2)
+                {
+                    using (var bmr = new BmrDecoder (input))
+                    {
+                        bmr.Unpack();
+                        return new BinMemoryStream (bmr.Data, entry.Name);
+                    }
+                }
+                else if (lent.PackType == 1)
+                {
+                    using (var lz = new LzReader (input, entry.Size, lent.UnpackedSize))
+                    {
+                        lz.Unpack();
+                        return new BinMemoryStream (lz.Data, entry.Name);
+                    }
+                }
+                return base.OpenEntry (arc, entry);
             }
         }
 
@@ -201,15 +216,15 @@ namespace GameRes.Formats.Kaguya
                 if (size < 0x10)
                     return null;
                 int flags = m_input.ReadUInt16 ();
-                bool is_compressed = (flags & 3) != 0;
                 Skip (7);
                 var name = ReadName();
                 if (string.IsNullOrEmpty (name))
                     return null;
                 var entry = FormatCatalog.Instance.Create<LinkEntry> (name);
-                entry.Offset = m_input.Position;
-                entry.Size   = size - (uint)(entry.Offset - base_offset);
-                if (is_compressed)
+                entry.Offset   = m_input.Position;
+                entry.Size     = size - (uint)(entry.Offset - base_offset);
+                entry.PackType = flags & 3;
+                if (entry.PackType == 2)
                 {
                     m_input.Read (header, 0, 4);
                     if (header.AsciiEqual ("BMR"))
@@ -217,6 +232,13 @@ namespace GameRes.Formats.Kaguya
                         entry.IsPacked = true;
                         entry.UnpackedSize = m_input.ReadUInt32();
                     }
+                }
+                else if (entry.PackType == 1)
+                {
+                    entry.IsPacked = true;
+                    entry.Offset += 4;
+                    entry.Size -= 4;
+                    entry.UnpackedSize = m_input.ReadUInt32();
                 }
                 entry.IsEncrypted = (flags & 4) != 0;
                 m_has_encrypted = m_has_encrypted || entry.IsEncrypted;
@@ -492,7 +514,7 @@ namespace GameRes.Formats.Kaguya
                     return new ParamsV2Deserializer (input, version);
                 else if (version.Major < 5)
                     return new ParamsV4Deserializer (input, version);
-                else if (5 == version.Major && (version.Minor >= 4 && version.Minor <= 7))
+                else if (5 == version.Major && (version.Minor >= 4 && version.Minor <= 8))
                     return new ParamsV5Deserializer (input, version);
             }
             throw new UnknownEncryptionScheme();

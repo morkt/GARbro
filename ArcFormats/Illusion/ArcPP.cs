@@ -28,6 +28,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using GameRes.Formats.Strings;
 
 namespace GameRes.Formats.Illusion
 {
@@ -42,6 +43,11 @@ namespace GameRes.Formats.Illusion
     public class PpScheme : ResourceScheme
     {
         public IDictionary<string, PpEncryptionScheme>     KnownKeys;
+    }
+
+    internal class PpOptions : ResourceOptions
+    {
+        public string Scheme;
     }
 
     public class PpArchive : ArcFile
@@ -68,34 +74,43 @@ namespace GameRes.Formats.Illusion
 
         static readonly byte[][] DefaultIndexKey = new byte[][] {
             new byte[] { 0xFA, 0x49, 0x7B, 0x1C, 0xF9, 0x4D, 0x83, 0x0A },
-		    new byte[] { 0x3A, 0xE3, 0x87, 0xC2, 0xBD, 0x1E, 0xA6, 0xFE }
+            new byte[] { 0x3A, 0xE3, 0x87, 0xC2, 0xBD, 0x1E, 0xA6, 0xFE }
         };
+
+        public PpOpener ()
+        {
+            Signatures = new uint[] { 0x5650505B, 0 };
+        }
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (0, "[PPVER]\0"))
-                return null;
+            uint base_offset = 0;
+            int extra_size = 0;
+            if (file.View.AsciiEqual (0, "[PPVER]\0"))
+            {
+                var version = file.View.ReadBytes (8, 4);
+                DecryptIndex (version, 0, 4);
+                if (version.ToInt32 (0) < 0x6C)
+                    return null;
+                base_offset = 0xC;
+                extra_size = 0x14;
+            }
 
-            var buffer = file.View.ReadBytes (8, 9);
+            var buffer = file.View.ReadBytes (base_offset, 5);
 
-            DecryptIndex (buffer, 0, 4);
-            int version = buffer.ToInt32 (0);
-
-            DecryptIndex (buffer, 4, 1);
-            byte encryption_method = buffer[4];
+            DecryptIndex (buffer, 0, 1);
+            byte encryption_method = buffer[0];
             if (encryption_method > 4)
                 return null;
 
-            DecryptIndex (buffer, 5, 4);
-            int count = buffer.ToInt32 (5);
+            DecryptIndex (buffer, 1, 4);
+            int count = buffer.ToInt32 (1);
             if (!IsSaneCount (count))
                 return null;
 
-            if (version < 0x6C)
-                return null;
             var dir = new List<Entry> (count);
-            uint index_offset = 0x11;
-            uint index_size = (uint)(count * 0x120);
+            uint index_offset = base_offset + 5;
+            uint index_size = (uint)(count * (0x10C + extra_size));
             var index = file.View.ReadBytes (index_offset, index_size);
             index_offset += index_size;
             DecryptIndex (index, 0, index.Length);
@@ -110,7 +125,7 @@ namespace GameRes.Formats.Illusion
                 if (!entry.CheckPlacement (file.MaxOffset))
                     return null;
                 dir.Add (entry);
-                pos += 0x1C;
+                pos += 8 + extra_size;
             }
             var scheme = QueryEncryptionScheme (file);
             if (null == scheme)
@@ -223,13 +238,28 @@ namespace GameRes.Formats.Illusion
             set { DefaultScheme = (PpScheme)value; }
         }
 
+        public override ResourceOptions GetDefaultOptions ()
+        {
+            return new PpOptions { Scheme = Properties.Settings.Default.PPTitle };
+        }
+
+        public override object GetAccessWidget ()
+        {
+            return new GUI.WidgetPP (this);
+        }
+
         PpEncryptionScheme QueryEncryptionScheme (ArcView file)
         {
             var title = FormatCatalog.Instance.LookupGame (file.Name);
             if (string.IsNullOrEmpty (title))
                 title = FormatCatalog.Instance.LookupGame (file.Name, @"..\*.exe");
             if (string.IsNullOrEmpty (title))
-                return null;
+            {
+                var options = Query<PpOptions> (arcStrings.ArcEncryptedNotice);
+                if (null == options)
+                    return null;
+                title = options.Scheme;
+            }
             PpEncryptionScheme key;
             if (!KnownKeys.TryGetValue (title, out key))
                 return null;

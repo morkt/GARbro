@@ -48,6 +48,7 @@ namespace GameRes.Formats.CatSystem
             while (offset+0x14 < file.MaxOffset && file.View.AsciiEqual (offset+8, "stdinfo"))
             {
                 uint section_size = file.View.ReadUInt32 (offset);
+                int image_id = file.View.ReadInt32 (offset+4);
                 if (0 == section_size)
                     section_size = (uint)(file.MaxOffset - offset);
                 uint stdinfo_size = file.View.ReadUInt32 (offset+0x10);
@@ -55,7 +56,7 @@ namespace GameRes.Formats.CatSystem
                 {
                     var entry = new Entry
                     {
-                        Name = string.Format ("{0}#{1:D4}", base_name, i),
+                        Name = string.Format ("{0}#{1:D4}", base_name, image_id),
                         Type = "image",
                         Offset = offset + 8,
                         Size = section_size - 8,

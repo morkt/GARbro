@@ -52,7 +52,7 @@ namespace GameRes.Formats.Koei
     [Export(typeof(ArchiveFormat))]
     public partial class YkOpener : ArchiveFormat
     {
-        public override string         Tag => "YK";
+        public override string         Tag => "YK/KOEI";
         public override string Description => "Koei resource archive";
         public override uint     Signature => 0;
         public override bool  IsHierarchic => false;

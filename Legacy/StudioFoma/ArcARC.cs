@@ -33,12 +33,6 @@ using System.Linq;
 
 namespace GameRes.Formats.Foma
 {
-    [Serializable]
-    public class Is9Scheme : ResourceScheme
-    {
-        public IDictionary<string, IDictionary<string, uint>> KnownSchemes;
-    }
-
     [Export(typeof(ArchiveFormat))]
     public class ArcOpener : ArchiveFormat
     {
@@ -99,23 +93,14 @@ namespace GameRes.Formats.Foma
             }
         }
 
-        Is9Scheme m_scheme = new Is9Scheme
-        {
-            KnownSchemes = new Dictionary<string, IDictionary<string, uint>>()
-        };
-
         HashSet<string> m_known_arc_names = null;
 
-        public override ResourceScheme Scheme
-        {
-            get { return m_scheme; }
-            set { m_scheme = (Is9Scheme)value; m_known_arc_names = null; }
-        }
-
-        internal IDictionary<string, IDictionary<string, uint>> KnownSchemes
-        {
-            get { return m_scheme.KnownSchemes; }
-        }
+        Dictionary<string, Dictionary<string, uint>> KnownSchemes = new Dictionary<string, Dictionary<string, uint>> {
+            { "LOVEMATI.EXE", new Dictionary<string, uint> {
+                { "BMP.ARC",  0xBA9F0 },
+                { "WAVE.ARC", 0xBBE70 },
+            } },
+        };
 
         internal HashSet<string> KnownArcNames
         {

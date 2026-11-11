@@ -138,8 +138,8 @@ namespace GameRes.Formats.AVC
                 for (int i = 0; i < 8; ++i)
                 {
                     var symbol = m_input[header_offset+i] ^ "ARCHIVE\0"[i];
-                    var check = m_input[key_offset+i] ^ symbol;
-                    if (check < 0x20 || check > 0x7e)
+                    var check = (char)(m_input[key_offset+i] ^ symbol);
+                    if (!check.IsAsciiVisible())
                         return false;
                     Key[i] = (byte)symbol;
                 }

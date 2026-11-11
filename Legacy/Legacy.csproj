@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GameRes.Legacy</RootNamespace>
     <AssemblyName>ArcLegacy</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -24,7 +24,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\bin\Release\</OutputPath>
     <DefineConstants>
@@ -44,14 +44,30 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=1.3.3.11, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpZipLib.1.3.3\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=1.4.2.13, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpZipLib.1.4.2\lib\netstandard2.0\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Memory, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.6.3\lib\net462\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.6.1\lib\net462\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.6.3\lib\net462\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -70,6 +86,7 @@
     <Compile Include="Acme\ImageARD.cs" />
     <Compile Include="Acme\ImagePMG.cs" />
     <Compile Include="ADVGSys\ImageBMP.cs" />
+    <Compile Include="AdvS\ArcDAT.cs" />
     <Compile Include="Ags32i\AudioAGS.cs" />
     <Compile Include="Ags32i\ImageGSS.cs" />
     <Compile Include="Airyu\ArcCHR.cs" />
@@ -89,6 +106,8 @@
     <Compile Include="Artel\ArcPFD.cs" />
     <Compile Include="Artel\AudioMUW.cs" />
     <Compile Include="Artel\ImageMRL.cs" />
+    <Compile Include="Artifact\ArcMOO.cs" />
+    <Compile Include="Artifact\ImageLZS.cs" />
     <Compile Include="Asura\ArcPAK.cs" />
     <Compile Include="Asura\ImageMTG.cs" />
     <Compile Include="AyPio\ArcDLB.cs" />
@@ -99,6 +118,11 @@
     <Compile Include="BlackButterfly\ArcDAT.cs" />
     <Compile Include="Blucky\Aliases.cs" />
     <Compile Include="Bom\ImageGRP.cs" />
+    <Compile Include="Broccoli\ArcP00.cs" />
+    <Compile Include="Broccoli\BroccoliGrp.cs" />
+    <Compile Include="Broccoli\ImageT32.cs" />
+    <Compile Include="Broccoli\ImageTbm.cs" />
+    <Compile Include="Broccoli\PakVideoDecrypt.cs" />
     <Compile Include="CottonClub\ImageLMG.cs" />
     <Compile Include="Desire\ArcDSV.cs" />
     <Compile Include="Desire\ImageDES.cs" />
@@ -132,6 +156,7 @@
     <Compile Include="Eye\ImageCSF.cs" />
     <Compile Include="FazeX\ImageFGP.cs" />
     <Compile Include="Giga\ArcALL.cs" />
+    <Compile Include="Giga\ArcBBWAV.cs" />
     <Compile Include="HillField\ImageIMA.cs" />
     <Compile Include="HillField\ImageIMG.cs" />
     <Compile Include="hmp\ImageALP.cs" />
@@ -165,6 +190,9 @@
     <Compile Include="Mink\ImageFC.cs" />
     <Compile Include="Mink\ImageFD.cs" />
     <Compile Include="Mmfass\ArcSDA.cs" />
+    <Compile Include="NAUTS\ArcDPK.cs" />
+    <Compile Include="NAUTS\ArcMSP.cs" />
+    <Compile Include="NAUTS\ArcTTP.cs" />
     <Compile Include="Nekotaro\ImageNCG.cs" />
     <Compile Include="Neon\ArcAR2.cs" />
     <Compile Include="Pias\EncryptedGraphDat.cs" />
@@ -176,9 +204,14 @@
     <Compile Include="Omi\ArcDAT.cs" />
     <Compile Include="Paprika\ArcPKDAT.cs" />
     <Compile Include="Paprika\ImageNP.cs" />
+    <Compile Include="Peach\ArcDAT.cs" />
+    <Compile Include="Peach\ArcNIJI.cs" />
+    <Compile Include="Peach\ArcPAK.cs" />
     <Compile Include="Pearl\ArcARY.cs" />
     <Compile Include="Pearl\ImagePL4.cs" />
+    <Compile Include="PenguinWorks\ArcDAT.cs" />
     <Compile Include="PenguinWorks\ArcPAC.cs" />
+    <Compile Include="PenguinWorks\ImagePXL.cs" />
     <Compile Include="Pias\ArcDAT.cs" />
     <Compile Include="PineSoft\ArcCMB.cs" />
     <Compile Include="PineSoft\ArcVoice.cs" />
@@ -190,6 +223,7 @@
     <Compile Include="ProjectMyu\ImageGAM.cs" />
     <Compile Include="Ransel\ArcBCD.cs" />
     <Compile Include="Rare\ArcX.cs" />
+    <Compile Include="Rave\ImageRCG.cs" />
     <Compile Include="RedZone\ArcPAK.cs" />
     <Compile Include="Adv98\ImageGPC.cs" />
     <Compile Include="RedZone\ScriptQDO.cs" />
@@ -199,6 +233,10 @@
     <Compile Include="Rina\ImageRAD.cs" />
     <Compile Include="RSystem\ArcRAD.cs" />
     <Compile Include="RSystem\ImageRSG.cs" />
+    <Compile Include="Ruri\ArcKBM.cs" />
+    <Compile Include="Ruri\ImageKBM.cs" />
+    <Compile Include="NxLib\ImageDCG.cs" />
+    <Compile Include="ScenarioKun\ImageSJ1.cs" />
     <Compile Include="Brownie\ArcNAF.cs" />
     <Compile Include="Brownie\AudioWAV.cs" />
     <Compile Include="Discovery\ArcDAT.cs" />
@@ -214,6 +252,7 @@
     <Compile Include="Dice\ArcRLZ.cs" />
     <Compile Include="Dice\AudioKWF.cs" />
     <Compile Include="Dice\ImageRBP.cs" />
+    <Compile Include="Duke\ArcDAT.cs" />
     <Compile Include="Electriciteit\ArcDAT.cs" />
     <Compile Include="Eve\ArcGM.cs" />
     <Compile Include="Eve\AudioWV.cs" />
@@ -286,6 +325,7 @@
     <Compile Include="Marron\ArcCPN.cs" />
     <Compile Include="Mina\ArcML2.cs" />
     <Compile Include="Mina\ImageMD.cs" />
+    <Compile Include="Mink\ArcBINZ.cs" />
     <Compile Include="Mink\ArcMINK.cs" />
     <Compile Include="Mutation\ArcDPF.cs" />
     <Compile Include="Pinpai\ArcARC.cs" />
@@ -298,7 +338,6 @@
     <Compile Include="Mink\ImageGDF.cs" />
     <Compile Include="Mutation\ImageRBM.cs" />
     <Compile Include="Nabe\ImageYPF.cs" />
-    <Compile Include="Nanami\ArcBMM.cs" />
     <Compile Include="Nekotaro\ArcNSC.cs" />
     <Compile Include="Nekotaro\ImageGCmp.cs" />
     <Compile Include="PlanTech\ArcPAC.cs" />
@@ -348,17 +387,13 @@
       <Name>GameRes</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Nanami\" />
+  </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>perl "$(SolutionDir)inc-revision.pl" "$(ProjectPath)" $(ConfigurationName)
 exit 0</PreBuildEvent>
   </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

@@ -147,13 +147,12 @@ namespace GameRes.Formats.Cyberworks
                         var size_buf = new byte[4];
                         input.Read (size_buf, 0 , 4);
                         int png_size = BigEndian.ToInt32 (size_buf, 0);
+
                         BitmapSource frame;
-                        // work-around for possible extra padding before PNG data
                         using (var membuf = new MemoryStream (png_size+4))
                         {
                             input.CopyTo (membuf);
-                            membuf.Seek (-png_size, SeekOrigin.End);
-                            var decoder = new PngBitmapDecoder (membuf, BitmapCreateOptions.None,
+                            var decoder = new PngBitmapDecoder (new StreamRegion (membuf, membuf.Length-png_size), BitmapCreateOptions.None,
                                                                 BitmapCacheOption.OnLoad);
                             frame = decoder.Frames[0];
                         }

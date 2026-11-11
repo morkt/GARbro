@@ -55,8 +55,8 @@ namespace GameRes.Formats.KiriKiri
     [Serializable]
     public class CxEncryption : ICrypt
     {
-        private uint  m_mask;
-        private uint  m_offset;
+        protected uint  m_mask;
+        protected uint  m_offset;
 
         protected byte[]     PrologOrder;
         protected byte[]  OddBranchOrder;
@@ -107,6 +107,9 @@ namespace GameRes.Formats.KiriKiri
 
             var dir_name = VFS.GetDirectoryName (arc.File.Name);
             var tpm_name = VFS.CombinePath (dir_name, TpmFileName);
+            // Try search in "plugin" directory
+            if (!VFS.FileExists (tpm_name))
+                tpm_name = VFS.CombinePath (VFS.CombinePath (dir_name, "plugin"), TpmFileName);
             using (var tpm = VFS.OpenView (tpm_name))
             {
                 if (tpm.MaxOffset < 0x1000 || tpm.MaxOffset > uint.MaxValue)
@@ -164,6 +167,11 @@ namespace GameRes.Formats.KiriKiri
 
         public override void Decrypt (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
         {
+            CxDecryptCore (entry, offset, buffer, pos, count);
+        }
+
+        protected void CxDecryptCore (Xp3Entry entry, long offset, byte[] buffer, int pos, int count)
+        {
             uint key = entry.Hash;
             uint base_offset = GetBaseOffset (key);
             if (offset < base_offset)
@@ -204,10 +212,10 @@ namespace GameRes.Formats.KiriKiri
 
         public override void Encrypt (Xp3Entry entry, long offset, byte[] values, int pos, int count)
         {
-            Decrypt (entry, offset, values, pos, count);
+            CxDecryptCore (entry, offset, values, pos, count);
         }
 
-        Tuple<uint, uint> ExecuteXCode (uint hash)
+        protected Tuple<uint, uint> ExecuteXCode (uint hash)
         {
             uint seed = hash & 0x7f;
             if (null == m_program_list[seed])

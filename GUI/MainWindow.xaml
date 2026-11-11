@@ -5,7 +5,7 @@
         xmlns:jv="clr-namespace:JustView"
         xmlns:s="clr-namespace:GARbro.GUI.Strings"
         xmlns:p="clr-namespace:GARbro.GUI.Properties"
-        Title="GARbro" MinHeight="250" ResizeMode="CanResizeWithGrip"
+        Title="GARbro-Mod" MinHeight="250" ResizeMode="CanResizeWithGrip"
         Loaded="WindowLoaded"
         KeyDown="WindowKeyDown"
         AllowDrop="True" Drop="OnDropEvent"

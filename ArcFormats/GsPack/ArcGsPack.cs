@@ -241,4 +241,88 @@ namespace GameRes.Formats.Gs
             Signatures = new uint[] { 0x20574353, 0x35776353, 0x34776353 };
         }
     }
+
+    [Export(typeof(ArchiveFormat))]
+    public class GswSysOpener : ArchiveFormat
+    {
+        public override string         Tag { get { return "GswSys"; } }
+        public override string Description { get { return "GswSys resource archive"; } }
+        public override uint     Signature { get { return 0x53777347; } } // 'GswS'
+        public override bool  IsHierarchic { get { return false; } }
+        public override bool      CanWrite { get { return false; } }
+
+        public GswSysOpener ()
+        {
+            Extensions = new string[] { "pak" };
+        }
+
+        public override ArcFile TryOpen (ArcView file)
+        {
+            if (!file.View.AsciiEqual (0, "GswSys PACK 2.0"))
+                return null;
+            int index_size = file.View.ReadInt32 (0x10);
+            int count = file.View.ReadInt32 (0x14);
+            uint data_offset = file.View.ReadUInt32 (0x18);
+            if (!IsSaneCount (count) || index_size <= 0)
+                return null;
+            long index_pos = 0x1C;
+            if (index_pos + index_size > file.MaxOffset)
+                return null;
+            var packed_index = file.View.ReadBytes (index_pos, (uint)index_size);
+            if (packed_index.Length != index_size)
+                return null;
+            for (int i = 0; i != packed_index.Length; ++i)
+                packed_index[i] ^= (byte)i;
+            byte[] index;
+            using (var stream = new MemoryStream (packed_index))
+            using (var reader = new LzssReader (stream, packed_index.Length, count * 0x28))
+            {
+                reader.Unpack ();
+                index = reader.Data;
+            }
+            var dir = new List<Entry> (count);
+            int offset = 0;
+            for (int i = 0; i < count; ++i)
+            {
+                var entry = new Entry {
+                    Name = Binary.GetCString (index, offset, 0x20),
+                    Offset = data_offset + LittleEndian.ToUInt32 (index, offset+0x20),
+                    Size = LittleEndian.ToUInt32 (index, offset+0x24),
+                };
+                if (!entry.CheckPlacement (file.MaxOffset))
+                    return null;
+                dir.Add (entry);
+                offset += 0x28;
+            }
+            foreach (var entry in dir)
+            {
+                var res = AutoEntry.DetectFileType (file.View.ReadUInt32 (entry.Offset));
+                if (null != res)
+                    entry.ChangeType (res);
+                else if (IsGswinImage (file, entry))
+                    entry.ChangeType (ImageFormat.FindByTag ("GSWIN2"));
+            }
+            return new ArcFile (file, this, dir);
+        }
+
+        // GswSys 2.0 images carry no fixed signature; check the header fields instead.
+        bool IsGswinImage (ArcView file, Entry entry)
+        {
+            if (entry.Size < 0x28)
+                return false;
+            uint packed  = file.View.ReadUInt32 (entry.Offset);
+            uint width   = file.View.ReadUInt32 (entry.Offset+0x10);
+            uint height  = file.View.ReadUInt32 (entry.Offset+0x14);
+            int bpp      = file.View.ReadInt32 (entry.Offset+0x18);
+            if (0 == width || 0 == height || width > 0x4000 || height > 0x4000)
+                return false;
+            if (8 != bpp && 24 != bpp && 32 != bpp)
+                return false;
+            long need = (long)width*height*(bpp/8) + (8 == bpp ? 0x400 : 0);
+            long body = entry.Size - 0x28;
+            if (0 == packed)
+                return body == need;
+            return packed <= body;
+        }
+    }
 }

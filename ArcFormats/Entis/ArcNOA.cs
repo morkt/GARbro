@@ -29,6 +29,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 using GameRes.Formats.Strings;
@@ -131,10 +132,26 @@ namespace GameRes.Formats.Entis
             if (EncType.Raw == nent.Encryption || null == narc || null == narc.Password)
                 return input;
 
+            if (EncType.SimpleCrypt32 == nent.Encryption)
+            {
+                if (0 != size % 4)
+                    throw new InvalidFormatException ();
+
+                using (input)
+                    return DecodeSimpleCrypt32 (input, narc.Password, BitConverter.ToUInt32 (nent.Extra, 4));
+            }
+
             if (EncType.BSHFCrypt == nent.Encryption)
             {
                 using (input)
                     return DecodeBSHF (input, narc.Password);
+            }
+            if (EncType.ERISACrypt == nent.Encryption)
+            {
+                Stream enc;
+                using (input)
+                    enc = DecodeBSHF (input, narc.Password);
+                return new ErisaNemesisStream (enc, (int)entry.Size);
             }
             Trace.WriteLine (string.Format ("{0}: encryption scheme 0x{1:x8} not implemented",
                                             nent.Name, nent.Encryption));
@@ -232,6 +249,37 @@ namespace GameRes.Formats.Entis
             return new MemoryStream (buf);
         }
 
+        Stream DecodeSimpleCrypt32(Stream input, string password, uint imul_key)
+        {
+            var xor_key_map = Encoding.UTF8.GetBytes (password);
+            imul_key ^= Crc32.Compute (xor_key_map, 0, xor_key_map.Length);
+
+            for (int i = 0; i < xor_key_map.Length; i++)
+            {
+                var key_byte   = (byte)~xor_key_map[i];
+                xor_key_map[i] = (byte)(key_byte ^ (key_byte * 7));
+            }
+
+            var buffer = new byte[input.Length];
+            input.Read(buffer, 0, (int)input.Length);
+
+            var buffer_span  = MemoryMarshal.Cast<byte, uint> (buffer);
+            var xor_key_span = MemoryMarshal.Cast<byte, uint> (xor_key_map);
+
+            for (int i = 0; i < buffer_span.Length; i += xor_key_span.Length)
+            {
+                var window_size = Math.Min (buffer_span.Length - i, xor_key_span.Length);
+                var window_span = buffer_span.Slice (i, window_size);
+
+                for (int j = 0; j < window_size; j++)
+                {
+                    window_span[j] = (window_span[j] * imul_key) ^ xor_key_span[j];
+                }
+            }
+
+            return new MemoryStream (buffer);
+        }
+
         public override ResourceOptions GetDefaultOptions ()
         {
             return new NoaOptions {
@@ -306,7 +354,7 @@ namespace GameRes.Formats.Entis
 
                     entry.Encryption = m_file.View.ReadUInt32 (dir_offset);
                     m_found_encrypted = m_found_encrypted || (EncType.Raw != entry.Encryption && EncType.ERISACode != entry.Encryption);
-                    bool is_packed = EncType.ERISACode == entry.Encryption;
+                    bool is_packed = EncType.ERISACode == entry.Encryption || EncType.ERISACrypt == entry.Encryption;
                     dir_offset += 4;
 
                     entry.Offset = base_offset + m_file.View.ReadInt64 (dir_offset);

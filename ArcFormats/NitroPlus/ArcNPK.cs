@@ -57,11 +57,13 @@ namespace GameRes.Formats.NitroPlus
     internal class NpkArchive : ArcFile
     {
         public readonly Aes Encryption;
+        public readonly int Version;
 
-        public NpkArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, Aes enc)
+        public NpkArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, Aes enc, int version)
             : base (arc, impl, dir)
         {
             Encryption = enc;
+            Version = version;
         }
 
         #region IDisposable Members
@@ -100,8 +102,14 @@ namespace GameRes.Formats.NitroPlus
             set { DefaultScheme = (Npk2Scheme)value; }
         }
 
+        public NpkOpener ()
+        {
+            Signatures = new uint[] { 0x324B504E, 0x334B504E };
+        }
+
         public override ArcFile TryOpen (ArcView file)
         {
+            int version = file.View.ReadByte (3) - '0';
             int count = file.View.ReadInt32 (0x18);
             if (!IsSaneCount (count))
                 return null;
@@ -124,7 +132,7 @@ namespace GameRes.Formats.NitroPlus
                     var dir = ReadIndex (index, count, file.MaxOffset);
                     if (null == dir)
                         return null;
-                    var arc = new NpkArchive (file, this, dir, aes);
+                    var arc = new NpkArchive (file, this, dir, aes, version);
                     aes = null; // object ownership passed to NpkArchive, don't dispose
                     return arc;
                 }
@@ -481,6 +489,7 @@ namespace GameRes.Formats.NitroPlus
     {
         ArcView     m_file;
         Aes         m_encryption;
+        int         m_version;
         IEnumerator<NpkSegment> m_segment;
         Stream      m_stream;
         bool        m_eof = false;
@@ -493,6 +502,7 @@ namespace GameRes.Formats.NitroPlus
         {
             m_file = arc.File;
             m_encryption = arc.Encryption;
+            m_version = arc.Version;
             m_segment = entry.Segments.GetEnumerator();
             NextSegment();
         }
@@ -511,7 +521,15 @@ namespace GameRes.Formats.NitroPlus
             var decryptor = m_encryption.CreateDecryptor();
             m_stream = new InputCryptoStream (m_stream, decryptor);
             if (segment.IsCompressed)
-                m_stream = new DeflateStream (m_stream, CompressionMode.Decompress);
+                switch (m_version)
+                {
+                    case 2:
+                        m_stream = new DeflateStream (m_stream, CompressionMode.Decompress);
+                        break;
+                    case 3:
+                        m_stream = new ZstdSharp.DecompressionStream (m_stream);
+                        break;
+                }
         }
 
         public override int Read (byte[] buffer, int offset, int count)

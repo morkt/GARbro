@@ -1,6 +1,6 @@
 //! \file       ArcFVP.cs
 //! \date       Sat Feb 07 23:23:02 2015
-//! \brief      Favorit View Point system engine archive implementation.
+//! \brief      Favorite View Point system engine archive implementation.
 //
 // Copyright (C) 2015 by morkt
 //
@@ -116,7 +116,7 @@ namespace GameRes.Formats.FVP
                 {
                     ++token_width;
                     if (token_width > 24)
-                        throw new InvalidFormatException ("Invalid comressed stream");
+                        throw new InvalidFormatException ("Invalid compressed stream");
                 }
                 else if (0x102 == token) // reset dictionary
                 {
@@ -126,7 +126,7 @@ namespace GameRes.Formats.FVP
                 else
                 {
                     if (dict_pos >= lzw_dict.Length)
-                        throw new InvalidFormatException ("Invalid comressed stream");
+                        throw new InvalidFormatException ("Invalid compressed stream");
                     lzw_dict[dict_pos++] = dst;
                     if (token < 0x100)
                     {
@@ -136,11 +136,11 @@ namespace GameRes.Formats.FVP
                     {
                         token -= 0x103;
                         if (token >= dict_pos)
-                            throw new InvalidFormatException ("Invalid comressed stream");
+                            throw new InvalidFormatException ("Invalid compressed stream");
                         int src = lzw_dict[token];
                         int count = Math.Min (m_output.Length-dst, lzw_dict[token+1] - src + 1);
                         if (count < 0)
-                            throw new InvalidFormatException ("Invalid comressed stream");
+                            throw new InvalidFormatException ("Invalid compressed stream");
                         Binary.CopyOverlapped (m_output, src, dst, count);
                         dst += count;
                     }

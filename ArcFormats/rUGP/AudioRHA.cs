@@ -120,7 +120,7 @@ namespace GameRes.Formats.Rugp
 
         internal static uint RhaToMp3Header (uint header)
         {
-		    return (header & 0xF) << 4 | (header & 0x7F0) << 5 | (header & 0x800) << 8 | 0xFFF30004;
+            return (header & 0xF) << 4 | (header & 0x7F0) << 5 | (header & 0x800) << 8 | 0xFFF30004;
         }
 
         internal static int GetFrameLength (uint header)

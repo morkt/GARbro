@@ -67,6 +67,17 @@ namespace GameRes.Formats.Leaf
         {
             if (!file.View.AsciiEqual (4, "PACK"))
                 return null;
+            // The To Heart PSE variant embeds the key within the file and
+            // self-validates, so try it first without user interaction.
+            var pse = TryOpenEmbeddedKey (file);
+            if (null != pse)
+                return pse;
+            return TryOpenClassic (file);
+        }
+
+        // Classic LEAFPACK variant: the key comes from the scheme database or user input.
+        ArcFile TryOpenClassic (ArcView file)
+        {
             int count = file.View.ReadInt16 (8);
             if (!IsSaneCount (count))
                 return null;
@@ -94,6 +105,56 @@ namespace GameRes.Formats.Leaf
                 dir.Add (entry);
                 index_pos += 0x18;
             }
+            return new LeafArchive (file, this, dir, key);
+        }
+
+        // To Heart PSE variant: the key is embedded after the header, the entry
+        // count is stored at the end of the file and every index entry contains
+        // an end offset used for self-validation.
+        ArcFile TryOpenEmbeddedKey (ArcView file)
+        {
+            long size = file.MaxOffset;
+            if (size < 0x1C)
+                return null;
+            int key_length = file.View.ReadByte (size-1);
+            if (key_length <= 0)
+                return null;
+            int count = file.View.ReadInt16 (size-3);
+            if (!IsSaneCount (count))
+                return null;
+            long index_size = (long)count * 0x18;
+            long index_offset = size - 3 - index_size;
+            long key_end = 8 + key_length;
+            if (index_offset < key_end)
+                return null;
+            var key = file.View.ReadBytes (8, (uint)key_length);
+            var index = file.View.ReadBytes (index_offset, (uint)index_size);
+            DecryptData (index, key);
+            int index_pos = 0;
+            long prev_end = key_end;
+            var dir = new List<Entry> (count);
+            for (int i = 0; i < count; ++i)
+            {
+                var name = Binary.GetCString (index, index_pos, 8).TrimEnd ();
+                var ext  = Binary.GetCString (index, index_pos+8, 3).TrimEnd ();
+                if (!string.IsNullOrWhiteSpace (ext))
+                    name = Path.ChangeExtension (name, ext);
+                if (string.IsNullOrWhiteSpace (name))
+                    return null;
+                uint offset = index.ToUInt32 (index_pos+0xC);
+                uint entry_size = index.ToUInt32 (index_pos+0x10);
+                uint end    = index.ToUInt32 (index_pos+0x14);
+                if (offset < prev_end || (long)offset + entry_size != end || end > (ulong)index_offset)
+                    return null;
+                prev_end = end;
+                var entry = Create<Entry> (name);
+                entry.Offset = offset;
+                entry.Size   = entry_size;
+                dir.Add (entry);
+                index_pos += 0x18;
+            }
+            if (dir.Count == 0)
+                return null;
             return new LeafArchive (file, this, dir, key);
         }
 

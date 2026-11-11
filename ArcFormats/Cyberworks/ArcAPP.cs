@@ -80,10 +80,10 @@ namespace GameRes.Formats.Cyberworks
             entry.Offset += m_data_offset;
             m_type[0] = (char)m_index.ReadByte();
             m_type[1] = (char)m_index.ReadByte();
-            if (m_type[0] > 0x20 && m_type[0] < 0x7F)
+            if (m_type[0].IsAsciiVisible())
             {
                 string ext;
-                if (m_type[1] > 0x20 && m_type[1] < 0x7F)
+                if (m_type[1].IsAsciiVisible())
                     ext = new string (m_type);
                 else
                     ext = new string (m_type[0], 1);

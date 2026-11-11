@@ -98,12 +98,12 @@ namespace GameRes.Formats.PkWare
         public override bool  IsHierarchic { get { return true; } }
         public override bool      CanWrite { get { return true; } }
 
-        static readonly byte[] PkDirSignature = { (byte)'P', (byte)'K', 5, 6 };
+        internal static readonly byte[] PkDirSignature = { (byte)'P', (byte)'K', 5, 6 };
 
         public ZipOpener ()
         {
             Settings = new[] { ZipEncoding };
-            Extensions = new string[] { "zip", "vndat" };
+            Extensions = new string[] { "zip" };
         }
 
         EncodingSetting ZipEncoding = new EncodingSetting ("ZIPEncodingCP", "DefaultEncoding");
@@ -126,8 +126,8 @@ namespace GameRes.Formats.PkWare
 
         internal ArcFile OpenZipArchive (ArcView file, Stream input)
         {
-            SharpZip.ZipStrings.CodePage = Properties.Settings.Default.ZIPEncodingCP;
-            var zip = new SharpZip.ZipFile (input);
+            var sc = SharpZip.StringCodec.FromCodePage (Properties.Settings.Default.ZIPEncodingCP);
+            var zip = new SharpZip.ZipFile (input, false, sc);
             try
             {
                 var files = zip.Cast<SharpZip.ZipEntry>().Where (z => !z.IsDirectory);

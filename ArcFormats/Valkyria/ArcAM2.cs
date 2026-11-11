@@ -1,6 +1,6 @@
 //! \file       ArcAM2.cs
 //! \date       2018 Jun 05
-//! \brief      Valgyria multi-frame image format.
+//! \brief      Valkyria multi-frame image format.
 //
 // Copyright (C) 2018 by morkt
 //

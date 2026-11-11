@@ -47,20 +47,46 @@ namespace GameRes.Formats.Circus
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int count = file.View.ReadInt32 (0);
-            if (count <= 1 || count > 0xfffff)
-                return null;
-            var dir = ReadIndex (file, count, 0x24);
-            if (null == dir)
-                dir = ReadIndex (file, count, 0x30);
-            if (null == dir)
-                dir = ReadIndex (file, count, 0x3C);
-            if (null == dir)
-                return null;
-            return new ArcFile (file, this, dir);
+            var arcFile = TryOpenFromHeader(file);
+            if (null != arcFile) 
+            {
+                return arcFile;
+            }
+
+            arcFile = TryOpenFromFooter(file);
+
+            return arcFile;
         }
 
-        private List<Entry> ReadIndex (ArcView file, int count, int name_length)
+        public ArcFile TryOpenFromHeader(ArcView file) 
+        {
+            int count = file.View.ReadInt32(0);
+            if (count <= 1 || count > 0xfffff)
+                return null;
+            var dir = ReadIndexV1(file, count, 0x24);
+            if (null == dir)
+                dir = ReadIndexV1(file, count, 0x30);
+            if (null == dir)
+                dir = ReadIndexV1(file, count, 0x3C);
+            if (null == dir)
+                return null;
+            return new ArcFile(file, this, dir);
+        }
+
+        public ArcFile TryOpenFromFooter(ArcView file) 
+        {
+            int count = file.View.ReadInt32(file.MaxOffset - 4);
+            if(count <= 1 || count > 0xfffff) 
+            {
+                return null;
+            }
+
+           var dir = ReadIndexV2(file, count, file.View.ReadInt32(file.MaxOffset - 0x8));
+
+           return new ArcFile(file, this, dir);
+        }
+
+        private List<Entry> ReadIndexV1 (ArcView file, int count, int name_length)
         {
             long index_offset = 4;
             uint index_size = (uint)((name_length + 4) * count);
@@ -96,6 +122,37 @@ namespace GameRes.Formats.Circus
                 dir.Add (entry);
                 index_offset += 4;
             }
+            return dir;
+        }
+
+        private List<Entry> ReadIndexV2(ArcView file, int count, long start_offset) 
+        {
+            uint max_index_size = (uint)(count * 0x4C);
+            long index_offset = start_offset;
+            var dir = new List<Entry> (count);
+
+            file.View.Reserve(start_offset, max_index_size);
+
+            for (int i = 0; i < count; i++)
+            {
+                int name_length = file.View.ReadByte(index_offset);
+                index_offset++;
+
+                string name = file.View.ReadString(index_offset, (uint)name_length);
+                index_offset += name_length;
+
+                uint entry_size = file.View.ReadUInt32(index_offset);
+                index_offset += 8;
+
+                long entry_offset = file.View.ReadInt32(index_offset);
+                index_offset += 4;
+
+                var entry = FormatCatalog.Instance.Create<Entry>(name);
+                entry.Size = entry_size;
+                entry.Offset = entry_offset;
+                dir.Add(entry);
+            }
+
             return dir;
         }
     }

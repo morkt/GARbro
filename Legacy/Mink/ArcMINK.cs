@@ -52,7 +52,7 @@ namespace GameRes.Formats.Mink
             if (!IsSaneCount (count))
                 return null;
             uint index_offset = file.View.ReadUInt32 (4);
-            if (index_offset < 8 || index_offset>= file.MaxOffset)
+            if (index_offset < 8 || index_offset >= file.MaxOffset)
                 return null;
 
             var dir = new List<Entry> (count);

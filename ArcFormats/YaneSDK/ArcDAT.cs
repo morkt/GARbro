@@ -70,7 +70,7 @@ namespace GameRes.Formats.YaneSDK
                     entry.EncryptedSize = index.ReadUInt16();
                     entry.Size = index.ReadUInt32();
                     entry.Offset = index.ReadUInt32();
-                    if (!entry.CheckPlacement (file.MaxOffset) || entry.Offset <= data_offset)
+                    if (!entry.CheckPlacement (file.MaxOffset) || entry.Offset < data_offset)
                         return null;
                     dir.Add (entry);
                 }

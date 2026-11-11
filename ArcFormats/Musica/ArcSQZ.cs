@@ -34,11 +34,13 @@ namespace GameRes.Formats.Musica
     internal class SqzArchive : ArcFile
     {
         public readonly ImageMetaData Info;
+        public readonly int FPS;
 
-        public SqzArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, ImageMetaData info)
+        public SqzArchive (ArcView arc, ArchiveFormat impl, ICollection<Entry> dir, ImageMetaData info, int fps)
             : base (arc, impl, dir)
         {
             Info = info;
+            FPS = fps;
         }
     }
 
@@ -53,7 +55,7 @@ namespace GameRes.Formats.Musica
 
         public override ArcFile TryOpen (ArcView file)
         {
-            int count = file.View.ReadInt32 (0x10) * 2;
+            int count = file.View.ReadInt32 (4);
             if (!IsSaneCount (count))
                 return null;
 
@@ -62,8 +64,8 @@ namespace GameRes.Formats.Musica
                 Width   = file.View.ReadUInt32 (8),
                 Height  = file.View.ReadUInt32 (0xC),
                 BPP     = 32,
-//                BPP = file.View.ReadInt32 (4),
             };
+            int fps = file.View.ReadInt32(0x10);
             var base_name = Path.GetFileNameWithoutExtension (file.Name);
             uint index_offset = 0x14;
             var dir = new List<Entry> (count);
@@ -80,7 +82,7 @@ namespace GameRes.Formats.Musica
                 dir.Add (entry);
                 index_offset += 8;
             }
-            return new SqzArchive (file, this, dir, info);
+            return new SqzArchive (file, this, dir, info, fps);
         }
 
         public override IImageDecoder OpenImage (ArcFile arc, Entry entry)

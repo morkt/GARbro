@@ -133,7 +133,7 @@ namespace GameRes.Formats.Actgs
                 input = new BinMemoryStream (header, entry.Name);
             else
                 input = new PrefixStream (header, arc.File.CreateStream (entry.Offset+0x20, entry.Size-0x20));
-            if (header.AsciiEqual ("BM"))
+            if (header.AsciiEqual ("BM") || header.AsciiEqual ("8BPS"))
                 return input;
             input.Position = 4;
             return new LzssStream (input);

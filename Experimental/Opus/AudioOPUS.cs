@@ -26,6 +26,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
+using Concentus;
 using Concentus.Oggfile;
 using Concentus.Structs;
 
@@ -58,7 +59,7 @@ namespace GameRes.Formats.Opus
 //            int rate = header.ToInt32 (header_pos+0xC);
             int rate = 48000;
             file.Position = 0;
-            var decoder = OpusDecoder.Create (rate, channels);
+            var decoder = OpusCodecFactory.CreateDecoder (rate, channels);
             var ogg_in = new OpusOggReadStream (decoder, file.AsStream);
             var pcm = new MemoryStream();
             try

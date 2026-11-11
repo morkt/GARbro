@@ -69,6 +69,12 @@ namespace GameRes.Formats.FVP
                 if (null == image_info)
                     return null;
             }
+            // This is a atlas image, all clips are placed into a single TLG image
+            if (file.View.AsciiEqual (0x2C, "TLG"))
+                return null;
+            // This is a diff image
+            if (0x64 == file.View.ReadByte (0x2C))
+                return null;
             int count = file.View.ReadInt32 (0x20);
             if (0 == count)
                 count = 1;

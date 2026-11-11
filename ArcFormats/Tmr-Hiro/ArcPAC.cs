@@ -105,7 +105,7 @@ namespace GameRes.Formats.TmrHiro
                 {
                     entry.Type = "audio";
                 }
-                else if (6 == file.View.ReadInt16 (entry.Offset+4) && 0x140050 == file.View.ReadUInt32 (entry.Offset+6))
+                else if (IsSrp (file, entry))
                 {
                     entry.Type = "script";
                     if ("srp" == arc_name)
@@ -118,8 +118,7 @@ namespace GameRes.Formats.TmrHiro
         public override Stream OpenEntry (ArcFile arc, Entry entry)
         {
             if ("script" != entry.Type
-                || 6 != arc.File.View.ReadInt16 (entry.Offset+4)
-                || 0x140050 != arc.File.View.ReadUInt32 (entry.Offset+6))
+                || !IsSrp (arc.File, entry))
                 return base.OpenEntry (arc, entry);
             int record_count = arc.File.View.ReadInt32 (entry.Offset);
             var data = arc.File.View.ReadBytes (entry.Offset, entry.Size);
@@ -137,6 +136,11 @@ namespace GameRes.Formats.TmrHiro
                 }
             }
             return new BinMemoryStream (data, entry.Name);
+        }
+
+        bool IsSrp (ArcView file, Entry entry)
+        {
+            return 0x030010 == file.View.ReadUInt32 (entry.Offset+entry.Size-4);
         }
     }
 }

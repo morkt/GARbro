@@ -26,12 +26,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.IO;
 
 namespace GameRes.Formats.TopCat
 {
     [Export(typeof(ArchiveFormat))]
-    public class Tcd1Opener : TcdOpener
+    public class Tcd1Opener : ArchiveFormat
     {
         public override string         Tag { get { return "TCD1"; } }
         public override string Description { get { return "TopCat data archive"; } }

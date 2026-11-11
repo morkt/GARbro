@@ -53,6 +53,10 @@ namespace GameRes.Formats.Nekotaro
             int bottom = top + height;
             if (right > 640 || bottom > 400 || 0 == width || 0 == height)
                 return null;
+            // The header alone can false-positive on text data; require a palette
+            // that the decoder will be able to process.
+            if (!NcgReader.HasValidPalette (file))
+                return null;
             return new ImageMetaData {
                 Width = (uint)width,
                 Height = (uint)height,
@@ -269,6 +273,32 @@ namespace GameRes.Formats.Nekotaro
                     bits[i] |= bit;
                 s <<= 1;
             }
+        }
+
+        /// <summary>
+        /// Check whether the palette decodes to valid PC-98 4-bit channel values.
+        /// </summary>
+        internal static bool HasValidPalette (IBinaryStream file)
+        {
+            if (file.Length < 4 + 48)
+                return false;
+            file.Position = 4;
+            var palette = file.ReadBytes (48);
+            if (palette.Length < 48)
+                return false;
+            int k = 0;
+            for (int c = 0; c < 16; ++c)
+            {
+                int g = palette[c*3  ];
+                int r = palette[c*3+1];
+                int b = palette[c*3+2];
+                b = (~b - PaletteKey[k++ & 7]) & 0xFF;
+                r = (~r - PaletteKey[k++ & 7]) & 0xFF;
+                g = (~g - PaletteKey[k++ & 7]) & 0xFF;
+                if (r > 0x0F || g > 0x0F || b > 0x0F)
+                    return false;
+            }
+            return true;
         }
 
         static readonly string PaletteKey = "NEKOTARO";

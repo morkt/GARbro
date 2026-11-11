@@ -58,6 +58,8 @@ namespace GameRes.Formats.Tanuki
                 version = 100;
             else if (file.View.AsciiEqual (4, "1.10"))
                 version = 110;
+            else if (file.View.AsciiEqual (4, "1.20"))
+                version = 120;
             else
                 return null;
             int count = file.View.ReadInt32 (0x14);
@@ -67,7 +69,19 @@ namespace GameRes.Formats.Tanuki
             int bucket_count = file.View.ReadInt32 (0x18);
             uint index_size = file.View.ReadUInt32 (0x1C);
             uint arc_seed = file.View.ReadUInt32 (0x20);
-            long index_offset = version >= 110 ? 0x2C : 0x24;
+            long index_offset = 0;
+            switch (version)
+            {
+                case 100:
+                    index_offset = 0x24;
+                    break;
+                case 110:
+                    index_offset = 0x2C;
+                    break;
+                case 120:
+                    index_offset = 0x30 + file.View.ReadUInt32 (0x2C);
+                    break;
+            };
             long base_offset = index_offset + index_size;
             var blowfish = new Blowfish (IndexKey);
             var packed_bytes = file.View.ReadBytes (index_offset, index_size);

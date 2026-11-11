@@ -1,6 +1,6 @@
 //! \file       ArcMFG.cs
 //! \date       Wed Apr 29 13:22:31 2015
-//! \brief      MFG resourse archives implementation.
+//! \brief      MFG resource archives implementation.
 //
 // Copyright (C) 2015 by morkt
 //

@@ -1,6 +1,6 @@
 //! \file       ArcLPC.cs
 //! \date       2019 Jan 15
-//! \brief      Kogado Stduio multi-frame image.
+//! \brief      Kogado Studio multi-frame image.
 //
 // Copyright (C) 2019 by morkt
 //

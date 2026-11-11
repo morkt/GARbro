@@ -25,6 +25,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using GameRes.Utility;
 
 namespace GameRes.Formats.ShiinaRio
@@ -608,10 +609,14 @@ namespace GameRes.Formats.ShiinaRio
     }
 
     [Serializable]
+    [DataContract]
     public class ImageArray : IByteArray
     {
+        [DataMember]
         private byte[]  m_common;
+        [DataMember]
         private byte[]  m_extra;
+        [DataMember]
         private int     m_common_length;
 
         public ImageArray (byte[] common) : this (common, common.Length, Array.Empty<byte>())
@@ -1309,6 +1314,72 @@ namespace GameRes.Formats.ShiinaRio
                     data32[i] ^= m_key;
                 }
             }
+        }
+    }
+
+    [Serializable]
+    public class Nukitashi2Crypt : IDecryptExtra
+    {
+        protected readonly byte[] m_key;
+
+        public Nukitashi2Crypt (byte[] key)
+        {
+            m_key = key;
+        }
+
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x200)
+            {
+                if ((flags & 0x202) == 0x202)
+                {
+                    for (int i = 0; i < ((length & 0x7E) | 1); i++)
+                    {
+                        data[index+i] ^= m_key[i % 0x40];
+                    }
+                    var value = MemoryMarshal.Read<uint> (data.AsSpan (index+0x100));
+                    value ^= length;
+                    MemoryMarshal.Write<uint> (data.AsSpan (index+0x100), ref value);
+                }
+            }
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            throw new NotImplementedException ();
+        }
+    }
+
+    [Serializable]
+    public class SaiminCrypt : IDecryptExtra
+    {
+        protected readonly byte[] m_key;
+
+        public SaiminCrypt (byte[] key)
+        {
+            m_key = key;
+        }
+
+        public void Decrypt (byte[] data, int index, uint length, uint flags)
+        {
+            if (length >= 0x200)
+            {
+                if ((flags & 0x202) == 0x202)
+                {
+                    for (int i = 0; i < ((length & 0x7E) | 1); i++)
+                    {
+                        data[index+i] ^= m_key[i % 0x40];
+                    }
+                    var value = MemoryMarshal.Read<uint> (data.AsSpan (index+0x104));
+                    value ^= length;
+                    MemoryMarshal.Write<uint> (data.AsSpan (index+0x104), ref value);
+                }
+            }
+        }
+
+        public void Encrypt (byte[] data, int index, uint length, uint flags)
+        {
+            throw new NotImplementedException ();
         }
     }
 }

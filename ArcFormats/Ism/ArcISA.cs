@@ -44,7 +44,7 @@ namespace GameRes.Formats.ISM
 
         public override ArcFile TryOpen (ArcView file)
         {
-            if (!file.View.AsciiEqual (4, "ARCHIVED"))
+            if (!file.View.AsciiEqual (4, "ARCHIVED") && !file.View.AsciiEqual(4, "ENGLISH "))
                 return null;
             int count = file.View.ReadInt16 (0x0C);
             if (!IsSaneCount (count))

@@ -62,8 +62,19 @@ namespace GameRes.Formats.Succubus
                     return null;
                 if (string.IsNullOrEmpty (entry.Type) && is_voice)
                     entry.Type = "audio";
+                if (string.IsNullOrEmpty (entry.Type) && entry.Name.HasExtension ("yx"))
+                    entry.Type = "script";
                 dir.Add (entry);
                 index_offset += 0x18;
+            }
+            // entries without a recognised extension (e.g. sound archives) are typed by content
+            foreach (var entry in dir)
+            {
+                if (!string.IsNullOrEmpty (entry.Type))
+                    continue;
+                var res = AutoEntry.DetectFileType (file.View.ReadUInt32 (entry.Offset));
+                if (null != res)
+                    entry.ChangeType (res);
             }
             return new ArcFile (file, this, dir);
         }

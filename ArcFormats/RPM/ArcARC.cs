@@ -44,11 +44,13 @@ namespace GameRes.Formats.Rpm
     {
         public string   Keyword;
         public int      NameLength;
+        public int      IndexOffset;
 
-        public EncryptionScheme (string key, int name_length = 32)
+        public EncryptionScheme (string key, int name_length = 32, int index_offset = 8)
         {
             Keyword = key;
             NameLength = name_length;
+            IndexOffset = index_offset;
         }
     }
 
@@ -82,22 +84,26 @@ namespace GameRes.Formats.Rpm
         }
 
         /// <summary>Minimum entry length across all possible archive schemes.</summary>
-        const int MinEntryLength = 0x24;
+        const int MinEntryLength = 0x1C;
 
         // largest size should be first
-        static readonly int[] PossibleNameSizes = new[] { 0x20, 0x18 };
+        static readonly int[] PossibleNameSizes = new[] { 0x20, 0x18, 0x10 };
 
         public override ArcFile TryOpen (ArcView file)
         {
             int count = file.View.ReadInt32 (0);
-            if (!IsSaneCount (count) || 8 + count * MinEntryLength >= file.MaxOffset)
-                return null;
-            uint is_compressed = file.View.ReadUInt32 (4);
-            if (is_compressed > 1) // should be either 0 or 1
+            if (!IsSaneCount (count) || 4 + count * MinEntryLength >= file.MaxOffset)
                 return null;
 
-            var index_reader = new ArcIndexReader (file, count, is_compressed != 0);
-            var scheme = index_reader.GuessScheme (8, PossibleNameSizes);
+            uint is_compressed = 1;
+            var index_reader = new ArcIndexReader (file, count);
+            var scheme = index_reader.GuessScheme (4, PossibleNameSizes);
+            if (null == scheme)
+            {
+                is_compressed = file.View.ReadUInt32 (4);
+                if (is_compressed <= 1) // should be either 0 or 1
+                    scheme = index_reader.GuessScheme (8, PossibleNameSizes);
+            }
             // additional checks to avoid dialog popup on false positives
             if (null == scheme && KnownSchemes.Count > 0 && file.Name.HasExtension (".arc"))
             {
@@ -114,7 +120,7 @@ namespace GameRes.Formats.Rpm
                 && VFS.IsPathEqualsToFileName (file.Name, "instdata.arc"))
                 scheme = new EncryptionScheme ("inst", scheme.NameLength);
 
-            var dir = index_reader.ReadIndex (8, scheme);
+            var dir = index_reader.ReadIndex (scheme, scheme.IndexOffset > 4 ? is_compressed != 0 : true);
             if (null == dir)
                 return null;
             return new ArcFile (file, this, dir);
@@ -161,17 +167,16 @@ namespace GameRes.Formats.Rpm
     {
         ArcView             m_file;
         int                 m_count;
-        bool                m_is_compressed;
 
-        public ArcIndexReader (ArcView file, int count, bool is_compressed)
+        public ArcIndexReader (ArcView file, int count)
         {
             m_file = file;
             m_count = count;
-            m_is_compressed = is_compressed;
         }
 
-        public List<Entry> ReadIndex (long offset, EncryptionScheme scheme)
+        public List<Entry> ReadIndex (EncryptionScheme scheme, bool is_compressed)
         {
+            long offset = scheme.IndexOffset;
             int index_size = m_count * (scheme.NameLength + 12);
             var index = m_file.View.ReadBytes (offset, (uint)index_size);
             if (index.Length != index_size)
@@ -192,7 +197,7 @@ namespace GameRes.Formats.Rpm
                 entry.UnpackedSize  = LittleEndian.ToUInt32 (index, index_offset);
                 entry.Size          = LittleEndian.ToUInt32 (index, index_offset+4);
                 entry.Offset        = LittleEndian.ToUInt32 (index, index_offset+8);
-                entry.IsPacked      = m_is_compressed;
+                entry.IsPacked      = is_compressed;
                 if (0 != entry.Size)
                 {
                     if (entry.Offset < data_offset || !entry.CheckPlacement (m_file.MaxOffset))
@@ -247,7 +252,7 @@ namespace GameRes.Formats.Rpm
                     key[(second_match+i) % key_length] = sym;
                 }
                 if (i == key_length)
-                    return new EncryptionScheme (Encoding.ASCII.GetString (key), name_length);
+                    return new EncryptionScheme (Encoding.ASCII.GetString (key), name_length, index_offset);
             }
             return null;
         }
